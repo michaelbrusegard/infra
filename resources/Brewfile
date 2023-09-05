@@ -1,0 +1,100 @@
+tap "homebrew/bundle"
+tap "homebrew/cask-fonts"
+brew "ffmpeg"
+brew "git"
+brew "git-lfs"
+brew "gnupg"
+brew "grep"
+brew "gzip"
+brew "jabba"
+brew "mas"
+brew "nvm"
+brew "p7zip"
+brew "pinentry-mac"
+brew "pyenv"
+brew "tree"
+brew "wireshark"
+cask "blender"
+cask "discord"
+cask "firefox"
+cask "font-roboto"
+cask "font-source-code-pro"
+cask "geekbench"
+cask "google-chrome"
+cask "imageoptim"
+cask "linearmouse"
+cask "microsoft-teams"
+cask "onyx"
+cask "prusaslicer"
+cask "raycast"
+cask "scenebuilder"
+cask "sf-symbols"
+cask "tempbox"
+cask "tiles"
+cask "transmission"
+cask "visual-studio-code"
+cask "zoom"
+cask "zopfli"
+mas "AdGuard for Safari", id: 1440147259
+mas "Affinity Designer 2", id: 1616831348
+mas "Affinity Photo 2", id: 1616822987
+mas "Affinity Publisher 2", id: 1606941598
+mas "Apple Configurator", id: 1037126344
+mas "Compressor", id: 424390742
+mas "Curve", id: 1219074514
+mas "Hidden Bar", id: 1452453066
+mas "Jump Desktop", id: 524141863
+mas "Keynote", id: 409183694
+mas "Messenger", id: 1480068668
+mas "Microsoft Excel", id: 462058435
+mas "Microsoft PowerPoint", id: 462062816
+mas "Microsoft Word", id: 462054704
+mas "Numbers", id: 409203825
+mas "Pages", id: 409201541
+mas "Slack", id: 803453959
+mas "Texifier", id: 458866234
+mas "WireGuard", id: 1451685025
+mas "Xcode", id: 497799835
+vscode "bilalekrem.scenebuilderextension"
+vscode "bradlc.vscode-tailwindcss"
+vscode "dbaeumer.vscode-eslint"
+vscode "eamodio.gitlens"
+vscode "esbenp.prettier-vscode"
+vscode "formulahendry.code-runner"
+vscode "ginfuru.ginfuru-better-solarized-dark-theme"
+vscode "GitHub.copilot"
+vscode "GitHub.copilot-chat"
+vscode "GitHub.vscode-codeql"
+vscode "github.vscode-github-actions"
+vscode "GitHub.vscode-pull-request-github"
+vscode "googlecloudtools.cloudcode"
+vscode "hbenl.vscode-test-explorer"
+vscode "jebbs.plantuml"
+vscode "mrmlnc.vscode-autoprefixer"
+vscode "ms-python.isort"
+vscode "ms-python.python"
+vscode "ms-python.vscode-pylance"
+vscode "ms-toolsai.jupyter"
+vscode "ms-toolsai.jupyter-keymap"
+vscode "ms-toolsai.jupyter-renderers"
+vscode "ms-toolsai.vscode-jupyter-cell-tags"
+vscode "ms-toolsai.vscode-jupyter-slideshow"
+vscode "ms-vscode.live-server"
+vscode "ms-vscode.test-adapter-converter"
+vscode "ms-vsliveshare.vsliveshare"
+vscode "naumovs.color-highlight"
+vscode "redhat.fabric8-analytics"
+vscode "redhat.java"
+vscode "shrey150.javafx-support"
+vscode "svelte.svelte-vscode"
+vscode "tomoki1207.pdf"
+vscode "vadimcn.vscode-lldb"
+vscode "VisualStudioExptTeam.intellicode-api-usage-examples"
+vscode "VisualStudioExptTeam.vscodeintellicode"
+vscode "VisualStudioExptTeam.vscodeintellicode-completions"
+vscode "vivaxy.vscode-conventional-commits"
+vscode "vscjava.vscode-java-debug"
+vscode "vscjava.vscode-java-dependency"
+vscode "vscjava.vscode-java-pack"
+vscode "vscjava.vscode-java-test"
+vscode "vscode-icons-team.vscode-icons"
