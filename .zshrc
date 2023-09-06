@@ -23,6 +23,11 @@ export NVM_DIR="$HOME/.nvm"
   [ -s "/usr/local/opt/nvm/nvm.sh" ] && \. "/usr/local/opt/nvm/nvm.sh"  # This loads nvm
   [ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/usr/local/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
+# Apple Silicon Node Version Manager
+export NVM_DIR="$HOME/.nvm"
+  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
+  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+
 # PyEnv
 export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
@@ -30,6 +35,9 @@ eval "$(pyenv virtualenv-init -)"
 
 # Java Version Manager
   [ -s "/usr/local/opt/jabba/share/jabba/jabba.sh" ] && . "/usr/local/opt/jabba/share/jabba/jabba.sh"
+
+# Apple Silicon Java Version Manager
+  [ -s "/opt/homebrew/opt/jabba/share/jabba/jabba.sh" ] && . "/opt/homebrew/opt/jabba/share/jabba/jabba.sh"
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/michaelbrusegard/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/michaelbrusegard/google-cloud-sdk/path.zsh.inc'; fi
