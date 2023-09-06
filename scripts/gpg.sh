@@ -32,15 +32,15 @@ echo "pinentry-program $(which pinentry-mac)" >> ~/.gnupg/gpg-agent.conf
 
 echo "Generating a new GPG key for GitHub..."
 
-printf "Enter user name: "
-read USER_NAME
 printf "Enter user email: "
 read USER_EMAIL
+printf "Enter user name: "
+read USER_NAME
 
 USER_ID="${USER_NAME} <${USER_EMAIL}>"
 echo "Using user id $USER_ID"
 
-printf "Enter password (hard to guess, easy to remember and use): "
+printf "Enter password: "
 read_secret PASSWORD
 printf "Enter again for confirmation: "
 read_secret PASSWORD_CONFIRMATION
