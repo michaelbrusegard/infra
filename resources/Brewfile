@@ -14,6 +14,7 @@ brew "pinentry-mac"
 brew "pyenv"
 brew "tree"
 brew "wireshark"
+brew "zopfli"
 cask "blender"
 cask "discord"
 cask "firefox"
@@ -34,7 +35,6 @@ cask "tiles"
 cask "transmission"
 cask "visual-studio-code"
 cask "zoom"
-cask "zopfli"
 mas "AdGuard for Safari", id: 1440147259
 mas "Affinity Designer 2", id: 1616831348
 mas "Affinity Photo 2", id: 1616822987

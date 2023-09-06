@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e  # Abort the script if any command fails
+set -x  # Print commands and their arguments as they are executedZ
 
 # Thanks to mathiasbynens for most parts of this script!
 # ~/.macos — https://github.com/mathiasbynens/dotfiles/blob/main/.macos
@@ -149,9 +150,6 @@ defaults write NSGlobalDomain AppleMetricUnits -bool true
 # Show language menu in the top right corner of the boot screen
 #sudo defaults write /Library/Preferences/com.apple.loginwindow showInputMenu -bool true
 
-# Set the timezone; see `sudo systemsetup -listtimezones` for other values
-sudo systemsetup -settimezone "Europe/Oslo" > /dev/null
-
 ###############################################################################
 # Energy saving                                                               #
 ###############################################################################
@@ -162,26 +160,20 @@ sudo pmset -a lidwake 1
 # Restart automatically on power loss
 sudo pmset -a autorestart 1
 
-# Restart automatically if the computer freezes
-sudo systemsetup -setrestartfreeze on
-
 # Start screensaver after 5 minutes
 sudo defaults write /Library/Preferences/com.apple.screensaver idleTime -int 300
 
 # Sleep the display after 10 minutes
 sudo pmset -a displaysleep 10
 
-# Set machine sleep to 60 minutes while charging
-sudo pmset -c sleep 60
+# Disable machine sleep while charging
+sudo pmset -c sleep 0
 
 # Set machine sleep to 10 minutes on battery
 sudo pmset -b sleep 10
 
 # Set standby delay to 24 hours (default is 1 hour)
 sudo pmset -a standbydelay 86400
-
-# Never go into computer sleep mode
-# sudo systemsetup -setcomputersleep Off > /dev/null
 
 # Hibernation mode
 # 0: Disable hibernation (speeds up entering sleep mode)
@@ -322,13 +314,10 @@ defaults write com.apple.finder WarnOnEmptyTrash -bool false
 defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
 
 # Show the ~/Library folder
-chflags nohidden ~/Library && xattr -d com.apple.FinderInfo ~/Library
+chflags nohidden ~/Library
 
 # Show the /Volumes folder
 sudo chflags nohidden /Volumes
-
-# Enable the MacBook Air SuperDrive on any Mac
-sudo nvram boot-args="mbasd=1"
 
 # Expand the following File Info panes:
 # “General”, “Open with”, and “Sharing & Permissions”
@@ -344,8 +333,8 @@ defaults write com.apple.finder FXInfoPanesExpanded -dict \
 # Enable highlight hover effect for the grid view of a stack (Dock)
 defaults write com.apple.dock mouse-over-hilite-stack -bool true
 
-# Set the icon size of Dock items to 36 pixels
-defaults write com.apple.dock tilesize -int 36
+# Set the icon size of Dock items to 56 pixels
+defaults write com.apple.dock tilesize -int 56
 
 # Change minimize/maximize window effect
 defaults write com.apple.dock mineffect -string "scale"
@@ -441,13 +430,12 @@ defaults write com.apple.dock "orientation" -string "left"
 # Top left screen corner → Start screen saver
 defaults write com.apple.dock wvous-tl-corner -int 5
 defaults write com.apple.dock wvous-tl-modifier -int 0
-# Top right screen corner → Desktop
-defaults write com.apple.dock wvous-tr-corner -int 4
+# Top right screen corner no action
+defaults write com.apple.dock wvous-tr-corner -int 0
 defaults write com.apple.dock wvous-tr-modifier -int 0
-# Bottom left screen corner → Mission Control
-defaults write com.apple.dock wvous-bl-corner -int 2
+# Bottom left screen corner → Desktop
+defaults write com.apple.dock wvous-bl-corner -int 4
 defaults write com.apple.dock wvous-bl-modifier -int 0
-
 # Bottom right screen corner no action
 defaults write com.apple.dock wvous-br-corner -int 0
 defaults write com.apple.dock wvous-br-modifier -int 0
@@ -570,49 +558,8 @@ defaults write com.apple.mail SpellCheckingBehavior -string "NoSpellCheckingEnab
 # Spotlight                                                                   #
 ###############################################################################
 
-# Hide Spotlight tray-icon (and subsequent helper)
-sudo chmod 600 /System/Library/CoreServices/Search.bundle/Contents/MacOS/Search
-# Disable Spotlight indexing for any volume that gets mounted and has not yet
-# been indexed before.
-# Use `sudo mdutil -i off "/Volumes/foo"` to stop indexing any volume.
-sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"
-# Change indexing order and disable some search results
-# Yosemite-specific search results (remove them if you are using macOS 10.9 or older):
-# 	MENU_DEFINITION
-# 	MENU_CONVERSION
-# 	MENU_EXPRESSION
-# 	MENU_SPOTLIGHT_SUGGESTIONS (send search queries to Apple)
-# 	MENU_WEBSEARCH             (send search queries to Apple)
-# 	MENU_OTHER
-defaults write com.apple.spotlight orderedItems -array \
-	'{"enabled" = 1;"name" = "APPLICATIONS";}' \
-	'{"enabled" = 1;"name" = "SYSTEM_PREFS";}' \
-	'{"enabled" = 1;"name" = "DIRECTORIES";}' \
-	'{"enabled" = 1;"name" = "PDF";}' \
-	'{"enabled" = 1;"name" = "FONTS";}' \
-	'{"enabled" = 0;"name" = "DOCUMENTS";}' \
-	'{"enabled" = 0;"name" = "MESSAGES";}' \
-	'{"enabled" = 0;"name" = "CONTACT";}' \
-	'{"enabled" = 0;"name" = "EVENT_TODO";}' \
-	'{"enabled" = 0;"name" = "IMAGES";}' \
-	'{"enabled" = 0;"name" = "BOOKMARKS";}' \
-	'{"enabled" = 0;"name" = "MUSIC";}' \
-	'{"enabled" = 0;"name" = "MOVIES";}' \
-	'{"enabled" = 0;"name" = "PRESENTATIONS";}' \
-	'{"enabled" = 0;"name" = "SPREADSHEETS";}' \
-	'{"enabled" = 0;"name" = "SOURCE";}' \
-	'{"enabled" = 0;"name" = "MENU_DEFINITION";}' \
-	'{"enabled" = 0;"name" = "MENU_OTHER";}' \
-	'{"enabled" = 0;"name" = "MENU_CONVERSION";}' \
-	'{"enabled" = 0;"name" = "MENU_EXPRESSION";}' \
-	'{"enabled" = 0;"name" = "MENU_WEBSEARCH";}' \
-	'{"enabled" = 0;"name" = "MENU_SPOTLIGHT_SUGGESTIONS";}'
-# Load new settings before rebuilding the index
-killall mds > /dev/null 2>&1
-# Make sure indexing is enabled for the main volume
-sudo mdutil -i on / > /dev/null
-# Rebuild the index from scratch
-sudo mdutil -E / > /dev/null
+# Disable spotlight
+sudo mdutil -a -i off
 
 ###############################################################################
 # Terminal                                                                    #
@@ -622,6 +569,9 @@ sudo mdutil -E / > /dev/null
 defaults write com.apple.terminal StringEncodings -array 4
 
 # Use a modified version of the Solarized Dark theme by default in Terminal.app
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+THEME_FILE="$SCRIPT_DIR/../resources/Solarized Dark.terminal"
+
 osascript <<EOD
 
 tell application "Terminal"
@@ -637,7 +587,7 @@ tell application "Terminal"
 	(* Open the custom theme so that it gets added to the list
 	   of available terminal themes (note: this will open two
 	   additional terminal windows). *)
-	do shell script "open '$(dirname \"$0\")/../resources/" & themeName & ".terminal'"
+	do shell script "open \"$THEME_FILE\""
 
 	(* Wait a little bit to ensure that the custom theme is added. *)
 	delay 1
@@ -687,9 +637,6 @@ defaults write com.apple.Terminal ShowLineMarks -int 0
 
 # Prevent Time Machine from prompting to use new hard drives as backup volume
 defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
-
-# Disable local Time Machine backups
-hash tmutil &> /dev/null && sudo tmutil disablelocal
 
 ###############################################################################
 # Activity Monitor                                                            #
@@ -833,20 +780,18 @@ defaults write com.apple.archiveutility dearchive-move-after -string "~/.Trash"
 ###############################################################################
 # Kill affected applications                                                  #
 ###############################################################################
+if pgrep -x "Activity Monitor" > /dev/null; then killall "Activity Monitor"; fi
+if pgrep -x "Calendar" > /dev/null; then killall "Calendar"; fi
+if pgrep -x "cfprefsd" > /dev/null; then killall "cfprefsd"; fi
+if pgrep -x "Contacts" > /dev/null; then killall "Contacts"; fi
+if pgrep -x "Dock" > /dev/null; then killall "Dock"; fi
+if pgrep -x "Finder" > /dev/null; then killall "Finder"; fi
+if pgrep -x "Mail" > /dev/null; then killall "Mail"; fi
+if pgrep -x "Messages" > /dev/null; then killall "Messages"; fi
+if pgrep -x "Photos" > /dev/null; then killall "Photos"; fi
+if pgrep -x "Safari" > /dev/null; then killall "Safari"; fi
+if pgrep -x "SystemUIServer" > /dev/null; then killall "SystemUIServer"; fi
+if pgrep -x "Terminal" > /dev/null; then killall "Terminal"; fi
+if pgrep -x "Transmission" > /dev/null; then killall "Transmission"; fi
 
-for app in "Activity Monitor" \
-	"Calendar" \
-	"cfprefsd" \
-	"Contacts" \
-	"Dock" \
-	"Finder" \
-	"Mail" \
-	"Messages" \
-	"Photos" \
-	"Safari" \
-	"SystemUIServer" \
-	"Terminal" \
-	"Transmission"; do
-	killall "${app}" &> /dev/null
-done
 echo "Done. Note that some of these changes require a logout/restart to take effect."

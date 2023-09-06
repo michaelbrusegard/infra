@@ -7,6 +7,8 @@ if ! command -v brew &> /dev/null; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
 # Run brew bundle with the specified Brewfile path
 BREWFILE_PATH="$SCRIPT_DIR/../resources/Brewfile"
 brew bundle --file "$BREWFILE_PATH"
