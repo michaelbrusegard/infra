@@ -794,4 +794,4 @@ if pgrep -x "SystemUIServer" > /dev/null; then killall "SystemUIServer"; fi
 if pgrep -x "Terminal" > /dev/null; then killall "Terminal"; fi
 if pgrep -x "Transmission" > /dev/null; then killall "Transmission"; fi
 
-echo "Done. Note that some of these changes require a logout/restart to take effect."
+echo "Done. Please restart for everything to take effect."

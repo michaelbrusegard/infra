@@ -2,6 +2,9 @@
 
 set -e  # Abort the script if any command fails
 
+# Ask for the administrator password upfront
+sudo -v
+
 # Install Homebrew if it is not already installed
 if ! command -v brew &> /dev/null; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
