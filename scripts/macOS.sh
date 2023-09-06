@@ -496,10 +496,10 @@ defaults write com.apple.Safari WebContinuousSpellCheckingEnabled -bool true
 defaults write com.apple.Safari WebAutomaticSpellingCorrectionEnabled -bool false
 
 # Disable AutoFill
-defaults write com.apple.Safari AutoFillFromAddressBook -bool false
-defaults write com.apple.Safari AutoFillPasswords -bool false
-defaults write com.apple.Safari AutoFillCreditCardData -bool false
-defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
+#defaults write com.apple.Safari AutoFillFromAddressBook -bool false
+#defaults write com.apple.Safari AutoFillPasswords -bool false
+#defaults write com.apple.Safari AutoFillCreditCardData -bool false
+#defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
 
 # Warn about fraudulent websites
 defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
