@@ -40,10 +40,10 @@ eval "$(pyenv virtualenv-init -)"
   [ -s "/opt/homebrew/opt/jabba/share/jabba/jabba.sh" ] && . "/opt/homebrew/opt/jabba/share/jabba/jabba.sh"
 
 # The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/michaelbrusegard/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/michaelbrusegard/google-cloud-sdk/path.zsh.inc'; fi
+source "$(brew --prefix)/share/google-cloud-sdk/path.zsh.inc"
 
 # The next line enables shell command completion for gcloud.
-if [ -f '/Users/michaelbrusegard/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/michaelbrusegard/google-cloud-sdk/completion.zsh.inc'; fi
+source "$(brew --prefix)/share/google-cloud-sdk/completion.zsh.inc"
 
 # Load aliases and functions
 source ~/.aliases
