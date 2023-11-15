@@ -29,7 +29,7 @@
 	ca = !git add -A && git commit -av
 
 	# Switch to a branch.
-	go = "!f() { git checkout \"$1\"; }; f"
+	go = !git checkout
 
 	# Show verbose output about tags, branches or remotes
 	tags = tag -l
