@@ -5,13 +5,14 @@ set -e  # Abort the script if any command fails
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."  # Get the absolute path to the repository directory
 
 # Delete existing dotfiles in the home directory
-rm -rf ~/.zshrc ~/.aliases ~/.functions ~/.gitconfig &>/dev/null || true
+rm -rf ~/.zshrc ~/.p10k.zsh ~/.tmux.conf ~/.aliases ~/.gitconfig &>/dev/null || true
 
 
 # Create symlinks for each dotfile
 ln -sf "${repo_dir}/.zshrc" ~/.zshrc
+ln -sf "${repo_dir}/.p10k.zsh" ~/.p10k.zsh
+ln -sf "${repo_dir}/.tmux.conf" ~/.tmux.conf
 ln -sf "${repo_dir}/.aliases" ~/.aliases
-ln -sf "${repo_dir}/.functions" ~/.functions
 ln -sf "${repo_dir}/.gitconfig" ~/.gitconfig
 
 echo "Symlinks created successfully!"
