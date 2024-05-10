@@ -389,8 +389,8 @@ defaults write com.apple.dock expose-animation-duration -float 0.1
 # Group windows by application in Mission Control
 defaults write com.apple.dock expose-group-by-app -bool true
 
-# Disable speperate spaces for displays
-defaults write com.apple.spaces "spans-displays" -bool false
+# Enable seperate spaces for displays
+defaults write com.apple.spaces "spans-displays" -bool true
 
 # Scroll up on a Dock icon to show all Space's opened windows for an app, or open stack.
 defaults write com.apple.dock "scroll-to-open" -bool true
