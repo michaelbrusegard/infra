@@ -11,11 +11,12 @@ git clone https://github.com/michaelbrusegard/dotfiles.git ~/dotfiles
 Before setting up MacOS, System Intergrity Protection (SIP) needs to be partially disabled for the [yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) tiling window manager to work correctly.
 
 1. Turn off the mac, then press and hold the power button until "Loading startup options" appears.
-Click Options, then click Continue.
+   Click Options, then click Continue.
 
 2. In the menu bar, choose `Utilities`, then `Terminal`
 
 3. Run this:
+
 ```zsh
 csrutil enable --without fs --without debug --without nvram
 ```
@@ -58,6 +59,12 @@ zsh ~/dotfiles/shared/scripts/ssh.zsh
 
 ```zsh
 zsh ~/dotfiles/shared/scripts/gpg.zsh
+```
+
+When finished switch to use SSH for the repository:
+
+```zsh
+cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfiles.git
 ```
 
 ## Inspiration…
