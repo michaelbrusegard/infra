@@ -1,1 +1,4 @@
-.DS_Store
+.gnupg/*
+!.gnupg/gpg-agent.conf
+.config/karabiner/*
+!.config/karabiner/karabiner.json
