@@ -69,32 +69,10 @@ zstyle ':fzf-tab:complete:ssh:*' fzf-preview 'dig $realpath'
 zstyle ':fzf-tab:complete:*' fzf-preview 'if [[ -d $realpath ]]; then eza -a --tree --color=always $realpath | head -n 200; else bat --style=plain --color=always --line-range=:500 $realpath; fi'
 
 # Aliases
-alias vi='vim'
-alias vim='nvim'
-alias c='clear'
-alias reload='source ~/.zshrc'
-alias dl='cd ~/Downloads'
-alias dt='cd ~/Desktop'
-alias dc='cd ~/Documents'
-alias p='cd ~/Projects'
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias .....='cd ../../../..'
-alias ......='cd ../../../../..'
-alias afk='open -a ScreenSaverEngine'
-alias neofetch='fastfetch'
-function trash {
-  local trash_dir="$HOME/.Trash"
-  for file in "$@"; do
-    if [ -e "$file" ]; then
-      mv "$file" "$trash_dir"
-      echo "Moved '$file' to trash."
-    else
-      echo "'$file' not found."
-    fi
-  done
-}
+source ~/.aliases
+if [ -f ~/.aliases_private ]; then
+    source ~/.aliases_private
+fi
 
 # Generic
 export LANG=en_GB.UTF-8

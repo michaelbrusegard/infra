@@ -1,0 +1,33 @@
+#!/usr/bin/env zsh
+
+# Shortcuts
+alias vi='vim'
+alias vim='nvim'
+alias c='clear'
+alias reload='source ~/.zshrc'
+alias dl='cd ~/Downloads'
+alias dt='cd ~/Desktop'
+alias dc='cd ~/Documents'
+alias p='cd ~/Projects'
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
+
+# Utilities
+alias afk='open -a ScreenSaverEngine'
+alias neofetch='fastfetch'
+function trash {
+  local trash_dir="$HOME/.Trash"
+  for file in "$@"; do
+    if [ -e "$file" ]; then
+      mv "$file" "$trash_dir"
+      echo "Moved '$file' to trash."
+    else
+      echo "'$file' not found."
+    fi
+  done
+}
