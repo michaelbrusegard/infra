@@ -1,0 +1,12 @@
+[user]
+	name = Michael Brusegard
+	email = 56915010+michaelbrusegard@users.noreply.github.com
+
+[commit]
+	gpgsign = true
+
+[core]
+	editor = nvim
+	excludesfile = ~/.gitignore
+[init]
+	defaultBranch = main
