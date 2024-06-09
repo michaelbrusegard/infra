@@ -16,6 +16,7 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
 alias ......='cd ../../../../..'
+alias -- -="cd -"
 
 # Utilities
 alias afk='open -a ScreenSaverEngine'
@@ -30,4 +31,10 @@ function trash {
       echo "'$file' not found."
     fi
   done
+}
+function ssh {
+    wezterm cli spawn --domain-name SSH:"$@"
+}
+function sshmux {
+    wezterm cli spawn --domain-name SSHMUX:"$@"
 }
