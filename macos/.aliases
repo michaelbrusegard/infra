@@ -20,7 +20,6 @@ alias ......='cd ../../../../..'
 # Utilities
 alias afk='open -a ScreenSaverEngine'
 alias neofetch='fastfetch'
-alias wake='wakeonlan'
 function trash {
   local trash_dir="$HOME/.Trash"
   for file in "$@"; do
