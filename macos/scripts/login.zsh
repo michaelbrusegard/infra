@@ -9,12 +9,15 @@ add_login_item() {
     local app_path="/Applications/${app_name}.app"
     osascript <<EOF
 tell application "System Events"
-    if login item "$app_name" does not exist then
+    if not (exists login item "$app_name") then
         make new login item at end with properties {path:"$app_path", hidden:true}
     end if
 end tell
 EOF
 }
+
+# Configure scripting addition to inject into the Dock
+echo "$(whoami) ALL=(root) NOPASSWD: sha256:$(shasum -a 256 $(which yabai) | cut -d " " -f 1) $(which yabai) --load-sa" | sudo tee /private/etc/sudoers.d/yabai
 
 # Start yabai automatically
 yabai --start-service

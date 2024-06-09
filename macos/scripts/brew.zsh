@@ -1,7 +1,5 @@
 #!/usr/bin/env zsh
 
-set -e  # Abort the script if any command fails
-
 # Ask for the administrator password upfront
 sudo -v
 
@@ -14,9 +12,12 @@ if ! command -v brew &> /dev/null; then
 fi
 
 # Install everything specified in the brewfile
-brew bundle --file="$(dirname "$PWD")/resources/Brewfile"
+/opt/homebrew/bin/brew bundle --file="$(dirname "$(realpath "$0")")/../resources/Brewfile"
+
+# Install local casks
+/opt/homebrew/bin/brew install --cask "$(dirname "$(realpath "$0")")/../resources/yabaiindicator.rb"
 
 # Cleanup
-brew cleanup
+/opt/homebrew/bin/brew cleanup
 
 echo "Done. All apps should be installed."

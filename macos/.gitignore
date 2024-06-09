@@ -2,3 +2,5 @@
 !.gnupg/gpg-agent.conf
 .config/karabiner/*
 !.config/karabiner/karabiner.json
+.docker/*
+!.docker/config.json

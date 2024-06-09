@@ -97,7 +97,7 @@ defaults write NSGlobalDomain AppleHighlightColor -string "0.968627 0.831373 1.0
 defaults write NSGlobalDomain NSTableViewDefaultSizeMode -int 2
 
 # Set wallpaper
-osascript -e 'tell application "System Events" to tell every desktop to set picture to POSIX file "'"$(find "$(dirname "$PWD")/resources" \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | head -n 1)"'"'
+osascript -e 'tell application "System Events" to tell every desktop to set picture to POSIX file "'"$(find "$(dirname "$(realpath "$0")")/../resources" \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | head -n 1)"'"'
 
 # ********************************************************************************
 # * Accessibility                                                                *
@@ -755,7 +755,7 @@ defaults write com.apple.Terminal ShowLineMarks -bool false
 # Set theme and font
 osascript <<EOD
 tell application "Terminal"
-    set terminalFile to POSIX file "$(find "$(dirname "$PWD")/resources" -name "*.terminal" | head -n 1)" as alias
+    set terminalFile to POSIX file "$(find "$(dirname "$(realpath "$0")")/../resources" -name "*.terminal" | head -n 1)" as alias
     open terminalFile
     delay 1
     set themeName to name of current settings of window 1
@@ -764,7 +764,6 @@ tell application "Terminal"
     set default settings to settings set themeName
 end tell
 EOD
-
 
 # ********************************************************************************
 # * Activity Monitor                                                             *
@@ -944,20 +943,7 @@ defaults write com.raycast.macos  "emojiPicker_skinTone" -string "medium"
 defaults write com.raycast.macos navigationCommandStyleIdentifierKey -string "vim"
 
 # Import other settings and extensions
-open -a "Raycast" "$(find "$(dirname "$PWD")/resources" -name "*.rayconfig" | head -n 1)"
-osascript <<EOD
-tell application "System Events"
-    tell process "Raycast"
-        keystroke return
-    end tell
-end tell
-delay 1
-tell application "System Events"
-    tell process "Raycast"
-        keystroke return
-    end tell
-end tell
-EOD
+open -a "Raycast" "$(find "$(dirname "$(realpath "$0")")/../resources" -name "*.rayconfig" | head -n 1)"
 
 # ********************************************************************************
 # * Transmission                                                                 *
@@ -1008,8 +994,9 @@ defaults write org.m0k.transmission RemoveWhenFinishSeeding -bool true
 # Enable non-Apple-signed arm64e binaries for Apple Silicon
 sudo nvram boot-args=-arm64e_preview_abi
 
-# Configure scripting addition to inject into the Dock
-echo "$(whoami) ALL=(root) NOPASSWD: sha256:$(shasum -a 256 $(which yabai) | cut -d " " -f 1) $(which yabai) --load-sa" | sudo tee /private/etc/sudoers.d/yabai
+# Start service and stop it again to enable Accessibility
+/opt/homebrew/bin/yabai --start-service
+/opt/homebrew/bin/yabai --uninstall-service
 
 # ********************************************************************************
 # * Kill some affected applications                                              *

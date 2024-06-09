@@ -1,11 +1,10 @@
 tap "homebrew/bundle"
-tap "homebrew/cask-fonts"
 tap "homebrew/services"
 tap "jesseduffield/lazygit"
 tap "koekeishiya/formulae"
 tap "oven-sh/bun"
 brew "bat"
-brew "colima"
+brew "colima", restart_service: true
 brew "docker"
 brew "docker-compose"
 brew "docker-credential-helper"
