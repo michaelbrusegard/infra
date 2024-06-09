@@ -320,7 +320,6 @@ table.insert(plugins, {
 })
 
 -- Indent lines
-
 table.insert(plugins, {
 	"lukas-reineke/indent-blankline.nvim",
 	main = "ibl",
@@ -550,8 +549,8 @@ table.insert(plugins, {
 
 -- Cmp
 table.insert(plugins, {
-	"llllvvuu/nvim-cmp",
-	branch = "feat/above",
+	"xzbdmw/nvim-cmp",
+	branch = "dynamic",
 	dependencies = {
 		"hrsh7th/cmp-nvim-lsp",
 		"hrsh7th/cmp-buffer",
@@ -563,6 +562,7 @@ table.insert(plugins, {
 		"zbirenbaum/copilot-cmp",
 		"onsails/lspkind.nvim",
 	},
+	event = { "InsertEnter", "CmdlineEnter" },
 	config = function()
 		local cmp = require("cmp")
 		local lspkind = require("lspkind")
@@ -571,7 +571,7 @@ table.insert(plugins, {
 				completeopt = "menu",
 			},
 			view = {
-				entries = { name = "custom", selection_order = "near_cursor", vertical_positioning = "above" },
+				entries = { name = "custom", selection_order = "near_cursor" },
 			},
 			sources = {
 				{ name = "copilot", max_item_count = 3 },
@@ -611,6 +611,7 @@ table.insert(plugins, {
 				completion = cmp.config.window.bordered({
 					border = "none",
 					scrollbar = false,
+					col_offset = 3,
 				}),
 			},
 		})

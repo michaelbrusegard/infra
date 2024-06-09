@@ -120,6 +120,10 @@ wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_wid
 		end
 	end
 
+	if title == "" then
+		title = tab.active_pane.title
+	end
+
 	if #title > config.tab_max_width then
 		title = title:sub(1, config.tab_max_width - 3) .. "..."
 	end
@@ -142,7 +146,7 @@ end)
 
 -- Check if the pane contains vim
 local function is_vim(pane)
-  return pane:get_user_vars().IS_NVIM == 'true'
+	return pane:get_user_vars().IS_NVIM == "true"
 end
 
 -- Keymaps for vim when using super key
@@ -151,19 +155,19 @@ local vim_super_keymaps = {
 	["SUPER_j"] = utf8.char(0xAB),
 	["SUPER_k"] = utf8.char(0xAC),
 	["SUPER_l"] = utf8.char(0xAD),
-    ["SUPER|SHIFT_h"] = utf8.char(0xBA),
+	["SUPER|SHIFT_h"] = utf8.char(0xBA),
 	["SUPER|SHIFT_j"] = utf8.char(0xBB),
 	["SUPER|SHIFT_k"] = utf8.char(0xBC),
 	["SUPER|SHIFT_l"] = utf8.char(0xBD),
-    ["SUPER_c"] = utf8.char(0xCA),
+	["SUPER_c"] = utf8.char(0xCA),
 	["SUPER_v"] = utf8.char(0xCB),
 }
 
 local direction_keys = {
-  h = 'Left',
-  j = 'Down',
-  k = 'Up',
-  l = 'Right',
+	h = "Left",
+	j = "Down",
+	k = "Up",
+	l = "Right",
 }
 
 -- Translate keyvinds to be sent to vim if needed
@@ -173,26 +177,26 @@ local function vim_super_keymap_translation(key, mods)
 		mods = mods,
 		action = wezterm.action_callback(function(win, pane)
 			if is_vim(pane) then
-                local char = vim_super_keymaps[mods .. "_" .. key]
-                if char then
-			    	win:perform_action({
-					    SendKey = { key = char, mods = nil },
-				    }, pane)
-                end
+				local char = vim_super_keymaps[mods .. "_" .. key]
+				if char then
+					win:perform_action({
+						SendKey = { key = char, mods = nil },
+					}, pane)
+				end
 			else
-                if key == 'c' then
-                    win:perform_action(wezterm.action.CopyTo("Clipboard"), pane)
-                elseif key == 'v' then
-                    win:perform_action(wezterm.action.PasteFrom("Clipboard"), pane)
-                else
-				if mods == 'SUPER|SHIFT' then
-                    win:perform_action({ AdjustPaneSize = { direction_keys[key], 3 } }, pane)
-                else
-                    win:perform_action({ ActivatePaneDirection = direction_keys[key] }, pane)
-                end
-            end
+				if key == "c" then
+					win:perform_action(wezterm.action.CopyTo("Clipboard"), pane)
+				elseif key == "v" then
+					win:perform_action(wezterm.action.PasteFrom("Clipboard"), pane)
+				else
+					if mods == "SUPER|SHIFT" then
+						win:perform_action({ AdjustPaneSize = { direction_keys[key], 3 } }, pane)
+					else
+						win:perform_action({ ActivatePaneDirection = direction_keys[key] }, pane)
+					end
+				end
 			end
-		end)
+		end),
 	}
 end
 
@@ -204,19 +208,19 @@ end
 config.disable_default_key_bindings = true
 
 config.keys = {
-    -- Global keys
-    vim_super_keymap_translation("c", "SUPER"),
-    vim_super_keymap_translation("v", "SUPER"),
+	-- Global keys
+	vim_super_keymap_translation("c", "SUPER"),
+	vim_super_keymap_translation("v", "SUPER"),
 
-    -- Smart splits
-    vim_super_keymap_translation("h", "SUPER"),
-    vim_super_keymap_translation("j", "SUPER"),
-    vim_super_keymap_translation("k", "SUPER"),
-    vim_super_keymap_translation("l", "SUPER"),
-    vim_super_keymap_translation("h", "SUPER|SHIFT"),
-    vim_super_keymap_translation("j", "SUPER|SHIFT"),
-    vim_super_keymap_translation("k", "SUPER|SHIFT"),
-    vim_super_keymap_translation("l", "SUPER|SHIFT"),
+	-- Smart splits
+	vim_super_keymap_translation("h", "SUPER"),
+	vim_super_keymap_translation("j", "SUPER"),
+	vim_super_keymap_translation("k", "SUPER"),
+	vim_super_keymap_translation("l", "SUPER"),
+	vim_super_keymap_translation("h", "SUPER|SHIFT"),
+	vim_super_keymap_translation("j", "SUPER|SHIFT"),
+	vim_super_keymap_translation("k", "SUPER|SHIFT"),
+	vim_super_keymap_translation("l", "SUPER|SHIFT"),
 
 	-- Navigation between tabs
 	{ key = "Tab", mods = "CTRL", action = wezterm.action.ActivateTabRelative(1) },
@@ -310,7 +314,10 @@ config.key_tables = {
 		{ key = "v", mods = "NONE", action = wezterm.action.CopyMode({ SetSelectionMode = "Cell" }) },
 		{ key = "v", mods = "CTRL", action = wezterm.action.CopyMode({ SetSelectionMode = "Block" }) },
 		{ key = "w", mods = "NONE", action = wezterm.action.CopyMode("MoveForwardWord") },
-		{ key = "y", mods = "NONE", action = wezterm.action.Multiple({ { CopyTo = "ClipboardAndPrimarySelection" }, { CopyMode = "Close" } }),
+		{
+			key = "y",
+			mods = "NONE",
+			action = wezterm.action.Multiple({ { CopyTo = "ClipboardAndPrimarySelection" }, { CopyMode = "Close" } }),
 		},
 		{ key = "PageUp", mods = "NONE", action = wezterm.action.CopyMode("PageUp") },
 		{ key = "PageDown", mods = "NONE", action = wezterm.action.CopyMode("PageDown") },
