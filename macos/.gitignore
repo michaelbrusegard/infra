@@ -1,8 +1,1 @@
-.gnupg/*
-!.gnupg/gpg-agent.conf
-.config/karabiner/*
-!.config/karabiner/karabiner.json
-.docker/*
-!.docker/config.json
-.ssh/*
-!.ssh/config
+.DS_Store
