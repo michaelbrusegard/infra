@@ -6,6 +6,12 @@ To get started, clone the repository into the home directory:
 git clone https://github.com/michaelbrusegard/dotfiles.git ~/dotfiles
 ```
 
+When finished switch to use SSH for the repository:
+
+```zsh
+cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfiles.git
+```
+
 ## MacOS
 
 Before setting up MacOS, System Intergrity Protection (SIP) needs to be partially disabled for the [yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) tiling window manager to work correctly.
@@ -47,7 +53,7 @@ cd ~/dotfiles && stow macos
 zsh ~/dotfiles/macos/scripts/login.zsh
 ```
 
-## Other scripts
+## Shared
 
 [Generate new SSH key for GitHub](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) by running:
 
@@ -59,12 +65,6 @@ zsh ~/dotfiles/shared/scripts/ssh.zsh
 
 ```zsh
 zsh ~/dotfiles/shared/scripts/gpg.zsh
-```
-
-When finished switch to use SSH for the repository:
-
-```zsh
-cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfiles.git
 ```
 
 ## Inspiration…
