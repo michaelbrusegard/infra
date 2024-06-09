@@ -1,0 +1,59 @@
+tap "homebrew/bundle"
+tap "homebrew/cask-fonts"
+tap "homebrew/services"
+tap "jesseduffield/lazygit"
+tap "koekeishiya/formulae"
+tap "oven-sh/bun"
+brew "bat"
+brew "colima"
+brew "docker"
+brew "docker-compose"
+brew "docker-credential-helper"
+brew "eza"
+brew "fastfetch"
+brew "ffmpeg"
+brew "fzf"
+brew "git"
+brew "gnupg"
+brew "jenv"
+brew "jq"
+brew "luarocks"
+brew "mas"
+brew "neovim"
+brew "nvm"
+brew "openssh"
+brew "pinentry-mac"
+brew "pyenv"
+brew "ripgrep"
+brew "stow"
+brew "thefuck"
+brew "zoxide"
+brew "jesseduffield/lazygit/lazygit"
+brew "koekeishiya/formulae/yabai"
+brew "oven-sh/bun/bun"
+cask "altserver"
+cask "chatgpt"
+cask "discord"
+cask "firefox@developer-edition"
+cask "font-meslo-lg-nerd-font"
+cask "font-roboto"
+cask "font-sf-pro"
+cask "jordanbaird-ice"
+cask "karabiner-elements"
+cask "raycast"
+cask "sf-symbols"
+cask "transmission"
+cask "wezterm"
+cask "yabaiindicator"
+cask "zoom"
+mas "AdGuard for Safari", id: 1440147259
+mas "Affinity Designer 2", id: 1616831348
+mas "Affinity Photo 2", id: 1616822987
+mas "Affinity Publisher 2", id: 1606941598
+mas "Jump Desktop", id: 524141863
+mas "Keynote", id: 409183694
+mas "Numbers", id: 409203825
+mas "Pages", id: 409201541
+mas "Slack", id: 803453959
+mas "Vimkey", id: 1585682577
+mas "WireGuard", id: 1451685025
