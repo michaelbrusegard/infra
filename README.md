@@ -44,7 +44,7 @@ zsh ~/dotfiles/macos/scripts/defaults.zsh
 ### Creating symlinks for the config files
 
 ```zsh
-cd ~/dotfiles && stow macos
+cd ~/dotfiles && /opt/homebrew/bin/stow macos
 ```
 
 ### Setup login items
