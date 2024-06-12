@@ -328,6 +328,33 @@ table.insert(plugins, {
 	end,
 })
 
+-- Cmdline UI
+table.insert(plugins, {
+	"folke/noice.nvim",
+	event = "VeryLazy",
+	dependencies = {
+		"MunifTanjim/nui.nvim",
+	},
+	config = function()
+		require("noice").setup({
+			lsp = {
+				override = {
+					["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+					["vim.lsp.util.stylize_markdown"] = true,
+					["cmp.entry.get_documentation"] = true,
+				},
+			},
+			presets = {
+				bottom_search = true,
+				command_palette = true,
+				long_message_to_split = true,
+				inc_rename = false,
+				lsp_doc_border = false,
+			},
+		})
+	end,
+})
+
 -- ********************************************************************************
 -- * Smart Splits                                                                 *
 -- ********************************************************************************
@@ -337,7 +364,7 @@ table.insert(plugins, {
 	"mrjones2014/smart-splits.nvim",
 	config = function()
 		local smartsplits = require("smart-splits")
-		smartsplits:setup()
+		smartsplits:setup({ jump = true })
 		vim.keymap.set("n", "<Char-0xAA>", smartsplits.move_cursor_left)
 		vim.keymap.set("n", "<Char-0xAB>", smartsplits.move_cursor_down)
 		vim.keymap.set("n", "<Char-0xAC>", smartsplits.move_cursor_up)
@@ -571,7 +598,7 @@ table.insert(plugins, {
 				completeopt = "menu",
 			},
 			view = {
-				entries = { name = "custom", selection_order = "near_cursor" },
+				entries = { name = "custom", selection_order = "near_cursor", follow_cursor = true },
 			},
 			sources = {
 				{ name = "copilot", max_item_count = 3 },
@@ -585,11 +612,11 @@ table.insert(plugins, {
 				["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
 				["<C-y>"] = cmp.mapping.confirm({ select = true }),
 				["<Tab>"] = cmp.mapping.confirm({ select = true }),
-				["<CR>"] = cmp.mapping.confirm({ select = true }),
 				["<C-e>"] = cmp.mapping({
 					i = cmp.mapping.abort(),
 					c = cmp.mapping.close(),
 				}),
+				["<esc>"] = cmp.mapping.abort(),
 			}),
 			snippet = {
 				expand = function(args)
@@ -611,7 +638,6 @@ table.insert(plugins, {
 				completion = cmp.config.window.bordered({
 					border = "none",
 					scrollbar = false,
-					col_offset = 3,
 				}),
 			},
 		})
