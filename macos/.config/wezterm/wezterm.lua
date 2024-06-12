@@ -77,6 +77,10 @@ config.window_padding = {
 	bottom = 0,
 }
 
+-- ********************************************************************************
+-- * Tab bar                                                                      *
+-- ********************************************************************************
+
 -- Set terminal style for tab bar
 config.use_fancy_tab_bar = false
 
@@ -94,7 +98,7 @@ config.colors = {
 }
 
 -- Format tabs
-wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_width)
+wezterm.on("format-tab-title", function(tab)
 	local cwd_uri = tab.active_pane.current_working_dir
 	local cwd = ""
 	local parent = ""
@@ -138,6 +142,19 @@ wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_wid
 		{ Background = { Color = tab.is_active and colors.surface1 or colors.surface0 } },
 		{ Text = " " .. title .. " " },
 	}
+end)
+
+-- Right side status
+wezterm.on("update-right-status", function(window)
+	local status_elements = {
+		{ Foreground = { Color = colors.mantle } },
+		{ Background = { Color = colors.green } },
+		{ Text = "  " },
+		{ Foreground = { Color = colors.text } },
+		{ Background = { Color = colors.surface0 } },
+		{ Text = " " .. wezterm.hostname() .. " " },
+	}
+	window:set_right_status(wezterm.format(status_elements))
 end)
 
 -- ********************************************************************************
