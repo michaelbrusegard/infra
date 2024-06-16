@@ -627,7 +627,7 @@ table.insert(plugins, {
 				["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
 				["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
 				["<C-y>"] = cmp.mapping.confirm({ select = true }),
-				["<C-Space>"] = cmp.mapping.complete(),
+				["<C-Space>"] = cmp.mapping.confirm({ select = true }),
 				["<Tab>"] = cmp.mapping(function(fallback)
 					if cmp.visible() then
 						cmp.select_next_item()
@@ -642,7 +642,6 @@ table.insert(plugins, {
 						fallback()
 					end
 				end),
-
 				["<C-e>"] = cmp.mapping({
 					i = cmp.mapping.abort(),
 					c = cmp.mapping.close(),
