@@ -337,6 +337,14 @@ table.insert(plugins, {
 	},
 	config = function()
 		require("noice").setup({
+			views = {
+				cmdline_popup = {
+					position = {
+						row = "95%",
+						col = "50%",
+					},
+				},
+			},
 			lsp = {
 				override = {
 					["vim.lsp.util.convert_input_to_markdown_lines"] = true,
