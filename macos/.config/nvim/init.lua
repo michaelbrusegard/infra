@@ -132,7 +132,7 @@ vim.api.nvim_set_keymap("n", "<leader>w", ":w<CR>", { desc = "Save file" })
 vim.api.nvim_set_keymap("n", "<leader>q", ":q<CR>", { desc = "Quit file" })
 
 -- Save and quit file
-vim.api.nvim_set_keymap("n", "<leader>W", ":wq<CR>", { desc = "Save and quit file" })
+vim.api.nvim_set_keymap("n", "<leader>x", ":x<CR>", { desc = "Save and quit file" })
 
 -- ********************************************************************************
 -- * Autocommands                                                                 *

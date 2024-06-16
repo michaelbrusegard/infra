@@ -172,10 +172,10 @@ local vim_super_keymaps = {
 	["SUPER_j"] = utf8.char(0xAB),
 	["SUPER_k"] = utf8.char(0xAC),
 	["SUPER_l"] = utf8.char(0xAD),
-	["SUPER|SHIFT_h"] = utf8.char(0xBA),
-	["SUPER|SHIFT_j"] = utf8.char(0xBB),
-	["SUPER|SHIFT_k"] = utf8.char(0xBC),
-	["SUPER|SHIFT_l"] = utf8.char(0xBD),
+	["SUPER|CTRL_h"] = utf8.char(0xBA),
+	["SUPER|CTRL_j"] = utf8.char(0xBB),
+	["SUPER|CTRL_k"] = utf8.char(0xBC),
+	["SUPER|CTRL_l"] = utf8.char(0xBD),
 	["SUPER_c"] = utf8.char(0xCA),
 	["SUPER_v"] = utf8.char(0xCB),
 }
@@ -206,7 +206,7 @@ local function vim_super_keymap_translation(key, mods)
 				elseif key == "v" then
 					win:perform_action(wezterm.action.PasteFrom("Clipboard"), pane)
 				else
-					if mods == "SUPER|SHIFT" then
+					if mods == "SUPER|CTRL" then
 						win:perform_action({ AdjustPaneSize = { direction_keys[key], 3 } }, pane)
 					else
 						win:perform_action({ ActivatePaneDirection = direction_keys[key] }, pane)
@@ -234,10 +234,10 @@ config.keys = {
 	vim_super_keymap_translation("j", "SUPER"),
 	vim_super_keymap_translation("k", "SUPER"),
 	vim_super_keymap_translation("l", "SUPER"),
-	vim_super_keymap_translation("h", "SUPER|SHIFT"),
-	vim_super_keymap_translation("j", "SUPER|SHIFT"),
-	vim_super_keymap_translation("k", "SUPER|SHIFT"),
-	vim_super_keymap_translation("l", "SUPER|SHIFT"),
+	vim_super_keymap_translation("h", "SUPER|CTRL"),
+	vim_super_keymap_translation("j", "SUPER|CTRL"),
+	vim_super_keymap_translation("k", "SUPER|CTRL"),
+	vim_super_keymap_translation("l", "SUPER|CTRL"),
 
 	-- Navigation between tabs
 	{ key = "Tab", mods = "CTRL", action = wezterm.action.ActivateTabRelative(1) },
