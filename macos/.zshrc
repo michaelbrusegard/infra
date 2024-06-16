@@ -40,12 +40,13 @@ zinit cdreplay -q
 
 # Keybindings
 bindkey -v
-bindkey -M vicmd 'k' history-search-backward
-bindkey -M vicmd 'j' history-search-forward
+bindkey -M vicmd "k" history-search-backward
+bindkey -M vicmd "j" history-search-forward
 bindkey "^N" history-search-forward
 bindkey "^P" history-search-backward
-bindkey '^Y' autosuggest-accept
-bindkey '^E' autosuggest-clear
+bindkey "^Y" autosuggest-accept
+bindkey "^@" autosuggest-accept
+bindkey "^E" autosuggest-clear
 
 # History
 HISTSIZE=6900
@@ -61,12 +62,12 @@ setopt hist_ignore_dups
 setopt hist_find_no_dups
 
 # Completion styling
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
-zstyle ':completion:*' menu no
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -a --tree --color=always $realpath | head -n 200'
-zstyle ':fzf-tab:complete:(unset|export):*' fzf-preview 'eval echo $realpath'
-zstyle ':fzf-tab:complete:ssh:*' fzf-preview 'dig $realpath'
-zstyle ':fzf-tab:complete:*' fzf-preview 'if [[ -d $realpath ]]; then eza -a --tree --color=always $realpath | head -n 200; else bat --style=plain --color=always --line-range=:500 $realpath; fi'
+zstyle ":completion:*" matcher-list "m:{a-z}={A-Za-z}"
+zstyle ":completion:*" menu no
+zstyle ":fzf-tab:complete:cd:*" fzf-preview "eza -a --tree --color=always $realpath | head -n 200"
+zstyle ":fzf-tab:complete:(unset|export):*" fzf-preview "eval echo $realpath"
+zstyle ":fzf-tab:complete:ssh:*" fzf-preview "dig $realpath"
+zstyle ":fzf-tab:complete:*" fzf-preview "if [[ -d $realpath ]]; then eza -a --tree --color=always $realpath | head -n 200; else bat --style=plain --color=always --line-range=:500 $realpath; fi"
 
 # Aliases
 source ~/.aliases
@@ -76,7 +77,7 @@ fi
 
 # Generic
 export LANG=en_GB.UTF-8
-export EDITOR='nvim'
+export EDITOR="nvim"
 
 # gpg
 export GPG_TTY=$TTY
@@ -87,17 +88,17 @@ export FZF_DEFAULT_OPTS=" \
 --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
 --color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8"
 export FZF_CTRL_T_OPTS="--preview 'if [ -d {} ]; then eza --tree --color=always {} | head -200; else bat -n --color=always --line-range :500 {}; fi'"
-export FZF_ALT_C_COMMAND=''
+export FZF_ALT_C_COMMAND=""
 eval "$(fzf --zsh)"
 
 # zoxide
 eval "$(zoxide init --cmd cd zsh)"
 
 # eza
-alias ls='eza -a -1 --icons=always --color=always --git'
+alias ls="eza -a -1 --icons=always --color=always --git"
 
 # bat
-alias cat='bat'
+alias cat="bat"
 export BAT_THEME="Catppuccin Mocha"
 
 # thefuck

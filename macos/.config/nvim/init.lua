@@ -336,12 +336,20 @@ table.insert(plugins, {
 		"MunifTanjim/nui.nvim",
 	},
 	config = function()
+		local total_rows = vim.api.nvim_eval('winheight("$")')
 		require("noice").setup({
 			views = {
 				cmdline_popup = {
 					position = {
-						row = "95%",
-						col = "50%",
+						row = total_rows - 1,
+						col = "0%",
+					},
+					size = {
+						width = "100%",
+						height = "auto",
+					},
+					border = {
+						style = "none",
 					},
 				},
 			},
@@ -353,7 +361,6 @@ table.insert(plugins, {
 				},
 			},
 			presets = {
-				bottom_search = true,
 				command_palette = true,
 				long_message_to_split = true,
 				inc_rename = false,
@@ -548,6 +555,7 @@ table.insert(plugins, {
 				"prettier",
 				"eslint_d",
 				"black",
+				"jsonlint",
 			},
 		})
 	end,
@@ -619,12 +627,26 @@ table.insert(plugins, {
 				["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
 				["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
 				["<C-y>"] = cmp.mapping.confirm({ select = true }),
-				["<Tab>"] = cmp.mapping.confirm({ select = true }),
+				["<C-Space>"] = cmp.mapping.complete(),
+				["<Tab>"] = cmp.mapping(function(fallback)
+					if cmp.visible() then
+						cmp.select_next_item()
+					else
+						fallback()
+					end
+				end),
+				["<S-Tab>"] = cmp.mapping(function(fallback)
+					if cmp.visible() then
+						cmp.select_prev_item()
+					else
+						fallback()
+					end
+				end),
+
 				["<C-e>"] = cmp.mapping({
 					i = cmp.mapping.abort(),
 					c = cmp.mapping.close(),
 				}),
-				["<esc>"] = cmp.mapping.abort(),
 			}),
 			snippet = {
 				expand = function(args)
@@ -771,6 +793,7 @@ table.insert(plugins, {
 				sql = { "sql-formatter" },
 				java = { "google-java-format" },
 				kotlin = { "ktlint" },
+				zsh = { "shfmt" },
 			},
 		})
 		vim.keymap.set({ "n", "v" }, "<leader>cf", function()
@@ -807,6 +830,7 @@ table.insert(plugins, {
 			sql = { "sqlint" },
 			java = { "checkstyle" },
 			kotlin = { "ktlint" },
+			zsh = { "shellcheck" },
 		}
 		vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave", "TextChanged" }, {
 			callback = function()
