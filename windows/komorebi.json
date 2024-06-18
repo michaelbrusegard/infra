@@ -1,0 +1,53 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LGUG2Z/komorebi/v0.1.25/schema.json",
+  "app_specific_configuration_path": "$Env:USERPROFILE/applications.yaml",
+  "window_hiding_behaviour": "Cloak",
+  "cross_monitor_move_behaviour": "Insert",
+  "default_workspace_padding": 6,
+  "default_container_padding": 3,
+  "border": false,
+  "border_width": 0,
+  "border_offset": -1,
+  "monitors": [
+    {
+      "workspaces": [
+        {
+          "name": "Desktop 1",
+          "layout": "BSP"
+        },
+        {
+          "name": "Desktop 2",
+          "layout": "BSP"
+        },
+        {
+          "name": "Desktop 3",
+          "layout": "BSP"
+        },
+        {
+          "name": "Desktop 4",
+          "layout": "BSP"
+        },
+        {
+          "name": "Desktop 5",
+          "layout": "BSP"
+        },
+        {
+          "name": "Desktop 6",
+          "layout": "BSP"
+        },
+        {
+          "name": "Desktop 7",
+          "layout": "BSP"
+        },
+                {
+          "name": "Desktop 8",
+          "layout": "BSP"
+        },
+                {
+          "name": "Desktop 9",
+          "layout": "BSP"
+        }
+      ]
+    }
+  ]
+}
