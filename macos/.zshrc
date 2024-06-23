@@ -45,7 +45,6 @@ bindkey -M vicmd "j" history-search-forward
 bindkey "^N" history-search-forward
 bindkey "^P" history-search-backward
 bindkey "^Y" autosuggest-accept
-bindkey "^@" autosuggest-accept
 bindkey "^E" autosuggest-clear
 
 # History
