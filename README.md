@@ -68,13 +68,13 @@ sh ~/dotfiles/espresso/scripts/apt.sh
 ### Setting up symlinks
 
 ```sh
-cd ~/dotfiles && stow espresso
+cd ~/dotfiles && stow --adopt espresso && git restore .
 ```
 
 ### Setup login items
 
 ```sh
-zsh ~/dotfiles/espresso/scripts/login.sh
+sh ~/dotfiles/espresso/scripts/login.sh
 ```
 
 ## Shared

@@ -36,26 +36,20 @@ set smartcase
 " Disable line wrapping
 set nowrap
 
-" Keep signcolumn on by default
-set signcolumn=yes
-
 " Decrease update time
 set updatetime=50
 
-" Decrease mapped sequence wait time, displays which-key popup sooner
+" Decrease mapped sequence wait time
 set timeoutlen=300
 
 " Configure how new splits should be opened
 set splitright
 set splitbelow
 
-" Preview substitutions live, as you type!
-set inccommand=split
-
 " Show which line your cursor is on
 set cursorline
 
-" Minimal number of screen lines to keep above and below the cursor.
+" Minimal number of screen lines to keep above and below the cursor
 set scrolloff=13
 
 " Same as scrolloff, but for the horizontal axis
@@ -123,3 +117,12 @@ au BufLeave,FocusLost * if &modified && !&readonly && expand('%') != '' && &buft
 
 " Use terminal colors
 set t_Co=0
+
+" Disable backup files
+set nobackup
+
+" Disable backup before writing
+set nowritebackup
+
+" Disable swap file creation
+set noswapfile
