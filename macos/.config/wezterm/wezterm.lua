@@ -128,10 +128,6 @@ wezterm.on("format-tab-title", function(tab)
 		title = tab.active_pane.title
 	end
 
-	if #title > config.tab_max_width then
-		title = title:sub(1, config.tab_max_width - 3) .. "..."
-	end
-
 	return {
 		{ Attribute = { Intensity = "Bold" } },
 		{ Foreground = { Color = colors.mantle } },
@@ -148,6 +144,7 @@ end)
 wezterm.on("update-status", function(window, pane)
 	local cwd_uri = pane:get_current_working_dir()
 	local hostname = ""
+
 	if cwd_uri then
 		if type(cwd_uri) == "userdata" then
 			hostname = cwd_uri.host or wezterm.hostname()
@@ -168,6 +165,7 @@ wezterm.on("update-status", function(window, pane)
 	else
 		hostname = wezterm.hostname()
 	end
+
 	local status_elements = {
 		{ Foreground = { Color = colors.mantle } },
 		{ Background = { Color = colors.green } },
