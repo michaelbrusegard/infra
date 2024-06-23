@@ -1,5 +1,31 @@
 # Prompt
-PS1='\[\e[34m\]\w\[\e[0m\]\n\[\e[1;32m\]❯ \[\e[0m\]'
+update_prompt() {
+    if [[ $1 == "insert" ]]; then
+        PS1='\[\e[34m\]\w\[\e[0m\]\n\[\e[1;32m\]❮ \[\e[0m\]'
+    else
+        PS1='\[\e[34m\]\w\[\e[0m\]\n\[\e[1;32m\]❯ \[\e[0m\]'
+    fi
+}
+update_prompt "normal"
+bind 'set show-mode-in-prompt on'
+bind 'set vi-ins-mode-string ""'
+bind 'set vi-cmd-mode-string ""'
+trap 'update_prompt insert' SIGUSR1
+trap 'update_prompt normal' SIGUSR2
+switch_to_insert_mode() {
+    update_prompt "insert"
+    kill -SIGUSR1 $$
+}
+switch_to_normal_mode() {
+    update_prompt "normal"
+    kill -SIGUSR2 $$
+}
+
+bind 'set show-mode-in-prompt on'
+bind 'set vi-ins-mode-string ""'
+bind 'set vi-cmd-mode-string ""'
+trap 'update_prompt insert' SIGUSR1
+trap 'update_prompt normal' SIGUSR2
 
 # Keybindings
 set -o vi
