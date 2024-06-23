@@ -145,14 +145,36 @@ wezterm.on("format-tab-title", function(tab)
 end)
 
 -- Right side status
-wezterm.on("update-right-status", function(window)
+wezterm.on("update-status", function(window, pane)
+	local cwd_uri = pane:get_current_working_dir()
+	local hostname = ""
+	if cwd_uri then
+		if type(cwd_uri) == "userdata" then
+			hostname = cwd_uri.host or wezterm.hostname()
+		else
+			cwd_uri = cwd_uri:sub(8)
+			local slash = cwd_uri:find("/")
+			if slash then
+				hostname = cwd_uri:sub(1, slash - 1)
+			end
+		end
+		local dot = hostname:find("[.]")
+		if dot then
+			hostname = hostname:sub(1, dot - 1)
+		end
+		if hostname == "" then
+			hostname = wezterm.hostname()
+		end
+	else
+		hostname = wezterm.hostname()
+	end
 	local status_elements = {
 		{ Foreground = { Color = colors.mantle } },
 		{ Background = { Color = colors.green } },
 		{ Text = "  " },
 		{ Foreground = { Color = colors.text } },
 		{ Background = { Color = colors.surface0 } },
-		{ Text = " " .. wezterm.hostname() .. " " },
+		{ Text = " " .. hostname .. " " },
 	}
 	window:set_right_status(wezterm.format(status_elements))
 end)
@@ -187,29 +209,29 @@ local direction_keys = {
 	l = "Right",
 }
 
--- Translate keyvinds to be sent to vim if needed
+-- Translate keybinds to be sent to vim if needed
 local function vim_super_keymap_translation(key, mods)
 	return {
 		key = key,
 		mods = mods,
-		action = wezterm.action_callback(function(win, pane)
+		action = wezterm.action_callback(function(window, pane)
 			if is_vim(pane) then
 				local char = vim_super_keymaps[mods .. "_" .. key]
 				if char then
-					win:perform_action({
+					window:perform_action({
 						SendKey = { key = char, mods = nil },
 					}, pane)
 				end
 			else
 				if key == "c" then
-					win:perform_action(wezterm.action.CopyTo("Clipboard"), pane)
+					window:perform_action(wezterm.action.CopyTo("Clipboard"), pane)
 				elseif key == "v" then
-					win:perform_action(wezterm.action.PasteFrom("Clipboard"), pane)
+					window:perform_action(wezterm.action.PasteFrom("Clipboard"), pane)
 				else
 					if mods == "SUPER|CTRL" then
-						win:perform_action({ AdjustPaneSize = { direction_keys[key], 3 } }, pane)
+						window:perform_action({ AdjustPaneSize = { direction_keys[key], 3 } }, pane)
 					else
-						win:perform_action({ ActivatePaneDirection = direction_keys[key] }, pane)
+						window:perform_action({ ActivatePaneDirection = direction_keys[key] }, pane)
 					end
 				end
 			end
