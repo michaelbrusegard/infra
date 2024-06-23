@@ -36,3 +36,4 @@ alias -- -="cd -"
 
 # Utilities
 alias packagefile='dpkg --get-selections > ~/dotfiles/espresso/resources/PackageFile'
+alias ls='ls -a -1 --color=auto'

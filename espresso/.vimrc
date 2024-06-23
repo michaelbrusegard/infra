@@ -126,3 +126,6 @@ set nowritebackup
 
 " Disable swap file creation
 set noswapfile
+
+" Do not create an undo file
+set noundofile
