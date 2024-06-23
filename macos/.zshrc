@@ -50,6 +50,7 @@ bindkey "^E" autosuggest-clear
 
 # History
 HISTSIZE=6900
+HISTFILESIZE=6900
 HISTFILE=~/.zsh_history
 SAVEHIST=$HISTSIZE
 HISTDUP=erase

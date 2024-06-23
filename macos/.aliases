@@ -21,6 +21,7 @@ alias -- -="cd -"
 # Utilities
 alias afk='open -a ScreenSaverEngine'
 alias neofetch='fastfetch'
+alias brewfile='brew bundle --file=~/dotfiles/macos/resources/Brewfile'
 function trash {
   local trash_dir="$HOME/.Trash"
   for file in "$@"; do

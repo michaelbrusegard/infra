@@ -12,6 +12,8 @@ When finished switch to use SSH for the repository:
 cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfiles.git
 ```
 
+**Heads-up:** The dotfiles in this repository are incomplete because I also maintain private dotfiles with sensitive information that I want to keep secure. The setup for the private dotfiles is the same.
+
 ## MacOS
 
 Before setting up MacOS, System Intergrity Protection (SIP) needs to be partially disabled for the [yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) tiling window manager to work correctly.
@@ -51,6 +53,28 @@ cd ~/dotfiles && /opt/homebrew/bin/stow macos
 
 ```zsh
 zsh ~/dotfiles/macos/scripts/login.zsh
+```
+
+## Espresso (Ubuntu Server)
+
+Espresso is my personal home server used for hosting various appications and services.
+
+### Installing packages
+
+```sh
+sh ~/dotfiles/espresso/scripts/apt.sh
+```
+
+### Setting up symlinks
+
+```sh
+cd ~/dotfiles && stow espresso
+```
+
+### Setup login items
+
+```sh
+zsh ~/dotfiles/espresso/scripts/login.sh
 ```
 
 ## Shared
