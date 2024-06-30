@@ -58,7 +58,7 @@
                                 },
                                 "to": [
                                     {
-                                        "shell_command": "osascript -e 'tell application \"Safari\" to make new document at end of documents' -e 'tell application \"Safari\" to activate'"
+                                        "shell_command": "osascript -e 'if application \"Safari\" is running then tell application \"Safari\" to make new document at end of documents' -e 'tell application \"Safari\" to activate'"
                                     }
                                 ],
                                 "type": "basic"

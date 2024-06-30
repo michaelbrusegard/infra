@@ -45,4 +45,7 @@ add_login_item "Yabaiindicator"
 # Start colima container runtime
 brew services start colima
 
+# Rebuild bat cache to enable themes
+bat cache --build
+
 echo "Done. Applications have been set to launch at login."

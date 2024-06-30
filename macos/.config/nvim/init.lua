@@ -105,34 +105,24 @@ vim.keymap.set({ "n", "v" }, "<leader>d", '"_d', { desc = "Delete without overri
 -- Open diagnostics window
 vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Open diagnostics window" })
 
--- Go to next diagnostic message
-vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous diagnostic message" })
-
--- Go to previous diagnostic message
-vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic message" })
-
--- Move selected lines up and down
-vim.keymap.set("v", "J", ":move '>+1<CR>gv-gv", { desc = "Move selected lines down" })
-vim.keymap.set("v", "K", ":move '<-2<CR>gv-gv", { desc = "Move selected lines up" })
-
 -- Keep selection when indenting
 vim.keymap.set("v", ">", ">gv")
 vim.keymap.set("v", "<", "<gv")
 
 -- Open mason
-vim.api.nvim_set_keymap("n", "<leader>m", ":Mason<CR>", { desc = "Open Mason" })
+vim.api.nvim_set_keymap("n", "<leader>m", "<cmd>Mason<cr>", { desc = "Open Mason" })
 
 -- Open lazy
-vim.api.nvim_set_keymap("n", "<leader>l", ":Lazy<CR>", { desc = "Open Lazy" })
+vim.api.nvim_set_keymap("n", "<leader>l", "<cmd>Lazy<cr>", { desc = "Open Lazy" })
 
 -- Save file
-vim.api.nvim_set_keymap("n", "<leader>w", ":w<CR>", { desc = "Save file" })
+vim.api.nvim_set_keymap("n", "<leader>w", "<cmd>w<cr>", { desc = "Save file" })
 
 -- Quit file
-vim.api.nvim_set_keymap("n", "<leader>q", ":q<CR>", { desc = "Quit file" })
+vim.api.nvim_set_keymap("n", "<leader>q", "<cmd>q<cr>", { desc = "Quit file" })
 
 -- Save and quit file
-vim.api.nvim_set_keymap("n", "<leader>x", ":x<CR>", { desc = "Save and quit file" })
+vim.api.nvim_set_keymap("n", "<leader>x", "<cmd>x<cr>", { desc = "Save and quit file" })
 
 -- ********************************************************************************
 -- * Autocommands                                                                 *
@@ -208,24 +198,9 @@ vim.diagnostic.config({
 			[vim.diagnostic.severity.HINT] = "",
 		},
 	},
-	virtual_text = {
-		spacing = 4,
-		style = "italic,bold",
-		prefix = function(diagnostic)
-			local icons = {
-				[vim.diagnostic.severity.ERROR] = "",
-				[vim.diagnostic.severity.WARN] = "",
-				[vim.diagnostic.severity.INFO] = "",
-				[vim.diagnostic.severity.HINT] = "",
-			}
-			return icons[diagnostic.severity] .. " "
-		end,
-	},
-	underline = {
-		severity = {
-			min = vim.diagnostic.severity.WARN,
-		},
-	},
+	virtual_text = false,
+	virtual_lines = { only_current_line = true, highlight_whole_line = false },
+	underline = false,
 	severity_sort = true,
 })
 
@@ -238,9 +213,6 @@ table.insert(plugins, {
 		require("catppuccin").setup({
 			integrations = {
 				treesitter = true,
-				telescope = {
-					enabled = true,
-				},
 				harpoon = true,
 				mini = {
 					enabled = true,
@@ -255,7 +227,9 @@ table.insert(plugins, {
 					scope_color = "lavender",
 					colored_indent_levels = false,
 				},
+				markdown = true,
 				mason = true,
+				noice = true,
 				native_lsp = {
 					enabled = true,
 					virtual_text = {
@@ -370,6 +344,23 @@ table.insert(plugins, {
 	end,
 })
 
+-- Scrollbar
+table.insert(plugins, {
+	"lewis6991/satellite.nvim",
+	dependencies = { "lewis6991/gitsigns.nvim" },
+	config = function()
+		require("satellite").setup()
+	end,
+})
+
+-- Lsp lines
+table.insert(plugins, {
+	"https://git.sr.ht/~whynothugo/lsp_lines.nvim",
+	config = function()
+		require("lsp_lines").setup()
+	end,
+})
+
 -- ********************************************************************************
 -- * Smart Splits                                                                 *
 -- ********************************************************************************
@@ -405,7 +396,6 @@ table.insert(plugins, {
 	config = function()
 		require("nvim-treesitter.configs").setup({
 			sync_install = false,
-			auto_install = true,
 			highlight = { enable = true },
 			indent = { enable = true },
 			autotag = { enable = true },
@@ -419,6 +409,7 @@ table.insert(plugins, {
 					node_decremental = "grm",
 				},
 			},
+			auto_install = true,
 			ensure_installed = {
 				"vimdoc",
 				"lua",
@@ -431,6 +422,18 @@ table.insert(plugins, {
 				"markdown",
 				"python",
 				"gitignore",
+				"angular",
+				"c_sharp",
+				"dockerfile",
+				"java",
+				"jq",
+				"jsdoc",
+				"kotlin",
+				"latex",
+				"rust",
+				"scss",
+				"sql",
+				"yaml",
 			},
 		})
 	end,
@@ -447,7 +450,6 @@ table.insert(plugins, {
 		"williamboman/mason.nvim",
 		"williamboman/mason-lspconfig.nvim",
 		"hrsh7th/cmp-nvim-lsp",
-		"WhoIsSethDaniel/mason-tool-installer.nvim",
 	},
 	config = function()
 		vim.api.nvim_create_autocmd("LspAttach", {
@@ -455,7 +457,7 @@ table.insert(plugins, {
 				local opts = { buffer = event.buf }
 				vim.keymap.set(
 					"n",
-					"K",
+					"gk",
 					vim.lsp.buf.hover,
 					vim.tbl_extend("force", opts, { desc = "Hover documentation" })
 				)
@@ -513,7 +515,6 @@ table.insert(plugins, {
 			},
 		})
 		require("mason-lspconfig").setup({
-			automatic_installation = true,
 			handlers = {
 				default_setup,
 				lua_ls = function()
@@ -538,24 +539,140 @@ table.insert(plugins, {
 					})
 				end,
 			},
+			automatic_installation = true,
 			ensure_installed = {
 				"lua_ls",
 				"tsserver",
 				"html",
 				"tailwindcss",
 				"pyright",
+				"angularls",
+				"bashls",
+				"omnisharp",
+				"cssls",
+				"dockerls",
+				"docker_compose_language_service",
+				"eslint",
+				"gradle_ls",
+				"jsonls",
+				"jdtls",
+				"kotlin_language_server",
+				"ltex",
+				"markdown_oxide",
+				"sqlls",
+				"yamlls",
+				"rust-analyzer",
 			},
 		})
-		require("mason-tool-installer").setup({
-			auto_update = true,
-			run_on_start = true,
+	end,
+})
+
+-- ********************************************************************************
+-- * Linting & Formatting                                                         *
+-- ********************************************************************************
+
+-- Conform
+table.insert(plugins, {
+	"stevearc/conform.nvim",
+	dependencies = { "LittleEndianRoot/mason-conform" },
+	event = { "BufReadPre", "BufNewFile" },
+	config = function()
+		require("conform").setup({
+			format_on_save = {
+				timeout_ms = 500,
+				lsp_fallback = true,
+			},
+			formatters_by_ft = {
+				lua = { "stylua" },
+				javascript = { "prettier" },
+				typescript = { "prettier" },
+				typescriptreact = { "prettier" },
+				javascriptreact = { "prettier" },
+				html = { "prettier" },
+				css = { "prettier" },
+				json = { "prettier" },
+				markdown = { "prettier" },
+				python = { "black" },
+				rust = { "ast-grep" },
+				sh = { "shfmt" },
+				yaml = { "prettier" },
+				toml = { "prettier" },
+				sql = { "sql-formatter" },
+				java = { "google-java-format" },
+				kotlin = { "ktlint" },
+				zsh = { "shfmt" },
+			},
+		})
+		vim.keymap.set({ "n", "v" }, "<leader>cf", function()
+			require("conform").format({
+				timeout_ms = 500,
+				lsp_fallback = true,
+			})
+		end, { desc = "Format file or range (in visual mode)" })
+		require("mason-conform").setup({
+			automatic_installation = false,
 			ensure_installed = {
 				"stylua",
-				"luacheck",
 				"prettier",
-				"eslint_d",
 				"black",
+				"ast-grep",
+				"shfmt",
+				"sql-formatter",
+				"google-java-format",
+				"ktlint",
+			},
+		})
+	end,
+})
+
+-- Nvim Lint
+table.insert(plugins, {
+	"mfussenegger/nvim-lint",
+	dependencies = { "rshkarin/mason-nvim-lint" },
+	event = { "BufReadPre", "BufNewFile" },
+	config = function()
+		local lint = require("lint")
+		lint.linters_by_ft = {
+			lua = { "luacheck" },
+			javascript = { "eslint_d" },
+			typescript = { "eslint_d" },
+			typescriptreact = { "eslint_d" },
+			javascriptreact = { "eslint_d" },
+			html = { "htmlhint" },
+			css = { "stylelint" },
+			json = { "jsonlint" },
+			markdown = { "markdownlint" },
+			python = { "flake8" },
+			rust = { "ast-grep" },
+			sh = { "shellcheck" },
+			yaml = { "yamllint" },
+			sql = { "sqlfluff" },
+			java = { "checkstyle" },
+			kotlin = { "ktlint" },
+			zsh = { "shellcheck" },
+		}
+		vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave", "TextChanged" }, {
+			callback = function()
+				lint.try_lint()
+			end,
+		})
+		vim.keymap.set({ "n", "v" }, "<leader>cl", lint.try_lint, { desc = "Lint file" })
+		require("mason-nvim-lint").setup({
+			automatic_installation = false,
+			ensure_installed = {
+				"luacheck",
+				"eslint_d",
+				"htmlhint",
+				"stylelint",
 				"jsonlint",
+				"markdownlint",
+				"flake8",
+				"ast-grep",
+				"shellcheck",
+				"yamllint",
+				"sqlfluff",
+				"checkstyle",
+				"ktlint",
 			},
 		})
 	end,
@@ -604,6 +721,7 @@ table.insert(plugins, {
 		"petertriho/cmp-git",
 		"zbirenbaum/copilot-cmp",
 		"onsails/lspkind.nvim",
+		"luckasRanarison/tailwind-tools.nvim",
 	},
 	event = { "InsertEnter", "CmdlineEnter" },
 	config = function()
@@ -648,6 +766,7 @@ table.insert(plugins, {
 					maxwidth = 50,
 					ellipsis_char = "...",
 					symbol_map = { Copilot = "" },
+					before = require("tailwind-tools.cmp").lspkind_format,
 				}),
 			},
 			window = {
@@ -683,24 +802,15 @@ table.insert(plugins, {
 -- * Navigation                                                                   *
 -- ********************************************************************************
 
--- Telescope
+-- Fzf lua, file finder and grepper
 table.insert(plugins, {
-	"nvim-telescope/telescope.nvim",
-	branch = "0.1.x",
-	dependencies = {
-		"nvim-lua/plenary.nvim",
-		"nvim-tree/nvim-web-devicons",
-		{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
-	},
+	"ibhagwan/fzf-lua",
+	dependencies = { "nvim-tree/nvim-web-devicons" },
 	config = function()
-		local telescope = require("telescope")
-		local builtin = require("telescope.builtin")
-		vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Find files" })
-		vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Live grep" })
-		vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Find buffers" })
-		vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Find help tags" })
-		telescope.setup()
-		telescope.load_extension("fzf")
+		require("fzf-lua").setup({ "telescope" })
+		vim.keymap.set("n", "<leader>ff", "<cmd>lua require('fzf-lua').files()<cr>", { desc = "Find files" })
+		vim.keymap.set("n", "<leader>fg", "<cmd>lua require('fzf-lua').live_grep()<cr>", { desc = "Live grep" })
+		vim.keymap.set("n", "<leader>fb", "<cmd>lua require('fzf-lua').buffers()<cr>", { desc = "Find buffers" })
 	end,
 })
 
@@ -712,7 +822,7 @@ table.insert(plugins, {
 	config = function()
 		local harpoon = require("harpoon")
 		harpoon:setup()
-		vim.keymap.set("n", "<leader>a", function()
+		vim.keymap.set("n", "<leader>h", function()
 			harpoon:list():add()
 		end, { desc = "Add file to Harpoon" })
 		vim.keymap.set("n", "<leader>d", function()
@@ -741,89 +851,11 @@ table.insert(plugins, {
 		local oil = require("oil")
 		oil.setup({
 			delete_to_trash = true,
-		})
-		vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Open parent directory" })
-	end,
-})
-
--- ********************************************************************************
--- * Linting & Formatting                                                         *
--- ********************************************************************************
-
--- Conform
-table.insert(plugins, {
-	"stevearc/conform.nvim",
-	event = { "BufReadPre", "BufNewFile" },
-	config = function()
-		require("conform").setup({
-			format_on_save = {
-				timeout_ms = 500,
-				lsp_fallback = true,
-			},
-			formatters_by_ft = {
-				lua = { "stylua" },
-				javascript = { "prettier" },
-				typescript = { "prettier" },
-				typescriptreact = { "prettier" },
-				javascriptreact = { "prettier" },
-				html = { "prettier" },
-				css = { "prettier" },
-				json = { "prettier" },
-				markdown = { "prettier" },
-				python = { "black" },
-				go = { "gofmt" },
-				rust = { "rustfmt" },
-				sh = { "shfmt" },
-				yaml = { "prettier" },
-				toml = { "prettier" },
-				sql = { "sql-formatter" },
-				java = { "google-java-format" },
-				kotlin = { "ktlint" },
-				zsh = { "shfmt" },
+			view_options = {
+				show_hidden = true,
 			},
 		})
-		vim.keymap.set({ "n", "v" }, "<leader>cf", function()
-			require("conform").format({
-				timeout_ms = 500,
-				lsp_fallback = true,
-			})
-		end, { desc = "Format file or range (in visual mode)" })
-	end,
-})
-
--- Nvim Lint
-table.insert(plugins, {
-	"mfussenegger/nvim-lint",
-	event = { "BufReadPre", "BufNewFile" },
-	config = function()
-		local lint = require("lint")
-		lint.linters_by_ft = {
-			lua = { "luacheck" },
-			javascript = { "eslint_d" },
-			typescript = { "eslint_d" },
-			typescriptreact = { "eslint_d" },
-			javascriptreact = { "eslint_d" },
-			html = { "tidy" },
-			css = { "stylelint" },
-			json = { "jsonlint" },
-			markdown = { "markdownlint" },
-			python = { "flake8" },
-			go = { "golangci-lint" },
-			rust = { "clippy" },
-			sh = { "shellcheck" },
-			yaml = { "yamllint" },
-			toml = { "tlint" },
-			sql = { "sqlint" },
-			java = { "checkstyle" },
-			kotlin = { "ktlint" },
-			zsh = { "shellcheck" },
-		}
-		vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave", "TextChanged" }, {
-			callback = function()
-				lint.try_lint()
-			end,
-		})
-		vim.keymap.set("n", "<leader>cl", lint.try_lint, { desc = "Lint file" })
+		vim.keymap.set("n", "-", "<cmd>Oil<cr>", { desc = "Open parent directory" })
 	end,
 })
 
@@ -836,55 +868,72 @@ table.insert(plugins, {
 	"CopilotC-Nvim/CopilotChat.nvim",
 	branch = "canary",
 	dependencies = { "nvim-lua/plenary.nvim", "zbirenbaum/copilot.lua" },
-	keys = {
-		{
-			"<leader>ccb",
-			function()
-				vim.cmd("CopilotChatOpen")
-				vim.defer_fn(function()
-					vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-w>l", true, false, true), "n", false)
-				end, 50)
-			end,
-			mode = { "n", "v" },
-			desc = "CopilotChat - Open and jump into",
-		},
-		{ "<leader>cce", "<cmd>CopilotChatExplain<cr>", mode = { "n", "v" }, desc = "CopilotChat - Explain code" },
-		{ "<leader>cct", "<cmd>CopilotChatTests<cr>", mode = { "n", "v" }, desc = "CopilotChat - Generate tests" },
-		{ "<leader>ccr", "<cmd>CopilotChatReview<cr>", mode = { "n", "v" }, desc = "CopilotChat - Review code" },
-		{ "<leader>ccR", "<cmd>CopilotChatRefactor<cr>", mode = { "n", "v" }, desc = "CopilotChat - Refactor code" },
-		{ "<leader>cco", "<cmd>CopilotChatOptimize<cr>", mode = { "n", "v" }, desc = "CopilotChat - Optimize code" },
-		{
-			"<leader>ccq",
-			function()
-				local input = vim.fn.input("Quick Chat: ")
-				if input ~= "" then
-					require("CopilotChat").ask(input, { selection = require("CopilotChat.select").buffer })
-				end
-			end,
-			mode = { "n", "v" },
-			desc = "CopilotChat - Quick chat",
-		},
-	},
 	event = "VeryLazy",
 	config = function()
 		require("CopilotChat.integrations.cmp").setup()
-		require("CopilotChat").setup({
+		local copilotchat = require("CopilotChat")
+		copilotchat.setup({
+			question_header = "",
+			answer_header = "",
+			error_header = "",
+			allow_insecure = true,
+			show_help = false,
 			window = {
 				width = 0.4,
+				title = nil,
 			},
 			mappings = {
 				complete = {
 					insert = "",
 				},
 			},
+			prompts = {
+				Explain = {
+					mapping = "<leader>ae",
+					description = "AI Explain",
+				},
+				Review = {
+					mapping = "<leader>ar",
+					description = "AI Review",
+				},
+				Tests = {
+					mapping = "<leader>at",
+					description = "AI Tests",
+				},
+				Fix = {
+					mapping = "<leader>af",
+					description = "AI Fix",
+				},
+				Optimize = {
+					mapping = "<leader>ao",
+					description = "AI Optimize",
+				},
+				FixDiagnostic = {
+					mapping = "<leader>ad",
+					description = "AI Diagnostic Fix",
+				},
+				Docs = {
+					mapping = "<leader>am",
+					description = "AI Documentation",
+				},
+				CommitStaged = {
+					mapping = "<leader>ac",
+					description = "AI Generate Commit",
+				},
+			},
 		})
-		local function stop_copilot_chat()
-			pcall(vim.cmd, "CopilotChatStop")
-		end
+		vim.keymap.set({ "n", "v" }, "<leader>aa", copilotchat.toggle, { desc = "AI Toggle" })
 		vim.api.nvim_create_autocmd("BufEnter", {
 			pattern = "copilot-*",
 			callback = function()
-				vim.keymap.set("n", "<C-s>", stop_copilot_chat, { buffer = true, desc = "CopilotChat - Stop output" })
+				vim.opt_local.relativenumber = false
+				vim.opt_local.number = false
+				vim.keymap.set(
+					"n",
+					"<C-s>",
+					"<cmd>CopilotChatStop<cr>",
+					{ buffer = true, desc = "CopilotChat - Stop output" }
+				)
 			end,
 		})
 	end,
@@ -910,6 +959,15 @@ table.insert(plugins, {
 	end,
 })
 
+-- Move with brackets
+table.insert(plugins, {
+	"echasnovski/mini.bracketed",
+	version = false,
+	config = function()
+		require("mini.bracketed").setup()
+	end,
+})
+
 -- Auto pairs
 table.insert(plugins, {
 	"echasnovski/mini.pairs",
@@ -925,6 +983,26 @@ table.insert(plugins, {
 	version = false,
 	config = function()
 		require("mini.surround").setup()
+	end,
+})
+
+-- Move text easily
+table.insert(plugins, {
+	"echasnovski/mini.move",
+	version = false,
+	config = function()
+		require("mini.move").setup({
+			mappings = {
+				left = "<S-h>",
+				right = "<S-l>",
+				down = "<S-j>",
+				up = "<S-k>",
+				line_left = "<S-h>",
+				line_right = "<S-l>",
+				line_down = "<S-j>",
+				line_up = "<S-k>",
+			},
+		})
 	end,
 })
 
@@ -965,69 +1043,84 @@ table.insert(plugins, {
 table.insert(plugins, {
 	"lewis6991/gitsigns.nvim",
 	event = { "BufReadPre", "BufNewFile" },
-	opts = {
-		on_attach = function(bufnr)
-			local gitsigns = require("gitsigns")
-			local opts = { buffer = bufnr }
-			vim.keymap.set("n", "[g", gitsigns.prev_hunk, vim.tbl_extend("force", opts, { desc = "Previous hunk" }))
-			vim.keymap.set("n", "]g", gitsigns.next_hunk, vim.tbl_extend("force", opts, { desc = "Next hunk" }))
-			vim.keymap.set(
-				"n",
-				"<leader>gr",
-				gitsigns.reset_hunk,
-				vim.tbl_extend("force", opts, { desc = "Reset hunk" })
-			)
-			vim.keymap.set(
-				"n",
-				"<leader>gs",
-				gitsigns.stage_hunk,
-				vim.tbl_extend("force", opts, { desc = "Stage hunk" })
-			)
-			vim.keymap.set(
-				"n",
-				"<leader>gS",
-				gitsigns.stage_buffer,
-				vim.tbl_extend("force", opts, { desc = "Stage buffer" })
-			)
-			vim.keymap.set(
-				"n",
-				"<leader>gu",
-				gitsigns.undo_stage_hunk,
-				vim.tbl_extend("force", opts, { desc = "Undo stage hunk" })
-			)
-			vim.keymap.set(
-				"n",
-				"<leader>gp",
-				gitsigns.preview_hunk,
-				vim.tbl_extend("force", opts, { desc = "Preview hunk" })
-			)
-			vim.keymap.set(
-				"n",
-				"<leader>gb",
-				gitsigns.toggle_current_line_blame,
-				vim.tbl_extend("force", opts, { desc = "Toggle current line blame" })
-			)
-			vim.keymap.set("n", "<leader>gB", function()
-				gitsigns.blame_line({ full = true })
-			end, vim.tbl_extend("force", opts, { desc = "Blame line" }))
-			vim.keymap.set("n", "<leader>gd", gitsigns.diffthis, vim.tbl_extend("force", opts, { desc = "Diff this" }))
-			vim.keymap.set("n", "<leader>gD", function()
-				gitsigns.diffthis("~")
-			end, vim.tbl_extend("force", opts, { desc = "Diff this (cached)" }))
-			vim.keymap.set(
-				"n",
-				"<leader>gt",
-				gitsigns.toggle_deleted,
-				vim.tbl_extend("force", opts, { desc = "Toggle deleted" })
-			)
-			vim.keymap.set(
-				{ "o", "x" },
-				"ih",
-				":<C-U>Gitsigns select_hunk<CR>",
-				vim.tbl_extend("force", opts, { desc = "Select hunk" })
-			)
-		end,
-	},
+	config = function()
+		local gitsigns = require("gitsigns")
+		gitsigns.setup({
+			signs = {
+				add = { text = "│" },
+				change = { text = "│" },
+				delete = { text = "˽" },
+				topdelete = { text = "˹" },
+				changedelete = { text = "˺" },
+				untracked = { text = "┆" },
+			},
+			on_attach = function(bufnr)
+				local opts = { buffer = bufnr }
+				vim.keymap.set("n", "[g", gitsigns.prev_hunk, vim.tbl_extend("force", opts, { desc = "Previous hunk" }))
+				vim.keymap.set("n", "]g", gitsigns.next_hunk, vim.tbl_extend("force", opts, { desc = "Next hunk" }))
+				vim.keymap.set(
+					"n",
+					"<leader>gr",
+					gitsigns.reset_hunk,
+					vim.tbl_extend("force", opts, { desc = "Reset hunk" })
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>gs",
+					gitsigns.stage_hunk,
+					vim.tbl_extend("force", opts, { desc = "Stage hunk" })
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>gS",
+					gitsigns.stage_buffer,
+					vim.tbl_extend("force", opts, { desc = "Stage buffer" })
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>gu",
+					gitsigns.undo_stage_hunk,
+					vim.tbl_extend("force", opts, { desc = "Undo stage hunk" })
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>gp",
+					gitsigns.preview_hunk,
+					vim.tbl_extend("force", opts, { desc = "Preview hunk" })
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>gb",
+					gitsigns.toggle_current_line_blame,
+					vim.tbl_extend("force", opts, { desc = "Toggle current line blame" })
+				)
+				vim.keymap.set("n", "<leader>gB", function()
+					gitsigns.blame_line({ full = true })
+				end, vim.tbl_extend("force", opts, { desc = "Blame line" }))
+				vim.keymap.set(
+					"n",
+					"<leader>gd",
+					gitsigns.diffthis,
+					vim.tbl_extend("force", opts, { desc = "Diff this" })
+				)
+				vim.keymap.set("n", "<leader>gD", function()
+					gitsigns.diffthis("~")
+				end, vim.tbl_extend("force", opts, { desc = "Diff this (cached)" }))
+				vim.keymap.set(
+					"n",
+					"<leader>gt",
+					gitsigns.toggle_deleted,
+					vim.tbl_extend("force", opts, { desc = "Toggle deleted" })
+				)
+				vim.keymap.set(
+					{ "o", "x" },
+					"ih",
+					":<C-U>Gitsigns select_hunk<cr>",
+					vim.tbl_extend("force", opts, { desc = "Select hunk" })
+				)
+			end,
+		})
+	end,
 })
 
 -- Lazygit

@@ -10,6 +10,7 @@ brew "docker-compose"
 brew "docker-credential-helper"
 brew "eza"
 brew "fastfetch"
+brew "fd"
 brew "ffmpeg"
 brew "fzf"
 brew "git"
@@ -23,8 +24,10 @@ brew "nvm"
 brew "pinentry-mac"
 brew "pyenv"
 brew "ripgrep"
+brew "rust-analyzer"
 brew "stow"
 brew "thefuck"
+brew "wakeonlan"
 brew "zoxide"
 brew "jesseduffield/lazygit/lazygit"
 brew "koekeishiya/formulae/yabai"
@@ -48,6 +51,7 @@ mas "AdGuard for Safari", id: 1440147259
 mas "Affinity Designer 2", id: 1616831348
 mas "Affinity Photo 2", id: 1616822987
 mas "Affinity Publisher 2", id: 1606941598
+mas "Developer", id: 640199958
 mas "Jump Desktop", id: 524141863
 mas "Keynote", id: 409183694
 mas "Numbers", id: 409203825
@@ -55,3 +59,4 @@ mas "Pages", id: 409201541
 mas "Slack", id: 803453959
 mas "Vimkey", id: 1585682577
 mas "WireGuard", id: 1451685025
+mas "Xcode", id: 497799835

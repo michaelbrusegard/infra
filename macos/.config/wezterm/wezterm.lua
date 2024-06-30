@@ -77,6 +77,10 @@ config.window_padding = {
 	bottom = 0,
 }
 
+-- Underline
+config.underline_position = "200%"
+config.underline_thickness = "300%"
+
 -- ********************************************************************************
 -- * Tab bar                                                                      *
 -- ********************************************************************************
@@ -356,10 +360,6 @@ config.key_tables = {
 			mods = "NONE",
 			action = wezterm.action.Multiple({ { CopyTo = "ClipboardAndPrimarySelection" }, { CopyMode = "Close" } }),
 		},
-		{ key = "PageUp", mods = "NONE", action = wezterm.action.CopyMode("PageUp") },
-		{ key = "PageDown", mods = "NONE", action = wezterm.action.CopyMode("PageDown") },
-		{ key = "End", mods = "NONE", action = wezterm.action.CopyMode("MoveToEndOfLineContent") },
-		{ key = "Home", mods = "NONE", action = wezterm.action.CopyMode("MoveToStartOfLine") },
 	},
 
 	search_mode = {
@@ -369,8 +369,6 @@ config.key_tables = {
 		{ key = "p", mods = "CTRL", action = wezterm.action.CopyMode("PriorMatch") },
 		{ key = "r", mods = "CTRL", action = wezterm.action.CopyMode("CycleMatchType") },
 		{ key = "u", mods = "CTRL", action = wezterm.action.CopyMode("ClearPattern") },
-		{ key = "PageUp", mods = "NONE", action = wezterm.action.CopyMode("PriorMatchPage") },
-		{ key = "PageDown", mods = "NONE", action = wezterm.action.CopyMode("NextMatchPage") },
 	},
 }
 
