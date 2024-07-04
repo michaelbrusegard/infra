@@ -28,8 +28,8 @@
   "mason-nvim-lint": { "branch": "main", "commit": "116bfb4239353ffa7c859cef3d180c9642d83027" },
   "mason.nvim": { "branch": "main", "commit": "0950b15060067f752fde13a779a994f59516ce3d" },
   "mini.bracketed": { "branch": "main", "commit": "48e62a8681185363be89444a0a334c29538e7ce8" },
+  "mini.hipatterns": { "branch": "main", "commit": "aa68eb143ce77a57b6416fb4bd71ee0adba5a517" },
   "mini.move": { "branch": "main", "commit": "0977d909000510b9d3c16981e16580b8433c8697" },
-  "mini.pairs": { "branch": "main", "commit": "ea9c763fccf114dc57efc32131604a8b39b90186" },
   "mini.surround": { "branch": "main", "commit": "af280fc18792b4d142aab4c1638a8949a38ff33a" },
   "noice.nvim": { "branch": "main", "commit": "03c6a75661e68012e30b0ed81f050358b1e2233c" },
   "nui.nvim": { "branch": "main", "commit": "61574ce6e60c815b0a0c4b5655b8486ba58089a1" },
@@ -45,5 +45,6 @@
   "satellite.nvim": { "branch": "main", "commit": "777ed56e1ef45ec808df701730b6597fc4fb0fbc" },
   "smart-splits.nvim": { "branch": "master", "commit": "e186518f9d7eb4b1e43fbbe0c52bf323637194d0" },
   "tailwind-tools.nvim": { "branch": "master", "commit": "27d28c993382fdcb4c3d4d0ec4b98c6697a938b5" },
+  "vim-be-good": { "branch": "master", "commit": "4fa57b7957715c91326fcead58c1fa898b9b3625" },
   "which-key.nvim": { "branch": "main", "commit": "0099511294f16b81c696004fa6a403b0ae61f7a0" }
 }

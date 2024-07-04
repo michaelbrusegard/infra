@@ -361,6 +361,15 @@ table.insert(plugins, {
 	end,
 })
 
+-- Colorizer
+table.insert(plugins, {
+	"echasnovski/mini.hipatterns",
+	version = false,
+	config = function()
+		require("mini.hipatterns").setup()
+	end,
+})
+
 -- ********************************************************************************
 -- * Smart Splits                                                                 *
 -- ********************************************************************************
@@ -430,7 +439,6 @@ table.insert(plugins, {
 				"jsdoc",
 				"kotlin",
 				"latex",
-				"rust",
 				"scss",
 				"sql",
 				"yaml",
@@ -561,7 +569,6 @@ table.insert(plugins, {
 				"markdown_oxide",
 				"sqlls",
 				"yamlls",
-				"rust-analyzer",
 			},
 		})
 	end,
@@ -593,7 +600,6 @@ table.insert(plugins, {
 				json = { "prettier" },
 				markdown = { "prettier" },
 				python = { "black" },
-				rust = { "ast-grep" },
 				sh = { "shfmt" },
 				yaml = { "prettier" },
 				toml = { "prettier" },
@@ -615,7 +621,6 @@ table.insert(plugins, {
 				"stylua",
 				"prettier",
 				"black",
-				"ast-grep",
 				"shfmt",
 				"sql-formatter",
 				"google-java-format",
@@ -643,7 +648,6 @@ table.insert(plugins, {
 			json = { "jsonlint" },
 			markdown = { "markdownlint" },
 			python = { "flake8" },
-			rust = { "ast-grep" },
 			sh = { "shellcheck" },
 			yaml = { "yamllint" },
 			sql = { "sqlfluff" },
@@ -667,7 +671,6 @@ table.insert(plugins, {
 				"jsonlint",
 				"markdownlint",
 				"flake8",
-				"ast-grep",
 				"shellcheck",
 				"yamllint",
 				"sqlfluff",
@@ -968,15 +971,6 @@ table.insert(plugins, {
 	end,
 })
 
--- Auto pairs
-table.insert(plugins, {
-	"echasnovski/mini.pairs",
-	version = false,
-	config = function()
-		require("mini.pairs").setup()
-	end,
-})
-
 -- Add surround keybinds
 table.insert(plugins, {
 	"echasnovski/mini.surround",
@@ -1033,6 +1027,11 @@ table.insert(plugins, {
 			NextParagraph = { text = "}", prio = 8 },
 		},
 	},
+})
+
+-- Vim Be Good game
+table.insert(plugins, {
+	"ThePrimeagen/vim-be-good",
 })
 
 -- ********************************************************************************
