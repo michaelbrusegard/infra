@@ -301,6 +301,48 @@ table.insert(plugins, {
 	end,
 })
 
+-- Cmdline UI
+table.insert(plugins, {
+	"folke/noice.nvim",
+	event = "VeryLazy",
+	dependencies = {
+		"MunifTanjim/nui.nvim",
+	},
+	config = function()
+		local total_rows = vim.api.nvim_eval('winheight("$")')
+		require("noice").setup({
+			views = {
+				cmdline_popup = {
+					position = {
+						row = total_rows - 1,
+						col = "0%",
+					},
+					size = {
+						width = "100%",
+						height = "auto",
+					},
+					border = {
+						style = "none",
+					},
+				},
+			},
+			lsp = {
+				override = {
+					["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+					["vim.lsp.util.stylize_markdown"] = true,
+					["cmp.entry.get_documentation"] = true,
+				},
+			},
+			presets = {
+				command_palette = true,
+				long_message_to_split = true,
+				inc_rename = false,
+				lsp_doc_border = false,
+			},
+		})
+	end,
+})
+
 -- Scrollbar
 table.insert(plugins, {
 	"lewis6991/satellite.nvim",
@@ -812,12 +854,21 @@ table.insert(plugins, {
 	config = function()
 		local oil = require("oil")
 		oil.setup({
+			default_file_explorer = true,
 			delete_to_trash = true,
+			skip_confirm_for_simple_edits = true,
 			view_options = {
 				show_hidden = true,
+				natural_order = true,
+				is_always_hidden = function(name, _)
+					return name == ".." or name == ".git"
+				end,
 			},
 		})
 		vim.keymap.set("n", "-", "<cmd>Oil<cr>", { desc = "Open parent directory" })
+		if vim.fn.bufname("%") == "" then
+			oil.open()
+		end
 	end,
 })
 
