@@ -229,7 +229,6 @@ table.insert(plugins, {
 				},
 				markdown = true,
 				mason = true,
-				noice = true,
 				native_lsp = {
 					enabled = true,
 					virtual_text = {
@@ -299,48 +298,6 @@ table.insert(plugins, {
 	main = "ibl",
 	config = function()
 		require("ibl").setup()
-	end,
-})
-
--- Cmdline UI
-table.insert(plugins, {
-	"folke/noice.nvim",
-	event = "VeryLazy",
-	dependencies = {
-		"MunifTanjim/nui.nvim",
-	},
-	config = function()
-		local total_rows = vim.api.nvim_eval('winheight("$")')
-		require("noice").setup({
-			views = {
-				cmdline_popup = {
-					position = {
-						row = total_rows - 1,
-						col = "0%",
-					},
-					size = {
-						width = "100%",
-						height = "auto",
-					},
-					border = {
-						style = "none",
-					},
-				},
-			},
-			lsp = {
-				override = {
-					["vim.lsp.util.convert_input_to_markdown_lines"] = true,
-					["vim.lsp.util.stylize_markdown"] = true,
-					["cmp.entry.get_documentation"] = true,
-				},
-			},
-			presets = {
-				command_palette = true,
-				long_message_to_split = true,
-				inc_rename = false,
-				lsp_doc_border = false,
-			},
-		})
 	end,
 })
 
@@ -591,18 +548,19 @@ table.insert(plugins, {
 			},
 			formatters_by_ft = {
 				lua = { "stylua" },
-				javascript = { "prettier" },
-				typescript = { "prettier" },
-				typescriptreact = { "prettier" },
-				javascriptreact = { "prettier" },
-				html = { "prettier" },
-				css = { "prettier" },
-				json = { "prettier" },
-				markdown = { "prettier" },
+				javascript = { "prettierd" },
+				typescript = { "prettierd" },
+				typescriptreact = { "prettierd" },
+				javascriptreact = { "prettierd" },
+				html = { "prettierd" },
+				css = { "prettierd" },
+				json = { "prettierd" },
+				jsonc = { "prettierd" },
+				markdown = { "prettierd" },
 				python = { "black" },
 				sh = { "shfmt" },
-				yaml = { "prettier" },
-				toml = { "prettier" },
+				yaml = { "prettierd" },
+				toml = { "prettierd" },
 				sql = { "sql-formatter" },
 				java = { "google-java-format" },
 				kotlin = { "ktlint" },
@@ -619,7 +577,7 @@ table.insert(plugins, {
 			automatic_installation = false,
 			ensure_installed = {
 				"stylua",
-				"prettier",
+				"prettierd",
 				"black",
 				"shfmt",
 				"sql-formatter",
@@ -646,6 +604,7 @@ table.insert(plugins, {
 			html = { "htmlhint" },
 			css = { "stylelint" },
 			json = { "jsonlint" },
+			jsonc = { "jsonlint" },
 			markdown = { "markdownlint" },
 			python = { "flake8" },
 			sh = { "shellcheck" },
