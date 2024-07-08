@@ -1219,11 +1219,7 @@ RunAndReleaseWinKey(commands*) {
     for index, command in commands {
         Run, %command%,, Hide
     }
-    Send, {LWin Up}
-}
-SendAndReleaseWinKey(keys) {
-    Send, %keys%
-    Send, {LWin Up}
+    Send, {LWin}
 }
 
 ; Focus window
@@ -1273,7 +1269,7 @@ $#h::
     SetTimer, SendDown, Off
     SetTimer, SendUp, Off
     SetTimer, SendRight, Off
-    SetTimer, SendLeft, 30
+    SetTimer, SendLeft, 50
     KeyWait, h
     SetTimer, SendLeft, Off
     Return
@@ -1286,7 +1282,7 @@ $#j::
     SetTimer, SendLeft, Off
     SetTimer, SendUp, Off
     SetTimer, SendRight, Off
-    SetTimer, SendDown, 30
+    SetTimer, SendDown, 50
     KeyWait, j
     SetTimer, SendDown, Off
     Return
@@ -1299,7 +1295,7 @@ $#k::
     SetTimer, SendLeft, Off
     SetTimer, SendDown, Off
     SetTimer, SendRight, Off
-    SetTimer, SendUp, 30
+    SetTimer, SendUp, 50
     KeyWait, k
     SetTimer, SendUp, Off
     Return
@@ -1312,7 +1308,7 @@ $#l::
     SetTimer, SendLeft, Off
     SetTimer, SendDown, Off
     SetTimer, SendUp, Off
-    SetTimer, SendRight, 30
+    SetTimer, SendRight, 50
     KeyWait, l
     SetTimer, SendRight, Off
     Return
@@ -1330,16 +1326,19 @@ SendRight:
 ; Map æ, ø and å characters
 $!a::Send, {U+00E5}
 $!o::Send, {U+00F8}
-$!'::Send, {U+00E6}
+$!sc028::Send, {U+00E6}
 $!+a::Send, {U+00C5}
 $!+o::Send, {U+00D8}
-$!+'::Send, {U+00C6}
+$!+sc028::Send, {U+00C6}
 
 ; Open Terminal
-$!Enter:: Run, wt.exe
+$!Enter:: Run, wt.exe,, Hide
 
 ; Open Browser
-$!b::Run, "C:\Program Files\Firefox Developer Edition\firefox.exe"
+$!b::Run, "C:\Program Files\Mozilla Firefox\firefox.exe",, Hide
 
 ; Open Explorer
-$!f::Run, explorer.exe
+$!f::Run, explorer.exe,, Hide
+
+; Lock Screen
+$^#q::Run, tsdiscon,, Hide
