@@ -299,35 +299,35 @@ GroupAdd, intellij, ahk_exe idea64.exe
             ; Secondary
             ; Send {LCtrl down}{Secondary up}{tab}
            Send {LCtrl down}{LWin up}{tab}               ; WinModifiers
-;            Send {LCtrl down}{LAlt up}{tab}               ; MacModifiers
-;            Send {LCtrl down}{CapsLock up}{tab}           ; CB/IBM
+;     ;        Send {LCtrl down}{LAlt up}{tab}               ; MacModifiers
+;     ;        Send {LCtrl down}{CapsLock up}{tab}           ; CB/IBM
             KeyWait, tab
         ; Tertiary
         } else if (GetKeyState("LCtrl", "P") AND GetKeyState("LShift", "P")) {
             ; Secondary
             ; Send {LCtrl down}{Secondary up}{LShift down}{tab}
            Send {LCtrl down}{LWin up}{LShift down}{tab}     ; WinModifiers/CB
-;            Send {LCtrl down}{LAlt up}{LShift down}{tab}     ; MacModifiers
+;     ;        Send {LCtrl down}{LAlt up}{LShift down}{tab}     ; MacModifiers
 ;     ;        Send {LCtrl down}{CapsLock up}{LShift down}{tab} ; IBM
             KeyWait, tab
         ; Primary
        } else if (GetKeyState("LAlt", "P") AND GetKeyState("LShift", "P") = false) {   ; WinModifiers/CB/IBM
-;        } else if (GetKeyState("LWin", "P") AND GetKeyState("LShift", "P") = false) {   ; MacModifiers
+;     ;    } else if (GetKeyState("LWin", "P") AND GetKeyState("LShift", "P") = false) {   ; MacModifiers
             Send {LAlt down}{tab}
             KeyWait, tab
         ; Primary
        } else if (GetKeyState("LAlt", "P") AND GetKeyState("LShift", "P")) { ; WinModifiers/CB/IBM
-;        } else if (GetKeyState("LWin", "P") AND GetKeyState("LShift", "P")) { ; MacModifiers
+;     ;    } else if (GetKeyState("LWin", "P") AND GetKeyState("LShift", "P")) { ; MacModifiers
             Send {LAlt down}{LShift down}{tab}
             KeyWait, tab
         ; Secondary 
        } else if (GetKeyState("LWin", "P") AND GetKeyState("LShift", "P")) = false {     ; WinModifiers/CB
-;        } else if (GetKeyState("LAlt", "P") AND GetKeyState("LShift", "P") = false) {     ; MacModifiers
+;     ;    } else if (GetKeyState("LAlt", "P") AND GetKeyState("LShift", "P") = false) {     ; MacModifiers
 ;     ;    } else if (GetKeyState("CapsLock", "P") AND GetKeyState("LShift", "P")) = false { ; IBM
             return
         ; Secondary
         } else if (GetKeyState("LWin", "P") AND GetKeyState("LShift", "P")) {     ; WinModifiers/CB
-;         } else if (GetKeyState("LAlt", "P") AND GetKeyState("LShift", "P")) {     ; MacModifiers
+;     ;     } else if (GetKeyState("LAlt", "P") AND GetKeyState("LShift", "P")) {     ; MacModifiers
 ;     ;     } else if (GetKeyState("CapsLock", "P") AND GetKeyState("LShift", "P")) { ; IBM
             return
         } else {
@@ -346,11 +346,11 @@ GroupAdd, intellij, ahk_exe idea64.exe
     ; Secondary::LAlt
     ; Tertiary::LWin
 
-;     $LAlt::LCtrl     ; CB/IBM
+;     ; $LAlt::LCtrl     ; CB/IBM
 ;     ; $RAlt::RCtrl     ; IBM
-;     $RCtrl::RAlt     ; CB/IBM
+;     ; $RCtrl::RAlt     ; CB/IBM
 ;     ; $CapsLock::LWin  ; IBM
-;     $LCtrl::LAlt     ; CB/IBM
+;     ; $LCtrl::LAlt     ; CB/IBM
 
     $LAlt::LCtrl   ; WinModifiers
     $RAlt::RCtrl   ; WinModifiers
@@ -358,9 +358,9 @@ GroupAdd, intellij, ahk_exe idea64.exe
     $LWin::LAlt    ; WinModifiers
     $LCtrl::LWin   ; WinModifiers
 
-;     $LWin::LCtrl   ; MacModifiers
-;     $RWin::RCtrl   ; MacModifiers
-;     $LCtrl::LWin   ; MacModifiers
+;     ; $LWin::LCtrl   ; MacModifiers
+;     ; $RWin::RCtrl   ; MacModifiers
+;     ; $LCtrl::LWin   ; MacModifiers
 
     ; Hack to disable start menu on winkey
     ; Static - Does not apply to IBM or Chromebooks
@@ -377,19 +377,19 @@ GroupAdd, intellij, ahk_exe idea64.exe
     ; impacts Alt-Tab fix
     ; Primary
     $LAlt up::Send {LWin up}{LAlt up}{LCtrl up} ; WinModifiers
-;     $LWin up::Send {LWin up}{LAlt up}{LCtrl up} ; MacModifiers
-;     $LAlt up::Send {LWin up}{CapsLock up}{LAlt up}{LCtrl up} ; CB/IBM
+;     ; $LWin up::Send {LWin up}{LAlt up}{LCtrl up} ; MacModifiers
+;     ; $LAlt up::Send {LWin up}{CapsLock up}{LAlt up}{LCtrl up} ; CB/IBM
 
-    ; !Enter:: 
-    ; {
-    ;     if (GetKeyState("RAlt", "P")) {
-    ;         Send {Insert}
-    ;     }
-    ;     else{
-    ;         Send {Alt down}{Enter}{Alt up}
-    ;     }
-    ;     Return 
-    ; }
+    !Enter:: 
+    {
+        if (GetKeyState("RAlt", "P")) {
+            Send {Insert}
+        }
+        else{
+            Send {Alt down}{Enter}{Alt up}
+        }
+        Return 
+    }
 
     ; Remap Alt+Esc to Break/Pause
     !Esc::SendInput, {Pause}
@@ -426,24 +426,24 @@ GroupAdd, intellij, ahk_exe idea64.exe
     return
 
     ; hide all but active program
-    ; !^h::
-    ; WinGetClass, class, A
-    ; WinMinimizeAll
-    ; WinGet, AllWindows, List
-    ; loop %AllWindows% {
-    ;     WinGetClass, WinClass, % "ahk_id " AllWindows%A_Index%
-    ;     if(InStr(WinClass,class)){
-    ;         WinRestore, % "ahk_id " AllWindows%A_Index%
-    ;     }
-    ; }
-    ; return
+    !^h::
+    WinGetClass, class, A
+    WinMinimizeAll
+    WinGet, AllWindows, List
+    loop %AllWindows% {
+        WinGetClass, WinClass, % "ahk_id " AllWindows%A_Index%
+        if(InStr(WinClass,class)){
+            WinRestore, % "ahk_id " AllWindows%A_Index%
+        }
+    }
+    return
 
     ; Show Desktop
     ^F3::Send #d
 
     ; Emoji Panel
     #^Space::Send {LWin down};{LWin up} ; Default
-;     !^Space::Send {LWin down};{LWin up} ; CB/IBM
+;     ; !^Space::Send {LWin down};{LWin up} ; CB/IBM
 
     ; Full Screenshot
     ^+3::Send {PrintScreen}
@@ -453,7 +453,7 @@ GroupAdd, intellij, ahk_exe idea64.exe
 
     ; Open File Browser
     !^space::Send #e ; Default
-;     #^space::Send #e ; CB/IBM
+;     ; #^space::Send #e ; CB/IBM
 
 ;     ; #if GetKeyState("LWin", "P") || GetKeyState("RAlt", "P") ; Chromebook
 ;     ;     Space::Send ^{Esc}                                   ; Chromebook
@@ -509,15 +509,15 @@ GroupAdd, intellij, ahk_exe idea64.exe
         #a::Send {Home}
         #e::Send {End}
         #d::Send {Delete}
-        ; #k::Send +{End}{Backspace}
+        #k::Send +{End}{Backspace}
     #If
 
     ; Cmd+Space Alternative
-    ; $^Space::Send ^{Esc}
+    $^Space::Send ^{Esc}
 
     #IfWinActive ahk_group intellij
         $#c::Send ^{c}                  ; Default - Sigints interrupt
-;         $!c::Send ^{c}                  ; CB/IBM
+;         ; $!c::Send ^{c}                  ; CB/IBM
         ; General
         ^0::Send !{0}                   ;Open corresponding tool window
         ^1::Send !{1}                   ;Open corresponding tool window
@@ -542,9 +542,9 @@ GroupAdd, intellij, ahk_exe idea64.exe
         #+g::Send !+j                   ;Unselect occurrence
         ; Editing
         #Space::Send ^{Space}           ; Default - Basic code completion
-;         !Space::Send ^{Space}           ; CB/IBM - Basic code completion
+;         ; !Space::Send ^{Space}           ; CB/IBM - Basic code completion
         #+Space::Send ^+{Space}         ;Smart code completion
-        ; #j::Send ^q                     ;Quick documentation lookup
+        #j::Send ^q                     ;Quick documentation lookup
         ^n::Send !{Insert}              ;Generate code...
         #o::Send ^o                     ;Override methods
         #i::Send ^i                     ;Implement methods
@@ -571,15 +571,15 @@ GroupAdd, intellij, ahk_exe idea64.exe
         ^!o::Send ^!+n                  ;Go to symbol
         #Right::Send !{Right}           ;Go to next editor tab
         #Left::Send !{Left}             ;Go to previous editor tab
-        ; #l::Send ^g                     ;Go to line
+        #l::Send ^g                     ;Go to line
         #e::Send ^e                     ;Recent files popup
         !Space::Send ^+i                ; Default - Open quick definition lookup
-;         #Space::Send ^+i                ; CB/IBM - Open quick definition lookup
+;         ; #Space::Send ^+i                ; CB/IBM - Open quick definition lookup
         ^Y::Send ^+i                    ;Open quick definition lookup
         #+b::Send ^+b                   ;Go to type declaration
         #Up::Send !{Up}                 ;Go to previous
         #Down::Send !{Down}             ;Go to next method
-        ; #h::Send ^h                     ;Type hierarchy
+        #h::Send ^h                     ;Type hierarchy
         #!h::Send ^!h                   ;Call hierarchy
         ^Down::Send ^{Enter}            ;Edit source/View source
         !Home::Send !{Home}             ;Show navigation bar
@@ -646,30 +646,30 @@ GroupAdd, intellij, ahk_exe idea64.exe
         ; Remap Ctrl+Shift to behave like macOS Sublimetext
         ; Will extend cursor to multiple lines
        #+Up::send ^!{Up}                                   ; Default - ST2CODE
-;        !+Up::send ^!{Up}                                   ; CB/IBM - ST2CODE
+;     ;    !+Up::send ^!{Up}                                   ; CB/IBM - ST2CODE
        #+Down::send ^!{Down}                               ; Default - ST2CODE
-;        !+Down::send ^!{Down}                               ; CB/IBM - ST2CODE
+;     ;    !+Down::send ^!{Down}                               ; CB/IBM - ST2CODE
         ; Remap Ctrl+Cmd+G to select all matches
        #^g::send ^+{L}                                     ; Default - ST2CODE
-;        !^g::send ^+{L}                                     ; CB/IBM - ST2CODE
+;     ;    !^g::send ^+{L}                                     ; CB/IBM - ST2CODE
         !+g::send ^+{G}                                      ; View source control
        $#c::Send {Ctrl down}c{Ctrl up}                     ; Default - Sigints interrupt
-;        $!c::Send {Ctrl down}c{Ctrl up}                     ; CB/IBM
+;     ;    $!c::Send {Ctrl down}c{Ctrl up}                     ; CB/IBM
        $#x::Send {Ctrl down}x{Ctrl up}                     ; Default - Sigints interrupt
-;        $!x::Send {Ctrl down}x{Ctrl up}                     ; CB/IBM
+;     ;    $!x::Send {Ctrl down}x{Ctrl up}                     ; CB/IBM
 
       #Space::Send ^{Space}                                ; Default - Basic code completion
-;       !Space::Send ^{Space}                                ; CB/IBM - Basic code completion
+;     ;   !Space::Send ^{Space}                                ; CB/IBM - Basic code completion
     #If
 
     #IfWinActive ahk_exe sublime_text.exe
         #x::Send ^{x}                                           ; Default - Terminal - Ctrl-x
         #c::Send ^{c}                                           ; Default - Terminal - Ctrl-c sigint
-;         !x::Send ^{x}                                           ; CB/IBM
-;         !c::Send ^{c}                                           ; CB/IBM - Sigint
+;         ; !x::Send ^{x}                                           ; CB/IBM
+;         ; !c::Send ^{c}                                           ; CB/IBM - Sigint
         ; #c::send ^{Pause}                                       ; cancel_build
         #Space::Send ^{Space}                                   ; Default - Basic code completion
-;         !Space::Send ^{Space}                                   ; CB/IBM - Basic code completion
+;         ; !Space::Send ^{Space}                                   ; CB/IBM - Basic code completion
         #^Up::send !{O}                                         ; Switch file
         #^f::send {F11}                                         ; toggle_full_screen
         ^!v::send {Ctrl Down}k{Ctrl Up}{Ctrl Down}v{Ctrl Up}    ; paste_from_history
@@ -679,8 +679,8 @@ GroupAdd, intellij, ahk_exe idea64.exe
         ^!Down::send ^{Down}                                    ; scroll_lines down
         #+Up::send {shift up}^!{Up}                             ; Default - multi-cursor up
         #+Down::send {shift up}^!{Down}                         ; Default - multi-cursor down
-;         !+Up::send {shift up}^!{Up}                             ; CB/IBM - multi-cursor up
-;         !+Down::send {shift up}^!{Down}                         ; CB/IBM - multi-cursor down
+;         ; !+Up::send {shift up}^!{Up}                             ; CB/IBM - multi-cursor up
+;         ; !+Down::send {shift up}^!{Down}                         ; CB/IBM - multi-cursor down
         ^PgDn::Return                                           ; cancel next_view
         ^PgUp::Return                                           ; cancel prev_view
         ^+{::send ^{PgDn}                                       ; next_view
@@ -703,7 +703,7 @@ GroupAdd, intellij, ahk_exe idea64.exe
         #!g::send ^{F3}                                         ; find_under
         #!+g::send ^+{F3}                                       ; find_under_prev
         #^g::send !{F3}                                         ; Default - find_all_under
-;         !^g::send !{F3}                                         ; CB/IBM - find_all_under
+;         ; !^g::send !{F3}                                         ; CB/IBM - find_all_under
         ^+Up::Return                                            ; cancel swap_line_up
         #!Up::send ^+{Up}                                       ; swap_line_up
         ^+Down::Return                                          ; cancel swap_line_down
@@ -734,13 +734,13 @@ GroupAdd, intellij, ahk_exe idea64.exe
 
         ; End of Line
         #e:: ; Default
-;         !e:: ; CB/IBM
+;         ; !e:: ; CB/IBM
         Send {End}
         return
 
         ; Beginning of Line
         #a:: ; Default
-;         !a:: ; CB/IBM
+;         ; !a:: ; CB/IBM
         Send {Home}
         return
 
@@ -772,7 +772,7 @@ GroupAdd, intellij, ahk_exe idea64.exe
 
         ; Sigints - interrupt
         $#c::Send {Ctrl down}c{Ctrl up} ; Default
-;         $!c::Send {Ctrl down}c{Ctrl up} ; CB/IBM
+;         ; $!c::Send {Ctrl down}c{Ctrl up} ; CB/IBM
         $^.::Send {Ctrl down}c{Ctrl up}
 
         ; Windows Terminal
@@ -866,45 +866,45 @@ GroupAdd, intellij, ahk_exe idea64.exe
         #x::Send {LCtrl down}x{Ctrl up}  ; Default
         #y::Send {LCtrl down}y{Ctrl up}  ; Default
         #z::Send {LCtrl down}z{Ctrl up}  ; Default
-;         !0::Send {LCtrl down}0{Ctrl up}  ; CB/IBM
-;         !1::Send {LCtrl down}1{Ctrl up}  ; CB/IBM
-;         !2::Send {LCtrl down}2{Ctrl up}  ; CB/IBM
-;         !3::Send {LCtrl down}3{Ctrl up}  ; CB/IBM
-;         !4::Send {LCtrl down}4{Ctrl up}  ; CB/IBM
-;         !5::Send {LCtrl down}5{Ctrl up}  ; CB/IBM
-;         !6::Send {LCtrl down}6{Ctrl up}  ; CB/IBM
-;         !7::Send {LCtrl down}7{Ctrl up}  ; CB/IBM
-;         !8::Send {LCtrl down}8{Ctrl up}  ; CB/IBM
-;         !9::Send {LCtrl down}9{Ctrl up}  ; CB/IBM
-;         !-::Send {LCtrl down}-{Ctrl up}  ; CB/IBM
-;         !=::Send {LCtrl down}={Ctrl up}  ; CB/IBM
-;         !`::Send {LCtrl down}`{Ctrl up}  ; CB/IBM
-;         !a::Send {LCtrl down}a{Ctrl up}  ; CB/IBM
-;         !b::Send {LCtrl down}b{Ctrl up}  ; CB/IBM
-;         !c::Send {LCtrl down}c{Ctrl up}  ; CB/IBM
-;         !d::Send {LCtrl down}d{Ctrl up}  ; CB/IBM
-;         !e::Send {LCtrl down}e{Ctrl up}  ; CB/IBM
-;         !f::Send {LCtrl down}f{Ctrl up}  ; CB/IBM
-;         !g::Send {LCtrl down}g{Ctrl up}  ; CB/IBM
-;         !h::Send {LCtrl down}h{Ctrl up}  ; CB/IBM
-;         !i::Send {LCtrl down}i{Ctrl up}  ; CB/IBM
-;         !j::Send {LCtrl down}j{Ctrl up}  ; CB/IBM
-;         !k::Send {LCtrl down}k{Ctrl up}  ; CB/IBM
-;         !l::Send {LCtrl down}l{Ctrl up}  ; CB/IBM
-;         !m::Send {LCtrl down}m{Ctrl up}  ; CB/IBM
-;         !n::Send {LCtrl down}n{Ctrl up}  ; CB/IBM
-;         !o::Send {LCtrl down}o{Ctrl up}  ; CB/IBM
-;         !p::Send {LCtrl down}p{Ctrl up}  ; CB/IBM
-;         !q::Send {LCtrl down}q{Ctrl up}  ; CB/IBM
-;         !r::Send {LCtrl down}r{Ctrl up}  ; CB/IBM
-;         !s::Send {LCtrl down}s{Ctrl up}  ; CB/IBM
-;         !t::Send {LCtrl down}t{Ctrl up}  ; CB/IBM
-;         !u::Send {LCtrl down}u{Ctrl up}  ; CB/IBM
-;         !v::Send {LCtrl down}v{Ctrl up}  ; CB/IBM
-;         !w::Send {LCtrl down}w{Ctrl up}  ; CB/IBM
-;         !x::Send {LCtrl down}x{Ctrl up}  ; CB/IBM
-;         !y::Send {LCtrl down}y{Ctrl up}  ; CB/IBM
-;         !z::Send {LCtrl down}z{Ctrl up}  ; CB/IBM
+;         ; !0::Send {LCtrl down}0{Ctrl up}  ; CB/IBM
+;         ; !1::Send {LCtrl down}1{Ctrl up}  ; CB/IBM
+;         ; !2::Send {LCtrl down}2{Ctrl up}  ; CB/IBM
+;         ; !3::Send {LCtrl down}3{Ctrl up}  ; CB/IBM
+;         ; !4::Send {LCtrl down}4{Ctrl up}  ; CB/IBM
+;         ; !5::Send {LCtrl down}5{Ctrl up}  ; CB/IBM
+;         ; !6::Send {LCtrl down}6{Ctrl up}  ; CB/IBM
+;         ; !7::Send {LCtrl down}7{Ctrl up}  ; CB/IBM
+;         ; !8::Send {LCtrl down}8{Ctrl up}  ; CB/IBM
+;         ; !9::Send {LCtrl down}9{Ctrl up}  ; CB/IBM
+;         ; !-::Send {LCtrl down}-{Ctrl up}  ; CB/IBM
+;         ; !=::Send {LCtrl down}={Ctrl up}  ; CB/IBM
+;         ; !`::Send {LCtrl down}`{Ctrl up}  ; CB/IBM
+;         ; !a::Send {LCtrl down}a{Ctrl up}  ; CB/IBM
+;         ; !b::Send {LCtrl down}b{Ctrl up}  ; CB/IBM
+;         ; !c::Send {LCtrl down}c{Ctrl up}  ; CB/IBM
+;         ; !d::Send {LCtrl down}d{Ctrl up}  ; CB/IBM
+;         ; !e::Send {LCtrl down}e{Ctrl up}  ; CB/IBM
+;         ; !f::Send {LCtrl down}f{Ctrl up}  ; CB/IBM
+;         ; !g::Send {LCtrl down}g{Ctrl up}  ; CB/IBM
+;         ; !h::Send {LCtrl down}h{Ctrl up}  ; CB/IBM
+;         ; !i::Send {LCtrl down}i{Ctrl up}  ; CB/IBM
+;         ; !j::Send {LCtrl down}j{Ctrl up}  ; CB/IBM
+;         ; !k::Send {LCtrl down}k{Ctrl up}  ; CB/IBM
+;         ; !l::Send {LCtrl down}l{Ctrl up}  ; CB/IBM
+;         ; !m::Send {LCtrl down}m{Ctrl up}  ; CB/IBM
+;         ; !n::Send {LCtrl down}n{Ctrl up}  ; CB/IBM
+;         ; !o::Send {LCtrl down}o{Ctrl up}  ; CB/IBM
+;         ; !p::Send {LCtrl down}p{Ctrl up}  ; CB/IBM
+;         ; !q::Send {LCtrl down}q{Ctrl up}  ; CB/IBM
+;         ; !r::Send {LCtrl down}r{Ctrl up}  ; CB/IBM
+;         ; !s::Send {LCtrl down}s{Ctrl up}  ; CB/IBM
+;         ; !t::Send {LCtrl down}t{Ctrl up}  ; CB/IBM
+;         ; !u::Send {LCtrl down}u{Ctrl up}  ; CB/IBM
+;         ; !v::Send {LCtrl down}v{Ctrl up}  ; CB/IBM
+;         ; !w::Send {LCtrl down}w{Ctrl up}  ; CB/IBM
+;         ; !x::Send {LCtrl down}x{Ctrl up}  ; CB/IBM
+;         ; !y::Send {LCtrl down}y{Ctrl up}  ; CB/IBM
+;         ; !z::Send {LCtrl down}z{Ctrl up}  ; CB/IBM
     #If
 #If
 
@@ -1219,7 +1219,7 @@ RunAndReleaseWinKey(commands*) {
     for index, command in commands {
         Run, %command%,, Hide
     }
-    Send, {LWin}
+	Send, {LWin Up}
 }
 
 ; Focus window
@@ -1235,10 +1235,10 @@ $!+k::RunAndReleaseWinKey("komorebic move up")
 $!+l::RunAndReleaseWinKey("komorebic move right")
 
 ; Resize window
-$!#h::RunAndReleaseWinKey("komorebic resize-axis horizontal decrease")
-$!#j::RunAndReleaseWinKey("komorebic resize-axis vertical decrease")
-$!#k::RunAndReleaseWinKey("komorebic resize-axis vertical increase")
-$!#l::RunAndReleaseWinKey("komorebic resize-axis horizontal increase")
+$!#h::RunAndReleaseWinKey("komorebic resize-edge left decrease")
+$!#j::RunAndReleaseWinKey("komorebic resize-edge down decrease")
+$!#k::RunAndReleaseWinKey("komorebic resize-edge up increase")
+$!#l::RunAndReleaseWinKey("komorebic resize-edge right increase")
 
 ; Switch to specific space
 $!1::Run, komorebic focus-workspace 0,, Hide
@@ -1332,13 +1332,13 @@ $!+o::Send, {U+00D8}
 $!+sc028::Send, {U+00C6}
 
 ; Open Terminal
-$!Enter:: Run, wt.exe,, Hide
+$!Enter:: Run, wt.exe
 
 ; Open Browser
-$!b::Run, "C:\Program Files\Mozilla Firefox\firefox.exe",, Hide
+$!b::Run, "C:\Program Files\Mozilla Firefox\firefox.exe"
 
 ; Open Explorer
-$!f::Run, explorer.exe,, Hide
+$!f::Run, explorer.exe
 
 ; Lock Screen
 $^#q::Run, tsdiscon,, Hide
