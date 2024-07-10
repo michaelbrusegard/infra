@@ -152,6 +152,20 @@ vim.api.nvim_create_autocmd({ "BufLeave", "FocusLost" }, {
 	command = [[if &modified && !&readonly && expand("%") != "" && &buftype == "" | silent! update | endif]],
 })
 
+-- Resize splits when resizing window
+vim.api.nvim_create_autocmd("VimResized", {
+	pattern = "*",
+	command = "wincmd =",
+})
+
+-- Disable line numbers in terminal
+vim.api.nvim_create_autocmd("TermOpen", {
+	callback = function()
+		vim.opt_local.number = false
+		vim.opt_local.relativenumber = false
+	end,
+})
+
 -- ********************************************************************************
 -- * Package manager                                                              *
 -- ********************************************************************************
@@ -185,7 +199,7 @@ local config = {
 local plugins = {}
 
 -- ********************************************************************************
--- * Appearance                                                                   *
+-- * Diagnostics                                                                  *
 -- ********************************************************************************
 
 -- Set diagnostic signs and colors
@@ -198,11 +212,18 @@ vim.diagnostic.config({
 			[vim.diagnostic.severity.HINT] = "",
 		},
 	},
+	float = {
+		source = true,
+	},
+	update_in_insert = false,
 	virtual_text = false,
-	virtual_lines = { only_current_line = true, highlight_whole_line = false },
-	underline = false,
+	underline = true,
 	severity_sort = true,
 })
+
+-- ********************************************************************************
+-- * Appearance                                                                   *
+-- ********************************************************************************
 
 -- Set colorscheme
 table.insert(plugins, {
@@ -274,6 +295,15 @@ table.insert(plugins, {
 				component_separators = { left = "", right = "" },
 				section_separators = { left = "", right = "" },
 			},
+			sections = {
+				lualine_x = {
+					{
+						require("noice").api.statusline.mode.get,
+						cond = require("noice").api.statusline.mode.has,
+						color = { fg = "#ff9e64" },
+					},
+				},
+			},
 		})
 	end,
 })
@@ -281,15 +311,19 @@ table.insert(plugins, {
 -- Add notifications
 table.insert(plugins, {
 	"j-hui/fidget.nvim",
-	config = function()
-		require("fidget").setup({
-			notification = {
-				window = {
-					winblend = 0,
-				},
+	tag = "v1.0.0",
+	opts = {
+		notification = {
+			window = {
+				winblend = 0,
 			},
-		})
-	end,
+		},
+		progress = {
+			display = {
+				done_ttl = 10,
+			},
+		},
+	},
 })
 
 -- Indent lines
@@ -309,12 +343,21 @@ table.insert(plugins, {
 		"MunifTanjim/nui.nvim",
 	},
 	config = function()
-		local total_rows = vim.api.nvim_eval('winheight("$")')
 		require("noice").setup({
+			routes = {
+				{
+					filter = {
+						event = "msg_show",
+						kind = "",
+						find = "written",
+					},
+					opts = { skip = true },
+				},
+			},
 			views = {
 				cmdline_popup = {
 					position = {
-						row = total_rows - 1,
+						row = vim.o.lines - 2,
 						col = "0%",
 					},
 					size = {
@@ -343,23 +386,6 @@ table.insert(plugins, {
 	end,
 })
 
--- Scrollbar
-table.insert(plugins, {
-	"lewis6991/satellite.nvim",
-	dependencies = { "lewis6991/gitsigns.nvim" },
-	config = function()
-		require("satellite").setup()
-	end,
-})
-
--- Lsp lines
-table.insert(plugins, {
-	"https://git.sr.ht/~whynothugo/lsp_lines.nvim",
-	config = function()
-		require("lsp_lines").setup()
-	end,
-})
-
 -- Colorizer
 table.insert(plugins, {
 	"echasnovski/mini.hipatterns",
@@ -378,7 +404,7 @@ table.insert(plugins, {
 	"mrjones2014/smart-splits.nvim",
 	config = function()
 		local smartsplits = require("smart-splits")
-		smartsplits:setup({ jump = true })
+		smartsplits.setup()
 		vim.keymap.set("n", "<Char-0xAA>", smartsplits.move_cursor_left)
 		vim.keymap.set("n", "<Char-0xAB>", smartsplits.move_cursor_down)
 		vim.keymap.set("n", "<Char-0xAC>", smartsplits.move_cursor_up)
@@ -403,6 +429,8 @@ table.insert(plugins, {
 	run = ":TSUpdate",
 	config = function()
 		require("nvim-treesitter.configs").setup({
+			modules = {},
+			ignore_install = {},
 			sync_install = false,
 			highlight = { enable = true },
 			indent = { enable = true },
@@ -419,6 +447,8 @@ table.insert(plugins, {
 			},
 			auto_install = true,
 			ensure_installed = {
+				"vim",
+				"regex",
 				"vimdoc",
 				"lua",
 				"bash",
@@ -428,6 +458,7 @@ table.insert(plugins, {
 				"typescript",
 				"json",
 				"markdown",
+				"markdown_inline",
 				"python",
 				"gitignore",
 				"angular",
@@ -449,6 +480,20 @@ table.insert(plugins, {
 -- ********************************************************************************
 -- * Language Servers                                                             *
 -- ********************************************************************************
+
+-- Development config
+table.insert(plugins, {
+	"folke/lazydev.nvim",
+	depdendencies = {
+		"justinsgithub/wezterm-types",
+	},
+	ft = "lua",
+	opts = {
+		library = {
+			{ path = "wezterm-types", mods = { "wezterm" } },
+		},
+	},
+})
 
 -- Lspconfig & Mason
 table.insert(plugins, {
@@ -527,29 +572,13 @@ table.insert(plugins, {
 				lua_ls = function()
 					require("lspconfig").lua_ls.setup({
 						capabilities = capabilities,
-						settings = {
-							Lua = {
-								runtime = {
-									version = "LuaJIT",
-								},
-								diagnostics = {
-									globals = { "vim" },
-								},
-								workspace = {
-									library = {
-										vim.env.VIMRUNTIME,
-										"${3rd}/luv/library",
-									},
-								},
-							},
-						},
 					})
 				end,
 			},
 			automatic_installation = true,
 			ensure_installed = {
 				"lua_ls",
-				"tsserver",
+				"vtsls",
 				"html",
 				"tailwindcss",
 				"pyright",
@@ -585,7 +614,7 @@ table.insert(plugins, {
 	config = function()
 		require("conform").setup({
 			format_on_save = {
-				timeout_ms = 500,
+				timeout_ms = 2000,
 				lsp_fallback = true,
 			},
 			formatters_by_ft = {
@@ -611,7 +640,7 @@ table.insert(plugins, {
 		})
 		vim.keymap.set({ "n", "v" }, "<leader>cf", function()
 			require("conform").format({
-				timeout_ms = 500,
+				timeout_ms = 2000,
 				lsp_fallback = true,
 			})
 		end, { desc = "Format file or range (in visual mode)" })
@@ -739,11 +768,12 @@ table.insert(plugins, {
 				entries = { name = "custom", selection_order = "near_cursor", follow_cursor = true },
 			},
 			sources = {
-				{ name = "copilot", max_item_count = 3 },
-				{ name = "nvim_lsp", max_item_count = 3 },
-				{ name = "luasnip", max_item_count = 3 },
-				{ name = "buffer", max_item_count = 3 },
-				{ name = "path", max_item_count = 3 },
+				{ name = "copilot", max_item_count = 3, group_index = 0 },
+				{ name = "lazydev", max_item_count = 3, group_index = 1 },
+				{ name = "nvim_lsp", max_item_count = 3, group_index = 1 },
+				{ name = "luasnip", max_item_count = 3, group_index = 2 },
+				{ name = "buffer", max_item_count = 3, group_index = 3 },
+				{ name = "path", max_item_count = 3, group_index = 3 },
 			},
 			mapping = cmp.mapping.preset.insert({
 				["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
@@ -765,6 +795,8 @@ table.insert(plugins, {
 				ghost_text = true,
 			},
 			formatting = {
+				expandable_indicator = true,
+				fields = { "kind", "abbr", "menu" },
 				format = lspkind.cmp_format({
 					mode = "symbol",
 					maxwidth = 50,
@@ -826,10 +858,10 @@ table.insert(plugins, {
 	config = function()
 		local harpoon = require("harpoon")
 		harpoon:setup()
-		vim.keymap.set("n", "<leader>h", function()
+		vim.keymap.set("n", "<leader>ha", function()
 			harpoon:list():add()
 		end, { desc = "Add file to Harpoon" })
-		vim.keymap.set("n", "<leader>d", function()
+		vim.keymap.set("n", "<leader>hh", function()
 			harpoon.ui:toggle_quick_menu(harpoon:list())
 		end, { desc = "Toggle Harpoon quick menu" })
 		vim.keymap.set("n", "<C-h>", function()
@@ -1008,35 +1040,6 @@ table.insert(plugins, {
 			},
 		})
 	end,
-})
-
--- Add precognition which assits discovering motions
-table.insert(plugins, {
-	"tris203/precognition.nvim",
-	event = "VeryLazy",
-	config = {
-		startVisible = true,
-		showBlankVirtLine = true,
-		highlightColor = { link = "Comment" },
-		hints = {
-			Caret = { text = "^", prio = 2 },
-			Dollar = { text = "$", prio = 1 },
-			MatchingPair = { text = "%", prio = 5 },
-			Zero = { text = "0", prio = 1 },
-			w = { text = "w", prio = 10 },
-			b = { text = "b", prio = 9 },
-			e = { text = "e", prio = 8 },
-			W = { text = "W", prio = 7 },
-			B = { text = "B", prio = 6 },
-			E = { text = "E", prio = 5 },
-		},
-		gutterHints = {
-			G = { text = "G", prio = 10 },
-			gg = { text = "gg", prio = 9 },
-			PrevParagraph = { text = "{", prio = 8 },
-			NextParagraph = { text = "}", prio = 8 },
-		},
-	},
 })
 
 -- Vim Be Good game
