@@ -380,16 +380,16 @@ GroupAdd, intellij, ahk_exe idea64.exe
 ;     ; $LWin up::Send {LWin up}{LAlt up}{LCtrl up} ; MacModifiers
 ;     ; $LAlt up::Send {LWin up}{CapsLock up}{LAlt up}{LCtrl up} ; CB/IBM
 
-    !Enter:: 
-    {
-        if (GetKeyState("RAlt", "P")) {
-            Send {Insert}
-        }
-        else{
-            Send {Alt down}{Enter}{Alt up}
-        }
-        Return 
-    }
+    ; !Enter:: 
+    ; {
+    ;     if (GetKeyState("RAlt", "P")) {
+    ;         Send {Insert}
+    ;     }
+    ;     else{
+    ;         Send {Alt down}{Enter}{Alt up}
+    ;     }
+    ;     Return 
+    ; }
 
     ; Remap Alt+Esc to Break/Pause
     !Esc::SendInput, {Pause}
@@ -1221,7 +1221,7 @@ RunAndReleaseWinKey(commands*) {
     for index, command in commands {
         Run, %command%,, Hide
     }
-	Send, {LWin Up}
+	Send, {LWin up}
 }
 
 ; Focus window
