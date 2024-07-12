@@ -414,6 +414,7 @@ GroupAdd, intellij, ahk_exe idea64.exe
     return
 
     ; hide all instances of active Program
+	#If Not WinActive("ahk_group terminals")
     ^h::
     WinGetClass, class, A
     WinGet, AllWindows, List
@@ -437,6 +438,7 @@ GroupAdd, intellij, ahk_exe idea64.exe
         }
     }
     return
+	#If
 
     ; Show Desktop
     ^F3::Send #d
@@ -513,7 +515,7 @@ GroupAdd, intellij, ahk_exe idea64.exe
     #If
 
     ; Cmd+Space Alternative
-    $^Space::Send ^{Esc}
+    $^Space::Send !{Space}
 
     #IfWinActive ahk_group intellij
         $#c::Send ^{c}                  ; Default - Sigints interrupt
