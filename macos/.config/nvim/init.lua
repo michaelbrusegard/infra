@@ -87,10 +87,10 @@ vim.opt.pumheight = 7
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 
 -- Copy to clipboard using global binding
-vim.keymap.set({ "n", "v" }, "<Char-0xCA>", '"+y')
+vim.keymap.set({ "n", "x" }, "<Char-0xCA>", '"+y')
 
 -- Paste from clipboard using global binding
-vim.keymap.set({ "n", "v" }, "<Char-0xCB>", '"+p')
+vim.keymap.set({ "n", "x" }, "<Char-0xCB>", '"+p')
 vim.keymap.set("i", "<Char-0xCB>", function()
 	return vim.api.nvim_replace_termcodes('<Esc>"+pi', true, true, true)
 end, { expr = true })
@@ -100,14 +100,14 @@ vim.keymap.set("c", "<Char-0xCB>", "<C-R>+")
 vim.keymap.set("x", "<leader>p", '"_dP', { desc = "Paste without overriding clipboard" })
 
 -- Preserve clipboard when deleting with leader
-vim.keymap.set({ "n", "v" }, "<leader>d", '"_d', { desc = "Delete without overriding clipboard" })
+vim.keymap.set({ "n", "x" }, "<leader>d", '"_d', { desc = "Delete without overriding clipboard" })
 
 -- Open diagnostics window
 vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Open diagnostics window" })
 
 -- Keep selection when indenting
-vim.keymap.set("v", ">", ">gv")
-vim.keymap.set("v", "<", "<gv")
+vim.keymap.set("x", ">", ">gv")
+vim.keymap.set("x", "<", "<gv")
 
 -- Open mason
 vim.api.nvim_set_keymap("n", "<leader>m", "<cmd>Mason<cr>", { desc = "Open Mason" })
@@ -123,6 +123,20 @@ vim.api.nvim_set_keymap("n", "<leader>q", "<cmd>q<cr>", { desc = "Quit file" })
 
 -- Save and quit file
 vim.api.nvim_set_keymap("n", "<leader>x", "<cmd>x<cr>", { desc = "Save and quit file" })
+
+-- Function to escape special characters for search
+local function escape_term(term)
+	return vim.fn.escape(term, "/\\")
+end
+
+-- Map / to search for selected text in visual mode
+vim.api.nvim_set_keymap("x", "/", 'y/\\V<C-R>=v:lua.escape_term(@")<CR><CR>', {})
+
+-- Map ? to search backward for selected text in visual mode
+vim.api.nvim_set_keymap("x", "?", 'y?\\V<C-R>=v:lua.escape_term(@")<CR><CR>', {})
+
+-- Make the escape_term function available in the global scope
+_G.escape_term = escape_term
 
 -- ********************************************************************************
 -- * Autocommands                                                                 *
@@ -502,6 +516,7 @@ table.insert(plugins, {
 		"williamboman/mason.nvim",
 		"williamboman/mason-lspconfig.nvim",
 		"hrsh7th/cmp-nvim-lsp",
+		"ibhagwan/fzf-lua",
 	},
 	config = function()
 		vim.api.nvim_create_autocmd("LspAttach", {
@@ -528,7 +543,7 @@ table.insert(plugins, {
 				vim.keymap.set(
 					"n",
 					"gr",
-					vim.lsp.buf.references,
+					"<cmd>lua require('fzf-lua').lsp_references()<cr>",
 					vim.tbl_extend("force", opts, { desc = "Find references" })
 				)
 				vim.keymap.set(
@@ -540,7 +555,7 @@ table.insert(plugins, {
 				vim.keymap.set(
 					"n",
 					"<leader>ca",
-					vim.lsp.buf.code_action,
+					"<cmd>lua require('fzf-lua').lsp_code_actions()<cr>",
 					vim.tbl_extend("force", opts, { desc = "Code action" })
 				)
 				vim.keymap.set(
@@ -638,7 +653,7 @@ table.insert(plugins, {
 				zsh = { "shfmt" },
 			},
 		})
-		vim.keymap.set({ "n", "v" }, "<leader>cf", function()
+		vim.keymap.set({ "n", "x" }, "<leader>cf", function()
 			require("conform").format({
 				timeout_ms = 2000,
 				lsp_fallback = true,
@@ -690,7 +705,7 @@ table.insert(plugins, {
 				lint.try_lint()
 			end,
 		})
-		vim.keymap.set({ "n", "v" }, "<leader>cl", lint.try_lint, { desc = "Lint file" })
+		vim.keymap.set({ "n", "x" }, "<leader>cl", lint.try_lint, { desc = "Lint file" })
 		require("mason-nvim-lint").setup({
 			automatic_installation = false,
 			ensure_installed = {
@@ -967,7 +982,7 @@ table.insert(plugins, {
 				},
 			},
 		})
-		vim.keymap.set({ "n", "v" }, "<leader>aa", copilotchat.toggle, { desc = "AI Toggle" })
+		vim.keymap.set({ "n", "x" }, "<leader>aa", copilotchat.toggle, { desc = "AI Toggle" })
 		vim.api.nvim_create_autocmd("BufEnter", {
 			pattern = "copilot-*",
 			callback = function()
