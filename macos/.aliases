@@ -21,6 +21,8 @@ alias -- -="cd -"
 # Utilities
 alias afk='open -a ScreenSaverEngine'
 alias neofetch='fastfetch'
+alias lzg='lazygit'
+alias lzd='lazydocker'
 alias brewfile='cd ~/dotfiles/macos/resources && brew bundle dump --force'
 function trash {
   local trash_dir="$HOME/.Trash"
@@ -34,8 +36,8 @@ function trash {
   done
 }
 function ssh {
-    wezterm cli spawn --domain-name SSH:"$@"
+  wezterm cli spawn --domain-name SSH:"$@"
 }
 function sshmux {
-    wezterm cli spawn --domain-name SSHMUX:"$@"
+  wezterm cli spawn --domain-name SSHMUX:"$@"
 }

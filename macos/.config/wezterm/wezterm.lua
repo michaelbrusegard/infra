@@ -77,6 +77,12 @@ config.window_padding = {
 	bottom = 0,
 }
 
+-- Disable dimming of inactive panes
+config.inactive_pane_hsb = {
+	saturation = 1.0,
+	brightness = 0.9,
+}
+
 -- Underline
 config.underline_position = "200%"
 config.underline_thickness = "300%"
@@ -182,86 +188,107 @@ wezterm.on("update-status", function(window, pane)
 end)
 
 -- ********************************************************************************
--- * Smart Splits                                                                 *
+-- * Keybinds                                                                     *
 -- ********************************************************************************
 
--- Check if the pane contains vim
-local function is_vim(pane)
+-- Check if the pane contains nvim
+local function is_nvim(pane)
 	return pane:get_user_vars().IS_NVIM == "true"
 end
 
--- Keymaps for vim when using super key
-local vim_super_keymaps = {
-	["SUPER_h"] = utf8.char(0xAA),
-	["SUPER_j"] = utf8.char(0xAB),
-	["SUPER_k"] = utf8.char(0xAC),
-	["SUPER_l"] = utf8.char(0xAD),
-	["SUPER|CTRL_h"] = utf8.char(0xBA),
-	["SUPER|CTRL_j"] = utf8.char(0xBB),
-	["SUPER|CTRL_k"] = utf8.char(0xBC),
-	["SUPER|CTRL_l"] = utf8.char(0xBD),
-	["SUPER_c"] = utf8.char(0xCA),
-	["SUPER_v"] = utf8.char(0xCB),
-}
-
-local direction_keys = {
-	h = "Left",
-	j = "Down",
-	k = "Up",
-	l = "Right",
-}
-
--- Translate keybinds to be sent to vim if needed
-local function vim_super_keymap_translation(key, mods)
-	return {
-		key = key,
-		mods = mods,
-		action = wezterm.action_callback(function(window, pane)
-			if is_vim(pane) then
-				local char = vim_super_keymaps[mods .. "_" .. key]
-				if char then
-					window:perform_action({
-						SendKey = { key = char, mods = nil },
-					}, pane)
-				end
-			else
-				if key == "c" then
-					window:perform_action(wezterm.action.CopyTo("Clipboard"), pane)
-				elseif key == "v" then
-					window:perform_action(wezterm.action.PasteFrom("Clipboard"), pane)
-				else
-					if mods == "SUPER|CTRL" then
-						window:perform_action({ AdjustPaneSize = { direction_keys[key], 3 } }, pane)
-					else
-						window:perform_action({ ActivatePaneDirection = direction_keys[key] }, pane)
-					end
-				end
-			end
-		end),
-	}
+-- Send key to nvim if it is running
+local function nvim_action(action, nvim_key)
+	return wezterm.action_callback(function(window, pane)
+		if is_nvim(pane) then
+			window:perform_action({
+				SendKey = { key = nvim_key, mods = nil },
+			}, pane)
+		else
+			window:perform_action(action, pane)
+		end
+	end)
 end
-
--- ********************************************************************************
--- * Keybinds                                                                     *
--- ********************************************************************************
 
 -- Disable default bindings
 config.disable_default_key_bindings = true
 
 config.keys = {
-	-- Global keys
-	vim_super_keymap_translation("c", "SUPER"),
-	vim_super_keymap_translation("v", "SUPER"),
+	-- Global actions
+	{ key = "c", mods = "SUPER", action = nvim_action(wezterm.action.CopyTo("Clipboard"), utf8.char(0xca)) },
+	{ key = "v", mods = "SUPER", action = nvim_action(wezterm.action.PasteFrom("Clipboard"), utf8.char(0xcb)) },
+	{ key = "x", mods = "SUPER", action = nvim_action(wezterm.action_callback(function() end), utf8.char(0xcc)) },
+	{ key = "s", mods = "SUPER", action = nvim_action(wezterm.action_callback(function() end), utf8.char(0xcd)) },
 
-	-- Smart splits
-	vim_super_keymap_translation("h", "SUPER"),
-	vim_super_keymap_translation("j", "SUPER"),
-	vim_super_keymap_translation("k", "SUPER"),
-	vim_super_keymap_translation("l", "SUPER"),
-	vim_super_keymap_translation("h", "SUPER|CTRL"),
-	vim_super_keymap_translation("j", "SUPER|CTRL"),
-	vim_super_keymap_translation("k", "SUPER|CTRL"),
-	vim_super_keymap_translation("l", "SUPER|CTRL"),
+	-- Pane actions
+	{
+		key = "w",
+		mods = "SUPER",
+		action = nvim_action(wezterm.action.CloseCurrentPane({ confirm = true }), utf8.char(0xda)),
+	},
+	{
+		key = "w",
+		mods = "SHIFT|SUPER",
+		action = nvim_action(wezterm.action.CloseCurrentTab({ confirm = true }), utf8.char(0xdb)),
+	},
+	{
+		key = "-",
+		mods = "SUPER",
+		action = nvim_action(wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }), utf8.char(0xdc)),
+	},
+	{
+		key = "=",
+		mods = "SUPER",
+		action = nvim_action(wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }), utf8.char(0xdd)),
+	},
+
+	-- Pane navigation
+	{
+		key = "h",
+		mods = "SUPER",
+		action = nvim_action(wezterm.action.ActivatePaneDirection("Left"), utf8.char(0xe0)),
+	},
+	{
+		key = "j",
+		mods = "SUPER",
+		action = nvim_action(wezterm.action.ActivatePaneDirection("Down"), utf8.char(0xe1)),
+	},
+	{
+		key = "k",
+		mods = "SUPER",
+		action = nvim_action(wezterm.action.ActivatePaneDirection("Up"), utf8.char(0xe2)),
+	},
+	{
+		key = "l",
+		mods = "SUPER",
+		action = nvim_action(wezterm.action.ActivatePaneDirection("Right"), utf8.char(0xe3)),
+	},
+	{
+		key = "h",
+		mods = "CTRL|SUPER",
+		action = nvim_action(wezterm.action.AdjustPaneSize({ "Left", 3 }), utf8.char(0xe4)),
+	},
+	{
+		key = "j",
+		mods = "CTRL|SUPER",
+		action = nvim_action(wezterm.action.AdjustPaneSize({ "Down", 3 }), utf8.char(0xe5)),
+	},
+	{
+		key = "k",
+		mods = "CTRL|SUPER",
+		action = nvim_action(wezterm.action.AdjustPaneSize({ "Up", 3 }), utf8.char(0xe6)),
+	},
+	{
+		key = "l",
+		mods = "CTRL|SUPER",
+		action = nvim_action(wezterm.action.AdjustPaneSize({ "Right", 3 }), utf8.char(0xe7)),
+	},
+
+	-- Application actions
+	{ key = "m", mods = "SUPER", action = wezterm.action.Hide },
+	{ key = "q", mods = "SUPER", action = wezterm.action.QuitApplication },
+	{ key = "n", mods = "SUPER", action = wezterm.action.SpawnWindow },
+	{ key = "t", mods = "SUPER", action = wezterm.action.SpawnTab("CurrentPaneDomain") },
+	{ key = "w", mods = "SHIFT|SUPER", action = wezterm.action.CloseCurrentTab({ confirm = true }) },
 
 	-- Navigation between tabs
 	{ key = "Tab", mods = "CTRL", action = wezterm.action.ActivateTabRelative(1) },
@@ -282,24 +309,11 @@ config.keys = {
 	{ key = "8", mods = "SUPER", action = wezterm.action.ActivateTab(7) },
 	{ key = "9", mods = "SUPER", action = wezterm.action.ActivateTab(-1) },
 
-	-- Swaping and splitting into new panes
-	{ key = "0", mods = "SUPER", action = wezterm.action.PaneSelect({ mode = "SwapWithActive" }) },
-	{ key = "-", mods = "SUPER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
-	{ key = "=", mods = "SUPER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
-
 	-- Basic actions
 	{ key = "f", mods = "SUPER", action = wezterm.action.Search("CurrentSelectionOrEmptyString") },
 	{ key = "Enter", mods = "SUPER", action = wezterm.action.ActivateCopyMode },
 	{ key = "z", mods = "SUPER", action = wezterm.action.TogglePaneZoomState },
 	{ key = "r", mods = "SUPER", action = wezterm.action.ReloadConfiguration },
-
-	-- Application actions
-	{ key = "m", mods = "SUPER", action = wezterm.action.Hide },
-	{ key = "q", mods = "SUPER", action = wezterm.action.QuitApplication },
-	{ key = "n", mods = "SUPER", action = wezterm.action.SpawnWindow },
-	{ key = "t", mods = "SUPER", action = wezterm.action.SpawnTab("CurrentPaneDomain") },
-	{ key = "w", mods = "SHIFT|SUPER", action = wezterm.action.CloseCurrentTab({ confirm = true }) },
-	{ key = "w", mods = "SUPER", action = wezterm.action.CloseCurrentPane({ confirm = false }) },
 }
 
 config.key_tables = {

@@ -5,3 +5,5 @@ macos/.config/karabiner/**
 !macos/.config/karabiner/karabiner.json
 macos/.docker/**
 !macos/.docker/config.json
+macos/.config/lazygit/**
+!macos/.config/lazygit/config.yml
