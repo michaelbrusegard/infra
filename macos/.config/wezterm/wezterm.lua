@@ -84,8 +84,8 @@ config.inactive_pane_hsb = {
 }
 
 -- Underline
-config.underline_position = "200%"
-config.underline_thickness = "300%"
+config.underline_position = "250%"
+config.underline_thickness = "250%"
 
 -- ********************************************************************************
 -- * Tab bar                                                                      *

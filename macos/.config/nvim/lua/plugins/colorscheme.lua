@@ -1,0 +1,49 @@
+return {
+	{
+		"catppuccin/nvim",
+		name = "catppuccin",
+		priority = 1000,
+		opts = {
+			flavor = "mocha",
+			default_integrations = false,
+			term_colors = true,
+			integrations = {
+				treesitter = true,
+				treesitter_context = true,
+				harpoon = true,
+				mini = true,
+				cmp = true,
+				which_key = true,
+				gitsigns = true,
+				indent_blankline = {
+					enabled = true,
+				},
+				mason = true,
+				neotest = true,
+				lsp_trouble = true,
+				native_lsp = {
+					enabled = true,
+					virtual_text = {
+						errors = { "italic" },
+						hints = { "italic" },
+						warnings = { "italic" },
+						information = { "italic" },
+					},
+					underlines = {
+						errors = { "undercurl" },
+						hints = { "undercurl" },
+						warnings = { "undercurl" },
+						information = { "undercurl" },
+					},
+					inlay_hints = {
+						background = true,
+					},
+				},
+			},
+		},
+		config = function(_, opts)
+			require("catppuccin").setup(opts)
+			vim.cmd.colorscheme("catppuccin-mocha")
+		end,
+	},
+}

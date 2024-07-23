@@ -34,31 +34,41 @@ vim.api.nvim_create_autocmd("InsertLeave", {
 	callback = function()
 		local is_file = vim.bo.buftype == ""
 		if is_file then
-			vim.opt.relativenumber = true
+		vim.opt.relativenumber = true
 		end
 	end,
 })
 
--- Disable line numbers when in terminal mode
+-- Disable line numbers when in terminal mode and start in insert mode
 vim.api.nvim_create_autocmd("TermOpen", {
 	group = vim.api.nvim_create_augroup("terminal", { clear = true }),
 	callback = function()
 		vim.opt.number = false
 		vim.opt.relativenumber = false
+    vim.cmd("startinsert")
 	end,
+})
+
+-- Disable line numbers for oil.nvim
+vim.api.nvim_create_autocmd("BufEnter", {
+  group = vim.api.nvim_create_augroup("oil", { clear = true }),
+  callback = function(event)
+    if vim.bo[event.buf].filetype == "oil" then
+      vim.api.nvim_buf_set_option(event.buf, 'number', false)
+      vim.api.nvim_buf_set_option(event.buf, 'relativenumber', false)
+    end
+  end,
 })
 
 -- Prevent automatic comments on new lines
 vim.api.nvim_create_autocmd("BufEnter", {
 	group = vim.api.nvim_create_augroup("no_auto_comment", { clear = true }),
-	pattern = "",
 	command = "set fo-=c fo-=r fo-=o",
 })
 
 -- Remove trailing whitespace on save
 vim.api.nvim_create_autocmd("BufWritePre", {
 	group = vim.api.nvim_create_augroup("remove_trailing_whitespace", { clear = true }),
-	pattern = "*",
 	command = ":%s/\\s\\+$//e",
 })
 
@@ -71,7 +81,6 @@ vim.api.nvim_create_autocmd({ "BufLeave", "FocusLost" }, {
 -- Resize splits when resizing window
 vim.api.nvim_create_autocmd("VimResized", {
 	group = vim.api.nvim_create_augroup("resize_splits", { clear = true }),
-	pattern = "*",
 	command = "wincmd =",
 })
 
@@ -196,4 +205,15 @@ vim.filetype.add({
 			end,
 		},
 	},
+})
+
+-- Disable syntax highlighting for big files
+vim.api.nvim_create_autocmd({ "FileType" }, {
+	group = vim.api.nvim_create_augroup("bigfile", { clear = true }),
+	pattern = "bigfile",
+	callback = function(event)
+		vim.schedule(function()
+			vim.bo[event.buf].syntax = vim.filetype.match({ buf = event.buf }) or ""
+		end)
+	end,
 })

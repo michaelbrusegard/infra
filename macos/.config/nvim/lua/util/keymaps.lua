@@ -97,19 +97,18 @@ function M.open_git(args)
 	})
 	vim.keymap.set("t", "<esc>", "<esc>", { buffer = buf, nowait = true })
 	local command = table.concat({ "lazygit", args }, " ")
-	vim.fn.termopen(command, {
+  vim.bo[buf].filetype = "git"
+	return vim.fn.termopen(command, {
 		on_exit = function()
 			vim.api.nvim_win_close(win, true)
 		end,
 	})
-	vim.bo.filetype = "git"
-	vim.cmd("startinsert")
 end
 
 function M.open_git_file_commits()
 	local file = vim.api.nvim_buf_get_name(0)
-	local args = { "lazygit", "-f", vim.trim(file) }
-	M.open_git(args)
+	local args = table.concat({ "-f", vim.trim(file) }, " ")
+	return M.open_git(args)
 end
 
 -- Get git command for line blaming
@@ -131,7 +130,7 @@ function M.open_git_blame()
 		end
 	end
 	local command = { "git", "-C", root(), "log", "-u", "-L", line .. ",+1:" .. file }
-	require("lazy.util").float_cmd(command, {
+	return require("lazy.util").float_cmd(command, {
 		filetype = "git",
 		size = {
 			width = 0.85,
