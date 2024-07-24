@@ -4,7 +4,7 @@ return {
 		"folke/which-key.nvim",
 		opts = {
 			spec = {
-				{ "<BS>", desc = "Decrement Selection", mode = "x" },
+				{ "<bs>", desc = "Decrement Selection", mode = "x" },
 				{ "<c-space>", desc = "Increment Selection", mode = { "x", "n" } },
 			},
 		},
@@ -58,8 +58,8 @@ return {
 			incremental_selection = {
 				enable = true,
 				keymaps = {
-					init_selection = "<C-space>",
-					node_incremental = "<C-space>",
+					init_selection = "<c-space>",
+					node_incremental = "<c-space>",
 					scope_incremental = false,
 					node_decremental = "<bs>",
 				},

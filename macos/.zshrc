@@ -66,7 +66,7 @@ zstyle ":completion:*" menu no
 zstyle ":fzf-tab:complete:cd:*" fzf-preview "eza -a --tree --color=always $realpath | head -n 200"
 zstyle ":fzf-tab:complete:(unset|export):*" fzf-preview "eval echo $realpath"
 zstyle ":fzf-tab:complete:ssh:*" fzf-preview "dig $realpath"
-zstyle ":fzf-tab:complete:*" fzf-preview "if [[ -d $realpath ]]; then eza -a --tree --color=always $realpath | head -n 200; else bat --style=plain --color=always --line-range=:500 $realpath; fi"
+zstyle ":fzf-tab:complete:*" fzf-preview 'if [ -d $realpath ]; then eza --tree --color=always $realpath | head -200; elif file --mime-type $realpath | grep -q "image/"; then chafa -f iterm -s ${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES} $realpath; else bat -n --color=always --line-range :500 $realpath; fi'
 
 # Aliases
 source ~/.aliases
@@ -87,7 +87,7 @@ export FZF_DEFAULT_OPTS=" \
 --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
 --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
 --color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8"
-export FZF_CTRL_T_OPTS="--preview 'if [ -d {} ]; then eza --tree --color=always {} | head -200; else bat -n --color=always --line-range :500 {}; fi'"
+export FZF_CTRL_T_OPTS="--preview \"if [ -d {} ]; then eza --tree --color=always {} | head -200; elif file --mime-type {} | grep -q 'image/'; then chafa -f iterm -s \${FZF_PREVIEW_COLUMNS}x\${FZF_PREVIEW_LINES} {}; else bat -n --color=always --line-range :500 {}; fi\""
 export FZF_DEFAULT_COMMAND="fd --hidden --strip-cwd-prefix --exclude .git"
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND=""

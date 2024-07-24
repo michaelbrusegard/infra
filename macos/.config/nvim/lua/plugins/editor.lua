@@ -85,14 +85,14 @@ return {
 				function()
 					require("which-key").show({ global = false })
 				end,
-				desc = "Buffer Keymaps (which-key)",
+				desc = "Buffer Keymaps",
 			},
 			{
 				"<c-w><space>",
 				function()
 					require("which-key").show({ keys = "<c-w>", loop = true })
 				end,
-				desc = "Window Hydra Mode (which-key)",
+				desc = "Window Hydra Mode",
 			},
 		},
 		config = function(_, opts)
@@ -209,7 +209,7 @@ return {
 	-- in your project and loads them into a browsable list.
 	{
 		"folke/todo-comments.nvim",
-		cmd = { "TodoTrouble", "TodoTelescope" },
+		cmd = { "TodoTrouble" },
 		event = "LazyFile",
 		opts = {},
     -- stylua: ignore
@@ -218,8 +218,6 @@ return {
       { "[t", function() require("todo-comments").jump_prev() end, desc = "Previous Todo Comment" },
       { "<leader>xt", "<cmd>Trouble todo toggle<cr>", desc = "Todo" },
       { "<leader>xT", "<cmd>Trouble todo toggle filter = {tag = {TODO,FIX,FIXME}}<cr>", desc = "Filter Todo/Fix/Fixme" },
-      { "<leader>st", "<cmd>TodoTelescope<cr>", desc = "Todo" },
-      { "<leader>sT", "<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>", desc = "Filter Todo/Fix/Fixme" },
     },
 	},
   -- Remove search highlights when moving
@@ -228,4 +226,15 @@ return {
 		event = "BufRead",
 		opts = {},
 	},
+  -- Set shiftwidth based on what is used in project
+  {
+    'nmac427/guess-indent.nvim',
+    event = 'LazyFile',
+    opts = {
+      filetype_exclude = {
+        "oil",
+        "copilot-chat",
+      },
+    },
+  },
 }
