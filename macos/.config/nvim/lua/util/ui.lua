@@ -7,7 +7,7 @@ function M.pretty_path(opts)
 		directory_hl = "",
 		filename_hl = "Bold",
 		modified_sign = "",
-		readonly_icon = " 󰌾 ",
+		readonly_icon = "󰌾 ",
 		length = 3,
 	}, opts or {})
 
@@ -18,8 +18,8 @@ function M.pretty_path(opts)
 			return ""
 		end
 
-		local root = vim.uv.fs_realpath("/")
-		local cwd = vim.uv.fs_realpath(vim.uv.cwd())
+    local cwd = require("util.root").cwd()
+    local root = require("util.root").get({ normalize = true })
 
 		if opts.relative == "cwd" and path:find(cwd, 1, true) == 1 then
 			path = path:sub(#cwd + 2)
@@ -64,12 +64,12 @@ function M.root_dir(opts)
 		parent = true,
 		other = true,
 		icon = "󱉭 ",
-		color = vim.api.nvim_get_hl(0, { name = "Special", link = false }).fg,
+		color = { fg = string.format("#%06x", vim.api.nvim_get_hl(0, { name = "Special", link = false }).fg) } ,
 	}, opts or {})
 
 	local function get()
-		local cwd = vim.uv.fs_realpath(vim.uv.cwd())
-		local root = vim.uv.fs_realpath("/")
+    local cwd = require("util.root").cwd()
+    local root = require("util.root").get({ normalize = true })
 		local name = vim.fs.basename(root)
 
 		if root == cwd then

@@ -119,17 +119,8 @@ function M.open_git_blame()
 	vim.g.float_open = true
 	local line = vim.api.nvim_win_get_cursor(0)[1]
 	local file = vim.api.nvim_buf_get_name(0)
-	local function root()
-		local handle = io.popen("git rev-parse --show-toplevel 2>/dev/null")
-		if handle == nil then
-			return "."
-		else
-			local result = handle:read("*a"):gsub("%s+$", "")
-			handle:close()
-			return result
-		end
-	end
-	local command = { "git", "-C", root(), "log", "-u", "-L", line .. ",+1:" .. file }
+	local root = require("util.root").detectors.pattern(0, { ".git" })[1] or "."
+	local command = { "git", "-C", root, "log", "-u", "-L", line .. ",+1:" .. file }
 	return require("lazy.util").float_cmd(command, {
 		filetype = "git",
 		size = {

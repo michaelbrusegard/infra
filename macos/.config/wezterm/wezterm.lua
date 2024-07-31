@@ -283,11 +283,20 @@ config.keys = {
 		action = nvim_action(wezterm.action.AdjustPaneSize({ "Right", 3 }), utf8.char(0xe7)),
 	},
 
+	-- Norwegian special characters
+  { key = "'", mods = 'ALT', action = wezterm.action.SendString("æ") },
+  { key = "o", mods = 'ALT', action = wezterm.action.SendString("ø") },
+  { key = "a", mods = 'ALT', action = wezterm.action.SendString("å") },
+  { key = '"', mods = 'SHIFT|ALT', action = wezterm.action.SendString("Æ") },
+  { key = "o", mods = 'SHIFT|ALT', action = wezterm.action.SendString("Ø") },
+  { key = "a", mods = 'SHIFT|ALT', action = wezterm.action.SendString("Å") },
+
 	-- Application actions
 	{ key = "m", mods = "SUPER", action = wezterm.action.Hide },
 	{ key = "q", mods = "SUPER", action = wezterm.action.QuitApplication },
 	{ key = "n", mods = "SUPER", action = wezterm.action.SpawnWindow },
 	{ key = "t", mods = "SUPER", action = wezterm.action.SpawnTab("CurrentPaneDomain") },
+	{ key = "t", mods = "SHIFT|SUPER", action = wezterm.action.SpawnCommandInNewTab{ domain = 'CurrentPaneDomain', args = { "/opt/homebrew/bin/nvim" } } },
 	{ key = "w", mods = "SHIFT|SUPER", action = wezterm.action.CloseCurrentTab({ confirm = true }) },
 
 	-- Navigation between tabs

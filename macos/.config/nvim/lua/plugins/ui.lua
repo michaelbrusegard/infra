@@ -6,7 +6,7 @@ return {
 		init = function()
 			vim.g.lualine_laststatus = vim.o.laststatus
 			if vim.fn.argc(-1) > 0 then
-				-- set an empty statusline till lualine loads
+				-- Set an empty statusline till lualine loads
 				vim.o.statusline = " "
 			else
 				-- hide the statusline on the starter page
@@ -29,20 +29,15 @@ return {
 				},
 				sections = {
 					lualine_a = { "mode" },
-					lualine_b = { "branch" },
+					lualine_b = { "branch", "diff", {
+						"diagnostics",
+						symbols = {error = ' ', warn = ' ', info = ' ', hint = ' '},
+					  }
+					},
 					lualine_c = {
-						-- require("util.ui").root_dir(),
-						{
-							"diagnostics",
-							symbols = {
-								error = "",
-								warn = "",
-								info = "",
-								hint = "",
-							},
-						},
+						require("util.ui").root_dir(),
 						{ "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } },
-						-- { require("util.ui").pretty_path() },
+						{ require("util.ui").pretty_path() },
 					},
 				},
 				extensions = { "lazy", "mason", "oil", "trouble", "nvim-dap-ui" },
@@ -119,15 +114,10 @@ return {
 				lsp_doc_border = false,
 			},
 		},
-    -- stylua: ignore
     keys = {
-      { "<leader>sn", "", desc = "+noice"},
-      { "<s-enter>", function() require("noice").redirect(vim.fn.getcmdline()) end, mode = "c", desc = "Redirect Cmdline" },
-      { "<leader>snl", function() require("noice").cmd("last") end, desc = "Noice Last Message" },
-      { "<leader>snh", function() require("noice").cmd("history") end, desc = "Noice History" },
-      { "<leader>sna", function() require("noice").cmd("all") end, desc = "Noice All" },
-      { "<leader>snd", function() require("noice").cmd("dismiss") end, desc = "Dismiss All" },
-      { "<leader>snt", function() require("noice").cmd("pick") end, desc = "Noice Picker" },
+      { "<s-enter>", "<cmd>lua require('noice').redirect(vim.fn.getcmdline())<cr>", mode = "c", desc = "Redirect Cmdline" },
+      { "<leader>lp", "<cmd>lua require('noice').cmd('last')<cr>", desc = "Log Prev Message" },
+      { "<leader>lh", "<cmd>lua require('noice').cmd('history')<cr>", desc = "Log History" },
       { "<c-f>", function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end, silent = true, expr = true, desc = "Scroll Forward", mode = {"i", "n", "s"} },
       { "<c-b>", function() if not require("noice.lsp").scroll(-4) then return "<c-b>" end end, silent = true, expr = true, desc = "Scroll Backward", mode = {"i", "n", "s"}},
     },
@@ -140,12 +130,6 @@ return {
 			end
 			require("noice").setup(opts)
 		end,
-	},
-	-- Icons
-	{
-		"nvim-tree/nvim-web-devicons",
-		lazy = true,
-		opts = {},
 	},
 	-- Ui components
 	{ "MunifTanjim/nui.nvim", lazy = true },

@@ -8,7 +8,7 @@ gui:
 
   # Fraction of the total screen width to use for the left side section. You may want to pick a small number (e.g. 0.2) if you're using a narrow screen, so that you can see more of the main section.
   # Number from 0 to 1.0.
-  sidePanelWidth: 0.3
+  sidePanelWidth: 0.25
 
   # If true, increase the height of the focused side window; creating an accordion effect.
   expandFocusedSidePanel: true
@@ -69,6 +69,16 @@ gui:
   nerdFontsVersion: "3"
   # Config relating to git
 git:
+  paging:
+    # Value of the --color arg in the git diff command. Some pagers want this to be set to 'always' and some want it set to 'never'
+    colorArg: always
+
+    # e.g.
+    # diff-so-fancy
+    # delta --dark --paging=never
+    # ydiff -p cat -s --wrap --width={{columnWidth}}
+    pager: delta --dark --paging=never
+
   # If true, parse emoji strings in commit messages e.g. render :rocket: as 🚀
   # (This should really be under 'gui', not 'git')
   parseEmoji: true

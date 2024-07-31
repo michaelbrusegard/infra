@@ -30,11 +30,16 @@ return {
   {
     "folke/flash.nvim",
     event = "VeryLazy",
-    opts = {},
+    opts = {
+			modes = {
+				char = {
+					enabled = false
+				}
+			}
+		},
     keys = {
       { "s", mode = { "n", "x", "o" }, "<cmd>lua require('flash').jump()<cr>", desc = "Flash" },
       { "S", mode = { "n", "x", "o" }, "<cmd>lua require('flash').treesitter()<cr>", desc = "Flash Treesitter" },
-      { "r", mode = "o", "<cmd>lua require('flash').remote()<cr>", desc = "Remote Flash" },
       { "R", mode = { "o", "x" }, "<cmd>lua function() require('flash').treesitter_search()<cr>", desc = "Treesitter Search" },
       { "<c-s>", mode = { "c" }, "<cmd>lua require('flash').toggle()<cr>", desc = "Toggle Flash Search" },
     },
@@ -54,12 +59,12 @@ return {
 					{ "<leader>f", group = "file/find" },
 					{ "<leader>g", group = "git" },
 					{ "<leader>s", group = "search" },
-					{ "<leader>u", group = "ui", icon = { icon = "󰙵 ", color = "cyan" } },
+					{ "<leader>l", group = "log/lib", icon = { icon = "󰙵 ", color = "cyan" } },
 					{ "<leader>x", group = "trouble", icon = { icon = "󱖫 ", color = "green" } },
 					{ "[", group = "prev" },
 					{ "]", group = "next" },
 					{ "g", group = "goto" },
-					{ "s", group = "surround" },
+					{ "gs", group = "surround" },
 					{ "z", group = "fold" },
 					{
 						"<leader>b",
@@ -77,22 +82,6 @@ return {
 						end,
 					},
 				},
-			},
-		},
-		keys = {
-			{
-				"<leader>?",
-				function()
-					require("which-key").show({ global = false })
-				end,
-				desc = "Buffer Keymaps",
-			},
-			{
-				"<c-w><space>",
-				function()
-					require("which-key").show({ keys = "<c-w>", loop = true })
-				end,
-				desc = "Window Hydra Mode",
 			},
 		},
 		config = function(_, opts)
@@ -123,37 +112,31 @@ return {
 			on_attach = function(buffer)
 				local gs = package.loaded.gitsigns
 
-				local function map(mode, l, r, desc)
-					vim.keymap.set(mode, l, r, { buffer = buffer, desc = desc })
-				end
-
-        -- stylua: ignore start
-        map("n", "]g", function()
+        vim.keymap.set("n", "]g", function()
           if vim.wo.diff then
             vim.cmd.normal({ "]c", bang = true })
           else
             gs.nav_hunk("next")
           end
-        end, "Git Next Hunk")
-        map("n", "[g", function()
+        end, { buffer = buffer, desc = "Git Next Hunk" })
+        vim.keymap.set("n", "[g", function()
           if vim.wo.diff then
             vim.cmd.normal({ "[c", bang = true })
           else
             gs.nav_hunk("prev")
           end
-        end, "Git Prev Hunk")
-        map("n", "]G", function() gs.nav_hunk("last") end, "Git Last Hunk")
-        map("n", "[G", function() gs.nav_hunk("first") end, "Git First Hunk")
-        map({ "n", "v" }, "<leader>gs", ":Gitsigns stage_hunk<cr>", "Git Stage Hunk")
-        map({ "n", "v" }, "<leader>gr", ":Gitsigns reset_hunk<cr>", "Git Reset Hunk")
-        map("n", "<leader>gS", gs.stage_buffer, "Git Stage Buffer")
-        map("n", "<leader>gu", gs.undo_stage_hunk, "Git Undo Stage Hunk")
-        map("n", "<leader>gR", gs.reset_buffer, "Git Reset Buffer")
-        map("n", "<leader>gp", gs.preview_hunk_inline, "Git Preview Hunk Inline")
-        map("n", "<leader>gb", function() gs.blame_line() end, "Git Blame Line")
-        map("n", "<leader>gd", gs.diffthis, "Git Diff This")
-        map("n", "<leader>gD", function() gs.diffthis("~") end, "Git Diff This ~")
-        map({ "o", "x" }, "ih", ":<c-U>Gitsigns select_hunk<cr>", "Git Select Hunk")
+        end, { buffer = buffer, desc = "Git Prev Hunk" })
+        vim.keymap.set("n", "]G", "<cmd>lua require('gitsigns').nav_hunk('last')<cr>", { buffer = buffer, desc = "Git Last Hunk" })
+        vim.keymap.set("n", "[G", "<cmd>lua require('gitsigns').nav_hunk('first')<cr>", { buffer = buffer, desc = "Git First Hunk" })
+        vim.keymap.set({ "n", "v" }, "<leader>gs", "<cmd>Gitsigns stage_hunk<cr>", { buffer = buffer, desc = "Git Stage Hunk" })
+        vim.keymap.set({ "n", "v" }, "<leader>gr", "<cmd>Gitsigns reset_hunk<cr>", { buffer = buffer, desc = "Git Reset Hunk" })
+        vim.keymap.set("n", "<leader>gS", gs.stage_buffer, { buffer = buffer, desc = "Git Stage Buffer" })
+        vim.keymap.set("n", "<leader>gu", gs.undo_stage_hunk, { buffer = buffer, desc = "Git Undo Stage Hunk" })
+        vim.keymap.set("n", "<leader>gR", gs.reset_buffer, { buffer = buffer, desc = "Git Reset Buffer" })
+        vim.keymap.set("n", "<leader>gp", gs.preview_hunk_inline, { buffer = buffer, desc = "Git Preview Hunk Inline" })
+        vim.keymap.set("n", "<leader>gb", gs.blame_line, { buffer = buffer, desc = "Git Blame Line" })
+        vim.keymap.set("n", "<leader>gd", gs.diffthis, { buffer = buffer, desc = "Git Diff This" })
+        vim.keymap.set({ "o", "x" }, "ih", "<cmd>Gitsigns select_hunk<cr>", { buffer = buffer, desc = "Git Select Hunk" })
 			end,
 		},
 	},
@@ -194,7 +177,7 @@ return {
 				function()
 					if require("trouble").is_open() then
 						require("trouble").next({ skip_groups = true, jump = true })
-					else
+				else
 						local ok, err = pcall(vim.cmd.cnext)
 						if not ok then
 							vim.notify(err, vim.log.levels.ERROR)
@@ -214,11 +197,32 @@ return {
 		opts = {},
     -- stylua: ignore
     keys = {
-      { "]t", function() require("todo-comments").jump_next() end, desc = "Next Todo Comment" },
-      { "[t", function() require("todo-comments").jump_prev() end, desc = "Previous Todo Comment" },
+      { "]t", "<cmd>lua require('todo-comments').jump_next()<cr>", desc = "Next Todo Comment" },
+      { "[t", "<cmd>lua require('todo-comments').jump_prev()<cr>", desc = "Previous Todo Comment" },
       { "<leader>xt", "<cmd>Trouble todo toggle<cr>", desc = "Todo" },
       { "<leader>xT", "<cmd>Trouble todo toggle filter = {tag = {TODO,FIX,FIXME}}<cr>", desc = "Filter Todo/Fix/Fixme" },
     },
+	},
+	-- Move selected text
+	{
+		"echasnovski/mini.move",
+    event = "VeryLazy",
+		version = false,
+		opts = {
+			mappings = {
+				left = "<s-h>",
+				right = "<s-l>",
+				down = "<s-j>",
+				up = "<s-k>",
+				line_left = "",
+				line_right = "",
+				line_down = "",
+				line_up = "",
+			},
+			options = {
+				reindent_linewise = true,
+			},
+		},
 	},
   -- Remove search highlights when moving
 	{

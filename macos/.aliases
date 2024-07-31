@@ -36,8 +36,8 @@ function trash {
   done
 }
 function ssh {
-  wezterm cli spawn --domain-name SSH:"$@"
+  wezterm cli spawn --domain-name SSH:"$@" 2>/dev/null || /usr/bin/ssh "$@"
 }
 function sshmux {
-  wezterm cli spawn --domain-name SSHMUX:"$@"
+  wezterm cli spawn --domain-name SSHMUX:"$@" 2>/dev/null || /usr/bin/ssh "$@"
 }

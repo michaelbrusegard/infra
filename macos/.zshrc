@@ -88,7 +88,7 @@ export FZF_DEFAULT_OPTS=" \
 --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
 --color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8"
 export FZF_CTRL_T_OPTS="--preview \"if [ -d {} ]; then eza --tree --color=always {} | head -200; elif file --mime-type {} | grep -q 'image/'; then chafa -f iterm -s \${FZF_PREVIEW_COLUMNS}x\${FZF_PREVIEW_LINES} {}; else bat -n --color=always --line-range :500 {}; fi\""
-export FZF_DEFAULT_COMMAND="fd --hidden --strip-cwd-prefix --exclude .git"
+export FZF_DEFAULT_COMMAND="fd --hidden --strip-cwd-prefix --exclude .git --exclude .DS_Store"
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND=""
 eval "$(fzf --zsh)"
@@ -101,7 +101,6 @@ alias ls="eza -a -1 --icons=always --color=always --git"
 
 # bat
 alias cat="bat"
-export BAT_THEME="Catppuccin Mocha"
 
 # fd
 alias find="fd"

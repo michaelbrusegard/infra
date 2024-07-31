@@ -1,3 +1,12 @@
+-- Load options here, before lazy init while sourcing plugin modules
+-- This is needed to make sure options will be correctly applied
+-- after installing missing plugins
+require("config.options")
+
+-- Defer built-in clipboard handling: "xsel" and "pbcopy" can be slow
+local lazy_clipboard = vim.opt.clipboard
+vim.opt.clipboard = ""
+
 -- Autocmds can be loaded lazily when not opening a file
 local lazy_autocmds = vim.fn.argc(-1) == 0
 if not lazy_autocmds then
@@ -13,6 +22,7 @@ vim.api.nvim_create_autocmd("User", {
     end
       require("config.keymaps")
     vim.opt.clipboard = lazy_clipboard
+		require("util.root").setup()
   end,
 })
 
@@ -32,15 +42,6 @@ if not (vim.uv or vim.loop).fs_stat(path) then
 	end
 end
 vim.opt.rtp:prepend(path)
-
--- Load options here, before lazy init while sourcing plugin modules
--- This is needed to make sure options will be correctly applied
--- after installing missing plugins
-require("config.options")
-
--- Defer built-in clipboard handling: "xsel" and "pbcopy" can be slow
-local lazy_clipboard = vim.opt.clipboard
-vim.opt.clipboard = ""
 
 -- This autocmd will only trigger when a file was loaded from the cmdline.
 -- It will render the file as quickly as possible.

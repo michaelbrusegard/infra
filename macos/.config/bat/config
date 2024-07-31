@@ -1,0 +1,20 @@
+# Specify desired highlighting theme (e.g. "TwoDark"). Run `bat --list-themes`
+# for a list of all available themes
+--theme="Catppuccin Mocha"
+
+# Set colors
+--color=always
+
+# Enable this to use italic text on the terminal
+--italic-text=always
+
+# Show only line numbers
+--style=numbers
+
+# Uncomment the following line to disable automatic paging:
+--paging=never
+
+--pager=delta
+
+# Use "gitignore" highlighting for ".ignore" files
+--map-syntax .ignore:.gitignore

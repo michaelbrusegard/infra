@@ -45,12 +45,6 @@ vim.keymap.set({ "n", "x" }, "<up>", "v:count == 0 ? 'gk' : 'k'", { desc = "Up",
 -- Delete character under cursor without overriding clipboard
 vim.keymap.set("n", "x", '"_x', { silent = true })
 
--- Open Mason
-vim.keymap.set("n", "<leader>m", require("util.keymaps").open_mason, { desc = "Open Mason", silent = true })
-
--- Open Lazy
-vim.keymap.set("n", "<leader>l", require("util.keymaps").open_lazy, { desc = "Open Lazy", silent = true })
-
 -- Exit terminal mode in the builtin terminal with a shortcut that is easier
 vim.keymap.set("t", "<esc><esc>", "<c-\\><c-n>", { desc = "Exit terminal mode", silent = true })
 
@@ -123,43 +117,15 @@ vim.keymap.set("n", "<leader>wm", require("util.keymaps").maximize, { desc = "Ma
 
 -- Git
 vim.keymap.set("n", "<leader>gg", require("util.keymaps").open_git, { desc = "Git Menu", silent = true })
-vim.keymap.set("n", "<leader>gf", require("util.keymaps").open_git_file_commits, { desc = "Git File Commits Log", silent = true })
+vim.keymap.set("n", "<leader>gC", require("util.keymaps").open_git_file_commits, { desc = "Git Commits Log", silent = true })
 vim.keymap.set("n", "<leader>gB", require("util.keymaps").open_git_blame, { desc = "Git Blame Log", silent = true })
 
--- User interface
-vim.keymap.set("n", "<leader>ui", require("util.keymaps").toggle_signs, { desc = "User Interface Signs", silent = true })
+-- Signs
+vim.keymap.set("n", "<leader>ls", require("util.keymaps").toggle_signs, { desc = "Signcolumn", silent = true })
 
--- LSP
-local function lsp(buffer)
-	vim.keymap.set("n", "<leader>cl", "<cmd>LspInfo<cr>", { buffer = buffer, desc = "Lsp Info" })
-	vim.keymap.set("n", "gd", vim.lsp.buf.definition, { buffer = buffer, desc = "Goto Definition" })
-	vim.keymap.set("n", "gr", vim.lsp.buf.references, { buffer = buffer, desc = "References" })
-	vim.keymap.set("n", "gI", vim.lsp.buf.implementation, { buffer = buffer, desc = "Goto Implementation" })
-	vim.keymap.set("n", "gy", vim.lsp.buf.type_definition, { buffer = buffer, desc = "Goto Type Definition" })
-	vim.keymap.set("n", "gD", vim.lsp.buf.declaration, { buffer = buffer, desc = "Goto Declaration" })
-	vim.keymap.set("n", "K", vim.lsp.buf.hover, { buffer = buffer, desc = "Hover" })
-	vim.keymap.set("i", "<c-k>", vim.lsp.buf.signature_help, { buffer = buffer, desc = "Signature Help" })
-	vim.keymap.set("n", "crr", vim.lsp.buf.code_action, { buffer = buffer, desc = "Code Action" })
-	vim.keymap.set("n", "<leader>cc", vim.lsp.codelens.run, { buffer = buffer, desc = "Run Codelens" })
-	vim.keymap.set(
-		"n",
-		"<leader>cC",
-		vim.lsp.codelens.refresh,
-		{ buffer = buffer, desc = "Refresh & Display Codelens" }
-	)
-	vim.keymap.set("n", "crn", vim.lsp.buf.rename, { buffer = buffer, desc = "Rename" })
-	-- vim.keymap.set("n", "<leader>cr", LazyVim.lsp.rename_file, { buffer = buffer, desc = "Rename File" })
-	-- vim.keymap.set("n", "<leader>cA", LazyVim.lsp.action.source, { buffer = buffer, desc = "Source Action" })
-	-- vim.keymap.set("n", "]]", function()
-	-- 	LazyVim.lsp.words.jump(vim.v.count1)
-	-- end, { buffer = buffer, desc = "Next Reference" })
-	-- vim.keymap.set("n", "[[", function()
-	-- 	LazyVim.lsp.words.jump(-vim.v.count1)
-	-- end, { buffer = buffer, desc = "Prev Reference" })
-	-- vim.keymap.set("n", "<a-n>", function()
-	-- 	LazyVim.lsp.words.jump(vim.v.count1, true)
-	-- end, { buffer = buffer, desc = "Next Reference" })
-	-- vim.keymap.set("n", "<a-p>", function()
-	-- 	LazyVim.lsp.words.jump(-vim.v.count1, true)
-	-- end, { buffer = buffer, desc = "Prev Reference" })
-end
+-- Open Mason
+vim.keymap.set("n", "<leader>lm", require("util.keymaps").open_mason, { desc = "Mason", silent = true })
+
+-- Open Lazy
+vim.keymap.set("n", "<leader>ll", require("util.keymaps").open_lazy, { desc = "Lazy", silent = true })
+

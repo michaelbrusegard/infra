@@ -100,7 +100,7 @@ vim.api.nvim_create_autocmd("BufLeave", {
 	group = vim.api.nvim_create_augroup("float_open", { clear = true }),
 	callback = function()
 		local ft = vim.bo.filetype
-		if ft == "lazy" or ft == "mason" or ft == "git" then
+		if ft == "lazy" or ft == "mason" or ft == "git" or ft == "fzf" then
 			vim.g.float_open = false
 		end
 	end,
