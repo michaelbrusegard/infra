@@ -2,7 +2,10 @@ return {
 	-- Search/replace in multiple files
 	{
 		"MagicDuck/grug-far.nvim",
-		opts = { headerMaxWidth = 80 },
+		opts = {
+			headerMaxWidth = 80,
+			disableBufferLineNumbers = false,
+		},
 		cmd = "GrugFar",
 		keys = {
 			{
