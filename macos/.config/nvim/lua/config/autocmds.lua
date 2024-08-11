@@ -54,8 +54,8 @@ vim.api.nvim_create_autocmd("BufEnter", {
 	group = vim.api.nvim_create_augroup("oil", { clear = true }),
 	callback = function(event)
 		if vim.bo[event.buf].filetype == "oil" then
-			vim.api.nvim_buf_set_option_value(event.buf, "number", false)
-			vim.api.nvim_buf_set_option_value(event.buf, "relativenumber", false)
+			vim.api.nvim_set_option_value("number", false, { scope = "local", win = vim.fn.win_getid() })
+			vim.api.nvim_set_option_value("relativenumber", false, { scope = "local", win = vim.fn.win_getid() })
 		end
 	end,
 })
