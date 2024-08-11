@@ -171,6 +171,9 @@ vim.opt.statuscolumn = [[%!v:lua.require('util.options').statuscolumn()]]
 vim.opt.foldexpr = "v:lua.require('util.options').foldexpr()"
 vim.opt.foldmethod = "expr"
 
+-- Set format expression to use conform
+vim.opt.formatexpr = "v:lua.require'conform'.formatexpr()"
+
 -- Disable fold text
 vim.opt.foldtext = ""
 

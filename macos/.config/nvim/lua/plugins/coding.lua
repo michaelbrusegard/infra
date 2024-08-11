@@ -174,14 +174,14 @@ return {
 			require("util.coding").pairs(opts)
 		end,
 	},
-  -- Add surround keymaps
-  {
-    'echasnovski/mini.surround',
-    event = "VeryLazy",
-    version = false,
-			keys = function(_, keys)
+	-- Add surround keymaps
+	{
+		"echasnovski/mini.surround",
+		event = "VeryLazy",
+		version = false,
+		keys = function(_, keys)
 			-- Populate the keys based on the user's options
-			local opts = require('util.lazy').opts("mini.surround")
+			local opts = require("util.lazy").opts("mini.surround")
 			local mappings = {
 				{ opts.mappings.add, desc = "Add Surrounding", mode = { "n", "v" } },
 				{ opts.mappings.delete, desc = "Delete Surrounding" },
@@ -196,7 +196,7 @@ return {
 			end, mappings)
 			return vim.list_extend(mappings, keys)
 		end,
-    opts = {
+		opts = {
 			mappings = {
 				add = "gsa",
 				delete = "gsd",
@@ -207,7 +207,7 @@ return {
 				update_n_lines = "gsn",
 			},
 		},
-  },
+	},
 	-- Better text-objects
 	{
 		"echasnovski/mini.ai",
@@ -256,7 +256,7 @@ return {
 		event = "VeryLazy",
 		opts = {},
 	},
-  -- Better config dev behavior
+	-- Better config dev behavior
 	{
 		"folke/lazydev.nvim",
 		depdendencies = {
@@ -266,7 +266,6 @@ return {
 		cmd = "LazyDev",
 		opts = {
 			library = {
-				"lazy.nvim",
 				{ path = "luvit-meta/library", words = { "vim%.uv" } },
 				{ path = "wezterm-types", mods = { "wezterm" } },
 			},
@@ -293,38 +292,38 @@ return {
 			},
 		},
 	},
-  -- Copilot cmp source
-  {
-    "nvim-cmp",
-    dependencies = {
-      {
-        "zbirenbaum/copilot-cmp",
-        dependencies = "copilot.lua",
-        opts = {},
-        config = function(_, opts)
-          local copilot_cmp = require("copilot_cmp")
-          copilot_cmp.setup(opts)
-          -- Attach cmp source whenever copilot attaches
-          -- Fixes lazy-loading issues with the copilot cmp source
-					vim.api.nvim_create_autocmd('LspAttach', {
+	-- Copilot cmp source
+	{
+		"nvim-cmp",
+		dependencies = {
+			{
+				"zbirenbaum/copilot-cmp",
+				dependencies = "copilot.lua",
+				opts = {},
+				config = function(_, opts)
+					local copilot_cmp = require("copilot_cmp")
+					copilot_cmp.setup(opts)
+					-- Attach cmp source whenever copilot attaches
+					-- Fixes lazy-loading issues with the copilot cmp source
+					vim.api.nvim_create_autocmd("LspAttach", {
 						callback = function(event)
 							local client = vim.lsp.get_client_by_id(event.data.client_id)
 							if client and client.name == "copilot" then
 								copilot_cmp._on_insert_enter({})
 							end
-						end
+						end,
 					})
-        end,
-      },
-    },
-    opts = function(_, opts)
-      table.insert(opts.sources, 1, {
-        name = "copilot",
-        group_index = 1,
-        priority = 100,
-      })
-    end,
-  },
+				end,
+			},
+		},
+		opts = function(_, opts)
+			table.insert(opts.sources, 1, {
+				name = "copilot",
+				group_index = 1,
+				priority = 100,
+			})
+		end,
+	},
 	-- Copilot chat
 	{
 		"CopilotC-Nvim/CopilotChat.nvim",
@@ -344,7 +343,7 @@ return {
 				},
 				mappings = {
 					complete = {
-						insert = '',
+						insert = "",
 					},
 				},
 				selection = function(source)
@@ -352,18 +351,19 @@ return {
 				end,
 				prompts = {
 					Review = {
-						prompt = '/COPILOT_REVIEW Review the selected code.',
+						prompt = "/COPILOT_REVIEW Review the selected code.",
 						callback = function(response, source)
-							local ns = vim.api.nvim_create_namespace('copilot_review')
+							local ns = vim.api.nvim_create_namespace("copilot_review")
 							local diagnostics = {}
-							for line in response:gmatch('[^\r\n]+') do
-								if line:find('^line=') then
+							for line in response:gmatch("[^\r\n]+") do
+								if line:find("^line=") then
 									local start_line = nil
 									local end_line = nil
 									local message = nil
-									local single_match, message_match = line:match('^line=(%d+): (.*)$')
+									local single_match, message_match = line:match("^line=(%d+): (.*)$")
 									if not single_match then
-										local start_match, end_match, m_message_match = line:match('^line=(%d+)-(%d+): (.*)$')
+										local start_match, end_match, m_message_match =
+											line:match("^line=(%d+)-(%d+): (.*)$")
 										if start_match and end_match then
 											start_line = tonumber(start_match)
 											end_line = tonumber(end_match)
@@ -382,7 +382,7 @@ return {
 											col = 0,
 											message = message,
 											severity = vim.diagnostic.severity.WARN,
-											source = 'Copilot Review',
+											source = "Copilot Review",
 										})
 									end
 								end
@@ -391,21 +391,25 @@ return {
 						end,
 					},
 					Explain = {
-						prompt = '/COPILOT_EXPLAIN Write an explanation for the active selection as paragraphs of text.',
+						prompt = "/COPILOT_EXPLAIN Write an explanation for the active selection as paragraphs of text.",
 					},
 					Optimize = {
-						prompt = '/COPILOT_GENERATE Optimize the selected code to improve performance and readablilty.',
+						prompt = "/COPILOT_GENERATE Optimize the selected code to improve performance and readablilty.",
 					},
 					Tests = {
-						prompt = '/COPILOT_GENERATE Please generate tests for my code.',
+						prompt = "/COPILOT_GENERATE Please generate tests for my code.",
 					},
 					FixDiagnostic = {
-						prompt = 'Please assist with the following diagnostic issue in file:',
+						prompt = "Please assist with the following diagnostic issue in file:",
 						selection = select.diagnostics,
 					},
-					Heading = { prompt = "Please provide a single-line comment heading for the selected code. Only return the heading." },
-					BetterNamings = { prompt = "Please provide better names for the following variables and functions." },
-				}
+					Heading = {
+						prompt = "Please provide a single-line comment heading for the selected code. Only return the heading.",
+					},
+					BetterNamings = {
+						prompt = "Please provide better names for the following variables and functions.",
+					},
+				},
 			}
 		end,
 		keys = {
@@ -419,13 +423,13 @@ return {
 				desc = "Toggle",
 				mode = { "n", "v" },
 			},
-      { "<leader>ae", "<cmd>CopilotChatExplain<cr>", desc = "Explain code", mode = { "n", "v" } },
-      { "<leader>at", "<cmd>CopilotChatTests<cr>", desc = "Generate tests", mode = { "n", "v" } },
-      { "<leader>ar", "<cmd>CopilotChatReview<cr>", desc = "Review code", mode = { "n", "v" } },
-      { "<leader>ao", "<cmd>CopilotChatOptimize<cr>", desc = "Optimize code", mode = { "n", "v" } },
-      { "<leader>ad", "<cmd>CopilotChatFixDiagnostic<cr>", desc = "Diagnostics", mode = { "n", "v" } },
-      { "<leader>ah", "<cmd>CopilotChatHeading<cr>", desc = "Suggest Heading", mode = { "n", "v" } },
-      { "<leader>an", "<cmd>CopilotChatBetterNamings<cr>", desc = "Better Naming",  mode = { "n", "v" } },
+			{ "<leader>ae", "<cmd>CopilotChatExplain<cr>", desc = "Explain code", mode = { "n", "v" } },
+			{ "<leader>at", "<cmd>CopilotChatTests<cr>", desc = "Generate tests", mode = { "n", "v" } },
+			{ "<leader>ar", "<cmd>CopilotChatReview<cr>", desc = "Review code", mode = { "n", "v" } },
+			{ "<leader>ao", "<cmd>CopilotChatOptimize<cr>", desc = "Optimize code", mode = { "n", "v" } },
+			{ "<leader>ad", "<cmd>CopilotChatFixDiagnostic<cr>", desc = "Diagnostics", mode = { "n", "v" } },
+			{ "<leader>ah", "<cmd>CopilotChatHeading<cr>", desc = "Suggest Heading", mode = { "n", "v" } },
+			{ "<leader>an", "<cmd>CopilotChatBetterNamings<cr>", desc = "Better Naming", mode = { "n", "v" } },
 			{
 				"<leader>aq",
 				function()
@@ -438,7 +442,12 @@ return {
 				mode = { "n", "v" },
 			},
 			-- Show prompts actions with fzf
-			{ "<leader>ap", require('util.coding').copilot_pick("prompt"), desc = "Prompt Actions Ai", mode = { "n", "v" } },
+			{
+				"<leader>ap",
+				require("util.coding").copilot_pick("prompt"),
+				desc = "Prompt Actions Ai",
+				mode = { "n", "v" },
+			},
 		},
 		config = function(_, opts)
 			local chat = require("CopilotChat")
@@ -449,16 +458,11 @@ return {
 				callback = function()
 					vim.opt_local.relativenumber = false
 					vim.opt_local.number = false
-					vim.keymap.set(
-						"n",
-						"<C-s>",
-						"<cmd>CopilotChatStop<cr>",
-						{ buffer = true }
-					)
+					vim.keymap.set("n", "<C-s>", "<cmd>CopilotChatStop<cr>", { buffer = true })
 				end,
 			})
 
 			chat.setup(opts)
 		end,
-	}
+	},
 }

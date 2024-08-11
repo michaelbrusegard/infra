@@ -27,26 +27,31 @@ return {
 			},
 		},
 	},
-  -- Flash enhances the built-in search functionality by showing labels
-  -- at the end of each match, letting you quickly jump to a specific
-  -- location.
-  {
-    "folke/flash.nvim",
-    event = "VeryLazy",
-    opts = {
+	-- Flash enhances the built-in search functionality by showing labels
+	-- at the end of each match, letting you quickly jump to a specific
+	-- location.
+	{
+		"folke/flash.nvim",
+		event = "VeryLazy",
+		opts = {
 			modes = {
 				char = {
-					enabled = false
-				}
-			}
+					enabled = false,
+				},
+			},
 		},
-    keys = {
-      { "s", mode = { "n", "x", "o" }, "<cmd>lua require('flash').jump()<cr>", desc = "Flash" },
-      { "S", mode = { "n", "x", "o" }, "<cmd>lua require('flash').treesitter()<cr>", desc = "Flash Treesitter" },
-      { "R", mode = { "o", "x" }, "<cmd>lua function() require('flash').treesitter_search()<cr>", desc = "Treesitter Search" },
-      { "<c-s>", mode = { "c" }, "<cmd>lua require('flash').toggle()<cr>", desc = "Toggle Flash Search" },
-    },
-  },
+		keys = {
+			{ "s", mode = { "n", "x", "o" }, "<cmd>lua require('flash').jump()<cr>", desc = "Flash" },
+			{ "S", mode = { "n", "x", "o" }, "<cmd>lua require('flash').treesitter()<cr>", desc = "Flash Treesitter" },
+			{
+				"R",
+				mode = { "o", "x" },
+				"<cmd>lua function() require('flash').treesitter_search()<cr>",
+				desc = "Treesitter Search",
+			},
+			{ "<c-s>", mode = { "c" }, "<cmd>lua require('flash').toggle()<cr>", desc = "Toggle Flash Search" },
+		},
+	},
 	-- which-key helps you remember key bindings by showing a popup
 	-- with the active keybindings of the command you started typing.
 	{
@@ -92,7 +97,7 @@ return {
 			wk.setup(opts)
 		end,
 	},
-  -- Show git signs in the sign column
+	-- Show git signs in the sign column
 	{
 		"lewis6991/gitsigns.nvim",
 		event = "LazyFile",
@@ -115,31 +120,61 @@ return {
 			on_attach = function(buffer)
 				local gs = package.loaded.gitsigns
 
-        vim.keymap.set("n", "]g", function()
-          if vim.wo.diff then
-            vim.cmd.normal({ "]c", bang = true })
-          else
-            gs.nav_hunk("next")
-          end
-        end, { buffer = buffer, desc = "Git Next Hunk" })
-        vim.keymap.set("n", "[g", function()
-          if vim.wo.diff then
-            vim.cmd.normal({ "[c", bang = true })
-          else
-            gs.nav_hunk("prev")
-          end
-        end, { buffer = buffer, desc = "Git Prev Hunk" })
-        vim.keymap.set("n", "]G", "<cmd>lua require('gitsigns').nav_hunk('last')<cr>", { buffer = buffer, desc = "Git Last Hunk" })
-        vim.keymap.set("n", "[G", "<cmd>lua require('gitsigns').nav_hunk('first')<cr>", { buffer = buffer, desc = "Git First Hunk" })
-        vim.keymap.set({ "n", "v" }, "<leader>gs", "<cmd>Gitsigns stage_hunk<cr>", { buffer = buffer, desc = "Git Stage Hunk" })
-        vim.keymap.set({ "n", "v" }, "<leader>gr", "<cmd>Gitsigns reset_hunk<cr>", { buffer = buffer, desc = "Git Reset Hunk" })
-        vim.keymap.set("n", "<leader>gS", gs.stage_buffer, { buffer = buffer, desc = "Git Stage Buffer" })
-        vim.keymap.set("n", "<leader>gu", gs.undo_stage_hunk, { buffer = buffer, desc = "Git Undo Stage Hunk" })
-        vim.keymap.set("n", "<leader>gR", gs.reset_buffer, { buffer = buffer, desc = "Git Reset Buffer" })
-        vim.keymap.set("n", "<leader>gp", gs.preview_hunk_inline, { buffer = buffer, desc = "Git Preview Hunk Inline" })
-        vim.keymap.set("n", "<leader>gb", gs.blame_line, { buffer = buffer, desc = "Git Blame Line" })
-        vim.keymap.set("n", "<leader>gd", gs.diffthis, { buffer = buffer, desc = "Git Diff This" })
-        vim.keymap.set({ "o", "x" }, "ih", "<cmd>Gitsigns select_hunk<cr>", { buffer = buffer, desc = "Git Select Hunk" })
+				vim.keymap.set("n", "]g", function()
+					if vim.wo.diff then
+						vim.cmd.normal({ "]c", bang = true })
+					else
+						gs.nav_hunk("next")
+					end
+				end, { buffer = buffer, desc = "Git Next Hunk" })
+				vim.keymap.set("n", "[g", function()
+					if vim.wo.diff then
+						vim.cmd.normal({ "[c", bang = true })
+					else
+						gs.nav_hunk("prev")
+					end
+				end, { buffer = buffer, desc = "Git Prev Hunk" })
+				vim.keymap.set(
+					"n",
+					"]G",
+					"<cmd>lua require('gitsigns').nav_hunk('last')<cr>",
+					{ buffer = buffer, desc = "Git Last Hunk" }
+				)
+				vim.keymap.set(
+					"n",
+					"[G",
+					"<cmd>lua require('gitsigns').nav_hunk('first')<cr>",
+					{ buffer = buffer, desc = "Git First Hunk" }
+				)
+				vim.keymap.set(
+					{ "n", "v" },
+					"<leader>gs",
+					"<cmd>Gitsigns stage_hunk<cr>",
+					{ buffer = buffer, desc = "Git Stage Hunk" }
+				)
+				vim.keymap.set(
+					{ "n", "v" },
+					"<leader>gr",
+					"<cmd>Gitsigns reset_hunk<cr>",
+					{ buffer = buffer, desc = "Git Reset Hunk" }
+				)
+				vim.keymap.set("n", "<leader>gS", gs.stage_buffer, { buffer = buffer, desc = "Git Stage Buffer" })
+				vim.keymap.set("n", "<leader>gu", gs.undo_stage_hunk, { buffer = buffer, desc = "Git Undo Stage Hunk" })
+				vim.keymap.set("n", "<leader>gR", gs.reset_buffer, { buffer = buffer, desc = "Git Reset Buffer" })
+				vim.keymap.set(
+					"n",
+					"<leader>gp",
+					gs.preview_hunk_inline,
+					{ buffer = buffer, desc = "Git Preview Hunk Inline" }
+				)
+				vim.keymap.set("n", "<leader>gb", gs.blame_line, { buffer = buffer, desc = "Git Blame Line" })
+				vim.keymap.set("n", "<leader>gd", gs.diffthis, { buffer = buffer, desc = "Git Diff This" })
+				vim.keymap.set(
+					{ "o", "x" },
+					"ih",
+					"<cmd>Gitsigns select_hunk<cr>",
+					{ buffer = buffer, desc = "Git Select Hunk" }
+				)
 			end,
 		},
 	},
@@ -180,7 +215,7 @@ return {
 				function()
 					if require("trouble").is_open() then
 						require("trouble").next({ skip_groups = true, jump = true })
-				else
+					else
 						local ok, err = pcall(vim.cmd.cnext)
 						if not ok then
 							vim.notify(err, vim.log.levels.ERROR)
@@ -209,7 +244,7 @@ return {
 	-- Move selected text
 	{
 		"echasnovski/mini.move",
-    event = "VeryLazy",
+		event = "VeryLazy",
 		version = false,
 		opts = {
 			mappings = {
@@ -227,21 +262,21 @@ return {
 			},
 		},
 	},
-  -- Remove search highlights when moving
+	-- Remove search highlights when moving
 	{
 		"nvimdev/hlsearch.nvim",
 		event = "BufRead",
 		opts = {},
 	},
-  -- Set shiftwidth based on what is used in project
-  {
-    'nmac427/guess-indent.nvim',
-    event = 'LazyFile',
-    opts = {
-      filetype_exclude = {
-        "oil",
-        "copilot-chat",
-      },
-    },
-  },
+	-- Set shiftwidth based on what is used in project
+	{
+		"nmac427/guess-indent.nvim",
+		event = "LazyFile",
+		opts = {
+			filetype_exclude = {
+				"oil",
+				"copilot-chat",
+			},
+		},
+	},
 }

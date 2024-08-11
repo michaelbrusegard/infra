@@ -87,7 +87,12 @@ vim.keymap.set("n", "]q", vim.cmd.cnext, { desc = "Next Quickfix", silent = true
 
 -- Diagnostics
 vim.keymap.set("n", "<leader>cd", vim.diagnostic.open_float, { desc = "Line Diagnostics", silent = true })
-vim.keymap.set("n", "]d", "<cmd>lua vim.diagnostic.jump({ count = 1, float = true })<cr>", { desc = "Next Diagnostic", silent = true })
+vim.keymap.set(
+	"n",
+	"]d",
+	"<cmd>lua vim.diagnostic.jump({ count = 1, float = true })<cr>",
+	{ desc = "Next Diagnostic", silent = true }
+)
 vim.keymap.set(
 	"n",
 	"[d",
@@ -102,12 +107,6 @@ vim.keymap.set("n", "dm", require("util.keymaps").delmarks, { desc = "Delete Mar
 vim.keymap.set("n", "gt", "<nop>", { desc = "", noremap = true, silent = true })
 vim.keymap.set("n", "gT", "<nop>", { desc = "", noremap = true, silent = true })
 
--- Format
-vim.keymap.set({ "n", "x" }, "<leader>cf", "<cmd>lua require('conform').formatexpr()<cr>", { desc = "Format", silent = true })
-
--- Lint
-vim.keymap.set({ "n", "x" }, "<leader>cl", "<cmd>lua require('lint').try_lint()<cr>", { desc = "Lint", silent = true })
-
 -- Windows
 vim.keymap.set("n", "<leader>w", "<c-w>", { desc = "Windows", remap = true, silent = true })
 vim.keymap.set("n", "<c-w>-", "<c-w>s", { desc = "Split Window Below", remap = true, silent = true })
@@ -117,7 +116,12 @@ vim.keymap.set("n", "<leader>wm", require("util.keymaps").maximize, { desc = "Ma
 
 -- Git
 vim.keymap.set("n", "<leader>gg", require("util.keymaps").open_git, { desc = "Git Menu", silent = true })
-vim.keymap.set("n", "<leader>gC", require("util.keymaps").open_git_file_commits, { desc = "Git Commits Log", silent = true })
+vim.keymap.set(
+	"n",
+	"<leader>gC",
+	require("util.keymaps").open_git_file_commits,
+	{ desc = "Git Commits Log", silent = true }
+)
 vim.keymap.set("n", "<leader>gB", require("util.keymaps").open_git_blame, { desc = "Git Blame Log", silent = true })
 
 -- Signs
@@ -128,4 +132,3 @@ vim.keymap.set("n", "<leader>lm", require("util.keymaps").open_mason, { desc = "
 
 -- Open Lazy
 vim.keymap.set("n", "<leader>ll", require("util.keymaps").open_lazy, { desc = "Lazy", silent = true })
-

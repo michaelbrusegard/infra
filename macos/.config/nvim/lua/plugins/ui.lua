@@ -29,16 +29,20 @@ return {
 				},
 				sections = {
 					lualine_a = { "mode" },
-					lualine_b = { "branch", "diff", {
-						"diagnostics",
-						symbols = {error = ' ', warn = ' ', info = ' ', hint = ' '},
-					  }
+					lualine_b = {
+						"branch",
+						"diff",
+						{
+							"diagnostics",
+							symbols = { error = " ", warn = " ", info = " ", hint = " " },
+						},
 					},
 					lualine_c = {
 						require("util.ui").root_dir(),
 						{ "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } },
-						{ require("util.ui").pretty_path() },
+						require("util.ui").pretty_path(),
 					},
+					lualine_x = {},
 				},
 				extensions = { "lazy", "mason", "oil", "trouble", "nvim-dap-ui" },
 			}
@@ -114,13 +118,40 @@ return {
 				lsp_doc_border = false,
 			},
 		},
-    keys = {
-      { "<s-enter>", "<cmd>lua require('noice').redirect(vim.fn.getcmdline())<cr>", mode = "c", desc = "Redirect Cmdline" },
-      { "<leader>lp", "<cmd>lua require('noice').cmd('last')<cr>", desc = "Log Prev Message" },
-      { "<leader>lh", "<cmd>lua require('noice').cmd('history')<cr>", desc = "Log History" },
-      { "<c-f>", function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end, silent = true, expr = true, desc = "Scroll Forward", mode = {"i", "n", "s"} },
-      { "<c-b>", function() if not require("noice.lsp").scroll(-4) then return "<c-b>" end end, silent = true, expr = true, desc = "Scroll Backward", mode = {"i", "n", "s"}},
-    },
+		keys = {
+			{
+				"<s-enter>",
+				"<cmd>lua require('noice').redirect(vim.fn.getcmdline())<cr>",
+				mode = "c",
+				desc = "Redirect Cmdline",
+			},
+			{ "<leader>lp", "<cmd>lua require('noice').cmd('last')<cr>", desc = "Log Prev Message" },
+			{ "<leader>lh", "<cmd>lua require('noice').cmd('history')<cr>", desc = "Log History" },
+			{
+				"<c-f>",
+				function()
+					if not require("noice.lsp").scroll(4) then
+						return "<c-f>"
+					end
+				end,
+				silent = true,
+				expr = true,
+				desc = "Scroll Forward",
+				mode = { "i", "n", "s" },
+			},
+			{
+				"<c-b>",
+				function()
+					if not require("noice.lsp").scroll(-4) then
+						return "<c-b>"
+					end
+				end,
+				silent = true,
+				expr = true,
+				desc = "Scroll Backward",
+				mode = { "i", "n", "s" },
+			},
+		},
 		config = function(_, opts)
 			-- HACK: noice shows messages from before it was enabled,
 			-- but this is not ideal when Lazy is installing plugins,

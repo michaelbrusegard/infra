@@ -34,7 +34,7 @@ vim.api.nvim_create_autocmd("InsertLeave", {
 	callback = function()
 		local is_file = vim.bo.buftype == ""
 		if is_file then
-		vim.opt.relativenumber = true
+			vim.opt.relativenumber = true
 		end
 	end,
 })
@@ -45,19 +45,19 @@ vim.api.nvim_create_autocmd("TermOpen", {
 	callback = function()
 		vim.opt.number = false
 		vim.opt.relativenumber = false
-    vim.cmd("startinsert")
+		vim.cmd("startinsert")
 	end,
 })
 
 -- Disable line numbers for oil.nvim
 vim.api.nvim_create_autocmd("BufEnter", {
-  group = vim.api.nvim_create_augroup("oil", { clear = true }),
-  callback = function(event)
-    if vim.bo[event.buf].filetype == "oil" then
-      vim.api.nvim_buf_set_option(event.buf, 'number', false)
-      vim.api.nvim_buf_set_option(event.buf, 'relativenumber', false)
-    end
-  end,
+	group = vim.api.nvim_create_augroup("oil", { clear = true }),
+	callback = function(event)
+		if vim.bo[event.buf].filetype == "oil" then
+			vim.api.nvim_buf_set_option_value(event.buf, "number", false)
+			vim.api.nvim_buf_set_option_value(event.buf, "relativenumber", false)
+		end
+	end,
 })
 
 -- Prevent automatic comments on new lines
