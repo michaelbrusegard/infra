@@ -66,7 +66,7 @@ return {
 					{ "<leader>c", group = "code" },
 					{ "<leader>f", group = "file/find" },
 					{ "<leader>g", group = "git" },
-					{ "<leader>s", group = "search" },
+					{ "<leader>s", group = "search/screenshot" },
 					{ "<leader>l", group = "log/lib", icon = { icon = "󰙵 ", color = "cyan" } },
 					{ "<leader>x", group = "trouble", icon = { icon = "󱖫 ", color = "green" } },
 					{ "[", group = "prev" },
@@ -262,6 +262,8 @@ return {
 			},
 		},
 	},
+	-- Incremental rename
+	{ "saecki/live-rename.nvim" },
 	-- Remove search highlights when moving
 	{
 		"nvimdev/hlsearch.nvim",

@@ -5,7 +5,7 @@ return {
 		event = "LazyFile",
 		opts = {
 			linters_by_ft = {
-				fish = { "fish" },
+				-- fish = { "fish" },
 			},
 			linters = {
 				-- -- Example of using selene only when a selene.toml file is present
@@ -18,7 +18,7 @@ return {
 				-- },
 			},
 		},
-		keys = { "<leader>cl", mode = { "n", "x" }, "<cmd>lua require('util.lint').lint()<cr>", desc = "Code Lint" },
+		keys = { { "<leader>cl", mode = { "n", "x" }, "<cmd>lua require('util.lint').lint()<cr>", desc = "Code Lint" } },
 		config = function(_, opts)
 			local lint = require("lint")
 			for name, linter in pairs(opts.linters) do

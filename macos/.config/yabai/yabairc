@@ -13,7 +13,7 @@ yabai -m config normal_window_opacity 0.9
 yabai -m config window_opacity_duration 0.1
 
 # Color of the window --insert message and mouse_drag selection (Purple)
-yabai -m config insert_feedback_color 0xFFAF52DE 
+yabai -m config insert_feedback_color 0xFFAF52DE
 
 # Keyboard modifier used for moving and resizing windows
 yabai -m config mouse_modifier alt
@@ -45,7 +45,7 @@ yabai -m config --space "General 2" layout float
 
 # Application rules
 yabai -m rule --add app="^(Calculator|System Settings|Archive Utility)$" manage=off
-yabai -m rule --add app="^Firefox Developer Edition$" space=Web
+yabai -m rule --add app="^LibreWolf$" space=Web
 yabai -m rule --add app="^Mail$" space=Mail
 yabai -m rule --add app="^(Messages|FaceTime|Discord|Slack|Messenger)$" space=Social
 yabai -m rule --add app="^Notes$" space=Notes

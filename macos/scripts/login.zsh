@@ -48,4 +48,7 @@ brew services start colima
 # Rebuild bat cache to enable themes
 bat cache --build
 
+# Rebuild silicon cache
+silicon --build-cache
+
 echo "Done. Applications have been set to launch at login."

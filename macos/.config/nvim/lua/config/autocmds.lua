@@ -96,11 +96,12 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- Make sure open float is false when leaving a foating window
+local float_filetypes = { "lazy", "mason", "git", "fzf", "harpoon", "lspinfo" }
+
 vim.api.nvim_create_autocmd("BufLeave", {
 	group = vim.api.nvim_create_augroup("float_open", { clear = true }),
 	callback = function()
-		local ft = vim.bo.filetype
-		if ft == "lazy" or ft == "mason" or ft == "git" or ft == "fzf" then
+		if vim.tbl_contains(float_filetypes, vim.bo.filetype) then
 			vim.g.float_open = false
 		end
 	end,
@@ -217,3 +218,29 @@ vim.api.nvim_create_autocmd({ "FileType" }, {
 		end)
 	end,
 })
+
+-- Open filetypes with corresponding applications
+local file_types = {
+	"pdf",
+	"jpg",
+	"jpeg",
+	"webp",
+	"png",
+	"mp3",
+	"mp4",
+	"xls",
+	"xlsx",
+	"xopp",
+	"gif",
+	"doc",
+	"docx",
+}
+local binfiles_group = vim.api.nvim_create_augroup("binFiles", { clear = true })
+
+for _, ext in ipairs(file_types) do
+	vim.api.nvim_create_autocmd({ "BufReadCmd" }, {
+		pattern = "*." .. ext,
+		group = binfiles_group,
+		callback = require("util.autocmds").open_app,
+	})
+end

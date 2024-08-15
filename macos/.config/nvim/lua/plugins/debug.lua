@@ -1,19 +1,6 @@
-local function get_args(config)
-	local args = type(config.args) == "function" and (config.args() or {}) or config.args or {}
-	config = vim.deepcopy(config)
-	config.args = function()
-		local new_args = vim.fn.input("Run with args: ", table.concat(args, " "))
-		return vim.split(vim.fn.expand(new_args), " ")
-	end
-	return config
-end
-
 return {
 	{
 		"mfussenegger/nvim-dap",
-		recommended = true,
-		desc = "Debugging support. Requires language specific adapters to be configured. (see lang extras)",
-
 		dependencies = {
 			"rcarriga/nvim-dap-ui",
 			-- virtual text for the debugger
@@ -22,29 +9,27 @@ return {
 				opts = {},
 			},
 		},
-
     -- stylua: ignore
     keys = {
-      { "<leader>d", "", desc = "+debug", mode = {"n", "v"} },
-      { "<leader>dB", function() require("dap").set_breakpoint(vim.fn.input('Breakpoint condition: ')) end, desc = "Breakpoint Condition" },
-      { "<leader>db", function() require("dap").toggle_breakpoint() end, desc = "Toggle Breakpoint" },
-      { "<leader>dc", function() require("dap").continue() end, desc = "Continue" },
-      { "<leader>da", function() require("dap").continue({ before = get_args }) end, desc = "Run with Args" },
-      { "<leader>dC", function() require("dap").run_to_cursor() end, desc = "Run to Cursor" },
-      { "<leader>dg", function() require("dap").goto_() end, desc = "Go to Line (No Execute)" },
-      { "<leader>di", function() require("dap").step_into() end, desc = "Step Into" },
-      { "<leader>dj", function() require("dap").down() end, desc = "Down" },
-      { "<leader>dk", function() require("dap").up() end, desc = "Up" },
-      { "<leader>dl", function() require("dap").run_last() end, desc = "Run Last" },
-      { "<leader>do", function() require("dap").step_out() end, desc = "Step Out" },
-      { "<leader>dO", function() require("dap").step_over() end, desc = "Step Over" },
-      { "<leader>dp", function() require("dap").pause() end, desc = "Pause" },
-      { "<leader>dr", function() require("dap").repl.toggle() end, desc = "Toggle REPL" },
-      { "<leader>ds", function() require("dap").session() end, desc = "Session" },
-      { "<leader>dt", function() require("dap").terminate() end, desc = "Terminate" },
-      { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
+      { "<leader>d", "", desc = "+debug", mode = {"n", "x"} },
+      { "<leader>dB", "<cmd>lua require('dap').set_breakpoint(vim.fn.input('Breakpoint condition: '))<cr>", desc = "Breakpoint Condition" },
+      { "<leader>db", "<cmd>lua require('dap').toggle_breakpoint()<cr>", desc = "Toggle Breakpoint" },
+      { "<leader>dc", "<cmd>lua require('dap').continue()<cr>", desc = "Continue" },
+      { "<leader>da", "<cmd>lua require('dap').continue({ before = require('util.debug').get_args() })<cr>", desc = "Run with Args" },
+      { "<leader>dC", "<cmd>lua require('dap').run_to_cursor()<cr>", desc = "Run to Cursor" },
+      { "<leader>dg", "<cmd>lua require('dap').goto_()<cr>", desc = "Go to Line (No Execute)" },
+      { "<leader>di", "<cmd>lua require('dap').step_into()<cr>", desc = "Step Into" },
+      { "<leader>dj", "<cmd>lua require('dap').down()<cr>", desc = "Down" },
+      { "<leader>dk", "<cmd>lua require('dap').up()<cr>", desc = "Up" },
+      { "<leader>dl", "<cmd>lua require('dap').run_last()<cr>", desc = "Run Last" },
+      { "<leader>do", "<cmd>lua require('dap').step_out()<cr>", desc = "Step Out" },
+      { "<leader>dO", "<cmd>lua require('dap').step_over()<cr>", desc = "Step Over" },
+      { "<leader>dp", "<cmd>lua require('dap').pause()<cr>", desc = "Pause" },
+      { "<leader>dr", "<cmd>lua require('dap').repl.toggle()<cr>", desc = "Toggle REPL" },
+      { "<leader>ds", "<cmd>lua require('dap').session()<cr>", desc = "Session" },
+      { "<leader>dt", "<cmd>lua require('dap').terminate()<cr>", desc = "Terminate" },
+      { "<leader>dw", "<cmd>lua require('dap.ui.widgets').hover()<cr>", desc = "Widgets" },
     },
-
 		config = function()
 			-- load mason-nvim-dap here, after all adapters have been setup
 			require("mason-nvim-dap").setup(require("util.lazy").opts("mason-nvim-dap.nvim"))
@@ -66,22 +51,9 @@ return {
 					{ text = sign[1], texthl = sign[2] or "DiagnosticInfo", linehl = sign[3], numhl = sign[3] }
 				)
 			end
-
-			-- setup dap config by VsCode launch.json file
-			local vscode = require("dap.ext.vscode")
-			local json = require("plenary.json")
-			vscode.json_decode = function(str)
-				return vim.json.decode(json.json_strip_comments(str))
-			end
-
-			-- Extends dap.configurations with entries read from .vscode/launch.json
-			if vim.fn.filereadable(".vscode/launch.json") then
-				vscode.load_launchjs()
-			end
 		end,
 	},
-
-	-- fancy UI for the debugger
+	-- Fancy UI for the debugger
 	{
 		"rcarriga/nvim-dap-ui",
 		dependencies = { "nvim-neotest/nvim-nio" },
@@ -106,8 +78,7 @@ return {
 			end
 		end,
 	},
-
-	-- mason.nvim integration
+	-- Mason.nvim integration
 	{
 		"jay-babu/mason-nvim-dap.nvim",
 		dependencies = "mason.nvim",
@@ -129,5 +100,49 @@ return {
 		},
 		-- mason-nvim-dap is loaded when nvim-dap loads
 		config = function() end,
+	},
+	-- Nvim lua dap
+	{
+		"nvim-dap",
+		dependencies = {
+			{
+				"jbyuki/one-small-step-for-vimkind",
+      -- stylua: ignore
+      config = function()
+        local dap = require("dap")
+        dap.adapters.nlua = function(callback, conf)
+          local adapter = {
+            type = "server",
+            host = conf.host or "127.0.0.1",
+            port = conf.port or 8086,
+          }
+          if conf.start_neovim then
+            local dap_run = dap.run
+            dap.run = function(c)
+              adapter.port = c.port
+              adapter.host = c.host
+            end
+            require("osv").run_this()
+            dap.run = dap_run
+          end
+          callback(adapter)
+        end
+        dap.configurations.lua = {
+          {
+            type = "nlua",
+            request = "attach",
+            name = "Run this file",
+            start_neovim = {},
+          },
+          {
+            type = "nlua",
+            request = "attach",
+            name = "Attach to running Neovim instance (port = 8086)",
+            port = 8086,
+          },
+        }
+      end,
+			},
+		},
 	},
 }

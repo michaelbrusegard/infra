@@ -1,0 +1,11 @@
+# Font
+--font "MesloLGS Nerd Font=34;Noto Color Emoji"
+
+# Theme
+--theme="Catppuccin Mocha"
+
+# Set output to downloads directory
+--output "$HOME/Downloads/"
+
+# Background color
+--background "#b4befe"

@@ -42,7 +42,13 @@ return {
 						{ "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } },
 						require("util.ui").pretty_path(),
 					},
-					lualine_x = {},
+					lualine_x = {
+						{
+							require("noice").api.statusline.mode.get,
+							cond = require("noice").api.statusline.mode.has,
+							color = { fg = "#fab387" },
+						},
+					},
 				},
 				extensions = { "lazy", "mason", "oil", "trouble", "nvim-dap-ui" },
 			}
@@ -103,7 +109,7 @@ return {
 						col = 0,
 					},
 					size = {
-						width = vim.o.columns - 4,
+						width = vim.o.columns,
 						height = 1,
 					},
 					border = {
@@ -112,7 +118,6 @@ return {
 				},
 			},
 			presets = {
-				command_palette = true,
 				long_message_to_split = true,
 				inc_rename = false,
 				lsp_doc_border = false,

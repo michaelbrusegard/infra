@@ -245,7 +245,13 @@ return {
 			},
 			{
 				"<leader>h",
-				"<cmd>lua require('harpoon').ui:toggle_quick_menu(require('harpoon'):list())<cr>",
+				function()
+					if vim.g.float_open then
+						return
+					end
+					vim.g.float_open = true
+					require("harpoon").ui:toggle_quick_menu(require("harpoon"):list())
+				end,
 				desc = "Harpoon Quick Menu",
 			},
 			{

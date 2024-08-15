@@ -136,20 +136,6 @@ function M.setup(opts)
 	cmp.event:on("menu_opened", function(event)
 		M.add_missing_snippet_docs(event.window)
 	end)
-
-	cmp.setup.cmdline({ "/", "?" }, {
-		mapping = cmp.mapping.preset.cmdline(),
-		sources = {
-			{ name = "buffer" },
-		},
-	})
-	cmp.setup.cmdline(":", {
-		mapping = cmp.mapping.preset.cmdline(),
-		sources = {
-			{ name = "path" },
-			{ name = "cmdline" },
-		},
-	})
 end
 
 -- Mini.ai indent text object
@@ -304,14 +290,14 @@ function M.pairs(opts)
 end
 
 function M.copilot_pick(kind)
-  return function()
-    local actions = require("CopilotChat.actions")
-    local items = actions[kind .. "_actions"]()
-    if not items then
-      return
-    end
-    require("CopilotChat.integrations.fzflua").pick(items)
-  end
+	return function()
+		local actions = require("CopilotChat.actions")
+		local items = actions[kind .. "_actions"]()
+		if not items then
+			return
+		end
+		require("CopilotChat.integrations.fzflua").pick(items)
+	end
 end
 
 return M
