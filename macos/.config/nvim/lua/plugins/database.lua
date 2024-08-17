@@ -17,22 +17,18 @@ return {
 		opts = {},
 	},
 	-- Completion integration
-	-- {
-	-- 	"nvim-cmp",
-	-- 	dependencies = {
-	-- 		{
-	-- 			"MattiasMTS/cmp-dbee",
-	-- 			dependencies = {
-	-- 				{ "kndndrj/nvim-dbee" },
-	-- 			},
-	-- 			ft = "sql",
-	-- 			opts = {},
-	-- 		},
-	-- 	},
-	-- 	opts = {
-	-- 		sources = {
-	-- 			{ "cmp-dbee" },
-	-- 		},
-	-- 	},
-	-- },
+	{
+		"MattiasMTS/cmp-dbee",
+		dependencies = {
+			"kndndrj/nvim-dbee",
+		},
+		ft = "sql",
+		config = function()
+			require("cmp").setup.buffer({
+				sources = {
+					{ name = "cmp-dbee" },
+				},
+			})
+		end,
+	},
 }

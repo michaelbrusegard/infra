@@ -9,10 +9,11 @@ vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
 })
 
 -- Highlight when yanking text
+vim.cmd("highlight HighlightYank guifg=#f9e2af guibg=#3f3b41")
 vim.api.nvim_create_autocmd("TextYankPost", {
 	group = vim.api.nvim_create_augroup("highlight_yank", { clear = true }),
 	callback = function()
-		vim.highlight.on_yank()
+		vim.highlight.on_yank({ higroup = "HighlightYank", timeout = 300 })
 	end,
 })
 
@@ -46,17 +47,6 @@ vim.api.nvim_create_autocmd("TermOpen", {
 		vim.opt.number = false
 		vim.opt.relativenumber = false
 		vim.cmd("startinsert")
-	end,
-})
-
--- Disable line numbers for oil.nvim
-vim.api.nvim_create_autocmd("BufEnter", {
-	group = vim.api.nvim_create_augroup("oil", { clear = true }),
-	callback = function(event)
-		if vim.bo[event.buf].filetype == "oil" then
-			vim.api.nvim_set_option_value("number", false, { scope = "local", win = vim.fn.win_getid() })
-			vim.api.nvim_set_option_value("relativenumber", false, { scope = "local", win = vim.fn.win_getid() })
-		end
 	end,
 })
 
@@ -96,7 +86,7 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- Make sure open float is false when leaving a foating window
-local float_filetypes = { "lazy", "mason", "git", "fzf", "harpoon", "lspinfo" }
+local float_filetypes = { "lazy", "mason", "git", "fzf", "harpoon", "lspinfo", "noice" }
 
 vim.api.nvim_create_autocmd("BufLeave", {
 	group = vim.api.nvim_create_augroup("float_open", { clear = true }),

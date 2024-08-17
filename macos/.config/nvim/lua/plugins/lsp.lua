@@ -96,7 +96,7 @@ return {
 					vim.keymap.set( "n", "gK", vim.lsp.buf.signature_help, { desc = "Signature Help", buffer = event.buf, silent = true })
 					vim.keymap.set( "i", "<c-k>", vim.lsp.buf.signature_help, { desc = "Signature Help", buffer = event.buf, silent = true })
 					vim.keymap.set( { "n", "x" }, "crr", vim.lsp.buf.code_action, { desc = "Code Action", buffer = event.buf, silent = true })
-					vim.keymap.set("n", "crn", require("live-rename").rename, { desc = "Rename", buffer = event.buf, silent = true })
+					vim.keymap.set("n", "crn", "<cmd>lua require('live-rename').rename()<cr>", { desc = "Rename", buffer = event.buf, silent = true })
 					vim.keymap.set( { "n", "x" }, "<leader>cc", vim.lsp.codelens.run, { desc = "Run Codelens", buffer = event.buf, silent = true })
 					vim.keymap.set( "n", "<leader>cC", vim.lsp.codelens.refresh, { desc = "Refresh & Display Codelens", buffer = event.buf, silent = true })
 				end,
@@ -131,7 +131,11 @@ return {
 			end
 
 			require("mason-lspconfig").setup({
-				ensure_installed,
+				ensure_installed = vim.tbl_deep_extend(
+          "force",
+          ensure_installed,
+          require('util.lazy').opts("mason-lspconfig.nvim").ensure_installed or {}
+				),
 				handlers = { setup },
 			})
 		end,

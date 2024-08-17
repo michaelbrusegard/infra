@@ -21,6 +21,12 @@ return {
 				mason = true,
 				neotest = true,
 				lsp_trouble = true,
+				flash = true,
+				fzf = true,
+				grug_far = true,
+				noice = true,
+				dap = true,
+				dap_ui = true,
 				native_lsp = {
 					enabled = true,
 					virtual_text = {

@@ -147,60 +147,42 @@ return {
 				end
 			end)
 		end,
+		-- stylua: ignore
 		keys = {
 			{ "<c-j>", "<c-j>", ft = "fzf", mode = "t", nowait = true },
 			{ "<c-k>", "<c-k>", ft = "fzf", mode = "t", nowait = true },
-			{
-				"<leader>,",
-				"<cmd>FzfLua buffers sort_mru=true sort_lastused=true<cr>",
-				desc = "Switch Buffer",
-			},
+			{ "<leader>,", "<cmd>FzfLua buffers sort_mru=true sort_lastused=true<cr>", desc = "Switch Buffer", },
 			{ "<leader>/", "<cmd>lua require('util.navigation').pick('live_grep')<cr>", desc = "Grep" },
-			{
-				"<leader>:",
-				"<cmd>lua require('util.navigation').pick('command_history')<cr>",
-				desc = "Command History",
-			},
+			{ "<leader>:", "<cmd>lua require('util.navigation').pick('command_history')<cr>", desc = "Command History", },
 			{ "<leader><space>", "<cmd>lua require('util.navigation').pick('files')<cr>", desc = "Find Files" },
 			-- Find
 			{ "<leader>fb", "<cmd>lua require('util.navigation').pick('buffers')<cr>", desc = "Buffers" },
 			{ "<leader>ff", "<cmd>lua require('util.navigation').pick('files')<cr>", desc = "Find Files" },
 			{ "<leader>fg", "<cmd>lua require('util.navigation').pick('live_grep')<cr>", desc = "Grep" },
-			{
-				"<leader>fg",
-				"<cmd>lua require('util.navigation').pick('grep_visual')<cr>",
-				mode = "v",
-				desc = "Selection (Root Dir)",
-			},
+			{ "<leader>fg", "<cmd>lua require('util.navigation').pick('grep_visual')<cr>", mode = "x", desc = "Selection (Root Dir)", },
 			{ "<leader>fr", "<cmd>lua require('util.navigation').pick('oldfiles')<cr>", desc = "Recent" },
 			-- Git
 			{ "<leader>gc", "<cmd>lua require('util.navigation').pick('git_commits')<cr>", desc = "Git Commits" },
 			-- Search
 			{ '<leader>s"', "<cmd>lua require('util.navigation').pick('registers')<cr>", desc = "Registers" },
 			{ "<leader>sc", "<cmd>lua require('util.navigation').pick('commands')<cr>", desc = "Commands" },
-			{
-				"<leader>sC",
-				"<cmd>lua require('util.navigation').pick('command_history')<cr>",
-				desc = "Command History",
-			},
-			{
-				"<leader>sd",
-				"<cmd>lua require('util.navigation').pick('diagnostics_document')<cr>",
-				desc = "Document Diagnostics",
-			},
+			{ "<leader>sC", "<cmd>lua require('util.navigation').pick('command_history')<cr>", desc = "Command History", },
+			{ "<leader>sd", "<cmd>lua require('util.navigation').pick('diagnostics_document')<cr>", desc = "Document Diagnostics", },
 			{ "<leader>sh", "<cmd>lua require('util.navigation').pick('help_tags')<cr>", desc = "Help Pages" },
+			{ "<leader>sH", "<cmd>FzfLua highlights<cr>", desc = "Search Highlight Groups" },
 		},
 	},
 	-- File explorer
 	{
 		"stevearc/oil.nvim",
+		event = "VimEnter",
 		dependencies = { "echasnovski/mini.icons" },
 		keys = {
 			{
 				"-",
 				function()
 					local ft = vim.bo.filetype
-					if ft ~= "lazy" and ft ~= "mason" and ft ~= "git" then
+					if ft ~= "lazy" and ft ~= "mason" and ft ~= "git" and ft ~= "lspinfo" then
 						vim.cmd("Oil")
 					end
 				end,
@@ -219,6 +201,17 @@ return {
 				end,
 			},
 		},
+		init = function()
+			-- Disable line numbers for oil.nvim
+			vim.api.nvim_create_autocmd("FileType", {
+				callback = function(event)
+					if vim.bo[event.buf].filetype == "oil" then
+						vim.opt_local.number = false
+						vim.opt_local.relativenumber = false
+					end
+				end,
+			})
+		end,
 	},
 	-- Pane navigation
 	{

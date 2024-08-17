@@ -24,8 +24,8 @@ return {
 				options = {
 					theme = "auto",
 					globalstatus = vim.o.laststatus == 3,
-					component_separators = { left = "", right = "" },
-					section_separators = { left = "", right = "" },
+					component_separators = "",
+					section_separators = "",
 				},
 				sections = {
 					lualine_a = { "mode" },
@@ -39,12 +39,17 @@ return {
 					},
 					lualine_c = {
 						require("util.ui").root_dir(),
-						{ "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } },
 						require("util.ui").pretty_path(),
 					},
 					lualine_x = {
 						{
-							require("noice").api.statusline.mode.get,
+							function()
+								local message = require("noice").api.statusline.mode.get()
+								if not message:find("---") then
+									return message
+								end
+								return ""
+							end,
 							cond = require("noice").api.statusline.mode.has,
 							color = { fg = "#fab387" },
 						},
@@ -77,12 +82,35 @@ return {
 		},
 		main = "ibl",
 	},
+	-- Line decorations
+	{
+		"mvllow/modes.nvim",
+		event = "LazyFile",
+		-- branch = "canary",
+		opts = {
+			colors = {
+				copy = "#f9e2af",
+				delete = "#f38ba8",
+				insert = "#94e2d5",
+				replace = "#eba0ac",
+				visual = "#cba6f7",
+			},
+		},
+		line_opacity = 0.15,
+		set_cursorline = false,
+		set_number = false,
+		set_signcolumn = false,
+	},
 	-- Highly experimental plugin that completely replaces the UI for messages, cmdline and the popupmenu.
 	{
 		"folke/noice.nvim",
+		dependencies = { "j-hui/fidget.nvim" },
 		event = "VeryLazy",
 		opts = {
 			lsp = {
+				progress = {
+					enabled = false,
+				},
 				override = {
 					["vim.lsp.util.convert_input_to_markdown_lines"] = true,
 					["vim.lsp.util.stylize_markdown"] = true,
@@ -92,28 +120,35 @@ return {
 			routes = {
 				{
 					filter = {
-						event = "msg_show",
 						any = {
-							{ find = "%d+L, %d+B" },
-							{ find = "; after #%d+" },
-							{ find = "; before #%d+" },
+							{ find = "(%d+)L, (%d+)B%s+%[w%]%s*$" },
 						},
 					},
-					view = "mini",
+					view = "fidget",
+					opts = {
+						stop = true,
+						skip = false,
+						format = {
+							"{message}",
+						},
+					},
 				},
 			},
 			views = {
 				cmdline_popup = {
 					position = {
-						row = vim.o.lines - 2,
-						col = 0,
+						row = vim.o.lines,
+						col = 10,
 					},
 					size = {
-						width = vim.o.columns,
+						width = vim.o.columns - 19,
 						height = 1,
 					},
 					border = {
 						style = "none",
+					},
+					win_options = {
+						winhighlight = "NormalFloat:NormalFloat,FloatBorder:FloatBorder",
 					},
 				},
 			},
@@ -164,9 +199,12 @@ return {
 			if vim.o.filetype == "lazy" then
 				vim.cmd([[messages clear]])
 			end
+
+			package.loaded["noice.view.backend.fidget"] = require("util.ui").FidgetView
+
 			require("noice").setup(opts)
 		end,
 	},
-	-- Ui components
+	-- UI components
 	{ "MunifTanjim/nui.nvim", lazy = true },
 }
