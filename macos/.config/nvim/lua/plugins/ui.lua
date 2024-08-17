@@ -97,14 +97,27 @@ return {
 			},
 		},
 		line_opacity = 0.15,
-		set_cursorline = false,
+		set_cursorline = true,
 		set_number = false,
 		set_signcolumn = false,
+	},
+	-- Notifications
+	{
+		"j-hui/fidget.nvim",
+		opts = {
+			progress = {
+				display = {
+					overrides = {
+						rust_analyzer = { name = "rust-analyzer" },
+						lua_ls = { name = "lua-ls" },
+					},
+				},
+			},
+		},
 	},
 	-- Highly experimental plugin that completely replaces the UI for messages, cmdline and the popupmenu.
 	{
 		"folke/noice.nvim",
-		dependencies = { "j-hui/fidget.nvim" },
 		event = "VeryLazy",
 		opts = {
 			lsp = {
@@ -125,13 +138,6 @@ return {
 						},
 					},
 					view = "fidget",
-					opts = {
-						stop = true,
-						skip = false,
-						format = {
-							"{message}",
-						},
-					},
 				},
 			},
 			views = {
@@ -193,14 +199,11 @@ return {
 			},
 		},
 		config = function(_, opts)
-			-- HACK: noice shows messages from before it was enabled,
-			-- but this is not ideal when Lazy is installing plugins,
-			-- so clear the messages in this case.
 			if vim.o.filetype == "lazy" then
 				vim.cmd([[messages clear]])
 			end
 
-			package.loaded["noice.view.backend.fidget"] = require("util.ui").FidgetView
+			require("util.ui").fidgetview()
 
 			require("noice").setup(opts)
 		end,

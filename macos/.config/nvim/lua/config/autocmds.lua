@@ -13,7 +13,7 @@ vim.cmd("highlight HighlightYank guifg=#f9e2af guibg=#3f3b41")
 vim.api.nvim_create_autocmd("TextYankPost", {
 	group = vim.api.nvim_create_augroup("highlight_yank", { clear = true }),
 	callback = function()
-		vim.highlight.on_yank({ higroup = "HighlightYank", timeout = 300 })
+		vim.highlight.on_yank({ higroup = "HighlightYank", timeout = 200 })
 	end,
 })
 

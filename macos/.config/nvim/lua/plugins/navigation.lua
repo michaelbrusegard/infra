@@ -175,7 +175,6 @@ return {
 	-- File explorer
 	{
 		"stevearc/oil.nvim",
-		event = "VimEnter",
 		dependencies = { "echasnovski/mini.icons" },
 		keys = {
 			{

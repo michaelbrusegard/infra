@@ -109,104 +109,117 @@ function M.root_dir()
 	}
 end
 
-M.FidgetView = require("noice.view"):extend("MiniView")
+function M.fidgetview()
+	local require = require("noice.util.lazy")
 
-function M.FidgetView:init(opts)
-	M.FidgetView.super.init(self, opts)
-	self.active = {}
-	self.timers = {}
-	self._instance = "view"
-	self.handles = {}
-end
+	local Util = require("noice.util")
+	local View = require("noice.view")
 
-function M.FidgetView:update_options()
-	self._opts = vim.tbl_deep_extend("force", { timeout = 5000 }, self._opts)
-end
+	local defaults = { timeout = 5000 }
 
-function M.FidgetView:can_hide(message)
-	if message.opts.keep and message.opts.keep() then
-		return false
+	local FidgetView = View:extend("MiniView")
+
+	function FidgetView:init(opts)
+		FidgetView.super.init(self, opts)
+		self.active = {}
+		self.timers = {}
+		self._instance = "view"
+		self.handles = {}
 	end
-	return not require("noice.util").is_blocking()
-end
 
-function M.FidgetView:autohide(id)
-	if not id then
-		return
+	function FidgetView:update_options()
+		self._opts = vim.tbl_deep_extend("force", defaults, self._opts)
 	end
-	if not self.timers[id] then
-		self.timers[id] = vim.loop.new_timer()
+
+	function FidgetView:can_hide(message)
+		if message.opts.keep and message.opts.keep() then
+			return false
+		end
+		return not Util.is_blocking()
 	end
-	self.timers[id]:start(self._opts.timeout, 0, function()
-		if not self.active[id] then
+
+	function FidgetView:autohide(id)
+		if not id then
 			return
 		end
-		if not self:can_hide(self.active[id]) then
-			return self:autohide(id)
+		if not self.timers[id] then
+			self.timers[id] = vim.loop.new_timer()
 		end
-		self.active[id] = nil
-		self.timers[id] = nil
-		vim.schedule(function()
-			self:update()
+		self.timers[id]:start(self._opts.timeout, 0, function()
+			if not self.active[id] then
+				return
+			end
+			if not self:can_hide(self.active[id]) then
+				return self:autohide(id)
+			end
+			self.active[id] = nil
+			self.timers[id] = nil
+			vim.schedule(function()
+				self:update()
+			end)
 		end)
-	end)
-end
-
-function M.FidgetView:show()
-	for _, message in ipairs(self._messages) do
-		message._debug = true
-		self.active[message.id] = message
-		self:autohide(message.id)
 	end
-	self:clear()
-	self:update()
-end
 
-function M.FidgetView:dismiss()
-	self:clear()
-	self.active = {}
-	self:update()
-end
-
-function M.FidgetView:update()
-	local active = vim.tbl_values(self.active)
-	table.sort(active, function(a, b)
-		local ret = a.id < b.id
-		if self._opts.reverse then
-			return not ret
+	function FidgetView:show()
+		for _, message in ipairs(self._messages) do
+			-- we already have debug info,
+			-- so make sure we dont regen it in the child view
+			message._debug = true
+			self.active[message.id] = message
+			self:autohide(message.id)
 		end
-		return ret
-	end)
-	local seen = {}
-	for _, message in pairs(active) do
-		seen[message.id] = true
-		if self.handles[message.id] then
-			self.handles[message.id]:report({
-				message = message:content(),
-			})
-		else
-			self.handles[message.id] = require("fidget").progress.handle.create({
-				title = message.level or "info",
-				message = message:content(),
-				level = message.level,
-				lsp_client = {
-					name = self._view_opts.title or "noice",
-				},
-			})
+		self:clear()
+		self:update()
+	end
+
+	function FidgetView:dismiss()
+		self:clear()
+		self.active = {}
+		self:update()
+	end
+
+	function FidgetView:update()
+		local active = vim.tbl_values(self.active)
+		table.sort(active, function(a, b)
+			local ret = a.id < b.id
+			if self._opts.reverse then
+				return not ret
+			end
+			return ret
+		end)
+		local seen = {}
+		for _, message in pairs(active) do
+			seen[message.id] = true
+			if self.handles[message.id] then
+				self.handles[message.id]:report({
+					message = message:content(),
+				})
+			else
+				self.handles[message.id] = require("fidget").progress.handle.create({
+					title = message.level or "info",
+					message = message:content(),
+					level = message.level,
+					lsp_client = {
+						name = self._view_opts.title or "noice",
+					},
+				})
+			end
+		end
+		for id, handle in pairs(self.handles) do
+			if not seen[id] then
+				handle:finish()
+				self.handles[id] = nil
+			end
 		end
 	end
-	for id, handle in pairs(self.handles) do
-		if not seen[id] then
+
+	function FidgetView:hide()
+		for _, handle in pairs(self.handles) do
 			handle:finish()
-			self.handles[id] = nil
 		end
 	end
-end
 
-function M.FidgetView:hide()
-	for _, handle in pairs(self.handles) do
-		handle:finish()
-	end
+	package.loaded["noice.view.backend.fidget"] = FidgetView
 end
 
 return M
