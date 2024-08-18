@@ -414,6 +414,7 @@ return {
 		end,
 		config = function(_, opts)
 			require("dial.config").augends:register_group(opts.groups)
+			vim.g.dials_by_ft = opts.dials_by_ft
 		end,
 	},
 	-- Incremental rename

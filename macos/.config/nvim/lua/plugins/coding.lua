@@ -349,4 +349,14 @@ return {
 			})
 		end,
 	},
+	-- Git source
+	{
+		"nvim-cmp",
+		dependencies = {
+			{ "petertriho/cmp-git", opts = {} },
+		},
+		opts = function(_, opts)
+			table.insert(opts.sources, { name = "git" })
+		end,
+	},
 }

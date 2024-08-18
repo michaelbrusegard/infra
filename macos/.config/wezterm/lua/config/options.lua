@@ -61,6 +61,14 @@ local function options(config)
 		tab_bar = {
 			background = require("util.colors").mantle,
 		},
+
+		-- Yank mode
+		selection_fg = "#f9e2af",
+		selection_bg = "#3f3b41",
+
+		-- Find mode
+		copy_mode_inactive_highlight_fg = { Color = "#a6e3a1" },
+		copy_mode_inactive_highlight_bg = { Color = "#323c3f" },
 	}
 end
 

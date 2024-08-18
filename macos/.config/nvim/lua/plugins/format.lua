@@ -26,22 +26,48 @@ return {
 			formatters_by_ft = {
 				lua = { "stylua" },
 				sh = { "shfmt" },
+				python = { "black" },
+				css = { "prettierd" },
+				graphql = { "prettierd" },
+				handlebars = { "prettierd" },
+				html = { "prettierd" },
+				javascript = { "prettierd" },
+				javascriptreact = { "prettierd" },
+				json = { "prettierd" },
+				jsonc = { "prettierd" },
+				less = { "prettierd" },
+				markdown = { "prettierd", "markdownlint-cli2" },
+				["markdown.mdx"] = { "prettierd", "markdownlint-cli2" },
+				scss = { "prettierd" },
+				typescript = { "prettierd" },
+				typescriptreact = { "prettierd" },
+				vue = { "prettierd" },
+				yaml = { "prettierd" },
+				kotlin = { "ktlint" },
+				cs = { "csharpier" },
 			},
 			-- The options you set here will be merged with the builtin formatters.
 			-- You can also define any custom formatters here.
 			formatters = {
 				injected = { options = { ignore_errors = true } },
-				-- # Example of using dprint only when a dprint.json file is present
-				-- dprint = {
-				--   condition = function(ctx)
-				--     return vim.fs.find({ "dprint.json" }, { path = ctx.filename, upward = true })[1]
-				--   end,
-				-- },
-				--
-				-- # Example of using shfmt with extra args
-				-- shfmt = {
-				--   prepend_args = { "-i", "2", "-ci" },
-				-- },
+				prettierd = {
+					condition = function(_, ctx)
+						vim.fn.system({ "prettierd", "--find-config-path", ctx.filename })
+						return vim.v.shell_error == 0
+					end,
+				},
+				["markdownlint-cli2"] = {
+					condition = function(_, ctx)
+						local diag = vim.tbl_filter(function(d)
+							return d.source == "markdownlint"
+						end, vim.diagnostic.get(ctx.buf))
+						return #diag > 0
+					end,
+				},
+				csharpier = {
+					command = "dotnet-csharpier",
+					args = { "--write-stdout" },
+				},
 			},
 		},
 	},

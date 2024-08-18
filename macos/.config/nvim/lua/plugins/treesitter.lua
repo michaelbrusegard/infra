@@ -27,7 +27,10 @@ return {
 		},
 		opts_extend = { "ensure_installed" },
 		opts = {
-			highlight = { enable = true },
+			highlight = {
+				enable = true,
+				disable = { "latex" },
+			},
 			indent = { enable = true },
 			ensure_installed = {
 				"bash",
@@ -54,6 +57,25 @@ return {
 				"vimdoc",
 				"xml",
 				"yaml",
+				"http",
+				"graphql",
+				"angular",
+				"scss",
+				"dockerfile",
+				"git_config",
+				"gitcommit",
+				"git_rebase",
+				"gitignore",
+				"gitattributes",
+				"java",
+				"json5",
+				"kotlin",
+				"c_sharp",
+				"ninja",
+				"rst",
+				"bibtex",
+				"latex",
+				"vue",
 			},
 			incremental_selection = {
 				enable = true,
@@ -88,6 +110,13 @@ return {
 		},
 		config = function(_, opts)
 			require("nvim-treesitter.configs").setup(opts)
+
+			vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
+				pattern = { "*.component.html", "*.container.html" },
+				callback = function()
+					vim.treesitter.start(nil, "angular")
+				end,
+			})
 		end,
 	},
 	-- Text objects for treesitter

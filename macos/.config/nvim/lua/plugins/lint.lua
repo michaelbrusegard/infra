@@ -5,18 +5,11 @@ return {
 		event = "LazyFile",
 		opts = {
 			linters_by_ft = {
-				-- fish = { "fish" },
+				dockerfile = { "hadolint" },
+				kotlin = { "ktlint" },
+				markdown = { "markdownlint-cli2" },
 			},
-			linters = {
-				-- -- Example of using selene only when a selene.toml file is present
-				-- selene = {
-				--   -- `condition` is another LazyVim extension that allows you to
-				--   -- dynamically enable/disable linters based on the context.
-				--   condition = function(ctx)
-				--     return vim.fs.find({ "selene.toml" }, { path = ctx.filename, upward = true })[1]
-				--   end,
-				-- },
-			},
+			linters = {},
 		},
 		keys = { { "<leader>cl", mode = { "n", "x" }, "<cmd>lua require('util.lint').lint()<cr>", desc = "Code Lint" } },
 		config = function(_, opts)
