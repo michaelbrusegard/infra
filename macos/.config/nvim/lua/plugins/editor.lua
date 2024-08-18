@@ -418,7 +418,7 @@ return {
 		end,
 	},
 	-- Incremental rename
-	{ "saecki/live-rename.nvim" },
+	{ "saecki/live-rename.nvim", event = "InsertEnter" },
 	-- Remove search highlights when moving
 	{
 		"nvimdev/hlsearch.nvim",
