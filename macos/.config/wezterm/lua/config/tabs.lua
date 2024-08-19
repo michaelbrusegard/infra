@@ -47,61 +47,12 @@ wezterm.on("format-tab-title", function(tab)
 	end
 
 	return {
-		{ Attribute = { Intensity = "Bold" } },
 		{ Foreground = { Color = require("util.colors").pink } },
 		{ Background = { Color = tab.is_active and require("util.colors").surface0 or require("util.colors").mantle } },
+		{ Attribute = { Intensity = "Bold" } },
 		{ Text = " " .. (tab.tab_index + 1) .. " " },
-		{ Attribute = { Intensity = tab.is_active and "Bold" or "Normal" } },
 		{ Foreground = { Color = require("util.colors").text } },
+		{ Attribute = { Intensity = tab.is_active and "Bold" or "Normal" } },
 		{ Text = title .. " " },
 	}
-end)
-
--- Right side status
-wezterm.on("update-status", function(window, pane)
-	local cwd_uri = pane:get_current_working_dir()
-	local hostname = ""
-
-	if cwd_uri then
-		if type(cwd_uri) == "userdata" then
-			hostname = cwd_uri.host or wezterm.hostname()
-		else
-			cwd_uri = cwd_uri:sub(8)
-			local slash = cwd_uri:find("/")
-			if slash then
-				hostname = cwd_uri:sub(1, slash - 1)
-			end
-		end
-		local dot = hostname:find("[.]")
-		if dot then
-			hostname = hostname:sub(1, dot - 1)
-		end
-		if hostname == "" then
-			hostname = wezterm.hostname()
-		end
-	else
-		hostname = wezterm.hostname()
-	end
-
-	local current_mode = window:active_key_table() or "normal_mode"
-
-	local modes = {
-		normal_mode = { text = "WINDOW 󱂬", color = require("util.colors").blue },
-		search_mode = { text = "FIND ", color = require("util.colors").green },
-		copy_mode = { text = "YANK 󰆏", color = require("util.colors").yellow },
-	}
-
-	window:set_right_status(wezterm.format({
-		{ Foreground = { Color = require("util.colors").mantle } },
-		{ Background = { Color = modes[current_mode].color } },
-		{ Attribute = { Intensity = "Bold" } },
-		{ Text = " " .. hostname .. " " },
-	}))
-
-	window:set_left_status(wezterm.format({
-		{ Foreground = { Color = require("util.colors").mantle } },
-		{ Background = { Color = modes[current_mode].color } },
-		{ Attribute = { Intensity = "Bold" } },
-		{ Text = " " .. modes[current_mode].text .. " " },
-	}))
 end)

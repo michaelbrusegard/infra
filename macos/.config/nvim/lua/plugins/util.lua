@@ -11,7 +11,6 @@ return {
 	{
 		"m4xshen/hardtime.nvim",
 		event = "LazyFile",
-		dependencies = { "MunifTanjim/nui.nvim", "nvim-lua/plenary.nvim" },
 		opts = {},
 	},
 	-- Database client
@@ -76,5 +75,31 @@ return {
 		config = function()
 			vim.cmd([[do FileType]])
 		end,
+	},
+	-- Eye strain prevention
+	{
+		"wildfunctions/myeyeshurt",
+		event = "VeryLazy",
+		keys = {
+			{
+				"<leader>ms",
+				"<cmd>lua require('myeyeshurt').start()<cr>",
+				desc = "Trigger flakes",
+			},
+			{
+				"<leader>mx",
+				"<cmd>lua require('myeyeshurt').stop()<cr>",
+				desc = "Stop flakes",
+			},
+		},
+		opts = {
+			initialFlakes = 1,
+			flakeOdds = 20,
+			maxFlakes = 750,
+			nextFrameDelay = 175,
+			useDefaultKeymaps = false,
+			flake = { "*", "." },
+			minutesUntilRest = 20,
+		},
 	},
 }

@@ -5,6 +5,7 @@ return {
 			"nvim-neotest/nvim-nio",
 			"Issafalcon/neotest-dotnet",
 			"nvim-neotest/neotest-python",
+			"mrcjkb/rustaceanvim",
 		},
 		opts = {
 			-- Can be a list of adapters like what neotest expects,
@@ -14,6 +15,7 @@ return {
 			adapters = {
 				["neotest-dotnet"] = {},
 				["neotest-python"] = {},
+				["rustaceanvim.neotest"] = {},
 			},
 			status = { virtual_text = true },
 			output = { open_on_run = true },

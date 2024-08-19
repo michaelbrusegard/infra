@@ -67,6 +67,7 @@ return {
 					{ "<leader>f", group = "file/find" },
 					{ "<leader>g", group = "git" },
 					{ "<leader>s", group = "search/screenshot" },
+					{ "<leader>m", group = "snow" },
 					{ "<leader>l", group = "log/lib", icon = { icon = "󰙵 ", color = "cyan" } },
 					{ "<leader>x", group = "trouble", icon = { icon = "󱖫 ", color = "green" } },
 					{ "[", group = "prev" },

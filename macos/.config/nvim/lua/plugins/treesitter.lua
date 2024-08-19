@@ -76,6 +76,8 @@ return {
 				"bibtex",
 				"latex",
 				"vue",
+				"rust",
+				"ron",
 			},
 			incremental_selection = {
 				enable = true,

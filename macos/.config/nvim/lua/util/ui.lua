@@ -51,12 +51,9 @@ function M.pretty_path()
 			return ""
 		end
 
-		local cwd = require("util.root").cwd()
 		local root = require("util.root").get({ normalize = true })
 
-		if path:find(cwd, 1, true) == 1 then
-			path = path:sub(#cwd + 2)
-		else
+		if path:find(root, 1, true) == 1 then
 			path = path:sub(#root + 2)
 		end
 

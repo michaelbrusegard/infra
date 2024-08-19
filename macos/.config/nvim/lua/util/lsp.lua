@@ -12,4 +12,13 @@ function M.on_attach(on_attach, name)
 	})
 end
 
+function M.extend_or_override(config, custom, ...)
+	if type(custom) == "function" then
+		config = custom(config, ...) or config
+	elseif custom then
+		config = vim.tbl_deep_extend("force", config, custom)
+	end
+	return config
+end
+
 return M

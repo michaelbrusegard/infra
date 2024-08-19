@@ -1,6 +1,6 @@
 local function options(config)
-	-- Keep wezterm running when all windows are closed
-	config.quit_when_all_windows_are_closed = false
+	-- Quit wezterm when all windows are closed
+	config.quit_when_all_windows_are_closed = true
 
 	-- Don't adjust window size because of tiling window manager
 	config.adjust_window_size_when_changing_font_size = true

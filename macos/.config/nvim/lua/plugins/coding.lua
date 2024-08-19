@@ -360,6 +360,7 @@ return {
 			table.insert(opts.sources, { name = "git" })
 		end,
 	},
+	-- Sql source
 	{
 		"nvim-cmp",
 		dependencies = {
@@ -372,11 +373,9 @@ return {
 				opts = {},
 			},
 		},
-		opts = {
-			sources = {
-				{ "cmp-dbee" },
-			},
-		},
+		opts = function(_, opts)
+			table.insert(opts.sources, { name = "dbee" })
+		end,
 	},
 	-- TailwindCSS colorizer
 	{
@@ -390,6 +389,25 @@ return {
 				format_kinds(entry, item) -- add icons
 				return require("tailwindcss-colorizer-cmp").formatter(entry, item)
 			end
+		end,
+	},
+	-- Rust crates source
+	{
+		"nvim-cmp",
+		dependencies = {
+			{
+				"Saecki/crates.nvim",
+				event = { "BufRead Cargo.toml" },
+				opts = {
+					completion = {
+						cmp = { enabled = true },
+					},
+				},
+			},
+		},
+		opts = function(_, opts)
+			opts.sources = opts.sources or {}
+			table.insert(opts.sources, { name = "crates" })
 		end,
 	},
 }
