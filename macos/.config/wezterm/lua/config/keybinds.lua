@@ -28,6 +28,9 @@ local function keybinds(config)
 		{ key = "k", mods = "CTRL|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.AdjustPaneSize({ "Up", 3 }), utf8.char(0xe6)) },
 		{ key = "l", mods = "CTRL|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.AdjustPaneSize({ "Right", 3 }), utf8.char(0xe7)) },
 
+		-- Move pane
+		{ key = "0", mods = "SUPER", action = wezterm.action.PaneSelect({ mode = "SwapWithActiveKeepFocus" }) },
+
 		-- Norwegian special characters
 		{ key = "'", mods = "ALT", action = wezterm.action.SendString("æ") },
 		{ key = "o", mods = "ALT", action = wezterm.action.SendString("ø") },
@@ -49,6 +52,7 @@ local function keybinds(config)
 				window:active_pane():send_text("nvim\n")
 			end),
 		},
+		{ key = 'l', mods = 'SHIFT|SUPER', action = wezterm.action.ShowDebugOverlay },
 
 		-- Navigation between tabs
 		{ key = "Tab", mods = "CTRL", action = wezterm.action.ActivateTabRelative(1) },
@@ -68,6 +72,10 @@ local function keybinds(config)
 		{ key = "7", mods = "SUPER", action = wezterm.action.ActivateTab(6) },
 		{ key = "8", mods = "SUPER", action = wezterm.action.ActivateTab(7) },
 		{ key = "9", mods = "SUPER", action = wezterm.action.ActivateTab(-1) },
+
+		-- Move tabs
+		{ key = "p", mods = "SHIFT|SUPER", action = wezterm.action.MoveTabRelative(-1) },
+		{ key = "n", mods = "SHIFT|SUPER", action = wezterm.action.MoveTabRelative(1) },
 
 		-- Basic actions
 		{ key = "f", mods = "SUPER", action = wezterm.action.Search("CurrentSelectionOrEmptyString") },
@@ -133,6 +141,14 @@ local function keybinds(config)
 			{
 				key = "y",
 				mods = "NONE",
+				action = wezterm.action.Multiple({
+					{ CopyTo = "ClipboardAndPrimarySelection" },
+					{ CopyMode = "Close" },
+				}),
+			},
+			{
+				key = "c",
+				mods = "SUPER",
 				action = wezterm.action.Multiple({
 					{ CopyTo = "ClipboardAndPrimarySelection" },
 					{ CopyMode = "Close" },

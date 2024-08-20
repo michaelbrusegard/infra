@@ -8,8 +8,8 @@ return {
 			{
 				"<leader>cf",
 				mode = { "n", "x" },
-				"<cmd>lua require('conform').format({ formatters = { 'injected' }, timeout_ms = 3000 })<cr>",
-				desc = "Format",
+				"<cmd>ConformInfo<cr>",
+				desc = "Format Info",
 			},
 		},
 		opts = {
@@ -36,8 +36,8 @@ return {
 				json = { "prettierd" },
 				jsonc = { "prettierd" },
 				less = { "prettierd" },
-				markdown = { "prettierd", "markdownlint-cli2" },
-				["markdown.mdx"] = { "prettierd", "markdownlint-cli2" },
+				markdown = { "prettierd", "markdownlint-cli2", "markdown-toc" },
+				["markdown.mdx"] = { "prettierd", "markdownlint-cli2", "markdown-toc" },
 				scss = { "prettierd" },
 				typescript = { "prettierd" },
 				typescriptreact = { "prettierd" },
@@ -45,6 +45,7 @@ return {
 				yaml = { "prettierd" },
 				kotlin = { "ktlint" },
 				cs = { "csharpier" },
+				rust = { lsp_format = "prefer" },
 			},
 			-- The options you set here will be merged with the builtin formatters.
 			-- You can also define any custom formatters here.
@@ -54,6 +55,15 @@ return {
 					condition = function(_, ctx)
 						vim.fn.system({ "prettierd", "--find-config-path", ctx.filename })
 						return vim.v.shell_error == 0
+					end,
+				},
+				["markdown-toc"] = {
+					condition = function(_, ctx)
+						for _, line in ipairs(vim.api.nvim_buf_get_lines(ctx.buf, 0, -1, false)) do
+							if line:find("<!%-%- toc %-%->") then
+								return true
+							end
+						end
 					end,
 				},
 				["markdownlint-cli2"] = {

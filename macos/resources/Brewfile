@@ -30,6 +30,7 @@ brew "pinentry-mac"
 brew "pyenv"
 brew "ripgrep"
 brew "rust-analyzer"
+brew "rustup"
 brew "silicon"
 brew "stow"
 brew "thefuck"
@@ -62,6 +63,7 @@ mas "Affinity Publisher 2", id: 1606941598
 mas "Developer", id: 640199958
 mas "Jump Desktop", id: 524141863
 mas "Keynote", id: 409183694
+mas "Messenger", id: 1480068668
 mas "Numbers", id: 409203825
 mas "Pages", id: 409201541
 mas "Slack", id: 803453959

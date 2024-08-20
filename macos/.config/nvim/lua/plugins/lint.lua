@@ -11,7 +11,6 @@ return {
 			},
 			linters = {},
 		},
-		keys = { { "<leader>cl", mode = { "n", "x" }, "<cmd>lua require('util.lint').lint()<cr>", desc = "Code Lint" } },
 		config = function(_, opts)
 			local lint = require("lint")
 			for name, linter in pairs(opts.linters) do

@@ -119,11 +119,10 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 vim.api.nvim_create_autocmd("FileType", {
 	group = vim.api.nvim_create_augroup("close_with_q", { clear = true }),
 	pattern = {
-		"PlenaryTestPopup",
 		"help",
 		"lspinfo",
+		"grug-far",
 		"qf",
-		"spectre_panel",
 		"tsplayground",
 		"neotest-output",
 		"checkhealth",

@@ -197,10 +197,47 @@ return {
 					},
 				},
 				texlab = {},
+				yamlls = {
+					-- Have to add this for yamlls to understand that we support line folding
+					capabilities = {
+						textDocument = {
+							foldingRange = {
+								dynamicRegistration = false,
+								lineFoldingOnly = true,
+							},
+						},
+					},
+					-- lazy-load schemastore when needed
+					on_new_config = function(new_config)
+						new_config.settings.yaml.schemas = vim.tbl_deep_extend(
+							"force",
+							new_config.settings.yaml.schemas or {},
+							require("schemastore").yaml.schemas()
+						)
+					end,
+					settings = {
+						redhat = { telemetry = { enabled = false } },
+						yaml = {
+							keyOrdering = false,
+							format = {
+								enable = true,
+							},
+							validate = true,
+							schemaStore = {
+								-- Must disable built-in schemaStore support to use
+								-- schemas from SchemaStore.nvim plugin
+								enable = false,
+								-- Avoid TypeError: Cannot read properties of undefined (reading 'length')
+								url = "",
+							},
+						},
+					},
+				},
 			},
 			setup = {
+				-- stylua: ignore
 				vtsls = function(_, opts)
-					require("util.lsp").on_attach(function(client)
+					require("util.lsp").on_attach(function(client, buffer)
 						client.commands["_typescript.moveToFileRefactoring"] = function(command)
 							local action, uri, range = unpack(command.arguments)
 
@@ -247,6 +284,13 @@ return {
 								end)
 							end)
 						end
+						vim.keymap.set("n", "gD", "<cmd>lua require('util.lsp').execute({ command = 'typescript.goToSourceDefinition', arguments = { vim.lsp.util.make_position_params().textDocument.uri, vim.lsp.util.make_position_params().position }, open = true, })<cr>", { desc = "Goto Source Definition", buffer = buffer, silent = true })
+						vim.keymap.set("n", "gR", "<cmd>lua require('util.lsp').execute({ command = 'typescript.findAllFileReferences', arguments = { vim.uri_from_bufnr(0) }, open = true, })<cr>", { desc = "Find References", buffer = buffer, silent = true })
+						vim.keymap.set("n", "<leader>co", "<cmd>lua require('util.lsp').action('source.organizeImports')<cr>", { desc = "Organize Imports", buffer = buffer, silent = true })
+						vim.keymap.set("n", "<leader>cM", "<cmd>lua require('util.lsp').action('source.addMissingImports.ts')<cr>", { desc = "Add missing imports", buffer = buffer, silent = true })
+						vim.keymap.set("n", "<leader>cu", "<cmd>lua require('util.lsp').action('source.removeUnused.ts')<cr>", { desc = "Remove unused imports", buffer = buffer, silent = true })
+						vim.keymap.set("n", "<leader>cD", "<cmd>lua require('util.lsp').action('source.fixAll.ts')<cr>", { desc = "Fix all diagnostics", buffer = buffer, silent = true })
+						vim.keymap.set("n", "<leader>cV", "<cmd>lua require('util.lsp').execute({ command = 'typescript.selectTypeScriptVersion' })<cr>", { desc = "Select TS workspace version", buffer = buffer, silent = true })
 					end, "vtsls")
 					-- copy typescript settings to javascript
 					opts.settings.javascript =
@@ -300,11 +344,24 @@ return {
 				jdtls = function()
 					return true -- avoid duplicate servers
 				end,
+				-- stylua: ignore
+				omnisharp = function()
+					require("util.lsp").on_attach(function(_, buffer)
+						vim.keymap.set("n", "gd", "<cmd>lua require('omnisharp_extended').telescope_lsp_definitions()<cr>", { desc = "Goto Definition", buffer = buffer, silent = true })
+					end, "omnisharp")
+				end,
+				-- stylua: ignore
 				ruff = function()
-					require("util.lsp").on_attach(function(client, _)
+					require("util.lsp").on_attach(function(client, buffer)
 						-- Disable hover in favor of Pyright
 						client.server_capabilities.hoverProvider = false
+						vim.keymap.set("n", "<leader>co", "<cmd>lua require('util.lsp').action('source.organizeImports')<cr>", { desc = "Organize Imports", buffer = buffer, silent = true })
 					end, "ruff")
+				end,
+				yamlls = function()
+					require("util.lsp").on_attach(function(client, _)
+						client.server_capabilities.documentFormattingProvider = true
+					end, "yamlls")
 				end,
 			},
 		},
@@ -326,18 +383,18 @@ return {
 					end
 
 					vim.keymap.set("n", "<leader>ci", function() if vim.g.float_open then return end vim.g.float_open = true vim.cmd("LspInfo") end, { desc = "Lsp Info", buffer = buffer, silent = true })
-					vim.keymap.set( "n", "gd", "<cmd>lua require('util.navigation').pick('lsp_definitions', { jump_to_single_result = true, ignore_current_line = true })<cr>", { desc = "Goto Definition", buffer = buffer, silent = true })
-					vim.keymap.set( "n", "gr", "<cmd>lua require('util.navigation').pick('lsp_references', { jump_to_single_result = true, ignore_current_line = true })<cr>", { desc = "References", buffer = buffer, silent = true })
-					vim.keymap.set( "n", "gI", "<cmd>lua require('util.navigation').pick('lsp_implementations', { jump_to_single_result = true, ignore_current_line = true })<cr>", { desc = "Goto Implementation", buffer = buffer, silent = true })
-					vim.keymap.set( "n", "gy", "<cmd>lua require('util.navigation').pick('lsp_typedefs', { jump_to_single_result = true, ignore_current_line = true })<cr>", { desc = "Goto T[y]pe Definition", buffer = buffer, silent = true })
-					vim.keymap.set( "n", "gD", vim.lsp.buf.declaration, { desc = "Goto Declaration", buffer = buffer, silent = true })
+					vim.keymap.set("n", "gd", "<cmd>lua require('util.navigation').pick('lsp_definitions', { jump_to_single_result = true, ignore_current_line = true })<cr>", { desc = "Goto Definition", buffer = buffer, silent = true })
+					vim.keymap.set("n", "gr", "<cmd>lua require('util.navigation').pick('lsp_references', { jump_to_single_result = true, ignore_current_line = true })<cr>", { desc = "References", buffer = buffer, silent = true })
+					vim.keymap.set("n", "gI", "<cmd>lua require('util.navigation').pick('lsp_implementations', { jump_to_single_result = true, ignore_current_line = true })<cr>", { desc = "Goto Implementation", buffer = buffer, silent = true })
+					vim.keymap.set("n", "gy", "<cmd>lua require('util.navigation').pick('lsp_typedefs', { jump_to_single_result = true, ignore_current_line = true })<cr>", { desc = "Goto T[y]pe Definition", buffer = buffer, silent = true })
+					vim.keymap.set("n", "gD", vim.lsp.buf.declaration, { desc = "Goto Declaration", buffer = buffer, silent = true })
 					vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Hover", buffer = buffer, silent = true })
-					vim.keymap.set( "n", "gK", vim.lsp.buf.signature_help, { desc = "Signature Help", buffer = buffer, silent = true })
-					vim.keymap.set( "i", "<c-k>", vim.lsp.buf.signature_help, { desc = "Signature Help", buffer = buffer, silent = true })
-					vim.keymap.set( { "n", "x" }, "crr", vim.lsp.buf.code_action, { desc = "Code Action", buffer = buffer, silent = true })
+					vim.keymap.set("n", "gK", vim.lsp.buf.signature_help, { desc = "Signature Help", buffer = buffer, silent = true })
+					vim.keymap.set("i", "<c-k>", vim.lsp.buf.signature_help, { desc = "Signature Help", buffer = buffer, silent = true })
+					vim.keymap.set({ "n", "x" }, "crr", vim.lsp.buf.code_action, { desc = "Code Action", buffer = buffer, silent = true })
 					vim.keymap.set("n", "crn", "<cmd>lua require('live-rename').rename()<cr>", { desc = "Rename", buffer = buffer, silent = true })
-					vim.keymap.set( { "n", "x" }, "<leader>cc", vim.lsp.codelens.run, { desc = "Run Codelens", buffer = buffer, silent = true })
-					vim.keymap.set( "n", "<leader>cC", vim.lsp.codelens.refresh, { desc = "Refresh & Display Codelens", buffer = buffer, silent = true })
+					vim.keymap.set({ "n", "x" }, "<leader>cc", vim.lsp.codelens.run, { desc = "Run Codelens", buffer = buffer, silent = true })
+					vim.keymap.set("n", "<leader>cC", vim.lsp.codelens.refresh, { desc = "Refresh & Display Codelens", buffer = buffer, silent = true })
 				end)
 
 			local capabilities = vim.tbl_deep_extend(
@@ -410,6 +467,7 @@ return {
 				"java-debug-adapter",
 				"java-test",
 				"ktlint",
+				"markdown-toc",
 				"markdownlint-cli2",
 				"csharpier",
 				"netcoredbg",
@@ -439,7 +497,7 @@ return {
 			end)
 		end,
 	},
-	-- Json schema store
+	-- Json and yaml schema store
 	{
 		"b0o/SchemaStore.nvim",
 		lazy = true,
@@ -657,21 +715,30 @@ return {
 	-- Rustacean
 	{
 		"mrcjkb/rustaceanvim",
-		version = "^4", -- Recommended
+		version = "^5", -- Recommended
 		ft = { "rust" },
 		opts = {
 			server = {
 				on_attach = function(_, bufnr)
-					vim.keymap.set("n", "<leader>cR", function()
-						vim.cmd.RustLsp("codeAction")
-					end, { desc = "Code Action", buffer = bufnr })
-					vim.keymap.set("n", "<leader>dr", function()
-						vim.cmd.RustLsp("debuggables")
-					end, { desc = "Rust Debuggables", buffer = bufnr })
+					vim.keymap.set(
+						"n",
+						"<leader>cR",
+						"<cmd>lua vim.cmd.RustLsp('codeAction')<cr>",
+						{ desc = "Code Action", buffer = bufnr }
+					)
+					vim.keymap.set(
+						"n",
+						"<leader>dr",
+						"<cmd>lua vim.cmd.RustLsp('debuggables')<cr>",
+						{ desc = "Rust Debuggables", buffer = bufnr }
+					)
 				end,
 				default_settings = {
 					-- rust-analyzer language server configuration
 					["rust-analyzer"] = {
+						server = {
+							extraEnv = { ["RUSTUP_TOOLCHAIN"] = "stable" },
+						},
 						cargo = {
 							allFeatures = true,
 							loadOutDirsFromCheck = true,
@@ -688,6 +755,28 @@ return {
 								["napi-derive"] = { "napi" },
 								["async-recursion"] = { "async_recursion" },
 							},
+						},
+						inlayHints = {
+							typeHints = true,
+							parameterHints = true,
+							maxLength = 25,
+							renderColons = true,
+							chainingHints = { enable = false },
+							bindingModeHints = { enable = false },
+							closingBraceHints = { enable = false },
+							closureCaptureHints = { enable = false },
+							closureReturnTypeHints = { enable = "never" },
+							discriminantHints = { enable = "never" },
+							expressionAdjustmentHints = { enable = "never" },
+							genericParameterHints = {
+								const = { enable = false },
+								lifetime = { enable = false },
+								type = { enable = false },
+							},
+							implicitDrops = { enable = false },
+							lifetimeElisionHints = { enable = "never" },
+							rangeExclusiveHints = { enable = false },
+							reborrowHints = { enable = "never" },
 						},
 					},
 				},

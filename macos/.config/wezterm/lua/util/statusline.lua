@@ -20,15 +20,21 @@ function M.get_hostname(cwd)
 				hostname = cwd:sub(1, slash - 1)
 			end
 		end
-		local dot = hostname:find("[.]")
-		if dot then
-			hostname = hostname:sub(1, dot - 1)
-		end
-		if hostname == "" then
-			hostname = wezterm.hostname()
-		end
 	else
 		hostname = wezterm.hostname()
+	end
+
+	local dot = hostname:find("[.]")
+	if dot then
+		hostname = hostname:sub(1, dot - 1)
+	end
+
+	if hostname == "" then
+		hostname = wezterm.hostname()
+		local wezdot = hostname:find("[.]")
+		if wezdot then
+			hostname = hostname:sub(1, wezdot - 1)
+		end
 	end
 
 	return hostname
