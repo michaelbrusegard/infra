@@ -55,6 +55,14 @@ cd ~/dotfiles && /opt/homebrew/bin/stow macos
 zsh ~/dotfiles/macos/scripts/login.zsh
 ```
 
+#### Screenshots
+
+<img width="560" alt="WezTerm" src="https://github.com/user-attachments/assets/d6c99c89-f4d5-465a-9faa-3756c8105962">
+
+<img width="560" alt="Neovim & Safari" src="https://github.com/user-attachments/assets/1bad8a88-f082-4d7f-9345-6744e1e2cc64">
+
+<img width="560" alt="Desktop wallpaper" src="https://github.com/user-attachments/assets/43a9b48a-b2b5-4a69-8afe-fd166f0f5380">
+
 ## Espresso (Ubuntu Server)
 
 Espresso is my personal home server used for hosting various appications and services.
