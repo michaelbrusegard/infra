@@ -18,6 +18,8 @@ return {
 			},
 		},
 		opts = {
+			notify_on_error = true,
+			notify_no_formatters = true,
 			default_format_opts = {
 				timeout_ms = 3000,
 				async = false,
@@ -32,22 +34,22 @@ return {
 				lua = { "stylua" },
 				sh = { "shfmt" },
 				python = { "black" },
-				css = { "prettierd" },
-				graphql = { "prettierd" },
-				handlebars = { "prettierd" },
-				html = { "prettierd" },
-				javascript = { "prettierd" },
-				javascriptreact = { "prettierd" },
-				json = { "prettierd" },
-				jsonc = { "prettierd" },
-				less = { "prettierd" },
-				markdown = { "prettierd", "markdownlint-cli2", "markdown-toc" },
-				["markdown.mdx"] = { "prettierd", "markdownlint-cli2", "markdown-toc" },
-				scss = { "prettierd" },
-				typescript = { "prettierd" },
-				typescriptreact = { "prettierd" },
-				vue = { "prettierd" },
-				yaml = { "prettierd" },
+				css = { "prettierd", "biome" },
+				graphql = { "prettierd", "biome" },
+				handlebars = { "prettierd", "biome" },
+				html = { "prettierd", "biome" },
+				javascript = { "prettierd", "biome" },
+				javascriptreact = { "prettierd", "biome" },
+				json = { "prettierd", "biome" },
+				jsonc = { "prettierd", "biome" },
+				less = { "prettierd", "biome" },
+				markdown = { "prettierd", "biome", "markdownlint-cli2", "markdown-toc" },
+				["markdown.mdx"] = { "prettierd", "biome", "markdownlint-cli2", "markdown-toc" },
+				scss = { "prettierd", "biome" },
+				typescript = { "prettierd", "biome" },
+				typescriptreact = { "prettierd", "biome" },
+				vue = { "prettierd", "biome" },
+				yaml = { "prettierd", "biome" },
 				kotlin = { "ktlint" },
 				cs = { "csharpier" },
 				rust = { lsp_format = "prefer" },
@@ -58,8 +60,23 @@ return {
 				injected = { options = { ignore_errors = true } },
 				prettierd = {
 					condition = function(_, ctx)
-						vim.fn.system({ "prettierd", "--find-config-path", ctx.filename })
-						return vim.v.shell_error == 0
+						return require("util.format").find_config(ctx.filename, {
+							".prettierrc",
+							".prettierrc.json",
+							".prettierrc.yml",
+							".prettierrc.yaml",
+							".prettierrc.json5",
+							".prettierrc.js",
+							".prettierrc.cjs",
+							".prettierrc.toml",
+							"prettier.config.js",
+							"prettier.config.cjs",
+						})
+					end,
+				},
+				biome = {
+					condition = function(_, ctx)
+						return require("util.format").find_config(ctx.filename, { "biome.json", "biome.jsonc" })
 					end,
 				},
 				["markdown-toc"] = {
