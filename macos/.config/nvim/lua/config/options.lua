@@ -2,6 +2,15 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
+-- Setup python
+local venv = vim.fn.expand("~/.pyenv/versions/neovim")
+-- Run python -m ipykernel once if it can't find the file/directory
+-- It needs the following dependencies: pynvim jupytext jupyter_client ipykernel plotly kaleido pnglatex pyperclip
+vim.g.python3_host_prog = venv .. "/bin/python"
+-- Prepend the python host program to the path
+vim.env.PATH = venv .. "/bin:" .. vim.env.PATH
+vim.env.PYENV_VERSION = vim.fn.system("pyenv version"):match("(%S+)%s+%(.-%)")
+
 -- Make line numbers default
 vim.opt.number = true
 
@@ -101,7 +110,7 @@ vim.opt.completeopt = "menu,menuone,noselect"
 vim.opt.conceallevel = 2
 
 -- Spellcheck
-vim.opt.spelllang = { "en" }
+vim.opt.spelllang = "en,nb"
 
 -- Confirm instead of failing
 vim.opt.confirm = true

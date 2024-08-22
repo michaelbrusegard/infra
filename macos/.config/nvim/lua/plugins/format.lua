@@ -8,8 +8,13 @@ return {
 			{
 				"<leader>cf",
 				mode = { "n", "x" },
+				"<cmd>lua require('conform').format({ formatters = { 'injected' }, timeout_ms = 3000 })<cr>",
+				desc = "Format",
+			},
+			{
+				"<leader>cF",
 				"<cmd>ConformInfo<cr>",
-				desc = "Format Info",
+				desc = "Formatter Info",
 			},
 		},
 		opts = {

@@ -181,7 +181,7 @@ return {
 				"-",
 				function()
 					local ft = vim.bo.filetype
-					if ft ~= "lazy" and ft ~= "mason" and ft ~= "git" and ft ~= "lspinfo" and ft ~= "grug-far" then
+					if ft ~= "lazy" and ft ~= "mason" and ft ~= "git" and ft ~= "lspinfo" and ft ~= "copilot-chat" then
 						vim.cmd("Oil")
 					end
 				end,
@@ -228,6 +228,7 @@ return {
 			settings = {
 				save_on_toggle = true,
 			},
+			excluded_filetypes = { "harpoon", "oil", "grug-far", "lazy", "mason", "git", "lspinfo", "fzf", "noice" },
 		},
 		keys = {
 			{

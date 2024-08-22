@@ -97,8 +97,9 @@ function M.open_git(args)
 	})
 	vim.keymap.set("t", "<esc>", "<esc>", { buffer = buf, nowait = true })
 	local command = table.concat({ "lazygit", args }, " ")
-  vim.bo[buf].filetype = "git"
+	vim.bo[buf].filetype = "git"
 	return vim.fn.termopen(command, {
+		cwd = require("util.root").git(),
 		on_exit = function()
 			vim.api.nvim_win_close(win, true)
 		end,

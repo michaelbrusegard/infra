@@ -28,6 +28,7 @@ brew "neovim", args: ["HEAD"]
 brew "nvm"
 brew "pinentry-mac"
 brew "pyenv"
+brew "pyenv-virtualenv"
 brew "ripgrep"
 brew "rust-analyzer"
 brew "rustup"

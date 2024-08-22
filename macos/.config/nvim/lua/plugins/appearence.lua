@@ -80,4 +80,10 @@ return {
 			end
 		end,
 	},
+	-- Show colors in the code
+	{
+		"echasnovski/mini.hipatterns",
+		event = "LazyFile",
+		opts = {},
+	},
 }

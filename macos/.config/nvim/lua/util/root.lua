@@ -133,4 +133,11 @@ function M.get(opts)
 	return ret
 end
 
+function M.git()
+	local root = M.get()
+	local git_root = vim.fs.find(".git", { path = root, upward = true })[1]
+	local ret = git_root and vim.fn.fnamemodify(git_root, ":h") or root
+	return ret
+end
+
 return M

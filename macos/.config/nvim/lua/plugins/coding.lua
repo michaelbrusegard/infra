@@ -261,6 +261,7 @@ return {
 					g = require("util.coding").ai_buffer,
 					u = ai.gen_spec.function_call(),
 					U = ai.gen_spec.function_call({ name_pattern = "[%w_]" }),
+					n = ai.gen_spec.treesitter({ a = "@code_cell.outer", i = "@code_cell.inner" }),
 				},
 			}
 		end,

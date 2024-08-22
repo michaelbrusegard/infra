@@ -74,17 +74,6 @@ vim.api.nvim_create_autocmd("VimResized", {
 	command = "wincmd =",
 })
 
--- Close Lazy with <esc>
-vim.api.nvim_create_autocmd("FileType", {
-	group = vim.api.nvim_create_augroup("close_lazy", { clear = true }),
-	pattern = "lazy",
-	callback = function()
-		vim.keymap.set("n", "<esc>", function()
-			vim.api.nvim_win_close(0, false)
-		end, { buffer = true, nowait = true })
-	end,
-})
-
 -- Make sure open float is false when leaving a foating window
 local float_filetypes = { "lazy", "mason", "git", "fzf", "harpoon", "lspinfo", "noice" }
 
@@ -130,10 +119,27 @@ vim.api.nvim_create_autocmd("FileType", {
 		"neotest-output-panel",
 		"dbout",
 		"gitsigns.blame",
+		"molten_output",
 	},
 	callback = function(event)
 		vim.bo[event.buf].buflisted = false
 		vim.keymap.set("n", "q", "<cmd>close<cr>", {
+			buffer = event.buf,
+			silent = true,
+			desc = "Quit buffer",
+		})
+	end,
+})
+
+-- Close filetypes with <esc>
+vim.api.nvim_create_autocmd("FileType", {
+	group = vim.api.nvim_create_augroup("close_with_esc", { clear = true }),
+	pattern = {
+		"lazy",
+	},
+	callback = function(event)
+		vim.bo[event.buf].buflisted = false
+		vim.keymap.set("n", "<esc>", "<cmd>close<cr>", {
 			buffer = event.buf,
 			silent = true,
 			desc = "Quit buffer",
@@ -198,7 +204,7 @@ vim.filetype.add({
 })
 
 -- Disable syntax highlighting for big files
-vim.api.nvim_create_autocmd({ "FileType" }, {
+vim.api.nvim_create_autocmd("FileType", {
 	group = vim.api.nvim_create_augroup("bigfile", { clear = true }),
 	pattern = "bigfile",
 	callback = function(event)
@@ -210,26 +216,40 @@ vim.api.nvim_create_autocmd({ "FileType" }, {
 
 -- Open filetypes with corresponding applications
 local file_types = {
-	"pdf",
+	"png",
 	"jpg",
 	"jpeg",
+	"gif",
 	"webp",
-	"png",
+	"avif",
+	"pdf",
 	"mp3",
 	"mp4",
 	"xls",
 	"xlsx",
 	"xopp",
-	"gif",
 	"doc",
 	"docx",
 }
 local binfiles_group = vim.api.nvim_create_augroup("binFiles", { clear = true })
 
 for _, ext in ipairs(file_types) do
-	vim.api.nvim_create_autocmd({ "BufReadCmd" }, {
+	vim.api.nvim_create_autocmd("BufReadCmd", {
 		pattern = "*." .. ext,
 		group = binfiles_group,
 		callback = require("util.autocmds").open_app,
 	})
 end
+
+-- Setup filetypes
+vim.filetype.add({
+	extension = {
+		["http"] = "http",
+		["vert"] = "glsl",
+		["frag"] = "glsl",
+		["comp"] = "glsl",
+		["rchit"] = "glsl",
+		["rmiss"] = "glsl",
+		["rahit"] = "glsl",
+	},
+})

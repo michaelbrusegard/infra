@@ -196,7 +196,11 @@ return {
 						},
 					},
 				},
-				texlab = {},
+				texlab = {
+					keys = {
+						{ "<Leader>K", "<plug>(vimtex-doc-package)", desc = "Vimtex Docs" },
+					},
+				},
 				yamlls = {
 					-- Have to add this for yamlls to understand that we support line folding
 					capabilities = {
@@ -792,5 +796,46 @@ return {
 				)
 			end
 		end,
+	},
+	-- Embedded documents
+	{
+		"jmbuhr/otter.nvim",
+		dependencies = {
+			"nvim-treesitter/nvim-treesitter",
+		},
+		ft = { "markdown", "quarto" },
+	},
+	{
+		"quarto-dev/quarto-nvim",
+		dependencies = {
+			"nvim-cmp",
+			"nvim-lspconfig",
+			"otter.nvim",
+		},
+		ft = { "quarto", "markdown" },
+		opts = {
+			lspFeatures = {
+				languages = { "python" },
+				chunks = "all",
+				diagnostics = {
+					enabled = true,
+					triggers = { "BufWritePost" },
+				},
+				completion = {
+					enabled = true,
+				},
+			},
+			keymap = {
+				hover = "K",
+				definition = "gd",
+				rename = "crn",
+				references = "gr",
+				format = "<leader>cf",
+			},
+			codeRunner = {
+				enabled = true,
+				default_method = "molten",
+			},
+		},
 	},
 }
