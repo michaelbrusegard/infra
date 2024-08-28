@@ -1,15 +1,15 @@
 -- Set <space> as the leader key
-vim.g.mapleader = " "
-vim.g.maplocalleader = " "
+vim.g.mapleader = ' '
+vim.g.maplocalleader = ' '
 
 -- Setup python
-local venv = vim.fn.expand("~/.pyenv/versions/neovim")
+local venv = vim.fn.expand('~/.pyenv/versions/neovim')
 -- Run python -m ipykernel once if it can't find the file/directory
 -- It needs the following dependencies: pynvim jupytext jupyter_client ipykernel plotly kaleido pnglatex pyperclip pillow
-vim.g.python3_host_prog = venv .. "/bin/python"
+vim.g.python3_host_prog = venv .. '/bin/python'
 -- Prepend the python host program to the path
-vim.env.PATH = venv .. "/bin:" .. vim.env.PATH
-vim.env.PYENV_VERSION = vim.fn.system("pyenv version"):match("(%S+)%s+%(.-%)")
+vim.env.PATH = venv .. '/bin:' .. vim.env.PATH
+vim.env.PYENV_VERSION = vim.fn.system('pyenv version'):match('(%S+)%s+%(.-%)')
 
 -- Make line numbers default
 vim.opt.number = true
@@ -33,7 +33,7 @@ vim.opt.shiftround = true
 vim.opt.expandtab = true
 
 -- Enable mouse mode, can be useful for resizing splits
-vim.opt.mouse = "a"
+vim.opt.mouse = 'a'
 
 -- Don't show the mode, since it's already in the status line
 vim.opt.showmode = false
@@ -58,7 +58,7 @@ vim.opt.wrap = false
 vim.opt.linebreak = true
 
 -- Keep the sign column on by default
-vim.opt.signcolumn = "yes"
+vim.opt.signcolumn = 'yes'
 
 -- Decrease update time
 vim.opt.updatetime = 50
@@ -71,10 +71,10 @@ vim.opt.splitright = true
 vim.opt.splitbelow = true
 
 -- Maintain text around the cursor when splitting
-vim.opt.splitkeep = "screen"
+vim.opt.splitkeep = 'screen'
 
 -- Preview substitutions live, as you type!
-vim.opt.inccommand = "split"
+vim.opt.inccommand = 'split'
 
 -- Show which line your cursor is on
 vim.opt.cursorline = true
@@ -104,44 +104,44 @@ vim.opt.pumblend = 10
 vim.opt.autowrite = true
 
 -- Set completion options
-vim.opt.completeopt = "menu,menuone,noselect"
+vim.opt.completeopt = 'menu,menuone,noselect'
 
 -- Hide * markup for bold and italic, but not markers with substitutions
 vim.opt.conceallevel = 2
 
 -- Spellcheck
-vim.opt.spelllang = "en,nb"
+vim.opt.spelllang = 'en,nb'
 
 -- Confirm instead of failing
 vim.opt.confirm = true
 
 -- Set fill characters
 vim.opt.fillchars = {
-	foldopen = "",
-	foldclose = "",
-	fold = " ",
-	foldsep = " ",
-	diff = "╱",
-	eob = " ",
+  foldopen = '',
+  foldclose = '',
+  fold = ' ',
+  foldsep = ' ',
+  diff = '╱',
+  eob = ' ',
 }
 
 -- Open all folds when file is opened
 vim.opt.foldlevel = 99
 
 -- Set the format options
-vim.opt.formatoptions = "jcroqlnt"
+vim.opt.formatoptions = 'jcroqlnt'
 
 -- Set the grep format
-vim.opt.grepformat = "%f:%l:%c:%m"
+vim.opt.grepformat = '%f:%l:%c:%m'
 
 -- Use ripgrep for grepping
-vim.opt.grepprg = "rg --vimgrep"
+vim.opt.grepprg = 'rg --vimgrep'
 
 -- Preview search/replace in buffer
-vim.opt.inccommand = "nosplit"
+vim.opt.inccommand = 'nosplit'
 
 -- Keep view when jumping
-vim.opt.jumpoptions = "view"
+vim.opt.jumpoptions = 'view'
 
 -- Set mimimum width
 vim.opt.winminwidth = 5
@@ -150,10 +150,10 @@ vim.opt.winminwidth = 5
 vim.opt.laststatus = 3
 
 -- Store more information in the session file
-vim.opt.sessionoptions = { "buffers", "curdir", "tabpages", "winsize", "help", "globals", "skiprtp", "folds" }
+vim.opt.sessionoptions = { 'buffers', 'curdir', 'tabpages', 'winsize', 'help', 'globals', 'skiprtp', 'folds' }
 
 -- Disable vim info messages
-vim.opt.shortmess:append({ W = true, I = true, c = true, C = true })
+vim.opt.shortmess:append { W = true, I = true, c = true, C = true }
 
 -- Automatic indenting new lines
 vim.opt.smartindent = true
@@ -165,10 +165,10 @@ vim.opt.termguicolors = true
 vim.opt.timeoutlen = 300
 
 -- Move cursor freely in visual block
-vim.opt.virtualedit = "block"
+vim.opt.virtualedit = 'block'
 
 -- Set command-line completion mode
-vim.opt.wildmode = "longest:full,full"
+vim.opt.wildmode = 'longest:full,full'
 
 -- Enable smooth scrolling
 vim.opt.smoothscroll = true
@@ -178,13 +178,13 @@ vim.opt.statuscolumn = [[%!v:lua.require('util.options').statuscolumn()]]
 
 -- Create folds using expressions
 vim.opt.foldexpr = "v:lua.require('util.options').foldexpr()"
-vim.opt.foldmethod = "expr"
+vim.opt.foldmethod = 'expr'
 
 -- Set format expression to use conform
 vim.opt.formatexpr = "v:lua.require'conform'.formatexpr()"
 
 -- Disable fold text
-vim.opt.foldtext = ""
+vim.opt.foldtext = ''
 
 -- Disable tabs
 vim.opt.showtabline = 0

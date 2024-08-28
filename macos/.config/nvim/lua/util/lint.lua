@@ -1,4 +1,4 @@
-local M =  {}
+local M = {}
 
 function M.debounce(ms, fn)
   local timer = vim.uv.new_timer()
@@ -12,7 +12,7 @@ function M.debounce(ms, fn)
 end
 
 function M.lint()
-  local lint = require("lint")
+  local lint = require('lint')
   -- Use nvim-lint's logic first:
   -- * checks if linters exist for the full filetype first
   -- * otherwise will split filetype by "." and add all those linters
@@ -24,15 +24,15 @@ function M.lint()
 
   -- Add fallback linters.
   if #names == 0 then
-    vim.list_extend(names, lint.linters_by_ft["_"] or {})
+    vim.list_extend(names, lint.linters_by_ft['_'] or {})
   end
 
   -- Filter out linters that don't exist or don't match the condition.
   local ctx = { filename = vim.api.nvim_buf_get_name(0) }
-  ctx.dirname = vim.fn.fnamemodify(ctx.filename, ":h")
+  ctx.dirname = vim.fn.fnamemodify(ctx.filename, ':h')
   names = vim.tbl_filter(function(name)
     local linter = lint.linters[name]
-    return linter and not (type(linter) == "table" and linter.condition and not linter.condition(ctx))
+    return linter and not (type(linter) == 'table' and linter.condition and not linter.condition(ctx))
   end, names)
 
   -- Run linters.
@@ -42,5 +42,3 @@ function M.lint()
 end
 
 return M
-
-
