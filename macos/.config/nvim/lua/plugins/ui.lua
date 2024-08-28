@@ -24,11 +24,11 @@ return {
 				options = {
 					theme = "auto",
 					globalstatus = vim.o.laststatus == 3,
-					component_separators = "",
-					section_separators = "",
+					section_separators = { left = "", right = "" },
+					component_separators = { left = "", right = "" },
 				},
 				sections = {
-					lualine_a = { "mode" },
+					lualine_a = { { "mode", fmt = string.lower } },
 					lualine_b = {
 						"branch",
 						"diff",

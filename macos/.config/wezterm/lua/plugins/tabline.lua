@@ -7,17 +7,30 @@ return function()
 	tabline.setup({
 		options = {
 			theme = "Catppuccin Mocha",
-			component_separators = "",
-			section_separators = "",
-			tab_separators = "",
-			fmt = string.lower,
+			section_separators = {
+				left = wezterm.nerdfonts.ple_right_half_circle_thick,
+				right = wezterm.nerdfonts.ple_left_half_circle_thick,
+			},
+			component_separators = {
+				left = wezterm.nerdfonts.ple_right_half_circle_thin,
+				right = wezterm.nerdfonts.ple_left_half_circle_thin,
+			},
+			tab_separators = {
+				left = wezterm.nerdfonts.ple_right_half_circle_thick,
+				right = wezterm.nerdfonts.ple_left_half_circle_thick,
+			},
 		},
 		sections = {
+			tabline_a = {
+				{ "mode", fmt = string.lower },
+			},
+			tabline_c = { "" },
 			tab_active = {
 				{ Attribute = { Intensity = "Bold" } },
 				{ Foreground = { Color = colors.ansi[6] } },
 				"tab_index",
 				"ResetAttributes",
+				{ Foreground = { Color = colors.foreground } },
 				" ",
 				"parent",
 				"/",
@@ -27,6 +40,8 @@ return function()
 			tabline_x = {},
 			tabline_y = { "ram", "cpu" },
 		},
-		extensions = { "ressurect" },
+		extensions = {
+			"ressurect",
+		},
 	})
 end
