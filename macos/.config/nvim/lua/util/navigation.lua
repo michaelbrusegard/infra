@@ -13,7 +13,7 @@ function M.pick(command, opts)
   }, require('util.lazy').opts('ibhagwan/fzf-lua').command or {}, opts)
 
   if not opts.cwd and opts.root ~= false then
-    opts.cwd = require('util.root').get { buf = opts.buf }
+    opts.cwd = require('util.root').get({ buf = opts.buf })
   end
 
   require('fzf-lua')[command](opts)

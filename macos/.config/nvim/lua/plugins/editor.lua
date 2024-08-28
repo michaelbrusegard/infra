@@ -18,9 +18,9 @@ return {
           local grug = require('grug-far')
           local ext = vim.bo.buftype == '' and vim.fn.expand('%:e')
           local filesFilter = ext and ext ~= '' and '*.' .. ext or nil;
-          (is_visual and grug.with_visual_selection or grug.grug_far) {
+          (is_visual and grug.with_visual_selection or grug.grug_far)({
             prefills = { filesFilter = filesFilter },
-          }
+          })
         end,
         mode = { 'n', 'v' },
         desc = 'Search and Replace',
@@ -124,14 +124,14 @@ return {
 
         vim.keymap.set('n', ']g', function()
           if vim.wo.diff then
-            vim.cmd.normal { ']c', bang = true }
+            vim.cmd.normal({ ']c', bang = true })
           else
             gs.nav_hunk('next')
           end
         end, { buffer = buffer, desc = 'Git Next Hunk' })
         vim.keymap.set('n', '[g', function()
           if vim.wo.diff then
-            vim.cmd.normal { '[c', bang = true }
+            vim.cmd.normal({ '[c', bang = true })
           else
             gs.nav_hunk('prev')
           end
@@ -197,7 +197,7 @@ return {
         '[q',
         function()
           if require('trouble').is_open() then
-            require('trouble').prev { skip_groups = true, jump = true }
+            require('trouble').prev({ skip_groups = true, jump = true })
           else
             local ok, err = pcall(vim.cmd.cprev)
             if not ok then
@@ -211,7 +211,7 @@ return {
         ']q',
         function()
           if require('trouble').is_open() then
-            require('trouble').next { skip_groups = true, jump = true }
+            require('trouble').next({ skip_groups = true, jump = true })
           else
             local ok, err = pcall(vim.cmd.cnext)
             if not ok then
@@ -272,13 +272,13 @@ return {
     opts = function()
       local augend = require('dial.augend')
 
-      local logical_alias = augend.constant.new {
+      local logical_alias = augend.constant.new({
         elements = { '&&', '||' },
         word = false,
         cyclic = true,
-      }
+      })
 
-      local ordinal_numbers = augend.constant.new {
+      local ordinal_numbers = augend.constant.new({
         -- elements through which we cycle. When we increment, we go down
         -- On decrement we go up
         elements = {
@@ -298,9 +298,9 @@ return {
         -- do we cycle back and forth (tenth to first on increment, first to tenth on decrement).
         -- Otherwise nothing will happen when there are no further values
         cyclic = true,
-      }
+      })
 
-      local weekdays = augend.constant.new {
+      local weekdays = augend.constant.new({
         elements = {
           'Monday',
           'Tuesday',
@@ -312,9 +312,9 @@ return {
         },
         word = true,
         cyclic = true,
-      }
+      })
 
-      local months = augend.constant.new {
+      local months = augend.constant.new({
         elements = {
           'January',
           'February',
@@ -331,16 +331,16 @@ return {
         },
         word = true,
         cyclic = true,
-      }
+      })
 
-      local capitalized_boolean = augend.constant.new {
+      local capitalized_boolean = augend.constant.new({
         elements = {
           'True',
           'False',
         },
         word = true,
         cyclic = true,
-      }
+      })
 
       return {
         dials_by_ft = {
@@ -370,7 +370,7 @@ return {
             augend.integer.alias.decimal, -- nonnegative and negative decimal number
             augend.constant.alias.bool, -- boolean value (true <-> false)
             logical_alias,
-            augend.constant.new { elements = { 'let', 'const' } },
+            augend.constant.new({ elements = { 'let', 'const' } }),
           },
           yaml = {
             augend.integer.alias.decimal, -- nonnegative and negative decimal number
@@ -378,12 +378,12 @@ return {
           },
           css = {
             augend.integer.alias.decimal, -- nonnegative and negative decimal number
-            augend.hexcolor.new {
+            augend.hexcolor.new({
               case = 'lower',
-            },
-            augend.hexcolor.new {
+            }),
+            augend.hexcolor.new({
               case = 'upper',
-            },
+            }),
           },
           markdown = {
             augend.misc.alias.markdown_header,
@@ -395,11 +395,11 @@ return {
           lua = {
             augend.integer.alias.decimal, -- nonnegative and negative decimal number
             augend.constant.alias.bool, -- boolean value (true <-> false)
-            augend.constant.new {
+            augend.constant.new({
               elements = { 'and', 'or' },
               word = true, -- if false, "sand" is incremented into "sor", "doctor" into "doctand", etc.
               cyclic = true, -- "or" is incremented into "and".
-            },
+            }),
           },
           python = {
             augend.integer.alias.decimal, -- nonnegative and negative decimal number

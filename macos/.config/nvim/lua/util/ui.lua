@@ -51,7 +51,7 @@ function M.pretty_path()
       return ''
     end
 
-    local root = require('util.root').get { normalize = true }
+    local root = require('util.root').get({ normalize = true })
 
     if path:find(root, 1, true) == 1 then
       path = path:sub(#root + 2)
@@ -91,7 +91,7 @@ end
 
 function M.root_dir()
   local function get()
-    local root = require('util.root').get { normalize = true }
+    local root = require('util.root').get({ normalize = true })
     return vim.fs.basename(root)
   end
 
@@ -188,18 +188,18 @@ function M.fidgetview()
     for _, message in pairs(active) do
       seen[message.id] = true
       if self.handles[message.id] then
-        self.handles[message.id]:report {
+        self.handles[message.id]:report({
           message = message:content(),
-        }
+        })
       else
-        self.handles[message.id] = require('fidget').progress.handle.create {
+        self.handles[message.id] = require('fidget').progress.handle.create({
           title = message.level or 'info',
           message = message:content(),
           level = message.level,
           lsp_client = {
             name = self._view_opts.title or 'noice',
           },
-        }
+        })
       end
     end
     for id, handle in pairs(self.handles) do

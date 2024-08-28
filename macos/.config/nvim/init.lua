@@ -30,7 +30,7 @@ vim.api.nvim_create_autocmd('User', {
 local path = vim.fn.stdpath('data') .. '/lazy/lazy.nvim'
 if not (vim.uv or vim.loop).fs_stat(path) then
   local repo = 'https://github.com/folke/lazy.nvim.git'
-  local out = vim.fn.system { 'git', 'clone', '--filter=blob:none', '--branch=stable', repo, path }
+  local out = vim.fn.system({ 'git', 'clone', '--filter=blob:none', '--branch=stable', repo, path })
   if vim.v.shell_error ~= 0 then
     vim.api.nvim_echo({
       { 'Failed to clone lazy.nvim:\n', 'ErrorMsg' },
@@ -54,7 +54,7 @@ vim.api.nvim_create_autocmd('BufReadPost', {
     end
 
     -- Try to guess the filetype (may change later on during Neovim startup)
-    local ft = vim.filetype.match { buf = event.buf }
+    local ft = vim.filetype.match({ buf = event.buf })
     if ft then
       -- Add treesitter highlights and fallback to syntax
       local lang = vim.treesitter.language.get_lang(ft)
@@ -75,7 +75,7 @@ Event.mappings.LazyFile = { id = 'LazyFile', event = { 'BufReadPost', 'BufNewFil
 Event.mappings['User LazyFile'] = Event.mappings.LazyFile
 
 -- Setup lazy.nvim
-require('lazy').setup {
+require('lazy').setup({
   spec = {
     { import = 'plugins' },
   },
@@ -102,4 +102,4 @@ require('lazy').setup {
       },
     },
   },
-}
+})

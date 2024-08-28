@@ -133,7 +133,7 @@ return {
       if require('util.lazy').is_loaded('nvim-treesitter') then
         local opts = require('util.lazy').opts('nvim-treesitter')
         ---@diagnostic disable-next-line: missing-fields
-        require('nvim-treesitter.configs').setup { textobjects = opts.textobjects }
+        require('nvim-treesitter.configs').setup({ textobjects = opts.textobjects })
       end
       local move = require('nvim-treesitter.textobjects.move')
       local configs = require('nvim-treesitter.configs')

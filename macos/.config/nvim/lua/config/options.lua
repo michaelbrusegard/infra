@@ -153,7 +153,7 @@ vim.opt.laststatus = 3
 vim.opt.sessionoptions = { 'buffers', 'curdir', 'tabpages', 'winsize', 'help', 'globals', 'skiprtp', 'folds' }
 
 -- Disable vim info messages
-vim.opt.shortmess:append { W = true, I = true, c = true, C = true }
+vim.opt.shortmess:append({ W = true, I = true, c = true, C = true })
 
 -- Automatic indenting new lines
 vim.opt.smartindent = true

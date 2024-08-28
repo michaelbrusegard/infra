@@ -5,11 +5,11 @@ return function(config)
 
   resurrect.periodic_save()
 
-  resurrect.set_encryption {
+  resurrect.set_encryption({
     enable = true,
     method = '/opt/homebrew/bin/gpg',
     public_key = '6596A3ED40F6534894332DD2ECC513C0F9798B79',
-  }
+  })
 
   -- loads the state whenever I create a new workspace
   wezterm.on('smart_workspace_switcher.workspace_switcher.created', function(window, _, label)
@@ -30,7 +30,7 @@ return function(config)
   table.insert(config.keys, {
     key = 'Enter',
     mods = 'SHIFT|SUPER',
-    action = wezterm.action.Multiple {
+    action = wezterm.action.Multiple({
       wezterm.action_callback(function(window, pane)
         resurrect.fuzzy_load(window, pane, function(id)
           id = string.match(id, '([^/]+)$')
@@ -42,6 +42,6 @@ return function(config)
           })
         end)
       end),
-    },
+    }),
   })
 end

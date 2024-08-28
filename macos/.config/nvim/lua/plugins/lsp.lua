@@ -481,10 +481,10 @@ return {
       mr:on('package:install:success', function()
         vim.defer_fn(function()
           -- trigger FileType event to possibly load this newly installed LSP server
-          require('lazy.core.handler.event').trigger {
+          require('lazy.core.handler.event').trigger({
             event = 'FileType',
             buf = vim.api.nvim_get_current_buf(),
-          }
+          })
         end, 100)
       end)
 
@@ -628,7 +628,7 @@ return {
           local client = vim.lsp.get_client_by_id(args.data.client_id)
           if client and client.name == 'jdtls' then
             local wk = require('which-key')
-            wk.add {
+            wk.add({
               {
                 mode = 'n',
                 buffer = args.buf,
@@ -639,8 +639,8 @@ return {
                 { 'gS', require('jdtls.tests').goto_subjects, desc = 'Goto Subjects' },
                 { '<leader>co', require('jdtls').organize_imports, desc = 'Organize Imports' },
               },
-            }
-            wk.add {
+            })
+            wk.add({
               {
                 mode = 'v',
                 buffer = args.buf,
@@ -661,7 +661,7 @@ return {
                   desc = 'Extract Constant',
                 },
               },
-            }
+            })
 
             if opts.dap and mason_registry.is_installed('java-debug-adapter') then
               -- custom init for Java debugger
@@ -671,7 +671,7 @@ return {
               -- Java Test require Java debugger to work
               if opts.test and mason_registry.is_installed('java-test') then
                 -- custom keymaps for Java test runner (not yet compatible with neotest)
-                wk.add {
+                wk.add({
                   {
                     mode = 'n',
                     buffer = args.buf,
@@ -679,24 +679,24 @@ return {
                     {
                       '<leader>tt',
                       function()
-                        require('jdtls.dap').test_class {
+                        require('jdtls.dap').test_class({
                           config_overrides = type(opts.test) ~= 'boolean' and opts.test.config_overrides or nil,
-                        }
+                        })
                       end,
                       desc = 'Run All Test',
                     },
                     {
                       '<leader>tr',
                       function()
-                        require('jdtls.dap').test_nearest_method {
+                        require('jdtls.dap').test_nearest_method({
                           config_overrides = type(opts.test) ~= 'boolean' and opts.test.config_overrides or nil,
-                        }
+                        })
                       end,
                       desc = 'Run Nearest Test',
                     },
                     { '<leader>tT', require('jdtls.dap').pick_test, desc = 'Run Test' },
                   },
-                }
+                })
               end
             end
           end

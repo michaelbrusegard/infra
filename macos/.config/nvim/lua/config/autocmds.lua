@@ -13,7 +13,7 @@ vim.cmd('highlight HighlightYank guifg=#f9e2af guibg=#3f3b41')
 vim.api.nvim_create_autocmd('TextYankPost', {
   group = vim.api.nvim_create_augroup('highlight_yank', { clear = true }),
   callback = function()
-    vim.highlight.on_yank { higroup = 'HighlightYank', timeout = 200 }
+    vim.highlight.on_yank({ higroup = 'HighlightYank', timeout = 200 })
   end,
 })
 
@@ -188,7 +188,7 @@ vim.api.nvim_create_autocmd('BufWritePre', {
 })
 
 -- Set filetype to bigfile for large files
-vim.filetype.add {
+vim.filetype.add({
   pattern = {
     ['.*'] = {
       function(path, buf)
@@ -201,7 +201,7 @@ vim.filetype.add {
       end,
     },
   },
-}
+})
 
 -- Disable syntax highlighting for big files
 vim.api.nvim_create_autocmd('FileType', {
@@ -209,7 +209,7 @@ vim.api.nvim_create_autocmd('FileType', {
   pattern = 'bigfile',
   callback = function(event)
     vim.schedule(function()
-      vim.bo[event.buf].syntax = vim.filetype.match { buf = event.buf } or ''
+      vim.bo[event.buf].syntax = vim.filetype.match({ buf = event.buf }) or ''
     end)
   end,
 })
@@ -242,7 +242,7 @@ for _, ext in ipairs(file_types) do
 end
 
 -- Setup filetypes
-vim.filetype.add {
+vim.filetype.add({
   extension = {
     ['http'] = 'http',
     ['vert'] = 'glsl',
@@ -252,4 +252,4 @@ vim.filetype.add {
     ['rmiss'] = 'glsl',
     ['rahit'] = 'glsl',
   },
-}
+})

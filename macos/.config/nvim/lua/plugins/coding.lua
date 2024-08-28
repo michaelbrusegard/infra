@@ -27,17 +27,17 @@ return {
           completeopt = 'menu,menuone,noinsert',
         },
         preselect = cmp.PreselectMode.Item or cmp.PreselectMode.None,
-        mapping = cmp.mapping.preset.insert {
+        mapping = cmp.mapping.preset.insert({
           ['<c-b>'] = cmp.mapping.scroll_docs(-4),
           ['<c-f>'] = cmp.mapping.scroll_docs(4),
           ['<c-space>'] = cmp.mapping.complete(),
-          ['<c-y>'] = require('util.coding').confirm { select = true },
-          ['<s-cr>'] = require('util.coding').confirm { behavior = cmp.ConfirmBehavior.Replace },
+          ['<c-y>'] = require('util.coding').confirm({ select = true }),
+          ['<s-cr>'] = require('util.coding').confirm({ behavior = cmp.ConfirmBehavior.Replace }),
           ['<c-cr>'] = function(fallback)
             cmp.abort()
             fallback()
           end,
-        },
+        }),
         sources = cmp.config.sources({
           { name = 'nvim_lsp' },
           { name = 'path' },
@@ -106,10 +106,10 @@ return {
           end,
         },
         window = {
-          completion = cmp.config.window.bordered {
+          completion = cmp.config.window.bordered({
             border = 'none',
             scrollbar = false,
-          },
+          }),
         },
         experimental = {
           ghost_text = {
@@ -147,7 +147,7 @@ return {
       {
         '<tab>',
         function()
-          return vim.snippet.active { direction = 1 } and '<cmd>lua vim.snippet.jump(1)<cr>' or '<tab>'
+          return vim.snippet.active({ direction = 1 }) and '<cmd>lua vim.snippet.jump(1)<cr>' or '<tab>'
         end,
         expr = true,
         silent = true,
@@ -156,7 +156,7 @@ return {
       {
         '<s-tab>',
         function()
-          return vim.snippet.active { direction = -1 } and '<cmd>lua vim.snippet.jump(-1)<cr>' or '<s-tab>'
+          return vim.snippet.active({ direction = -1 }) and '<cmd>lua vim.snippet.jump(-1)<cr>' or '<s-tab>'
         end,
         expr = true,
         silent = true,
@@ -245,12 +245,12 @@ return {
       return {
         n_lines = 500,
         custom_textobjects = {
-          o = ai.gen_spec.treesitter {
+          o = ai.gen_spec.treesitter({
             a = { '@block.outer', '@conditional.outer', '@loop.outer' },
             i = { '@block.inner', '@conditional.inner', '@loop.inner' },
-          },
-          f = ai.gen_spec.treesitter { a = '@function.outer', i = '@function.inner' },
-          c = ai.gen_spec.treesitter { a = '@class.outer', i = '@class.inner' },
+          }),
+          f = ai.gen_spec.treesitter({ a = '@function.outer', i = '@function.inner' }),
+          c = ai.gen_spec.treesitter({ a = '@class.outer', i = '@class.inner' }),
           t = { '<([%p%w]-)%f[^<%w][^<>]->.-</%1>', '^<.->().*()</[^/]->$' },
           d = { '%f[%d]%d+' },
           e = {
@@ -265,8 +265,8 @@ return {
           i = require('util.coding').ai_indent,
           g = require('util.coding').ai_buffer,
           u = ai.gen_spec.function_call(),
-          U = ai.gen_spec.function_call { name_pattern = '[%w_]' },
-          n = ai.gen_spec.treesitter { a = '@code_cell.outer', i = '@code_cell.inner' },
+          U = ai.gen_spec.function_call({ name_pattern = '[%w_]' }),
+          n = ai.gen_spec.treesitter({ a = '@code_cell.outer', i = '@code_cell.inner' }),
         },
       }
     end,
@@ -341,7 +341,7 @@ return {
             callback = function(event)
               local client = vim.lsp.get_client_by_id(event.data.client_id)
               if client and client.name == 'copilot' then
-                copilot_cmp._on_insert_enter {}
+                copilot_cmp._on_insert_enter({})
               end
             end,
           })

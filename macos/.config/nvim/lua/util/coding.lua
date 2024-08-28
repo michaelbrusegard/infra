@@ -3,7 +3,7 @@ local M = {}
 function M.snippet_replace(snippet, fn)
   return snippet:gsub('%$%b{}', function(m)
     local n, name = m:match('^%${(%d+):(.+)}$')
-    return n and fn { n = n, text = name } or m
+    return n and fn({ n = n, text = name }) or m
   end) or snippet
 end
 

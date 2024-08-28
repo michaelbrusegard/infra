@@ -140,7 +140,7 @@ return {
     init = function()
       require('util.lazy').on_very_lazy(function()
         vim.ui.select = function(...)
-          require('lazy').load { plugins = { 'fzf-lua' } }
+          require('lazy').load({ plugins = { 'fzf-lua' } })
           local opts = require('util.lazy').opts('fzf-lua') or {}
           require('fzf-lua').register_ui_select(opts.ui_select or nil)
           return vim.ui.select(...)

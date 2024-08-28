@@ -16,12 +16,12 @@ local function options(config)
   config.color_scheme = 'Catppuccin Mocha'
 
   -- Font style without ligatures
-  config.font = require('wezterm').font_with_fallback {
+  config.font = require('wezterm').font_with_fallback({
     {
       family = 'MesloLGS Nerd Font',
       harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' },
     },
-  }
+  })
 
   -- Font size
   config.font_size = 13.0
