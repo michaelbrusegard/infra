@@ -2,8 +2,10 @@ return {
 	-- Auto completion
 	{
 		-- "hrsh7th/nvim-cmp",
-		"xzbdmw/nvim-cmp",
-		branch = "dynamic",
+		-- "xzbdmw/nvim-cmp",
+		-- branch = "dynamic",
+		"yioneko/nvim-cmp",
+		branch = "perf",
 		version = false,
 		event = "InsertEnter",
 		dependencies = {
@@ -17,6 +19,10 @@ return {
 			local defaults = require("cmp.config.default")()
 			return {
 				auto_brackets = {},
+				performance = {
+					debounce = 0,
+					throttle = 0,
+				},
 				completion = {
 					completeopt = "menu,menuone,noinsert",
 				},
@@ -25,7 +31,6 @@ return {
 					["<c-b>"] = cmp.mapping.scroll_docs(-4),
 					["<c-f>"] = cmp.mapping.scroll_docs(4),
 					["<c-space>"] = cmp.mapping.complete(),
-					["<cr>"] = require("util.coding").confirm({ select = true }),
 					["<c-y>"] = require("util.coding").confirm({ select = true }),
 					["<s-cr>"] = require("util.coding").confirm({ behavior = cmp.ConfirmBehavior.Replace }),
 					["<c-cr>"] = function(fallback)

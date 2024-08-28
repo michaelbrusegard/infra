@@ -36,7 +36,6 @@ yabai -m config --space "General 2" layout float
 
 # Application rules
 yabai -m rule --add app="^(Calculator|System Settings|Archive Utility)$" manage=off
-yabai -m rule --add app="^LibreWolf$" space=Web
 yabai -m rule --add app="^Mail$" space=Mail
 yabai -m rule --add app="^(Messages|FaceTime|Discord|Slack|Messenger)$" space=Social
 yabai -m rule --add app="^Notes$" space=Notes

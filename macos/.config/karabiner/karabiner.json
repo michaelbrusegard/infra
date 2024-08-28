@@ -1,21 +1,8 @@
 {
-    "global": {
-        "ask_for_confirmation_before_quitting": true,
-        "check_for_updates_on_startup": true,
-        "show_in_menu_bar": false,
-        "show_profile_name_in_menu_bar": false,
-        "unsafe_ui": false
-    },
+    "global": { "show_in_menu_bar": false },
     "profiles": [
         {
             "complex_modifications": {
-                "parameters": {
-                    "basic.simultaneous_threshold_milliseconds": 50,
-                    "basic.to_delayed_action_delay_milliseconds": 500,
-                    "basic.to_if_alone_timeout_milliseconds": 1000,
-                    "basic.to_if_held_down_threshold_milliseconds": 500,
-                    "mouse_motion_to_scroll.speed": 100
-                },
                 "rules": [
                     {
                         "description": "Open Terminal",
@@ -24,19 +11,11 @@
                                 "from": {
                                     "key_code": "return_or_enter",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "zsh -c 'if /usr/bin/pgrep -x \"wezterm-gui\" > /dev/null; then /opt/homebrew/bin/wezterm cli spawn --new-window; else open -a wezterm; fi'"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "zsh -c 'if /usr/bin/pgrep -x \"wezterm-gui\" > /dev/null; then /opt/homebrew/bin/wezterm cli spawn --new-window; else open -a wezterm; fi'" }],
                                 "type": "basic"
                             }
                         ]
@@ -48,19 +27,11 @@
                                 "from": {
                                     "key_code": "b",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "osascript -e 'if application \"Safari\" is running then tell application \"Safari\" to make new document at end of documents' -e 'tell application \"Safari\" to activate'"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "osascript -e 'if application \"Safari\" is running then tell application \"Safari\" to make new document at end of documents' -e 'tell application \"Safari\" to activate'" }],
                                 "type": "basic"
                             }
                         ]
@@ -72,19 +43,11 @@
                                 "from": {
                                     "key_code": "d",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/'System/Applications/Mission Control.app/Contents/MacOS/Mission Control' 1"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/'System/Applications/Mission Control.app/Contents/MacOS/Mission Control' 1" }],
                                 "type": "basic"
                             }
                         ]
@@ -96,19 +59,11 @@
                                 "from": {
                                     "key_code": "f",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "osascript -e 'tell application \"Finder\" to make new Finder window'"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "osascript -e 'tell application \"Finder\" to make new Finder window'" }],
                                 "type": "basic"
                             }
                         ]
@@ -120,76 +75,44 @@
                                 "from": {
                                     "key_code": "h",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --focus west || /opt/homebrew/bin/yabai -m display --focus west"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --focus west || /opt/homebrew/bin/yabai -m display --focus west" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "l",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --focus east || /opt/homebrew/bin/yabai -m display --focus east"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --focus east || /opt/homebrew/bin/yabai -m display --focus east" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "j",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --focus stack.next || /opt/homebrew/bin/yabai -m window --focus south"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --focus stack.next || /opt/homebrew/bin/yabai -m window --focus south" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "k",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --focus stack.prev || /opt/homebrew/bin/yabai -m window --focus north"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --focus stack.prev || /opt/homebrew/bin/yabai -m window --focus north" }],
                                 "type": "basic"
                             }
                         ]
@@ -201,80 +124,44 @@
                                 "from": {
                                     "key_code": "h",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --swap west || /opt/homebrew/bin/yabai -m window --display west"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --swap west || /opt/homebrew/bin/yabai -m window --display west" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "l",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --swap east || /opt/homebrew/bin/yabai -m window --display east"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --swap east || /opt/homebrew/bin/yabai -m window --display east" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "j",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --swap south"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --swap south" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "k",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --swap north"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --swap north" }],
                                 "type": "basic"
                             }
                         ]
@@ -286,80 +173,44 @@
                                 "from": {
                                     "key_code": "h",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "control",
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["control", "option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --resize left:-50:0 || /opt/homebrew/bin/yabai -m window --resize right:-50:0"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --resize left:-50:0 || /opt/homebrew/bin/yabai -m window --resize right:-50:0" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "j",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "control",
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["control", "option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --resize bottom:0:50"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --resize bottom:0:50" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "k",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "control",
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["control", "option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --resize top:0:-50 || /opt/homebrew/bin/yabai -m window --resize bottom:0:-50"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --resize top:0:-50 || /opt/homebrew/bin/yabai -m window --resize bottom:0:-50" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "l",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "control",
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["control", "option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --resize right:50:0"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --resize right:50:0" }],
                                 "type": "basic"
                             }
                         ]
@@ -371,171 +222,99 @@
                                 "from": {
                                     "key_code": "1",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --focus 1 || /opt/homebrew/bin/yabai -m space --focus recent"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --focus 1 || /opt/homebrew/bin/yabai -m space --focus recent" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "2",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --focus 2 || /opt/homebrew/bin/yabai -m space --focus recent"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --focus 2 || /opt/homebrew/bin/yabai -m space --focus recent" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "3",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --focus 3 || /opt/homebrew/bin/yabai -m space --focus recent"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --focus 3 || /opt/homebrew/bin/yabai -m space --focus recent" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "4",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --focus 4 || /opt/homebrew/bin/yabai -m space --focus recent"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --focus 4 || /opt/homebrew/bin/yabai -m space --focus recent" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "5",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --focus 5 || /opt/homebrew/bin/yabai -m space --focus recent"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --focus 5 || /opt/homebrew/bin/yabai -m space --focus recent" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "6",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --focus 6 || /opt/homebrew/bin/yabai -m space --focus recent"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --focus 6 || /opt/homebrew/bin/yabai -m space --focus recent" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "7",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --focus 7 || /opt/homebrew/bin/yabai -m space --focus recent"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --focus 7 || /opt/homebrew/bin/yabai -m space --focus recent" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "8",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --focus 8 || /opt/homebrew/bin/yabai -m space --focus recent"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --focus 8 || /opt/homebrew/bin/yabai -m space --focus recent" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "9",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --focus $(/opt/homebrew/bin/yabai -m query --spaces | /opt/homebrew/bin/jq '.[-1].index')"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --focus $(/opt/homebrew/bin/yabai -m query --spaces | /opt/homebrew/bin/jq '.[-1].index')" }],
                                 "type": "basic"
                             }
                         ]
@@ -547,180 +326,99 @@
                                 "from": {
                                     "key_code": "1",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --space 1"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --space 1" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "2",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --space 2"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --space 2" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "3",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --space 3"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --space 3" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "4",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --space 4"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --space 4" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "5",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --space 5"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --space 5" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "6",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --space 6"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --space 6" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "7",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --space 7"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --space 7" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "8",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --space 8"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --space 8" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "9",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option",
-                                            "shift"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option", "shift"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m window --space $(/opt/homebrew/bin/yabai -m query --spaces | /opt/homebrew/bin/jq '.[-1].index')"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --space $(/opt/homebrew/bin/yabai -m query --spaces | /opt/homebrew/bin/jq '.[-1].index')" }],
                                 "type": "basic"
                             }
                         ]
@@ -732,38 +430,22 @@
                                 "from": {
                                     "key_code": "comma",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --layout bsp"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --layout bsp" }],
                                 "type": "basic"
                             },
                             {
                                 "from": {
                                     "key_code": "slash",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "option"
-                                        ],
-                                        "optional": [
-                                            "caps_lock"
-                                        ]
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "shell_command": "/opt/homebrew/bin/yabai -m space --layout stack"
-                                    }
-                                ],
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --layout stack" }],
                                 "type": "basic"
                             }
                         ]
@@ -784,19 +466,11 @@
                                 "from": {
                                     "key_code": "h",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "control"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
+                                        "mandatory": ["control"],
+                                        "optional": ["any"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "key_code": "left_arrow"
-                                    }
-                                ],
+                                "to": [{ "key_code": "left_arrow" }],
                                 "type": "basic"
                             },
                             {
@@ -812,19 +486,11 @@
                                 "from": {
                                     "key_code": "j",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "control"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
+                                        "mandatory": ["control"],
+                                        "optional": ["any"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "key_code": "down_arrow"
-                                    }
-                                ],
+                                "to": [{ "key_code": "down_arrow" }],
                                 "type": "basic"
                             },
                             {
@@ -840,19 +506,11 @@
                                 "from": {
                                     "key_code": "k",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "control"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
+                                        "mandatory": ["control"],
+                                        "optional": ["any"]
                                     }
                                 },
-                                "to": [
-                                    {
-                                        "key_code": "up_arrow"
-                                    }
-                                ],
+                                "to": [{ "key_code": "up_arrow" }],
                                 "type": "basic"
                             },
                             {
@@ -868,19 +526,56 @@
                                 "from": {
                                     "key_code": "l",
                                     "modifiers": {
-                                        "mandatory": [
-                                            "control"
-                                        ],
-                                        "optional": [
-                                            "any"
-                                        ]
+                                        "mandatory": ["control"],
+                                        "optional": ["any"]
                                     }
                                 },
-                                "to": [
+                                "to": [{ "key_code": "right_arrow" }],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
+                        "description": "UD for Page Up/Page Down",
+                        "manipulators": [
+                            {
+                                "conditions": [
                                     {
-                                        "key_code": "right_arrow"
+                                        "bundle_identifiers": [
+                                            "^com\\.apple\\.Terminal$",
+                                            "^com\\.github\\.wez\\.wezterm$"
+                                        ],
+                                        "type": "frontmost_application_unless"
                                     }
                                 ],
+                                "from": {
+                                    "key_code": "u",
+                                    "modifiers": {
+                                        "mandatory": ["control"],
+                                        "optional": ["any"]
+                                    }
+                                },
+                                "to": [{ "key_code": "page_up" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "^com\\.apple\\.Terminal$",
+                                            "^com\\.github\\.wez\\.wezterm$"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "d",
+                                    "modifiers": {
+                                        "mandatory": ["control"],
+                                        "optional": ["any"]
+                                    }
+                                },
+                                "to": [{ "key_code": "page_down" }],
                                 "type": "basic"
                             }
                         ]
@@ -891,22 +586,10 @@
                             {
                                 "from": {
                                     "key_code": "caps_lock",
-                                    "modifiers": {
-                                        "optional": [
-                                            "any"
-                                        ]
-                                    }
+                                    "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [
-                                    {
-                                        "key_code": "left_control"
-                                    }
-                                ],
-                                "to_if_alone": [
-                                    {
-                                        "key_code": "escape"
-                                    }
-                                ],
+                                "to": [{ "key_code": "left_control" }],
+                                "to_if_alone": [{ "key_code": "escape" }],
                                 "type": "basic"
                             }
                         ]
@@ -915,95 +598,21 @@
             },
             "devices": [
                 {
-                    "disable_built_in_keyboard_if_exists": false,
-                    "fn_function_keys": [],
-                    "game_pad_swap_sticks": false,
                     "identifiers": {
-                        "is_game_pad": false,
                         "is_keyboard": true,
-                        "is_pointing_device": false,
                         "product_id": 641,
                         "vendor_id": 1452
                     },
-                    "ignore": false,
-                    "manipulate_caps_lock_led": false,
-                    "mouse_flip_horizontal_wheel": false,
-                    "mouse_flip_vertical_wheel": false,
-                    "mouse_flip_x": false,
-                    "mouse_flip_y": false,
-                    "mouse_swap_wheels": false,
-                    "mouse_swap_xy": false,
-                    "simple_modifications": [],
-                    "treat_as_built_in_keyboard": false
-                },
-                {
-                    "disable_built_in_keyboard_if_exists": false,
-                    "fn_function_keys": [],
-                    "game_pad_swap_sticks": false,
-                    "identifiers": {
-                        "is_game_pad": false,
-                        "is_keyboard": false,
-                        "is_pointing_device": true,
-                        "product_id": 641,
-                        "vendor_id": 1452
-                    },
-                    "ignore": true,
-                    "manipulate_caps_lock_led": false,
-                    "mouse_flip_horizontal_wheel": false,
-                    "mouse_flip_vertical_wheel": false,
-                    "mouse_flip_x": false,
-                    "mouse_flip_y": false,
-                    "mouse_swap_wheels": false,
-                    "mouse_swap_xy": false,
-                    "simple_modifications": [],
-                    "treat_as_built_in_keyboard": false
+                    "manipulate_caps_lock_led": false
                 }
             ],
             "fn_function_keys": [
                 {
-                    "from": {
-                        "key_code": "f1"
-                    },
-                    "to": [
-                        {
-                            "consumer_key_code": "display_brightness_decrement"
-                        }
-                    ]
+                    "from": { "key_code": "f4" },
+                    "to": [{ "apple_vendor_keyboard_key_code": "launchpad" }]
                 },
                 {
-                    "from": {
-                        "key_code": "f2"
-                    },
-                    "to": [
-                        {
-                            "consumer_key_code": "display_brightness_increment"
-                        }
-                    ]
-                },
-                {
-                    "from": {
-                        "key_code": "f3"
-                    },
-                    "to": [
-                        {
-                            "apple_vendor_keyboard_key_code": "mission_control"
-                        }
-                    ]
-                },
-                {
-                    "from": {
-                        "key_code": "f4"
-                    },
-                    "to": [
-                        {
-                            "apple_vendor_keyboard_key_code": "launchpad"
-                        }
-                    ]
-                },
-                {
-                    "from": {
-                        "key_code": "f5"
-                    },
+                    "from": { "key_code": "f5" },
                     "to": [
                         {
                             "software_function": {
@@ -1017,87 +626,12 @@
                     ]
                 },
                 {
-                    "from": {
-                        "key_code": "f6"
-                    },
-                    "to": [
-                        {
-                            "key_code": "vk_none"
-                        }
-                    ]
-                },
-                {
-                    "from": {
-                        "key_code": "f7"
-                    },
-                    "to": [
-                        {
-                            "consumer_key_code": "rewind"
-                        }
-                    ]
-                },
-                {
-                    "from": {
-                        "key_code": "f8"
-                    },
-                    "to": [
-                        {
-                            "consumer_key_code": "play_or_pause"
-                        }
-                    ]
-                },
-                {
-                    "from": {
-                        "key_code": "f9"
-                    },
-                    "to": [
-                        {
-                            "consumer_key_code": "fast_forward"
-                        }
-                    ]
-                },
-                {
-                    "from": {
-                        "key_code": "f10"
-                    },
-                    "to": [
-                        {
-                            "consumer_key_code": "mute"
-                        }
-                    ]
-                },
-                {
-                    "from": {
-                        "key_code": "f11"
-                    },
-                    "to": [
-                        {
-                            "consumer_key_code": "volume_decrement"
-                        }
-                    ]
-                },
-                {
-                    "from": {
-                        "key_code": "f12"
-                    },
-                    "to": [
-                        {
-                            "consumer_key_code": "volume_increment"
-                        }
-                    ]
+                    "from": { "key_code": "f6" },
+                    "to": [{ "key_code": "vk_none" }]
                 }
             ],
             "name": "Default profile",
-            "parameters": {
-                "delay_milliseconds_before_open_device": 1000
-            },
-            "selected": true,
-            "simple_modifications": [],
-            "virtual_hid_keyboard": {
-                "country_code": 0,
-                "indicate_sticky_modifier_keys_state": true,
-                "mouse_key_xy_scale": 100
-            }
+            "selected": true
         }
     ]
 }

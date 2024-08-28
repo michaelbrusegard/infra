@@ -63,6 +63,8 @@ zsh ~/dotfiles/macos/scripts/login.zsh
 
 <img width="560" alt="Desktop wallpaper" src="https://github.com/user-attachments/assets/43a9b48a-b2b5-4a69-8afe-fd166f0f5380">
 
+My setup evolves over time, so the screenshots might not reflect the current state of my setup.
+
 ## Espresso (Ubuntu Server)
 
 Espresso is my personal home server used for hosting various appications and services.

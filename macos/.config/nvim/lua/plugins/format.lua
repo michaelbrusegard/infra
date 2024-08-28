@@ -60,6 +60,10 @@ return {
 				injected = { options = { ignore_errors = true } },
 				prettierd = {
 					condition = function(_, ctx)
+						local filetype = vim.api.nvim_buf_get_option(ctx.buf, "filetype")
+						if filetype == "markdown" or filetype == "markdown.mdx" then
+							return true
+						end
 						return require("util.format").find_config(ctx.filename, {
 							".prettierrc",
 							".prettierrc.json",

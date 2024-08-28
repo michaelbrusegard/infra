@@ -6,7 +6,9 @@ tap "jstkdng/programs"
 tap "koekeishiya/formulae"
 tap "oven-sh/bun"
 brew "bat"
+brew "librsvg"
 brew "chafa"
+brew "lima"
 brew "colima", restart_service: true
 brew "docker"
 brew "docker-compose"
@@ -18,12 +20,15 @@ brew "ffmpeg"
 brew "fzf"
 brew "git"
 brew "git-delta"
+brew "pinentry"
 brew "gnupg"
 brew "go"
+brew "imagemagick"
 brew "jenv"
 brew "jq"
 brew "luarocks"
 brew "mas"
+brew "mkcert"
 brew "neovim", args: ["HEAD"]
 brew "nvm"
 brew "pinentry-mac"
@@ -44,13 +49,13 @@ brew "oven-sh/bun/bun"
 cask "altserver"
 cask "chatgpt"
 cask "discord"
+cask "firefox"
 cask "font-meslo-lg-nerd-font"
 cask "font-noto-color-emoji"
 cask "font-roboto"
 cask "font-sf-pro"
 cask "jordanbaird-ice"
 cask "karabiner-elements"
-cask "librewolf"
 cask "raycast"
 cask "sf-symbols"
 cask "transmission"
@@ -68,6 +73,7 @@ mas "Messenger", id: 1480068668
 mas "Numbers", id: 409203825
 mas "Pages", id: 409201541
 mas "Slack", id: 803453959
+mas "UTM", id: 1538878817
 mas "Vimkey", id: 1585682577
 mas "WireGuard", id: 1451685025
 mas "Xcode", id: 497799835

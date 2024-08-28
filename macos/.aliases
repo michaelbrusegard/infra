@@ -8,7 +8,7 @@ alias reload='source ~/.zshrc'
 alias dl='cd ~/Downloads'
 alias dt='cd ~/Desktop'
 alias dc='cd ~/Documents'
-alias p='cd ~/Projects'
+alias dp='cd ~/Developer'
 
 # Navigation
 alias ..='cd ..'

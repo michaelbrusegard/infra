@@ -1,7 +1,7 @@
 -- Pull in the wezterm API
 local wezterm = require("wezterm")
 
--- Set the modules path
+-- Expand the modules path
 package.path = package.path .. ";" .. wezterm.config_dir .. "/lua/?.lua"
 
 -- This will hold the configuration.
@@ -12,9 +12,6 @@ require("config.options")(config)
 
 -- Keybinds
 require("config.keybinds")(config)
-
--- Tab bar
-require("config.tabs")
 
 -- Manage plugins
 local plugins_dir = wezterm.config_dir .. "/lua/plugins"
