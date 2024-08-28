@@ -57,7 +57,7 @@ local function options(config)
   config.tab_max_width = 32
 
   -- Update status faster
-  config.status_update_interval = 200
+  config.status_update_interval = 500
 
   -- Set tab bar background
   config.colors = {
