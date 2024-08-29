@@ -60,6 +60,7 @@
   "nvim-dbee": { "branch": "master", "commit": "21d2cc0844a16262bb6ea93ab3d0a0f20bd87853" },
   "nvim-jdtls": { "branch": "master", "commit": "99e4b2081de1d9162666cc7b563cbeb01c26b66b" },
   "nvim-lint": { "branch": "master", "commit": "debabca63c0905b59ce596a55a8e33eafdf66342" },
+  "nvim-lsp-endhints": { "branch": "main", "commit": "a0d483f05a98423e8971be15c023c3bc4380cee4" },
   "nvim-lspconfig": { "branch": "master", "commit": "2a6f00ff66e276ab3289be8bb9f844f7ab385848" },
   "nvim-nio": { "branch": "master", "commit": "a428f309119086dc78dd4b19306d2d67be884eee" },
   "nvim-silicon": { "branch": "main", "commit": "feb882f04c992b797daa118101a239fb3bedfc04" },

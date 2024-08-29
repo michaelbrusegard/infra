@@ -498,6 +498,12 @@ return {
       end)
     end,
   },
+  -- Fancy inlay hints
+  {
+    'chrisgrieser/nvim-lsp-endhints',
+    event = 'LspAttach',
+    opts = {},
+  },
   -- Json and yaml schema store
   {
     'b0o/SchemaStore.nvim',
