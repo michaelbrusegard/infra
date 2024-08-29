@@ -79,13 +79,6 @@ nnoremap <leader>p "+p
 vnoremap <leader>p "+p
 inoremap <leader>p <C-R><C-O>+
 
-" Preserves clipboard when pasting with leader
-xnoremap <leader>p "_dP
-
-" Preserve clipboard when deleting with leader
-nnoremap <leader>d "_d
-vnoremap <leader>d "_d
-
 " Move selected lines up and down
 vnoremap J :move '>+1<CR>gv-gv
 vnoremap K :move '<-2<CR>gv-gv
@@ -93,15 +86,6 @@ vnoremap K :move '<-2<CR>gv-gv
 " Keep selection when indenting
 vnoremap > >gv
 vnoremap < <gv
-
-" Save file
-nnoremap <leader>w :w<CR>
-
-" Quit file
-nnoremap <leader>q :q<CR>
-
-" Save and quit file
-nnoremap <leader>x :x<CR>
 
 " Highlight when yanking text
 au TextYankPost * silent! lua vim.highlight.on_yank()
