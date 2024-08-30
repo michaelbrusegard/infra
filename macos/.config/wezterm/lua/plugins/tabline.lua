@@ -40,6 +40,7 @@ return function()
     },
     extensions = {
       'ressurect',
+      'smart_workspace_switcher',
     },
   })
 end

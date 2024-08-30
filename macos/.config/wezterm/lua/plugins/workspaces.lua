@@ -7,7 +7,7 @@ return function(config)
 
   workspace_switcher.workspace_formatter = function(label)
     return wezterm.format({
-      { Foreground = { Color = require('util.colors')['compose_cursor'] } },
+      { Foreground = { Color = require('util.colors').compose_cursor } },
       { Text = wezterm.nerdfonts.md_dock_window .. ' : ' .. label },
     })
   end

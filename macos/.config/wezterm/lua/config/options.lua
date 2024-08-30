@@ -62,15 +62,15 @@ local function options(config)
   -- Set tab bar background
   config.colors = {
     tab_bar = {
-      background = require('util.colors')['tab_bar'].inactive_tab['bg_color'],
+      background = require('util.colors').tab_bar.inactive_tab.bg_color,
     },
 
     -- Yank mode
-    selection_fg = require('util.colors')['ansi'][4],
+    selection_fg = require('util.colors').ansi[4],
     selection_bg = '#3f3b41',
 
     -- Find mode
-    copy_mode_inactive_highlight_fg = { Color = require('util.colors')['ansi'][3] },
+    copy_mode_inactive_highlight_fg = { Color = require('util.colors').ansi[3] },
     copy_mode_inactive_highlight_bg = { Color = '#323c3f' },
   }
 end
