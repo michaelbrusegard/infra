@@ -162,6 +162,17 @@ return {
         inc_rename = false,
         lsp_doc_border = false,
       },
+      cmdline = {
+        format = {
+          cmdline = { icon = '' },
+          search_down = { icon = ' ' },
+          search_up = { icon = ' ' },
+          filter = { icon = '$ ' },
+          lua = { icon = ' ' },
+          help = { icon = '󰋖 ' },
+          input = { view = 'cmdline_popup', icon = '󰥻 ' },
+        },
+      },
     },
     keys = {
       {

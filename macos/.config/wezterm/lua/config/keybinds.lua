@@ -31,14 +31,6 @@ local function keybinds(config)
 		-- Move pane
 		{ key = "0", mods = "SUPER", action = wezterm.action.PaneSelect({ mode = "SwapWithActiveKeepFocus" }) },
 
-		-- Norwegian special characters
-		{ key = "'", mods = "ALT", action = wezterm.action.SendString("æ") },
-		{ key = "o", mods = "ALT", action = wezterm.action.SendString("ø") },
-		{ key = "a", mods = "ALT", action = wezterm.action.SendString("å") },
-		{ key = '"', mods = "SHIFT|ALT", action = wezterm.action.SendString("Æ") },
-		{ key = "o", mods = "SHIFT|ALT", action = wezterm.action.SendString("Ø") },
-		{ key = "a", mods = "SHIFT|ALT", action = wezterm.action.SendString("Å") },
-
 		-- Application actions
 		{ key = "m", mods = "SUPER", action = wezterm.action.Hide },
 		{ key = "q", mods = "SUPER", action = wezterm.action.QuitApplication },

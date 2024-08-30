@@ -9,6 +9,10 @@ local function options(config)
   config.enable_kitty_keyboard = true
   config.enable_csi_u_key_encoding = false
 
+  -- Make Option key work as expected
+  config.send_composed_key_when_left_alt_is_pressed = true
+  config.send_composed_key_when_right_alt_is_pressed = true
+
   -- Keep terminal open after process exits
   config.exit_behavior = 'Hold'
 
