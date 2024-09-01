@@ -82,7 +82,7 @@ cd ~/dotfiles/espresso
 # Home directory
 stow --adopt -t ~ home
 # System configuration
-stow --adopt -t /etc etc
+sudo stow --adopt -t /etc etc
 # Overwrite files
 git restore .
 ```
