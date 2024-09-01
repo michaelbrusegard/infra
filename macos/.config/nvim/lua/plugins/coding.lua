@@ -27,6 +27,9 @@ return {
           docs = {
             auto_open = false,
           },
+          entries = {
+            follow_cursor = true,
+          },
         },
         completion = {
           completeopt = 'menu,menuone,noinsert',

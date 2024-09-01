@@ -181,7 +181,14 @@ return {
         '-',
         function()
           local ft = vim.bo.filetype
-          if ft ~= 'lazy' and ft ~= 'mason' and ft ~= 'git' and ft ~= 'lspinfo' and ft ~= 'copilot-chat' then
+          if
+            ft ~= 'lazy'
+            and ft ~= 'mason'
+            and ft ~= 'git'
+            and ft ~= 'lspinfo'
+            and ft ~= 'conforminfo'
+            and ft ~= 'noice'
+          then
             vim.cmd('Oil')
           end
         end,
