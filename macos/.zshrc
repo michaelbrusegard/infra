@@ -128,3 +128,6 @@ eval "$(jenv init -)"
 
 # rustup
 export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
+
+# bun completions
+[ -s "/Users/michaelbrusegard/.bun/_bun" ] && source "/Users/michaelbrusegard/.bun/_bun"

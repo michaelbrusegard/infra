@@ -57,23 +57,10 @@ function M.pretty_path()
       path = path:sub(#root + 2)
     end
 
-    local sep = package.config:sub(1, 1)
-    local parts = vim.split(path, '[\\/]')
-
-    if #parts > 3 then
-      parts = { parts[1], '…', table.concat({ unpack(parts, #parts - 5, #parts) }, sep) }
-    end
-
     if vim.bo.modified then
-      parts[#parts] = M.format(self, parts[#parts], 'MatchParen')
+      path = M.format(self, path, 'MatchParen')
     else
-      parts[#parts] = M.format(self, parts[#parts], 'Bold')
-    end
-
-    local dir = ''
-    if #parts > 1 then
-      dir = table.concat({ unpack(parts, 1, #parts - 1) }, sep)
-      dir = M.format(self, dir .. sep, '')
+      path = M.format(self, path, 'Bold')
     end
 
     local readonly = ''
@@ -85,7 +72,7 @@ function M.pretty_path()
 
     local icon_part = M.format(self, icon, icon_highlight_group)
 
-    return icon_part .. dir .. parts[#parts] .. readonly
+    return icon_part .. path .. readonly
   end
 end
 

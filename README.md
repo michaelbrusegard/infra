@@ -67,7 +67,7 @@ My setup evolves over time, so the screenshots might not reflect the current sta
 
 ## Espresso (Ubuntu Server)
 
-Espresso is my personal home server used for hosting various appications and services.
+Espresso is my personal home server used for hosting various applications and services.
 
 ### Installing packages
 
@@ -78,7 +78,13 @@ sh ~/dotfiles/espresso/scripts/apt.sh
 ### Setting up symlinks
 
 ```sh
-cd ~/dotfiles && stow --adopt espresso && git restore .
+cd ~/dotfiles/espresso
+# Home directory
+stow --adopt -t ~ home
+# System configuration
+stow --adopt -t /etc etc
+# Overwrite files
+git restore .
 ```
 
 ### Setup login items
@@ -103,7 +109,7 @@ zsh ~/dotfiles/shared/scripts/gpg.zsh
 
 ## Inspiration…
 
-- Mathias Bynens and his [macOS defaults](https://github.com/mathiasbynens/dotfiles/blob/main/.macos)
+- Mathias Bynens and his [MacOS defaults](https://github.com/mathiasbynens/dotfiles/blob/main/.macos)
 - Dries Vints and his [SSH script](https://github.com/driesvints/dotfiles/blob/main/ssh.sh)
 - Antione Martin and his [GPG script](https://github.com/antoinemartin/create-gpg-key/blob/main/create_gpg_key.sh)
 - Elliot's fast and beautiful [.zshrc prompt](https://github.com/dreamsofautonomy/zensh/blob/main/.zshrc)
