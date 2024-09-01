@@ -39,7 +39,7 @@ return function()
       tabline_y = { 'ram', 'cpu' },
     },
     extensions = {
-      'ressurect',
+      'resurrect',
       'smart_workspace_switcher',
     },
   })
