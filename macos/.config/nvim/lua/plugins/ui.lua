@@ -143,10 +143,10 @@ return {
         cmdline_popup = {
           position = {
             row = vim.o.lines,
-            col = 10,
+            col = 14,
           },
           size = {
-            width = vim.o.columns - 19,
+            width = vim.o.columns - 30,
             height = 1,
           },
           border = {
