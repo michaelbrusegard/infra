@@ -2,10 +2,10 @@ return {
   -- Auto completion
   {
     -- "hrsh7th/nvim-cmp",
-    -- "xzbdmw/nvim-cmp",
-    -- branch = "dynamic",
-    'yioneko/nvim-cmp',
-    branch = 'perf',
+    'xzbdmw/nvim-cmp',
+    branch = 'dynamic',
+    -- 'yioneko/nvim-cmp',
+    -- branch = 'perf',
     version = false,
     event = 'InsertEnter',
     dependencies = {
@@ -22,6 +22,11 @@ return {
         performance = {
           debounce = 0,
           throttle = 0,
+        },
+        view = {
+          docs = {
+            auto_open = false,
+          },
         },
         completion = {
           completeopt = 'menu,menuone,noinsert',
