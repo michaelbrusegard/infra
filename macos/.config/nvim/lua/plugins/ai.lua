@@ -22,7 +22,7 @@ return {
       local select = require('CopilotChat.select')
       return {
         model = 'gpt-4',
-        auto_insert_mode = true,
+        auto_insert_mode = false,
         auto_follow_cursor = false,
         show_help = false,
         question_header = '',
