@@ -146,7 +146,7 @@ return {
             col = 14,
           },
           size = {
-            width = vim.o.columns - 30,
+            width = vim.o.columns - 31,
             height = 1,
           },
           border = {
