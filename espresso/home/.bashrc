@@ -16,6 +16,11 @@ export HISTCONTROL=ignoreboth:erasedups
 shopt -s histappend
 export PROMPT_COMMAND="history -a; history -n; $PROMPT_COMMAND"
 
+# Aliases
+if [ -f ~/.aliases_private ]; then
+  source ~/.aliases_private
+fi
+
 # Generic
 export LANG=en_GB.UTF-8
 export EDITOR="nvim"
