@@ -34,6 +34,7 @@ return function()
         '/',
         { Attribute = { Intensity = 'Bold' } },
         { 'cwd', padding = { left = 0, right = 1 } },
+        { 'zoomed', padding = 0 },
       },
       tabline_x = {},
       tabline_y = { 'ram', 'cpu' },

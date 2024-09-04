@@ -23,7 +23,7 @@ fi
 
 # Generic
 export LANG=en_GB.UTF-8
-export EDITOR="nvim"
+export EDITOR="vim"
 
 # Shortcuts
 alias vi='vim'
