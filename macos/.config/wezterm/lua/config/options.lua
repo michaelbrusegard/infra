@@ -13,9 +13,6 @@ local function options(config)
   config.send_composed_key_when_left_alt_is_pressed = true
   config.send_composed_key_when_right_alt_is_pressed = true
 
-  -- Keep terminal open after process exits
-  config.exit_behavior = 'Hold'
-
   -- Color scheme
   config.color_scheme = 'Catppuccin Mocha'
 
