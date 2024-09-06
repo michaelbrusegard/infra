@@ -39,9 +39,6 @@ zinit snippet OMZP::gradle
 zinit cdreplay -q
 
 # Keybindings
-bindkey -v
-bindkey -M vicmd "k" history-search-backward
-bindkey -M vicmd "j" history-search-forward
 bindkey "^N" history-search-forward
 bindkey "^P" history-search-backward
 bindkey "^Y" autosuggest-accept

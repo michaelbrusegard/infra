@@ -2,9 +2,6 @@
 PS1='\[\e[34m\]\w\[\e[0m\]\n\[\e[1;32m\]❯ \[\e[0m\]'
 
 # Keybindings
-set -o vi
-bind -m vi-command '"k": history-search-backward'
-bind -m vi-command '"j": history-search-forward'
 bind '"\C-n": history-search-forward'
 bind '"\C-p": history-search-backward'
 
