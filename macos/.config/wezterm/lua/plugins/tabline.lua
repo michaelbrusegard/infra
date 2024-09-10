@@ -36,6 +36,7 @@ return function()
         { 'cwd', padding = { left = 0, right = 1 } },
         { 'zoomed', padding = 0 },
       },
+      tab_inactive = { 'tab_index', { 'process', icons_only = true, padding = 0 } },
       tabline_x = {},
       tabline_y = { 'ram', 'cpu' },
     },
