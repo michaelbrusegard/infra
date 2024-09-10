@@ -74,6 +74,14 @@ local function keybinds(config)
 		{ key = "y", mods = "SUPER", action = wezterm.action.ActivateCopyMode },
 		{ key = "z", mods = "SUPER", action = wezterm.action.TogglePaneZoomState },
 		{ key = "r", mods = "SUPER", action = wezterm.action.ReloadConfiguration },
+		{
+      key = "r",
+      mods = "SHIFT|SUPER",
+      action = wezterm.action_callback(function()
+        wezterm.plugin.update_all()
+        wezterm.action.ReloadConfiguration()
+      end),
+    },
 	}
 
   config.key_tables = {

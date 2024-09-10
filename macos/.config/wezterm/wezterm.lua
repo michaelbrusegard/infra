@@ -24,10 +24,5 @@ if files then
   end
 end
 
--- Avoid updating plugins when running in neovim
-if not require('util.keybinds').is_nvim then
-  wezterm.plugin.update_all()
-end
-
 -- Finally, return the configuration to wezterm
 return config
