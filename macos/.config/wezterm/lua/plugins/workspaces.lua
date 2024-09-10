@@ -5,10 +5,10 @@ return function(config)
   workspace_switcher.apply_to_config(config)
   workspace_switcher.zoxide_path = '/opt/homebrew/bin/zoxide'
 
-  workspace_switcher.workspace_formatter = function(label)
+  workspace_switcher.workspace_formatter = function(name)
     return wezterm.format({
       { Foreground = { Color = require('util.colors').compose_cursor } },
-      { Text = wezterm.nerdfonts.md_dock_window .. ' : ' .. label },
+      { Text = wezterm.nerdfonts.cod_terminal_tmux .. ' ' .. string.match(name, '[^/\\]+$') },
     })
   end
 

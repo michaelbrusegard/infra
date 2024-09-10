@@ -42,6 +42,7 @@ return function()
     extensions = {
       'resurrect',
       'smart_workspace_switcher',
+      'quick_domains',
     },
   })
 end

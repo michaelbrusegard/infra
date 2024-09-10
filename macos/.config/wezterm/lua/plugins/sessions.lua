@@ -40,7 +40,33 @@ return function(config)
             restore_text = true,
             on_pane_restore = resurrect.tab_state.default_on_pane_restore,
           })
-        end)
+        end, {
+          fuzzy_description = nil,
+          fmt_workspace = function(name)
+            return wezterm.format({
+              { Foreground = { Color = require('util.colors').ansi[3] } },
+              {
+                Text = wezterm.nerdfonts.cod_terminal_tmux .. ' ' .. string.match(name, '[^~+]+$'):gsub('%.json$', ''),
+              },
+            })
+          end,
+          fmt_window = function(name)
+            return wezterm.format({
+              { Foreground = { Color = require('util.colors').ansi[3] } },
+              {
+                Text = wezterm.nerdfonts.cod_window .. ' ' .. string.match(name, '[^~+]+$'):gsub('%.json$', ''),
+              },
+            })
+          end,
+          fmt_tab = function(name)
+            return wezterm.format({
+              { Foreground = { Color = require('util.colors').ansi[3] } },
+              {
+                Text = wezterm.nerdfonts.cod_chrome_restore .. ' ' .. string.match(name, '[^~+]+$'):gsub('%.json$', ''),
+              },
+            })
+          end,
+        })
       end),
     }),
   })
