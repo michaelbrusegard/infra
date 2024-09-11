@@ -66,7 +66,6 @@ return {
   -- Jupyter notebook code running and output viewing
   {
     'benlubas/molten-nvim',
-    dependencies = { '3rd/image.nvim' },
     version = '^1.0.0',
     build = ':UpdateRemotePlugins',
     ft = { 'markdown', 'quarto' },
@@ -84,6 +83,7 @@ return {
     },
     init = function()
       vim.g.molten_auto_image_popup = true
+      vim.g.molten_auto_open_html_in_browser = true
       vim.g.molten_auto_open_output = false
       vim.g.molten_virt_text_output = true
       vim.g.molten_virt_lines_off_by_1 = true
