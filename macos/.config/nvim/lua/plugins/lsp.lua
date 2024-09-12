@@ -802,7 +802,12 @@ return {
     dependencies = {
       'nvim-treesitter/nvim-treesitter',
     },
-    ft = { 'markdown', 'quarto' },
+    ft = { 'quarto' },
+    opts = {
+      verbose = {
+        no_code_found = false,
+      },
+    },
   },
   {
     'quarto-dev/quarto-nvim',
@@ -811,7 +816,7 @@ return {
       'nvim-lspconfig',
       'otter.nvim',
     },
-    ft = { 'quarto', 'markdown' },
+    ft = { 'quarto' },
     opts = {
       lspFeatures = {
         languages = { 'python' },
@@ -823,13 +828,6 @@ return {
         completion = {
           enabled = true,
         },
-      },
-      keymap = {
-        hover = 'K',
-        definition = 'gd',
-        rename = 'crn',
-        references = 'gr',
-        format = '<leader>cf',
       },
       codeRunner = {
         enabled = true,

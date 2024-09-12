@@ -66,26 +66,39 @@ return {
   -- Jupyter notebook code running and output viewing
   {
     'benlubas/molten-nvim',
+    dependencies = { 'image.nvim' },
     version = '^1.0.0',
     build = ':UpdateRemotePlugins',
-    ft = { 'markdown', 'quarto' },
+    ft = { 'quarto' },
     keys = {
       { '<leader>nr', "<cmd>lua require('quarto.runner').run_above()<cr>", desc = 'Run cell' },
       { '<leader>nR', "<cmd>lua require('quarto.runner').run_all()<cr>", desc = 'Run all cells' },
       { '<leader>nl', "<cmd>lua require('quarto.runner').run_line()<cr>", desc = 'Run line' },
       { '<leader>ni', '<cmd>MoltenInit<cr>', desc = 'Initialize kernel' },
       { '<leader>nI', '<cmd>MoltenInfo<cr>', desc = 'Kernel Info' },
-      { '<leader>no', '<cmd>noautocmd MoltenEnterOutput<cr>', desc = 'Open output window' },
+      {
+        '<leader>no',
+        '<cmd>noautocmd MoltenEnterOutput<cr>',
+        desc = 'Enter output window',
+      },
       { '<leader>nm', '<cmd>MoltenImagePopup<cr>', desc = 'Open Image Popup' },
       { '<leader>nh', '<cmd>MoltenHideOutput<cr>', desc = 'Close output window' },
       { '<leader>nv', '<cmd>MoltenEvaluateVisual<cr>', desc = 'Execute visual selection', mode = 'x' },
       { '<leader>nd', '<cmd>MoltenDelete<cr>', desc = 'Delete Molten cell' },
     },
     init = function()
-      vim.g.molten_auto_image_popup = true
-      vim.g.molten_auto_open_html_in_browser = true
-      vim.g.molten_auto_open_output = false
-      vim.g.molten_virt_text_output = true
+      -- vim.g.molten_auto_image_popup = true
+      -- vim.g.molten_auto_open_html_in_browser = true
+      vim.g.molten_image_provider = 'image.nvim'
+      vim.g.molten_enter_output_behavior = 'open_and_enter'
+      vim.g.molten_output_show_exec_time = true
+      vim.g.molten_output_win_border = { '', '', '', '' }
+      vim.g.molten_output_win_cover_gutter = false
+      vim.g.molten_output_win_style = 'minimal'
+      -- vim.g.molten_auto_open_output = false
+      vim.g.molten_wrap_output = true
+      -- vim.g.molten_virt_text_output = true
+      vim.g.molten_output_virt_lines = true
       vim.g.molten_virt_lines_off_by_1 = true
       vim.g.molten_output_show_more = true
 
@@ -112,9 +125,9 @@ return {
     'GCBallesteros/jupytext.nvim',
     event = 'LazyFile',
     opts = {
-      style = 'markdown',
-      output_extension = 'md',
-      force_ft = 'markdown',
+      style = 'quarto',
+      output_extension = 'qmd',
+      force_ft = 'quarto',
     },
   },
   -- Latex
