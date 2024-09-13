@@ -44,6 +44,7 @@ return function()
       'resurrect',
       'smart_workspace_switcher',
       'quick_domains',
+      'presentation',
     },
   })
 end
