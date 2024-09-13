@@ -5,7 +5,7 @@ vim.g.maplocalleader = ' '
 -- Setup python
 local venv = vim.fn.expand('~/.pyenv/versions/neovim')
 -- Run python -m ipykernel once if it can't find the file/directory
--- It needs the following dependencies: pynvim jupytext jupyter_client ipykernel plotly kaleido cairosvg pnglatex pyperclip pillow git+https://github.com/quarto-dev/quarto-cli
+-- It needs the following dependencies: pynvim ipykernel plotly kaleido cairosvg pnglatex pyperclip pillow
 vim.g.python3_host_prog = venv .. '/bin/python'
 -- Prepend the python host program to the path
 vim.env.PATH = venv .. '/bin:' .. vim.env.PATH
