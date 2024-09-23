@@ -30,6 +30,8 @@ brew "luarocks"
 brew "mas"
 brew "mkcert"
 brew "neovim", args: ["HEAD"]
+brew "netcat"
+brew "nmap"
 brew "nvm"
 brew "pinentry-mac"
 brew "pyenv"
@@ -43,7 +45,7 @@ brew "thefuck"
 brew "wakeonlan"
 brew "zoxide"
 brew "jesseduffield/lazydocker/lazydocker"
-brew "jesseduffield/lazygit/lazygit"
+brew "jesseduffield/lazygit/lazygit", link: false
 brew "koekeishiya/formulae/yabai"
 brew "oven-sh/bun/bun"
 cask "altserver"
@@ -54,6 +56,7 @@ cask "font-meslo-lg-nerd-font"
 cask "font-noto-color-emoji"
 cask "font-roboto"
 cask "font-sf-pro"
+cask "google-chrome"
 cask "jordanbaird-ice"
 cask "karabiner-elements"
 cask "raycast"
@@ -74,6 +77,5 @@ mas "Numbers", id: 409203825
 mas "Pages", id: 409201541
 mas "Slack", id: 803453959
 mas "UTM", id: 1538878817
-mas "Vimkey", id: 1585682577
 mas "WireGuard", id: 1451685025
 mas "Xcode", id: 497799835

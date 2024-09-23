@@ -13,6 +13,16 @@ return {
       },
     },
   },
+  -- Supermaven
+  {
+    'supermaven-inc/supermaven-nvim',
+    build = ':SupermavenUseFree',
+    opts = {
+      disable_inline_completion = true,
+      disable_keymaps = true,
+      log_level = 'off',
+    },
+  },
   -- Copilot chat
   {
     'CopilotC-Nvim/CopilotChat.nvim',

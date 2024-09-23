@@ -65,6 +65,7 @@ return {
               Constant = '󰏿 ',
               Constructor = ' ',
               Copilot = ' ',
+              Supermaven = ' ',
               Enum = ' ',
               EnumMember = ' ',
               Event = ' ',
@@ -332,7 +333,7 @@ return {
       snippet_engine = 'nvim',
     },
   },
-  -- Copilot cmp source
+  -- AI cmp source
   {
     'nvim-cmp',
     dependencies = {
@@ -358,10 +359,15 @@ return {
     },
     opts = function(_, opts)
       table.insert(opts.sources, 1, {
-        name = 'copilot',
+        name = 'supermaven',
         group_index = 1,
         priority = 100,
       })
+      -- table.insert(opts.sources, 1, {
+      --   name = 'copilot',
+      --   group_index = 1,
+      --   priority = 100,
+      -- })
     end,
   },
   -- Git source
