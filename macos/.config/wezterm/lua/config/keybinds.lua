@@ -85,7 +85,6 @@ local function keybinds(config)
 	}
 
   config.key_tables = {
-    -- Yank mode
     copy_mode = {
       { key = 'Tab', mods = 'NONE', action = wezterm.action.CopyMode('MoveForwardWord') },
       { key = 'Tab', mods = 'SHIFT', action = wezterm.action.CopyMode('MoveBackwardWord') },
@@ -156,7 +155,6 @@ local function keybinds(config)
       },
     },
 
-    -- Find mode
     search_mode = {
       { key = 'Enter', mods = 'NONE', action = wezterm.action.CopyMode('PriorMatch') },
       { key = 'Escape', mods = 'NONE', action = wezterm.action.CopyMode('Close') },
