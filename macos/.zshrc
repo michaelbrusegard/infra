@@ -34,6 +34,7 @@ zinit snippet OMZP::git
 zinit snippet OMZP::sudo
 zinit snippet OMZP::command-not-found
 zinit snippet OMZP::gradle
+zinit snippet OMZP::bun
 
 # Apply zinit cdreplay
 zinit cdreplay -q
@@ -108,23 +109,29 @@ eval "$(thefuck --alias)"
 # imagemagick
 export DYLD_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_LIBRARY_PATH"
 
-# nvm
-export NVM_DIR="$HOME/.nvm"
-[ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ] && \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
-[ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
+# Lazy load function
+lazy_load() {
+  init=$1
+  shift
+  for cmd in "$@"; do
+    eval "
+    $cmd() {
+      unset -f $cmd
+      $init
+      $cmd \"\$@\"
+    }
+    "
+  done
+}
+
+# fnm
+lazy_load 'eval "$(command fnm env --use-on-cd --shell zsh)"' 'fnm' 'node' 'npm' 'npx'
 
 # pyenv
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
+lazy_load 'export PYENV_ROOT="$HOME/.pyenv"; [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(command pyenv init -)"; eval "$(command pyenv virtualenv-init -)"' 'pyenv' 'python' 'pip'
 
 # jenv
-export PATH="$HOME/.jenv/bin:$PATH"
-eval "$(jenv init -)"
+lazy_load 'export PATH="$HOME/.jenv/bin:$PATH"; eval "$(command jenv init -)"' 'jenv' 'java' 'javac'
 
 # rustup
-export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
-
-# bun completions
-[ -s "/Users/michaelbrusegard/.bun/_bun" ] && source "/Users/michaelbrusegard/.bun/_bun"
+lazy_load 'export PATH="/opt/homebrew/opt/rustup/bin:$PATH"' 'rustup' 'rustc' 'cargo'
