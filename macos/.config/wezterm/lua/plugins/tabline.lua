@@ -27,7 +27,7 @@ return function()
       tab_active = {
         { Attribute = { Intensity = 'Bold' } },
         { Foreground = { Color = colors.ansi[6] } },
-        'tab_index',
+        'index',
         'ResetAttributes',
         { Foreground = { Color = colors.foreground } },
         { 'parent', padding = 0 },
@@ -36,7 +36,7 @@ return function()
         { 'cwd', padding = { left = 0, right = 1 } },
         { 'zoomed', padding = 0 },
       },
-      tab_inactive = { 'tab_index', { 'process', icons_only = true, padding = 0 } },
+      tab_inactive = { 'index', { 'process', icons_only = true, padding = 0 } },
       tabline_x = {},
       tabline_y = { 'ram', 'cpu' },
     },
