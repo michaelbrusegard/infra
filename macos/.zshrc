@@ -34,7 +34,6 @@ zinit snippet OMZP::git
 zinit snippet OMZP::sudo
 zinit snippet OMZP::command-not-found
 zinit snippet OMZP::gradle
-zinit snippet OMZP::bun
 
 # Apply zinit cdreplay
 zinit cdreplay -q

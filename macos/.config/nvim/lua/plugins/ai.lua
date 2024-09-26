@@ -16,6 +16,7 @@ return {
   -- Supermaven
   {
     'supermaven-inc/supermaven-nvim',
+    cmd = 'Supermaven',
     build = ':SupermavenUseFree',
     opts = {
       disable_inline_completion = true,

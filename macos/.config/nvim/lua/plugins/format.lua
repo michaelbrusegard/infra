@@ -83,6 +83,19 @@ return {
             return require('util.format').find_config(ctx.filename, { 'biome.json', 'biome.jsonc' })
           end,
         },
+        black = {
+          condition = function(_, ctx)
+            local config_path = require('util.format').find_config(ctx.filename, { 'pyproject.toml' })
+            if config_path then
+              for line in io.lines(config_path) do
+                if line:match('%[tool.black%]') then
+                  return true
+                end
+              end
+            end
+            return false
+          end,
+        },
         ['markdown-toc'] = {
           condition = function(_, ctx)
             for _, line in ipairs(vim.api.nvim_buf_get_lines(ctx.buf, 0, -1, false)) do
