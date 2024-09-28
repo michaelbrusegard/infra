@@ -124,7 +124,7 @@ lazy_load() {
 }
 
 # fnm
-lazy_load 'eval "$(command fnm env --use-on-cd --shell zsh)"' 'fnm' 'node' 'npm' 'npx'
+eval "$(command fnm env --use-on-cd --shell zsh)"
 
 # pyenv
 lazy_load 'export PYENV_ROOT="$HOME/.pyenv"; [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(command pyenv init -)"; eval "$(command pyenv virtualenv-init -)"' 'pyenv' 'python' 'pip'

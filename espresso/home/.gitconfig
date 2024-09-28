@@ -3,7 +3,7 @@
 	email = 56915010+michaelbrusegard@users.noreply.github.com
 
 [push]
-    autoSetupRemote = true
+  autoSetupRemote = true
 
 [core]
 	editor = vim
