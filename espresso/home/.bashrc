@@ -39,3 +39,7 @@ alias -- -="cd -"
 # Utilities
 alias packagefile='dpkg --get-selections > ~/dotfiles/espresso/resources/PackageFile'
 alias ls='ls -a -1 --color=auto'
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH=$BUN_INSTALL/bin:$PATH
