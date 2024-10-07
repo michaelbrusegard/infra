@@ -8,6 +8,9 @@
 [push]
   autoSetupRemote = true
 
+[pull]
+	rebase = false
+
 [core]
 	editor = nvim
 	pager = delta
@@ -15,6 +18,18 @@
 
 [init]
   defaultBranch = main
+
+[merge]
+  conflictstyle = diff3
+
+[diff]
+  colorMoved = default
+
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
 
 [interactive]
   diffFilter = delta --color-only
@@ -52,14 +67,3 @@
 		bold yellow => syntax "#544f4e"
 	# Should match the name of the bat theme
 	syntax-theme = Catppuccin Mocha
-
-[merge]
-  conflictstyle = diff3
-
-[diff]
-  colorMoved = default
-[filter "lfs"]
-	required = true
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
