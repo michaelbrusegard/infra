@@ -35,12 +35,12 @@ function trash {
     fi
   done
 }
-function ssh {
-  wezterm cli spawn --domain-name SSH:"$@" 2>/dev/null || /usr/bin/ssh "$@"
-}
-function sshmux {
-  wezterm cli spawn --domain-name SSHMUX:"$@" 2>/dev/null || /usr/bin/ssh "$@"
-}
+# function ssh {
+#   wezterm cli spawn --domain-name SSH:"$@" 2>/dev/null || /usr/bin/ssh "$@"
+# }
+# function sshmux {
+#   wezterm cli spawn --domain-name SSHMUX:"$@" 2>/dev/null || /usr/bin/ssh "$@"
+# }
 
 # Hollywood here I come
 alias hollywood="docker run --rm -it bcbcarl/hollywood"
