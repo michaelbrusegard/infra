@@ -14,6 +14,14 @@ cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfi
 
 **Heads-up:** The dotfiles in this repository are incomplete because I also maintain private dotfiles with sensitive information that I want to keep secure. The setup for the private dotfiles is the same.
 
+## Arch
+
+### Creating symlinks for the config files
+
+```zsh
+cd ~/dotfiles/arch && stow -t ~ home && sudo stow -t /etc etc
+```
+
 ## MacOS
 
 Before setting up MacOS, System Intergrity Protection (SIP) needs to be partially disabled for the [yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) tiling window manager to work correctly.

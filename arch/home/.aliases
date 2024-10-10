@@ -1,0 +1,44 @@
+#!/usr/bin/env zsh
+
+# Shortcuts
+alias vi='vim'
+alias vim='nvim'
+alias reload='source ~/.zshrc'
+alias dl='cd ~/Downloads'
+alias dt='cd ~/Desktop'
+alias dc='cd ~/Documents'
+alias dp='cd ~/Developer'
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
+alias -- -="cd -"
+
+# Utilities
+# alias afk='open -a ScreenSaverEngine'
+alias neofetch='fastfetch'
+alias lzg='lazygit'
+alias lzd='lazydocker'
+# function trash {
+#   local trash_dir="$HOME/.Trash"
+#   for file in "$@"; do
+#     if [ -e "$file" ]; then
+#       mv "$file" "$trash_dir"
+#       echo "Moved '$file' to trash."
+#     else
+#       echo "'$file' not found."
+#     fi
+#   done
+# }
+# function ssh {
+#   wezterm cli spawn --domain-name SSH:"$@" 2>/dev/null || /usr/bin/ssh "$@"
+# }
+# function sshmux {
+#   wezterm cli spawn --domain-name SSHMUX:"$@" 2>/dev/null || /usr/bin/ssh "$@"
+# }
+
+# Hollywood here I come
+alias hollywood="docker run --rm -it bcbcarl/hollywood"
