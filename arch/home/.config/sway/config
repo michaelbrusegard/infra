@@ -1,21 +1,5 @@
-# Default config for sway
-#
-# Copy this to ~/.config/sway/config and edit it to your liking.
-#
-# Read `man 5 sway` for a complete reference.
-
-input * {
-    xkb_options "ctrl:swap_lwin_lctl,ctrl:swap_rwin_rctl"
-}
-
-for_window [app_id="org.wezfurlong.wezterm"] {
-    input * {
-        xkb_options " "
-    }
-}
-
 ### Variables
-#
+
 # Logo key. Use Mod1 for Alt.
 set $mod Mod1
 # Home row direction keys, like vim
