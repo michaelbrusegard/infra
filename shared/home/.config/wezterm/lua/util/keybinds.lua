@@ -1,4 +1,15 @@
+local wezterm = require('wezterm')
+
 local M = {}
+
+-- Make SUPER key and CTRL consistent across Linux and MacOS
+M.SUPER = 'CTRL'
+M.CTRL = 'SUPER'
+
+if string.match(wezterm.target_triple, 'darwin') ~= nil then
+  M.SUPER = 'SUPER'
+  M.CTRL = 'CTRL'
+end
 
 -- Check if the pane contains nvim
 function M.is_nvim(pane)

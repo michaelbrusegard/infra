@@ -1,4 +1,5 @@
 local wezterm = require('wezterm')
+local keybinds = require('util.keybinds')
 
 return function(config)
   local resurrect = wezterm.plugin.require('https://github.com/MLFlexer/resurrect.wezterm')
@@ -29,7 +30,7 @@ return function(config)
 
   table.insert(config.keys, {
     key = 'Enter',
-    mods = 'SHIFT|SUPER',
+    mods = 'SHIFT|' .. keybinds.SUPER,
     action = wezterm.action.Multiple({
       wezterm.action_callback(function(window, pane)
         resurrect.fuzzy_load(window, pane, function(id)
