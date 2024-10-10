@@ -34,13 +34,13 @@ read_secret PASSWORD
 printf "Enter again for confirmation: "
 read_secret PASSWORD_CONFIRMATION
 
-if [ "$PASSWORD" != "$PASSWORD_CONFIRMATION" ]; then 
+if [ "$PASSWORD" != "$PASSWORD_CONFIRMATION" ]; then
     echo "ERROR! Passwords don't match. Please restart."
     exit 1
 fi
 
 # Generating a new GPG key
-gpg --batch --passphrase "$PASSWORD" --quick-generate-key "$USER_ID" rsa4096 sign 0
+gpg --batch --passphrase "$PASSWORD" --quick-generate-key "$USER_ID" ed25519 sign 0
 
 # Export the generated GPG key
 EXPORTED_KEY=$(gpg --armor --export "$USER_EMAIL")
