@@ -86,13 +86,7 @@ sh ~/dotfiles/espresso/scripts/apt.sh
 ### Setting up symlinks
 
 ```sh
-cd ~/dotfiles/espresso
-# Home directory
-stow --adopt -t ~ home
-# System configuration
-sudo stow --adopt -t /etc etc
-# Overwrite files
-git restore .
+cd ~/dotfiles/espresso && stow --adopt -t ~ home && sudo stow --adopt -t /etc etc && git restore .
 ```
 
 ### Setup login items
