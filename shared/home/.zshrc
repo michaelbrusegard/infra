@@ -141,4 +141,4 @@ lazy_load 'export PATH="$HOME/.jenv/bin:$PATH"; eval "$(command jenv init -)"' '
 # rustup
 if [[ "$OS" == "Darwin" ]]; then
   lazy_load 'export PATH="/opt/homebrew/opt/rustup/bin:$PATH"' 'rustup' 'rustc' 'cargo'
-if
+fi
