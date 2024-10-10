@@ -96,9 +96,10 @@ sh ~/dotfiles/espresso/scripts/login.sh
 ## Shared
 
 ### Symlinks used by MacOS and Arch
+
 ```zsh
 cd ~/dotfiles/shared
-stow --adopt -t ~ home
+stow -t ~ home
 ```
 
 ### Scripts
