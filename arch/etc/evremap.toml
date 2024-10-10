@@ -1,0 +1,22 @@
+device_name = "Logitech USB Receiver Keyboard"
+
+[[dual_role]]
+input = "KEY_CAPSLOCK"
+hold = ["KEY_LEFTCTRL"]
+tap = ["KEY_ESC"]
+
+[[remap]]
+input = ["KEY_LEFTALT"]
+output = ["KEY_LEFTMETA"]
+
+[[remap]]
+input = ["KEY_LEFTMETA"]
+output = ["KEY_LEFTALT"]
+
+[[remap]]
+input = ["KEY_RIGHTALT"]
+output = ["KEY_RIGHTMETA"]
+
+[[remap]]
+input = ["KEY_RIGHTMETA"]
+output = ["KEY_RIGHTALT"]
