@@ -20,6 +20,9 @@ zinit light romkatv/powerlevel10k
 # Prompt
 [[ ! -f ~/.config/powerlevel10k/p10k.zsh ]] || source ~/.config/powerlevel10k/p10k.zsh
 
+# Set OS
+OS=$(uname)
+
 # Load completions
 autoload -Uz compinit && compinit
 
@@ -107,7 +110,9 @@ alias find="fd"
 eval "$(thefuck --alias)"
 
 # imagemagick
-export DYLD_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_LIBRARY_PATH"
+if [[ "$OS" == "Darwin" ]]; then
+  export DYLD_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_LIBRARY_PATH"
+fi
 
 # Lazy load function
 lazy_load() {
@@ -134,4 +139,6 @@ lazy_load 'export PYENV_ROOT="$HOME/.pyenv"; [[ -d $PYENV_ROOT/bin ]] && export 
 lazy_load 'export PATH="$HOME/.jenv/bin:$PATH"; eval "$(command jenv init -)"' 'jenv' 'java' 'javac'
 
 # rustup
-lazy_load 'export PATH="/opt/homebrew/opt/rustup/bin:$PATH"' 'rustup' 'rustc' 'cargo'
+if [[ "$OS" == "Darwin" ]]; then
+  lazy_load 'export PATH="/opt/homebrew/opt/rustup/bin:$PATH"' 'rustup' 'rustc' 'cargo'
+if
