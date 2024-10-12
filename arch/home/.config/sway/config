@@ -1,3 +1,8 @@
+# Swap CTRL key with the SUPER/META key position
+input "*" {
+    xkb_options ctrl:swap_lwin_lctl,ctrl:swap_rwin_rctl
+}
+
 ### Variables
 
 # Logo key. Use Mod1 for Alt.
