@@ -1,54 +1,31 @@
 device_name = "Logitech USB Receiver Keyboard"
 
-# Swap CTRL key with SUPER/META key
+# CTRL key gives SUPER/META key
 [[remap]]
 input = ["KEY_LEFTCTRL"]
-output = ["KEY_F13"]     # Temporary key
-
-[[remap]]
-input = ["KEY_LEFTMETA"]
-output = ["KEY_LEFTCTRL"]
-
-[[remap]]
-input = ["KEY_F13"]       # Temporary key
 output = ["KEY_LEFTMETA"]
 
 [[remap]]
 input = ["KEY_RIGHTCTRL"]
-output = ["KEY_F14"]      # Temporary key
-
-[[remap]]
-input = ["KEY_RIGHTMETA"]
-output = ["KEY_RIGHTCTRL"]
-
-[[remap]]
-input = ["KEY_F14"]        # Temporary key
 output = ["KEY_RIGHTMETA"]
 
-# Swap ALT key with SUPER/META key
-[[remap]]
-input = ["KEY_LEFTALT"]
-output = ["KEY_F15"]    # Temporary key
-
+# SUPER/META key gives ALT key
 [[remap]]
 input = ["KEY_LEFTMETA"]
 output = ["KEY_LEFTALT"]
 
 [[remap]]
-input = ["KEY_F15"]       # Temporary key
-output = ["KEY_LEFTMETA"]
-
-[[remap]]
-input = ["KEY_RIGHTALT"]
-output = ["KEY_F16"]     # Temporary key
-
-[[remap]]
 input = ["KEY_RIGHTMETA"]
 output = ["KEY_RIGHTALT"]
 
+# ALT key gives CTRL key
 [[remap]]
-input = ["KEY_F16"]        # Temporary key
-output = ["KEY_RIGHTMETA"]
+input = ["KEY_LEFTALT"]
+output = ["KEY_LEFTCTRL"]
+
+[[remap]]
+input = ["KEY_RIGHTALT"]
+output = ["KEY_RIGHTCTRL"]
 
 # Make CAPSLOCK useful
 [[dual_role]]
