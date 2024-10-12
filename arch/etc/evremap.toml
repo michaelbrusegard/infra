@@ -3,52 +3,19 @@ device_name = "Logitech USB Receiver Keyboard"
 # Swap SUPER/META key with OPTION/ALT key
 [[remap]]
 input = ["KEY_LEFTALT"]
-output = ["KEY_SCROLLLOCK"]
+output = ["KEY_LEFTMETA"]
 
 [[remap]]
 input = ["KEY_LEFTMETA"]
 output = ["KEY_LEFTALT"]
 
 [[remap]]
-input = ["KEY_SCROLLLOCK"]
-output = ["KEY_LEFTMETA"]
-
-[[remap]]
 input = ["KEY_RIGHTALT"]
-output = ["KEY_SCROLLLOCK"]
+output = ["KEY_RIGHTMETA"]
 
 [[remap]]
 input = ["KEY_RIGHTMETA"]
 output = ["KEY_RIGHTALT"]
-
-[[remap]]
-input = ["KEY_SCROLLLOCK"]
-output = ["KEY_RIGHTMETA"]
-
-# Swap CTRL key with the new SUPER/META key position
-[[remap]]
-input = ["KEY_LEFTCTRL"]
-output = ["KEY_SCROLLLOCK"]
-
-[[remap]]
-input = ["KEY_LEFTMETA"]
-output = ["KEY_LEFTCTRL"]
-
-[[remap]]
-input = ["KEY_SCROLLLOCK"]
-output = ["KEY_LEFTMETA"]
-
-[[remap]]
-input = ["KEY_RIGHTCTRL"]
-output = ["KEY_SCROLLLOCK"]
-
-[[remap]]
-input = ["KEY_RIGHTMETA"]
-output = ["KEY_RIGHTCTRL"]
-
-[[remap]]
-input = ["KEY_SCROLLLOCK"]
-output = ["KEY_RIGHTMETA"]
 
 # Make CAPSLOCK useful
 [[dual_role]]
