@@ -1,12 +1,16 @@
 # Set OPTION/ALT as mod
 set $mod Mod1
 
+# Padding
+gaps inner 6
+gaps outer 12
+
+# Open Application Launcher
+bindsym Mod4+Space exec wofi --show run
+
 # Drag floating windows by holding down $mod and left mouse button.
 # Resize them with right mouse button + $mod.
 floating_modifier $mod normal
-
-# Open Application Launcher
-bindsym $mod+Space exec wofi --show run
 
 # Open Terminal
 bindsym $mod+Return exec wezterm
@@ -45,7 +49,7 @@ bindsym $mod+5 workspace number 5
 bindsym $mod+6 workspace number 6
 bindsym $mod+7 workspace number 7
 bindsym $mod+8 workspace number 8
-bindsym $mod+9 workspace number back_and_forth
+bindsym $mod+9 workspace number 9
 
 # Move window to specific space
 bindsym $mod+Shift+1 move container to workspace number 1
@@ -62,7 +66,7 @@ bindsym $mod+Shift+9 move container to workspace number 9
 bindsym $mod+0 floating toggle
 
 # Change between tiled and stacked layout for space
-bindsym $mod+comma layout tabbed
+bindsym $mod+comma layout default
 bindsym $mod+slash layout stacking
 
 # Wallpaper
@@ -77,16 +81,15 @@ exec swayidle -w \
 # Swaybar
 bar {
     position top
-
-    # When the status_command prints a new line to stdout, swaybar updates.
-    # The default just shows the current date and time.
-    status_command while date +'%Y-%m-%d %X'; do sleep 1; done
+    strip_workspace_numbers yes
+    workspace_buttons no
+    status_command while date +'%d %b %H:%M'; do sleep 1; done
 
     colors {
-        statusline #ffffff
-        background #323232
-        inactive_workspace #32323200 #32323200 #5c5c5c
+        statusline #fdfdfd
+        background #4b515e
     }
+    font "Cantarell 10"
 }
 
 include /etc/sway/config.d/*
