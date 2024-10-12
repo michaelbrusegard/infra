@@ -424,6 +424,22 @@
                         ]
                     },
                     {
+                        "description": "Toggle Floating Window",
+                        "manipulators": [
+                            {
+                                "from": {
+                                    "key_code": "0",
+                                    "modifiers": {
+                                        "mandatory": ["option"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m window --toggle float" }],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
                         "description": "Change between tiled and stacked layout for space",
                         "manipulators": [
                             {

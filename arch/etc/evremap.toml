@@ -18,7 +18,31 @@ output = ["KEY_LEFTALT"]
 input = ["KEY_RIGHTMETA"]
 output = ["KEY_RIGHTALT"]
 
-# Make CAPSLOCK useful
+# HJKL for arrow keys when CTRL is held
+[[remap]]
+input = ["KEY_LEFTCTRL", "KEY_H"]
+output = ["KEY_LEFT"]
+
+[[remap]]
+input = ["KEY_LEFTCTRL", "KEY_J"]
+output = ["KEY_DOWN"]
+
+[[remap]]
+input = ["KEY_LEFTCTRL", "KEY_K"]
+output = ["KEY_UP"]
+
+[[remap]]
+input = ["KEY_LEFTCTRL", "KEY_L"]
+output = ["KEY_RIGHT"]
+
+# UD for Page Up/Page Down when CTRL is held
+[[remap]]
+input = ["KEY_LEFTCTRL", "KEY_U"]
+output = ["KEY_PAGEUP"]
+
+[[remap]]
+input = ["KEY_LEFTCTRL", "KEY_D"]
+output = ["KEY_PAGEDOWN"]
 [[dual_role]]
 input = "KEY_CAPSLOCK"
 hold = ["KEY_LEFTCTRL"]

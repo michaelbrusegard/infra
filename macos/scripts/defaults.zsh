@@ -97,7 +97,7 @@ defaults write NSGlobalDomain AppleHighlightColor -string "0.968627 0.831373 1.0
 defaults write NSGlobalDomain NSTableViewDefaultSizeMode -int 2
 
 # Set wallpaper
-osascript -e 'tell application "System Events" to tell every desktop to set picture to POSIX file "'"$(find "$(dirname "$(realpath "$0")")/../../shared/resources" \( -name "*current.png" -o -name "*current.jpg" \) | head -n 1)"'"'
+osascript -e "tell application \"System Events\" to tell every desktop to set picture to POSIX file \"$(dirname "$(realpath "$0")")/../../shared/resources/Twilight Peaks.png\""
 
 # ********************************************************************************
 # * Accessibility                                                                *
