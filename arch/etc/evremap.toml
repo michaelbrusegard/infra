@@ -1,5 +1,39 @@
 device_name = "Logitech USB Receiver Keyboard"
 
+# Swap SUPER/META key with CTRL key
+[[remap]]
+input = ["KEY_LEFTCTRL"]
+output = ["KEY_LEFTMETA"]
+
+[[remap]]
+input = ["KEY_LEFTMETA"]
+output = ["KEY_LEFTCTRL"]
+
+[[remap]]
+input = ["KEY_RIGHTCTRL"]
+output = ["KEY_RIGHTMETA"]
+
+[[remap]]
+input = ["KEY_RIGHTMETA"]
+output = ["KEY_RIGHTCTRL"]
+
+# Swap ALT key with the SUPER/META key
+[[remap]]
+input = ["KEY_LEFTALT"]
+output = ["KEY_LEFTMETA"]
+
+[[remap]]
+input = ["KEY_LEFTMETA"]
+output = ["KEY_LEFTALT"]
+
+[[remap]]
+input = ["KEY_RIGHTALT"]
+output = ["KEY_RIGHTMETA"]
+
+[[remap]]
+input = ["KEY_RIGHTMETA"]
+output = ["KEY_RIGHTALT"]
+
 # Make CAPSLOCK useful
 [[dual_role]]
 input = "KEY_CAPSLOCK"
