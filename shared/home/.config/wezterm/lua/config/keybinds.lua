@@ -11,6 +11,7 @@ local function keybinds(config)
 		{ key = "v", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action.PasteFrom("Clipboard"), utf8.char(0xcb)) },
 		{ key = "x", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action_callback(function() end), utf8.char(0xcc)) },
 		{ key = "s", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action_callback(function() end), utf8.char(0xcd)) },
+    { key = "l", mods = "CTRL", action = wezterm.action({ SendString = "\x0c" }) },
 
 		-- Pane actions
 		{ key = "w", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action.CloseCurrentPane({ confirm = true }), utf8.char(0xda)) },
