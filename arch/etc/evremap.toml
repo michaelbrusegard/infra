@@ -1,22 +1,5 @@
 device_name = "Logitech USB Receiver Keyboard"
 
-# Swap SUPER/META key with OPTION/ALT key
-[[remap]]
-input = ["KEY_LEFTALT"]
-output = ["KEY_LEFTMETA"]
-
-[[remap]]
-input = ["KEY_LEFTMETA"]
-output = ["KEY_LEFTALT"]
-
-[[remap]]
-input = ["KEY_RIGHTALT"]
-output = ["KEY_RIGHTMETA"]
-
-[[remap]]
-input = ["KEY_RIGHTMETA"]
-output = ["KEY_RIGHTALT"]
-
 # Make CAPSLOCK useful
 [[dual_role]]
 input = "KEY_CAPSLOCK"
