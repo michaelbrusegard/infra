@@ -5,6 +5,15 @@ set $mod Mod1
 gaps inner 6
 gaps outer 12
 
+# Enable support for X11 applications
+xwayland enable
+
+# Set key repeat rate to very fast
+input * {
+    repeat_delay 200
+    repeat_rate 50
+}
+
 # Open Application Launcher
 bindsym Mod4+Space exec wofi --show run
 
@@ -34,10 +43,10 @@ bindsym $mod+Shift+k move up
 bindsym $mod+Shift+l move right
 
 # Resize window
-bindsym $mod+Control+h resize shrink width 50px
-bindsym $mod+Control+j resize grow height 50px
-bindsym $mod+Control+k resize shrink height 50px
-bindsym $mod+Control+l resize grow width 50px
+bindsym $mod+Ctrl+h resize shrink width 50px
+bindsym $mod+Ctrl+j resize grow height 50px
+bindsym $mod+Ctrl+k resize shrink height 50px
+bindsym $mod+Ctrl+l resize grow width 50px
 
 # Switch to specific space
 workspace_auto_back_and_forth yes
@@ -66,7 +75,7 @@ bindsym $mod+Shift+9 move container to workspace number 9
 bindsym $mod+0 floating toggle
 
 # Change between tiled and stacked layout for space
-bindsym $mod+comma layout default
+bindsym $mod+comma layout splith
 bindsym $mod+slash layout stacking
 
 # Wallpaper
@@ -78,18 +87,22 @@ exec swayidle -w \
          timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
          before-sleep 'swaylock -f -c 000000'
 
+# Border
+default_border none
+default_floating_border none
+hide_edge_borders --i3 smart
+titlebar_padding 1
+titlebar_border_thickness 0
+
 # Swaybar
 bar {
     position top
-    strip_workspace_numbers yes
-    workspace_buttons no
     status_command while date +'%d %b %H:%M'; do sleep 1; done
 
     colors {
         statusline #fdfdfd
         background #4b515e
     }
-    font "Cantarell 10"
 }
 
 include /etc/sway/config.d/*

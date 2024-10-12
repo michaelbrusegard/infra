@@ -1,0 +1,35 @@
+window {
+  border: 1px solid #454545;
+  background-color: #171718;
+  border-radius: 0.75rem;
+  width: 50%;
+  height: 50%;
+  color: #f2f2f2;
+  opacity: 0.8;
+}
+
+#input {
+  border: none;
+  border-radius: 0;
+  background-color: #171718;
+  color: #f2f2f2;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  margin: 8px;
+}
+
+#inner-box {
+  padding: 8px;
+  border-top: 1px solid #2d2d2d;
+}
+
+#entry {
+  border-radius: 0.75rem;
+  padding: 12px;
+  border: none;
+}
+
+#entry:selected {
+  background-color: #2e2e2f;
+  border: none;
+}

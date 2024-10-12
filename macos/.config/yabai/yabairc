@@ -9,6 +9,9 @@ yabai -m config insert_feedback_color 0xFFAF52DE
 # Keyboard modifier used for moving and resizing windows
 yabai -m config mouse_modifier alt
 
+# Set focus follows mouse mode
+yabai -m config focus_follows_mouse autoraise
+
 # Set the layout
 yabai -m config layout bsp
 
