@@ -19,7 +19,7 @@ cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfi
 ### Creating symlinks for the config files
 
 ```zsh
-cd ~/dotfiles/arch && stow -t ~ home && sudo stow -t /etc etc
+cd ~/dotfiles/arch && stow --adopt -t ~ home && sudo stow --adopt -t /etc etc && git restore .
 ```
 
 ## MacOS

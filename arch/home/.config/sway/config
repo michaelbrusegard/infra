@@ -96,12 +96,16 @@ titlebar_border_thickness 0
 
 # Swaybar
 bar {
+    font "Inter Medium 13"
     position top
     status_command while date +'%d %b %H:%M'; do sleep 1; done
 
     colors {
         statusline #fdfdfd
         background #4b515e
+        focused_workspace #4b515e #fdfdfd #4b515e
+        active_workspace #fdfdfd #4b515e #fdfdfd
+        inactive_workspace #4b515e #4b515e #fdfdfd
     }
 }
 
