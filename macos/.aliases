@@ -1,5 +1,8 @@
 #!/usr/bin/env zsh
 
+# Add sudo support
+alias sudo='sudo '
+
 # Shortcuts
 alias vi='vim'
 alias vim='nvim'
