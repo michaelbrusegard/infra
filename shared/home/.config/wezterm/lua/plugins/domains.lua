@@ -10,13 +10,13 @@ return function(config)
         tbl = '',
       },
       vsplit = {
-        key = nil,
-        mods = nil,
+        key = 'F12',
+        mods = 'CTRL|SHIFT',
         tbl = '',
       },
       hsplit = {
-        key = nil,
-        mods = nil,
+        key = 'F12',
+        mods = 'CTRL|SHIFT',
         tbl = '',
       },
     },
