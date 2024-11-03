@@ -9,6 +9,16 @@ return function(config)
         key = 'd',
         tbl = '',
       },
+      vsplit = {
+        key = nil,
+        mods = nil,
+        tbl = '',
+      },
+      hsplit = {
+        key = nil,
+        mods = nil,
+        tbl = '',
+      },
     },
   })
 

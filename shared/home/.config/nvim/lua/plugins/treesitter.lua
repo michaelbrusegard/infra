@@ -79,6 +79,7 @@ return {
         'rust',
         'ron',
         'glsl',
+        'graphql',
       },
       incremental_selection = {
         enable = true,

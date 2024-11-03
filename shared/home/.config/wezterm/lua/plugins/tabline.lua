@@ -3,7 +3,6 @@ local colors = require('util.colors')
 
 return function()
   local tabline = wezterm.plugin.require('https://github.com/michaelbrusegard/tabline.wez')
-
   tabline.setup({
     options = {
       theme = 'Catppuccin Mocha',

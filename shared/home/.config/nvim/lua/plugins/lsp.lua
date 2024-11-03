@@ -237,6 +237,7 @@ return {
             },
           },
         },
+        graphql = {},
       },
       setup = {
 				-- stylua: ignore
