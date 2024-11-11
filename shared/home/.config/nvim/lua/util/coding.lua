@@ -289,15 +289,4 @@ function M.pairs(opts)
   end
 end
 
-function M.copilot_pick(kind)
-  return function()
-    local actions = require('CopilotChat.actions')
-    local items = actions[kind .. '_actions']()
-    if not items then
-      return
-    end
-    require('CopilotChat.integrations.fzflua').pick(items)
-  end
-end
-
 return M

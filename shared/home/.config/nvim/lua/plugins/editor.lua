@@ -429,7 +429,6 @@ return {
     opts = {
       filetype_exclude = {
         'oil',
-        'copilot-chat',
         'fzf',
         'mason',
         'lazy',
