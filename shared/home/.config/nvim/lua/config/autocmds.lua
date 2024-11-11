@@ -17,29 +17,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
--- Disable relative line numbers when in insert mode
-local relativenumber_group = vim.api.nvim_create_augroup('relativenumber', { clear = true })
-
-vim.api.nvim_create_autocmd('InsertEnter', {
-  group = relativenumber_group,
-  callback = function()
-    local is_file = vim.bo.buftype == ''
-    if is_file then
-      vim.opt.relativenumber = false
-    end
-  end,
-})
-
-vim.api.nvim_create_autocmd('InsertLeave', {
-  group = relativenumber_group,
-  callback = function()
-    local is_file = vim.bo.buftype == ''
-    if is_file then
-      vim.opt.relativenumber = true
-    end
-  end,
-})
-
 -- Disable line numbers when in terminal mode and start in insert mode
 vim.api.nvim_create_autocmd('TermOpen', {
   group = vim.api.nvim_create_augroup('terminal', { clear = true }),
@@ -185,33 +162,6 @@ vim.api.nvim_create_autocmd('BufWritePre', {
     end
     local file = vim.uv.fs_realpath(event.match) or event.match
     vim.fn.mkdir(vim.fn.fnamemodify(file, ':p:h'), 'p')
-  end,
-})
-
--- Set filetype to bigfile for large files
-vim.filetype.add({
-  pattern = {
-    ['.*'] = {
-      function(path, buf)
-        return vim.bo[buf]
-            and vim.bo[buf].filetype ~= 'bigfile'
-            and path
-            and vim.fn.getfsize(path) > vim.g.bigfile_size
-            and 'bigfile'
-          or nil
-      end,
-    },
-  },
-})
-
--- Disable syntax highlighting for big files
-vim.api.nvim_create_autocmd('FileType', {
-  group = vim.api.nvim_create_augroup('bigfile', { clear = true }),
-  pattern = 'bigfile',
-  callback = function(event)
-    vim.schedule(function()
-      vim.bo[event.buf].syntax = vim.filetype.match({ buf = event.buf }) or ''
-    end)
   end,
 })
 

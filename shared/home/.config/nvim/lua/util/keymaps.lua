@@ -5,43 +5,6 @@ function M.escape_term(term)
   return vim.fn.escape(term, '/\\')
 end
 
--- Function to remove buffer without closing window
-function M.bufremove(buf)
-  buf = buf or 0
-  buf = buf == 0 and vim.api.nvim_get_current_buf() or buf
-
-  if vim.bo.modified then
-    local choice = vim.fn.confirm(('Save changes to %q?'):format(vim.fn.bufname()), '&Yes\n&No\n&Cancel')
-    if choice == 0 or choice == 3 then
-      return
-    end
-    if choice == 1 then
-      vim.cmd.write()
-    end
-  end
-  for _, win in ipairs(vim.fn.win_findbuf(buf)) do
-    vim.api.nvim_win_call(win, function()
-      if not vim.api.nvim_win_is_valid(win) or vim.api.nvim_win_get_buf(win) ~= buf then
-        return
-      end
-      local alt = vim.fn.bufnr('#')
-      if alt ~= buf and vim.fn.buflisted(alt) == 1 then
-        vim.api.nvim_win_set_buf(win, alt)
-        return
-      end
-      local has_previous = pcall(vim.cmd, 'bprevious')
-      if has_previous and buf ~= vim.api.nvim_win_get_buf(win) then
-        return
-      end
-      local new_buf = vim.api.nvim_create_buf(true, false)
-      vim.api.nvim_win_set_buf(win, new_buf)
-    end)
-  end
-  if vim.api.nvim_buf_is_valid(buf) then
-    pcall(vim.cmd, 'bdelete! ' .. buf)
-  end
-end
-
 -- Function to delete marks on the current line
 function M.delmarks()
   local current_line = vim.fn.line('.')
@@ -74,62 +37,6 @@ function M.open_mason()
     vim.g.float_open = true
     vim.cmd('Mason')
   end
-end
-
--- Git in floating window
-function M.open_git(args)
-  if vim.g.float_open then
-    return
-  end
-  vim.g.float_open = true
-  local width = math.ceil(vim.o.columns * 0.85)
-  local height = math.ceil(vim.o.lines * 0.85)
-  local left = math.ceil((vim.o.columns - width) / 2)
-  local top = math.ceil((vim.o.lines - height) / 2)
-  local buf = vim.api.nvim_create_buf(false, true)
-  local win = vim.api.nvim_open_win(buf, true, {
-    relative = 'editor',
-    width = width,
-    height = height,
-    row = top,
-    col = left,
-    style = 'minimal',
-  })
-  vim.keymap.set('t', '<esc>', '<esc>', { buffer = buf, nowait = true })
-  local command = table.concat({ 'lazygit', args }, ' ')
-  vim.bo[buf].filetype = 'git'
-  return vim.fn.termopen(command, {
-    cwd = require('util.root').git(),
-    on_exit = function()
-      vim.api.nvim_win_close(win, true)
-    end,
-  })
-end
-
-function M.open_git_file_commits()
-  local file = vim.api.nvim_buf_get_name(0)
-  local args = table.concat({ '-f', vim.trim(file) }, ' ')
-  return M.open_git(args)
-end
-
--- Get git command for line blaming
-function M.open_git_blame()
-  if vim.g.float_open then
-    return
-  end
-  vim.g.float_open = true
-  local line = vim.api.nvim_win_get_cursor(0)[1]
-  local file = vim.api.nvim_buf_get_name(0)
-  local root = require('util.root').detectors.pattern(0, { '.git' })[1] or '.'
-  local command = { 'git', '-C', root, 'log', '-u', '-L', line .. ',+1:' .. file }
-  return require('lazy.util').float_cmd(command, {
-    filetype = 'git',
-    size = {
-      width = 0.85,
-      height = 0.85,
-    },
-    border = 'rounded',
-  })
 end
 
 -- Maximize window
@@ -166,19 +73,6 @@ function M.maximize()
       end,
     })
     is_maximized = true
-  end
-end
-
--- Toggle signs in sign column
-function M.toggle_signs()
-  vim.cmd('Gitsigns toggle_signs')
-  vim.g.show_marks = not vim.g.show_marks
-  if vim.g.show_diagnostics then
-    vim.diagnostic.hide()
-    vim.g.show_diagnostics = false
-  else
-    vim.diagnostic.show()
-    vim.g.show_diagnostics = true
   end
 end
 

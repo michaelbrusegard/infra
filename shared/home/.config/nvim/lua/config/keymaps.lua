@@ -75,7 +75,6 @@ vim.keymap.set('i', ';', ';<c-g>u', { silent = true })
 vim.keymap.set('n', ']b', '<cmd>bnext<cr>', { desc = 'Next Buffer', silent = true })
 vim.keymap.set('n', '[b', '<cmd>bprevious<cr>', { desc = 'Prev Buffer', silent = true })
 vim.keymap.set('n', '<leader>bb', '<cmd>e #<cr>', { desc = 'Switch to Other Buffer', silent = true })
-vim.keymap.set('n', '<leader>bd', require('util.keymaps').bufremove, { desc = 'Delete Buffer', silent = true })
 vim.keymap.set('n', '<leader>bD', '<cmd>bd<cr>', { desc = 'Delete Buffer and Window', silent = true })
 
 -- New file
@@ -113,19 +112,6 @@ vim.keymap.set('n', '<c-w>-', '<c-w>s', { desc = 'Split Window Below', remap = t
 vim.keymap.set('n', '<c-w>=', '<c-w>v', { desc = 'Split Window Right', remap = true, silent = true })
 vim.keymap.set('n', '<c-w>d', '<c-w>c', { desc = 'Delete Window', remap = true, silent = true })
 vim.keymap.set('n', '<leader>wm', require('util.keymaps').maximize, { desc = 'Maximise Window', silent = true })
-
--- Git
-vim.keymap.set('n', '<leader>gg', require('util.keymaps').open_git, { desc = 'Git Menu', silent = true })
-vim.keymap.set(
-  'n',
-  '<leader>gC',
-  require('util.keymaps').open_git_file_commits,
-  { desc = 'Git Commits Log', silent = true }
-)
-vim.keymap.set('n', '<leader>gB', require('util.keymaps').open_git_blame, { desc = 'Git Blame Log', silent = true })
-
--- Signs
-vim.keymap.set('n', '<leader>ls', require('util.keymaps').toggle_signs, { desc = 'Signcolumn', silent = true })
 
 -- Open Mason
 vim.keymap.set('n', '<leader>lm', require('util.keymaps').open_mason, { desc = 'Mason', silent = true })
