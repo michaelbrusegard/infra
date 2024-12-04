@@ -8,6 +8,20 @@ return {
     opts = {
       provider = 'claude',
       auto_suggestions_provider = 'copilot',
+      windows = {
+        width = 50,
+        sidebar_header = {
+          enabled = false,
+        },
+        input = {
+          prefix = '> ',
+          height = 8,
+        },
+        ask = {
+          start_insert = false,
+          border = 'none',
+        },
+      },
     },
     build = 'make',
     dependencies = {

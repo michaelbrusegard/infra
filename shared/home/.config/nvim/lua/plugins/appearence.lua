@@ -86,4 +86,8 @@ return {
     event = 'LazyFile',
     opts = {},
   },
+  {
+    'sphamba/smear-cursor.nvim',
+    opts = {},
+  },
 }
