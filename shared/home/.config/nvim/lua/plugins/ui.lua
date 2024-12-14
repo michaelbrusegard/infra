@@ -12,7 +12,7 @@ return {
         lualine_y = { 'progress' },
         lualine_z = { 'location' },
       },
-      extensions = { 'lazy', 'mason', 'fzf' },
+      extensions = { 'lazy', 'mason' },
     },
   },
 }

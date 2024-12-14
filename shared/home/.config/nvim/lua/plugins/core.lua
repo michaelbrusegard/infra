@@ -2,7 +2,6 @@ return {
   { 'folke/lazy.nvim', version = false },
   {
     'LazyVim/LazyVim',
-    branch = 'v14',
     version = false,
     opts = {
       colorscheme = 'catppuccin',
@@ -10,11 +9,16 @@ return {
   },
   {
     'folke/snacks.nvim',
+    -- Use latest when underline bug is fixed
+    version = '2.9.0',
     opts = {
       indent = {
-        scope = {
+        indent = {
           char = '▏',
+        },
+        scope = {
           underline = true,
+          char = '▏',
         },
       },
     },
