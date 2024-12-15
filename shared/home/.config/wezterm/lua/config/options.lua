@@ -13,6 +13,10 @@ local function options(config)
   config.send_composed_key_when_left_alt_is_pressed = true
   config.send_composed_key_when_right_alt_is_pressed = true
 
+  -- Increase number of drawn frames
+  config.max_fps = 120
+  config.animation_fps = 120
+
   -- Color scheme
   config.color_scheme = 'Catppuccin Mocha'
 
