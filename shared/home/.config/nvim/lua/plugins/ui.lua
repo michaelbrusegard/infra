@@ -1,4 +1,5 @@
 return {
+  { import = 'lazyvim.plugins.extras.ui.smear-cursor' },
   {
     'nvim-lualine/lualine.nvim',
     opts = {

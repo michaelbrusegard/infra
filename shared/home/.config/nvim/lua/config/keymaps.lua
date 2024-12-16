@@ -76,6 +76,25 @@ vim.keymap.set(
   { silent = true }
 )
 
+-- Lazydocker
 vim.keymap.set('n', '<leader>gd', function()
   Snacks.terminal('lazydocker', { esc_esc = false, ctrl_hjkl = false })
 end, { desc = 'Lazydocker' })
+
+-- Marks
+vim.keymap.set('n', 'dm', function()
+  local current_line = vim.fn.line('.')
+  local marks_to_check = {}
+  for mark = 97, 122 do -- ASCII values for 'a' to 'z'
+    table.insert(marks_to_check, string.char(mark))
+  end
+  for mark = 65, 90 do -- ASCII values for 'A' to 'Z'
+    table.insert(marks_to_check, string.char(mark))
+  end
+  for _, mark in ipairs(marks_to_check) do
+    local mark_line = vim.fn.getpos("'" .. mark)[2]
+    if mark_line == current_line then
+      vim.cmd('delmarks ' .. mark)
+    end
+  end
+end, { desc = 'Delete Marks', silent = true })
