@@ -1,4 +1,5 @@
 return {
+  { 'akinsho/bufferline.nvim', enabled = false },
   { import = 'lazyvim.plugins.extras.ui.smear-cursor' },
   {
     'nvim-lualine/lualine.nvim',

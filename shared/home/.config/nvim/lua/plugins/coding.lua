@@ -1,4 +1,5 @@
 return {
+  { 'echasnovski/mini.pairs', enabled = false },
   { import = 'lazyvim.plugins.extras.coding.yanky' },
   {
     'gbprod/substitute.nvim',
@@ -17,6 +18,6 @@ return {
   },
   {
     'saghen/blink.cmp',
-    opts = { ksaghensagheneymap = { preset = 'default' } },
+    opts = { keymap = { preset = 'default' } },
   },
 }
