@@ -13,8 +13,8 @@ local function keybinds(config)
 		{ key = "s", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action_callback(function() end), utf8.char(0xcd)) },
 
 		-- Pane actions
-		{ key = "w", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action.CloseCurrentPane({ confirm = true }), utf8.char(0xda)) },
-		{ key = "w", mods = "SHIFT|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.CloseCurrentTab({ confirm = true }), utf8.char(0xdb)) },
+		{ key = "w", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action.CloseCurrentPane({ confirm = false }), utf8.char(0xda)) },
+		{ key = "w", mods = "SHIFT|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.CloseCurrentTab({ confirm = false }), utf8.char(0xdb)) },
 		{ key = "-", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }), utf8.char(0xdc)) },
 		{ key = "=", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }), utf8.char(0xdd)) },
 
