@@ -2,6 +2,7 @@ services:
   vpn:
     container_name: vpn
     image: hwdsl2/ipsec-vpn-server
+    restart: unless-stopped
     environment:
       VPN_LOCAL_TRAFFIC: 1
       VPN_ADDL_ROUTES: 192.168.1.0/24
@@ -11,7 +12,6 @@ services:
       - 500:500/udp
       - 4500:4500/udp
     privileged: true
-    restart: unless-stopped
     volumes:
       - /lib/modules:/lib/modules:ro
       - ./data:/etc/ipsec.d
