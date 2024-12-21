@@ -86,7 +86,7 @@ sh ~/dotfiles/espresso/scripts/apt.sh
 ### Setting up symlinks
 
 ```sh
-cd ~/dotfiles/espresso && stow --adopt -t ~ home && sudo stow --adopt -t /etc etc && git restore .
+cd ~/dotfiles/espresso && stow --adopt -t ~ home && sudo stow --adopt -t /etc etc && stow --adopt -t /data data && git restore .
 ```
 
 ### Setup login items
