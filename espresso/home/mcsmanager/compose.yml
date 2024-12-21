@@ -2,22 +2,25 @@ services:
   web:
     image: githubyumao/mcsmanager-web:latest
     restart: unless-stopped
-    ports:
-      - "23333:23333"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./web/data:/opt/mcsmanager/web/data
       - ./web/logs:/opt/mcsmanager/web/logs
+    networks:
+      - nginx_default
 
   daemon:
     image: githubyumao/mcsmanager-daemon:latest
     restart: unless-stopped
     environment:
       - MCSM_DOCKER_WORKSPACE_PATH=./daemon/data/InstanceData
-    ports:
-      - "24444:24444"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./daemon/data:/opt/mcsmanager/daemon/data
       - ./daemon/logs:/opt/mcsmanager/daemon/logs
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - nginx_default
+networks:
+  nginx_default:
+    external: true
