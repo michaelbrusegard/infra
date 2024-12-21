@@ -1,6 +1,6 @@
 [user]
-	name = Espresso
-	email = 56915010+michaelbrusegard@users.noreply.github.com
+  name = Espresso
+  email = 56915010+michaelbrusegard@users.noreply.github.com
 
 [push]
   autoSetupRemote = true
@@ -9,7 +9,7 @@
   rebase = false
 
 [core]
-	editor = vim
+  editor = vim
 
 [init]
-	defaultBranch = main
+  defaultBranch = main
