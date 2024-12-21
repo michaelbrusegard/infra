@@ -1,6 +1,5 @@
 return {
   { 'nvim-neo-tree/neo-tree.nvim', enabled = false },
-  { 'folke/trouble.nvim', enabled = false },
   { import = 'lazyvim.plugins.extras.editor.dial' },
   { import = 'lazyvim.plugins.extras.editor.harpoon2' },
   { import = 'lazyvim.plugins.extras.editor.illuminate' },
