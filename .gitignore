@@ -1,9 +1,1 @@
 .DS_Store
-macos/.gnupg/**
-!macos/.gnupg/gpg-agent.conf
-macos/.config/karabiner/**
-!macos/.config/karabiner/karabiner.json
-macos/.docker/**
-!macos/.docker/config.json
-shared/.config/lazygit/**
-!shared/.config/lazygit/config.yml

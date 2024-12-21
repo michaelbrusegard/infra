@@ -1,2 +1,5 @@
-home/nginx/data/
-home/nginx/letsencrypt/
+home/nginx/data
+home/nginx/letsencrypt
+home/vpn/data
+data/mcsmanager/web
+data/mcsmanager/daemon
