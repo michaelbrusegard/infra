@@ -4,8 +4,6 @@ return {
   { import = 'lazyvim.plugins.extras.util.rest' },
   {
     'folke/snacks.nvim',
-    -- Use latest when underline bug is fixed
-    version = '2.9.0',
     opts = {
       indent = {
         indent = {
