@@ -14,4 +14,4 @@ services:
     network_mode: host
     volumes:
       - /lib/modules:/lib/modules:ro
-      - ikev2-vpn-data:/etc/ipsec.d
+      - ./data:/etc/ipsec.d
