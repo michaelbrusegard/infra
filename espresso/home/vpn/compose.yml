@@ -1,5 +1,6 @@
 services:
   vpn:
+    container_name: vpn
     image: hwdsl2/ipsec-vpn-server
     environment:
       VPN_LOCAL_TRAFFIC: 1
