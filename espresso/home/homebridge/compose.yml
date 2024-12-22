@@ -1,0 +1,35 @@
+services:
+  homebridge:
+    image: homebridge/homebridge:latest
+    restart: unless-stopped
+    ports:
+      - 8581:8581
+      - 51826:51826
+    volumes:
+      - ./data/homebridge:/homebridge
+    logging:
+      driver: json-file
+      options:
+        max-size: 10mb
+        max-file: 1
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    restart: unless-stopped
+    volumes:
+      - ./data/mosquitto:/mosquitto
+    ports:
+      - 1883:1883
+      - 9001:9001
+    command: 'mosquitto -c /mosquitto-no-auth.conf'
+  zigbee2mqtt:
+    restart: unless-stopped
+    image: koenkk/zigbee2mqtt
+    volumes:
+      - ./data/zigbee2mqtt:/app/data
+      - /run/udev:/run/udev:ro
+    ports:
+      - 8080:8080
+    environment:
+      - TZ=Europe/Oslo
+    devices:
+      - /dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2690606-if00:/dev/ttyACM0

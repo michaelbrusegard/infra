@@ -11,7 +11,7 @@ services:
         creative.eldians.com=lazymc:25566
         revelation.eldians.com=lazymc:25567
     ports:
-      - "25565:25565"
+      - 25565:25565
   backup:
     image: itzg/mc-backup
     networks:
@@ -34,7 +34,7 @@ services:
         ipv4_address: 172.28.0.4
     restart: unless-stopped
     environment:
-      RUST_LOG: "trace"
+      RUST_LOG: trace
     volumes:
       - ./data/vanilla:/server/vanilla:ro
       - ./data/creative:/server/creative:ro

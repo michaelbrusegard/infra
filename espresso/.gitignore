@@ -1,4 +1,5 @@
 home/nginx/data
 home/nginx/letsencrypt
 home/vpn/data
+home/homebridge/data
 data/minecraft/data
