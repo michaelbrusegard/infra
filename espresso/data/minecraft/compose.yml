@@ -3,7 +3,7 @@ services:
     image: itzg/mc-router
     networks:
       minecraft-network:
-        ipv4_address: 172.20.0.2
+        ipv4_address: 172.28.0.2
     restart: unless-stopped
     depends_on:
       - lazymc
@@ -18,7 +18,7 @@ services:
     image: itzg/mc-backup
     networks:
       minecraft-network:
-        ipv4_address: 172.20.0.3
+        ipv4_address: 172.28.0.3
     restart: unless-stopped
     depends_on:
       - lazymc
@@ -35,7 +35,7 @@ services:
     image: ghcr.io/joesturge/lazymc-docker-proxy:latest
     networks:
       minecraft-network:
-        ipv4_address: 172.20.0.4
+        ipv4_address: 172.28.0.4
     restart: unless-stopped
     environment:
       RUST_LOG: "trace"
@@ -48,7 +48,7 @@ services:
     image: itzg/minecraft-server
     networks:
       minecraft-network:
-        ipv4_address: 172.20.0.5
+        ipv4_address: 172.28.0.5
     labels:
       - lazymc.enabled=true
       - lazymc.group=vanilla
@@ -110,7 +110,7 @@ services:
     image: itzg/minecraft-server
     networks:
       minecraft-network:
-        ipv4_address: 172.20.0.6
+        ipv4_address: 172.28.0.6
     labels:
       - lazymc.enabled=true
       - lazymc.group=creative
@@ -172,7 +172,7 @@ services:
     image: itzg/minecraft-server:java8
     networks:
       minecraft-network:
-        ipv4_address: 172.20.0.7
+        ipv4_address: 172.28.0.7
     labels:
       - lazymc.enabled=true
       - lazymc.group=revelation
@@ -214,4 +214,4 @@ networks:
     driver: bridge    
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.28.0.0/16
