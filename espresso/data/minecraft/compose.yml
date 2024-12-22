@@ -60,7 +60,7 @@ services:
     restart: no
     environment:
       EULA: true
-      MAX_MEMORY: 8G
+      MAX_MEMORY: 8g
       RCON_PASSWORD: minecraft
       ENABLE_ROLLING_LOGS: true
       TYPE: FABRIC
@@ -100,7 +100,6 @@ services:
         itemswapper:0.7.4
         fsit:2.7.2+mc1.21.2
         weaponmaster:1.21.4+fabric+4.2.7
-        flight-conduit:1.1.2-1.20.1
         worldedit:7.3.9
     volumes:
       - ./data/vanilla:/data
@@ -122,7 +121,7 @@ services:
     restart: no
     environment:
       EULA: true
-      MAX_MEMORY: 4G
+      MAX_MEMORY: 4g
       RCON_PASSWORD: minecraft
       ENABLE_ROLLING_LOGS: true
       TYPE: FABRIC
@@ -162,7 +161,6 @@ services:
         itemswapper:0.7.4
         fsit:2.7.2+mc1.21.2
         weaponmaster:1.21.4+fabric+4.2.7
-        flight-conduit:1.1.2-1.20.1
         worldedit:7.3.9
     volumes:
       - ./data/creative:/data
@@ -184,7 +182,7 @@ services:
     restart: no
     environment:
       EULA: true
-      MAX_MEMORY: 8G
+      MAX_MEMORY: 8g
       RCON_PASSWORD: minecraft
       ENABLE_ROLLING_LOGS: true
       TYPE: FTBA
