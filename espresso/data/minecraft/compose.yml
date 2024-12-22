@@ -1,0 +1,193 @@
+services: 
+  router: 
+    image: itzg/mc-router
+    restart: unless-stopped
+    depends_on:
+      - lazymc
+    environment:
+      MAPPING: |
+        vanilla.eldians.com=lazymc:25565
+        creative.eldians.com=lazymc:25566
+        revelation.eldians.com=lazymc:25567
+    ports:
+      - "25565:25565"
+  backup:
+    image: itzg/mc-backup
+    restart: unless-stopped
+    depends_on:
+      - lazymc
+    environment:
+      BACKUP_INTERVAL: 2w
+      PRUNE_BACKUPS_DAYS: 0
+      PAUSE_IF_NO_PLAYERS: true
+    volumes:
+      - ./data/vanilla:/data/vanilla:ro
+      - ./data/creative:/data/creative:ro
+      - ./data/revelation:/data/revelation:ro
+      - ./backups:/backups
+  lazymc:
+    image: ghcr.io/joesturge/lazymc-docker-proxy:latest
+    restart: unless-stopped
+    environment:
+      RUST_LOG: "trace"
+    volumes:
+      - ./data/vanilla:/server/vanilla:ro
+      - ./data/creative:/server/creative:ro
+      - ./data/revelation:/server/revelation:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+  vanilla:
+    image: itzg/minecraft-server
+    labels:
+      - lazymc.enabled=true
+      - lazymc.group=vanilla
+      - lazymc.server.address=vanilla:25565
+      - lazymc.port=25565
+      - lazymc.server.directory=./vanilla
+    tty: true
+    stdin_open: true
+    restart: no
+    environment:
+      EULA: true
+      MAX_MEMORY: 8GB
+      RCON_PASSWORD: minecraft
+      ENABLE_ROLLING_LOGS: true
+      TYPE: FABRIC
+      VERSION: 1.21.4
+      MOTD: §e§l§m--§8§l[§e< §6Welcome to §4§lEldians\!§e >§k§8§l]§e§l§m--§8§l[ §5%VERSION% §8§l]§e§l§m---------§r\n§e§l§m----§8§l[          §b§l- §6§lVANILLA §b§l-§8§l          ]§e§l§m----§8§l[§ke§k§8§l]§e§l§m--
+      SEED: 3671431547008281909
+      ENABLE_COMMAND_BLOCK: true
+      GAMEMODE: survival
+      FORCE_GAMEMODE: true
+      DIFFICULTY: hard
+      RESOURCE_PACK_ENFORCE: true
+      MAX_BUILD_HEIGHT: 320
+      SPAWN_PROTECTION: 0
+      VIEW_DISTANCE: 16
+      SNOOPER_ENABLED: false
+      ENABLE_WHITELIST: true
+      WHITELIST: |
+        Ker4lis
+        Eccon
+      OPS: |
+        Ker4lis
+      VANILLATWEAKS_SHARECODE: 5BWcL0,f6EcuB,VcM0CD
+      MODRINTH_PROJECTS: |
+        no-chat-reports:Fabric-1.21.4-v2.11.0
+        fabric-api:0.112.2+1.21.4
+        lithium:mc1.21.4-0.14.3-fabric
+        c2me-fabric:0.3.1+beta.2.0+1.21.4
+        ferrite-core:7.1.1-fabric
+        servux:0.4.1
+        carpet:1.4.158
+        carpet-extra:1.4.158
+        collective:1.21.4-7.89-fabric+forge+neo
+        quick-right-click:1.21.4-1.5-fabric+forge+neo
+        fabric-seasons:2.4.2-BETA+1.21
+        snow-under-trees-remastered:2.6.0+1.21.4
+        better-than-mending:2.2.3
+        itemswapper:0.7.4
+        fsit:2.7.2+mc1.21.2
+        weaponmaster:1.21.4+fabric+4.2.7
+        flight-conduit:1.1.2-1.20.1
+        worldedit:7.3.9
+    volumes:
+      - ./data/vanilla:/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+  creative:
+    image: itzg/minecraft-server
+    labels:
+      - lazymc.enabled=true
+      - lazymc.group=creative
+      - lazymc.server.address=creative:25565
+      - lazymc.port=25566
+      - lazymc.server.directory=./creative
+    tty: true
+    stdin_open: true
+    restart: no
+    environment:
+      EULA: true
+      MAX_MEMORY: 4GB
+      RCON_PASSWORD: minecraft
+      ENABLE_ROLLING_LOGS: true
+      TYPE: FABRIC
+      VERSION: 1.21.4
+      MOTD: §e§l§m--§8§l[§e< §6Welcome to §4§lEldians\!§e >§k§8§l]§e§l§m--§8§l[ §5%VERSION% §8§l]§e§l§m---------§r\n§e§l§m----§8§l[          §b§l- §6§lCREATIVE §b§l-§8§l         ]§e§l§m----§8§l[§ke§k§8§l]§e§l§m--
+      SEED: 3671431547008281909
+      ENABLE_COMMAND_BLOCK: true
+      GAMEMODE: creative
+      FORCE_GAMEMODE: false
+      DIFFICULTY: hard
+      RESOURCE_PACK_ENFORCE: true
+      MAX_BUILD_HEIGHT: 320
+      SPAWN_PROTECTION: 0
+      VIEW_DISTANCE: 16
+      SNOOPER_ENABLED: false
+      ENABLE_WHITELIST: true
+      WHITELIST: |
+        Ker4lis
+        Eccon
+      OPS: |
+        Ker4lis
+      VANILLATWEAKS_SHARECODE: 5BWcL0,f6EcuB,VcM0CD
+      MODRINTH_PROJECTS: |
+        no-chat-reports:Fabric-1.21.4-v2.11.0
+        fabric-api:0.112.2+1.21.4
+        lithium:mc1.21.4-0.14.3-fabric
+        c2me-fabric:0.3.1+beta.2.0+1.21.4
+        ferrite-core:7.1.1-fabric
+        servux:0.4.1
+        carpet:1.4.158
+        carpet-extra:1.4.158
+        collective:1.21.4-7.89-fabric+forge+neo
+        quick-right-click:1.21.4-1.5-fabric+forge+neo
+        fabric-seasons:2.4.2-BETA+1.21
+        snow-under-trees-remastered:2.6.0+1.21.4
+        better-than-mending:2.2.3
+        itemswapper:0.7.4
+        fsit:2.7.2+mc1.21.2
+        weaponmaster:1.21.4+fabric+4.2.7
+        flight-conduit:1.1.2-1.20.1
+        worldedit:7.3.9
+    volumes:
+      - ./data/creative:/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+  revelation:
+    image: itzg/minecraft-server:java8
+    labels:
+      - lazymc.enabled=true
+      - lazymc.group=revelation
+      - lazymc.server.address=revelation:25565
+      - lazymc.port=25567
+      - lazymc.server.directory=./revelation
+    tty: true
+    stdin_open: true
+    restart: no
+    environment:
+      EULA: true
+      MAX_MEMORY: 8GB
+      RCON_PASSWORD: minecraft
+      ENABLE_ROLLING_LOGS: true
+      TYPE: FTBA
+      FTB_MODPACK_ID: 35 
+      FTB_MODPACK_VERSION_ID: 3.7.0
+      MOTD: §e§l§m--§8§l[§e< §6Welcome to §4§lEldians\!§e >§k§8§l]§e§l§m--§8§l[ §5%VERSION% §8§l]§e§l§m---------§r\n§e§l§m----§8§l[          §b§l- §6§lREVELATION §b§l-§8§l      ]§e§l§m----§8§l[§ke§k§8§l]§e§l§m--
+      SEED: 3671431547008281909
+      ENABLE_COMMAND_BLOCK: true
+      GAMEMODE: survival
+      FORCE_GAMEMODE: true
+      DIFFICULTY: hard
+      SPAWN_PROTECTION: 0
+      VIEW_DISTANCE: 16
+      ENABLE_WHITELIST: true
+      SNOOPER_ENABLED: false
+      WHITELIST: |
+        Ker4lis
+        Eccon
+      OPS: |
+        Ker4lis
+    volumes:
+      - ./data/revelation:/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
