@@ -1,6 +1,9 @@
 services: 
   router: 
     image: itzg/mc-router
+    networks:
+      minecraft-network:
+        ipv4_address: 172.18.0.2
     restart: unless-stopped
     depends_on:
       - lazymc
@@ -13,6 +16,9 @@ services:
       - "25565:25565"
   backup:
     image: itzg/mc-backup
+    networks:
+      minecraft-network:
+        ipv4_address: 172.18.0.3
     restart: unless-stopped
     depends_on:
       - lazymc
@@ -27,6 +33,9 @@ services:
       - ./backups:/backups
   lazymc:
     image: ghcr.io/joesturge/lazymc-docker-proxy:latest
+    networks:
+      minecraft-network:
+        ipv4_address: 172.18.0.4
     restart: unless-stopped
     environment:
       RUST_LOG: "trace"
@@ -37,6 +46,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
   vanilla:
     image: itzg/minecraft-server
+    networks:
+      minecraft-network:
+        ipv4_address: 172.18.0.5
     labels:
       - lazymc.enabled=true
       - lazymc.group=vanilla
@@ -96,6 +108,9 @@ services:
       - /etc/timezone:/etc/timezone:ro
   creative:
     image: itzg/minecraft-server
+    networks:
+      minecraft-network:
+        ipv4_address: 172.18.0.6
     labels:
       - lazymc.enabled=true
       - lazymc.group=creative
@@ -155,6 +170,9 @@ services:
       - /etc/timezone:/etc/timezone:ro
   revelation:
     image: itzg/minecraft-server:java8
+    networks:
+      minecraft-network:
+        ipv4_address: 172.18.0.7
     labels:
       - lazymc.enabled=true
       - lazymc.group=revelation
@@ -191,3 +209,9 @@ services:
       - ./data/revelation:/data
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
+networks:
+  minecraft-network:
+    driver: bridge    
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
