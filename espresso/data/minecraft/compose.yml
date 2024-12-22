@@ -5,8 +5,8 @@ services:
       minecraft-network:
         ipv4_address: 172.28.0.2
     restart: unless-stopped
-    depends_on:
-      - lazymc
+    # depends_on:
+    #   - lazymc
     environment:
       MAPPING: |
         vanilla.eldians.com=lazymc:25565
@@ -20,10 +20,11 @@ services:
       minecraft-network:
         ipv4_address: 172.28.0.3
     restart: unless-stopped
-    depends_on:
-      - lazymc
+    # depends_on:
+    #   - lazymc
     environment:
       BACKUP_INTERVAL: 2w
+      BACKUP_ON_STARTUP: false
       PRUNE_BACKUPS_DAYS: 0
       PAUSE_IF_NO_PLAYERS: true
     volumes:
@@ -31,19 +32,19 @@ services:
       - ./data/creative:/data/creative:ro
       - ./data/revelation:/data/revelation:ro
       - ./backups:/backups
-  lazymc:
-    image: ghcr.io/joesturge/lazymc-docker-proxy:latest
-    networks:
-      minecraft-network:
-        ipv4_address: 172.28.0.4
-    restart: unless-stopped
-    environment:
-      RUST_LOG: "trace"
-    volumes:
-      - ./data/vanilla:/server/vanilla:ro
-      - ./data/creative:/server/creative:ro
-      - ./data/revelation:/server/revelation:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+  # lazymc:
+  #   image: ghcr.io/joesturge/lazymc-docker-proxy:latest
+  #   networks:
+  #     minecraft-network:
+  #       ipv4_address: 172.28.0.4
+  #   restart: unless-stopped
+  #   environment:
+  #     RUST_LOG: "trace"
+  #   volumes:
+  #     - ./data/vanilla:/server/vanilla:ro
+  #     - ./data/creative:/server/creative:ro
+  #     - ./data/revelation:/server/revelation:ro
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
   vanilla:
     image: itzg/minecraft-server
     networks:
@@ -89,7 +90,7 @@ services:
         lithium:mc1.21.4-0.14.3-fabric
         c2me-fabric:0.3.1+beta.2.0+1.21.4
         ferrite-core:7.1.1-fabric
-        servux:0.4.1
+        servux:0.5.0
         carpet:1.4.158
         carpet-extra:1.4.158
         collective:1.21.4-7.89-fabric+forge+neo
@@ -150,7 +151,7 @@ services:
         lithium:mc1.21.4-0.14.3-fabric
         c2me-fabric:0.3.1+beta.2.0+1.21.4
         ferrite-core:7.1.1-fabric
-        servux:0.4.1
+        servux:0.5.0
         carpet:1.4.158
         carpet-extra:1.4.158
         collective:1.21.4-7.89-fabric+forge+neo
