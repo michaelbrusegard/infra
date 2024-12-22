@@ -25,7 +25,6 @@ services:
       PAUSE_IF_NO_PLAYERS: true
     volumes:
       - ./data/vanilla:/data/vanilla:ro
-      - ./data/creative:/data/creative:ro
       - ./data/revelation:/data/revelation:ro
       - ./backups:/backups
   lazymc:
