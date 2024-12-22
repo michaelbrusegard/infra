@@ -91,11 +91,9 @@ services:
         c2me-fabric:0.3.1+beta.2.0+1.21.4
         ferrite-core:7.1.1-fabric
         servux:0.5.0
-        carpet:1.4.158
-        carpet-extra:1.4.158
         collective:1.21.4-7.89-fabric+forge+neo
         quick-right-click:1.21.4-1.5-fabric+forge+neo
-        fabric-seasons:2.4.2-BETA+1.21
+        serene-seasons:10.4.0.0
         snow-under-trees-remastered:2.6.0+1.21.4
         better-than-mending:2.2.3
         itemswapper:0.7.4
@@ -152,11 +150,9 @@ services:
         c2me-fabric:0.3.1+beta.2.0+1.21.4
         ferrite-core:7.1.1-fabric
         servux:0.5.0
-        carpet:1.4.158
-        carpet-extra:1.4.158
         collective:1.21.4-7.89-fabric+forge+neo
         quick-right-click:1.21.4-1.5-fabric+forge+neo
-        fabric-seasons:2.4.2-BETA+1.21
+        serene-seasons:10.4.0.0
         snow-under-trees-remastered:2.6.0+1.21.4
         better-than-mending:2.2.3
         itemswapper:0.7.4
