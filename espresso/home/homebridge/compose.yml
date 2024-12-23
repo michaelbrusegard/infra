@@ -17,9 +17,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./data/mosquitto:/mosquitto
-    ports:
-      - 1883:1883
-      - 9001:9001
     command: 'mosquitto -c /mosquitto-no-auth.conf'
   zigbee2mqtt:
     restart: unless-stopped
