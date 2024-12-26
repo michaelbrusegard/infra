@@ -29,4 +29,4 @@ services:
     environment:
       - TZ=Europe/Oslo
     devices:
-      - /dev/ttyACM0:/dev/ttyACM0
+      - /dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2690606-if00:/dev/ttyACM0
