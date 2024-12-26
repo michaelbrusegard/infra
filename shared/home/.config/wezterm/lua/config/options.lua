@@ -23,13 +23,13 @@ local function options(config)
   -- Font style without ligatures
   config.font = require('wezterm').font_with_fallback({
     {
-      family = 'MesloLGS Nerd Font',
+      family = 'SF Mono',
       harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' },
     },
   })
 
   -- Font size
-  config.font_size = 13.0
+  config.font_size = 12.5
 
   -- Disable window resize UI
   config.window_decorations = 'RESIZE'
@@ -49,8 +49,8 @@ local function options(config)
   }
 
   -- Underline
-  config.underline_position = '250%'
-  config.underline_thickness = '250%'
+  config.underline_position = '150%'
+  config.underline_thickness = '200%'
 
   -- Set terminal style for tab bar
   config.use_fancy_tab_bar = false
