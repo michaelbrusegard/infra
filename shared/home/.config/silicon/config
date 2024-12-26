@@ -1,11 +1,11 @@
 # Font
---font "MesloLGS Nerd Font=34;Noto Color Emoji"
+--font "SF Mono Powerline"
 
 # Theme
 --theme="Catppuccin Mocha"
 
 # Set output to downloads directory
---output "$HOME/Downloads/"
+--output "~/Downloads/code.png"
 
 # Background color
 --background "#b4befe"
