@@ -30,3 +30,5 @@ services:
       - TZ=Europe/Oslo
     devices:
       - /dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2690606-if00:/dev/ttyACM0
+    group_add:
+      - dialout
