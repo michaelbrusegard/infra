@@ -1,5 +1,5 @@
 # Font
---font "SF Mono"
+--font "SF Mono Powerline"
 
 # Theme
 --theme="Catppuccin Mocha"
