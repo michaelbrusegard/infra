@@ -3,6 +3,14 @@ services:
     image: homebridge/homebridge
     restart: unless-stopped
     network_mode: host
+    environment:
+      - MDNS=avahi
+      - AVAHI_HOSTNAME=homebridge
+      - HOMEBRIDGE_CONFIG_UI_PORT=8581
+      - HOMEBRIDGE_PORT=51826
+      - AVAHI_IPV4=1
+      - AVAHI_IPV6=0
+      - AVAHI_INTERFACE=enp3s0
     volumes:
       - ./data/homebridge:/homebridge
     logging:
