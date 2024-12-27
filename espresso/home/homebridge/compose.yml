@@ -1,6 +1,6 @@
 services:
   homebridge:
-    image: homebridge/homebridge:latest
+    image: homebridge/homebridge
     restart: unless-stopped
     network_mode: host
     volumes:
