@@ -13,6 +13,7 @@ services:
       PIHOLE_DNS_: 1.1.1.1;8.8.8.8
       WEBTHEME: default-dark
       WEB_PORT: 8060
+      WEBPASSWORD: ${WEBPASSWORD}
     volumes:
       - './data/pihole:/etc/pihole'
       - './data/dnsmasq.d:/etc/dnsmasq.d'

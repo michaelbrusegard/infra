@@ -4,3 +4,4 @@ home/vpn/data
 home/homebridge/data
 home/pihole/data
 data/minecraft/data
+.env
