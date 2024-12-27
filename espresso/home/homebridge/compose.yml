@@ -13,18 +13,21 @@ services:
   mqtt:
     image: eclipse-mosquitto:2.0
     restart: unless-stopped
+    ports:
+        - '1883:1883'
+        - '9001:9001'
     volumes:
-      - ./data/mosquitto:/mosquitto
+    - ./data/mosquitto:/mosquitto
     command: 'mosquitto -c /mosquitto-no-auth.conf'
   zigbee2mqtt:
     restart: unless-stopped
     image: koenkk/zigbee2mqtt
-    volumes:
-      - ./data/zigbee2mqtt:/app/data
-      - /run/udev:/run/udev:ro
     ports:
       - 8080:8080
     environment:
       - TZ=Europe/Oslo
+    volumes:
+      - ./data/zigbee2mqtt:/app/data
+      - /run/udev:/run/udev:ro
     devices:
       - /dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2690606-if00:/dev/ttyACM0
