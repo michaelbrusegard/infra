@@ -2,9 +2,7 @@ services:
   homebridge:
     image: homebridge/homebridge:latest
     restart: unless-stopped
-    ports:
-      - 8581:8581
-      - 51826:51826
+    network_mode: host
     volumes:
       - ./data/homebridge:/homebridge
     logging:
