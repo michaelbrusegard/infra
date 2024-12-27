@@ -11,6 +11,7 @@ services:
       - AVAHI_IPV4=1
       - AVAHI_IPV6=0
       - AVAHI_INTERFACE=enp3s0
+      - TZ=Europe/Oslo
     volumes:
       - ./data/homebridge:/homebridge
     logging:
