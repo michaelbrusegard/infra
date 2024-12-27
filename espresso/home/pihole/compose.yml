@@ -5,11 +5,14 @@ services:
     restart: unless-stopped
     ports:
       - 53:53
+      - 8060:8060
       - 53:53/udp
       - 67:67/udp
-      - 8060:80
     environment:
       TZ: Europe/Oslo
+      PIHOLE_DNS_: 1.1.1.1;8.8.8.8
+      WEBTHEME: default-dark
+      WEB_PORT: 8060
     volumes:
       - './data/pihole:/etc/pihole'
       - './data/dnsmasq.d:/etc/dnsmasq.d'
