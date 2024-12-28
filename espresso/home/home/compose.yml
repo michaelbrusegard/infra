@@ -51,7 +51,6 @@ services:
       WEB_PORT: 8060
       WEBPASSWORD: ${WEBPASSWORD}
       IPv6: true
-      DHCP_IPv6: true
     volumes:
       - './data/pihole:/etc/pihole'
       - './data/dnsmasq.d:/etc/dnsmasq.d'
