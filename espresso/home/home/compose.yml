@@ -47,8 +47,6 @@ services:
       - 67:67/udp
     environment:
       TZ: Europe/Oslo
-      PIHOLE_DNS_: 1.1.1.1;8.8.8.8
-      WEBTHEME: default-dark
       WEB_PORT: 8060
       WEBPASSWORD: ${WEBPASSWORD}
     volumes:
