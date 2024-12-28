@@ -43,8 +43,6 @@ services:
     ports:
       - 53:53
       - 53:53/udp
-      - '[::]:53:53/tcp'
-      - '[::]:53:53/udp'
       - 8060:8060
     environment:
       TZ: Europe/Oslo
