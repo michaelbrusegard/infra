@@ -6,7 +6,6 @@ services:
     network_mode: host
     environment:
       TZ: Europe/Oslo
-      DISABLE_AVAHI: true
     volumes:
       - ./data/homebridge:/homebridge
     logging:
