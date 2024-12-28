@@ -18,8 +18,8 @@ services:
     image: eclipse-mosquitto:2.0
     restart: unless-stopped
     ports:
-        - '1883:1883'
-        - '9001:9001'
+        - 1883:1883
+        - 9001:9001
     volumes:
     - ./data/mosquitto:/mosquitto
     command: 'mosquitto -c /mosquitto-no-auth.conf'
@@ -36,3 +36,21 @@ services:
       - /run/udev:/run/udev:ro
     devices:
       - /dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2690606-if00:/dev/ttyACM0
+  pihole:
+    container_name: pihole
+    image: pihole/pihole
+    restart: unless-stopped
+    ports:
+      - 53:53
+      - 8060:80
+      - 53:53/udp
+      - 67:67/udp
+    environment:
+      TZ: Europe/Oslo
+      PIHOLE_DNS_: 1.1.1.1;8.8.8.8
+      WEBTHEME: default-dark
+      WEB_PORT: 8060
+      WEBPASSWORD: ${WEBPASSWORD}
+    volumes:
+      - './data/pihole:/etc/pihole'
+      - './data/dnsmasq.d:/etc/dnsmasq.d'
