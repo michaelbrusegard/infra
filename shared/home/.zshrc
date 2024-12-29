@@ -114,21 +114,6 @@ if [[ "$OS" == "Darwin" ]]; then
   export DYLD_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_LIBRARY_PATH"
 fi
 
-# Lazy load function
-lazy_load() {
-  init=$1
-  shift
-  for cmd in "$@"; do
-    eval "
-    $cmd() {
-      unset -f $cmd
-      $init
-      $cmd \"\$@\"
-    }
-    "
-  done
-}
-
 # fnm
 eval "$(command fnm env --use-on-cd --shell zsh)"
 
@@ -139,6 +124,4 @@ lazy_load 'export PYENV_ROOT="$HOME/.pyenv"; [[ -d $PYENV_ROOT/bin ]] && export 
 lazy_load 'export PATH="$HOME/.jenv/bin:$PATH"; eval "$(command jenv init -)"' 'jenv' 'java' 'javac'
 
 # rustup
-if [[ "$OS" == "Darwin" ]]; then
-  lazy_load 'export PATH="/opt/homebrew/opt/rustup/bin:$PATH"' 'rustup' 'rustc' 'cargo'
-fi
+export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
