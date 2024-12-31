@@ -114,6 +114,21 @@ if [[ "$OS" == "Darwin" ]]; then
   export DYLD_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_LIBRARY_PATH"
 fi
 
+# Lazy load function
+lazy_load() {
+  init=$1
+  shift
+  for cmd in "$@"; do
+    eval "
+    $cmd() {
+      unset -f $cmd
+      $init
+      $cmd \"\$@\"
+    }
+    "
+  done
+}
+
 # fnm
 eval "$(command fnm env --use-on-cd --shell zsh)"
 
