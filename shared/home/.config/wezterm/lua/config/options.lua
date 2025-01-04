@@ -17,9 +17,6 @@ local function options(config)
   config.max_fps = 120
   config.animation_fps = 120
 
-  -- Color scheme
-  config.color_scheme = 'Catppuccin Mocha'
-
   -- Font style without ligatures
   config.font = require('wezterm').font_with_fallback({
     {
@@ -63,21 +60,6 @@ local function options(config)
 
   -- Update status faster
   config.status_update_interval = 500
-
-  -- Set tab bar background
-  config.colors = {
-    tab_bar = {
-      background = require('util.colors').tab_bar.inactive_tab.bg_color,
-    },
-
-    -- Yank mode
-    selection_fg = require('util.colors').ansi[4],
-    selection_bg = '#3f3b41',
-
-    -- Find mode
-    copy_mode_inactive_highlight_fg = { Color = require('util.colors').ansi[3] },
-    copy_mode_inactive_highlight_bg = { Color = '#323c3f' },
-  }
 end
 
 return options

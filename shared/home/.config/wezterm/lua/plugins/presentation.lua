@@ -1,5 +1,9 @@
+local wezterm = require('wezterm')
+
 return function(config)
-  require('wezterm').plugin.require('https://github.com/Xarvex/presentation.wez').apply_to_config(config, {
+  local presentation = wezterm.plugin.require('https://github.com/Xarvex/presentation.wez')
+
+  presentation.apply_to_config(config, {
     font_size_multiplier = 1.8,
     presentation = {
       disabled = true,

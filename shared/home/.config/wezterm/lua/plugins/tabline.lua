@@ -1,11 +1,10 @@
 local wezterm = require('wezterm')
-local colors = require('util.colors')
 
-return function()
+return function(config)
   local tabline = wezterm.plugin.require('https://github.com/michaelbrusegard/tabline.wez')
   tabline.setup({
     options = {
-      theme = 'Catppuccin Mocha',
+      theme = config.colors,
       section_separators = {
         left = wezterm.nerdfonts.ple_right_half_circle_thick,
         right = wezterm.nerdfonts.ple_left_half_circle_thick,
@@ -25,10 +24,10 @@ return function()
       },
       tab_active = {
         { Attribute = { Intensity = 'Bold' } },
-        { Foreground = { Color = colors.ansi[6] } },
+        { Foreground = { Color = config.colors.ansi[7] } },
         'index',
         'ResetAttributes',
-        { Foreground = { Color = colors.foreground } },
+        { Foreground = { Color = config.colors.foreground } },
         { 'parent', padding = 0 },
         '/',
         { Attribute = { Intensity = 'Bold' } },

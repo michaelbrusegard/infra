@@ -32,30 +32,30 @@ gui:
   # See https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md#color-attributes
   theme:
     activeBorderColor:
-      - "#fab387"
+      - "#3e8fb0"
       - bold
     inactiveBorderColor:
-      - "#89b4fa"
+      - "#6e6a86"
     optionsTextColor:
-      - "#89b4fa"
+      - "#6e6a86"
     selectedLineBgColor:
       - "#45475a"
     cherryPickedCommitBgColor:
-      - "#f2cdcd"
+      - "#ea9a97"
     cherryPickedCommitFgColor:
-      - "#89b4fa"
+      - "#6e6a86"
     unstagedChangesColor:
-      - "#f38ba8"
+      - "#eb6f92"
     defaultFgColor:
-      - "#cdd6f4"
+      - "#e0def4"
     searchingActiveBorderColor:
-      - "#f9e2af"
+      - "#ea9a97"
     inactiveViewSelectedLineBgColor:
       - bold
     markedBaseCommitFgColor:
-      - "#89b4fa"
+      - "#6e6a86"
     markedBaseCommitBgColor:
-      - "#f9e2af"
+      - "#ea9a97"
 
   # If true, show the bottom line that contains keybinding info and useful buttons. If false, this line will be hidden except to display a loader for an in-progress action.
   showBottomLine: false

@@ -14,7 +14,7 @@ return function(config)
 
   workspace_switcher.workspace_formatter = function(name)
     return wezterm.format({
-      { Foreground = { Color = require('util.colors').compose_cursor } },
+      { Foreground = { Color = config.colors.ansi[6] } },
       { Text = wezterm.nerdfonts.cod_terminal_tmux .. ' ' .. string.match(name, '[^/\\]+$') },
     })
   end

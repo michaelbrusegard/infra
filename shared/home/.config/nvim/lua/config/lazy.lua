@@ -23,7 +23,7 @@ require('lazy').setup({
     lazy = false,
     version = false,
   },
-  install = { colorscheme = { 'catppuccin' } },
+  install = { colorscheme = { 'rose-pine-moon' } },
   checker = {
     enabled = true,
     notify = false,

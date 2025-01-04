@@ -24,7 +24,7 @@ return function(config)
 
   quick_domains.formatter = function(icon, name)
     return wezterm.format({
-      { Foreground = { Color = require('util.colors').tab_bar.active_tab.bg_color } },
+      { Foreground = { Color = config.colors.ansi[4] } },
       { Text = icon .. ' ' .. name },
     })
   end

@@ -44,7 +44,7 @@ return function(config)
           fuzzy_description = nil,
           fmt_workspace = function(name)
             return wezterm.format({
-              { Foreground = { Color = require('util.colors').ansi[3] } },
+              { Foreground = { Color = config.colors.ansi[3] } },
               {
                 Text = wezterm.nerdfonts.cod_terminal_tmux .. ' ' .. string.match(name, '[^~+]+$'):gsub('%.json$', ''),
               },
@@ -52,7 +52,7 @@ return function(config)
           end,
           fmt_window = function(name)
             return wezterm.format({
-              { Foreground = { Color = require('util.colors').ansi[3] } },
+              { Foreground = { Color = config.colors.ansi[3] } },
               {
                 Text = wezterm.nerdfonts.cod_window .. ' ' .. string.match(name, '[^~+]+$'):gsub('%.json$', ''),
               },
@@ -60,7 +60,7 @@ return function(config)
           end,
           fmt_tab = function(name)
             return wezterm.format({
-              { Foreground = { Color = require('util.colors').ansi[3] } },
+              { Foreground = { Color = config.colors.ansi[3] } },
               {
                 Text = wezterm.nerdfonts.cod_chrome_restore .. ' ' .. string.match(name, '[^~+]+$'):gsub('%.json$', ''),
               },
