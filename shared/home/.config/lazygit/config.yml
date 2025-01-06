@@ -28,35 +28,6 @@ gui:
   # Uses Go's time format syntax: https://pkg.go.dev/time#Time.Format
   shortTimeFormat: 15:04
 
-  # Config relating to colors and styles.
-  # See https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md#color-attributes
-  theme:
-    activeBorderColor:
-      - "#3e8fb0"
-      - bold
-    inactiveBorderColor:
-      - "#6e6a86"
-    optionsTextColor:
-      - "#6e6a86"
-    selectedLineBgColor:
-      - "#45475a"
-    cherryPickedCommitBgColor:
-      - "#ea9a97"
-    cherryPickedCommitFgColor:
-      - "#6e6a86"
-    unstagedChangesColor:
-      - "#eb6f92"
-    defaultFgColor:
-      - "#e0def4"
-    searchingActiveBorderColor:
-      - "#ea9a97"
-    inactiveViewSelectedLineBgColor:
-      - bold
-    markedBaseCommitFgColor:
-      - "#6e6a86"
-    markedBaseCommitBgColor:
-      - "#ea9a97"
-
   # If true, show the bottom line that contains keybinding info and useful buttons. If false, this line will be hidden except to display a loader for an in-progress action.
   showBottomLine: false
 
