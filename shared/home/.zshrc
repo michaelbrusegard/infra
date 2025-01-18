@@ -109,11 +109,6 @@ alias find="fd"
 # thefuck
 eval "$(thefuck --alias)"
 
-# imagemagick
-if [[ "$OS" == "Darwin" ]]; then
-  export DYLD_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_LIBRARY_PATH"
-fi
-
 # Lazy load function
 lazy_load() {
   init=$1
