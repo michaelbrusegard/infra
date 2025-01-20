@@ -3,31 +3,6 @@ return {
   { import = 'lazyvim.plugins.extras.util.mini-hipatterns' },
   { import = 'lazyvim.plugins.extras.util.rest' },
   {
-    'folke/snacks.nvim',
-    opts = {
-      dashboard = {
-        preset = {
-          header = [[
-███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗
-████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║
-██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║
-██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║
-██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║
-╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝]],
-        },
-      },
-      indent = {
-        indent = {
-          char = '▏',
-        },
-        scope = {
-          underline = true,
-          char = '▏',
-        },
-      },
-    },
-  },
-  {
     'michaelrommel/nvim-silicon',
     lazy = true,
     cmd = 'Silicon',

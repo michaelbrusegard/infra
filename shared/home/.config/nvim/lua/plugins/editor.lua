@@ -2,7 +2,6 @@ return {
   { 'nvim-neo-tree/neo-tree.nvim', enabled = false },
   { import = 'lazyvim.plugins.extras.editor.dial' },
   { import = 'lazyvim.plugins.extras.editor.harpoon2' },
-  { import = 'lazyvim.plugins.extras.editor.illuminate' },
   { import = 'lazyvim.plugins.extras.editor.mini-move' },
   {
     'mrjones2014/smart-splits.nvim',

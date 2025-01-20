@@ -135,3 +135,9 @@ export PATH="$HOME/.jenv/bin:$PATH"; eval "$(command jenv init -)"
 
 # rustup
 export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
+
+# android
+export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+export PATH=$PATH:$ANDROID_HOME/emulator

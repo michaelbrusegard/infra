@@ -11,7 +11,7 @@ brew "bat"
 brew "librsvg"
 brew "chafa"
 brew "lima"
-brew "colima", restart_service: true
+brew "colima", restart_service: :changed
 brew "docker"
 brew "docker-compose"
 brew "docker-credential-helper"
@@ -43,6 +43,7 @@ brew "mkcert"
 brew "neovim"
 brew "netcat"
 brew "nmap"
+brew "openjdk@21"
 brew "pinentry-mac"
 brew "pnpm"
 brew "poppler"
@@ -67,6 +68,7 @@ brew "jesseduffield/lazygit/lazygit", link: false
 brew "koekeishiya/formulae/yabai"
 brew "oven-sh/bun/bun"
 cask "altserver"
+cask "android-commandlinetools"
 cask "burp-suite"
 cask "chatgpt"
 cask "claude"
@@ -94,6 +96,7 @@ mas "AdGuard for Safari", id: 1440147259
 mas "Affinity Designer 2", id: 1616831348
 mas "Affinity Photo 2", id: 1616822987
 mas "Affinity Publisher 2", id: 1606941598
+mas "Apple Configurator", id: 1037126344
 mas "Developer", id: 640199958
 mas "Jump Desktop", id: 524141863
 mas "Keynote", id: 409183694
