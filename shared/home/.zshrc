@@ -131,7 +131,7 @@ eval "$(command fnm env --use-on-cd --shell zsh)"
 lazy_load 'export PYENV_ROOT="$HOME/.pyenv"; [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(command pyenv init -)"; eval "$(command pyenv virtualenv-init -)"' 'pyenv' 'python' 'pip'
 
 # jenv
-lazy_load 'export PATH="$HOME/.jenv/bin:$PATH"; eval "$(command jenv init -)"' 'jenv' 'java' 'javac'
+export PATH="$HOME/.jenv/bin:$PATH"; eval "$(command jenv init -)"
 
 # rustup
 export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
