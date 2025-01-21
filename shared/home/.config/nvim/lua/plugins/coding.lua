@@ -1,6 +1,9 @@
 return {
-  { 'echasnovski/mini.pairs', enabled = false },
   { import = 'lazyvim.plugins.extras.coding.yanky' },
+  {
+    'saghen/blink.cmp',
+    opts = { keymap = { preset = 'default' } },
+  },
   {
     'gbprod/substitute.nvim',
     event = 'LazyFile',
@@ -14,10 +17,10 @@ return {
       { 'pp', "<cmd>lua require('substitute').line()<cr>", desc = 'Paste Line' },
       { 'P', "<cmd>lua require('substitute').eol()<cr>", desc = 'Paste EOL' },
       { 'p', "<cmd>lua require('substitute').visual()<cr>", mode = { 'x' }, desc = 'Paste Visual' },
+      { 'gp', 'p', desc = 'Paste After Cursor' },
+      { 'gP', 'P', desc = 'Paste Before Cursor' },
+      { 'po', ':put<CR>==', desc = 'Paste Line Below' },
+      { 'pO', ':-1put<CR>==', desc = 'Paste Line Above' },
     },
-  },
-  {
-    'saghen/blink.cmp',
-    opts = { keymap = { preset = 'default' } },
   },
 }
