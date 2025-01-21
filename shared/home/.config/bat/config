@@ -1,6 +1,6 @@
 # Specify desired highlighting theme (e.g. "TwoDark"). Run `bat --list-themes`
 # for a list of all available themes
---theme="GitHub"
+--theme=rose-pine
 
 # Set colors
 --color=always
