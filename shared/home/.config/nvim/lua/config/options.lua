@@ -2,7 +2,6 @@
 vim.opt.spelllang = 'en,nb'
 
 -- Setup python
-vim.g.lazyvim_python_lsp = 'basedpyright'
 local venv = vim.fn.expand('~/.pyenv/versions/neovim')
 vim.g.python3_host_prog = venv .. '/bin/python'
 vim.env.PATH = venv .. '/bin:' .. vim.env.PATH
