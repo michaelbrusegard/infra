@@ -141,3 +141,6 @@ export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
 export PATH=$PATH:$ANDROID_HOME/emulator
+
+# bun completions
+[ -s "/Users/michaelbrusegard/.bun/_bun" ] && source "/Users/michaelbrusegard/.bun/_bun"
