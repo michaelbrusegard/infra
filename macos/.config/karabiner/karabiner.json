@@ -15,7 +15,7 @@
                                         "optional": ["caps_lock"]
                                     }
                                 },
-                                "to": [{ "shell_command": "zsh -c 'if /usr/bin/pgrep -x \"wezterm-gui\" > /dev/null; then /opt/homebrew/bin/wezterm cli spawn --new-window; else open -a wezterm; fi'" }],
+                                "to": [{ "shell_command": "nohup /opt/homebrew/bin/wezterm start >/dev/null 2>&1 &" }],
                                 "type": "basic"
                             }
                         ]
