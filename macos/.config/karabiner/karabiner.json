@@ -472,10 +472,7 @@
                             {
                                 "conditions": [
                                     {
-                                        "bundle_identifiers": [
-                                            "^com\\.apple\\.Terminal$",
-                                            "^com\\.github\\.wez\\.wezterm$"
-                                        ],
+                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
@@ -492,10 +489,7 @@
                             {
                                 "conditions": [
                                     {
-                                        "bundle_identifiers": [
-                                            "^com\\.apple\\.Terminal$",
-                                            "^com\\.github\\.wez\\.wezterm$"
-                                        ],
+                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
@@ -512,10 +506,7 @@
                             {
                                 "conditions": [
                                     {
-                                        "bundle_identifiers": [
-                                            "^com\\.apple\\.Terminal$",
-                                            "^com\\.github\\.wez\\.wezterm$"
-                                        ],
+                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
@@ -532,10 +523,7 @@
                             {
                                 "conditions": [
                                     {
-                                        "bundle_identifiers": [
-                                            "^com\\.apple\\.Terminal$",
-                                            "^com\\.github\\.wez\\.wezterm$"
-                                        ],
+                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
@@ -557,10 +545,7 @@
                             {
                                 "conditions": [
                                     {
-                                        "bundle_identifiers": [
-                                            "^com\\.apple\\.Terminal$",
-                                            "^com\\.github\\.wez\\.wezterm$"
-                                        ],
+                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
@@ -577,10 +562,7 @@
                             {
                                 "conditions": [
                                     {
-                                        "bundle_identifiers": [
-                                            "^com\\.apple\\.Terminal$",
-                                            "^com\\.github\\.wez\\.wezterm$"
-                                        ],
+                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
