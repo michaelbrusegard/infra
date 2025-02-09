@@ -12,6 +12,7 @@ brew "autoconf"
 brew "bat"
 brew "librsvg"
 brew "chafa"
+brew "cmake"
 brew "cmatrix"
 brew "lima"
 brew "colima", restart_service: :changed
@@ -84,32 +85,38 @@ cask "font-sf-mono"
 cask "font-sf-mono-for-powerline"
 cask "font-sf-pro"
 cask "font-symbols-only-nerd-font"
+cask "fontforge"
 cask "google-chrome"
 cask "jordanbaird-ice"
 cask "karabiner-elements"
 cask "legcord"
 cask "obsidian"
+cask "proton-drive"
+cask "proton-mail"
+cask "proton-pass"
+cask "protonvpn"
+cask "raspberry-pi-imager"
 cask "raycast"
 cask "sf-symbols"
 cask "shortcat"
 cask "tempbox"
 cask "transmission"
+cask "vial"
 cask "wezterm"
 cask "yabaiindicator"
 cask "zen-browser"
 cask "zoom"
-mas "AdGuard for Safari", id: 1440147259
 mas "Affinity Designer 2", id: 1616831348
 mas "Affinity Photo 2", id: 1616822987
 mas "Affinity Publisher 2", id: 1606941598
 mas "Apple Configurator", id: 1037126344
 mas "Developer", id: 640199958
-mas "Jump Desktop", id: 524141863
 mas "Keynote", id: 409183694
 mas "Messenger", id: 1480068668
 mas "Numbers", id: 409203825
 mas "Pages", id: 409201541
 mas "Slack", id: 803453959
 mas "UTM", id: 1538878817
+mas "Wipr", id: 1662217862
 mas "WireGuard", id: 1451685025
 mas "Xcode", id: 497799835

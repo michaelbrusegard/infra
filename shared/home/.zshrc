@@ -23,6 +23,10 @@ zinit light romkatv/powerlevel10k
 # Set OS
 OS=$(uname)
 
+# Create required directories for Zinit
+mkdir -p "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/completions"
+mkdir -p "$HOME/.cache/zinit/completions"
+
 # Load completions
 autoload -Uz compinit && compinit
 
@@ -37,6 +41,8 @@ zinit snippet OMZP::git
 zinit snippet OMZP::sudo
 zinit snippet OMZP::command-not-found
 zinit snippet OMZP::gradle
+zinit snippet OMZP::docker
+zinit snippet OMZP::docker-compose
 
 # Apply zinit cdreplay
 zinit cdreplay -q

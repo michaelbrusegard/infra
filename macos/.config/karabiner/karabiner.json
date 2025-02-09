@@ -5,38 +5,6 @@
             "complex_modifications": {
                 "rules": [
                     {
-                        "description": "Open Terminal",
-                        "manipulators": [
-                            {
-                                "from": {
-                                    "key_code": "return_or_enter",
-                                    "modifiers": {
-                                        "mandatory": ["option"],
-                                        "optional": ["caps_lock"]
-                                    }
-                                },
-                                "to": [{ "shell_command": "nohup /opt/homebrew/bin/wezterm start >/dev/null 2>&1 &" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "Open Browser",
-                        "manipulators": [
-                            {
-                                "from": {
-                                    "key_code": "b",
-                                    "modifiers": {
-                                        "mandatory": ["option"],
-                                        "optional": ["caps_lock"]
-                                    }
-                                },
-                                "to": [{ "shell_command": "osascript -e 'if application \"Safari\" is running then tell application \"Safari\" to make new document at end of documents' -e 'tell application \"Safari\" to activate'" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
                         "description": "Show Desktop",
                         "manipulators": [
                             {
@@ -48,22 +16,6 @@
                                     }
                                 },
                                 "to": [{ "shell_command": "/'System/Applications/Mission Control.app/Contents/MacOS/Mission Control' 1" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "Open Finder",
-                        "manipulators": [
-                            {
-                                "from": {
-                                    "key_code": "f",
-                                    "modifiers": {
-                                        "mandatory": ["option"],
-                                        "optional": ["caps_lock"]
-                                    }
-                                },
-                                "to": [{ "shell_command": "osascript -e 'tell application \"Finder\" to make new Finder window'" }],
                                 "type": "basic"
                             }
                         ]
@@ -462,118 +414,6 @@
                                     }
                                 },
                                 "to": [{ "shell_command": "/opt/homebrew/bin/yabai -m space --layout stack" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "HJKL for arrow keys",
-                        "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
-                                        "type": "frontmost_application_unless"
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "h",
-                                    "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
-                                    }
-                                },
-                                "to": [{ "key_code": "left_arrow" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
-                                        "type": "frontmost_application_unless"
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "j",
-                                    "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
-                                    }
-                                },
-                                "to": [{ "key_code": "down_arrow" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
-                                        "type": "frontmost_application_unless"
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "k",
-                                    "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
-                                    }
-                                },
-                                "to": [{ "key_code": "up_arrow" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
-                                        "type": "frontmost_application_unless"
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "l",
-                                    "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
-                                    }
-                                },
-                                "to": [{ "key_code": "right_arrow" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "UD for Page Up/Page Down",
-                        "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
-                                        "type": "frontmost_application_unless"
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "u",
-                                    "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
-                                    }
-                                },
-                                "to": [{ "key_code": "page_up" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "file_paths": ["/opt/homebrew/bin/wezterm-gui"],
-                                        "type": "frontmost_application_unless"
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "d",
-                                    "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
-                                    }
-                                },
-                                "to": [{ "key_code": "page_down" }],
                                 "type": "basic"
                             }
                         ]
