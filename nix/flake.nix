@@ -1,6 +1,4 @@
 {
-  description = "Nix configuration";
-
   inputs = import ./inputs.nix;
 
   outputs = { self, nixpkgs, darwin, ... }@inputs:
