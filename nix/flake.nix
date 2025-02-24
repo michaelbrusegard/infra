@@ -1,17 +1,7 @@
 {
   description = "Nix configuration";
 
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nur = {
-      url = "github:nix-community/NUR";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    darwin = {
-      url = "github:lnl7/nix-darwin";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-  };
+  inputs = import ./inputs.nix;
 
   outputs = { self, nixpkgs, darwin, ... }@inputs:
     let
@@ -23,11 +13,6 @@
         "x86_64-darwin"
         "aarch64-darwin"
       ];
-
-      users = {
-        michaelbrusegard = import ./users/michaelbrusegard;
-        sysadmin = import ./users/sysadmin;
-      };
     in
     {
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
@@ -35,36 +20,35 @@
       nixosConfigurations = {
         desktop = lib.mkSystem {
           system = "x86_64-linux";
-          user = users.michaelbrusegard;
+          user = "michaelbrusegard";
           name = "desktop";
         };
 
         wsl = lib.mkSystem {
           system = "x86_64-linux";
-          user = users.michaelbrusegard;
+          user = "michaelbrusegard";
           name = "wsl";
         };
 
         espresso = lib.mkSystem {
           system = "x86_64-linux";
-          user = users.sysadmin;
+          user = "sysadmin";
           name = "espresso";
         };
 
         leggero = lib.mkSystem {
           system = "aarch64-linux";
-          user = users.sysadmin;
+          user = "sysadmin";
           name = "leggero";
         };
       };
 
-      darwinConfigurations."*" = let
-        fullHostname = builtins.exec ["hostname"];
-        cleanHostname = builtins.head (builtins.split "\\." fullHostname);
-      in lib.mkSystem {
+      darwinConfigurations."*" = lib.mkSystem {
         system = builtins.currentSystem or "aarch64-darwin";
-        user = users.michaelbrusegard;
-        name = cleanHostname;
+        user = "michaelbrusegard";
+        name = builtins.substring 0 (-1) (builtins.readFile (builtins.toFile "hostname" (
+          builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname"
+            "PATH=/usr/bin:/usr/sbin:$PATH; scutil --get LocalHostName")))));
       };
 
       defaultPackage = forAllSystems (system:
