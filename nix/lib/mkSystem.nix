@@ -1,15 +1,14 @@
 inputs:
-{ system, user, name }:
+{ system, username, hostname }:
 let
-  configPath = import ./hosts/${name};
-  userPath = import ./users/${user};
+  hostPath = import ./hosts/${hostname};
+  userPath = import ./users/${username};
 
   nixConfig = {
     nixpkgs.config.allowUnfree = true;
     nix.settings = {
-      experimental-features = [ "nix-command" "flakes" ];
       auto-optimise-store = true;
-      trusted-users = [ "root" "${user}" ];
+      trusted-users = [ "root" "${username}" ];
     };
   };
 
@@ -17,24 +16,30 @@ let
     home-manager = {
       useUserPackages = true;
       useGlobalPkgs = true;
-      users.${user} = userPath;
+      users.${username} = userPath;
     };
   };
 
   nixosConfig = {
-    users.users.${user} = {
+    networking.hostName = hostname;
+    users.users.${username} = {
       isNormalUser = true;
-      home = "/home/${user}";
+      home = "/home/${username}";
       extraGroups = [ "wheel" "networkmanager" ];
     };
   };
 
+  darwinConfig = {
+    networking.hostName = hostname;
+    networking.computerName = hostname;
+  };
+
   commonArgs = {
     inherit system;
-    specialArgs = { inherit inputs name; };
+    specialArgs = { inherit inputs username hostname; };
     modules = [
       nixConfig
-      configPath
+      hostPath
       homeManagerConfig
     ];
   };
@@ -43,6 +48,7 @@ in
 if builtins.match ".*-darwin" system != null
 then inputs.darwin.lib.darwinSystem (commonArgs // {
   modules = commonArgs.modules ++ [
+    darwinConfig
     inputs.home-manager.darwinModules.default
   ];
 })

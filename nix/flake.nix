@@ -18,33 +18,33 @@
       nixosConfigurations = {
         desktop = lib.mkSystem {
           system = "x86_64-linux";
-          user = "michaelbrusegard";
-          name = "desktop";
+          username = "michaelbrusegard";
+          hostname = "desktop";
         };
 
         wsl = lib.mkSystem {
           system = "x86_64-linux";
-          user = "michaelbrusegard";
-          name = "wsl";
+          username = "michaelbrusegard";
+          hostname = "wsl";
         };
 
         espresso = lib.mkSystem {
           system = "x86_64-linux";
-          user = "sysadmin";
-          name = "espresso";
+          username = "sysadmin";
+          hostname = "espresso";
         };
 
         leggero = lib.mkSystem {
           system = "aarch64-linux";
-          user = "sysadmin";
-          name = "leggero";
+          username = "sysadmin";
+          hostname = "leggero";
         };
       };
 
       darwinConfigurations."*" = lib.mkSystem {
         system = builtins.currentSystem or "aarch64-darwin";
-        user = "michaelbrusegard";
-        name = builtins.substring 0 (-1) (builtins.readFile (builtins.toFile "hostname" (
+        username = "michaelbrusegard";
+        hostname = builtins.substring 0 (-1) (builtins.readFile (builtins.toFile "hostname" (
           builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname"
             "PATH=/usr/bin:/usr/sbin:$PATH; scutil --get LocalHostName")))));
       };
