@@ -41,6 +41,7 @@ let
       nixConfig
       hostPath
       homeManagerConfig
+      inputs.catppuccin.nixosModules.catppuccin
     ];
   };
 

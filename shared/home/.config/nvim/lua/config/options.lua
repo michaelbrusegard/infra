@@ -7,6 +7,9 @@ vim.g.python3_host_prog = venv .. '/bin/python'
 vim.env.PATH = venv .. '/bin:' .. vim.env.PATH
 vim.env.PYENV_VERSION = vim.fn.system('pyenv version'):match('(%S+)%s+%(.-%)')
 
+-- Disable order check
+vim.g.lazyvim_check_order = false
+
 -- Set snacks as the picker
 vim.g.lazyvim_picker = 'snacks'
 
