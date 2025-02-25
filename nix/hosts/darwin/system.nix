@@ -1,7 +1,8 @@
 { ... }: {
   system = {
+    stateVersion = 5;
     defaults = {
-      ".GlobalPreferences" = {
+      .GlobalPreferences = {
         "com.apple.mouse.scaling" = -1.0;
       };
       ActivityMonitor = {
@@ -25,19 +26,19 @@
       };
       dock = {
         autohide = true;
-        "autohide-delay": 1000000;
-        "autohide-time-modifier": 0;
-        "expose-animation-duration" = 0;
+        autohide-delay = 1000000;
+        autohide-time-modifier = 0;
+        expose-animation-duration = 0;
         launchanim = false;
         mineffect = "scale";
-        "minimize-to-application" = true;
-        "mru-spaces" = false;
+        minimize-to-application = true;
+        mru-spaces = false;
         orientation = "left";
         persistent-apps = [];
         persistent-others = [];
-        "show-process-indicators" = false;
-        "show-recents" = false;
-        "static-only" = true;
+        show-process-indicators = false;
+        show-recents = false;
+        static-only = true;
         tilesize = 64;
         wvous-bl-corner = 1;
         wvous-br-corner = 1;
@@ -121,10 +122,10 @@
         PMPrintingExpandedStateForPrint2 = true;
       };
       screencapture = {
-        "disable-shadow" = true;
-        "include-date" = false;
+        disable-shadow = true;
+        include-date = false;
         location = "~/Downloads";
-        "show-thumbnail" = false;
+        show-thumbnail = false;
         type = "png";
       };
       screensaver = {
@@ -132,7 +133,7 @@
         askForPasswordDelay = 0;
       };
       SoftwareUpdate.AutomaticallyInstallMacOSUpdates = true;
-      "spaces.spans-displays" = false;
+      spaces.spans-displays = false;
       trackpad = {
         ActuationStrength = 0;
         Clicking = true;
@@ -170,56 +171,56 @@
           "Negotiated Bitpool Min" = 80;
         };
         "com.apple.TimeMachine" = {
-          "DoNotOfferNewDisksForBackup" = true;
+          DoNotOfferNewDisksForBackup = true;
         };
         "com.apple.DiskArbitration.diskarbitrationd" = {
-          "DADisableEjectNotification" = true;
+          DADisableEjectNotification = true;
         };
       };
       CustomUserPreferences = {
         "com.apple.Safari" = {
-          "AlwaysRestoreSessionAtLaunch" = false;
-          "AutoOpenSafeDownloads" = false;
-          "ShowStandaloneTabBar" = false;
-          "TabCreationPolicy" = 1;
-          "SearchProviderShortName" = "DuckDuckGo";
-          "PrivateSearchProviderShortName" = "DuckDuckGo";
-          "WBSLastPrivateSearchEngineStringExplicitlyChosenByUserKey" = "com.duckduckgo";
-          "UniversalSearchEnabled" = true;
-          "WarnAboutFraudulentWebsites" = true;
-          "BlockStoragePolicy" = 2;
-          "WBSPrivacyProxyAvailabilityTraffic" = 33422572;
-          "ShowFullURLInSmartSearchField" = true;
-          "NeverUseBackgroundColorInToolbar" = false;
-          "EnableEnhancedPrivacyInPrivateBrowsing" = true;
-          "EnableEnhancedPrivacyInRegularBrowsing" = true;
-          "ShowFavoritesBar-v2" = false;
-          "DebugSnapshotsUpdatePolicy" = 2;
-          "FindOnPageMatchesWordStartsOnly" = false;
-          "UniversalSearchEnabled" = false;
-          "SuppressSearchSuggestions" = true;
-          "WebContinuousSpellCheckingEnabled" = true;
-          "WebAutomaticSpellingCorrectionEnabled" = false;
-          "InstallExtensionUpdatesAutomatically" = true;
+          AlwaysRestoreSessionAtLaunch = false;
+          AutoOpenSafeDownloads = false;
+          ShowStandaloneTabBar = false;
+          TabCreationPolicy = 1;
+          SearchProviderShortName = "DuckDuckGo";
+          PrivateSearchProviderShortName = "DuckDuckGo";
+          WBSLastPrivateSearchEngineStringExplicitlyChosenByUserKey = "com.duckduckgo";
+          UniversalSearchEnabled = true;
+          WarnAboutFraudulentWebsites = true;
+          BlockStoragePolicy = 2;
+          WBSPrivacyProxyAvailabilityTraffic = 33422572;
+          ShowFullURLInSmartSearchField = true;
+          NeverUseBackgroundColorInToolbar = false;
+          EnableEnhancedPrivacyInPrivateBrowsing = true;
+          EnableEnhancedPrivacyInRegularBrowsing = true;
+          ShowFavoritesBar-v2 = false;
+          DebugSnapshotsUpdatePolicy = 2;
+          FindOnPageMatchesWordStartsOnly = false;
+          UniversalSearchEnabled = false;
+          SuppressSearchSuggestions = true;
+          WebContinuousSpellCheckingEnabled = true;
+          WebAutomaticSpellingCorrectionEnabled = false;
+          InstallExtensionUpdatesAutomatically = true;
         };
         "com.apple.messageshelper.MessageController" = {
-          "SOInputLineSettings" = {
-            "automaticEmojiSubstitutionEnablediMessage" = false;
-            "automaticQuoteSubstitutionEnabled" = false;
-            "continuousSpellCheckingEnabled" = false;
+          SOInputLineSettings = {
+            automaticEmojiSubstitutionEnablediMessage = false;
+            automaticQuoteSubstitutionEnabled = false;
+            continuousSpellCheckingEnabled = false;
           };
         };
         "com.apple.desktopservices" = {
-          "DSDontWriteNetworkStores" = true;
-          "DSDontWriteUSBStores" = true;
+          DSDontWriteNetworkStores = true;
+          DSDontWriteUSBStores = true;
         };
         "com.apple.frameworks.diskimages" = {
-          "skip-verify" = true;
-          "skip-verify-locked" = true;
-          "skip-verify-remote" = true;
+          skip-verify = true;
+          skip-verify-locked = true;
+          skip-verify-remote = true;
         };
         "com.apple.NetworkBrowser" = {
-          "BrowseAllInterfaces" = true;
+          BrowseAllInterfaces = true;
         };
       };
     };
@@ -229,4 +230,4 @@
     };
     startup.chime = false;
   };
-}
+};

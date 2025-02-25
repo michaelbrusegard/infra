@@ -5,10 +5,23 @@ let
   userPath = import ./users/${username};
 
   nixConfig = {
-    nixpkgs.config.allowUnfree = true;
-    nix.settings = {
-      auto-optimise-store = true;
-      trusted-users = [ "root" "${username}" ];
+    nix = {
+      daemonCPUSchedPolicy = "idle";
+      daemonIOSchedClass = "idle";
+      gc = {
+        automatic = true;
+        interval.Day = 7;
+        options = "--delete-older-than 30d";
+      };
+      settings = {
+        auto-optimise-store = true;
+        builders-use-substitutes = true;
+        extra-experimental-features = [ "flakes" "nix-command" ];
+      };
+    };
+    nixpkgs.config = {
+      allowUnfree = true;
+      allowBroken = true;
     };
   };
 
@@ -21,17 +34,20 @@ let
   };
 
   nixosConfig = {
-    networking.hostName = hostname;
-    users.users.${username} = {
-      isNormalUser = true;
-      home = "/home/${username}";
-      extraGroups = [ "wheel" "networkmanager" ];
+    nix.settings = {
+      allowed-users = ["@wheel"];
+      trusted-users = ["@wheel"];
     };
   };
 
   darwinConfig = {
-    networking.hostName = hostname;
-    networking.computerName = hostname;
+    nix = {
+      settings = {
+        allowed-users = ["@admin"];
+        trusted-users = ["@admin"];
+      };
+      linux-builder.enable = true;
+    };
   };
 
   commonArgs = {
@@ -49,13 +65,13 @@ in
 if builtins.match ".*-darwin" system != null
 then inputs.darwin.lib.darwinSystem (commonArgs // {
   modules = commonArgs.modules ++ [
-    darwinConfig
+    nixosConfig
     inputs.home-manager.darwinModules.default
   ];
 })
 else inputs.nixpkgs.lib.nixosSystem (commonArgs // {
   modules = commonArgs.modules ++ [
-    nixosConfig
+    darwinConfig
     inputs.home-manager.nixosModules.default
   ];
 })

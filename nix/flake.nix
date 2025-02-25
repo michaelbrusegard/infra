@@ -55,4 +55,4 @@
         else self.nixosConfigurations.${builtins.head (builtins.match "^([a-zA-Z0-9_-]+).*" (builtins.readFile "/etc/hostname"))}.config.system.build.toplevel
       );
     };
-}
+};
