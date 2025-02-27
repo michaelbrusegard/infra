@@ -57,7 +57,7 @@ services:
       - lazymc.server.directory=./vanilla
     tty: true
     stdin_open: true
-    restart: no
+    restart: unless-stopped
     environment:
       EULA: true
       MAX_MEMORY: 8g
@@ -116,7 +116,7 @@ services:
       - lazymc.server.directory=./creative
     tty: true
     stdin_open: true
-    restart: no
+    restart: unless-stopped
     environment:
       EULA: true
       MAX_MEMORY: 4g
@@ -175,7 +175,7 @@ services:
       - lazymc.server.directory=./revelation
     tty: true
     stdin_open: true
-    restart: no
+    restart: unless-stopped
     environment:
       EULA: true
       MAX_MEMORY: 8g
