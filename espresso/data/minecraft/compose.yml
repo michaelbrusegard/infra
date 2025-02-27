@@ -12,25 +12,10 @@ services:
     environment:
       MAPPING: |
         vanilla.eldians.com=lazymc:25565
-        creative.eldians.com=lazymc:25565
-        revelation.eldians.com=lazymc:25565
+        creative.eldians.com=lazymc:25566
+        revelation.eldians.com=lazymc:25567
     ports:
       - 25565:25565
-  backup:
-    image: itzg/mc-backup
-    networks:
-      minecraft-network:
-        ipv4_address: 172.28.0.3
-    restart: unless-stopped
-    environment:
-      BACKUP_INTERVAL: 2w
-      BACKUP_ON_STARTUP: false
-      PRUNE_BACKUPS_DAYS: 0
-      PAUSE_IF_NO_PLAYERS: true
-    volumes:
-      - ./data/vanilla:/data/vanilla:ro
-      - ./data/revelation:/data/revelation:ro
-      - ./backups:/backups
   lazymc:
     image: ghcr.io/joesturge/lazymc-docker-proxy:latest
     networks:
@@ -54,10 +39,9 @@ services:
       - lazymc.group=vanilla
       - lazymc.server.address=vanilla:25565
       - lazymc.port=25565
-      - lazymc.server.directory=./vanilla
+      - lazymc.server.directory=./data/vanilla
     tty: true
     stdin_open: true
-    restart: unless-stopped
     environment:
       EULA: true
       MAX_MEMORY: 8g
@@ -113,10 +97,9 @@ services:
       - lazymc.group=creative
       - lazymc.server.address=creative:25565
       - lazymc.port=25566
-      - lazymc.server.directory=./creative
+      - lazymc.server.directory=./data/creative
     tty: true
     stdin_open: true
-    restart: unless-stopped
     environment:
       EULA: true
       MAX_MEMORY: 4g
@@ -172,10 +155,9 @@ services:
       - lazymc.group=revelation
       - lazymc.server.address=revelation:25565
       - lazymc.port=25567
-      - lazymc.server.directory=./revelation
+      - lazymc.server.directory=./data/revelation
     tty: true
     stdin_open: true
-    restart: unless-stopped
     environment:
       EULA: true
       MAX_MEMORY: 8g
@@ -205,7 +187,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
 networks:
   minecraft-network:
-    driver: bridge    
+    driver: bridge
     ipam:
       config:
         - subnet: 172.28.0.0/16
