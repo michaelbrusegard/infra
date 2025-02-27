@@ -2,7 +2,7 @@ services:
   router: 
     image: itzg/mc-router
     depends_on:
-      - lacymc
+      - lazymc
     networks:
       minecraft-network:
         ipv4_address: 172.28.0.2
