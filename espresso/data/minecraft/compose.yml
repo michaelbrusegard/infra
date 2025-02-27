@@ -2,9 +2,7 @@ services:
   router: 
     image: itzg/mc-router
     depends_on:
-      - vanilla
-      - creative
-      - revelation
+      - lacymc
     networks:
       minecraft-network:
         ipv4_address: 172.28.0.2
@@ -31,6 +29,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
   vanilla:
     image: itzg/minecraft-server
+    restart: no
     networks:
       minecraft-network:
         ipv4_address: 172.28.0.5
@@ -39,7 +38,8 @@ services:
       - lazymc.group=vanilla
       - lazymc.server.address=vanilla:25565
       - lazymc.port=25565
-      - lazymc.server.directory=./data/vanilla
+      - lazymc.server.directory=/server/vanilla
+      - lazymc.public.version=1.21.4
     tty: true
     stdin_open: true
     environment:
@@ -89,6 +89,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
   creative:
     image: itzg/minecraft-server
+    restart: no
     networks:
       minecraft-network:
         ipv4_address: 172.28.0.6
@@ -97,7 +98,8 @@ services:
       - lazymc.group=creative
       - lazymc.server.address=creative:25565
       - lazymc.port=25566
-      - lazymc.server.directory=./data/creative
+      - lazymc.server.directory=/server/creative
+      - lazymc.public.version=1.21.4
     tty: true
     stdin_open: true
     environment:
@@ -147,6 +149,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
   revelation:
     image: itzg/minecraft-server:java8
+    restart: no
     networks:
       minecraft-network:
         ipv4_address: 172.28.0.7
@@ -155,7 +158,10 @@ services:
       - lazymc.group=revelation
       - lazymc.server.address=revelation:25565
       - lazymc.port=25567
-      - lazymc.server.directory=./data/revelation
+      - lazymc.server.directory=/server/revelation
+      - lazymc.public.version=1.12.2
+      - lazymc.server.forge=true
+      - lazymc.public.protocol=340
     tty: true
     stdin_open: true
     environment:
@@ -187,7 +193,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
 networks:
   minecraft-network:
-    driver: bridge
+    driver: bridge    
     ipam:
       config:
         - subnet: 172.28.0.0/16
