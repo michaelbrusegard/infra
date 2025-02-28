@@ -10,8 +10,8 @@ services:
     environment:
       MAPPING: |
         vanilla.eldians.com=lazymc:25565
-        creative.eldians.com=lazymc:25565
-        revelation.eldians.com=lazymc:25565
+        creative.eldians.com=lazymc:25566
+        revelation.eldians.com=lazymc:25567
     ports:
       - 25565:25565
   lazymc:
