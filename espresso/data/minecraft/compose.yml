@@ -56,7 +56,6 @@ services:
       GAMEMODE: survival
       FORCE_GAMEMODE: true
       DIFFICULTY: hard
-      RESOURCE_PACK_ENFORCE: true
       MAX_BUILD_HEIGHT: 320
       SPAWN_PROTECTION: 0
       VIEW_DISTANCE: 16
@@ -130,7 +129,6 @@ services:
       GAMEMODE: creative
       FORCE_GAMEMODE: false
       DIFFICULTY: hard
-      RESOURCE_PACK_ENFORCE: true
       MAX_BUILD_HEIGHT: 320
       SPAWN_PROTECTION: 0
       VIEW_DISTANCE: 16
