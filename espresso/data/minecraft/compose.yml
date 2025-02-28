@@ -95,6 +95,7 @@ services:
         worldedit:7.3.10-beta-01
         beacon-flight:1.1.0
         inventory-sorting:1.9.1-1.21.4
+        architectury-api:15.0.3+fabric
         rei:18.0.800+fabric
     volumes:
       - ./data/vanilla:/data
@@ -168,6 +169,7 @@ services:
         worldedit:7.3.10-beta-01
         beacon-flight:1.1.0
         inventory-sorting:1.9.1-1.21.4
+        architectury-api:15.0.3+fabric
         rei:18.0.800+fabric
     volumes:
       - ./data/creative:/data
