@@ -60,7 +60,8 @@ services:
       SPAWN_PROTECTION: 0
       VIEW_DISTANCE: 16
       SNOOPER_ENABLED: false
-      RESOURCE_PACK: https://www.dropbox.com/scl/fi/9nhikz6hfo19jetj3jvbn/VanillaTweaks_174c898.zip?rlkey=hxhvanfabhvz936scd0if2cg8&st=6ma1qolv&dl=1
+      RESOURCE_PACK: https://www.dropbox.com/scl/fi/ubdihzo3s0rq98xjimbp9/VanillaTweaks_5ac0ac1.zip?rlkey=hzvmvmgx0nbuskbiwn89lfu6h&st=i9zc87z6&dl=1
+      RESOURCE_PACK_SHA1: ce53e346107a50c3e8390f1b0b2612ab632a4ca3
       RESOURCE_PACK_ENFORCE: true
       ENABLE_WHITELIST: true
       WHITELIST: |
@@ -134,7 +135,8 @@ services:
       SPAWN_PROTECTION: 0
       VIEW_DISTANCE: 16
       SNOOPER_ENABLED: false
-      RESOURCE_PACK: https://www.dropbox.com/scl/fi/9nhikz6hfo19jetj3jvbn/VanillaTweaks_174c898.zip?rlkey=hxhvanfabhvz936scd0if2cg8&st=6ma1qolv&dl=1
+      RESOURCE_PACK: https://www.dropbox.com/scl/fi/ubdihzo3s0rq98xjimbp9/VanillaTweaks_5ac0ac1.zip?rlkey=hzvmvmgx0nbuskbiwn89lfu6h&st=i9zc87z6&dl=1
+      RESOURCE_PACK_SHA1: ce53e346107a50c3e8390f1b0b2612ab632a4ca3
       RESOURCE_PACK_ENFORCE: true
       ENABLE_WHITELIST: true
       WHITELIST: |
