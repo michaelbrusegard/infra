@@ -40,6 +40,7 @@ services:
       - lazymc.port=25565
       - lazymc.server.directory=/server/vanilla
       - lazymc.public.version=1.21.4
+      - lazymc.public.protocol=769
     tty: true
     stdin_open: true
     environment:
@@ -111,6 +112,7 @@ services:
       - lazymc.port=25566
       - lazymc.server.directory=/server/creative
       - lazymc.public.version=1.21.4
+      - lazymc.public.protocol=769
     tty: true
     stdin_open: true
     environment:
@@ -182,8 +184,8 @@ services:
       - lazymc.port=25567
       - lazymc.server.directory=/server/revelation
       - lazymc.public.version=1.12.2
-      - lazymc.server.forge=true
       - lazymc.public.protocol=340
+      - lazymc.server.forge=true
     tty: true
     stdin_open: true
     environment:
