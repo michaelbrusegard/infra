@@ -49,7 +49,7 @@ services:
       ENABLE_ROLLING_LOGS: true
       TYPE: FABRIC
       VERSION: 1.21.4
-      MOTD: §e§l§m--§8§l[§e< §6Welcome to §4§lEldians\!§e >§k§8§l]§e§l§m--§8§l[ §5%VERSION% §8§l]§e§l§m---------§r\n§e§l§m----§8§l[          §b§l- §6§lVANILLA §b§l-§8§l          ]§e§l§m----§8§l[§ke§k§8§l]§e§l§m--
+      MOTD: "§2⚔ Eldians Vanilla Server\n§7✦ 1.21.4"
       SEED: 3671431547008281909
       ENABLE_COMMAND_BLOCK: true
       GAMEMODE: survival
@@ -120,7 +120,7 @@ services:
       ENABLE_ROLLING_LOGS: true
       TYPE: FABRIC
       VERSION: 1.21.4
-      MOTD: §e§l§m--§8§l[§e< §6Welcome to §4§lEldians\!§e >§k§8§l]§e§l§m--§8§l[ §5%VERSION% §8§l]§e§l§m---------§r\n§e§l§m----§8§l[          §b§l- §6§lCREATIVE §b§l-§8§l         ]§e§l§m----§8§l[§ke§k§8§l]§e§l§m--
+      MOTD: "§6⚔ Eldians Creative Server\n§7✦ 1.21.4"
       SEED: 3671431547008281909
       ENABLE_COMMAND_BLOCK: true
       GAMEMODE: creative
@@ -194,7 +194,7 @@ services:
       TYPE: FTBA
       FTB_MODPACK_ID: 35 
       FTB_MODPACK_VERSION_ID: 12180
-      MOTD: §e§l§m--§8§l[§e< §6Welcome to §4§lEldians\!§e >§k§8§l]§e§l§m--§8§l[ §5%VERSION% §8§l]§e§l§m---------§r\n§e§l§m----§8§l[          §b§l- §6§lREVELATION §b§l-§8§l      ]§e§l§m----§8§l[§ke§k§8§l]§e§l§m--
+      MOTD: "§4⚔ Eldians Revelation Server\n§7✦ 1.12.2"
       SEED: 3671431547008281909
       ENABLE_COMMAND_BLOCK: true
       GAMEMODE: survival
