@@ -1,15 +1,17 @@
 services:
   router:
     image: itzg/mc-router
+    depends_on:
+      - lazymc
     networks:
       minecraft-network:
         ipv4_address: 172.28.0.2
     restart: unless-stopped
     environment:
       MAPPING: |
-        vanilla.eldians.com=vanilla:25565
-        creative.eldians.com=creative:25565
-        revelation.eldians.com=revelation:25565
+        vanilla.eldians.com=lazymc:25565
+        creative.eldians.com=lazymc:25565
+        revelation.eldians.com=lazymc:25565
     ports:
       - 25565:25565
   lazymc:
