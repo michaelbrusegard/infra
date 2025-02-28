@@ -66,21 +66,32 @@ services:
         Ker4lis
       VANILLATWEAKS_SHARECODE: 5BWcL0,f6EcuB,VcM0CD
       MODRINTH_PROJECTS: |
-        no-chat-reports:Fabric-1.21.4-v2.11.0
         fabric-api:0.112.2+1.21.4
         lithium:mc1.21.4-0.14.3-fabric
-        c2me-fabric:0.3.1+beta.2.0+1.21.4
         ferrite-core:7.1.1-fabric
+        c2me-fabric:0.3.1.2+rc.1.0+1.21.4
+        modernfix:5.20.3+mc1.21.4
+        krypton:0.2.8
+        noisium:2.5.0+mc1.21.4
+        no-chat-reports:Fabric-1.21.4-v2.11.0
         servux:0.5.0
+        carpet:1.4.161
+        carpet-extra:1.4.161
         collective:1.21.4-7.89-fabric+forge+neo
         quick-right-click:1.21.4-1.5-fabric+forge+neo
-        serene-seasons:10.4.0.0
-        snow-under-trees-remastered:2.6.0+1.21.4
+        glitchcore:2.3.0.4
+        serene-seasons:10.4.0.4
+        weather-watch:1.0.3.1
+        mru:1.0.8+1.21.3-fabric
+        snow-under-trees-remastered:2.7.0+1.21.4
         better-than-mending:2.2.3
         itemswapper:0.7.4
-        fsit:2.7.2+mc1.21.2
+        fabric-language-kotlin:1.13.1+kotlin.2.1.10
+        fsit:2.7.4+mc1.21.2
         weaponmaster:1.21.4+fabric+4.2.7
         worldedit:7.3.10-beta-01
+        beacon-flight:1.1.0
+        inventory-sorting:1.9.1-1.21.4
     volumes:
       - ./data/vanilla:/data
       - /etc/localtime:/etc/localtime:ro
@@ -126,21 +137,32 @@ services:
         Ker4lis
       VANILLATWEAKS_SHARECODE: 5BWcL0,f6EcuB,VcM0CD
       MODRINTH_PROJECTS: |
-        no-chat-reports:Fabric-1.21.4-v2.11.0
         fabric-api:0.112.2+1.21.4
         lithium:mc1.21.4-0.14.3-fabric
-        c2me-fabric:0.3.1+beta.2.0+1.21.4
         ferrite-core:7.1.1-fabric
+        c2me-fabric:0.3.1.2+rc.1.0+1.21.4
+        modernfix:5.20.3+mc1.21.4
+        krypton:0.2.8
+        noisium:2.5.0+mc1.21.4
+        no-chat-reports:Fabric-1.21.4-v2.11.0
         servux:0.5.0
+        carpet:1.4.161
+        carpet-extra:1.4.161
         collective:1.21.4-7.89-fabric+forge+neo
         quick-right-click:1.21.4-1.5-fabric+forge+neo
-        serene-seasons:10.4.0.0
-        snow-under-trees-remastered:2.6.0+1.21.4
+        glitchcore:2.3.0.4
+        serene-seasons:10.4.0.4
+        weather-watch:1.0.3.1
+        mru:1.0.8+1.21.3-fabric
+        snow-under-trees-remastered:2.7.0+1.21.4
         better-than-mending:2.2.3
         itemswapper:0.7.4
-        fsit:2.7.2+mc1.21.2
+        fabric-language-kotlin:1.13.1+kotlin.2.1.10
+        fsit:2.7.4+mc1.21.2
         weaponmaster:1.21.4+fabric+4.2.7
         worldedit:7.3.10-beta-01
+        beacon-flight:1.1.0
+        inventory-sorting:1.9.1-1.21.4
     volumes:
       - ./data/creative:/data
       - /etc/localtime:/etc/localtime:ro
