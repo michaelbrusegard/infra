@@ -61,10 +61,13 @@ services:
       SPAWN_PROTECTION: 0
       VIEW_DISTANCE: 16
       SNOOPER_ENABLED: false
+      RESOURCE_PACK: file:///server/resourcepacks/VanillaTweaks_174c898.zip
+      RESOURCE_PACK_ENFORCE: true
       ENABLE_WHITELIST: true
       WHITELIST: |
         Ker4lis
         Eccon
+      BROADCAST_CONSOLE_TO_OPS: false
       OPS: |
         Ker4lis
       VANILLATWEAKS_SHARECODE: 5BWcL0,f6EcuB,VcM0CD
@@ -93,6 +96,7 @@ services:
         worldedit:7.3.10-beta-01
         beacon-flight:1.1.0
         inventory-sorting:1.9.1-1.21.4
+        rei:18.0.800+fabric
     volumes:
       - ./data/vanilla:/data
       - /etc/localtime:/etc/localtime:ro
@@ -131,10 +135,13 @@ services:
       SPAWN_PROTECTION: 0
       VIEW_DISTANCE: 16
       SNOOPER_ENABLED: false
+      RESOURCE_PACK: file:///server/resourcepacks/VanillaTweaks_174c898.zip
+      RESOURCE_PACK_ENFORCE: true
       ENABLE_WHITELIST: true
       WHITELIST: |
         Ker4lis
         Eccon
+      BROADCAST_CONSOLE_TO_OPS: false
       OPS: |
         Ker4lis
       VANILLATWEAKS_SHARECODE: 5BWcL0,f6EcuB,VcM0CD
@@ -163,6 +170,7 @@ services:
         worldedit:7.3.10-beta-01
         beacon-flight:1.1.0
         inventory-sorting:1.9.1-1.21.4
+        rei:18.0.800+fabric
     volumes:
       - ./data/creative:/data
       - /etc/localtime:/etc/localtime:ro
@@ -205,6 +213,7 @@ services:
       WHITELIST: |
         Ker4lis
         Eccon
+      BROADCAST_CONSOLE_TO_OPS: false
       OPS: |
         Ker4lis
     volumes:
