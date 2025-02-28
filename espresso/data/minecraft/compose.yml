@@ -60,7 +60,7 @@ services:
       SPAWN_PROTECTION: 0
       VIEW_DISTANCE: 16
       SNOOPER_ENABLED: false
-      RESOURCE_PACK: file:/resourcepacks/VanillaTweaks_174c898.zip
+      RESOURCE_PACK: https://www.dropbox.com/scl/fi/9nhikz6hfo19jetj3jvbn/VanillaTweaks_174c898.zip?rlkey=hxhvanfabhvz936scd0if2cg8&st=6ma1qolv&dl=1
       RESOURCE_PACK_ENFORCE: true
       ENABLE_WHITELIST: true
       WHITELIST: |
@@ -134,7 +134,7 @@ services:
       SPAWN_PROTECTION: 0
       VIEW_DISTANCE: 16
       SNOOPER_ENABLED: false
-      RESOURCE_PACK: file:/resourcepacks/VanillaTweaks_174c898.zip
+      RESOURCE_PACK: https://www.dropbox.com/scl/fi/9nhikz6hfo19jetj3jvbn/VanillaTweaks_174c898.zip?rlkey=hxhvanfabhvz936scd0if2cg8&st=6ma1qolv&dl=1
       RESOURCE_PACK_ENFORCE: true
       ENABLE_WHITELIST: true
       WHITELIST: |
