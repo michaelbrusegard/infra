@@ -190,7 +190,7 @@ services:
       RCON_PASSWORD: minecraft
       ENABLE_ROLLING_LOGS: true
       TYPE: FTBA
-      FTB_MODPACK_ID: 35 
+      FTB_MODPACK_ID: 35
       FTB_MODPACK_VERSION_ID: 12180
       MOTD: "§4⚔ Eldians Revelation Server\n§7✦ 1.12.2"
       SEED: 3671431547008281909
