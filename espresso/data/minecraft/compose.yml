@@ -69,7 +69,7 @@ services:
       BROADCAST_CONSOLE_TO_OPS: false
       OPS: |
         Ker4lis
-      VANILLATWEAKS_SHARECODE: 5BWcL0,f6EcuB,VcM0CD
+      VANILLATWEAKS_SHARECODE: UYQbPj,f6EcuB,VcM0CD
       MODRINTH_PROJECTS: |
         fabric-api:0.112.2+1.21.4
         lithium:mc1.21.4-0.14.3-fabric
@@ -143,7 +143,7 @@ services:
       BROADCAST_CONSOLE_TO_OPS: false
       OPS: |
         Ker4lis
-      VANILLATWEAKS_SHARECODE: 5BWcL0,f6EcuB,VcM0CD
+      VANILLATWEAKS_SHARECODE: UYQbPj,f6EcuB,VcM0CD
       MODRINTH_PROJECTS: |
         fabric-api:0.112.2+1.21.4
         lithium:mc1.21.4-0.14.3-fabric
