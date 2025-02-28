@@ -1,5 +1,5 @@
-services: 
-  router: 
+services:
+  router:
     image: itzg/mc-router
     networks:
       minecraft-network:
@@ -12,19 +12,19 @@ services:
         revelation.eldians.com=revelation:25565
     ports:
       - 25565:25565
-  # lazymc:
-  #   image: ghcr.io/joesturge/lazymc-docker-proxy:latest
-  #   networks:
-  #     minecraft-network:
-  #       ipv4_address: 172.28.0.4
-  #   restart: unless-stopped
-  #   environment:
-  #     RUST_LOG: trace
-  #   volumes:
-  #     - ./data/vanilla:/server/vanilla:ro
-  #     - ./data/creative:/server/creative:ro
-  #     - ./data/revelation:/server/revelation:ro
-  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  lazymc:
+    image: ghcr.io/joesturge/lazymc-docker-proxy:latest
+    networks:
+      minecraft-network:
+        ipv4_address: 172.28.0.4
+    restart: unless-stopped
+    environment:
+      RUST_LOG: trace
+    volumes:
+      - ./data/vanilla:/server/vanilla:ro
+      - ./data/creative:/server/creative:ro
+      - ./data/revelation:/server/revelation:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
   vanilla:
     image: itzg/minecraft-server
     restart: no
@@ -213,7 +213,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
 networks:
   minecraft-network:
-    driver: bridge    
+    driver: bridge
     ipam:
       config:
         - subnet: 172.28.0.0/16
