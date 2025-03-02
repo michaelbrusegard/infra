@@ -83,6 +83,7 @@ services:
         servux:0.5.0
         carpet:1.4.161
         carpet-extra:1.4.161
+        carpet-tis-addition:v1.65.2-mc1.21.4
         collective:1.21.4-7.89-fabric+forge+neo
         quick-right-click:1.21.4-1.5-fabric+forge+neo
         weather-watch:1.0.3.1
@@ -158,6 +159,7 @@ services:
         servux:0.5.0
         carpet:1.4.161
         carpet-extra:1.4.161
+        carpet-tis-addition:v1.65.2-mc1.21.4
         collective:1.21.4-7.89-fabric+forge+neo
         quick-right-click:1.21.4-1.5-fabric+forge+neo
         weather-watch:1.0.3.1
