@@ -178,6 +178,10 @@
         };
       };
       CustomUserPreferences = {
+        NSGlobalDomain = {
+          AppleAccentColor = 5;
+          AppleHighlightColor = "0.968627 0.831373 1.000000 Purple";
+        };
         "com.apple.Safari" = {
           AlwaysRestoreSessionAtLaunch = false;
           AutoOpenSafeDownloads = false;

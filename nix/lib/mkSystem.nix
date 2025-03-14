@@ -1,7 +1,19 @@
 inputs:
 { system, username, hostname }:
 let
-  pkgs = inputs.nixpkgs.legacyPackages.${system};
+  {
+    nixpkgs,
+    nur,
+    darwin,
+    home-manager,
+    nixos-hardware,
+    apple-fonts,
+    catppuccin,
+    zen-browser,
+    ...
+  } = inputs;
+
+  pkgs = nixpkgs.legacyPackages.${system};
   hostPath = import ./hosts/${hostname};
   userPath = import ./users/${username};
 
@@ -139,7 +151,7 @@ let
       useGlobalPkgs = true;
       users.${username} = {
         imports = [
-          inputs.catppuccin.homeManagerModules.catppuccin
+          catppuccin.homeManagerModules.catppuccin
           userPath
         ];
       };
@@ -148,7 +160,20 @@ let
 
   commonArgs = {
     inherit system;
-    specialArgs = { inherit inputs pkgs username hostname; };
+    specialArgs = {
+      inherit
+        pkgs
+        username
+        hostname
+        nixpkgs
+        nur
+        darwin
+        home-manager
+        nixos-hardware
+        apple-fonts
+        catppuccin
+        zen-browser;
+    };
     modules = [
       nixConfig
       hostPath
@@ -158,17 +183,17 @@ let
 
 in
 if builtins.match ".*-darwin" system != null
-then inputs.darwin.lib.darwinSystem (commonArgs // {
+then darwin.lib.darwinSystem (commonArgs // {
   modules = [
-    inputs.home-manager.darwinModules.default
-    inputs.catppuccin.nixosModules.catppuccin
+    home-manager.darwinModules.default
+    catppuccin.nixosModules.catppuccin
     darwinConfig
   ] ++ commonArgs.modules;
 })
-else inputs.nixpkgs.lib.nixosSystem (commonArgs // {
+else nixpkgs.lib.nixosSystem (commonArgs // {
   modules = [
-    inputs.home-manager.nixosModules.default
-    inputs.catppuccin.nixosModules.catppuccin
+    home-manager.nixosModules.default
+    catppuccin.nixosModules.catppuccin
     nixosConfig
   ] ++ commonArgs.modules;
 });
