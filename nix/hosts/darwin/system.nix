@@ -226,6 +226,26 @@
         "com.apple.NetworkBrowser" = {
           BrowseAllInterfaces = true;
         };
+        "com.jordanbaird.Ice" = {
+          AutoRehide = true;
+          CanToggleAlwaysHiddenSection = true;
+          EnableAlwaysHiddenSection = true;
+          IceBarLocation = 0;
+          ItemSpacingOffset = 0.0;
+          RehideInterval = 15;
+          RehideStrategy = 0;
+          ShowAllSectionsOnUserDrag = true;
+          ShowIceIcon = true;
+          ShowOnClick = true;
+          ShowOnHover = false;
+          ShowOnHoverDelay = 0.2;
+          ShowOnScroll = true;
+          ShowSectionDividers = false;
+          TempShowInterval = 15;
+          UseIceBar = false;
+          SUAutomaticallyUpdate = false;
+          SUEnableAutomaticallyChecks = false;
+        };
       };
     };
     keyboard = {
