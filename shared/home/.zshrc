@@ -150,3 +150,6 @@ export PATH=$PATH:$ANDROID_HOME/emulator
 
 # bun completions
 [ -s "/Users/michaelbrusegard/.bun/_bun" ] && source "/Users/michaelbrusegard/.bun/_bun"
+export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+
+export PATH=$PATH:~/.cargo/bin

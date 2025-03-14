@@ -3,9 +3,9 @@ local wezterm = require('wezterm')
 return function(config)
   local resurrect = wezterm.plugin.require('https://github.com/MLFlexer/resurrect.wezterm')
 
-  resurrect.periodic_save()
+  resurrect.state_manager.periodic_save()
 
-  resurrect.set_encryption({
+  resurrect.state_manager.set_encryption({
     enable = true,
     method = '/opt/homebrew/bin/gpg',
     public_key = '6596A3ED40F6534894332DD2ECC513C0F9798B79',
@@ -13,7 +13,7 @@ return function(config)
 
   -- loads the state whenever I create a new workspace
   wezterm.on('smart_workspace_switcher.workspace_switcher.created', function(window, _, label)
-    resurrect.workspace_state.restore_workspace(resurrect.load_state(label, 'workspace'), {
+    resurrect.workspace_state.restore_workspace(resurrect.state_manager.load_state(label, 'workspace'), {
       window = window,
       relative = true,
       restore_text = true,
@@ -24,7 +24,7 @@ return function(config)
   -- Saves the state whenever I select a workspace
   wezterm.on('smart_workspace_switcher.workspace_switcher.selected', function()
     local workspace_state = resurrect.workspace_state
-    resurrect.save_state(workspace_state.get_workspace_state())
+    resurrect.state_manager.save_state(workspace_state.get_workspace_state())
   end)
 
   table.insert(config.keys, {
@@ -32,7 +32,7 @@ return function(config)
     mods = 'SHIFT|SUPER',
     action = wezterm.action.Multiple({
       wezterm.action_callback(function(window, pane)
-        resurrect.fuzzy_load(window, pane, function(id)
+        resurrect.fuzzy_loader.fuzzy_load(window, pane, function(id)
           id = string.match(id, '([^/]+)$')
           id = string.match(id, '(.+)%..+$')
           resurrect.workspace_state.restore_workspace(resurrect.load_state(id, 'workspace'), {
