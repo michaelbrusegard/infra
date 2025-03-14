@@ -1,7 +1,7 @@
 {
   inputs = import ./inputs.nix;
 
-  outputs = { self, nixpkgs, darwin, ... }@inputs:
+  outputs = { self, nixpkgs, ... }@inputs:
     let
       lib = import ./lib inputs;
 

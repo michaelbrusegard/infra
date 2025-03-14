@@ -1,4 +1,4 @@
 inputs:
 {
-  mkSystem = import ./mkSystem.nix inputs;
+  mkSystem = import ./mk-system.nix inputs;
 };
