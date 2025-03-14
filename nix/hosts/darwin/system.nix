@@ -1,4 +1,4 @@
-{ ... }: {
+{ username, ... }: {
   system = {
     stateVersion = 5;
     defaults = {
@@ -233,5 +233,9 @@
       nonUS.remapTilde = true;
     };
     startup.chime = false;
+    activationScripts.createLogsDir.text = ''
+      mkdir -p /Users/${username}/.logs
+      chown ${username} /Users/${username}/.logs
+    '';
   };
 };
