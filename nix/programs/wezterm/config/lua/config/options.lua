@@ -5,7 +5,7 @@ local function options(config)
   config.quit_when_all_windows_are_closed = true
 
   -- Don't adjust window size because of tiling window manager
-  config.adjust_window_size_when_changing_font_size = true
+  config.adjust_window_size_when_changing_font_size = false
 
   -- Use kitty keyboard protocol over csi-u
   config.enable_kitty_keyboard = true
@@ -19,12 +19,14 @@ local function options(config)
   config.max_fps = 120
   config.animation_fps = 120
 
+  -- Set color scheme
+  config.color_scheme = 'Catppuccin Mocha'
   config.colors = wezterm.color.get_builtin_schemes()['Catppuccin Mocha']
 
   -- Font style without ligatures
   config.font = require('wezterm').font_with_fallback({
     {
-      family = 'SF Mono Powerline',
+      family = 'SFMono Nerd Font',
       harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' },
     },
   })
@@ -43,7 +45,7 @@ local function options(config)
     bottom = 0,
   }
 
-  -- Disable dimming of inactive panes
+  -- Dimming of inactive panes
   config.inactive_pane_hsb = {
     saturation = 1.0,
     brightness = 0.9,
