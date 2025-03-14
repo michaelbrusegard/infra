@@ -11,7 +11,13 @@ let
       daemonIOSchedClass = "idle";
       gc = {
         automatic = true;
-        interval.Day = 7;
+        interval = [
+          {
+            Hour = 3;
+            Minute = 15;
+            Weekday = 7;
+          }
+        ];
         options = "--delete-older-than 30d";
       };
       settings = {
@@ -76,34 +82,11 @@ let
     };
     networking = {
       enableIPv6 = true;
-      firewall = {
-        enable = true;
-        allowPing = false;
-      };
+      firewall.enable = true;
     };
     boot = {
-      initrd = {
-        verbose = false;
-        systemd.enable = true;
-      };
-      loader = {
-        systemd-boot = {
-          enable = true;
-          configurationLimit = 10;
-          editor = false;
-        };
-        timeout = 0;
-      };
+      initrd.systemd.enable = true;
       tmp.cleanOnBoot = true;
-      kernel.sysctl = {
-        "kernel.dmesg_restrict" = 1;
-        "kernel.kptr_restrict" = 2;
-        "net.core.bpf_jit_harden" = 2;
-        "kernel.yama.ptrace_scope" = 1;
-        "net.ipv4.conf.all.rp_filter" = 1;
-        "net.ipv4.conf.default.rp_filter" = 1;
-        "net.ipv4.icmp_echo_ignore_broadcasts" = 1;
-      };
     };
     security = {
       sudo = {
@@ -112,22 +95,13 @@ let
         execWheelOnly = true;
       };
       protectKernelImage = true;
-      lockKernelModules = false;
       rtkit.enable = true;
       pam = {
         loginLimits = [
           { domain = "@wheel"; type = "hard"; item = "nofile"; value = "524288"; }
           { domain = "@wheel"; type = "soft"; item = "nofile"; value = "524288"; }
         ];
-        services = {
-          login.requireWheel = true;
-        };
-      };
-      auditd.enable = true;
-      audit.enable = true;
-      apparmor = {
-        enable = true;
-        killUnconfinedConfinables = true;
+        services.login.requireWheel = true;
       };
     };
   };
@@ -142,7 +116,6 @@ let
     };
     users.users.${username} = {
       home = "/Users/${username}";
-      shell = pkgs.zsh;
       extraGroups = [ "admin" ];
     };
     security = {
@@ -189,13 +162,13 @@ then inputs.darwin.lib.darwinSystem (commonArgs // {
   modules = [
     inputs.home-manager.darwinModules.default
     inputs.catppuccin.nixosModules.catppuccin
-    nixosConfig
+    darwinConfig
   ] ++ commonArgs.modules;
 })
 else inputs.nixpkgs.lib.nixosSystem (commonArgs // {
   modules = [
     inputs.home-manager.nixosModules.default
     inputs.catppuccin.nixosModules.catppuccin
-    darwinConfig
+    nixosConfig
   ] ++ commonArgs.modules;
 });

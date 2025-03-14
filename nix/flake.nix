@@ -48,11 +48,5 @@
           builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname"
             "PATH=/usr/bin:/usr/sbin:$PATH; scutil --get LocalHostName")))));
       };
-
-      defaultPackage = forAllSystems (system:
-        if builtins.match ".*-darwin" system != null
-        then self.darwinConfigurations."*".config.system.build.toplevel
-        else self.nixosConfigurations.${builtins.head (builtins.match "^([a-zA-Z0-9_-]+).*" (builtins.readFile "/etc/hostname"))}.config.system.build.toplevel
-      );
     };
 };
