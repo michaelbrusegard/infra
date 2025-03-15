@@ -1,9 +1,6 @@
 { ... }: {
   home.stateVersion = "25.05";
-  catppuccin = {
-    enable = true;
-    flavor = "mocha";
-  };
+  catppuccin.flavor = "mocha";
   modules = {
     programs = {
       browser.enable = true;

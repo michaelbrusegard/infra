@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, catppuccin, ... }:
 
 let
   cfg = config.modules.terminal.git;
@@ -92,6 +92,10 @@ in {
           quitOnTopLevelReturn = true;
           os.editPreset = "nvim-remote";
         };
+      };
+      catppuccin.lazygit = {
+        enable = true;
+        accent = "blue";
       };
     };
   };

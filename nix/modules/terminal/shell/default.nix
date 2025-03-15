@@ -69,6 +69,7 @@ in {
           ];
         };
       };
+      catppuccin.zsh-syntax-highlighting.enable = true;
       fd = {
         enable = true;
         hidden = true;
@@ -106,23 +107,10 @@ in {
           ];
         };
       };
+      catppuccin.bat.enable = true;
       fzf = {
         enable = true;
         enableZshIntegration = true;
-        colors = {
-          "bg+" = "${catppuccin.flavors.mocha.surface1}";
-          bg = "${catppuccin.flavors.mocha.base}";
-          spinner = "${catppuccin.flavors.mocha.rosewater}";
-          hl = "${catppuccin.flavors.mocha.red}";
-          fg = "${catppuccin.flavors.mocha.text}";
-          header = "${catppuccin.flavors.mocha.red}";
-          info = "${catppuccin.flavors.mocha.mauve}";
-          pointer = "${catppuccin.flavors.mocha.rosewater}";
-          marker = "${catppuccin.flavors.mocha.rosewater}";
-          "fg+" = "${catppuccin.flavors.mocha.text}";
-          prompt = "${catppuccin.flavors.mocha.mauve}";
-          "hl+" = "${catppuccin.flavors.mocha.red}";
-        };
         defaultCommand = "fd --hidden --strip-cwd-prefix --exclude .git --exclude .DS_Store";
         fileWidgetCommand = "fd --hidden --strip-cwd-prefix --exclude .git --exclude .DS_Store";
         fileWidgetOptions = [
@@ -132,6 +120,10 @@ in {
           "--sort"
           "--exact"
         ];
+      };
+      catppuccin.fzf = {
+        enable = true;
+        accent = "mauve";
       };
       thefuck = {
         enable = true;
