@@ -53,6 +53,7 @@ in {
           cat = "bat";
           docker = "podman";
           docker-compose = "podman-compose";
+          lzd = "lazygit";
         };
         antidote = {
           enable = true;
