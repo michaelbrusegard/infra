@@ -1,9 +1,7 @@
-{ ... }: {
-  imports = [
-    ./programs/zen-browser
-    ./terminal/git
-    ./terminal/neovim
-    ./terminal/shell
-    ./terminal/wezterm
-  ];
-};
+{ utils, ... }:
+
+{
+  imports =
+    utils.importDirsFrom ./programs ++
+    utils.importDirsFrom ./terminal;
+}

@@ -3,7 +3,7 @@
 
   outputs = { self, nixpkgs, ... }@inputs:
     let
-      lib = import ./lib inputs;
+      utils = import ./utils inputs;
 
       forAllSystems = nixpkgs.lib.genAttrs [
         "x86_64-linux"
@@ -16,32 +16,32 @@
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
 
       nixosConfigurations = {
-        desktop = lib.mkSystem {
+        desktop = utils.mkSystem {
           system = "x86_64-linux";
           username = "michaelbrusegard";
           hostname = "desktop";
         };
 
-        wsl = lib.mkSystem {
+        wsl = utils.mkSystem {
           system = "x86_64-linux";
           username = "michaelbrusegard";
           hostname = "wsl";
         };
 
-        espresso = lib.mkSystem {
+        espresso = utils.mkSystem {
           system = "x86_64-linux";
           username = "sysadmin";
           hostname = "espresso";
         };
 
-        leggero = lib.mkSystem {
+        leggero = utils.mkSystem {
           system = "aarch64-linux";
           username = "sysadmin";
           hostname = "leggero";
         };
       };
 
-      darwinConfigurations."*" = lib.mkSystem {
+      darwinConfigurations."*" = utils.mkSystem {
         system = builtins.currentSystem or "aarch64-darwin";
         username = "michaelbrusegard";
         hostname = builtins.substring 0 (-1) (builtins.readFile (builtins.toFile "hostname" (

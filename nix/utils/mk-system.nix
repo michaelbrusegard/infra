@@ -1,14 +1,9 @@
-{ nixpkgs
-, nur
-, darwin
-, home-manager
-, nixos-hardware
-, apple-fonts
-, catppuccin
-, zen-browser
-}:
+inputs@{ nixpkgs, catppuccin, darwin, home-manager, ... }:
 { system, username, hostname }:
+let
   pkgs = nixpkgs.legacyPackages.${system};
+
+  utils = import ../utils inputs;
 
   commonModules = [
     catppuccin.nixosModules.catppuccin
@@ -20,19 +15,8 @@
   commonArgs = {
     inherit system;
     specialArgs = {
-      inherit
-        pkgs
-        system
-        username
-        hostname
-        nixpkgs
-        nur
-        darwin
-        home-manager
-        nixos-hardware
-        apple-fonts
-        catppuccin
-        zen-browser;
+      inherit pkgs system username hostname utils;
+      inherit (inputs) nixpkgs nur darwin home-manager nixos-hardware apple-fonts catppuccin zen-browser;
     };
   };
 
