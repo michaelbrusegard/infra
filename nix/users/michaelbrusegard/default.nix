@@ -6,7 +6,7 @@
   };
   modules = {
     programs = {
-      zenBrowser.enable = true;
+      browser.enable = true;
     };
     terminal = {
       git.enable = true;

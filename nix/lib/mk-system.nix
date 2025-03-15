@@ -22,6 +22,7 @@
     specialArgs = {
       inherit
         pkgs
+        system
         username
         hostname
         nixpkgs
