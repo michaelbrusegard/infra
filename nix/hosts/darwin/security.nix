@@ -1,5 +1,5 @@
 { ... }: {
     security.sudo.extraConfig = ''
-      %admin ALL=(root) NOPASSWD: ${pkgs.kanata}/bin/kanata" --cfg ${cfg.configPath} --nodelay
+      %admin ALL=(root) NOPASSWD: ${pkgs.kanata}/bin/kanata" --cfg ./kanata.kbd --nodelay
     '';
 };

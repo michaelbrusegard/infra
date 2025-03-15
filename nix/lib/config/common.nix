@@ -1,4 +1,4 @@
-{ pkgs, username, hostname }:
+{ pkgs, username, hostname, ... }:
 {
   nix = {
     daemonCPUSchedPolicy = "idle";

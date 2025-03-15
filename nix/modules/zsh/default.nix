@@ -42,6 +42,8 @@
         "-" = "cd -";
         ls = "eza";
         cat = "bat";
+        docker = "podman";
+        docker-compose = "podman-compose";
       };
       antidote = {
         enable = true;
@@ -51,7 +53,8 @@
           "getantidote/use-omz"
           "ohmyzsh/ohmyzsh path:lib"
           "ohmyzsh/ohmyzsh path:plugins/git"
-          "ohmyzsh/ohmyzsh path:plugins/podman"
+          "ohmyzsh/ohmyzsh path:plugins/docker"
+          "ohmyzsh/ohmyzsh path:plugins/docker-compose"
           "ohmyzsh/ohmyzsh path:plugins/gradle"
         ]
       };

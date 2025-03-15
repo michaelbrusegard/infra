@@ -3,8 +3,9 @@
   catppuccin.flavor = "mocha";
   catppuccin.enable = true;
   imports = [
-    ../../programs/shell
     ../../programs/git
+    ../../programs/zsh
+    ../../programs/yazi
     ../../programs/neovim
     ../../programs/wezterm
     ../../programs/zen-browser

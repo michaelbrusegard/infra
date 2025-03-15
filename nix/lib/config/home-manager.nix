@@ -1,4 +1,4 @@
-{ pkgs, username, userPath, catppuccin }:
+{ pkgs, username, catppuccin, ... }:
 {
   home-manager = {
     useUserPackages = true;
@@ -6,7 +6,8 @@
     users.${username} = {
       imports = [
         catppuccin.homeManagerModules.catppuccin
-        userPath
+        ../modules
+        ../users/${username}
       ];
     };
   };
