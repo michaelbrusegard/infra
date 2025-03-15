@@ -12,7 +12,7 @@
         left_padding = 12;
         right_padding = 12;
         window_gap = 6;
-        insert_feedback_color = "0xFFAF52DE";
+        insert_feedback_color = "0xFF007AFF";
       };
       extraConfig = ''
         # Space labels
