@@ -3,7 +3,7 @@ return {
     'LazyVim/LazyVim',
     version = false,
     opts = {
-      colorscheme = 'rose-pine',
+      colorscheme = 'catppuccin-mocha',
     },
   },
   { 'folke/lazy.nvim', version = false },
