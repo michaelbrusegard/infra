@@ -1,5 +1,8 @@
-{ pkgs, username, ... }:
+{ pkgs, username, home-manager, ... }:
 {
+  imports = [
+    home-manager.nixosModules.default
+  ];
   nix.settings = {
     allowed-users = ["@wheel"];
     trusted-users = ["@wheel"];

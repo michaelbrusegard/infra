@@ -1,5 +1,8 @@
-{ pkgs, username, ... }:
+{ pkgs, username, home-manager, ... }:
 {
+  imports = [
+    home-manager.darwinModules.default
+  ];
   nix = {
     settings = {
       allowed-users = ["@admin"];

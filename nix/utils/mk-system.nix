@@ -1,12 +1,11 @@
-inputs@{ nixpkgs, catppuccin, darwin, home-manager, ... }:
+inputs:
 { system, username, hostname }:
 let
-  pkgs = nixpkgs.legacyPackages.${system};
+  pkgs = inputs.nixpkgs.legacyPackages.${system};
 
   utils = import ../utils inputs;
 
   commonModules = [
-    catppuccin.nixosModules.catppuccin
     ./config/common.nix
     ../hosts/${hostname}
     ./config/home-manager.nix
@@ -16,7 +15,7 @@ let
     inherit system;
     specialArgs = {
       inherit pkgs system username hostname utils;
-      inherit (inputs) nixpkgs nur darwin home-manager nixos-hardware apple-fonts catppuccin zen-browser;
+      inherit (inputs) nixpkgs darwin home-manager nixos-hardware nur apple-fonts catppuccin zen-browser yazi;
     };
   };
 
@@ -24,16 +23,14 @@ let
 
 in
 if isDarwin then
-  darwin.lib.darwinSystem (commonArgs // {
+  inputs.darwin.lib.darwinSystem (commonArgs // {
     modules = [
-      home-manager.darwinModules.default
       ./config/darwin.nix
     ] ++ commonModules;
   })
 else
-  nixpkgs.lib.nixosSystem (commonArgs // {
+  inputs.nixpkgs.lib.nixosSystem (commonArgs // {
     modules = [
-      home-manager.nixosModules.default
       ./config/nixos.nix
     ] ++ commonModules;
   });

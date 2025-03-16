@@ -34,7 +34,7 @@ in {
         containersForce = true;
         extensions = {
           force = true;
-          packages = with nur.repos.rycee.firefox-addons; [
+          packages = with pkgs.nur.repos.rycee.firefox-addons; [
             ublock-origin
             sponsorblock
             youtube-shorts-block

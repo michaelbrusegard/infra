@@ -51,8 +51,6 @@ in {
           "-" = "cd -";
           ls = "eza";
           cat = "bat";
-          docker = "podman";
-          docker-compose = "podman-compose";
           lzd = "lazygit";
         };
         antidote = {
@@ -125,6 +123,7 @@ in {
         enable = true;
         accent = "mauve";
       };
+      ripgrep.enable = true;
       thefuck = {
         enable = true;
         enableZshIntegration = true;
