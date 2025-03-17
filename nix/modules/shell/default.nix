@@ -132,6 +132,7 @@ in {
     };
     home.sessionPath = [
       "$HOME/.local/bin"
+      "$HOME/bin"
     ];
   };
 }
