@@ -4,6 +4,15 @@ let
   cfg = config.modules.terminal.ssh;
 
   useKeychain = if isDarwin then "UseKeychain yes" else "";
+
+  wakeonlan = pkgs.writeShellScriptBin "wakeonlan" ''
+    ${lib.concatStrings (lib.mapAttrsToList (name: host: ''
+      if [ "$1" = "${name}" ]; then
+        exec ${pkgs.wakeonlan}/bin/wakeonlan -i ${host.ip} -p ${host.port} ${host.mac}
+      fi
+    '') secrets.wol)}
+    exec ${pkgs.wakeonlan}/bin/wakeonlan "$@"
+  '';
 in {
   options.modules.terminal.ssh = {
     enable = lib.mkEnableOption "SSH configuration";
@@ -91,5 +100,6 @@ in {
             ${useKeychain}
       '';
     };
+    home.packages = [ wakeonlan ];
   };
 }

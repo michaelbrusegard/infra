@@ -33,4 +33,16 @@
       port = "";
     };
   };
+  wol = {
+    desktop = {
+      ip = "";
+      mac = "";
+      port = "";
+    };
+    espresso = {
+      ip = "";
+      mac = "";
+      port = "";
+    };
+  };
 }
