@@ -4,6 +4,8 @@ let
   pkgs = inputs.nixpkgs.legacyPackages.${system};
 
   utils = import ../utils inputs;
+  secrets = import ../secrets.nix;
+  isDarwin = builtins.match ".*-darwin" system != null;
 
   commonModules = [
     ./config/common.nix
@@ -14,12 +16,10 @@ let
   commonArgs = {
     inherit system;
     specialArgs = {
-      inherit pkgs system username hostname utils;
+      inherit pkgs system username hostname utils secrets isDarwin;
       inherit (inputs) nixpkgs darwin home-manager nixos-hardware nur apple-fonts catppuccin zen-browser yazi;
     };
   };
-
-  isDarwin = builtins.match ".*-darwin" system != null;
 
 in
 if isDarwin then
