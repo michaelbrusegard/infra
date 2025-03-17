@@ -3,15 +3,17 @@
 let
   cfg = config.modules.cli;
 in {
-  options.modules.cli.enable = lib.mkEnableOption "CLI configuration";
+  options.modules.cli.enable = lib.mkEnableOption "CLI applications";
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
+      coreutils
+      curl
       wget
       file
       ffmpeg
       imagemagick
-      sevenzip
+      p7zip
       rsync
       chafa
     ];

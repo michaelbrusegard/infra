@@ -1,6 +1,21 @@
 { ... }: {
   homebrew = {
     enable = true;
+    caskArgs.no_quarantine = true;
+    global.brewfile = true;
+    casks = [
+      jordanbaird-ice
+      element
+      altserver
+      legcord
+      microsoft-outlook
+      obsidian
+      proton-mail
+      proton-pass
+      protonvpn
+      proton-drive
+      zen-browser
+    ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
       "Wipr" = 1662217862;

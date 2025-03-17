@@ -5,6 +5,7 @@
     cli.enable = true;
     dev.enable = true;
     git.enable = true;
+    gui.enable = true;
     mpv.enable = true;
     neovim.enable = true;
     pentest.enable = true;

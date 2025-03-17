@@ -1,4 +1,4 @@
-{ config, lib, pkgs, zen-browser, system, username, nur, ... }:
+{ config, lib, pkgs, zen-browser, system, username, nur, isDarwin, ... }:
 
 let
   cfg = config.modules.browser;
@@ -8,7 +8,13 @@ in {
   config = lib.mkIf cfg.enable {
     programs.firefox = {
       enable = true;
-      package = zen-browser.packages.${system}.default;
+      package = if isDarwin then
+        pkgs.runCommand "zen-browser-wrapper" {} ''
+          mkdir -p $out/bin
+          ln -s "/Applications/Zen Browser.app/Contents/MacOS/zen" $out/bin/firefox
+        ''
+      else
+    zen-browser.packages.${system}.default;
       languagePacks = [ "en-GB" ];
         DefaultDownloadDirectory = "$HOME/Downloads";
       profiles.${username} = {

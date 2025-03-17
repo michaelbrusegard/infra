@@ -220,7 +220,6 @@ in {
       hexyl
       poppler
       mediainfo
-      transmission
     ];
     catppuccin.yazi = {
       enable = true;
