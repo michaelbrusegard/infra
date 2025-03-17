@@ -130,5 +130,8 @@ in {
       jq.enable = true;
       fastfetch.enable = true;
     };
+    home.sessionPath = [
+      "$HOME/.local/bin"
+    ];
   };
 }

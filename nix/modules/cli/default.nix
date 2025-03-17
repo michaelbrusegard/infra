@@ -7,10 +7,11 @@ in {
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
+      wget
       file
       ffmpeg
       imagemagick
-      p7zip
+      sevenzip
       rsync
       chafa
     ];
