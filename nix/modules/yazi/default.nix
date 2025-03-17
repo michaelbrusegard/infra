@@ -1,7 +1,7 @@
 { config, lib, pkgs, catppuccin ... }:
 
 let
-  cfg = config.modules.terminal.yazi;
+  cfg = config.modules.yazi;
   yazi-plugins = pkgs.fetchFromGitHub {
     owner = "yazi-rs";
     repo = "plugins";
@@ -58,9 +58,7 @@ let
     rev = "e06c47f7fc7a1c679e3935b45013108dadd09c96";
   };
 in {
-  options.modules.terminal.yazi = {
-    enable = lib.mkEnableOption "Yazi configuration";
-  };
+  options.modules.yazi.enable = lib.mkEnableOption "Yazi configuration";
 
   config = lib.mkIf cfg.enable {
     programs.yazi = {

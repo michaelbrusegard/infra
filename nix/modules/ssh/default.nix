@@ -1,7 +1,7 @@
 { config, lib, pkgs, isDarwin, secrets, ... }:
 
 let
-  cfg = config.modules.terminal.ssh;
+  cfg = config.modules.ssh;
 
   useKeychain = if isDarwin then "UseKeychain yes" else "";
 
@@ -14,9 +14,7 @@ let
     exec ${pkgs.wakeonlan}/bin/wakeonlan "$@"
   '';
 in {
-  options.modules.terminal.ssh = {
-    enable = lib.mkEnableOption "SSH configuration";
-  };
+  options.modules.ssh.enable = lib.mkEnableOption "SSH configuration";
 
   config = lib.mkIf cfg.enable {
     services.ssh-agent.enable = true;

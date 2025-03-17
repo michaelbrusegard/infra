@@ -1,11 +1,9 @@
 { config, lib, pkgs, catppuccin, ... }:
 
 let
-  cfg = config.modules.terminal.silicon;
+  cfg = config.modules.silicon;
 in {
-  options.modules.terminal.silicon = {
-    enable = lib.mkEnableOption "Silicon configuration";
-  };
+  options.modules.silicon.enable = lib.mkEnableOption "Silicon configuration";
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [

@@ -1,11 +1,9 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.modules.terminal.neovim;
+  cfg = config.modules.neovim;
 in {
-  options.modules.terminal.neovim = {
-    enable = lib.mkEnableOption "Neovim configuration";
-  };
+  options.modules.neovim.enable = lib.mkEnableOption "Neovim configuration";
 
   config = lib.mkIf cfg.enable {
     programs.neovim = {

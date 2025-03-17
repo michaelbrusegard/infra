@@ -1,11 +1,9 @@
 { config, lib, pkgs, zen-browser, system, username, nur, ... }:
 
 let
-  cfg = config.modules.programs.browser;
+  cfg = config.modules.browser;
 in {
-  options.modules.programs.browser = {
-    enable = lib.mkEnableOption "Browser configuration";
-  };
+  options.modules.browser.enable = lib.mkEnableOption "Browser configuration";
 
   config = lib.mkIf cfg.enable {
     programs.firefox = {

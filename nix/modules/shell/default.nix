@@ -1,11 +1,9 @@
 { config, lib, pkgs, catppuccin, ... }:
 
 let
-  cfg = config.modules.terminal.shell;
+  cfg = config.modules.shell;
 in {
-  options.modules.terminal.shell = {
-    enable = lib.mkEnableOption "Shell configuration";
-  };
+  options.modules.shell.enable = lib.mkEnableOption "Shell configuration";
 
   config = lib.mkIf cfg.enable {
     programs = {

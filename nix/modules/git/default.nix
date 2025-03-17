@@ -1,11 +1,9 @@
 { config, lib, pkgs, catppuccin, ... }:
 
 let
-  cfg = config.modules.terminal.git;
+  cfg = config.modules.git;
 in {
-  options.modules.terminal.git = {
-    enable = lib.mkEnableOption "git configuration";
-  };
+  options.modules.git.enable = lib.mkEnableOption "git configuration";
 
   config = lib.mkIf cfg.enable {
     programs = {
@@ -66,6 +64,7 @@ in {
           "node_modules"
         ];
       };
+      catppuccin.delta.enable = true;
       lazygit = {
         enable = true;
         settings = {
