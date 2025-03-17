@@ -12,6 +12,7 @@ in {
       imagemagick
       p7zip
       rsync
+      chafa
     ];
   };
 }

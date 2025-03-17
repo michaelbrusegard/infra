@@ -4,6 +4,7 @@
     browser.enable = true;
     cli.enable = true;
     git.enable = true;
+    mpv.enable = true;
     neovim.enable = true;
     shell.enable = true;
     silicon.enable = true;

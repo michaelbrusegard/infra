@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, catppuccin, ... }:
 
 let
   cfg = config.modules.neovim;
@@ -15,6 +15,7 @@ in {
       withPython3 = true;
       withNodeJs = true;
     };
+    catppuccin.nvim.enable = true;
     xdg.configFile."nvim" = {
       source = ./config;
       recursive = true;
