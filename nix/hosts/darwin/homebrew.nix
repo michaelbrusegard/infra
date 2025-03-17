@@ -4,7 +4,6 @@
     caskArgs.no_quarantine = true;
     global.brewfile = true;
     casks = [
-      jordanbaird-ice
       element
       altserver
       legcord

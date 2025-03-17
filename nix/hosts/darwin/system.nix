@@ -249,9 +249,21 @@
       nonUS.remapTilde = true;
     };
     startup.chime = false;
-    activationScripts.createLogsDir.text = ''
-      mkdir -p /Users/${username}/.logs
-      chown ${username} /Users/${username}/.logs
-    '';
+    activationScripts = {
+      createLogsDir.text = ''
+        mkdir -p /Users/${username}/.logs
+        chown ${username} /Users/${username}/.logs
+      '';
+      podmanDockerCompat.text = ''
+          mkdir -p ~/.config/containers
+          echo "[engine]
+      compatible = true" > ~/.config/containers/containers.conf
+          mkdir -p ~/bin
+          ln -sf ${pkgs.podman}/bin/podman ~/bin/docker
+          mkdir -p ~/.local/share/containers/podman/machine
+          mkdir -p ~/.docker
+          ln -sf ~/.local/share/containers/podman/machine/podman.sock ~/.docker/docker.sock
+        '';
+    };
   };
 };
