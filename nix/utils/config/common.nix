@@ -1,4 +1,4 @@
-{ pkgs, username, hostname, catppuccin, nur, yazi, ... }:
+{ pkgs, username, hostname, secrets, catppuccin, nur, yazi, ... }:
 {
   imports = [
     catppuccin.nixosModules.catppuccin
@@ -51,5 +51,6 @@
   users.users.${username} = {
     name = username;
     shell = pkgs.zsh;
+    hashedPassword = secrets.users.${username}.hashedPassword;
   };
 }

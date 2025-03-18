@@ -1,4 +1,12 @@
 {
+  users = {
+    michaelbrusegard = {
+      hashedPassword = "";
+    };
+    sysadmin = {
+      hashedPassword = "";
+    };
+  };
   ssh = {
     desktop = {
       hostName = "";
