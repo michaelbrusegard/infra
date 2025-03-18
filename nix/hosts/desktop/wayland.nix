@@ -4,7 +4,11 @@
     xwayland.enable = true;
     package = hyprland.packages.${system}.hyprland;
     settings = {
-      exec-once = [ "waybar" ];
+      exec-once = [ 
+        "waybar"
+        "wl-paste --type text --watch cliphist store"
+        "wl-paste --type image --watch cliphist store"
+      ];
       general = {
           border_size = 0;
           gaps_in = 6;
@@ -104,6 +108,7 @@
         "alt, return, exec, wezterm"
         "alt shift, return, exec, wezterm -e sh -c 'yazi'"
         "super, space, exec, rofi -show drun"
+        "super shift, v, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
         "shift, q, killactive,"
         "super shift, 1, exec, hyprlock"
       ];

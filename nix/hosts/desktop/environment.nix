@@ -3,6 +3,7 @@
     systemPackages = with pkgs; [
       qemu
       wl-clipboard
+      cliphist
       rofi-wayland
       mako
       libnotify
