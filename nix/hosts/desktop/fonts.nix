@@ -1,4 +1,4 @@
-{ pkgs, apple-fonts, ... }: {
+{ pkgs, apple-fonts, apple-emoji-linux, ... }: {
   fonts = {
     packages = with pkgs; [
       apple-fonts.packages.${pkgs.system}.sf-pro
