@@ -13,6 +13,7 @@
     ./system.nix
     ./systemd.nix
     ./virtualisation.nix
+    ./wayland.nix
     ./xdg.nix
   ];
 };

@@ -119,7 +119,7 @@ in {
       };
       catppuccin.fzf = {
         enable = true;
-        accent = "mauve";
+        accent = "blue";
       };
       ripgrep.enable = true;
       thefuck = {
