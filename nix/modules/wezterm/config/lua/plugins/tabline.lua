@@ -45,4 +45,5 @@ return function(config)
       'presentation',
     },
   })
+  tabline.apply_to_config(config)
 end

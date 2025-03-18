@@ -19,6 +19,7 @@ local function options(config)
   config.max_fps = 120
   config.animation_fps = 120
 
+  config.color_scheme = 'Catppuccin Mocha'
   config.colors = wezterm.color.get_builtin_schemes()['Catppuccin Mocha']
 
   -- Font style without ligatures

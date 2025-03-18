@@ -17,6 +17,7 @@ in {
       p7zip
       rsync
       chafa
+      presenterm
     ];
   };
 }
