@@ -4,10 +4,10 @@
       qemu
       wl-clipboard
       cliphist
-      rofi-wayland
       mako
       libnotify
       swww
+      playerctl
     ];
     sessionVariables = {
       WLR_NO_HARDWARE_CURSORS = "1";

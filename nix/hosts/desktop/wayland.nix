@@ -1,4 +1,4 @@
-{ catppuccin, hyprland, ... }: {
+{ hyprland, ... }: {
   wayland.windowManager.hyprland = {
     enable = true;
     xwayland.enable = true;
@@ -10,11 +10,11 @@
         "wl-paste --type image --watch cliphist store"
       ];
       general = {
-          border_size = 0;
-          gaps_in = 6;
-          gaps_out = 12;
-          resize_on_border = true;
-          no_focus_fallback = true;
+        border_size = 0;
+        gaps_in = 6;
+        gaps_out = 12;
+        resize_on_border = true;
+        no_focus_fallback = true;
       };
       decoration = {
         rounding = 10;
@@ -116,6 +116,12 @@
         "alt, mouse:272, movewindow"
         "alt, mouse:273, resizewindow"
       ];
+      bindl = [
+        ", XF86AudioNext, exec, playerctl next"
+        ", XF86AudioPause, exec, playerctl play-pause"
+        ", XF86AudioPlay, exec, playerctl play-pause"
+        ", XF86AudioPrev, exec, playerctl previous"
+      ];
       windowrulev2 = [
         "workspace 2, class:^(Zen Browser)$"
         "workspace 3, class:^(Proton Mail)$"
@@ -126,9 +132,5 @@
         "workspace 7, class:^(Resolve)$"
       ];
     };
-  };
-  catppuccin.hyprland = {
-    enable = true;
-    accent = "blue";
   };
 };
