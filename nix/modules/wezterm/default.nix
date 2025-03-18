@@ -10,10 +10,7 @@ in {
       enable = true;
       enableZshIntegration = true;
     };
-
-    xdg.configFile."wezterm" = {
-      source = ./config;
-      recursive = true;
-    };
+    xdg.configFile."wezterm".source =
+      config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/wezterm/config";
   };
 }

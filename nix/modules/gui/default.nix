@@ -21,6 +21,7 @@ in {
       protonmail-desktop
       proton-pass
       protonvpn-gui
+      davinci-resolve
     ]);
   };
 }
