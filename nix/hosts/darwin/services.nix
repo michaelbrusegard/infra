@@ -16,29 +16,18 @@
         insert_feedback_color = "0xFF007AFF";
       };
       extraConfig = ''
-        # Space labels
-        yabai -m space 1 --label Code
-        yabai -m space 2 --label Web
-        yabai -m space 3 --label Mail
-        yabai -m space 4 --label Notes
-        yabai -m space 5 --label Social
-        yabai -m space 6 --label Media
-        yabai -m space 7 --label Creative
-        yabai -m space 8 --label "General 1"
-        yabai -m space 9 --label "General 2"
-
         # Space layout settings
-        yabai -m config --space Mail layout stack
-        yabai -m config --space "General 2" layout float
+        yabai -m config --space 3 layout stack
+        yabai -m config --space 9 layout float
 
         # Application rules
         yabai -m rule --add app="^(Calculator|System Settings|Archive Utility)$" manage=off
-        yabai -m rule --add app="^(Safari|Zen Browser)$" space=Web
-        yabai -m rule --add app="^(Proton Mail)$" space=Mail
-        yabai -m rule --add app="^(Messages|FaceTime|Element|Messenger|Legcord|Slack)$" space=Social
-        yabai -m rule --add app="^(Notes|Obsidian)$" space=Notes
-        yabai -m rule --add app="^(Music|TV|Photos)$" space=Media
-        yabai -m rule --add app="^(Affinity Photo 2|Affinity Designer 2|Affinity Publisher 2)$" space=Creative
+        yabai -m rule --add app="^(Safari|Zen Browser)$" space=2
+        yabai -m rule --add app="^(Proton Mail)$" space=3
+        yabai -m rule --add app="^(Notes|Obsidian)$" space=4
+        yabai -m rule --add app="^(Messages|FaceTime|Element|Messenger|Legcord|Slack)$" space=5
+        yabai -m rule --add app="^(Music|TV|Photos)$" space=6
+        yabai -m rule --add app="^(Affinity Photo 2|Affinity Designer 2|Affinity Publisher 2)$" space=7
 
         # Make sure there are 9 spaces
         current_spaces=$(yabai -m query --spaces | jq length)
@@ -76,10 +65,10 @@
         alt + shift - k : yabai -m window --swap north
 
         # Resize window
-        ctrl + alt - h : yabai -m window --resize left:-50:0 || yabai -m window --resize right:-50:0
-        ctrl + alt - j : yabai -m window --resize bottom:0:50
-        ctrl + alt - k : yabai -m window --resize top:0:-50 || yabai -m window --resize bottom:0:-50
-        ctrl + alt - l : yabai -m window --resize right:50:0
+        alt + ctrl - h : yabai -m window --resize left:-50:0 || yabai -m window --resize right:-50:0
+        alt + ctrl - j : yabai -m window --resize bottom:0:50
+        alt + ctrl - k : yabai -m window --resize top:0:-50 || yabai -m window --resize bottom:0:-50
+        alt + ctrl - l : yabai -m window --resize right:50:0
 
         # Switch to specific space
         alt - 1 : yabai -m space --focus 1 || yabai -m space --focus recent
