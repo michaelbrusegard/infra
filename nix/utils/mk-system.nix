@@ -17,7 +17,7 @@ let
     inherit system;
     specialArgs = {
       inherit pkgs system username hostname utils secrets isDarwin;
-      inherit (inputs) nixpkgs darwin home-manager nixos-hardware nur apple-fonts catppuccin zen-browser yazi;
+      inherit (inputs) nixpkgs darwin home-manager nixos-hardware nur apple-fonts apple-emoji-linux catppuccin zen-browser yazi;
     };
   };
 
