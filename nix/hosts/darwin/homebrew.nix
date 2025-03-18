@@ -14,6 +14,7 @@
       protonvpn
       proton-drive
       zen-browser
+      riscv-tools
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
