@@ -6,6 +6,7 @@
       rofi-wayland
       mako
       libnotify
+      swww
     ];
     sessionVariables = {
       WLR_NO_HARDWARE_CURSORS = "1";
