@@ -49,4 +49,4 @@
             "PATH=/usr/bin:/usr/sbin:$PATH; scutil --get LocalHostName")))));
       };
     };
-};
+}

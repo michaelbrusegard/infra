@@ -22,4 +22,4 @@
   catppuccin.url = "github:catppuccin/nix";
   zen-browser.url = "github:youwen5/zen-browser-flake";
   yazi.url = "github:sxyazi/yazi";
-};
+}
