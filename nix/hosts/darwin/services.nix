@@ -100,5 +100,13 @@
         alt - slash : yabai -m space --layout stack
       '';
     };
+    yankyborders = {
+      enable = true;
+      hidpi = true;
+      style = "round";
+      activeColor = "0xFF007AFF";
+      inactiveColor = "0xff45475a";
+      width = 5;
+    };
   };
 };

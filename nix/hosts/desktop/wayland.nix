@@ -15,6 +15,9 @@
         gaps_out = 12;
         resize_on_border = true;
         no_focus_fallback = true;
+        col.active_border = "0xFF007AFF";
+        col.inactive_border = "0xff45475a";
+        border_size = 5;
       };
       decoration = {
         rounding = 10;

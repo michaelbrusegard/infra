@@ -75,3 +75,5 @@ if [[ $spaces_to_delete -gt 0 ]]; then
         yabai -m space --destroy $last_space_id
     done
 fi
+
+borders active_color=0xff89b4fa inactive_color=0xff45475a width=5 hidpi=on &
