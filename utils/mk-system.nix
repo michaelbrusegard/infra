@@ -33,4 +33,4 @@ in
       modules = [
         ./config/nixos.nix
       ] ++ commonModules;
-    });
+    })

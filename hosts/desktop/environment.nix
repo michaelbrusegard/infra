@@ -22,5 +22,5 @@
       QT_QPA_PLATFORM = "wayland";
       XDG_SCREENSHOTS_DIR = "$HOME/Pictures/Screenshots";
     };
-  }
+  };
 }
