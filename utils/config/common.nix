@@ -35,7 +35,7 @@
       allowUnfree = true;
       allowBroken = true;
     };
-    overlays = [ nur.overlay yazi.overlays.default ];
+    overlays = [ nur.overlays.default yazi.overlays.default ];
   };
   networking = {
     computerName = hostname;
