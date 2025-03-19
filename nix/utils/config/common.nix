@@ -1,4 +1,4 @@
-{ pkgs, username, hostname, secrets, catppuccin, nur, yazi, ... }:
+{ pkgs, system, username, hostname, secrets, catppuccin, nur, yazi, ... }:
 {
   imports = [
     catppuccin.nixosModules.catppuccin
@@ -30,6 +30,7 @@
     };
   };
   nixpkgs = {
+    hostPlatform = system;
     config = {
       allowUnfree = true;
       allowBroken = true;

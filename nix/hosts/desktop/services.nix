@@ -15,5 +15,6 @@
         support32Bit = true;
       };
     };
+    xserver.xkb.layout = "us";
   };
 };
