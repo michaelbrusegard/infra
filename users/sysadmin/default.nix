@@ -8,4 +8,4 @@
     wezterm.enable = true;
     yazi.enable = true;
   };
-};
+}

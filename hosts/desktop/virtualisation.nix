@@ -5,4 +5,4 @@
     dockerSocket.enable = true;
     autoPrune.enable = true;
   };
-};
+}

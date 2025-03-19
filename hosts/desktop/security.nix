@@ -2,4 +2,4 @@
   security = {
     rtkit.enable = true;
   };
-};
+}

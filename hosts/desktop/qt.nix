@@ -4,4 +4,4 @@
     platformTheme = "gtk2";
     style.name = "adwaita-dark";
   };
-};
+}

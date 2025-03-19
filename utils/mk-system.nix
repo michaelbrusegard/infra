@@ -22,15 +22,15 @@ let
   };
 
 in
-if isDarwin then
-  inputs.darwin.lib.darwinSystem (commonArgs // {
-    modules = [
-      ./config/darwin.nix
-    ] ++ commonModules;
-  })
-else
-  inputs.nixpkgs.lib.nixosSystem (commonArgs // {
-    modules = [
-      ./config/nixos.nix
-    ] ++ commonModules;
-  });
+  if isDarwin then
+    inputs.darwin.lib.darwinSystem (commonArgs // {
+      modules = [
+        ./config/darwin.nix
+      ] ++ commonModules;
+    })
+  else
+    inputs.nixpkgs.lib.nixosSystem (commonArgs // {
+      modules = [
+        ./config/nixos.nix
+      ] ++ commonModules;
+    });

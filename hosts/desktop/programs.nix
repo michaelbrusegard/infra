@@ -196,4 +196,4 @@
     catppuccin.rofi.enable = true;
     yubikey-touch-detector.enable = true;
   };
-};
+}

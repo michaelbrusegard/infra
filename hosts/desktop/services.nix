@@ -17,4 +17,4 @@
     };
     xserver.xkb.layout = "us";
   };
-};
+}

@@ -13,4 +13,4 @@
     sounds.enable = true;
     mimeApps.enable = true;
   };
-};
+}

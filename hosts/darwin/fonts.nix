@@ -5,4 +5,4 @@
     apple-fonts.packages.${system}.sf-pro-nerd
     apple-fonts.packages.${system}.sf-mono-nerd
   ];
-};
+}

@@ -20,4 +20,4 @@
     ./wayland.nix
     ./xdg.nix
   ];
-};
+}

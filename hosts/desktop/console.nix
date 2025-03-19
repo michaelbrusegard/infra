@@ -22,4 +22,4 @@
       "${catppuccin.flavors.mocha.crust}"
     ];
   };
-};
+}

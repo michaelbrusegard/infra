@@ -23,4 +23,4 @@
       XDG_SCREENSHOTS_DIR = "$HOME/Pictures/Screenshots";
     };
   }
-};
+}

@@ -16,4 +16,4 @@
     xdg.enable = true;
     yazi.enable = true;
   };
-};
+}

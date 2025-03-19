@@ -10,4 +10,4 @@
     dhcpcd.enable = true;
     wireguard.enable = true;
   };
-};
+}

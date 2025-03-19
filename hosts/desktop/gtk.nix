@@ -17,4 +17,4 @@
     size = "compact";
     tweaks = [ "rimless" ];
   };
-};
+}

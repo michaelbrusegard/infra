@@ -24,4 +24,4 @@
     };
     enableDefaultPackages = false;
   };
-};
+}
