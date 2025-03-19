@@ -8,6 +8,7 @@
     ./location.nix
     ./networking.nix
     ./programs.nix
+    ./qt.nix
     ./security.nix
     ./services.nix
     ./system.nix

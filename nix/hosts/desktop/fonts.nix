@@ -1,11 +1,11 @@
-{ pkgs, apple-fonts, apple-emoji-linux, ... }: {
+{ pkgs, system, apple-fonts, apple-emoji-linux, ... }: {
   fonts = {
     packages = with pkgs; [
-      apple-fonts.packages.${pkgs.system}.sf-pro
-      apple-fonts.packages.${pkgs.system}.sf-mono
-      apple-fonts.packages.${pkgs.system}.sf-pro-nerd
-      apple-fonts.packages.${pkgs.system}.sf-mono-nerd
-      apple-emoji-linux.packages.${pkgs.system}.default
+      apple-fonts.packages.${system}.sf-pro
+      apple-fonts.packages.${system}.sf-mono
+      apple-fonts.packages.${system}.sf-pro-nerd
+      apple-fonts.packages.${system}.sf-mono-nerd
+      apple-emoji-linux.packages.${system}.default
       corefonts
       helvetica-neue-lt-std
       inter
