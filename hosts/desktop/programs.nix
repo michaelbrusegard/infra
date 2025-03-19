@@ -1,4 +1,4 @@
-{ config, pkgs, system, hyprland, catppuccin, ... }: {
+{ config, pkgs, syste, hyprland, ... }: {
   programs = {
     hyprland = {
       enable = true;

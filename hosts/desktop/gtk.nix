@@ -1,4 +1,4 @@
-{ system, catppuccin, apple-fonts, ... }: {
+{ system, apple-fonts, ... }: {
   gtk = {
     enable = true;
     iconCache.enable = true;

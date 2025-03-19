@@ -1,4 +1,4 @@
-{ pkgs, catppuccin, ... }: {
+{ pkgs, ... }: {
   environment = {
     systemPackages = with pkgs; [
       qemu
