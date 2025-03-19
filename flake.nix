@@ -13,10 +13,7 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixos-hardware = {
-      url = "github:NixOS/nixos-hardware";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixos-hardware.url = "github:NixOS/nixos-hardware";
     apple-emoji-linux.url = "github:samuelngs/apple-emoji-linux";
     apple-fonts.url = "github:Lyndeno/apple-fonts.nix";
     hyprland.url = "github:hyprwm/Hyprland";
