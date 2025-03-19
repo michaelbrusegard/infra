@@ -1,4 +1,5 @@
 local wezterm = require('wezterm')
+local utf8 = require('utf8')
 
 local function keybinds(config)
   -- Disable default bindings
@@ -23,10 +24,10 @@ local function keybinds(config)
 		{ key = "j", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action.ActivatePaneDirection("Down"), utf8.char(0xe1)) },
 		{ key = "k", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action.ActivatePaneDirection("Up"), utf8.char(0xe2)) },
 		{ key = "l", mods = "SUPER", action = require('util.keybinds').nvim_action(wezterm.action.ActivatePaneDirection("Right"), utf8.char(0xe3)) },
-		{ key = "h", mods = "CTRL|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.AdjustPaneSize({ "Left", 3 }), utf8.char(0xe4)) },
-		{ key = "j", mods = "CTRL|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.AdjustPaneSize({ "Down", 3 }), utf8.char(0xe5)) },
-		{ key = "k", mods = "CTRL|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.AdjustPaneSize({ "Up", 3 }), utf8.char(0xe6)) },
-		{ key = "l", mods = "CTRL|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.AdjustPaneSize({ "Right", 3 }), utf8.char(0xe7)) },
+		{ key = "h", mods = "CTRL|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.AdjustPaneSize({ "Left", 3 }), utf8.char(0xf4)) },
+		{ key = "j", mods = "CTRL|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.AdjustPaneSize({ "Down", 3 }), utf8.char(0xf5)) },
+		{ key = "k", mods = "CTRL|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.AdjustPaneSize({ "Up", 3 }), utf8.char(0xf6)) },
+		{ key = "l", mods = "CTRL|SUPER", action = require('util.keybinds').nvim_action(wezterm.action.AdjustPaneSize({ "Right", 3 }), utf8.char(0xf7)) },
 
 		-- Move pane
 		{ key = "0", mods = "SUPER", action = wezterm.action.PaneSelect({ mode = "SwapWithActiveKeepFocus" }) },

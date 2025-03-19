@@ -51,25 +51,25 @@ vim.keymap.set(
 -- Resize window using ctrl + super + hjkl keys
 vim.keymap.set(
   { 'i', 'x', 'n', 's' },
-  '<Char-0xe4>',
+  '<Char-0xf4>',
   "<cmd>lua require('smart-splits').resize_left()<cr>",
   { silent = true }
 )
 vim.keymap.set(
   { 'i', 'x', 'n', 's' },
-  '<Char-0xe5>',
+  '<Char-0xf5>',
   "<cmd>lua require('smart-splits').resize_down()<cr>",
   { silent = true }
 )
 vim.keymap.set(
   { 'i', 'x', 'n', 's' },
-  '<Char-0xe6>',
+  '<Char-0xf6>',
   "<cmd>lua require('smart-splits').resize_up()<cr>",
   { silent = true }
 )
 vim.keymap.set(
   { 'i', 'x', 'n', 's' },
-  '<Char-0xe7>',
+  '<Char-0xf7>',
   "<cmd>lua require('smart-splits').resize_right()<cr>",
   { silent = true }
 )
