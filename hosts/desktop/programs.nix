@@ -35,7 +35,7 @@
             };
             halign = "center";
             valign = "center";
-          },
+          }
           {
             text = "cmd[update:1000] date '+%H:%M'";
             color = "rgba(255, 255, 255, 1.0)";
@@ -47,7 +47,7 @@
             };
             halign = "center";
             valign = "center";
-          },
+          }
         ];
         input-field = [
           {

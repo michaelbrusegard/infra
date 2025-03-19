@@ -10,14 +10,13 @@
         "wl-paste --type image --watch cliphist store"
       ];
       general = {
-        border_size = 0;
+        border_size = 5;
         gaps_in = 6;
         gaps_out = 12;
         resize_on_border = true;
         no_focus_fallback = true;
         col.active_border = "0xFF007AFF";
         col.inactive_border = "0xff45475a";
-        border_size = 5;
       };
       decoration = {
         rounding = 10;
