@@ -112,7 +112,7 @@
         "alt shift, return, exec, wezterm -e sh -c 'yazi'"
         "super, space, exec, rofi -show drun"
         "super shift, v, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
-        "shift, q, killactive,"
+        "super, q, killactive,"
         "super shift, 1, exec, hyprlock"
       ];
       bindm = [

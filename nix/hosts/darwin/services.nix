@@ -98,6 +98,12 @@
         # Change between tiled and stacked layout for space
         alt - comma : yabai -m space --layout bsp
         alt - slash : yabai -m space --layout stack
+
+        # System
+        alt - return : open -a WezTerm
+        alt + shift - return : open -a WezTerm --args -e sh -c 'yazi'
+        super - space : open -a "Raycast" || open -a "Spotlight"
+        super - q : yabai -m window --close
       '';
     };
     yankyborders = {
