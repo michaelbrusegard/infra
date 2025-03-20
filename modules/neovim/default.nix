@@ -14,6 +14,7 @@ in {
       vimdiffAlias = true;
       withPython3 = true;
       withNodeJs = true;
+      withRuby = true;
     };
     catppuccin.nvim.enable = true;
     xdg.configFile."nvim".source =
