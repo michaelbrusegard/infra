@@ -7,10 +7,6 @@
     allowed-users = ["@wheel"];
     trusted-users = ["@wheel"];
   };
-  system.switch = {
-    enable = false;
-    enableNg = true;
-  };
   users.users.${username} = {
     isNormalUser = true;
     home = "/home/${username}";
