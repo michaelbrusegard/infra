@@ -1,5 +1,4 @@
 { ... }: {
-  home.stateVersion = "25.05";
   modules = {
     cli.enable = true;
     git.enable = true;

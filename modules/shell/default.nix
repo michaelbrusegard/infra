@@ -35,26 +35,6 @@ in {
           searchUpKey = "^P";
           searchDownKey = "^N";
         };
-        shellAliases = {
-          rebuild = if isDarwin then
-            "darwin-rebuild switch --flake ~/Developer/dotfiles#${config.networking.hostName}"
-          else
-            "sudo nixos-rebuild switch --flake ~/Developer/dotfiles#${config.networking.hostName}";
-          reload = "source ~/.zshrc";
-          dl = "cd ~/Downloads";
-          dt = "cd ~/Desktop";
-          dc = "cd ~/Documents";
-          dp = "cd ~/Developer";
-          ".." = "cd ..";
-          "..." = "cd ../..";
-          "...." = "cd ../../..";
-          "....." = "cd ../../../..";
-          "......" = "cd ../../../../..";
-          "-" = "cd -";
-          ls = "eza";
-          cat = "bat";
-          lzd = "lazygit";
-        };
         antidote = {
           enable = true;
           useFriendlyNames = true;
@@ -128,10 +108,6 @@ in {
       jq.enable = true;
       fastfetch.enable = true;
     };
-    home.sessionPath = [
-      "$HOME/.local/bin"
-      "$HOME/bin"
-    ];
     catppuccin = {
       zsh-syntax-highlighting.enable = true;
       bat.enable = true;

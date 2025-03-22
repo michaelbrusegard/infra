@@ -1,5 +1,4 @@
 { isDarwin, ... }: {
-  home.stateVersion = "25.05";
   modules = {
     browser.enable = true;
     cli.enable = true;
