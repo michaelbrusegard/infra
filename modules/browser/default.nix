@@ -17,7 +17,9 @@ in {
         else
           zen-browser.packages.${system}.default;
         languagePacks = [ "en-GB" ];
-        DefaultDownloadDirectory = "$HOME/Downloads";
+        policies = {
+          DefaultDownloadDirectory = "$HOME/Downloads";
+        };
         profiles.${username} = {
           containers = {
             personal = {
