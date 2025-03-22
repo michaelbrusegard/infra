@@ -6,8 +6,8 @@
     users.${username} = {
       imports = [
         catppuccin.homeManagerModules.catppuccin
-        ../modules
-        ../users/${username}
+        ../../modules
+        ../../users/${username}
       ];
     };
   };
