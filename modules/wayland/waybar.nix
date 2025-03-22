@@ -25,7 +25,7 @@ in {
           };
         };
       };
-      style = {};
+      style = '''';
     };
     catppuccin.waybar = {
       enable = true;
