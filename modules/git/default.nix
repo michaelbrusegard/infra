@@ -44,9 +44,6 @@ in {
           diff = {
             colorMoved = "default";
           };
-          interactive = {
-            diffFilter = "delta --color-only";
-          };
         };
         delta = {
           enable = true;

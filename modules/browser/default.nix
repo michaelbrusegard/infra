@@ -141,13 +141,13 @@ in {
                 updateInterval = 24 * 60 * 60 * 1000;
                 definedAliases = ["@d"];
               };
-              "Google".metaData.hidden = true;
+              "google".metaData.hidden = true;
               "bing".metaData.hidden = true;
-              "Amazon.com".metaData.hidden = true;
+              "amazondotcom-us".metaData.hidden = true;
               "ddg".metaData.hidden = true;
-              "eBay".metaData.hidden = true;
-              "Wikipedia".metaData.hidden = true;
-              "YouTube".metaData.hidden = true;
+              "ebay".metaData.hidden = true;
+              "wikipedia".metaData.hidden = true;
+              "youtube".metaData.hidden = true;
             };
           };
           userChrome = ''
