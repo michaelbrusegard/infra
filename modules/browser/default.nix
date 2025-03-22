@@ -142,9 +142,9 @@ in {
                 definedAliases = ["@d"];
               };
               "Google".metaData.hidden = true;
-              "Bing".metaData.hidden = true;
+              "bing".metaData.hidden = true;
               "Amazon.com".metaData.hidden = true;
-              "DuckDuckGo".metaData.hidden = true;
+              "ddg".metaData.hidden = true;
               "eBay".metaData.hidden = true;
               "Wikipedia".metaData.hidden = true;
               "YouTube".metaData.hidden = true;
