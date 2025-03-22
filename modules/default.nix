@@ -1,5 +1,7 @@
-{ utils, ... }:
-
+{ ... }:
+let
+  importDirs = import ../utils/import-dirs.nix;
+in
 {
-  imports = utils.importDirs ./.;
+  imports = importDirs ./.;
 }

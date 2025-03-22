@@ -8,7 +8,7 @@ let
   commonModules = [
     ./config/common.nix
     ../hosts/${hostname}
-    # ./config/home-manager.nix
+    ./config/home-manager.nix
   ];
 
   commonArgs = {
