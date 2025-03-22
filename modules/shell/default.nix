@@ -69,7 +69,6 @@ in {
           ];
         };
       };
-      catppuccin.zsh-syntax-highlighting.enable = true;
       fd = {
         enable = true;
         hidden = true;
@@ -107,7 +106,6 @@ in {
           ];
         };
       };
-      catppuccin.bat.enable = true;
       fzf = {
         enable = true;
         enableZshIntegration = true;
@@ -120,10 +118,6 @@ in {
           "--sort"
           "--exact"
         ];
-      };
-      catppuccin.fzf = {
-        enable = true;
-        accent = "blue";
       };
       ripgrep.enable = true;
       thefuck = {
@@ -138,5 +132,13 @@ in {
       "$HOME/.local/bin"
       "$HOME/bin"
     ];
+    catppuccin = {
+      zsh-syntax-highlighting.enable = true;
+      bat.enable = true;
+      fzf = {
+        enable = true;
+        accent = "blue";
+      };
+    };
   };
 }

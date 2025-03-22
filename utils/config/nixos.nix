@@ -3,9 +3,13 @@
   imports = [
     home-manager.nixosModules.default
   ];
-  nix.settings = {
-    allowed-users = ["@wheel"];
-    trusted-users = ["@wheel"];
+  nix = {
+    daemonCPUSchedPolicy = "idle";
+    daemonIOSchedClass = "idle";
+    settings = {
+      allowed-users = ["@wheel"];
+      trusted-users = ["@wheel"];
+    };
   };
   users.users.${username} = {
     isNormalUser = true;

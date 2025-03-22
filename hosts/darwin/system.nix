@@ -124,7 +124,7 @@
       screencapture = {
         disable-shadow = true;
         include-date = false;
-        location = "~/Pictures/Screenshots";
+        location = "~/Pictures/screenshots";
         show-thumbnail = false;
         type = "png";
       };

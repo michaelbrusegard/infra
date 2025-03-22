@@ -1,4 +1,4 @@
-{ config, lib, pkgs, catppuccin, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.modules.mpv;

@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, isDarwin, ... }:
 
 let
   cfg = config.modules.xdg;
@@ -21,8 +21,12 @@ in {
         videos = "$HOME/Videos";
         extraConfig = {
           XDG_PROJECTS_DIR = "$HOME/Developer";
+          XDG_SCREENSHOTS_DIR = "$HOME/Pictures/screenshots";  # Add it here
         };
       };
+      mimeApps.enable = !isDarwin;
+      icons.enable = !isDarwin;
+      autostart.enable = !isDarwin;
     };
   };
 }

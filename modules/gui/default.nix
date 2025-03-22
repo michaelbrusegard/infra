@@ -13,6 +13,7 @@ in {
     ] 
     ++ (lib.optionals isDarwin [
       raycast
+      ice-bar
     ])
     ++ (lib.optionals (!isDarwin) [
       element-desktop

@@ -1,4 +1,4 @@
-{ ... }: {
+{ isDarwin, ... }: {
   home.stateVersion = "25.05";
   modules = {
     browser.enable = true;
@@ -6,6 +6,7 @@
     dev.enable = true;
     git.enable = true;
     gui.enable = true;
+    hyprland.enable = !isDarwin;
     mpv.enable = true;
     neovim.enable = true;
     pentest.enable = true;

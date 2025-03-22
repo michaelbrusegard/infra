@@ -4,8 +4,6 @@
     catppuccin.nixosModules.catppuccin
   ];
   nix = {
-    daemonCPUSchedPolicy = "idle";
-    daemonIOSchedClass = "idle";
     gc = {
       automatic = true;
       dates = "weekly";
@@ -38,9 +36,7 @@
     overlays = [ nur.overlays.default yazi.overlays.default ];
   };
   networking = {
-    computerName = hostname;
     hostName = hostname;
-    localHostName = hostname;
     dns = [
       "1.1.1.1"
       "1.0.0.1"

@@ -1,4 +1,4 @@
-{ config, lib, pkgs, catppuccin, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.modules.git;
@@ -64,7 +64,6 @@ in {
           "node_modules"
         ];
       };
-      catppuccin.delta.enable = true;
       lazygit = {
         enable = true;
         settings = {
@@ -92,14 +91,17 @@ in {
           os.editPreset = "nvim-remote";
         };
       };
-      catppuccin.lazygit = {
-        enable = true;
-        accent = "blue";
-      };
     };
     home.packages = with pkgs; [
       git-filter-repo
       git-lfs
     ];
+    catppuccin = {
+      delta.enable = true;
+      lazygit = {
+        enable = true;
+        accent = "blue";
+      };
+    };
   };
 }

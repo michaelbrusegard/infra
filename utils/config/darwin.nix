@@ -10,6 +10,10 @@
     };
     linux-builder.enable = true;
   };
+  networking = {
+    computerName = hostname;
+    localHostName = hostname;
+  };
   users.users.${username} = {
     home = "/Users/${username}";
     extraGroups = [ "admin" ];
