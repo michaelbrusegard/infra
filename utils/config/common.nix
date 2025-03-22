@@ -32,6 +32,20 @@
     config = {
       allowUnfree = true;
       allowBroken = true;
+      permittedInsecurePackages = [
+        "yazi-plugins"
+        "glow.yazi"
+        "miller.yazi"
+        "hexyl.yazi"
+        "mediainfo.yazi"
+        "eza-preview.yazi"
+        "torrent-preview.yazi"
+        "relative-motions.yazi"
+        "rsync.yazi"
+        "lazygit.yazi"
+        "augment-command.yazi"
+        "yaziline.yazi"
+      ];
     };
     overlays = [ nur.overlays.default yazi.overlays.default ];
   };
