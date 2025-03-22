@@ -5,7 +5,7 @@
     dev.enable = true;
     git.enable = true;
     gui.enable = true;
-    hyprland.enable = !isDarwin;
+    wayland.enable = !isDarwin;
     mpv.enable = true;
     neovim.enable = true;
     pentest.enable = true;
