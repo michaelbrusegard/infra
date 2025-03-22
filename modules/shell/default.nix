@@ -92,7 +92,7 @@ in {
         defaultCommand = "fd --hidden --strip-cwd-prefix --exclude .git --exclude .DS_Store";
         fileWidgetCommand = "fd --hidden --strip-cwd-prefix --exclude .git --exclude .DS_Store";
         fileWidgetOptions = [
-          "--preview 'if [ -d {} ]; then eza --tree --color=always {} | head -200; elif file --mime-type {} | grep -q \"image/\"; then chafa -f iterm -s ${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES} {}; else bat -n --color=always --line-range :500 {}; fi'"
+          "--preview 'if [ -d {} ]; then eza --tree --color=always {} | head -200; elif file --mime-type {} | grep -q \"image/\"; then chafa -f iterm -s \${FZF_PREVIEW_COLUMNS}x\${FZF_PREVIEW_LINES} {}; else bat -n --color=always --line-range :500 {}; fi'"
         ];
         historyWidgetOptions = [
           "--sort"
