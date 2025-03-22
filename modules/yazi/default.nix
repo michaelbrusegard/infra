@@ -1,4 +1,4 @@
-{ config, lib, pkgs, catppuccin ... }:
+{ config, lib, pkgs, catppuccin, ... }:
 
 let
   cfg = config.modules.yazi;
