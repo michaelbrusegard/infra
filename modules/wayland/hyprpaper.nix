@@ -9,7 +9,7 @@ in {
       settings = {
         preload = "../../assets/Twillight Peaks.png";
         wallpaper = ",../../assets/Twillight Peaks.png";
-      },
+      };
     };
   };
 }
