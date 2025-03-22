@@ -14,6 +14,12 @@ cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfi
 
 **Heads-up:** The dotfiles in this repository are incomplete because I also maintain private dotfiles with sensitive information that I want to keep secure. The setup for the private dotfiles is the same.
 
+## Nix Options
+
+[nixpkgs](https://mynixos.com/nixpkgs/options)
+[nix-darwin](https://mynixos.com/nix-darwin/options)
+[home-manager](https://mynixos.com/home-manager/options)
+
 ## Arch
 
 ### Creating symlinks for the config files
@@ -95,31 +101,9 @@ cd ~/dotfiles/espresso && stow --adopt -t ~ home && sudo stow --adopt -t /etc et
 sh ~/dotfiles/espresso/scripts/login.sh
 ```
 
-## Shared
-
-### Symlinks used by MacOS and Arch
-
-```zsh
-cd ~/dotfiles/shared
-stow -t ~ home
-```
-
-### Scripts
-
-[Generate new SSH key for GitHub](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) by running:
-
-```zsh
-zsh ~/dotfiles/shared/scripts/ssh.zsh
-```
-
-[Generating a new GPG key for GitHub](https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key) by running:
-
-```zsh
-zsh ~/dotfiles/shared/scripts/gpg.zsh
-```
-
 ## Inspiration…
 
+- Notusknot's [nix-dotfiles](https://github.com/notusknot/dotfiles-nix)
 - Mathias Bynens and his [MacOS defaults](https://github.com/mathiasbynens/dotfiles/blob/main/.macos)
 - Dries Vints and his [SSH script](https://github.com/driesvints/dotfiles/blob/main/ssh.sh)
 - Antione Martin and his [GPG script](https://github.com/antoinemartin/create-gpg-key/blob/main/create_gpg_key.sh)
