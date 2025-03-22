@@ -1,4 +1,4 @@
-inputs: base:
+base:
 let
   contents = builtins.readDir base;
   dirs = builtins.filter (name:
@@ -6,4 +6,4 @@ let
     builtins.pathExists (base + "/${name}/default.nix")
   ) (builtins.attrNames contents);
 in
-map (name: base + "/${name}") dirs;
+map (name: base + "/${name}") dirs
