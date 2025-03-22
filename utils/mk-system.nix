@@ -2,6 +2,7 @@ inputs:
 { system, username, hostname }:
 let
   secrets = import ../secrets.nix;
+  colors = import ./colors.nix;
   isDarwin = builtins.match ".*-darwin" system != null;
 
   commonModules = [
@@ -13,7 +14,7 @@ let
   commonArgs = {
     inherit system;
     specialArgs = {
-      inherit system username hostname secrets isDarwin;
+      inherit system username hostname secrets colors isDarwin;
       inherit (inputs) nixpkgs darwin home-manager nixos-hardware nur apple-fonts apple-emoji-linux hyprland catppuccin zen-browser yazi;
     };
   };

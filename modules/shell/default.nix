@@ -1,4 +1,4 @@
-{ config, lib, pkgs, catppuccin, isDarwin, ... }:
+{ config, lib, pkgs, colors, isDarwin, ... }:
 
 let
   cfg = config.modules.shell;
@@ -16,7 +16,7 @@ in {
         enableCompletion = true;
         autosuggestion = {
           enable = true;
-          highlight = "fg=${catppuccin.colors.mocha.overlay0}";
+          highlight = "fg=${colors.mocha.overlay0}";
         };
         history = {
           append = true;

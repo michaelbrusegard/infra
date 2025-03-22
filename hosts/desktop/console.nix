@@ -1,25 +1,25 @@
-{ catppuccin, ... }: {
+{ colors, ... }: {
   console = {
     enable = true;
     font = "SF Mono";
     keyMap = "us";
     colors = [
-      "${catppuccin.colors.mocha.base}"
-      "${catppuccin.colors.mocha.red}"
-      "${catppuccin.colors.mocha.green}"
-      "${catppuccin.colors.mocha.yellow}"
-      "${catppuccin.colors.mocha.blue}"
-      "${catppuccin.colors.mocha.mauve}"
-      "${catppuccin.colors.mocha.teal}"
-      "${catppuccin.colors.mocha.text}"
-      "${catppuccin.colors.mocha.surface0}"
-      "${catppuccin.colors.mocha.peach}"
-      "${catppuccin.colors.mocha.sapphire}"
-      "${catppuccin.colors.mocha.rosewater}"
-      "${catppuccin.colors.mocha.lavender}"
-      "${catppuccin.colors.mocha.pink}"
-      "${catppuccin.colors.mocha.sky}"
-      "${catppuccin.colors.mocha.crust}"
+      "${colors.mocha.base}"
+      "${colors.mocha.red}"
+      "${colors.mocha.green}"
+      "${colors.mocha.yellow}"
+      "${colors.mocha.blue}"
+      "${colors.mocha.mauve}"
+      "${colors.mocha.teal}"
+      "${colors.mocha.text}"
+      "${colors.mocha.surface0}"
+      "${colors.mocha.peach}"
+      "${colors.mocha.sapphire}"
+      "${colors.mocha.rosewater}"
+      "${colors.mocha.lavender}"
+      "${colors.mocha.pink}"
+      "${colors.mocha.sky}"
+      "${colors.mocha.crust}"
     ];
   };
 }

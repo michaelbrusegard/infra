@@ -1,4 +1,4 @@
-{ config, lib, pkgs, catppuccin, ... }:
+{ config, lib, pkgs, colors, ... }:
 
 let
   cfg = config.modules.yazi;
@@ -183,7 +183,7 @@ in {
         --   smooth_scrolling = true,
         -- })
         -- require("yaziline"):setup({
-        --   color = "${catppuccin.colors.mocha.blue}",
+        --   color = "${colors.mocha.blue}",
         --   separator_style = "curvy",
         --   select_symbol = "",
         --   yank_symbol = "󰆐",
