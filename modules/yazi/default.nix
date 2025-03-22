@@ -183,7 +183,7 @@ in {
         --   smooth_scrolling = true,
         -- })
         -- require("yaziline"):setup({
-        --   color = "${catppuccin.flavors.mocha.blue}",
+        --   color = "${catppuccin.colors.mocha.blue}",
         --   separator_style = "curvy",
         --   select_symbol = "",
         --   yank_symbol = "󰆐",

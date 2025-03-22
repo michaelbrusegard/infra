@@ -4,22 +4,22 @@
     font = "SF Mono";
     keyMap = "us";
     colors = [
-      "${catppuccin.flavors.mocha.base}"
-      "${catppuccin.flavors.mocha.red}"
-      "${catppuccin.flavors.mocha.green}"
-      "${catppuccin.flavors.mocha.yellow}"
-      "${catppuccin.flavors.mocha.blue}"
-      "${catppuccin.flavors.mocha.mauve}"
-      "${catppuccin.flavors.mocha.teal}"
-      "${catppuccin.flavors.mocha.text}"
-      "${catppuccin.flavors.mocha.surface0}"
-      "${catppuccin.flavors.mocha.peach}"
-      "${catppuccin.flavors.mocha.sapphire}"
-      "${catppuccin.flavors.mocha.rosewater}"
-      "${catppuccin.flavors.mocha.lavender}"
-      "${catppuccin.flavors.mocha.pink}"
-      "${catppuccin.flavors.mocha.sky}"
-      "${catppuccin.flavors.mocha.crust}"
+      "${catppuccin.colors.mocha.base}"
+      "${catppuccin.colors.mocha.red}"
+      "${catppuccin.colors.mocha.green}"
+      "${catppuccin.colors.mocha.yellow}"
+      "${catppuccin.colors.mocha.blue}"
+      "${catppuccin.colors.mocha.mauve}"
+      "${catppuccin.colors.mocha.teal}"
+      "${catppuccin.colors.mocha.text}"
+      "${catppuccin.colors.mocha.surface0}"
+      "${catppuccin.colors.mocha.peach}"
+      "${catppuccin.colors.mocha.sapphire}"
+      "${catppuccin.colors.mocha.rosewater}"
+      "${catppuccin.colors.mocha.lavender}"
+      "${catppuccin.colors.mocha.pink}"
+      "${catppuccin.colors.mocha.sky}"
+      "${catppuccin.colors.mocha.crust}"
     ];
   };
 }

@@ -13,7 +13,7 @@ in {
       --font "SFMono Nerd Font"
       --theme="Catppuccin Mocha"
       --output "$HOME/Downloads/code.png"
-      --background "${catppuccin.flavors.mocha.lavender}"
+      --background "${catppuccin.colors.mocha.lavender}"
     '';
 
     xdg.configFile."silicon/themes/Catppuccin Mocha.tmTheme".source = "../../../assets/silicon/themes/Catppuccin Mocha.tmTheme";

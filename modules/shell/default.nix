@@ -16,7 +16,7 @@ in {
         enableCompletion = true;
         autosuggestion = {
           enable = true;
-          highlight = "fg=${catppuccin.flavors.mocha.overlay0}";
+          highlight = "fg=${catppuccin.colors.mocha.overlay0}";
         };
         history = {
           append = true;
