@@ -51,5 +51,6 @@ in {
     catppuccin.mpv = {
       enable = true;
       accent = "blue";
+    };
   };
 }
