@@ -83,7 +83,7 @@ in {
 
         Host phoenix
             HostName ${secrets.ssh.phoenix.hostName}
-            Port ${ecrets.ssh.phoenix.port}
+            Port ${secrets.ssh.phoenix.port}
             User hackerspace
             AddKeysToAgent yes
             IdentityFile ~/.ssh/hackerspace_ed25519
