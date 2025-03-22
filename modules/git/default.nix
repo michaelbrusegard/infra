@@ -30,7 +30,6 @@ in {
           };
           core = {
             editor = "nvim";
-            pager = "delta";
           };
           commit = {
             gpgSign = true;
