@@ -91,7 +91,7 @@ in {
           prepend_preloaders = [
             {
               mime = "{audio,video,image}/*";
-              run = "mediainfo"
+              run = "mediainfo";
             }
             {
               mime = "application/subrip";
