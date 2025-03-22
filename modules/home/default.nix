@@ -1,4 +1,4 @@
-{ config, pkgs, isDarwin, ... }:
+{ config, lib, pkgs, isDarwin, ... }:
 {
   home = {
     stateVersion = "25.05";
