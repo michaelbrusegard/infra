@@ -17,6 +17,11 @@ let
     repo = "miller.yazi";
     rev = "40e02654725a9902b689114537626207cbf23436";
   };
+  hexyl-plugin = pkgs.fetchFromGitHub {
+    owner = "Reledia";
+    repo = "hexyl.yazi";
+    rev = "228a9ef2c509f43d8da1847463535adc5fd88794";
+  };
   mediainfo-plugin = pkgs.fetchFromGitHub {
     owner = "boydaihungst ";
     repo = "mediainfo.yazi";
