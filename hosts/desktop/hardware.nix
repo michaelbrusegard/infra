@@ -3,10 +3,7 @@
   hardware = {
     enableRedistributableFirmware = true;
     cpu.amd.updateMicrocode = true;
-    opengl = {
-      enable = true;
-      driSupport = true;
-    };
+    opengl.enable = true;
     bluetooth = {
       enable = true;
       powerOnBoot = true;
