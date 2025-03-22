@@ -1,4 +1,4 @@
-{ config, lib, pkgs, isDarwin, ... }:
+{ lib, pkgs, hostName, isDarwin, ... }:
 {
   home = {
     stateVersion = "25.05";
@@ -25,9 +25,9 @@
     };
     shellAliases = {
       rebuild = if isDarwin then
-        "darwin-rebuild switch --flake ~/Developer/dotfiles#${config.networking.hostName}"
+        "darwin-rebuild switch --flake ~/Developer/dotfiles#${hostName}"
       else
-        "sudo nixos-rebuild switch --flake ~/Developer/dotfiles#${config.networking.hostName}";
+        "sudo nixos-rebuild switch --flake ~/Developer/dotfiles#${hostName}";
       reload = "source ~/.zshrc";
       dl = "cd ~/Downloads";
       dt = "cd ~/Desktop";

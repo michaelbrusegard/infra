@@ -1,5 +1,5 @@
 inputs:
-{ system, username, hostname }:
+{ system, username, hostName }:
 let
   secrets = import ../secrets.nix;
   colors = import ./colors.nix;
@@ -7,14 +7,14 @@ let
 
   commonModules = [
     ./config/common.nix
-    ../hosts/${hostname}
+    ../hosts/${hostName}
     ./config/home-manager.nix
   ];
 
   commonArgs = {
     inherit system;
     specialArgs = {
-      inherit system username hostname secrets colors isDarwin;
+      inherit system username hostName secrets colors isDarwin;
       inherit (inputs) nixpkgs darwin home-manager nixos-hardware nur apple-fonts apple-emoji-linux hyprland catppuccin zen-browser yazi;
     };
   };

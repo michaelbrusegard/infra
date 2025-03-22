@@ -1,4 +1,4 @@
-{ pkgs, username, home-manager, ... }:
+{ pkgs, username, hostName, home-manager, ... }:
 {
   imports = [
     home-manager.darwinModules.default
@@ -11,8 +11,8 @@
     linux-builder.enable = true;
   };
   networking = {
-    computerName = hostname;
-    localHostName = hostname;
+    computerName = hostName;
+    localHostName = hostName;
     dns = [
       "1.1.1.1"
       "1.0.0.1"

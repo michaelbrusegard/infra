@@ -40,32 +40,32 @@
         desktop = mkSystem {
           system = "x86_64-linux";
           username = "michaelbrusegard";
-          hostname = "desktop";
+          hostName = "desktop";
         };
 
         wsl = mkSystem {
           system = "x86_64-linux";
           username = "michaelbrusegard";
-          hostname = "wsl";
+          hostName = "wsl";
         };
 
         espresso = mkSystem {
           system = "x86_64-linux";
           username = "sysadmin";
-          hostname = "espresso";
+          hostName = "espresso";
         };
 
         leggero = mkSystem {
           system = "aarch64-linux";
           username = "sysadmin";
-          hostname = "leggero";
+          hostName = "leggero";
         };
       };
 
       darwinConfigurations."*" = mkSystem {
         system = builtins.currentSystem or "aarch64-darwin";
         username = "michaelbrusegard";
-        hostname = builtins.substring 0 (-1) (builtins.readFile (builtins.toFile "hostname" (
+        hostName = builtins.substring 0 (-1) (builtins.readFile (builtins.toFile "hostname" (
           builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname"
             "PATH=/usr/bin:/usr/sbin:$PATH; scutil --get LocalHostName")))));
       };

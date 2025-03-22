@@ -1,4 +1,4 @@
-{ pkgs, system, username, hostname, secrets, catppuccin, nur, yazi, ... }:
+{ pkgs, system, username, hostName, secrets, catppuccin, nur, yazi, ... }:
 {
   imports = [
     catppuccin.nixosModules.catppuccin
@@ -35,7 +35,7 @@
     };
     overlays = [ nur.overlays.default yazi.overlays.default ];
   };
-  networking.hostName = hostname;
+  networking.hostName = hostName;
   time.timeZone = "Europe/Oslo";
   users.users.${username} = {
     name = username;
