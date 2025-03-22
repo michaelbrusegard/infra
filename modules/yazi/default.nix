@@ -199,7 +199,7 @@ in {
           { on = "t"; run = "plugin toggle-pane min-preview"; desc = "Show or hide the preview pane"; }
           { on = "<c-e>"; run = "seek 5"; }
           { on = "<c-y>"; run = "seek -5"; }
-          { on = [ "<space>" "E" ]; run = "plugin eza-preview"; desc = "Toggle tree/list dir preview" }
+          { on = [ "<space>" "E" ]; run = "plugin eza-preview"; desc = "Toggle tree/list dir preview"; }
           { on = "1"; run = "plugin relative-motions 1"; desc = "Move in relative steps"; }
           { on = "2"; run = "plugin relative-motions 2"; desc = "Move in relative steps"; }
           { on = "3"; run = "plugin relative-motions 3"; desc = "Move in relative steps"; }
