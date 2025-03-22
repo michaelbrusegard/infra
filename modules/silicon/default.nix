@@ -12,11 +12,11 @@ in {
     xdg.configFile."silicon/config".text = ''
       --font "SFMono Nerd Font"
       --theme="Catppuccin Mocha"
-      --output "$HOME/Downloads/code.png"
+      --output "$HOME/Pictures/screenshots/code.png"
       --background "${colors.mocha.lavender}"
     '';
 
-    xdg.configFile."silicon/themes/Catppuccin Mocha.tmTheme".source = "../../../assets/silicon/themes/Catppuccin Mocha.tmTheme";
+    xdg.configFile."silicon/themes/Catppuccin Mocha.tmTheme".source = "./../../assets/silicon/themes/Catppuccin Mocha.tmTheme";
 
     xdg.configFile."silicon/syntaxes/.keep".text = "";
 
