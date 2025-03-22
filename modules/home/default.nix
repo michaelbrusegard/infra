@@ -1,4 +1,4 @@
-{ config, isDarwin, ... }:
+{ config, pkgs, isDarwin, ... }:
 {
   home = {
     stateVersion = "25.05";
@@ -15,6 +15,13 @@
       paper = "a4";
       telephone = "nb_NO.UTF-8";
       time = "nb_NO.UTF-8";
+    };
+    pointerCursor = lib.mkIf (!isDarwin) {
+      package = pkgs.apple-cursor;
+      name = "macOS";
+      size = 32;
+      gtk.enable = true;
+      x11.enable = true;
     };
     shellAliases = {
       rebuild = if isDarwin then
