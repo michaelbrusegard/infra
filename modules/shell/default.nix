@@ -1,4 +1,4 @@
-{ config, lib, pkgs, catppuccin, ... }:
+{ config, lib, pkgs, catppuccin, isDarwin, ... }:
 
 let
   cfg = config.modules.shell;
@@ -36,6 +36,10 @@ in {
           searchDownKey = "^N";
         };
         shellAliases = {
+          rebuild = if isDarwin then
+            "darwin-rebuild switch --flake ~/Developer/dotfiles#${config.networking.hostName}"
+          else
+            "sudo nixos-rebuild switch --flake ~/Developer/dotfiles#${config.networking.hostName}";
           reload = "source ~/.zshrc";
           dl = "cd ~/Downloads";
           dt = "cd ~/Desktop";
