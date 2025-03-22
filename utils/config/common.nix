@@ -42,4 +42,5 @@
     shell = pkgs.zsh;
     hashedPassword = secrets.users.${username}.hashedPassword;
   };
+  programs.zsh.enable = true;
 }
