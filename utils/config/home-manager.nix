@@ -10,5 +10,6 @@
         ../../users/${username}
       ];
     };
+    extraSpecialArgs = pkgs.lib.mkForce specialArgs;
   };
 }
