@@ -15,9 +15,9 @@ in {
             ln -s "/Applications/Zen Browser.app/Contents/MacOS/zen" $out/bin/firefox
           ''
         else
-      zen-browser.packages.${system}.default;
+          zen-browser.packages.${system}.default;
         languagePacks = [ "en-GB" ];
-          DefaultDownloadDirectory = "$HOME/Downloads";
+        DefaultDownloadDirectory = "$HOME/Downloads";
         profiles.${username} = {
           containers = {
             personal = {
@@ -153,10 +153,10 @@ in {
             :root {
               --attention-dot-color: rgba(0, 0, 0, 0) !important;
             }
-          ''
+          '';
         };
       };
-    chromium.enable = true;
+      chromium.enable = true;
     };
   };
 }
