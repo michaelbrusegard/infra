@@ -1,4 +1,4 @@
-{ pkgs, username, catppuccin, ... }:
+{ pkgs, specialArgs, username, catppuccin, ... }:
 {
   home-manager = {
     useUserPackages = true;

@@ -1,4 +1,4 @@
-{ config, lib, isDarwin, ... }:
+{ config, lib, ... }:
 
 let
   cfg = config.modules.xdg;
@@ -24,9 +24,6 @@ in {
           XDG_SCREENSHOTS_DIR = "$HOME/Pictures/screenshots";
         };
       };
-      mimeApps.enable = !isDarwin;
-      icons.enable = !isDarwin;
-      autostart.enable = !isDarwin;
     };
   };
 }
