@@ -149,7 +149,6 @@ in {
               "Wikipedia".metaData.hidden = true;
               "YouTube".metaData.hidden = true;
             };
-            disableSearchEngineDetection = true;
           };
           userChrome = ''
             :root {
