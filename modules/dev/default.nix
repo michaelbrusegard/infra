@@ -28,7 +28,6 @@ in {
 
         # Rust
         rustup
-        rust-analyzer
 
         # Go
         go
