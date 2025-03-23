@@ -16,8 +16,7 @@ in {
       withNodeJs = true;
       withRuby = true;
     };
-    xdg.configFile."nvim".source =
-      config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/neovim/config";
+    xdg.configFile."nvim".source = ./config;
     catppuccin.nvim.enable = true;
   };
 }
