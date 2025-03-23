@@ -9,7 +9,6 @@
       corefonts
       helvetica-neue-lt-std
       inter
-      georgia
     ];
     fontconfig = {
       defaultFonts = {
