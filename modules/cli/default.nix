@@ -8,8 +8,11 @@ in {
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
       coreutils
+      gnused
+      gnugrep
       whois
       curl
+      unzip
       wget
       file
       ffmpeg
