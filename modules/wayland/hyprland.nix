@@ -21,9 +21,9 @@ in {
           "wl-paste --type image --watch cliphist store"
         ];
         general = {
-          border_size = 5;
-          gaps_in = 6;
-          gaps_out = 12;
+          border_size = 3;
+          gaps_in = 3;
+          gaps_out = 6;
           resize_on_border = true;
           no_focus_fallback = true;
           "col.active_border" = "0xFF007AFF";
