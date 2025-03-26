@@ -31,8 +31,8 @@ in {
         };
         decoration = {
           rounding = 10;
+          blur.enabled = false;
         };
-        blur.enabled = false;
         shadow = {
           range = 20;
           render_power = 3;
@@ -50,12 +50,14 @@ in {
           repeat_delay = 150;
           follow_mouse = 1;
         };
-        group.auto_group = false;
-        groupbar.enabled = false;
+        group = {
+          auto_group = false;
+          groupbar.enabled = false;
+        };
         misc = {
           disable_hyprland_logo = true;
           disable_splash_rendering = true;
-          font-family = "SF Pro Nerd Font";
+          font_family = "SF Pro Nerd Font";
           mouse_move_enables_dpms = true;
           key_press_enables_dpms = true;
           disable_autoreload = true;
