@@ -1,4 +1,4 @@
-{ colors, ... }: {
+{ pkgs, colors, ... }: {
   console = {
     enable = true;
     font = "ter-v32n";
