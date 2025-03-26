@@ -3,6 +3,7 @@
   home-manager = {
     useUserPackages = true;
     useGlobalPkgs = true;
+    backupFileExtension = "backup";
     users.${username} = {
       imports = [
         catppuccin.homeManagerModules.catppuccin
