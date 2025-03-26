@@ -1,4 +1,4 @@
-{ config, lib, hyprland, system, ... }:
+{ config, lib, system, ... }:
 
 let
   cfg = config.modules.wayland;
@@ -7,7 +7,6 @@ in {
     wayland.windowManager.hyprland = {
       enable = true;
       xwayland.enable = true;
-      package = hyprland.packages.${system}.hyprland;
       settings = {
         env = [
           "NIXOS_OZONE_WL,1"

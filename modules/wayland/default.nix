@@ -1,4 +1,4 @@
-{ config, lib, pkgs, hyprland, apple-fonts, system, ... }:
+{ config, lib, pkgs, apple-fonts, system, ... }:
 
 let
   cfg = config.modules.wayland;
