@@ -116,6 +116,8 @@ in {
           "alt, return, exec, wezterm"
           "alt shift, return, exec, wezterm -e sh -c 'yazi'"
           "super, space, exec, rofi -show drun"
+          "super, c, exec, wl-copy"
+          "super, v, exec, wl-paste"
           "super shift, v, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
           "super, q, killactive,"
           "super shift, q, exec, hyprlock"
