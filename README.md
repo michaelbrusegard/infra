@@ -103,6 +103,7 @@ sh ~/dotfiles/espresso/scripts/login.sh
 
 ## Inspiration…
 
+- Andrey0189's [Nix Hyprland configuration](https://github.com/Andrey0189/nixos-config-reborn/tree/master/home-manager/modules/hyprland)
 - Notusknot's [nix-dotfiles](https://github.com/notusknot/dotfiles-nix)
 - Mathias Bynens and his [MacOS defaults](https://github.com/mathiasbynens/dotfiles/blob/main/.macos)
 - Dries Vints and his [SSH script](https://github.com/driesvints/dotfiles/blob/main/ssh.sh)
