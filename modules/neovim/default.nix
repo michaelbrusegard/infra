@@ -16,7 +16,7 @@ in {
       withNodeJs = true;
       withRuby = true;
     };
-    # xdg.configFile."nvim".source = ./config;
+    xdg.configFile."nvim".source = ./config;
     catppuccin.nvim.enable = true;
   };
 }

@@ -8,7 +8,7 @@ in {
     ./hyprland.nix
     # ./hyprlock.nix
     # ./hyprpaper.nix
-    # ./rofi.nix
+    ./rofi.nix
     # ./waybar.nix
   ];
   options.modules.wayland.enable = lib.mkEnableOption "Wayland configuration";

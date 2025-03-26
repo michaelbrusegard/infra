@@ -21,6 +21,7 @@ in {
       rsync
       chafa
       presenterm
+      fontconfig
     ];
   };
 }

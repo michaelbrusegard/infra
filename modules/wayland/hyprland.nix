@@ -14,6 +14,8 @@ in {
           "XDG_SESSION_TYPE,wayland"
           "XDG_SESSION_DESKTOP,hyprland"
           "QT_QPA_PLATFORM,wayland"
+          "GDK_BACKEND,wayland"
+          "CLUTTER_BACKEND,wayland"
         ];
         exec-once = [ 
           "waybar"
