@@ -52,12 +52,12 @@
     };
     protectKernelImage = true;
     rtkit.enable = true;
-    pam = {
-      loginLimits = [
-        { domain = "@wheel"; type = "hard"; item = "nofile"; value = "524288"; }
-        { domain = "@wheel"; type = "soft"; item = "nofile"; value = "524288"; }
-      ];
-      services.login.requireWheel = true;
-    };
+    # pam = {
+    #   loginLimits = [
+    #     { domain = "@wheel"; type = "hard"; item = "nofile"; value = "524288"; }
+    #     { domain = "@wheel"; type = "soft"; item = "nofile"; value = "524288"; }
+    #   ];
+    #   services.login.requireWheel = true;
+    # };
   };
 }
