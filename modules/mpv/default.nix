@@ -28,7 +28,7 @@ in {
         osd-font-size = "32";
         screenshot-format = "png";
         screenshot-png-compression = "8";
-        screenshot-directory = "~/Pictures/mpv";
+        screenshot-directory = "$HOME/Pictures/screenshots";
         cache = "yes";
         cache-secs = "60";
         ytdl-format = "bestvideo[height<=?1080]+bestaudio/best";

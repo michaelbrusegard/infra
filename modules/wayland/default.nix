@@ -4,12 +4,12 @@ let
   cfg = config.modules.wayland;
 in {
   imports = [
-    ./hypridle.nix
+    # ./hypridle.nix
     ./hyprland.nix
-    ./hyprlock.nix
-    ./hyprpaper.nix
-    ./rofi.nix
-    ./waybar.nix
+    # ./hyprlock.nix
+    # ./hyprpaper.nix
+    # ./rofi.nix
+    # ./waybar.nix
   ];
   options.modules.wayland.enable = lib.mkEnableOption "Wayland configuration";
 

@@ -153,3 +153,11 @@ export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
 
 export PATH=$PATH:~/.cargo/bin
+
+# pnpm
+export PNPM_HOME="/Users/michaelbrusegard/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end

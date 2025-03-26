@@ -63,7 +63,6 @@ in {
           middle_click_paste = false;
         };
         binds.workspace_back_and_forth = true;
-        xwayland.enabled = true;
         bind = [
           # Focus window
           "alt, h, movefocus, l"

@@ -1,6 +1,6 @@
 { isDarwin, ... }: {
   modules = {
-    browser.enable = true;
+    browser.enable = false;
     cli.enable = true;
     dev.enable = true;
     git.enable = true;
