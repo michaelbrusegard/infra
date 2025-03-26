@@ -12,7 +12,7 @@ in {
         dotDir = ".config/zsh";
         enableVteIntegration = true;
         autocd = true;
-        defaultKeymap = "vicmd";
+        # defaultKeymap = "vicmd";
         enableCompletion = true;
         autosuggestion = {
           enable = true;
@@ -35,6 +35,11 @@ in {
           searchUpKey = "^P";
           searchDownKey = "^N";
         };
+        initExtra = ''
+          autoload -U promptinit
+          promptinit
+          prompt pure
+        '';
         antidote = {
           enable = true;
           useFriendlyNames = true;
