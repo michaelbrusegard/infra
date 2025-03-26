@@ -25,7 +25,7 @@
     };
     shellAliases = {
       rebuild = if isDarwin then
-        "darwin-rebuild switch --flake ~/Developer/dotfiles#${hostName}"
+        "sudo darwin-rebuild switch --flake ~/Developer/dotfiles#${hostName}"
       else
         "sudo nixos-rebuild switch --flake ~/Developer/dotfiles#${hostName}";
       reload = "source ~/.zshrc";
