@@ -1,7 +1,8 @@
 { colors, ... }: {
   console = {
     enable = true;
-    # font = "SF Mono";
+    font = "ter-v32n";
+    packages = [ pkgs.terminus_font ];
     keyMap = "us";
     colors = [
       "${builtins.substring 1 6 colors.mocha.crust}"
