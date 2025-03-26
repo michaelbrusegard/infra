@@ -1,7 +1,7 @@
 { colors, ... }: {
   console = {
     enable = true;
-    font = "SF Mono";
+    # font = "SF Mono";
     keyMap = "us";
     colors = [
       "${builtins.substring 1 6 colors.mocha.crust}"
