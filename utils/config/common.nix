@@ -40,7 +40,8 @@
   users.users.${username} = {
     name = username;
     shell = pkgs.zsh;
-    hashedPassword = secrets.users.${username}.hashedPassword;
+    # hashedPassword = secrets.users.${username}.hashedPassword;
+    initialPassword = "iskrem";
   };
   programs.zsh.enable = true;
 }
