@@ -27,8 +27,8 @@ in {
           gaps_out = 12;
           resize_on_border = true;
           no_focus_fallback = true;
-          col.active_border = "0xFF007AFF";
-          col.inactive_border = "0xff45475a";
+          "col.active_border" = "0xFF007AFF";
+          "col.inactive_border" = "0xff45475a";
         };
         decoration = {
           rounding = 10;
@@ -124,10 +124,10 @@ in {
           "alt, mouse:273, resizewindow"
         ];
         bindl = [
-          ", XF86AudioNext, exec, playerctl next"
-          ", XF86AudioPause, exec, playerctl play-pause"
-          ", XF86AudioPlay, exec, playerctl play-pause"
-          ", XF86AudioPrev, exec, playerctl previous"
+          ", XF86AudioNext, exec, playerctld next"
+          ", XF86AudioPause, exec, playerctld play-pause"
+          ", XF86AudioPlay, exec, playerctld play-pause"
+          ", XF86AudioPrev, exec, playerctld previous"
         ];
         windowrulev2 = [
           "workspace 2, class:^(Zen Browser)$"
