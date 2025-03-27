@@ -57,7 +57,6 @@
         { domain = "@wheel"; type = "hard"; item = "nofile"; value = "524288"; }
         { domain = "@wheel"; type = "soft"; item = "nofile"; value = "524288"; }
       ];
-      debug = true;
     };
   };
 }
