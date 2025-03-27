@@ -38,12 +38,5 @@
     shell = pkgs.zsh;
     hashedPassword = secrets.users.${username}.hashedPassword;
   };
-  users.users.test = {
-    isNormalUser = true;
-    home = "/home/test";
-    initialPassword = "test123";
-    extraGroups = [ "wheel" ];
-    shell = pkgs.bash;  # Using bash instead of zsh for testing
-  };
   programs.zsh.enable = true;
 }
