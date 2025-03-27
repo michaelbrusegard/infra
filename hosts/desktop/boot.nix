@@ -1,6 +1,7 @@
 { ... }: {
   boot = {
     kernelModules = [ "kvm-amd" ];
+    consoleLogLevel = 0;
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
