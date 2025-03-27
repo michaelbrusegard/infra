@@ -34,14 +34,14 @@ in {
         decoration = {
           rounding = 10;
           blur.enabled = false;
-        };
-        shadow = {
-          range = 20;
-          render_power = 3;
-          ignore_window = true;
-          offset = "0 4";
-          scale = 0.97;
-          color = "0x66000000";
+          shadow = {
+            range = 20;
+            render_power = 3;
+            ignore_window = true;
+            offset = "0 4";
+            scale = 0.97;
+            color = "0x66000000";
+          };
         };
         animations = {
           enabled = false;
