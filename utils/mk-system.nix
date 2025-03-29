@@ -1,7 +1,6 @@
 inputs:
 { system, username, hostName }:
 let
-  secrets = import ../secrets.nix;
   colors = import ./colors.nix;
   isDarwin = builtins.match ".*-darwin" system != null;
 
@@ -14,8 +13,8 @@ let
   commonArgs = {
     inherit system;
     specialArgs = {
-      inherit system username hostName secrets colors isDarwin;
-      inherit (inputs) nixpkgs darwin home-manager nixos-hardware nur apple-fonts apple-emoji-linux catppuccin zen-browser;
+      inherit system username hostName colors isDarwin;
+      inherit (inputs) nixpkgs darwin home-manager sops-nix nixos-hardware nur apple-fonts apple-emoji-linux catppuccin zen-browser secrets;
     };
   };
 

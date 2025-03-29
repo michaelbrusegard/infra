@@ -11,10 +11,13 @@
       trusted-users = ["@wheel"];
     };
   };
-  users.users.${username} = {
-    isNormalUser = true;
-    home = "/home/${username}";
-    extraGroups = [ "wheel" ];
+  users = {
+    mutableUsers = false;
+    users.${username} = {
+      isNormalUser = true;
+      home = "/home/${username}";
+      extraGroups = [ "wheel" ];
+    };
   };
   i18n = {
     defaultLocale = "en_GB.UTF-8";

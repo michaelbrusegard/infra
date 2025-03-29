@@ -1,16 +1,57 @@
-{ config, lib, pkgs, isDarwin, secrets, ... }:
+{ config, lib, pkgs, isDarwin, ... }:
 
 let
   cfg = config.modules.ssh;
 
-  useKeychain = if isDarwin then "UseKeychain yes" else "";
+  mkHostBlock = name: _: let
+    secretPath = path: builtins.readFile config.sops.secrets."hosts/${name}/${path}".path;
+  in {
+    hostname = secretPath "hostName";
+    port = lib.removeSuffix "\n" (secretPath "sshPort");
+    user = lib.removeSuffix "\n" (secretPath "user");
+    identityFile = config.sops.secrets."hosts/${name}/sshKey".path;
+    extraOptions = {
+      AddKeysToAgent = "yes";
+    } // lib.optionalAttrs isDarwin {
+      UseKeychain = "yes";
+    };
+  };
+
+  gitHosts = {
+    "github.com" = {
+      user = "git";
+      identityFile = config.sops.secrets."hosts/github/sshKey".path;
+      extraOptions = {
+        AddKeysToAgent = "yes";
+      } // lib.optionalAttrs isDarwin {
+        UseKeychain = "yes";
+      };
+    };
+    "git.ntnu.no" = {
+      user = "git";
+      identityFile = config.sops.secrets."hosts/git-ntnu/sshKey".path;
+      extraOptions = {
+        AddKeysToAgent = "yes";
+      } // lib.optionalAttrs isDarwin {
+        UseKeychain = "yes";
+      };
+    };
+  };
+
+  hostBlocks = lib.mapAttrs mkHostBlock 
+    (lib.filterAttrs (n: v: 
+      lib.hasAttr "hostName" v && 
+      lib.hasAttr "sshPort" v && 
+      lib.hasAttr "sshKey" v &&
+      lib.hasAttr "user" v
+    ) config.sops.secrets);
 
   wakeonlan = pkgs.writeShellScriptBin "wakeonlan" ''
     ${lib.concatStrings (lib.mapAttrsToList (name: host: ''
       if [ "$1" = "${name}" ]; then
-        exec ${pkgs.wakeonlan}/bin/wakeonlan -i ${host.ip} -p ${host.port} ${host.mac}
+        exec ${pkgs.wakeonlan}/bin/wakeonlan -i ${builtins.readFile config.sops.secrets."hosts/${name}/ip".path} -p ${builtins.readFile config.sops.secrets."hosts/${name}/wolPort".path} ${builtins.readFile config.sops.secrets."hosts/${name}/macAddress".path}
       fi
-    '') secrets.wol)}
+    '') (lib.filterAttrs (n: v: lib.hasAttr "macAddress" v) config.sops.secrets))}
     exec ${pkgs.wakeonlan}/bin/wakeonlan "$@"
   '';
 in {
@@ -20,83 +61,7 @@ in {
     services.ssh-agent.enable = true;
     programs.ssh = {
       enable = true;
-      extraConfig = ''
-        Host github.com
-            User git
-            AddKeysToAgent yes
-            IdentityFile ~/.ssh/github_ed25519
-            ${useKeychain}
-
-        Host git.ntnu.no
-            User git
-            AddKeysToAgent yes
-            IdentityFile ~/.ssh/ntnu_ed25519
-            ${useKeychain}
-
-        Host desktop
-            HostName ${secrets.ssh.desktop.hostName}
-            Port ${secrets.ssh.desktop.port}
-            User michaelbrusegard
-            AddKeysToAgent yes
-            IdentityFile ~/.ssh/desktop_ed25519
-            ${useKeychain}
-
-        Host espresso
-            HostName ${secrets.ssh.espresso.hostName}
-            Port ${secrets.ssh.espresso.port}
-            User sysadmin
-            AddKeysToAgent yes
-            IdentityFile ~/.ssh/espresso_ed25519
-            ${useKeychain}
-
-        Host dingseboms
-            HostName ${secrets.ssh.dingseboms.hostName}
-            Port ${secrets.ssh.dingseboms.port}
-            User dingseboms
-            AddKeysToAgent yes
-            IdentityFile ~/.ssh/hackerspace_ed25519
-            ${useKeychain}
-
-        Host duppeditt
-            HostName ${secrets.ssh.duppeditt.hostName}
-            Port ${secrets.ssh.duppeditt.port}
-            User duppeditt
-            AddKeysToAgent yes
-            IdentityFile ~/.ssh/hackerspace_ed25519
-            ${useKeychain}
-
-        Host gluteus
-            HostName ${secrets.ssh.gluteus.hostName}
-            Port ${secrets.ssh.gluteus.port}
-            User hackerspace
-            AddKeysToAgent yes
-            IdentityFile ~/.ssh/hackerspace_ed25519
-            ${useKeychain}
-
-        Host noodlebar
-            HostName ${secrets.ssh.noodlebar.hostName}
-            Port ${secrets.ssh.noodlebar.port}
-            User hackerspace
-            AddKeysToAgent yes
-            IdentityFile ~/.ssh/hackerspace_ed25519
-            ${useKeychain}
-
-        Host phoenix
-            HostName ${secrets.ssh.phoenix.hostName}
-            Port ${secrets.ssh.phoenix.port}
-            User hackerspace
-            AddKeysToAgent yes
-            IdentityFile ~/.ssh/hackerspace_ed25519
-            ${useKeychain}
-
-        Host meieri
-            HostName ${secrets.ssh.meieri.hostName}
-            Port ${secrets.ssh.meieri.port}
-            User hackerspace
-            AddKeysToAgent yes
-            IdentityFile ~/.ssh/hackerspace_ed25519
-            ${useKeychain}
-      '';
+      matchBlocks = gitHosts // hostBlocks;
     };
     home.packages = [ wakeonlan ];
   };

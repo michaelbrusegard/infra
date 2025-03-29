@@ -1,6 +1,7 @@
-{ pkgs, system, username, hostName, secrets, catppuccin, nur, ... }:
+{ config, pkgs, system, username, hostName, sops-nix, catppuccin, nur, secrets, isDarwin, ... }:
 {
   imports = [
+    sops-nix.nixosModules.sops
     catppuccin.nixosModules.catppuccin
   ];
   nix = {
@@ -36,7 +37,19 @@
   users.users.${username} = {
     name = username;
     shell = pkgs.zsh;
-    hashedPassword = secrets.users.${username}.hashedPassword;
+    hashedPassword = config.secrets."users/${username}/hashedPassword".path;
+  };
+  sops = {
+    age.keyFile = if isDarwin 
+      then "/Users/${username}/.config/sops/age/keys.txt"
+      else "/home/${username}/.config/sops/age/keys.txt";
+    defaultSopsFile = "${builtins.toString secrets}/secrets.yaml";
+    validateSopsFile = false;
+    secrets = {
+      "users/${username}/hashedPassword" = {
+        neededForUsers = true;
+      };
+    };
   };
   programs.zsh.enable = true;
 }
