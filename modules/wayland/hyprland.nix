@@ -23,7 +23,7 @@ in {
           "wl-paste --type image --watch cliphist store"
         ];
         monitor = [
-          ",preferred,auto,2"
+          ",preferred,auto,0.85"
         ];
         general = {
           border_size = 2;

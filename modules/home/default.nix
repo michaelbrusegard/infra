@@ -19,7 +19,7 @@
     pointerCursor = lib.mkIf (!isDarwin) {
       package = pkgs.apple-cursor;
       name = "macOS";
-      size = 32;
+      size = 24;
       gtk.enable = true;
       x11.enable = true;
     };
