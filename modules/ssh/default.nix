@@ -61,6 +61,11 @@ let
 in {
   options.modules.ssh.enable = lib.mkEnableOption "SSH configuration";
 
+  sops.secrets = {
+    "hosts/git-ntnu/sshKey" = {};
+    "hosts/github/sshKey" = {};
+  };
+
   config = lib.mkIf cfg.enable {
     services.ssh-agent.enable = true;
     programs.ssh = {
