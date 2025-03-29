@@ -110,7 +110,7 @@
       enable = true;
       hidpi = true;
       style = "round";
-      activeColor = "0xFF007AFF";
+      activeColor = "0xff89b4fa";
       inactiveColor = "0xff45475a";
       width = 6;
     };

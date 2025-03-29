@@ -23,12 +23,12 @@ in {
           "wl-paste --type image --watch cliphist store"
         ];
         general = {
-          border_size = 3;
+          border_size = 2;
           gaps_in = 3;
           gaps_out = 6;
           resize_on_border = true;
           no_focus_fallback = true;
-          "col.active_border" = "0xFF007AFF";
+          "col.active_border" = "0xff89b4fa";
           "col.inactive_border" = "0xff45475a";
         };
         decoration = {
