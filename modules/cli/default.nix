@@ -22,6 +22,7 @@ in {
       chafa
       presenterm
       fontconfig
+      yq
     ];
   };
 }

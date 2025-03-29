@@ -51,7 +51,11 @@ let
       if [ "$1" = "${name}" ]; then
         exec ${pkgs.wakeonlan}/bin/wakeonlan -i ${builtins.readFile config.sops.secrets."hosts/${name}/ip".path} -p ${builtins.readFile config.sops.secrets."hosts/${name}/wolPort".path} ${builtins.readFile config.sops.secrets."hosts/${name}/macAddress".path}
       fi
-    '') (lib.filterAttrs (n: v: lib.hasAttr "macAddress" v) config.sops.secrets))}
+    '') (lib.filterAttrs (n: v: 
+      lib.hasAttr "wolPort" v && 
+      lib.hasAttr "ip" v && 
+      lib.hasAttr "macAddress" v
+    ) config.sops.secrets))}
     exec ${pkgs.wakeonlan}/bin/wakeonlan "$@"
   '';
 in {
