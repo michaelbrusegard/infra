@@ -23,6 +23,8 @@ in {
       presenterm
       fontconfig
       yq
+      age
+      sops
     ];
   };
 }
