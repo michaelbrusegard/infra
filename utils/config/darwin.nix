@@ -2,6 +2,7 @@
 {
   imports = [
     home-manager.darwinModules.default
+    sops-nix.darwinModules.sops
   ];
   nix = {
     settings = {

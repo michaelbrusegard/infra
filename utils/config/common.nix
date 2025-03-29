@@ -1,7 +1,6 @@
 { config, pkgs, system, username, hostName, sops-nix, catppuccin, nur, secrets, isDarwin, ... }:
 {
   imports = [
-    sops-nix.nixosModules.sops
     catppuccin.nixosModules.catppuccin
   ];
   nix = {
@@ -37,7 +36,7 @@
   users.users.${username} = {
     name = username;
     shell = pkgs.zsh;
-    hashedPasswordFile = config.secrets."users/${username}/hashedPassword".path;
+    hashedPasswordFile = config.sops.secrets."users/${username}/hashedPassword".path;
   };
   sops = {
     age.keyFile = if isDarwin 

@@ -2,6 +2,7 @@
 {
   imports = [
     home-manager.nixosModules.default
+    sops-nix.nixosModules.sops
   ];
   nix = {
     daemonCPUSchedPolicy = "idle";
