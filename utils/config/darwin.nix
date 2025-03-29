@@ -25,6 +25,7 @@
     home = "/Users/${userName}";
     extraGroups = [ "admin" ];
   };
+  sops.age.keyFile = "/Users/${userName}/.config/sops/age/keys.txt";
   security = {
     pam.enableSudoTouchIdAuth = true;
   };

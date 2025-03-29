@@ -39,9 +39,6 @@
     hashedPasswordFile = config.sops.secrets."users/${userName}/hashedPassword".path;
   };
   sops = {
-    age.keyFile = if isDarwin 
-      then "/Users/${userName}/.config/sops/age/keys.txt"
-      else "/home/${userName}/.config/sops/age/keys.txt";
     defaultSopsFile = "${builtins.toString secrets}/secrets.yaml";
     secrets = {
       "users/${userName}/hashedPassword" = {

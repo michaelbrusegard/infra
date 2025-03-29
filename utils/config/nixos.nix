@@ -20,6 +20,7 @@
       extraGroups = [ "wheel" ];
     };
   };
+  sops.age.keyFile = "/home/${userName}/.config/sops/age/keys.txt";
   i18n = {
     defaultLocale = "en_GB.UTF-8";
     extraLocaleSettings = {
