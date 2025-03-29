@@ -1,4 +1,4 @@
-{ pkgs, username, home-manager, ... }:
+{ pkgs, username, home-manager, sops-nix, ... }:
 {
   imports = [
     home-manager.nixosModules.default

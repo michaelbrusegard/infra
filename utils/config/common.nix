@@ -1,4 +1,4 @@
-{ config, pkgs, system, username, hostName, sops-nix, catppuccin, nur, secrets, isDarwin, ... }:
+{ config, pkgs, system, username, hostName, catppuccin, nur, secrets, isDarwin, ... }:
 {
   imports = [
     catppuccin.nixosModules.catppuccin
