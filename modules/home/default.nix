@@ -29,6 +29,7 @@
       else
         "sudo nixos-rebuild switch --flake ~/Developer/dotfiles#${hostName}";
       reload = "source ~/.zshrc";
+      c = "clear";
       dl = "cd ~/Downloads";
       dt = "cd ~/Desktop";
       dc = "cd ~/Documents";
