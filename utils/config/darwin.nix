@@ -1,4 +1,4 @@
-{ pkgs, username, hostName, home-manager, sops-nix, ... }:
+{ pkgs, userName, hostName, home-manager, sops-nix, ... }:
 {
   imports = [
     home-manager.darwinModules.default
@@ -21,8 +21,8 @@
       "2606:4700:4700::1001"
     ];
   };
-  users.users.${username} = {
-    home = "/Users/${username}";
+  users.users.${userName} = {
+    home = "/Users/${userName}";
     extraGroups = [ "admin" ];
   };
   security = {

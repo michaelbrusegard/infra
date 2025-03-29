@@ -1,4 +1,4 @@
-{ config, lib, pkgs, zen-browser, system, username, nur, isDarwin, ... }:
+{ config, lib, pkgs, zen-browser, system, userName, nur, isDarwin, ... }:
 
 let
   cfg = config.modules.browser;
@@ -20,7 +20,7 @@ in {
         policies = {
           DefaultDownloadDirectory = "$HOME/Downloads";
         };
-        profiles.${username} = {
+        profiles.${userName} = {
           containers = {
             personal = {
               color = "red";

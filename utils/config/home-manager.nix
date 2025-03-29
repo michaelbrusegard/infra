@@ -1,20 +1,20 @@
-{ pkgs, specialArgs, username, sops-nix, catppuccin, secrets, isDarwin, ... }:
+{ pkgs, specialArgs, userName, sops-nix, catppuccin, secrets, isDarwin, ... }:
 {
   home-manager = {
     useUserPackages = true;
     useGlobalPkgs = true;
     backupFileExtension = "backup";
-    users.${username} = {
+    users.${userName} = {
       imports = [
         sops-nix.homeManagerModules.sops
         catppuccin.homeManagerModules.catppuccin
         ../../modules
-        ../../users/${username}
+        ../../users/${userName}
       ];
       sops = {
         age.keyFile = if isDarwin 
-          then "/Users/${username}/.config/sops/age/keys.txt"
-          else "/home/${username}/.config/sops/age/keys.txt";
+          then "/Users/${userName}/.config/sops/age/keys.txt"
+          else "/home/${userName}/.config/sops/age/keys.txt";
         defaultSopsFile = "${builtins.toString secrets}/secrets.yaml";
       };
     };

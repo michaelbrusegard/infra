@@ -1,4 +1,4 @@
-{ config, pkgs, system, username, hostName, catppuccin, nur, secrets, isDarwin, ... }:
+{ config, pkgs, system, userName, hostName, catppuccin, nur, secrets, isDarwin, ... }:
 {
   imports = [
     catppuccin.nixosModules.catppuccin
@@ -33,18 +33,18 @@
   };
   networking.hostName = hostName;
   time.timeZone = "Europe/Oslo";
-  users.users.${username} = {
-    name = username;
+  users.users.${userName} = {
+    name = userName;
     shell = pkgs.zsh;
-    hashedPasswordFile = config.sops.secrets."users/${username}/hashedPassword".path;
+    hashedPasswordFile = config.sops.secrets."users/${userName}/hashedPassword".path;
   };
   sops = {
     age.keyFile = if isDarwin 
-      then "/Users/${username}/.config/sops/age/keys.txt"
-      else "/home/${username}/.config/sops/age/keys.txt";
+      then "/Users/${userName}/.config/sops/age/keys.txt"
+      else "/home/${userName}/.config/sops/age/keys.txt";
     defaultSopsFile = "${builtins.toString secrets}/secrets.yaml";
     secrets = {
-      "users/${username}/hashedPassword" = {
+      "users/${userName}/hashedPassword" = {
         neededForUsers = true;
       };
     };

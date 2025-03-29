@@ -1,4 +1,4 @@
-{ pkgs, username, home-manager, sops-nix, ... }:
+{ pkgs, userName, home-manager, sops-nix, ... }:
 {
   imports = [
     home-manager.nixosModules.default
@@ -14,9 +14,9 @@
   };
   users = {
     mutableUsers = false;
-    users.${username} = {
+    users.${userName} = {
       isNormalUser = true;
-      home = "/home/${username}";
+      home = "/home/${userName}";
       extraGroups = [ "wheel" ];
     };
   };

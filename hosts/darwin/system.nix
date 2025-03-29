@@ -1,4 +1,4 @@
-{ username, ... }: {
+{ userName, ... }: {
   system = {
     stateVersion = 5;
     defaults = {
@@ -251,8 +251,8 @@
     startup.chime = false;
     activationScripts = {
       createLogsDir.text = ''
-        mkdir -p /Users/${username}/.logs
-        chown ${username} /Users/${username}/.logs
+        mkdir -p /Users/${userName}/.logs
+        chown ${userName} /Users/${userName}/.logs
       '';
       podmanDockerCompat.text = ''
           mkdir -p ~/.config/containers
