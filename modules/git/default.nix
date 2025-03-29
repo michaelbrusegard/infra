@@ -33,7 +33,7 @@ in {
           };
           commit = {
             gpgSign = true;
-            signingKey = "~/.ssh/github_ed25519";
+            signingKey = config.sops.secrets."hosts/github/sshKey".path;
           };
           gpg = {
             format = "ssh";
