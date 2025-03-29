@@ -9,8 +9,28 @@ in {
     programs = {
       git = {
         enable = true;
+        lfs.enable = true;
         userName = "Michael Brusegard";
         userEmail = "56915010+michaelbrusegard@users.noreply.github.com";
+        signing = {
+          format = "ssh";
+          key = config.sops.secrets."hosts/github/sshKey".path;
+          signByDefault = true;
+        };
+        delta = {
+          enable = true;
+          options = {
+            navigate = true;
+            side-by-side = true;
+          };
+        };
+        ignores = [
+          ".DS_Store"
+          "*.swp"
+          "*.swo"
+          ".env"
+          "node_modules"
+        ];
         extraConfig = {
           init = {
             defaultBranch = "main";
@@ -31,13 +51,6 @@ in {
           core = {
             editor = "nvim";
           };
-          commit = {
-            gpgSign = true;
-            signingKey = config.sops.secrets."hosts/github/sshKey".path;
-          };
-          gpg = {
-            format = "ssh";
-          };
           merge = {
             conflictstyle = "diff3";
           };
@@ -45,20 +58,6 @@ in {
             colorMoved = "default";
           };
         };
-        delta = {
-          enable = true;
-          options = {
-            navigate = true;
-            side-by-side = true;
-          };
-        };
-        ignores = [
-          ".DS_Store"
-          "*.swp"
-          "*.swo"
-          ".env"
-          "node_modules"
-        ];
       };
       lazygit = {
         enable = true;
