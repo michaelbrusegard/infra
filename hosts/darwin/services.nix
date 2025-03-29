@@ -13,7 +13,7 @@
         left_padding = 12;
         right_padding = 12;
         window_gap = 6;
-        insert_feedback_color = "0xFF007AFF";
+        insert_feedback_color = "0xff89b4fa";
       };
       extraConfig = ''
         # Space layout settings
