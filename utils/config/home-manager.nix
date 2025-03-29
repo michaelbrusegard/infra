@@ -16,7 +16,6 @@
           then "/Users/${username}/.config/sops/age/keys.txt"
           else "/home/${username}/.config/sops/age/keys.txt";
         defaultSopsFile = "${builtins.toString secrets}/secrets.yaml";
-        validateSopsFile = false;
       };
     };
     extraSpecialArgs = pkgs.lib.mkForce specialArgs;

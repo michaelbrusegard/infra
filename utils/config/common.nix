@@ -37,14 +37,13 @@
   users.users.${username} = {
     name = username;
     shell = pkgs.zsh;
-    hashedPassword = config.secrets."users/${username}/hashedPassword".path;
+    hashedPasswordFile = config.secrets."users/${username}/hashedPassword".path;
   };
   sops = {
     age.keyFile = if isDarwin 
       then "/Users/${username}/.config/sops/age/keys.txt"
       else "/home/${username}/.config/sops/age/keys.txt";
     defaultSopsFile = "${builtins.toString secrets}/secrets.yaml";
-    validateSopsFile = false;
     secrets = {
       "users/${username}/hashedPassword" = {
         neededForUsers = true;
