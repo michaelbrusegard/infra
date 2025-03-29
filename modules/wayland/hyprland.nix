@@ -22,9 +22,6 @@ in {
           "wl-paste --type text --watch cliphist store"
           "wl-paste --type image --watch cliphist store"
         ];
-        monitor = [
-          ",preferred,auto,0.833333"
-        ];
         general = {
           border_size = 2;
           gaps_in = 3;
