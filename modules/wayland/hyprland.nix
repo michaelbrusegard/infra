@@ -10,12 +10,6 @@ in {
       settings = {
         env = [
           "NIXOS_OZONE_WL,1"
-          "XDG_CURRENT_DESKTOP,hyprland"
-          "XDG_SESSION_TYPE,wayland"
-          "XDG_SESSION_DESKTOP,hyprland"
-          "QT_QPA_PLATFORM,wayland"
-          "GDK_BACKEND,wayland"
-          "CLUTTER_BACKEND,wayland"
         ];
         exec-once = [ 
           "waybar"
@@ -64,6 +58,9 @@ in {
           key_press_enables_dpms = true;
           disable_autoreload = true;
           middle_click_paste = false;
+        };
+        cursor = {
+          no_warps = true;
         };
         binds.workspace_back_and_forth = true;
         bind = [
