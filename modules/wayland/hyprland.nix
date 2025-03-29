@@ -12,7 +12,6 @@ in {
           "NIXOS_OZONE_WL,1"
         ];
         exec-once = [ 
-          "waybar"
           "wl-paste --type text --watch cliphist store"
           "wl-paste --type image --watch cliphist store"
         ];
@@ -48,7 +47,10 @@ in {
         };
         group = {
           auto_group = false;
-          groupbar.enabled = false;
+          groupbar = {
+            enabled = false;
+            render_titles = false;
+          };
         };
         misc = {
           disable_hyprland_logo = true;
