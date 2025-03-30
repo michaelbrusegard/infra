@@ -46,4 +46,5 @@ return function(config)
     },
   })
   tabline.apply_to_config(config)
+  config.window_decorations = 'NONE'
 end

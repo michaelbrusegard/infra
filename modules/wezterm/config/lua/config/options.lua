@@ -35,7 +35,7 @@ local function options(config)
   config.font_size = 12.5
 
   -- Disable window resize UI
-  config.window_decorations = 'RESIZE'
+  config.window_decorations = 'NONE'
 
   -- Disable window padding
   config.window_padding = {
