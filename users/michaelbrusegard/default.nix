@@ -3,6 +3,7 @@
     browser.enable = false;
     cli.enable = true;
     dev.enable = true;
+    ghostty.enable = true;
     git.enable = true;
     gui.enable = true;
     wayland.enable = !isDarwin;
