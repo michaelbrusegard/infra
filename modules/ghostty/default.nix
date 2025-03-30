@@ -27,6 +27,7 @@ in {
         window-decoration = false;
         window-new-tab-position = "end";
         quit-after-last-window-closed = true;
+        cursor-style = "block";
       };
     };
   };
