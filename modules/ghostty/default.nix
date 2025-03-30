@@ -24,7 +24,7 @@ in {
         mouse-hide-while-typing = true;
         window-padding-x = 0;
         window-padding-y = 0;
-        window-decoration = "none";
+        window-decoration = false;
         window-new-tab-position = "end";
         quit-after-last-window-closed = true;
       };
