@@ -1,4 +1,4 @@
-{ pkgs, userName, ... }: {
+{ pkgs, ... }: {
   services = {
     kanata.enable = true;
     openssh = {
@@ -39,7 +39,7 @@
               --greet-align center \
               --power-shutdown '${pkgs.systemd}/bin/loginctl poweroff' \
               --power-reboot '${pkgs.systemd}/bin/loginctl reboot' \
-              --theme 'border=blue;text=white;prompt=cyan;input=yellow;action=green;button=magenta;container=black;time=gray' \
+              --theme 'border=blue;text=white;prompt=cyan;input=red;action=green;button=yellow;container=black;time=gray' \
               --kb-command 1 \
               --kb-sessions 2 \
               --kb-power 12

@@ -1,6 +1,10 @@
 { ... }: {
   boot = {
-    kernelModules = [ "kvm-amd" ];
+    kernelModules = [ 
+      "fbcon"
+      "efifb"
+      "kvm-amd"
+    ];
     kernelParams = [
       "quiet"
       "loglevel=3"
