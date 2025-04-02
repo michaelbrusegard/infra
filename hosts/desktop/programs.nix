@@ -34,7 +34,7 @@
       #   GTK = {
       #     application_prefer_dark_theme = true;
       #   };
-      };
+      # };
     };
   };
 }
