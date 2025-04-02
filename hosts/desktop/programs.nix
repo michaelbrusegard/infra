@@ -36,8 +36,8 @@
         };
       };
     };
-    users.users.${userName} = {
-      extraGroups = [ "video" "render" ];
-    };
+  };
+  users.users.${userName} = {
+    extraGroups = [ "video" "render" ];
   };
 }
