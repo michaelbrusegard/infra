@@ -19,7 +19,7 @@
       enable = true;
       settings = {
         default_session = {
-          command = "${pkgs.greetd.regreet}/bin/regreet --command Hyprland";
+          command = "${pkgs.greetd.regreet}/bin/regreet";
           user = "greeter";
         };
       };
