@@ -1,4 +1,4 @@
-{ ... }: {
+{ pkgs, userName, ... }: {
   services = {
     kanata.enable = true;
     openssh = {
@@ -13,6 +13,19 @@
       alsa = {
         enable = true;
         support32Bit = true;
+      };
+    };
+    greetd = {
+      enable = true;
+      settings = {
+        default_session = {
+          command = "${pkgs.greetd.regreet}/bin/regreet";
+          user = "greeter";
+        };
+        initial_session = {
+          command = "Hyprland";
+          user = userName;
+        };
       };
     };
     xserver.xkb.layout = "us";
