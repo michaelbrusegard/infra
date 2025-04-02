@@ -1,6 +1,10 @@
 { userName, pkgs, system, ... }: {
   programs = {
     dconf.enable = true;
+    hyprland = {
+      enable = true;
+      withUWSM = true;
+    };
     regreet = {
       enable = true;
       font = {
