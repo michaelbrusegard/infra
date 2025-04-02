@@ -17,7 +17,25 @@
     };
     greetd = {
       enable = true;
-      settings.default_session.user = config.programs.regreet.user;
+      settings = {
+        default_session = {
+          command = ''
+            ${pkgs.hyprland}/bin/Hyprland -c ${pkgs.writeText "greetd-hyprland.conf" ''
+              input {
+                repeat_rate = 65;
+                repeat_delay = 150;
+                follow_mouse = 1;
+              }
+              misc {
+                disable_hyprland_logo = true;
+                disable_splash_rendering = true;
+              }
+              exec-once = ${pkgs.greetd.regreet}/bin/regreet
+            ''}
+          '';
+          user = "greeter";
+        };
+      };
     };
     xserver.xkb.layout = "us";
   };
