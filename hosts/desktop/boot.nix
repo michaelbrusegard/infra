@@ -13,6 +13,10 @@
       efi.canTouchEfiVariables = true;
       timeout = 0;
     };
+    plymouth = {
+      enable = true;
+      theme = "spinner";
+    };
     initrd = {
       availableKernelModules = [ "nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod" ];
       luks.devices = {
@@ -21,4 +25,5 @@
       };
     };
   };
+  catppuccin.plymouth.enable = true;
 }
