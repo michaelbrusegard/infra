@@ -1,4 +1,4 @@
-{ userName, pkgs, system, ... }: {
+{ pkgs, ... }: {
   programs = {
     dconf.enable = true;
     hyprland = {

@@ -6,7 +6,6 @@
     kernelParams = [
       "quiet"
       "loglevel=3"
-      "video=DP-1:3440x1440@144e"
     ];
     consoleLogLevel = 3;
     loader = {
