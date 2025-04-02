@@ -1,15 +1,14 @@
-{ userName, pkgs, system, apple-fonts, ... }: {
+{ userName, pkgs, system, ... }: {
   programs = {
     dconf.enable = true;
     regreet = {
       enable = true;
-      cursorTheme = {
-        name = "macOS";
-        package = pkgs.apple-cursor;
-      };
       font = {
         name = "SF Pro";
-        package = apple-fonts.packages.${system}.sf-pro;
+      };
+      theme = {
+        name = "Catppuccin-Mocha-Standard-Blue-Dark";
+        package = pkgs.catppuccin-gtk;
       };
       settings = {
         background = {
@@ -17,15 +16,12 @@
           fit = "Cover";
         };
         appearance = {
-          greeting_msg = "Welcome";
+          greeting_msg = "Authenticating into Desktop";
         };
         "widget.clock" = {
-          format = "%A %e %b %H:%M";
+          format = "%A %-d %B %H:%M";
           timezone = "Europe/Oslo";
           label_width = 200;
-        };
-        GTK = {
-          application_prefer_dark_theme = true;
         };
       };
     };
