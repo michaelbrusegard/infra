@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, userName, ... }:
 
 let
   cfg = config.modules.wayland;
@@ -7,8 +7,8 @@ in {
     services.hyprpaper = {
       enable = true;
       settings = {
-        preload = [ "${config.home.homeDirectory}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png" ];
-        wallpaper = [ ",${config.home.homeDirectory}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png" ];
+        preload = [ "/home/${userName}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png" ];
+        wallpaper = [ ",/home/${userName}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png" ];
       };
     };
   };
