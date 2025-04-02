@@ -1,4 +1,4 @@
-{ userName, pkgs, system, ... }: {
+{ userName, pkgs, system, apple-fonts, ... }: {
   programs = {
     dconf.enable = true;
     regreet = {
@@ -9,6 +9,7 @@
       };
       font = {
         name = "SF Pro";
+        package = apple-fonts.packages.${system}.sf-pro;
       };
       settings = {
         background = {
