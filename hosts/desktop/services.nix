@@ -15,7 +15,6 @@
         support32Bit = true;
       };
     };
-    seatd.enable = true;
     greetd = {
       enable = true;
       settings = {
