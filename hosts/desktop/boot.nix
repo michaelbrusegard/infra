@@ -1,4 +1,4 @@
-{ ... }: {
+{ pkgs, apple-fonts, system, ... }: {
   boot = {
     kernelModules = [ 
       "kvm-amd"
@@ -15,7 +15,10 @@
     };
     plymouth = {
       enable = true;
-      theme = "spinner";
+      logo = pkgs.runCommand "empty.png" {} ''
+        ${pkgs.graphicsmagick}/bin/gm convert -size 1x1 xc:transparent $out
+      '';
+      font = "${apple-fonts.packages.${system}.sf-pro}/share/fonts/truetype/SF-Pro.ttf";
     };
     initrd = {
       availableKernelModules = [ "nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod" ];

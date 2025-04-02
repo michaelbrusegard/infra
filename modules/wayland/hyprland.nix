@@ -1,4 +1,4 @@
-{ config, lib, system, ... }:
+{ config, lib, ... }:
 
 let
   cfg = config.modules.wayland;
