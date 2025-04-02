@@ -15,15 +15,6 @@
         support32Bit = true;
       };
     };
-    greetd = {
-      enable = true;
-      settings = {
-        default_session = {
-          command = "${pkgs.greetd.regreet}/bin/regreet";
-          user = "greeter";
-        };
-      };
-    };
     xserver.xkb.layout = "us";
   };
 }
