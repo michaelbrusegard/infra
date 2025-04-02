@@ -1,4 +1,4 @@
-{ config, lib, pkgs, apple-fonts, system, ... }:
+{ config, lib, pkgs, system, ... }:
 
 let
   cfg = config.modules.wayland;
@@ -16,14 +16,18 @@ in {
   config = lib.mkIf cfg.enable {
     gtk = {
       enable = true;
-      font = {
-        name = "SF Pro";
-        package = apple-fonts.packages.${system}.sf-pro;
+      theme = {
+        name = "Catppuccin-Mocha";
+        package = pkgs.magnetic-catppuccin-gtk;
       };
+      font.name = "SF Pro";
     };
     qt = {
       enable = true;
-      style.name = "adwaita-dark";
+      style = {
+        name = "Catppuccin-Mocha";
+        package = pkgs.catppuccin-qt5ct;
+      };
     };
     services.playerctld.enable = true;
     home.packages = with pkgs; [
