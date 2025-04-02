@@ -1,7 +1,7 @@
 { pkgs, colors, ... }: {
   console = {
     enable = true;
-    font = "ter-v32n";
+    font = "${pkgs.terminus_font}/share/consolefonts/ter-120b.psf.gz";
     packages = [ pkgs.terminus_font ];
     keyMap = "us";
     colors = [

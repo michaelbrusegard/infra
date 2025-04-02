@@ -1,18 +1,19 @@
 { ... }: {
   boot = {
     kernelModules = [ 
-      "fbcon"
-      "efifb"
       "kvm-amd"
     ];
     kernelParams = [
       "quiet"
       "loglevel=3"
+      "video=DP-1:3440x1440@144e"
+      "video=DP-3:d"
     ];
     consoleLogLevel = 3;
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
+      timeout = 0;
     };
     initrd = {
       availableKernelModules = [ "nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod" ];
