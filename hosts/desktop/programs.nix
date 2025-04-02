@@ -11,9 +11,17 @@
         name = "SF Pro";
         package = apple-fonts.packages.${config.system}.sf-pro;
       };
+      theme = {
+        name = "Adwaita-dark";
+        package = pkgs.gnome.adwaita-dark-theme;
+      };
+      iconTheme = {
+        name = "Adwaita-dark";
+        package = pkgs.gnome3.adwaita-dark-icon-theme;
+      };
       settings = {
         background = {
-          path = "${config.home.homeDirectory}/Developer/dotfiles/assets/wallpapers/twillight-peaks.png";
+          path = "${config.home.homeDirectory}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png";
           fit = "Cover";
         };
         appearance = {
