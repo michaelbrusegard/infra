@@ -21,7 +21,7 @@
       };
       settings = {
         background = {
-          path = "/home/${userName}/Developer/dotfiles/assets/wallpapers/twillight-peaks.png";
+          path = "/home/${userName}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png";
           fit = "Cover";
         };
         appearance = {
