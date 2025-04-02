@@ -1,4 +1,4 @@
-{ config, pkgs, apple-fonts, ... }: {
+{ userName, pkgs, system, apple-fonts, ... }: {
   programs = {
     dconf.enable = true;
     regreet = {
@@ -9,7 +9,7 @@
       };
       font = {
         name = "SF Pro";
-        package = apple-fonts.packages.${config.system}.sf-pro;
+        package = apple-fonts.packages.${system}.sf-pro;
       };
       theme = {
         name = "Adwaita-dark";
@@ -21,7 +21,7 @@
       };
       settings = {
         background = {
-          path = "${config.home.homeDirectory}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png";
+          path = "/home/${userName}/Developer/dotfiles/assets/wallpapers/twillight-peaks.png";
           fit = "Cover";
         };
         appearance = {
