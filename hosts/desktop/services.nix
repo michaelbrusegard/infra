@@ -42,7 +42,7 @@
               --theme 'border=blue;text=white;prompt=cyan;input=yellow;action=green;button=magenta;container=black;time=gray' \
               --kb-command 1 \
               --kb-sessions 2 \
-              --kb-power 12
+              --kb-power 3
           '';
         };
       };
