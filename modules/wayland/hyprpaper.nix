@@ -7,8 +7,8 @@ in {
     services.hyprpaper = {
       enable = true;
       settings = {
-        preload = "/home/${config.home.username}/Developer/dotfiles/assets/wallpapers/twillight-peaks.png";
-        wallpaper = ",/home/${config.home.username}/Developer/dotfiles/assets/wallpapers/twillight-peaks.png";
+        preload = [ "~/Developer/dotfiles/assets/wallpapers/twillight-peaks.png" ];
+        wallpaper = [ ",~/Developer/dotfiles/assets/wallpapers/twillight-peaks.png" ];
       };
     };
   };
