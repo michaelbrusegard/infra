@@ -33,21 +33,9 @@ in {
       libnotify
       hyprpicker
     ];
-    catppuccin = {
-      gtk = {
-        enable = true;
-        accent = "blue";
-        icon = {
-          enable = true;
-          accent = "blue";
-        };
-        size = "compact";
-        tweaks = [ "rimless" ];
-      };
-      mako = {
-        enable = true;
-        accent = "blue";
-      };
+    catppuccin.mako = {
+      enable = true;
+      accent = "blue";
     };
   };
 }
