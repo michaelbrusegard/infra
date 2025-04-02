@@ -12,11 +12,9 @@
       };
       theme = {
         name = "Adwaita";
-        package = pkgs.gnome-themes-extra;
       };
       iconTheme = {
         name = "Adwaita";
-        package = pkgs.adwaita-icon-theme;
       };
       settings = {
         background = {
