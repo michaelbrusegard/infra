@@ -1,4 +1,4 @@
-{ config, lib, pkgs, system, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.modules.wayland;
@@ -17,7 +17,7 @@ in {
     gtk = {
       enable = true;
       theme = {
-        name = "Catppuccin-Mocha";
+        name = "Catppuccin-GTK-Dark";
         package = pkgs.magnetic-catppuccin-gtk;
       };
       font.name = "SF Pro";
@@ -25,7 +25,7 @@ in {
     qt = {
       enable = true;
       style = {
-        name = "Catppuccin-Mocha";
+        name = "catppuccin-mocha-blue";
         package = pkgs.catppuccin-qt5ct;
       };
     };
