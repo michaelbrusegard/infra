@@ -25,6 +25,7 @@ in {
       yq
       age
       sops
+      testdisk
     ];
   };
 }
