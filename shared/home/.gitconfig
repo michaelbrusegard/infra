@@ -1,9 +1,13 @@
 [user]
 	name = Michael Brusegard
 	email = 56915010+michaelbrusegard@users.noreply.github.com
+  signingkey = ~/.ssh/id_github.pub
 
 [commit]
   gpgsign = true
+
+[gpg]
+  format = ssh
 
 [push]
   autoSetupRemote = true
@@ -56,5 +60,3 @@
         bold cyan => syntax "#2a3439", \
         bold yellow => syntax "#3a3235"
     syntax-theme = rose-pine
-[gpg]
-	program = /opt/homebrew/bin/gpg
