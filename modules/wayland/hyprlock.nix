@@ -14,7 +14,7 @@ in {
         };
         background = [
           {
-            path = "../../assets/Twillight Peaks.png";
+            path = "../../assets/twilight-peaks.png";
           }
         ];
         label = [
@@ -23,10 +23,7 @@ in {
             color = "rgba(255, 255, 255, 0.8)";
             font_size = 24;
             font_family = "SF Pro";
-            position = {
-              x = 0;
-              y = -220;
-            };
+            position =  [0 -220];
             halign = "center";
             valign = "center";
           }
@@ -35,20 +32,14 @@ in {
             color = "rgba(255, 255, 255, 1.0)";
             font_size = 96;
             font_family = "SF Pro";
-            position = {
-              x = 0;
-              y = -140;
-            };
+            position =  [0 -140];
             halign = "center";
             valign = "center";
           }
         ];
         input-field = [
           {
-            size = {
-              width = 300;
-              height = 50;
-            };
+            size = ["20%" "5%"];
             outline_thickness = 2;
             dots_size = 0.33;
             dots_spacing = 0.15;
@@ -62,19 +53,12 @@ in {
             fade_on_empty = true;
             fade_timeout = 1000;
             rounding = 20;
-            position = {
-              x = 0;
-              y = 100;
-            };
+            position =  [0 200];
             halign = "center";
             valign = "center";
           }
         ];
       };
-    };
-    catppuccin.hyprlock = {
-      enable = true;
-      accent = "blue";
     };
   };
 }
