@@ -88,6 +88,5 @@ in {
         };
       };
     };
-    catppuccin.rofi.enable = true;
   };
 }
