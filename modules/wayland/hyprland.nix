@@ -125,7 +125,7 @@ in {
           "super, v, exec, wl-paste"
           "super shift, v, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
           "super, q, killactive,"
-          "super shift, q, exec, hyprlock"
+          "super ctrl, q, exec, hyprlock"
         ];
         bindm = [
           "alt, mouse:272, movewindow"

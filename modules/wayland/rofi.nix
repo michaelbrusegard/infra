@@ -28,7 +28,7 @@ in {
         };
 
         "inputbar" = {
-          font = "SF Pro Nerd Font 20";
+          font = "SF Pro Nerd Font 18";
           padding = mkLiteral "12px";
           spacing = mkLiteral "12px";
           children = map mkLiteral [ "icon-search" "entry" ];
