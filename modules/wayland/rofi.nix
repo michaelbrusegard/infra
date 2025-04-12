@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.wayland;
+  cfg = config.modules.wayland;
   inherit (config.lib.formats.rasi) mkLiteral;
 in {
   config = lib.mkIf cfg.enable {
