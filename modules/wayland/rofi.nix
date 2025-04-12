@@ -28,6 +28,7 @@ in {
         };
 
         "inputbar" = {
+          font = "SF Pro Nerd Font 20";
           padding = mkLiteral "12px";
           spacing = mkLiteral "12px";
           children = map mkLiteral [ "icon-search" "entry" ];
@@ -41,7 +42,8 @@ in {
         };
 
         "entry" = {
-          placeholder = "Search";
+          font = mkLiteral "inherit";
+          placeholder = "Search for apps and commands";
           placeholder-color = mkLiteral "#DEDEDE80";
           vertical-align = mkLiteral "0.5";
         };
