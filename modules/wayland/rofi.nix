@@ -14,14 +14,14 @@ in {
       theme = {
         "*" = {
           background-color = mkLiteral "transparent";
-          text-color = mkLiteral "#DEDEDE";
+          text-color = mkLiteral "#dedede";
           margin = 0;
           padding = 0;
           spacing = 0;
         };
 
         "window" = {
-          background-color = mkLiteral "#242424E6";
+          background-color = mkLiteral "#242424e6";
           location = mkLiteral "center";
           width = 640;
           border-radius = 8;
@@ -44,7 +44,7 @@ in {
         "entry" = {
           font = mkLiteral "inherit";
           placeholder = "Search for apps and commands";
-          placeholder-color = mkLiteral "#DEDEDE80";
+          placeholder-color = mkLiteral "#dedede80";
           vertical-align = mkLiteral "0.5";
         };
 
@@ -53,7 +53,7 @@ in {
           columns = 1;
           fixed-height = false;
           border = mkLiteral "1px 0 0";
-          border-color = mkLiteral "#7E7E7E80";
+          border-color = mkLiteral "#7e7e7e80";
         };
 
         "element" = {
@@ -73,16 +73,16 @@ in {
         };
 
         "element normal active" = {
-          text-color = mkLiteral "#0860f2E6";
+          text-color = mkLiteral "#0860f2e6";
         };
 
         "element alternate active" = {
-          text-color = mkLiteral "#0860f2E6";
+          text-color = mkLiteral "#0860f2e6";
         };
 
         "element selected normal, element selected active" = {
-          background-color = mkLiteral "#0860f2E6";
-          text-color = mkLiteral "#FFFFFF";
+          background-color = mkLiteral "#0860f2e6";
+          text-color = mkLiteral "#fff";
         };
       };
     };

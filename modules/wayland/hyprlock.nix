@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, userName, ... }:
 
 let
   cfg = config.modules.wayland;
@@ -9,51 +9,47 @@ in {
       settings = {
         general = {
           ignore_empty_input = true;
-          grace = 300;
+          grace = 0;
           disable_loading_bar = true;
         };
         background = [
           {
-            path = "../../assets/twilight-peaks.png";
+            path = "/home/${userName}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png";
           }
         ];
         label = [
           {
             text = "cmd[update:1000] date '+%A %d %B'";
-            color = "rgba(255, 255, 255, 0.8)";
+            color = "rgba(255,255,255,0.8)";
             font_size = 24;
             font_family = "SF Pro";
-            position =  [0 -220];
+            position = "0,580";
             halign = "center";
             valign = "center";
           }
           {
             text = "cmd[update:1000] date '+%H:%M'";
-            color = "rgba(255, 255, 255, 1.0)";
+            color = "rgba(255,255,255,0.8)";
             font_size = 96;
             font_family = "SF Pro";
-            position =  [0 -140];
+            position = "0,500";
             halign = "center";
             valign = "center";
           }
         ];
         input-field = [
           {
-            size = ["20%" "5%"];
-            outline_thickness = 2;
-            dots_size = 0.33;
-            dots_spacing = 0.15;
-            dots_center = true;
-            dots_rounding = -1;
-            outer_color = "rgba(100, 100, 100, 0.5)";
-            inner_color = "rgba(230, 230, 230, 0.8)";
-            font_color = "rgba(10, 10, 10, 1.0)";
+            size = "160,40";
+            outline_thickness = 0;
+            dots_size = 0.2;
+            dots_center = false;
+            outer_color = "rgba(0,0,0,0)";
+            inner_color = "rgba(78,78,78,0.8)";
+            font_color = "rgba(222,222,222,1)";
             font_family = "SF Pro";
             placeholder_text = "Enter Password";
-            fade_on_empty = true;
-            fade_timeout = 1000;
-            rounding = 20;
-            position =  [0 200];
+            fade_on_empty = false;
+            position = "0,-580";
             halign = "center";
             valign = "center";
           }
