@@ -16,6 +16,9 @@
       telephone = "nb_NO.UTF-8";
       time = "nb_NO.UTF-8";
     };
+    sessionVariables = {
+      LANG = "en_GB.UTF-8";
+    };
     pointerCursor = lib.mkIf (!isDarwin) {
       package = pkgs.apple-cursor;
       name = "macOS";
