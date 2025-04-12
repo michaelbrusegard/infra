@@ -29,8 +29,7 @@ in {
     qt = {
       enable = true;
       style = {
-        name = "WhiteSur-Dark";
-        package = pkgs.whitesur-qt5ct;
+        name = "gtk2";
       };
     };
     services.playerctld.enable = true;
