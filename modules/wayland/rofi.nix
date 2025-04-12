@@ -6,10 +6,7 @@ in {
   config = lib.mkIf cfg.enable {
     programs.rofi = {
       enable = true;
-      location = "center";
-      yoffset = -200;
       terminal = "${pkgs.wezterm}/bin/wezterm";
-      font = "SF Pro Nerd Font";
       theme = let
         inherit (config.lib.formats.rasi) mkLiteral;
       in {
@@ -20,71 +17,98 @@ in {
           fg0 = mkLiteral "#DEDEDE";
           fg1 = mkLiteral "#FFFFFF";
           fg2 = mkLiteral "#DEDEDE80";
+
+          background = mkLiteral "@bg0";
+          "background-alt" = mkLiteral "@bg1";
+          "background-selected" = mkLiteral "@bg2";
+          "background-active" = mkLiteral "@bg2";
+          "background-urgent" = mkLiteral "white";
+
+          foreground = mkLiteral "@fg1";
+          "foreground-alt" = mkLiteral "white";
+          "foreground-selected" = mkLiteral "@fg1";
+          "foreground-active" = mkLiteral "@fg1";
+          "foreground-urgent" = mkLiteral "white";
+
           "background-color" = mkLiteral "transparent";
-          "text-color" = mkLiteral "@fg0";
+          "border-color" = mkLiteral "@bg1";
+          "separator-color" = mkLiteral "white";
+          "placeholder-color" = mkLiteral "@fg2";
+          "handle-color" = mkLiteral "white";
+
+          font = mkLiteral "\"SF Pro 12\"";
           margin = 0;
           padding = 0;
           spacing = 0;
         };
+
         "window" = {
-          "background-color" = mkLiteral "@bg0";
+          "background-color" = mkLiteral "@background";
           location = mkLiteral "center";
           width = 640;
           "border-radius" = 8;
         };
+
         "inputbar" = {
+          font = mkLiteral "\"SF Pro 20\"";
           padding = mkLiteral "12px";
           spacing = mkLiteral "12px";
           children = map mkLiteral [ "icon-search" "entry" ];
         };
+
         "icon-search" = {
           expand = false;
-          filename = mkLiteral "\"Search for apps\"";
+          filename = mkLiteral "\"search\"";
           size = mkLiteral "28px";
         };
+
         "icon-search, entry, element-icon, element-text" = {
           "vertical-align" = mkLiteral "0.5";
         };
+
         "entry" = {
           font = mkLiteral "inherit";
-          placeholder = mkLiteral "\"Search\"";
-          "placeholder-color" = mkLiteral "@fg2";
+          placeholder = mkLiteral "\"Search for apps and commands\"";
+          "placeholder-color" = mkLiteral "@placeholder";
+          "text-color" = mkLiteral "@fg";
         };
+
         "message" = {
           border = mkLiteral "2px 0 0";
-          "border-color" = mkLiteral "@bg1";
-          "background-color" = mkLiteral "@bg1";
+          "border-color" = mkLiteral "@border";
+          "background-color" = mkLiteral "@bg-alt";
         };
+
         "textbox" = {
           padding = mkLiteral "8px 24px";
         };
+
         "listview" = {
           lines = 10;
           columns = 1;
           "fixed-height" = false;
           border = mkLiteral "1px 0 0";
-          "border-color" = mkLiteral "@bg1";
+          "border-color" = mkLiteral "@border";
         };
+
         "element" = {
           padding = mkLiteral "8px 16px";
           spacing = mkLiteral "16px";
           "background-color" = mkLiteral "transparent";
+          "text-color" = mkLiteral "@fg";
         };
-        "element normal active" = {
-          "text-color" = mkLiteral "@bg2";
+
+        "element-text, element-icon" = {
+          "text-color" = mkLiteral "inherit";
         };
-        "element alternate active" = {
-          "text-color" = mkLiteral "@bg2";
+
+        "element selected, element active" = {
+          "background-color" = mkLiteral "@bg-sel";
+          "text-color" = mkLiteral "@fg-act";
         };
-        "element selected normal, element selected active" = {
-          "background-color" = mkLiteral "@bg2";
-          "text-color" = mkLiteral "@fg1";
-        };
+
         "element-icon" = {
           size = mkLiteral "1em";
-        };
-        "element-text" = {
-          "text-color" = mkLiteral "inherit";
         };
       };
     };
