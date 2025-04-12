@@ -20,6 +20,10 @@ in {
         name = "Catppuccin-GTK-Dark";
         package = pkgs.magnetic-catppuccin-gtk;
       };
+      iconTheme = {
+        name = "Papirus-Dark";
+        package = pkgs.papirus-icon-theme;
+      };
       font.name = "SF Pro";
     };
     qt = {
