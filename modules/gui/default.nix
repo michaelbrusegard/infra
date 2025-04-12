@@ -23,6 +23,7 @@ in {
       proton-pass
       protonvpn-gui
       davinci-resolve
+      papirus-icon-theme
     ]);
   };
 }
