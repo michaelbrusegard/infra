@@ -17,20 +17,20 @@ in {
     gtk = {
       enable = true;
       theme = {
-        name = "Catppuccin-GTK-Dark";
-        package = pkgs.magnetic-catppuccin-gtk;
+        name = "WhiteSur-Dark";
+        package = pkgs.whitesur-gtk-theme;
       };
       iconTheme = {
-        name = "Papirus-Dark";
-        package = pkgs.papirus-icon-theme;
+        name = "WhiteSur";
+        package = pkgs.whitesur-icon-theme;
       };
       font.name = "SF Pro";
     };
     qt = {
       enable = true;
       style = {
-        name = "catppuccin-mocha-blue";
-        package = pkgs.catppuccin-qt5ct;
+        name = "WhiteSur-Dark";
+        package = pkgs.whitesur-qt5ct;
       };
     };
     services.playerctld.enable = true;

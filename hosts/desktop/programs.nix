@@ -11,8 +11,8 @@
         name = "SF Pro";
       };
       theme = {
-        name = "Catppuccin-GTK-Dark";
-        package = pkgs.magnetic-catppuccin-gtk;
+        name = "WhiteSur-Dark";
+        package = pkgs.whitesur-gtk-theme;
       };
       settings = {
         background = {
