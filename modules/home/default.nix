@@ -16,11 +16,11 @@
       telephone = "nb_NO.UTF-8";
       time = "nb_NO.UTF-8";
     };
-    packages = with pkgs; lib.mkIf (!isDarwin) [
-      glibcLocales
-    ];
-    sessionVariables = lib.mkIf (!isDarwin) {
+    sessionVariables = {
       LOCALE_ARCHIVE = "${pkgs.glibcLocales}/lib/locale/locale-archive";
+    } // lib.optionalAttrs (!isDarwin) {
+      LOCALE_ARCHIVE_2_11 = "${pkgs.glibcLocales}/lib/locale/locale-archive";
+      LOCALE_ARCHIVE_2_27 = "${pkgs.glibcLocales}/lib/locale/locale-archive";
     };
     pointerCursor = lib.mkIf (!isDarwin) {
       package = pkgs.apple-cursor;

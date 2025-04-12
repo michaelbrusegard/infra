@@ -11,37 +11,37 @@ vim.api.nvim_create_autocmd({ 'BufLeave', 'FocusLost' }, {
 })
 
 -- Open filetypes with system applications
-local file_types = {
-  'png',
-  'jpg',
-  'jpeg',
-  'gif',
-  'webp',
-  'avif',
-  'pdf',
-  'mp3',
-  'mp4',
-  'xls',
-  'xlsx',
-  'xopp',
-  'doc',
-  'docx',
-}
-local binfiles_group = vim.api.nvim_create_augroup('binFiles', { clear = true })
-
-for _, ext in ipairs(file_types) do
-  vim.api.nvim_create_autocmd('BufReadCmd', {
-    pattern = '*.' .. ext,
-    group = binfiles_group,
-    callback = function()
-      local prev_buf = vim.fn.bufnr('%')
-      local fn = vim.fn.expand('%:p')
-      vim.fn.jobstart('open "' .. fn .. '"')
-      vim.api.nvim_echo({ { string.format('Opening file: %s', fn), 'None' } }, false, {})
-      if vim.fn.buflisted(prev_buf) == 1 then
-        vim.api.nvim_set_current_buf(prev_buf)
-      end
-      vim.api.nvim_buf_delete(0, { force = true })
-    end,
-  })
-end
+-- local file_types = {
+--   'png',
+--   'jpg',
+--   'jpeg',
+--   'gif',
+--   'webp',
+--   'avif',
+--   'pdf',
+--   'mp3',
+--   'mp4',
+--   'xls',
+--   'xlsx',
+--   'xopp',
+--   'doc',
+--   'docx',
+-- }
+-- local binfiles_group = vim.api.nvim_create_augroup('binFiles', { clear = true })
+--
+-- for _, ext in ipairs(file_types) do
+--   vim.api.nvim_create_autocmd('BufReadCmd', {
+--     pattern = '*.' .. ext,
+--     group = binfiles_group,
+--     callback = function()
+--       local prev_buf = vim.fn.bufnr('%')
+--       local fn = vim.fn.expand('%:p')
+--       vim.fn.jobstart('open "' .. fn .. '"')
+--       vim.api.nvim_echo({ { string.format('Opening file: %s', fn), 'None' } }, false, {})
+--       if vim.fn.buflisted(prev_buf) == 1 then
+--         vim.api.nvim_set_current_buf(prev_buf)
+--       end
+--       vim.api.nvim_buf_delete(0, { force = true })
+--     end,
+--   })
+-- end
