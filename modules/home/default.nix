@@ -2,23 +2,6 @@
 {
   home = {
     stateVersion = "25.05";
-    language = {
-      base = "en_GB.UTF-8";
-      ctype = "en_GB.UTF-8";
-      messages = "en_GB.UTF-8";
-      address = "nb_NO.UTF-8";
-      collate = "nb_NO.UTF-8";
-      measurement = "nb_NO.UTF-8";
-      monetary = "nb_NO.UTF-8";
-      name = "nb_NO.UTF-8";
-      numeric = "nb_NO.UTF-8";
-      paper = "a4";
-      telephone = "nb_NO.UTF-8";
-      time = "nb_NO.UTF-8";
-    };
-    sessionVariables = {
-      LANG = "en_GB.UTF-8";
-    };
     pointerCursor = lib.mkIf (!isDarwin) {
       package = pkgs.apple-cursor;
       name = "macOS";

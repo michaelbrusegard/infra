@@ -1,4 +1,4 @@
-{ lib, pkgs, userName, home-manager, sops-nix, ... }:
+{ userName, home-manager, sops-nix, ... }:
 {
   imports = [
     home-manager.nixosModules.default
@@ -27,10 +27,20 @@
       "en_GB.UTF-8/UTF-8"
       "nb_NO.UTF-8/UTF-8"
     ];
-    glibcLocales = lib.hiPrio (pkgs.buildPackages.glibcLocales.override {
-      allLocales = lib.any (x: x == "all") config.i18n.supportedLocales;
-      locales = config.i18n.supportedLocales;
-    });
+    extraLocaleSettings = {
+      LC_ADDRESS = "nb_NO.UTF-8";
+      LC_IDENTIFICATION = "nb_NO.UTF-8";
+      LC_MEASUREMENT = "nb_NO.UTF-8";
+      LC_MONETARY = "nb_NO.UTF-8";
+      LC_NAME = "nb_NO.UTF-8";
+      LC_NUMERIC = "nb_NO.UTF-8";
+      LC_PAPER = "nb_NO.UTF-8";
+      LC_TELEPHONE = "nb_NO.UTF-8";
+      LC_TIME = "nb_NO.UTF-8";
+      LANG = "en_GB.UTF-8";
+      LC_CTYPE = "en_GB.UTF-8";
+      LC_MESSAGES = "en_GB.UTF-8";
+    };
   };
   networking = {
     enableIPv6 = true;
