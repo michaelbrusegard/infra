@@ -1,4 +1,4 @@
-{ pkgs, userName, home-manager, sops-nix, ... }:
+{ lib, pkgs, userName, home-manager, sops-nix, ... }:
 {
   imports = [
     home-manager.nixosModules.default
@@ -27,6 +27,10 @@
       "en_GB.UTF-8/UTF-8"
       "nb_NO.UTF-8/UTF-8"
     ];
+    glibcLocales = lib.hiPrio (pkgs.buildPackages.glibcLocales.override {
+      allLocales = lib.any (x: x == "all") config.i18n.supportedLocales;
+      locales = config.i18n.supportedLocales;
+    });
   };
   networking = {
     enableIPv6 = true;
