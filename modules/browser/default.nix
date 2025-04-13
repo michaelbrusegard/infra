@@ -6,6 +6,12 @@ in {
   options.modules.browser.enable = lib.mkEnableOption "Browser configuration";
 
   config = lib.mkIf cfg.enable {
+    home.activation = {
+      linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        $DRY_RUN_CMD mkdir -p $HOME/.zen
+        $DRY_RUN_CMD ln -sf $HOME/.mozilla/firefox/* $HOME/.zen/
+      '';
+    };
     programs = {
       firefox = {
         enable = true;
@@ -22,7 +28,6 @@ in {
         };
         profiles.${userName} = {
           isDefault = true;
-          path = ".zen/${userName}";
           containers = {
             personal = {
               color = "red";
