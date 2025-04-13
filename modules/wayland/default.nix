@@ -34,10 +34,12 @@ in {
         package = pkgs.adwaita-qt;
       };
     };
-    services.playerctld.enable = true;
+    services = { 
+      cliphist.enable = true;
+      playerctld.enable = true;
+    };
     home.packages = with pkgs; [
       wl-clipboard
-      cliphist
       hyprpicker
     ];
   };
