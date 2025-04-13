@@ -1,6 +1,6 @@
 { isDarwin, ... }: {
   modules = {
-    browser.enable = false;
+    browser.enable = true;
     cli.enable = true;
     dev.enable = true;
     ghostty.enable = true;
