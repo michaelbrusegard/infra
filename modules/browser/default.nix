@@ -1,4 +1,4 @@
-{ config, lib, pkgs, zen-browser, system, userName, nur, isDarwin, ... }:
+{ config, lib, pkgs, zen-browser, system, userName, isDarwin, ... }:
 
 let
   cfg = config.modules.browser;
@@ -130,11 +130,11 @@ in {
             };
           };
           search = {
-            default = "DuckDuckGo";
+            default = "ddg";
             force = true;
-            order = ["DuckDuckGo"];
+            order = ["ddg"];
             engines = {
-              "DuckDuckGo" = {
+              "ddg" = {
                 urls = [{
                   template = "https://duckduckgo.com/?q={searchTerms}";
                 }];
@@ -153,11 +153,6 @@ in {
                 metaData.remove = true;
               };
               "amazondotcom-us" = {
-                metaData.hidden = true;
-                metaData.alias = null;
-                metaData.remove = true;
-              };
-              "ddg" = {
                 metaData.hidden = true;
                 metaData.alias = null;
                 metaData.remove = true;
