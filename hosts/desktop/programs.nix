@@ -11,8 +11,8 @@
         name = "SF Pro";
       };
       theme = {
-        name = "WhiteSur-Dark";
-        package = pkgs.whitesur-gtk-theme;
+        name = "Adwaita-dark";
+        package = pkgs.gnome.gnome-themes-extra;
       };
       settings = {
         background = {
