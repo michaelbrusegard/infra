@@ -1,4 +1,4 @@
-{ config, lib, pkgs, zen-browser, system, userName, isDarwin, ... }:
+{ config, lib, pkgs, zen-browser, system, userName, isDarwin, colors, ... }:
 
 let
   cfg = config.modules.browser;
@@ -105,6 +105,7 @@ in {
             "devtools.cache.disabled" = true;
 
             # Zen-specific settings
+            "zen.welcome-screen.seen" = true;
             "zen.urlbar.behavior" = "float";
             "zen.view.compact.animate-sidebar" = false;
             "zen.view.experimental-no-window-controls" = true;
@@ -112,12 +113,16 @@ in {
             "zen.view.show-newtab-button-top" = false;
             "zen.tabs.show-newtab-vertical" = false;
             "zen.theme.color-prefs.amoled" = true;
+            "zen.theme.accent-color" = 	colors.mocha.blue;
+            "zen.theme.color-prefs.use-workspace-colors" = false;
+            "zen.themes.updated-value-observer" = false;
             "zen.splitView.change-on-hover" = true;
             "zen.glance.enabled" = false;
             "zen.glance.activation-method" = "meta";
             "zen.workspaces.force-container-workspace" = true;
             "zen.pinned-tab-manager.restore-pinned-tabs-to-pinned-url" = true;
             "zen.sidebar.data" = "{\"data\":{\"p4\":{\"url\":\"https://translate.google.com/\",\"ua\":true},\"p1738933158209\":{\"url\":\"https://t3.chat/\",\"ua\":true}},\"index\":[\"p1738933158209\",\"p4\"]}";
+            "zen.workspaces.force-container-workspace" = true;
 
             # Theme
             "extensions.activeThemeID" = "firefox-compact-dark@mozilla.org";
