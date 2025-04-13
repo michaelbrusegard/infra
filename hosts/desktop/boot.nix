@@ -19,6 +19,12 @@
         ${pkgs.graphicsmagick}/bin/gm convert -size 1x1 xc:transparent $out
       '';
       font = "${apple-fonts.packages.${system}.sf-pro}/share/fonts/truetype/SF-Pro.ttf";
+      themePackages = [ 
+        (pkgs.callPackage /path/to/adi1090x-plymouth-themes.nix {
+          selected_themes = [ "lone" ];
+        }) 
+      ];
+      theme = "lone";
     };
     initrd = {
       availableKernelModules = [ "nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod" ];
@@ -28,5 +34,4 @@
       };
     };
   };
-  catppuccin.plymouth.enable = true;
 }
