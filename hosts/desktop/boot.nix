@@ -19,11 +19,7 @@
         ${pkgs.graphicsmagick}/bin/gm convert -size 1x1 xc:transparent $out
       '';
       font = "${apple-fonts.packages.${system}.sf-pro}/share/fonts/truetype/SF-Pro.ttf";
-      themePackages = [ 
-        (pkgs.callPackage /path/to/adi1090x-plymouth-themes.nix {
-          selected_themes = [ "lone" ];
-        }) 
-      ];
+      themePackages = [ pkgs.adi1090x-plymouth-themes ];
       theme = "lone";
     };
     initrd = {
