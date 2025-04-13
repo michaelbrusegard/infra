@@ -8,6 +8,7 @@ in {
     ./hyprland.nix
     ./hyprlock.nix
     ./hyprpaper.nix
+    ./mako.nix
     ./rofi.nix
     # ./waybar.nix
   ];
@@ -17,33 +18,27 @@ in {
     gtk = {
       enable = true;
       theme = {
-        name = "Catppuccin-GTK-Dark";
-        package = pkgs.magnetic-catppuccin-gtk;
+        name = "Adwaita-dark";
+        package = pkgs.gnome.gnome-themes-extra;
       };
       iconTheme = {
-        name = "Papirus-Dark";
-        package = pkgs.papirus-icon-theme;
+        name = "Adwaita";
+        package = pkgs.gnome.adwaita-icon-theme;
       };
       font.name = "SF Pro";
     };
     qt = {
       enable = true;
       style = {
-        name = "catppuccin-mocha-blue";
-        package = pkgs.catppuccin-qt5ct;
+        name = "adwaita-dark";
+        package = pkgs.adwaita-qt;
       };
     };
     services.playerctld.enable = true;
     home.packages = with pkgs; [
       wl-clipboard
       cliphist
-      mako
-      libnotify
       hyprpicker
     ];
-    catppuccin.mako = {
-      enable = true;
-      accent = "blue";
-    };
   };
 }
