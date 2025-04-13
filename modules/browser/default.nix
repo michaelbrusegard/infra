@@ -21,6 +21,8 @@ in {
           DefaultDownloadDirectory = "$HOME/Downloads";
         };
         profiles.${userName} = {
+          isDefault = true;
+          path = ".zen/${userName}";
           containers = {
             personal = {
               color = "red";
