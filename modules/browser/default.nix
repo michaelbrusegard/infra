@@ -6,7 +6,7 @@ let
   ctrl-tabs = pkgs.fetchFirefoxAddon {
     name = "ctrl-tabs";
     url = "https://addons.mozilla.org/firefox/downloads/file/4195901/ctrl_tabs-1.2.1.xpi";
-    sha256 = "";
+    sha256 = "sha256-EiPuB4ZGjIg0wzHcouo1ieRbxnpSrlTeGBgmbdiaOsk=";
   };
 in {
   options.modules.browser.enable = lib.mkEnableOption "Browser configuration";
