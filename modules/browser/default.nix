@@ -6,12 +6,6 @@ in {
   options.modules.browser.enable = lib.mkEnableOption "Browser configuration";
 
   config = lib.mkIf cfg.enable {
-    home.activation = {
-      linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        $DRY_RUN_CMD mkdir -p $HOME/.zen
-        $DRY_RUN_CMD ln -sf $HOME/.mozilla/firefox/* $HOME/.zen/
-      '';
-    };
     programs = {
       firefox = {
         enable = true;
@@ -136,11 +130,11 @@ in {
             };
           };
           search = {
-            default = "Search";
+            default = "DuckDuckGo";
             force = true;
-            order = ["Search"];
+            order = ["DuckDuckGo"];
             engines = {
-              "Search" = {
+              "DuckDuckGo" = {
                 urls = [{
                   template = "https://duckduckgo.com/?q={searchTerms}";
                 }];
@@ -148,13 +142,41 @@ in {
                 updateInterval = 24 * 60 * 60 * 1000;
                 definedAliases = ["@d"];
               };
-              "google".metaData.hidden = true;
-              "bing".metaData.hidden = true;
-              "amazondotcom-us".metaData.hidden = true;
-              "ddg".metaData.hidden = true;
-              "ebay".metaData.hidden = true;
-              "wikipedia".metaData.hidden = true;
-              "youtube".metaData.hidden = true;
+              "google" = {
+                metaData.hidden = true;
+                metaData.alias = null;
+                metaData.remove = true;
+              };
+              "bing" = {
+                metaData.hidden = true;
+                metaData.alias = null;
+                metaData.remove = true;
+              };
+              "amazondotcom-us" = {
+                metaData.hidden = true;
+                metaData.alias = null;
+                metaData.remove = true;
+              };
+              "ddg" = {
+                metaData.hidden = true;
+                metaData.alias = null;
+                metaData.remove = true;
+              };
+              "ebay" = {
+                metaData.hidden = true;
+                metaData.alias = null;
+                metaData.remove = true;
+              };
+              "wikipedia" = {
+                metaData.hidden = true;
+                metaData.alias = null;
+                metaData.remove = true;
+              };
+              "youtube" = {
+                metaData.hidden = true;
+                metaData.alias = null;
+                metaData.remove = true;
+              };
             };
           };
           userChrome = ''
@@ -165,6 +187,13 @@ in {
         };
       };
       chromium.enable = true;
+    };
+    home.activation = {
+      linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        $DRY_RUN_CMD mkdir -p $HOME/.zen
+        $DRY_RUN_CMD rm -f $HOME/.zen/*  # Remove existing symlinks
+        $DRY_RUN_CMD ln -sf $HOME/.mozilla/firefox/* $HOME/.zen/
+      '';
     };
   };
 }
