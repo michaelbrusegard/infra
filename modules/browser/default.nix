@@ -1,4 +1,4 @@
-{ config, lib, pkgs, zen-browser, system, userName, nur, isDarwin, ... }:
+{ config, lib, pkgs, zen-browser, system, userName, isDarwin, ... }:
 
 let
   cfg = config.modules.browser;
@@ -137,11 +137,11 @@ in {
             };
           };
           search = {
-            default = "DuckDuckGo";
+            default = "search";
             force = true;
-            order = ["DuckDuckGo"];
+            order = ["search"];
             engines = {
-              "DuckDuckGo" = {
+              "search" = {
                 urls = [{
                   template = "https://duckduckgo.com/?q={searchTerms}";
                 }];
