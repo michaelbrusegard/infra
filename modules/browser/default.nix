@@ -125,7 +125,6 @@ in {
             "zen.workspaces.force-container-workspace" = true;
             "zen.pinned-tab-manager.restore-pinned-tabs-to-pinned-url" = true;
             "zen.sidebar.data" = "{\"data\":{\"p4\":{\"url\":\"https://translate.google.com/\",\"ua\":true},\"p1738933158209\":{\"url\":\"https://t3.chat/\",\"ua\":true}},\"index\":[\"p1738933158209\",\"p4\"]}";
-            "zen.workspaces.force-container-workspace" = true;
 
             # Theme
             "extensions.activeThemeID" = "firefox-compact-dark@mozilla.org";
