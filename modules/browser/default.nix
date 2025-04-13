@@ -140,11 +140,10 @@ in {
 
             # Extensions
             "extensions.autoDisableScopes" = 0;
-            "extensions.webextensions.restrictedDomains" = "";
 
-            "{54c3b408-956e-4059-9699-4e74e55a61d7}".private-browsing = true;
+            "{54c3b408-956e-4059-9699-4e74e55a61d7}".internal.privateBrowsingAllowed = true;
             "uBlock0@raymondhill.net" = {
-              private-browsing = true;
+              internal.privateBrowsingAllowed = true;
               settings = {
                 selectedFilterLists = [
                   "ublock-filters"
@@ -163,14 +162,14 @@ in {
               };
             };
           };
-          "sponsorBlocker@ajay.app".private-browsing = true;
-          "{34daeb50-c2d2-4f14-886a-7160b24d66a4}".private-browsing = true;
-          "wappalyzer@crunchlabz.com".private-browsing = true;
-          "@react-devtools".private-browsing = true;
-          "vpn@proton.ch".private-browsing = true;
-          "78272b6fa58f4a1abaac99321d503a20@proton.me".private-browsing = true;
-          "{a658a273-612e-489e-b4f1-5344e672f4f5}".private-browsing = true;
-          "{20a9bb38-ed7c-4faf-9aaf-7c5d241fd747}".private-browsing = true;
+          "sponsorBlocker@ajay.app".internal.privateBrowsingAllowed = true;
+          "{34daeb50-c2d2-4f14-886a-7160b24d66a4}".internal.privateBrowsingAllowed = true;
+          "wappalyzer@crunchlabz.com".internal.privateBrowsingAllowed = true;
+          "@react-devtools".internal.privateBrowsingAllowed = true;
+          "vpn@proton.ch".internal.privateBrowsingAllowed = true;
+          "78272b6fa58f4a1abaac99321d503a20@proton.me".internal.privateBrowsingAllowed = true;
+          "{a658a273-612e-489e-b4f1-5344e672f4f5}".internal.privateBrowsingAllowed = true;
+          "{20a9bb38-ed7c-4faf-9aaf-7c5d241fd747}".internal.privateBrowsingAllowed = true;
 
           search = {
             default = "search";
