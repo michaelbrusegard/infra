@@ -121,6 +121,7 @@ in {
             "extensions.activeThemeID" = "firefox-compact-dark@mozilla.org";
             "browser.theme.content-theme" = 0;
             "browser.theme.toolbar-theme" = 0;
+            "font.name.serif.x-western" = "SF Pro"
 
             # Language
             "intl.accept_languages" = "en,no";
