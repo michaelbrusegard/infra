@@ -130,11 +130,11 @@ in {
             };
           };
           search = {
-            default = "ddg";
+            default = "search";
             force = true;
-            order = ["ddg"];
+            order = ["search"];
             engines = {
-              "ddg" = {
+              "search" = {
                 urls = [{
                   template = "https://duckduckgo.com/?q={searchTerms}";
                 }];
@@ -153,6 +153,11 @@ in {
                 metaData.remove = true;
               };
               "amazondotcom-us" = {
+                metaData.hidden = true;
+                metaData.alias = null;
+                metaData.remove = true;
+              };
+              "ddg" = {
                 metaData.hidden = true;
                 metaData.alias = null;
                 metaData.remove = true;
