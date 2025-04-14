@@ -82,15 +82,15 @@
         alt - 9 : yabai -m space --focus $(yabai -m query --spaces | jq '.[-1].index')
 
         # Move window to specific space
-        alt + shift - 1 : yabai -m window --space 1
-        alt + shift - 2 : yabai -m window --space 2
-        alt + shift - 3 : yabai -m window --space 3
-        alt + shift - 4 : yabai -m window --space 4
-        alt + shift - 5 : yabai -m window --space 5
-        alt + shift - 6 : yabai -m window --space 6
-        alt + shift - 7 : yabai -m window --space 7
-        alt + shift - 8 : yabai -m window --space 8
-        alt + shift - 9 : yabai -m window --space $(yabai -m query --spaces | jq '.[-1].index')
+        alt + shift - 1 : yabai -m window --space 1 && yabai -m space --focus 1
+        alt + shift - 2 : yabai -m window --space 2 && yabai -m space --focus 2
+        alt + shift - 3 : yabai -m window --space 3 && yabai -m space --focus 3
+        alt + shift - 4 : yabai -m window --space 4 && yabai -m space --focus 4
+        alt + shift - 5 : yabai -m window --space 5 && yabai -m space --focus 5
+        alt + shift - 6 : yabai -m window --space 6 && yabai -m space --focus 6
+        alt + shift - 7 : yabai -m window --space 7 && yabai -m space --focus 7
+        alt + shift - 8 : yabai -m window --space 8 && yabai -m space --focus 8
+        alt + shift - 9 : LAST_SPACE=$(yabai -m query --spaces | jq '.[-1].index'); yabai -m window --space $LAST_SPACE && yabai -m space --focus $LAST_SPACE
 
         # Toggle Floating Window
         alt - 0 : yabai -m window --toggle float
