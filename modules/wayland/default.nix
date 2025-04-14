@@ -39,6 +39,7 @@ in {
       playerctld.enable = true;
     };
     home.packages = with pkgs; [
+      xclip
       wl-clipboard
       hyprpicker
     ];
