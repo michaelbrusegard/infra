@@ -1,6 +1,11 @@
 local wezterm = require('wezterm')
 
 local function options(config)
+  -- Ensure system binaries are available in PATH
+  config.set_environment_variables = {
+    PATH = '/usr/local/bin:/usr/bin:/bin:' .. (os.getenv('PATH') or ''),
+  }
+
   -- Quit wezterm when all windows are closed
   config.quit_when_all_windows_are_closed = true
 

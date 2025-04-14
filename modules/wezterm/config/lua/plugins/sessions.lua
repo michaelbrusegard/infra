@@ -7,11 +7,11 @@ return function(config)
 
   resurrect.state_manager.set_encryption({
     enable = true,
-    method = '/opt/homebrew/bin/gpg',
-    public_key = '6596A3ED40F6534894332DD2ECC513C0F9798B79',
+    method = 'age',
+    private_key = '/path/to/private/key.txt',
+    public_key = 'age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p',
   })
 
-  -- loads the state whenever I create a new workspace
   wezterm.on('smart_workspace_switcher.workspace_switcher.created', function(window, _, label)
     resurrect.workspace_state.restore_workspace(resurrect.state_manager.load_state(label, 'workspace'), {
       window = window,
@@ -21,7 +21,6 @@ return function(config)
     })
   end)
 
-  -- Saves the state whenever I select a workspace
   wezterm.on('smart_workspace_switcher.workspace_switcher.selected', function()
     local workspace_state = resurrect.workspace_state
     resurrect.state_manager.save_state(workspace_state.get_workspace_state())
