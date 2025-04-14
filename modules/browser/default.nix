@@ -77,7 +77,6 @@ in {
             "browser.search.suggest.enabled" = true;
             "browser.download.useDownloadDir" = true;
             "browser.download.always_ask_before_handling_new_types" = false;
-            "browser.formfill.enable" = false;
             "browser.showQuitWarning" = false;
             "browser.warnOnQuit" = false;
             "browser.privatebrowsing.searchsprovider.name" = "search";
