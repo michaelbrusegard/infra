@@ -17,7 +17,7 @@ in {
       firefox = {
         enable = true;
         package = if isDarwin then
-          nix-darwin-browsers.packages.${system}.zen-browser-bin;
+          nix-darwin-browsers.packages.${system}.zen-browser-bin
         else
           zen-browser.packages.${system}.default;
         languagePacks = [ "en-GB" ];
@@ -34,7 +34,7 @@ in {
                 Alias = "@d";
               }
             ];
-            Remove = ["Google", "Amazon.com", "Bing", "DuckDuckGo", "eBay", "Wikipedia"];
+            Remove = ["Google" "Amazon.com" "Bing" "DuckDuckGo" "eBay" "Wikipedia"];
             PreventInstalls = true;
           };
         };
