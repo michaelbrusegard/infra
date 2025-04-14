@@ -136,27 +136,21 @@ in {
             # Extensions
             "extensions.autoDisableScopes" = 0;
 
-            "uBlock0@raymondhill.net" = {
-              allowed_permissions = [
-                "internal:privateBrowsingAllowed"
-                "internal:svgContextPropertiesAllowed"
+            "uBlock0@raymondhill.net".settings = {
+              selectedFilterLists = [
+                "ublock-filters"
+                "ublock-badware"
+                "ublock-privacy"
+                "ublock-unbreak"
+                "ublock-quick-fixes"
+                "fanboy-cookiemonster"
+                "easylist-cookie"
+                "adguard-cookies"
+                "adguard-popup"
+                "adguard-mobile"
+                "block-annoyances"
+                "adguard-social"
               ];
-              settings = {
-                selectedFilterLists = [
-                  "ublock-filters"
-                  "ublock-badware"
-                  "ublock-privacy"
-                  "ublock-unbreak"
-                  "ublock-quick-fixes"
-                  "fanboy-cookiemonster"
-                  "easylist-cookie"
-                  "adguard-cookies"
-                  "adguard-popup"
-                  "adguard-mobile"
-                  "block-annoyances"
-                  "adguard-social"
-                ];
-              };
             };
           };
 
@@ -221,6 +215,7 @@ in {
     };
     home = {
       file = {
+        ".mozilla/firefox/${userName}/extension-preferences.json".source = ./config/extension-preferences.json;
         ".mozilla/firefox/${userName}/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
         ".mozilla/firefox/${userName}/zen-themes.json".source = ./config/zen-themes.json;
       };
