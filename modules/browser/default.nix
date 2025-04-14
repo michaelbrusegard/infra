@@ -26,6 +26,20 @@ in {
         languagePacks = [ "en-GB" ];
         policies = {
           DefaultDownloadDirectory = "$HOME/Downloads";
+          SearchEngines = {
+            Default = "search";
+            Add = [
+              {
+                Name = "search";
+                URLTemplate = "https://duckduckgo.com/?q={searchTerms}";
+                IconURL = "https://duckduckgo.com/favicon.ico";
+                Method = "GET";
+                Alias = "@d";
+              }
+            ];
+            Remove = ["Google", "Amazon.com", "Bing", "DuckDuckGo", "eBay", "Wikipedia"];
+            PreventInstalls = true;
+          };
         };
         profiles.${userName} = {
           isDefault = true;
@@ -78,6 +92,7 @@ in {
             "browser.search.suggest.enabled" = true;
             "browser.download.useDownloadDir" = true;
             "browser.download.always_ask_before_handling_new_types" = false;
+            "browser.search.separatePrivateDefault" = false;
 
             # Pins Proton Pass extension to the toolbar and remove the other extensions from being pinned
             "browser.uiCustomization.state" = ''{"placements":{"widget-overflow-fixed-list":[],"unified-extensions-area":["sponsorblocker_ajay_app-browser-action","wappalyzer_crunchlabz_com-browser-action","ublock0_raymondhill_net-browser-action","_react-devtools-browser-action","_34daeb50-c2d2-4f14-886a-7160b24d66a4_-browser-action","addon_darkreader_org-browser-action","_174b2d58-b983-4501-ab4b-07e71203cb43_-browser-action","vpn_proton_ch-browser-action","_a658a273-612e-489e-b4f1-5344e672f4f5_-browser-action"],"nav-bar":["back-button","forward-button","stop-reload-button","vertical-spacer","customizableui-special-spring1","urlbar-container","customizableui-special-spring2","unified-extensions-button","_d634138d-c276-4fc8-924b-40a0ea21d284_-browser-action","78272b6fa58f4a1abaac99321d503a20_proton_me-browser-action"],"TabsToolbar":["tabbrowser-tabs"],"vertical-tabs":[],"PersonalToolbar":["import-button","personal-bookmarks"],"zen-sidebar-top-buttons":[],"zen-sidebar-bottom-buttons":["preferences-button","zen-workspaces-button","downloads-button"],"zen-sidebar-icons-wrapper":["zen-profile-button","zen-workspaces-button","downloads-button"]},"seen":["developer-button","wappalyzer_crunchlabz_com-browser-action","ublock0_raymondhill_net-browser-action","_react-devtools-browser-action","_d634138d-c276-4fc8-924b-40a0ea21d284_-browser-action","78272b6fa58f4a1abaac99321d503a20_proton_me-browser-action","sponsorblocker_ajay_app-browser-action","_34daeb50-c2d2-4f14-886a-7160b24d66a4_-browser-action","addon_darkreader_org-browser-action","_174b2d58-b983-4501-ab4b-07e71203cb43_-browser-action","vpn_proton_ch-browser-action","_a658a273-612e-489e-b4f1-5344e672f4f5_-browser-action"],"dirtyAreaCache":["nav-bar","vertical-tabs","zen-sidebar-icons-wrapper","PersonalToolbar","unified-extensions-area","TabsToolbar","zen-sidebar-bottom-buttons"],"currentVersion":21,"newElementCount":4}'';
@@ -119,7 +134,6 @@ in {
             "zen.glance.activation-method" = "meta";
             "zen.workspaces.force-container-workspace" = true;
             "zen.pinned-tab-manager.restore-pinned-tabs-to-pinned-url" = true;
-            "zen.sidebar.data" = "{\"data\":{\"p4\":{\"url\":\"https://translate.google.com/\",\"ua\":true},\"p1738933158209\":{\"url\":\"https://t3.chat/\",\"ua\":true}},\"index\":[\"p1738933158209\",\"p4\"]}";
 
             # Theme
             "extensions.activeThemeID" = "firefox-compact-dark@mozilla.org";
@@ -166,41 +180,13 @@ in {
                 updateInterval = 24 * 60 * 60 * 1000;
                 definedAliases = ["@d"];
               };
-              "google" = {
-                metaData.hidden = true;
-                metaData.alias = null;
-                metaData.remove = true;
-              };
-              "bing" = {
-                metaData.hidden = true;
-                metaData.alias = null;
-                metaData.remove = true;
-              };
-              "amazondotcom-us" = {
-                metaData.hidden = true;
-                metaData.alias = null;
-                metaData.remove = true;
-              };
-              "ddg" = {
-                metaData.hidden = true;
-                metaData.alias = null;
-                metaData.remove = true;
-              };
-              "ebay" = {
-                metaData.hidden = true;
-                metaData.alias = null;
-                metaData.remove = true;
-              };
-              "wikipedia" = {
-                metaData.hidden = true;
-                metaData.alias = null;
-                metaData.remove = true;
-              };
-              "youtube" = {
-                metaData.hidden = true;
-                metaData.alias = null;
-                metaData.remove = true;
-              };
+              "google".metaData.remove = true;
+              "bing".metaData.remove = true;
+              "amazondotcom-us".metaData.remove = true;
+              "ddg".metaData.remove = true;
+              "ebay".metaData.remove = true;
+              "wikipedia".metaData.remove = true;
+              "youtube".metaData.remove = true;
             };
           };
           userChrome = ''
@@ -214,7 +200,6 @@ in {
     };
     home = {
       file = {
-        ".mozilla/firefox/${userName}/extension-preferences.json".source = ./config/extension-preferences.json;
         ".mozilla/firefox/${userName}/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
         ".mozilla/firefox/${userName}/zen-themes.json".source = ./config/zen-themes.json;
       };
