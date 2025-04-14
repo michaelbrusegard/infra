@@ -1,5 +1,9 @@
-{ pkgs, ... }: {
+{ pkgs, clipboard-sync, ... }: {
+  imports = [
+    clipboard-sync.nixosModules.default
+  ];
   services = {
+    clipboard-sync.enable = true;
     kanata.enable = true;
     openssh = {
       enable = true;

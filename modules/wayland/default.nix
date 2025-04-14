@@ -35,14 +35,10 @@ in {
       };
     };
     services = { 
-      copyq = {
-        enable = true;
-        # forceXWayland = true;
-      };
+      cliphist.enable = true;
       playerctld.enable = true;
     };
     home.packages = with pkgs; [
-      xclip
       wl-clipboard
       hyprpicker
     ];
