@@ -121,9 +121,7 @@ in {
           "alt, return, exec, wezterm"
           "alt shift, return, exec, wezterm -e sh -c 'yazi'"
           "super, space, exec, rofi -show drun"
-          # "super, c, exec, wl-copy"
-          # "super, v, exec, wl-paste"
-          "super shift, v, exec, cliphist list | rofi -dmenu -lines 10 | cliphist decode | wl-copy"
+          "super shift, v, exec, cliphist list | rofi -dmenu -theme-str 'listview {lines: 10;} element {padding: 8px 16px;}' | cliphist decode | wl-copy"
           "super, q, killactive,"
           "super ctrl, q, exec, loginctl lock-session"
         ];
