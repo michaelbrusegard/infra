@@ -11,10 +11,6 @@ in {
         env = [
           "NIXOS_OZONE_WL,1"
         ];
-        exec-once = [ 
-          "wl-paste --type text --watch cliphist store"
-          "wl-paste --type image --watch cliphist store"
-        ];
         monitor = [
           "DP-1,3440x1440@144,0x0,1"
           "DP-3,2560x1440@144,3440x0,1"
@@ -121,7 +117,7 @@ in {
           "alt, return, exec, wezterm"
           "alt shift, return, exec, wezterm -e sh -c 'yazi'"
           "super, space, exec, rofi -show drun"
-          "super shift, v, exec, cliphist list | rofi -dmenu -theme-str 'listview {lines: 10;} element {padding: 8px 16px;}' | cliphist decode | wl-copy"
+          "super shift, v, exec, copyq toggle"
           "super, q, killactive,"
           "super ctrl, q, exec, loginctl lock-session"
         ];

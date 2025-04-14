@@ -35,7 +35,10 @@ in {
       };
     };
     services = { 
-      cliphist.enable = true;
+      copyq = {
+        enable = true;
+        # forceXWayland = true;
+      };
       playerctld.enable = true;
     };
     home.packages = with pkgs; [
