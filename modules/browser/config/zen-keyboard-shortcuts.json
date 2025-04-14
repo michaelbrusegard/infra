@@ -1872,7 +1872,7 @@
     },
     {
       "id": "zen-workspace-forward",
-      "key": "e",
+      "key": "n",
       "keycode": "",
       "group": "zen-workspace",
       "l10nId": "zen-workspace-shortcut-forward",
@@ -1890,7 +1890,7 @@
     },
     {
       "id": "zen-workspace-backward",
-      "key": "q",
+      "key": "p",
       "keycode": "",
       "group": "zen-workspace",
       "l10nId": "zen-workspace-shortcut-backward",
