@@ -87,6 +87,9 @@ in {
 
             # Keybinds
             "ui.key.accelKey" = 224;
+            "ui.key.chromeAccess" = 0;
+            "ui.key.menuAccessKey" = 0;
+            "ui.key.menuAccessKeyFocuses" = false;
 
             # Privacy
             "privacy.donottrackheader.enabled" = true;
