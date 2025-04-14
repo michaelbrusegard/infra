@@ -14,6 +14,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     sops-nix.url = "github:Mic92/sops-nix";
+    clipboard-sync.url = "github:dnut/clipboard-sync";
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     apple-emoji-linux.url = "github:samuelngs/apple-emoji-linux";
     apple-fonts.url = "github:Lyndeno/apple-fonts.nix";
