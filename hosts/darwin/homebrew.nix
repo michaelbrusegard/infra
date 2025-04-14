@@ -13,7 +13,6 @@
       proton-pass
       protonvpn
       proton-drive
-      zen-browser
       riscv-tools
     ];
     masApps = {

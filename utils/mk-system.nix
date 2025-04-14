@@ -14,7 +14,7 @@ let
     inherit system;
     specialArgs = {
       inherit system userName hostName colors isDarwin;
-      inherit (inputs) nixpkgs darwin home-manager sops-nix nixos-hardware nur apple-fonts apple-emoji-linux catppuccin zen-browser secrets;
+      inherit (inputs) nixpkgs darwin home-manager sops-nix nixos-hardware nur apple-fonts apple-emoji-linux catppuccin zen-browser nix-darwin-browsers secrets;
     };
   };
 

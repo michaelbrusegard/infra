@@ -1,4 +1,4 @@
-{ config, lib, pkgs, zen-browser, system, userName, isDarwin, colors, ... }:
+{ config, lib, pkgs, zen-browser, nix-darwin-browsers, system, userName, isDarwin, colors, ... }:
 
 let
   cfg = config.modules.browser;
@@ -17,10 +17,7 @@ in {
       firefox = {
         enable = true;
         package = if isDarwin then
-          pkgs.runCommand "zen-browser-wrapper" {} ''
-            mkdir -p $out/bin
-            ln -s "/Applications/Zen Browser.app/Contents/MacOS/zen" $out/bin/firefox
-          ''
+          nix-darwin-browsers.packages.${system}.zen-browser-bin;
         else
           zen-browser.packages.${system}.default;
         languagePacks = [ "en-GB" ];
@@ -199,11 +196,14 @@ in {
       chromium.enable = true;
     };
     home = {
-      file = {
+      file = lib.mkIf (!isDarwin) {
         ".mozilla/firefox/${userName}/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
         ".mozilla/firefox/${userName}/zen-themes.json".source = ./config/zen-themes.json;
+      } // lib.mkIf isDarwin {
+        "Library/Application Support/Zen Browser/Profiles/default/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
+        "Library/Application Support/Zen Browser/Profiles/default/zen-themes.json".source = ./config/zen-themes.json;
       };
-      activation = {
+      activation = lib.mkIf (!isDarwin) {
         linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
           $DRY_RUN_CMD mkdir -p $HOME/.zen
           $DRY_RUN_CMD rm -f $HOME/.zen/*

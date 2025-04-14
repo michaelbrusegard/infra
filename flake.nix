@@ -19,6 +19,7 @@
     apple-fonts.url = "github:Lyndeno/apple-fonts.nix";
     catppuccin.url = "github:catppuccin/nix";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
+    nix-darwin-browsers.url = "github:wuz/nix-darwin-browsers";
     secrets = {
       url = "git+ssh://git@github.com/michaelbrusegard/dotfiles-private.git?ref=main&shallow=1";
       flake = false;
