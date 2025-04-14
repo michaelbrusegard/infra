@@ -10,7 +10,6 @@ in {
       settings = {
         env = [
           "NIXOS_OZONE_WL,1"
-          "OZONE_WAYLAND,1"
         ];
         exec-once = [ 
           "wl-paste --type text --watch cliphist store"
