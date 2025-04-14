@@ -10,8 +10,8 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -28,8 +28,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -46,26 +46,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
-      },
-      "action": null,
-      "disabled": false,
-      "reserved": false,
-      "internal": true
-    },
-    {
-      "id": "key_openHelpMac",
-      "key": "?",
-      "keycode": null,
-      "group": "other",
-      "l10nId": "zen-help-shortcut",
-      "modifiers": {
-        "control": false,
-        "alt": false,
-        "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -82,8 +64,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_minimizeWindow",
       "disabled": false,
@@ -136,8 +118,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -154,8 +136,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -172,8 +154,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -190,8 +172,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -208,8 +190,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -226,8 +208,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -244,8 +226,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -262,8 +244,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -280,8 +262,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -290,15 +272,15 @@
     },
     {
       "id": "key_undoCloseWindow",
-      "key": "",
-      "keycode": "",
+      "key": "n",
+      "keycode": null,
       "group": "windowAndTabManagement",
       "l10nId": "zen-window-new-shortcut",
       "modifiers": {
         "control": false,
         "alt": false,
-        "shift": false,
-        "meta": false,
+        "shift": true,
+        "meta": true,
         "accel": false
       },
       "action": "History:UndoCloseWindow",
@@ -316,8 +298,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "History:RestoreLastClosedTabOrWindowOrSession",
       "disabled": false,
@@ -334,8 +316,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -351,8 +333,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Tools:Sanitize",
       "disabled": false,
@@ -368,8 +350,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Tools:Sanitize",
       "disabled": false,
@@ -386,8 +368,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:Screenshot",
       "disabled": false,
@@ -396,15 +378,15 @@
     },
     {
       "id": "key_privatebrowsing",
-      "key": "",
-      "keycode": "",
+      "key": "p",
+      "keycode": null,
       "group": "navigation",
       "l10nId": "zen-private-browsing-shortcut",
       "modifiers": {
         "control": false,
         "alt": false,
-        "shift": false,
-        "meta": false,
+        "shift": true,
+        "meta": true,
         "accel": false
       },
       "action": "Tools:PrivateBrowsing",
@@ -422,8 +404,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_switchTextDirection",
       "disabled": false,
@@ -457,8 +439,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_fullZoomReset",
       "disabled": false,
@@ -475,8 +457,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_fullZoomReset",
       "disabled": false,
@@ -493,8 +475,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_fullZoomEnlarge",
       "disabled": false,
@@ -511,8 +493,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_fullZoomEnlarge",
       "disabled": false,
@@ -529,8 +511,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_fullZoomEnlarge",
       "disabled": false,
@@ -547,8 +529,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_fullZoomReduce",
       "disabled": false,
@@ -565,8 +547,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_fullZoomReduce",
       "disabled": false,
@@ -583,8 +565,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_fullZoomReduce",
       "disabled": false,
@@ -601,8 +583,44 @@
         "control": false,
         "alt": false,
         "shift": true,
+        "meta": true,
+        "accel": false
+      },
+      "action": null,
+      "disabled": false,
+      "reserved": false,
+      "internal": false
+    },
+    {
+      "id": "toggleSidebarKb",
+      "key": "z",
+      "keycode": null,
+      "group": "other",
+      "l10nId": "zen-toggle-sidebar-shortcut",
+      "modifiers": {
+        "control": true,
+        "alt": false,
+        "shift": false,
         "meta": false,
-        "accel": true
+        "accel": false
+      },
+      "action": null,
+      "disabled": false,
+      "reserved": false,
+      "internal": false
+    },
+    {
+      "id": "viewGenaiChatSidebarKb",
+      "key": "x",
+      "keycode": null,
+      "group": "other",
+      "l10nId": "zen-ai-chatbot-sidebar-shortcut",
+      "modifiers": {
+        "control": true,
+        "alt": false,
+        "shift": false,
+        "meta": false,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -619,8 +637,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:Stop",
       "disabled": false,
@@ -654,8 +672,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -672,8 +690,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -690,8 +708,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:ShowAllBookmarks",
       "disabled": false,
@@ -708,8 +726,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -726,8 +744,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:AddBookmarkAs",
       "disabled": false,
@@ -778,8 +796,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_findSelection",
       "disabled": false,
@@ -796,8 +814,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_findPrevious",
       "disabled": false,
@@ -814,8 +832,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_findAgain",
       "disabled": false,
@@ -832,8 +850,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_find",
       "disabled": false,
@@ -850,8 +868,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "View:PageInfo",
       "disabled": false,
@@ -868,8 +886,8 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "View:PageSource",
       "disabled": false,
@@ -886,8 +904,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "View:PageSource",
       "disabled": false,
@@ -921,8 +939,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:ReloadSkipCache",
       "disabled": false,
@@ -939,8 +957,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:Reload",
       "disabled": false,
@@ -957,8 +975,8 @@
         "control": false,
         "alt": true,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "View:PictureInPicture",
       "disabled": false,
@@ -975,8 +993,8 @@
         "control": false,
         "alt": true,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "View:PictureInPicture",
       "disabled": false,
@@ -993,8 +1011,8 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "View:ReaderView",
       "disabled": true,
@@ -1028,8 +1046,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "View:FullScreen",
       "disabled": true,
@@ -1046,8 +1064,8 @@
         "control": true,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "View:FullScreen",
       "disabled": true,
@@ -1081,8 +1099,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "View:FullScreen",
       "disabled": false,
@@ -1099,8 +1117,8 @@
         "control": true,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "View:FullScreen",
       "disabled": false,
@@ -1117,8 +1135,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:ShowAllHistory",
       "disabled": false,
@@ -1169,8 +1187,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:Forward",
       "disabled": false,
@@ -1187,8 +1205,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:Back",
       "disabled": false,
@@ -1204,8 +1222,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:Forward",
       "disabled": false,
@@ -1221,8 +1239,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:Back",
       "disabled": false,
@@ -1273,8 +1291,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -1308,8 +1326,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -1326,8 +1344,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -1344,8 +1362,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -1362,8 +1380,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -1380,8 +1398,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -1416,8 +1434,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_closeWindow",
       "disabled": false,
@@ -1434,8 +1452,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_close",
       "disabled": false,
@@ -1452,8 +1470,7 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": false
+        "meta": false
       },
       "action": "cmd_print",
       "disabled": false,
@@ -1470,8 +1487,7 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": false
+        "meta": false
       },
       "action": "Browser:SavePage",
       "disabled": false,
@@ -1488,8 +1504,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:OpenFile",
       "disabled": false,
@@ -1506,8 +1522,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Tools:Addons",
       "disabled": false,
@@ -1524,8 +1540,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Tools:Downloads",
       "disabled": false,
@@ -1542,8 +1558,8 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Tools:Search",
       "disabled": false,
@@ -1560,8 +1576,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Tools:Search",
       "disabled": false,
@@ -1578,8 +1594,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "Browser:OpenLocation",
       "disabled": false,
@@ -1596,8 +1612,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_newNavigatorTabNoEvent",
       "disabled": false,
@@ -1614,8 +1630,8 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_newNavigator",
       "disabled": false,
@@ -1624,7 +1640,7 @@
     },
     {
       "id": "zen-compact-mode-toggle",
-      "key": "s",
+      "key": "",
       "keycode": "",
       "group": "zen-compact-mode",
       "l10nId": "zen-compact-mode-shortcut-toggle",
@@ -1632,8 +1648,7 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": true,
-        "accel": false
+        "meta": false
       },
       "action": "cmd_zenCompactModeToggle",
       "disabled": false,
@@ -1642,7 +1657,7 @@
     },
     {
       "id": "zen-compact-mode-show-sidebar",
-      "key": "",
+      "key": "s",
       "keycode": "",
       "group": "zen-compact-mode",
       "l10nId": "zen-compact-mode-shortcut-show-sidebar",
@@ -1650,7 +1665,7 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
+        "meta": true,
         "accel": false
       },
       "action": "cmd_zenCompactModeShowSidebar",
@@ -1668,8 +1683,7 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": false
+        "meta": false
       },
       "action": "cmd_zenCompactModeShowToolbar",
       "disabled": false,
@@ -1858,7 +1872,7 @@
     },
     {
       "id": "zen-workspace-forward",
-      "key": "n",
+      "key": "e",
       "keycode": "",
       "group": "zen-workspace",
       "l10nId": "zen-workspace-shortcut-forward",
@@ -1876,7 +1890,7 @@
     },
     {
       "id": "zen-workspace-backward",
-      "key": "p",
+      "key": "q",
       "keycode": "",
       "group": "zen-workspace",
       "l10nId": "zen-workspace-shortcut-backward",
@@ -1902,8 +1916,7 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": false
+        "meta": false
       },
       "action": "cmd_zenSplitViewGrid",
       "disabled": false,
@@ -1912,15 +1925,15 @@
     },
     {
       "id": "zen-split-view-vertical",
-      "key": "+",
+      "key": "=",
       "keycode": "",
       "group": "zen-split-view",
       "l10nId": "zen-split-view-shortcut-vertical",
       "modifiers": {
-        "control": true,
+        "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
+        "meta": true,
         "accel": false
       },
       "action": "cmd_zenSplitViewVertical",
@@ -1938,8 +1951,7 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
-        "accel": false
+        "meta": false
       },
       "action": "cmd_zenSplitViewHorizontal",
       "disabled": false,
@@ -1948,15 +1960,15 @@
     },
     {
       "id": "zen-split-view-unsplit",
-      "key": "_",
+      "key": "-",
       "keycode": "",
       "group": "zen-split-view",
       "l10nId": "zen-split-view-shortcut-unsplit",
       "modifiers": {
-        "control": true,
+        "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
+        "meta": true,
         "accel": false
       },
       "action": "cmd_zenSplitViewUnsplit",
@@ -1984,13 +1996,13 @@
     },
     {
       "id": "zen-toggle-sidebar",
-      "key": "",
+      "key": "b",
       "keycode": "",
       "group": "zen-other",
       "l10nId": "zen-sidebar-shortcut-toggle",
       "modifiers": {
         "control": false,
-        "alt": false,
+        "alt": true,
         "shift": false,
         "meta": false,
         "accel": false
@@ -2010,8 +2022,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": "cmd_zenCopyCurrentURL",
       "disabled": false,
@@ -2019,8 +2031,26 @@
       "internal": false
     },
     {
+      "id": "zen-copy-url-markdown",
+      "key": "c",
+      "keycode": "",
+      "group": "zen-other",
+      "l10nId": "zen-text-action-copy-url-markdown-shortcut",
+      "modifiers": {
+        "control": false,
+        "alt": true,
+        "shift": true,
+        "meta": true,
+        "accel": false
+      },
+      "action": "cmd_zenCopyCurrentURLMarkdown",
+      "disabled": false,
+      "reserved": false,
+      "internal": false
+    },
+    {
       "id": "key_inspectorMac",
-      "key": "l",
+      "key": "c",
       "keycode": null,
       "group": "devTools",
       "l10nId": null,
@@ -2028,8 +2058,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -2063,8 +2093,8 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -2132,8 +2162,8 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -2150,8 +2180,8 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -2168,8 +2198,8 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -2178,7 +2208,7 @@
     },
     {
       "id": "key_inspector",
-      "key": "l",
+      "key": "c",
       "keycode": null,
       "group": "devTools",
       "l10nId": null,
@@ -2186,8 +2216,8 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -2204,8 +2234,8 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -2222,8 +2252,8 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -2240,8 +2270,8 @@
         "control": false,
         "alt": true,
         "shift": true,
-        "meta": false,
-        "accel": true
+        "meta": true,
+        "accel": false
       },
       "action": null,
       "disabled": false,
@@ -2258,61 +2288,7 @@
         "control": false,
         "alt": true,
         "shift": false,
-        "meta": false,
-        "accel": true
-      },
-      "action": null,
-      "disabled": false,
-      "reserved": false,
-      "internal": false
-    },
-    {
-      "id": "zen-copy-url-markdown",
-      "key": "c",
-      "keycode": "",
-      "group": "zen-other",
-      "l10nId": "zen-text-action-copy-url-markdown-shortcut",
-      "modifiers": {
-        "control": false,
-        "alt": true,
-        "shift": true,
-        "meta": false,
-        "accel": true
-      },
-      "action": "cmd_zenCopyCurrentURLMarkdown",
-      "disabled": false,
-      "reserved": false,
-      "internal": false
-    },
-    {
-      "id": "toggleSidebarKb",
-      "key": "z",
-      "keycode": null,
-      "group": "other",
-      "l10nId": "zen-toggle-sidebar-shortcut",
-      "modifiers": {
-        "control": true,
-        "alt": false,
-        "shift": false,
-        "meta": false,
-        "accel": false
-      },
-      "action": null,
-      "disabled": false,
-      "reserved": false,
-      "internal": false
-    },
-    {
-      "id": "viewGenaiChatSidebarKb",
-      "key": "x",
-      "keycode": null,
-      "group": "other",
-      "l10nId": "zen-ai-chatbot-sidebar-shortcut",
-      "modifiers": {
-        "control": true,
-        "alt": false,
-        "shift": false,
-        "meta": false,
+        "meta": true,
         "accel": false
       },
       "action": null,

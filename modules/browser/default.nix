@@ -78,8 +78,11 @@ in {
             "browser.download.useDownloadDir" = true;
             "browser.download.always_ask_before_handling_new_types" = false;
             "browser.formfill.enable" = false;
+            "browser.showQuitWarning" = false;
+            "browser.warnOnQuit" = false;
+            "browser.privatebrowsing.searchsprovider.name" = "search";
 
-            # Pins Proton Pass extension to the toolbar
+            # Pins Proton Pass extension to the toolbar and remove the other extensions from being pinned
             "browser.uiCustomization.state" = ''{"placements":{"widget-overflow-fixed-list":[],"unified-extensions-area":["sponsorblocker_ajay_app-browser-action","wappalyzer_crunchlabz_com-browser-action","ublock0_raymondhill_net-browser-action","_react-devtools-browser-action","_34daeb50-c2d2-4f14-886a-7160b24d66a4_-browser-action","addon_darkreader_org-browser-action","_174b2d58-b983-4501-ab4b-07e71203cb43_-browser-action","vpn_proton_ch-browser-action","_a658a273-612e-489e-b4f1-5344e672f4f5_-browser-action"],"nav-bar":["back-button","forward-button","stop-reload-button","vertical-spacer","customizableui-special-spring1","urlbar-container","customizableui-special-spring2","unified-extensions-button","_d634138d-c276-4fc8-924b-40a0ea21d284_-browser-action","78272b6fa58f4a1abaac99321d503a20_proton_me-browser-action"],"TabsToolbar":["tabbrowser-tabs"],"vertical-tabs":[],"PersonalToolbar":["import-button","personal-bookmarks"],"zen-sidebar-top-buttons":[],"zen-sidebar-bottom-buttons":["preferences-button","zen-workspaces-button","downloads-button"],"zen-sidebar-icons-wrapper":["zen-profile-button","zen-workspaces-button","downloads-button"]},"seen":["developer-button","wappalyzer_crunchlabz_com-browser-action","ublock0_raymondhill_net-browser-action","_react-devtools-browser-action","_d634138d-c276-4fc8-924b-40a0ea21d284_-browser-action","78272b6fa58f4a1abaac99321d503a20_proton_me-browser-action","sponsorblocker_ajay_app-browser-action","_34daeb50-c2d2-4f14-886a-7160b24d66a4_-browser-action","addon_darkreader_org-browser-action","_174b2d58-b983-4501-ab4b-07e71203cb43_-browser-action","vpn_proton_ch-browser-action","_a658a273-612e-489e-b4f1-5344e672f4f5_-browser-action"],"dirtyAreaCache":["nav-bar","vertical-tabs","zen-sidebar-icons-wrapper","PersonalToolbar","unified-extensions-area","TabsToolbar","zen-sidebar-bottom-buttons"],"currentVersion":21,"newElementCount":4}'';
 
             # Keybinds
@@ -169,7 +172,7 @@ in {
                 updateInterval = 24 * 60 * 60 * 1000;
                 definedAliases = ["@d"];
               };
-              "Google" = {
+              "google" = {
                 metaData.hidden = true;
                 metaData.alias = null;
                 metaData.remove = true;
@@ -189,7 +192,7 @@ in {
                 metaData.alias = null;
                 metaData.remove = true;
               };
-              "eBay" = {
+              "ebay" = {
                 metaData.hidden = true;
                 metaData.alias = null;
                 metaData.remove = true;
