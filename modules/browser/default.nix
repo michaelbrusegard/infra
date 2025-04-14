@@ -23,20 +23,6 @@ in {
         languagePacks = [ "en-GB" ];
         policies = {
           DefaultDownloadDirectory = "$HOME/Downloads";
-          SearchEngines = {
-            Default = "search";
-            Add = [
-              {
-                Name = "search";
-                URLTemplate = "https://duckduckgo.com/?q={searchTerms}";
-                IconURL = "https://duckduckgo.com/favicon.ico";
-                Method = "GET";
-                Alias = "@d";
-              }
-            ];
-            Remove = ["Google" "Amazon.com" "Bing" "DuckDuckGo" "eBay" "Wikipedia"];
-            PreventInstalls = true;
-          };
         };
         profiles.${userName} = {
           isDefault = true;
@@ -196,13 +182,16 @@ in {
       chromium.enable = true;
     };
     home = {
-      file = lib.mkIf (!isDarwin) {
-        ".mozilla/firefox/${userName}/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
-        ".mozilla/firefox/${userName}/zen-themes.json".source = ./config/zen-themes.json;
-      } // lib.mkIf isDarwin {
-        "Library/Application Support/Zen Browser/Profiles/default/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
-        "Library/Application Support/Zen Browser/Profiles/default/zen-themes.json".source = ./config/zen-themes.json;
-      };
+      file = lib.mkMerge [
+        (lib.mkIf (!isDarwin) {
+          ".mozilla/firefox/${userName}/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
+          ".mozilla/firefox/${userName}/zen-themes.json".source = ./config/zen-themes.json;
+        })
+        (lib.mkIf isDarwin {
+          "Library/Application Support/Zen Browser/Profiles/default/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
+          "Library/Application Support/Zen Browser/Profiles/default/zen-themes.json".source = ./config/zen-themes.json;
+        })
+      ];
       activation = lib.mkIf (!isDarwin) {
         linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
           $DRY_RUN_CMD mkdir -p $HOME/.zen
