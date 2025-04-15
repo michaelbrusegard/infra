@@ -22,8 +22,8 @@ in {
         package = pkgs.gnome-themes-extra;
       };
       iconTheme = {
-        name = "Adwaita";
-        package = pkgs.adwaita-icon-theme;
+        name = "Papirus-Dark";
+        package = pkgs.papirus-icon-theme;
       };
       font.name = "SF Pro";
     };
@@ -53,7 +53,7 @@ in {
       ];
       file.".local/share/applications/hyprpicker.desktop".text = ''
         [Desktop Entry]
-        Name=Color Picker
+        Name=Hyprpicker
         Exec=hyprpicker -a
         Type=Application
         Categories=Utility;
