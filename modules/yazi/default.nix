@@ -14,6 +14,7 @@ let
     rev = "c76bf4fb612079480d305fe6fe570bddfe4f99d3";
     hash = "sha256-DPud1Mfagl2z490f5L69ZPnZmVCa0ROXtFeDbEegBBU=";
   };
+  /*
   miller-plugin = pkgs.fetchFromGitHub {
     owner = "Reledia";
     repo = "miller.yazi";
@@ -74,6 +75,7 @@ let
     rev = "e06c47f7fc7a1c679e3935b45013108dadd09c96";
     hash = "sha256-K7ydg+xazl20bgiiZpcBxwKLaRbF51Gibr35dfT0Mro=";
   };
+  */
 in {
   options.modules.yazi.enable = lib.mkEnableOption "Yazi configuration";
 
@@ -91,13 +93,7 @@ in {
           show_hidden = true;
           show_symlink = true;
           scrolloff = 8;
-          mouse_events = [
-            "click"
-            "scroll"
-            "touch"
-            "move"
-            "drag"
-          ];
+          mouse_events = ["click" "scroll" "touch" "move" "drag"];
           title_format = "{cwd}";
         };
         preview = {
@@ -105,6 +101,7 @@ in {
           max_height = 1000;
         };
         plugin = {
+          /*
           prepend_preloaders = [
             {
               mime = "{audio,video,image}/*";
@@ -115,6 +112,7 @@ in {
               run = "mediainfo";
             }
           ];
+          */
           prepend_fetchers = [
             {
               id = "git";
@@ -133,36 +131,36 @@ in {
               prio = "high";
             }
           ];
-          prepend_previewers = [
-            {
-              name = "*/";
-              run = "eza-preview";
-            }
-            {
-              name = "*.md";
-              run = "glow";
-            }
-            {
-              mime = "text/csv";
-              run = "miller";
-            }
-            {
-              name = "*";
-              run = "hexyl";
-            }
-            {
-              mime = "{audio,video,image}/*";
-              run = "mediainfo";
-            }
-            {
-              mime = "application/subrip";
-              run = "mediainfo";
-            }
-            {
-              mime = "application/bittorrent";
-              run = "torrent-preview";
-            }
-          ];
+          # prepend_previewers = [
+          #   {
+          #     name = "*/";
+          #     run = "eza-preview";
+          #   }
+          #   {
+          #     name = "*.md";
+          #     run = "glow";
+          #   }
+          #   {
+          #     mime = "text/csv";
+          #     run = "miller";
+          #   }
+          #   {
+          #     name = "*";
+          #     run = "hexyl";
+          #   }
+          #   {
+          #     mime = "{audio,video,image}/*";
+          #     run = "mediainfo";
+          #   }
+          #   {
+          #     mime = "application/subrip";
+          #     run = "mediainfo";
+          #   }
+          #   {
+          #     mime = "application/bittorrent";
+          #     run = "torrent-preview";
+          #   }
+          # ];
         };
       };
       plugins = {
@@ -176,6 +174,7 @@ in {
         "mime-ext" = "${yazi-plugins}/mime-ext.yazi";
         "toggle-pane" = "${yazi-plugins}/toggle-pane.yazi";
         glow = "${glow-plugin}";
+        /*
         miller = "${miller-plugin}";
         hexyl = "${hexyl-plugin}";
         mediainfo = "${mediainfo-plugin}";
@@ -186,7 +185,9 @@ in {
         "lazygit" = "${lazygit-plugin}";
         "augment-command" = "${augment-command-plugin}";
         "yaziline" = "${yaziline-plugin}";
+        */
       };
+      /*
       initLua = ''
         require("git"):setup()
         require("relative-motions"):setup({ show_numbers="relative", show_motion = true })
@@ -201,22 +202,24 @@ in {
           yank_symbol = "󰆐",
         })
       '';
+      */
       keymap = {
         input.prepend_keymap = [
-          { on = "<esc>"; run = "close";  desc = "Cancel input"; }
+          { on = "<esc>"; run = "close"; desc = "Cancel input"; }
         ];
         manager.prepend_keymap = [
-          { on = [ "c" "m" ]; run = "plugin chmod";  desc = "Chmod on selected files"; }
-          { on = "M"; run = "plugin mount";  desc = "Mount disk"; }
-          { on = "f"; run = "plugin jump-to-char";  desc = "Jump to char"; }
-          { on = "F"; run = "plugin smart-filter";  desc = "Smart filter"; }
-          { on = [ "g" "c" ]; run = "plugin vcs-files";  desc = "Show Git file changes"; }
-          { on = "<c-d>"; run = "plugin diff";  desc = "Diff the selected with the hovered file"; }
+          { on = ["c" "m"]; run = "plugin chmod"; desc = "Chmod on selected files"; }
+          { on = "M"; run = "plugin mount"; desc = "Mount disk"; }
+          { on = "f"; run = "plugin jump-to-char"; desc = "Jump to char"; }
+          { on = "F"; run = "plugin smart-filter"; desc = "Smart filter"; }
+          { on = ["g" "c"]; run = "plugin vcs-files"; desc = "Show Git file changes"; }
+          { on = "<c-d>"; run = "plugin diff"; desc = "Diff the selected with the hovered file"; }
           { on = "T"; run = "plugin toggle-pane max-preview"; desc = "Maximize or restore the preview pane"; }
           { on = "t"; run = "plugin toggle-pane min-preview"; desc = "Show or hide the preview pane"; }
+          /*
           { on = "<c-e>"; run = "seek 5"; }
           { on = "<c-y>"; run = "seek -5"; }
-          { on = [ "<space>" "E" ]; run = "plugin eza-preview"; desc = "Toggle tree/list dir preview"; }
+          { on = ["<space>" "E"]; run = "plugin eza-preview"; desc = "Toggle tree/list dir preview"; }
           { on = "1"; run = "plugin relative-motions 1"; desc = "Move in relative steps"; }
           { on = "2"; run = "plugin relative-motions 2"; desc = "Move in relative steps"; }
           { on = "3"; run = "plugin relative-motions 3"; desc = "Move in relative steps"; }
@@ -227,7 +230,8 @@ in {
           { on = "8"; run = "plugin relative-motions 8"; desc = "Move in relative steps"; }
           { on = "9"; run = "plugin relative-motions 9"; desc = "Move in relative steps"; }
           { on = "R"; run = "plugin rsync"; desc = "Copy files using rsync"; }
-          { on = [ "<space>" "g" "g" ]; run = "plugin lazygit"; desc = "Run lazygit"; }
+          { on = ["<space>" "g" "g"]; run = "plugin lazygit"; desc = "Run lazygit"; }
+          */
         ];
       };
     };
