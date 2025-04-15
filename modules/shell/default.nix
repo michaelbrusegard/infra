@@ -1,4 +1,4 @@
-{ config, lib, pkgs, colors, isDarwin, ... }:
+{ config, lib, pkgs, colors, ... }:
 
 let
   cfg = config.modules.shell;
