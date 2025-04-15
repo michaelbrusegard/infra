@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, hyprland, system, ... }:
 
 let
   cfg = config.modules.wayland;
@@ -6,12 +6,7 @@ in {
   config = lib.mkIf cfg.enable {
     wayland.windowManager.hyprland = {
       enable = true;
-      package = pkgs.fetchFromGitHub {
-        owner = "hyprwm";
-        repo = "Hyprland";
-        rev = "4cdddcfe466cb21db81af0ac39e51cc15f574da9";
-        sha256 = "";
-      };
+      package = hyprland.packages.${system}.hyprland;
       xwayland.enable = true;
       settings = {
         env = [
