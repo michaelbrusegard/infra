@@ -6,15 +6,11 @@ in {
   config = lib.mkIf cfg.enable {
     wayland.windowManager.hyprland = {
       enable = true;
-      package = pkgs.hyprland.override {
-        hyprlandDerivation = {
-          src = pkgs.fetchFromGitHub {
-            owner = "hyprwm";
-            repo = "Hyprland";
-            rev = "4cdddcfe466cb21db81af0ac39e51cc15f574da9";
-            sha256 = "";
-          };
-        };
+      package = pkgs.fetchFromGitHub {
+        owner = "hyprwm";
+        repo = "Hyprland";
+        rev = "4cdddcfe466cb21db81af0ac39e51cc15f574da9";
+        sha256 = "";
       };
       xwayland.enable = true;
       settings = {
