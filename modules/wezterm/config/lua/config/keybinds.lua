@@ -9,12 +9,20 @@ local function keybinds(config)
 		-- Global actions
     { key = "c", mods = "SUPER", action = wezterm.action.CopyTo('Clipboard') },
 		{ key = "v", mods = "SUPER", action = wezterm.action.PasteFrom("Clipboard") },
+    { key = "=", mods = "SUPER", action = wezterm.action.IncreaseFontSize },
+    { key = "-", mods = "SUPER", action = wezterm.action.DecreaseFontSize },
+    { key = "0", mods = "SUPER", action = wezterm.action.ResetFontSize },
+		{ key = "q", mods = "SUPER", action = wezterm.action.QuitApplication },
+		{ key = "n", mods = "SUPER", action = wezterm.action.SpawnWindow },
+		{ key = "t", mods = "SUPER", action = wezterm.action.SpawnTab("CurrentPaneDomain") },
+    { key = "t", mods = "SHIFT|SUPER", action = wezterm.action.SpawnCommandInNewTab({ args = { "nvim" } }) },
+    { key = 'd', mods = 'SHIFT|SUPER', action = wezterm.action.ShowDebugOverlay },
 
 		-- Pane actions
 		{ key = "w", mods = "SUPER", action = wezterm.action.CloseCurrentPane({ confirm = false }) },
 		{ key = "w", mods = "SHIFT|SUPER", action = wezterm.action.CloseCurrentTab({ confirm = false }) },
-		{ key = "-", mods = "SUPER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
-		{ key = "=", mods = "SUPER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
+    { key = "\\", mods = "SUPER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
+    { key = "\\", mods = "SHIFT|SUPER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
 
 		-- Pane navigation
 		{ key = "h", mods = "SUPER", action = wezterm.action.ActivatePaneDirection("Left") },
@@ -26,21 +34,11 @@ local function keybinds(config)
 		{ key = "o", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Up", 3 }) },
 		{ key = "p", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Right", 3 }) },
 
-		-- Move pane
-		{ key = "0", mods = "SUPER", action = wezterm.action.PaneSelect({ mode = "SwapWithActiveKeepFocus" }) },
-
-		-- Application actions
-		{ key = "q", mods = "SUPER", action = wezterm.action.QuitApplication },
-		{ key = "n", mods = "SUPER", action = wezterm.action.SpawnWindow },
-		{ key = "t", mods = "SUPER", action = wezterm.action.SpawnTab("CurrentPaneDomain") },
-    {
-        key = "t",
-        mods = "SHIFT|SUPER",
-        action = wezterm.action.SpawnCommandInNewTab({
-            args = { "nvim" },
-        }),
-    },
-		{ key = 'l', mods = 'SHIFT|SUPER', action = wezterm.action.ShowDebugOverlay },
+    -- Move panes
+    { key = "h", mods = "SHIFT|SUPER", action = wezterm.action.SwapPaneDirection("Left") },
+    { key = "j", mods = "SHIFT|SUPER", action = wezterm.action.SwapPaneDirection("Down") },
+    { key = "k", mods = "SHIFT|SUPER", action = wezterm.action.SwapPaneDirection("Up") },
+    { key = "l", mods = "SHIFT|SUPER", action = wezterm.action.SwapPaneDirection("Right") },
 
 		-- Navigation between tabs
 		{ key = "Tab", mods = "CTRL", action = wezterm.action.ActivateTabRelative(1) },
