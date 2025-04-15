@@ -65,10 +65,10 @@
         alt + shift - k : yabai -m window --swap north
 
         # Resize window
-        alt + ctrl - h : yabai -m window --resize left:-50:0 || yabai -m window --resize right:-50:0
-        alt + ctrl - j : yabai -m window --resize bottom:0:50
-        alt + ctrl - k : yabai -m window --resize top:0:-50 || yabai -m window --resize bottom:0:-50
-        alt + ctrl - l : yabai -m window --resize right:50:0
+        alt - u : yabai -m window --resize left:-20:0 || yabai -m window --resize right:-20:0
+        alt - i : yabai -m window --resize top:0:-20 || yabai -m window --resize bottom:0:-20
+        alt - o : yabai -m window --resize bottom:0:20
+        alt - p : yabai -m window --resize right:20:0
 
         # Switch to specific space
         alt - 1 : yabai -m space --focus 1 || yabai -m space --focus recent

@@ -87,10 +87,10 @@ in {
           "alt shift, k, movewindow, u"
 
           # Resize window
-          "alt ctrl, h, resizeactive, -50 0"
-          "alt ctrl, j, resizeactive, 0 50"
-          "alt ctrl, k, resizeactive, 0 -50"
-          "alt ctrl, l, resizeactive, 50 0"
+          "alt, u, resizeactive, -20 0"
+          "alt, i, resizeactive, 0 20"
+          "alt, o, resizeactive, 0 -20"
+          "alt, p, resizeactive, 20 0"
 
           # Switch to specific workspace
           "alt, 1, workspace, 1"
