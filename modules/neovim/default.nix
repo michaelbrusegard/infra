@@ -1,4 +1,4 @@
-{ config, lib, userName, ... }:
+{ config, lib, ... }:
 
 let
   cfg = config.modules.neovim;
@@ -16,8 +16,7 @@ in {
       withNodeJs = true;
       withRuby = true;
     };
-    xdg.configFile."nvim".source = lib.mkOutOfStoreSymlink 
+    xdg.configFile."nvim".source = config.lib.file.mkOutOfStoreSymlink
       "${config.home.homeDirectory}/Developer/dotfiles/modules/neovim/config";
-    catppuccin.nvim.enable = true;
   };
 }
