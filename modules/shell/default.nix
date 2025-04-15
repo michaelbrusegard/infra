@@ -1,4 +1,4 @@
-{ config, lib, pkgs, colors, ... }:
+{ config, lib, colors, ... }:
 
 let
   cfg = config.modules.shell;
@@ -36,12 +36,12 @@ in {
           searchUpKey = "^P";
           searchDownKey = "^N";
         };
-        # initExtraFirst = ''
-        # '';
-        initExtra = ''
-          if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
-            source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+        initExtraFirst = ''
+          if [[ -r "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+              source "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh"
           fi
+        '';
+        initExtra = ''
           source ${./config/p10k.zsh}
           bindkey '^Y' autosuggest-accept
           bindkey '^E' autosuggest-clear
@@ -114,7 +114,6 @@ in {
       thefuck = {
         enable = true;
         enableZshIntegration = true;
-        enableInstantMode = true;
       };
       jq.enable = true;
       fastfetch.enable = true;
