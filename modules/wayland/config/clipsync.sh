@@ -111,6 +111,8 @@ watch() {
   watch_clipboard "wl-paste --primary --watch printf ''"
   watch_clipboard "clipnotify"
   watch_clipboard "clipnotify -s PRIMARY"
+
+  wait
 }
 
 # Kill all background processes related to clipsync
