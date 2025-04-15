@@ -1,4 +1,4 @@
-{ config, lib, userName, ... }:
+{ config, lib, ... }:
 
 let
   cfg = config.modules.wayland;
@@ -14,7 +14,7 @@ in {
         };
         background = [
           {
-            path = "/home/${userName}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png";
+            path = "${config.home.homeDirectory}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png";
           }
         ];
         label = [

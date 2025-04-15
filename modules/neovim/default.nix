@@ -16,13 +16,8 @@ in {
       withNodeJs = true;
       withRuby = true;
     };
-    xdg.configFile."nvim" = {
-      source = ./config;
-      exclude = [ "lazy-lock.json" ];
-      onChange = ''
-        ln -sf /home/${userName}/Developer/dotfiles/modules/neovim/config/lazy-lock.json $HOME/.config/nvim/lazy-lock.json
-      '';
-    };
+    xdg.configFile."nvim".source = lib.mkOutOfStoreSymlink 
+      "${config.home.homeDirectory}/Developer/dotfiles/modules/neovim/config";
     catppuccin.nvim.enable = true;
   };
 }
