@@ -2,16 +2,6 @@
 
 let
   cfg = config.modules.wayland;
-  clipsync = pkgs.writeShellApplication {
-    name = "clipsync";
-    text = builtins.readFile ./config/clipsync.sh;
-    runtimeInputs = with pkgs; [
-      wl-clipboard
-      xclip
-      clipnotify
-      libnotify
-    ];
-  };
 in {
   imports = [
     ./hypridle.nix
@@ -48,29 +38,8 @@ in {
       cliphist.enable = true;
       playerctld.enable = true;
     };
-    systemd.user.services.clipsync = {
-      Unit = {
-        Description = "Clipboard sync between Wayland and X11";
-        After = ["graphical-session.target"];
-        PartOf = "graphical-session.target";
-      };
-      Service = {
-        Environment = [
-          "WAYLAND_DISPLAY=wayland-1"
-          "DISPLAY=:0"
-          "XDG_RUNTIME_DIR=/run/user/1000"
-        ];
-        ExecStartPre = "${pkgs.coreutils}/bin/sleep 2";
-        ExecStart = "${clipsync}/bin/clipsync watch with-notifications";
-        ExecStop = "${clipsync}/bin/clipsync stop";
-        Restart = "on-failure";
-        RestartSec = "3";
-      };
-      Install = {
-        WantedBy = ["graphical-session.target"];
-      };
-    };
     home.packages = with pkgs; [
+      wl-clipboard
       hyprpicker
     ];
   };
