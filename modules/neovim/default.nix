@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, userName, ... }:
 
 let
   cfg = config.modules.neovim;
@@ -16,7 +16,13 @@ in {
       withNodeJs = true;
       withRuby = true;
     };
-    xdg.configFile."nvim".source = ./config;
+    xdg.configFile."nvim" = {
+      source = ./config;
+      exclude = [ "lazy-lock.json" ];
+      onChange = ''
+        ln -sf /home/${userName}/Developer/dotfiles/modules/neovim/config/lazy-lock.json $HOME/.config/nvim/lazy-lock.json
+      '';
+    };
     catppuccin.nvim.enable = true;
   };
 }
