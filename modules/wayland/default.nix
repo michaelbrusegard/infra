@@ -2,12 +2,14 @@
 
 let
   cfg = config.modules.wayland;
-  clipsync = pkgs.writeShellScriptBin "clipsync" {
-    text = builtins.readFile ./bin/clipsync.sh;
+  clipsync = pkgs.writeShellApplication {
+    name = "clipsync";
+    text = builtins.readFile ./config/clipsync.sh;
     runtimeInputs = with pkgs; [
       wl-clipboard
       xclip
       clipnotify
+      libnotify
     ];
   };
 in {
