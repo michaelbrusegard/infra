@@ -7,7 +7,14 @@ in {
     wayland.windowManager.hyprland = {
       enable = true;
       package = pkgs.hyprland.override {
-        commit = "4cdddcfe466cb21db81af0ac39e51cc15f574da9";
+        hyprlandDerivation = {
+          src = pkgs.fetchFromGitHub {
+            owner = "hyprwm";
+            repo = "Hyprland";
+            rev = "4cdddcfe466cb21db81af0ac39e51cc15f574da9";
+            sha256 = "";
+          };
+        };
       };
       xwayland.enable = true;
       settings = {
