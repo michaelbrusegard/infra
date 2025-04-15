@@ -1,83 +1,29 @@
--- Copy to system clipboard with super + c
-vim.keymap.set('n', '<char-0xca>', '"+yy', { silent = true })
-vim.keymap.set('x', '<char-0xca>', '"+y', { silent = true })
+-- Split windows
+vim.keymap.set({ 'n' }, '<C-\\>', '<cmd>split<cr>', { silent = true, desc = 'Split window horizontally' })
+vim.keymap.set({ 'n' }, '<C-S-\\>', '<cmd>vsplit<cr>', { silent = true, desc = 'Split window vertically' })
 
--- Paste from system clipboard with super + v
-vim.keymap.set({ 'n', 'x' }, '<char-0xcb>', '"+p', { silent = true })
-vim.keymap.set('i', '<char-0xcb>', function()
-  return vim.api.nvim_replace_termcodes('<esc>"+pi', true, true, true)
-end, { expr = true, silent = true })
-vim.keymap.set('c', '<char-0xcb>', '<c-R>+', { silent = true })
+-- Move between windows
+vim.keymap.set('n', '<C-h>', '<C-w>h', { silent = true, desc = 'Move to left window' })
+vim.keymap.set('n', '<C-j>', '<C-w>j', { silent = true, desc = 'Move to bottom window' })
+vim.keymap.set('n', '<C-k>', '<C-w>k', { silent = true, desc = 'Move to top window' })
+vim.keymap.set('n', '<C-l>', '<C-w>l', { silent = true, desc = 'Move to right window' })
 
--- Save file with super + s
-vim.keymap.set({ 'i', 'x', 'n', 's' }, '<char-0xcd>', '<cmd>w<cr><esc>', { silent = true })
+-- Swap windows
+vim.keymap.set('n', '<C-S-h>', '<C-w>H', { silent = true, desc = 'Swap window left' })
+vim.keymap.set('n', '<C-S-j>', '<C-w>J', { silent = true, desc = 'Swap window down' })
+vim.keymap.set('n', '<C-S-k>', '<C-w>K', { silent = true, desc = 'Swap window up' })
+vim.keymap.set('n', '<C-S-l>', '<C-w>L', { silent = true, desc = 'Swap window right' })
 
--- Quit with super + w
-vim.keymap.set({ 'i', 'x', 'n', 's' }, '<char-0xda>', '<cmd>q<cr>', { silent = true })
+-- Resize windows
+vim.keymap.set('n', '<C-u>', '<cmd>resize -2<CR>', { silent = true, desc = 'Decrease window height' })
+vim.keymap.set('n', '<C-i>', '<cmd>resize +2<CR>', { silent = true, desc = 'Increase window height' })
+vim.keymap.set('n', '<C-o>', '<cmd>vertical resize -2<CR>', { silent = true, desc = 'Decrease window width' })
+vim.keymap.set('n', '<C-p>', '<cmd>vertical resize +2<CR>', { silent = true, desc = 'Increase window width' })
 
--- Quit All with shift + super + w
-vim.keymap.set({ 'i', 'x', 'n', 's' }, '<char-0xdb>', '<cmd>qa<cr>', { silent = true })
-
--- Split windows with super + - and super + =
-vim.keymap.set({ 'i', 'x', 'n', 's' }, '<char-0xdc>', '<cmd>split<cr>', { silent = true })
-vim.keymap.set({ 'i', 'x', 'n', 's' }, '<char-0xdd>', '<cmd>vsplit<cr>', { silent = true })
-
--- Move to window using the super + hjkl keys
-vim.keymap.set(
-  { 'i', 'x', 'n', 's' },
-  '<char-0xe0>',
-  "<cmd>lua require('smart-splits').move_cursor_left()<cr>",
-  { silent = true }
-)
-vim.keymap.set(
-  { 'i', 'x', 'n', 's' },
-  '<char-0xe1>',
-  "<cmd>lua require('smart-splits').move_cursor_down()<cr>",
-  { silent = true }
-)
-vim.keymap.set(
-  { 'i', 'x', 'n', 's' },
-  '<char-0xe2>',
-  "<cmd>lua require('smart-splits').move_cursor_up()<cr>",
-  { silent = true }
-)
-vim.keymap.set(
-  { 'i', 'x', 'n', 's' },
-  '<char-0xe3>',
-  "<cmd>lua require('smart-splits').move_cursor_right()<cr>",
-  { silent = true }
-)
-
--- Resize window using ctrl + super + hjkl keys
-vim.keymap.set(
-  { 'i', 'x', 'n', 's' },
-  '<Char-0xf4>',
-  "<cmd>lua require('smart-splits').resize_left()<cr>",
-  { silent = true }
-)
-vim.keymap.set(
-  { 'i', 'x', 'n', 's' },
-  '<Char-0xf5>',
-  "<cmd>lua require('smart-splits').resize_down()<cr>",
-  { silent = true }
-)
-vim.keymap.set(
-  { 'i', 'x', 'n', 's' },
-  '<Char-0xf6>',
-  "<cmd>lua require('smart-splits').resize_up()<cr>",
-  { silent = true }
-)
-vim.keymap.set(
-  { 'i', 'x', 'n', 's' },
-  '<Char-0xf7>',
-  "<cmd>lua require('smart-splits').resize_right()<cr>",
-  { silent = true }
-)
-
--- Lazydocker
-vim.keymap.set('n', '<leader>gd', function()
-  Snacks.terminal('lazydocker', { esc_esc = false, ctrl_hjkl = false })
-end, { desc = 'Lazydocker' })
+-- File explorer
+vim.keymap.set('n', '-', function()
+  Snacks.explorer({ cwd = LazyVim.root() })
+end, { desc = 'Explorer Snacks (current dir)' })
 
 -- Marks
 vim.keymap.set('n', 'dm', function()
