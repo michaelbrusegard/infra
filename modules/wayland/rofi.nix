@@ -59,7 +59,6 @@ in {
           padding = mkLiteral "8px 16px";
           spacing = mkLiteral "16px";
           background-color = mkLiteral "transparent";
-          min-height = mkLiteral "24px";
         };
 
         "element-icon" = {
