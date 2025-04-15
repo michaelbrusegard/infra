@@ -35,6 +35,11 @@ return {
           files = {
             hidden = true,
           },
+          explorer = {
+            hidden = true,
+            ignored = true,
+            exclude = { '.git', '.DS_Store' },
+          };
         },
       },
     },

@@ -8,7 +8,7 @@ in {
       enable = true;
       settings = {
         preload = [ "${config.home.homeDirectory}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png" ];
-        wallpaper = [ ",/${config.home.homeDirectory}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png" ];
+        wallpaper = [ ",${config.home.homeDirectory}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png" ];
       };
     };
   };
