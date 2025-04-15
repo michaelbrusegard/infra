@@ -54,6 +54,10 @@ in {
         PartOf = "graphical-session.target";
       };
       Service = {
+        Environment = [
+          "WAYLAND_DISPLAY=wayland-1"
+          "DISPLAY=:0"
+        ];
         ExecStart = "${clipsync}/bin/clipsync watch";
         ExecStop = "${clipsync}/bin/clipsync stop";
         Restart = "always";
