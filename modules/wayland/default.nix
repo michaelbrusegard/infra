@@ -49,13 +49,26 @@ in {
       playerctld.enable = true;
     };
     systemd.user.services.clipsync = {
-      Unit.PartOf = "graphical-session.target";
+      Unit = {
+        Description = "Clipboard sync between Wayland and X11";
+        After = ["graphical-session.target"];
+        PartOf = "graphical-session.target";
+      };
       Service = {
+        Environment = [
+          "WAYLAND_DISPLAY=wayland-1"
+          "DISPLAY=:0"
+          "XDG_RUNTIME_DIR=/run/user/1000"
+        ];
+        ExecStartPre = "${pkgs.coreutils}/bin/sleep 2";
         ExecStart = "${clipsync}/bin/clipsync watch with-notifications";
         ExecStop = "${clipsync}/bin/clipsync stop";
-        Restart = "always";
+        Restart = "on-failure";
+        RestartSec = "3";
       };
-      Install.WantedBy = ["graphical-session.target"];
+      Install = {
+        WantedBy = ["graphical-session.target"];
+      };
     };
     home.packages = with pkgs; [
       hyprpicker
