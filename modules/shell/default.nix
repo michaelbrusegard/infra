@@ -37,11 +37,11 @@ in {
           searchDownKey = "^N";
         };
         initExtraFirst = ''
-          exec 2>>${config.xdg.cacheHome}/zsh_startup.log
-          set -x
           if [[ -r "${config.xdg.cacheHome}/p10k-instant-prompt-${"\${(%):-%n}"}.zsh" ]]; then
             source "${config.xdg.cacheHome}/p10k-instant-prompt-${"\${(%):-%n}"}.zsh"
           fi
+          exec 2>> ${config.xdg.cacheHome}/zsh_startup.log
+          typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
         '';
         initExtra = ''
           source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
