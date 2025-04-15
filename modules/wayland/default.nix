@@ -53,7 +53,7 @@ in {
       ];
       file.".local/share/applications/hyprpicker.desktop".text = ''
         [Desktop Entry]
-        Name=Color Picker
+        Name=Hyprpicker
         Exec=hyprpicker -a
         Type=Application
         Categories=Utility;
