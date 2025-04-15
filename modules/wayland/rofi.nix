@@ -51,7 +51,6 @@ in {
         "listview" = {
           lines = 10;
           columns = 1;
-          fixed-height = false;
           border = mkLiteral "1px 0 0";
           border-color = mkLiteral "#7e7e7e80";
         };
@@ -60,6 +59,7 @@ in {
           padding = mkLiteral "8px 16px";
           spacing = mkLiteral "16px";
           background-color = mkLiteral "transparent";
+          min-height = mkLiteral "24px";
         };
 
         "element-icon" = {
@@ -83,22 +83,6 @@ in {
         "element selected normal, element selected active" = {
           background-color = mkLiteral "#0860f2e6";
           text-color = mkLiteral "#fff";
-        };
-
-        "entry-wrapper" = {
-          orientation = 0;
-          horizontal-align = 0;
-          spacing = mkLiteral "4px";
-          vertical-align = mkLiteral "0.5";
-        };
-
-        "textbox" = {
-          padding = mkLiteral "8px 16px";
-          background-color = mkLiteral "transparent";
-          text-color = mkLiteral "inherit";
-          vertical-align = mkLiteral "0.5";
-          horizontal-align = 0;
-          font = "SF Pro Nerd Font 12";
         };
       };
     };
