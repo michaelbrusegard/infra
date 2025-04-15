@@ -40,9 +40,9 @@ in {
           if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
             source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
           fi
+          source ${./config/.p10k.zsh}
         '';
         initExtra = ''
-          source ${./config/.p10k.zsh}
           bindkey '^Y' autosuggest-accept
           bindkey '^E' autosuggest-clear
         '';
