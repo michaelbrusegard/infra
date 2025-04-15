@@ -29,10 +29,10 @@ local function keybinds(config)
 		{ key = "j", mods = "SUPER", action = wezterm.action.ActivatePaneDirection("Down") },
 		{ key = "k", mods = "SUPER", action = wezterm.action.ActivatePaneDirection("Up") },
 		{ key = "l", mods = "SUPER", action = wezterm.action.ActivatePaneDirection("Right") },
-		{ key = "s", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Left", 2 }) },
-		{ key = "d", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Down", 2 }) },
-		{ key = "f", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Up", 2 }) },
-		{ key = "g", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Right", 2 }) },
+		{ key = "u", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Left", 2 }) },
+		{ key = "i", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Down", 2 }) },
+		{ key = "o", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Up", 2 }) },
+		{ key = "p", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Right", 2 }) },
 
     -- Move panes
     { key = "h", mods = "SHIFT|SUPER", action = wezterm.action_callback(require('utils.pane').switch_pane_direction('Left')) },
@@ -75,6 +75,20 @@ local function keybinds(config)
         wezterm.plugin.update_all()
         wezterm.action.ReloadConfiguration()
       end),
+    },
+
+    -- Neovim
+    {
+      key = "s",
+      mods = "SUPER",
+      action = wezterm.action_callback(function(window, pane)
+        local process_name = pane:get_foreground_process_name() or ""
+        if process_name:match("vim") or process_name:match("nvim") then
+          window:perform_action(wezterm.action.SendKey({ key = ":" }), pane)
+          window:perform_action(wezterm.action.SendString("w"), pane)
+          window:perform_action(wezterm.action.SendKey({ key = "Enter" }), pane)
+        end
+      end)
     },
 	}
 

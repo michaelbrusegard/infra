@@ -12,7 +12,6 @@ in {
         dotDir = ".config/zsh";
         enableVteIntegration = true;
         autocd = true;
-        # defaultKeymap = "vicmd";
         enableCompletion = true;
         autosuggestion = {
           enable = true;
@@ -43,6 +42,8 @@ in {
         '';
         initExtra = ''
           source ${./config/p10k.zsh}
+          bindkey -v
+          export KEYTIMEOUT=1
           bindkey '^Y' autosuggest-accept
           bindkey '^E' autosuggest-clear
         '';
