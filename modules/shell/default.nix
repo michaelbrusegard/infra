@@ -35,16 +35,17 @@ in {
           searchUpKey = "^P";
           searchDownKey = "^N";
         };
+        initExtraFirst = ''
+        '';
         initExtra = ''
-          autoload -U promptinit
-          promptinit
-          prompt pure
+          source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
+          bindkey '^Y' autosuggest-accept
+          bindkey '^E' autosuggest-clear
         '';
         antidote = {
           enable = true;
           useFriendlyNames = true;
           plugins = [
-            "sindresorhus/pure kind:fpath"
             "getantidote/use-omz"
             "ohmyzsh/ohmyzsh path:lib"
             "ohmyzsh/ohmyzsh path:plugins/git"
@@ -113,6 +114,9 @@ in {
       jq.enable = true;
       fastfetch.enable = true;
     };
+    home.packages = with pkgs; [
+      zsh-powerlevel10k
+    ];
     catppuccin = {
       zsh-syntax-highlighting.enable = true;
       bat.enable = true;
