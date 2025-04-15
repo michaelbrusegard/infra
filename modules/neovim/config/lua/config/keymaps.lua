@@ -15,9 +15,9 @@ vim.keymap.set('n', '<C-S-k>', '<C-w>K', { silent = true, desc = 'Swap window up
 vim.keymap.set('n', '<C-S-l>', '<C-w>L', { silent = true, desc = 'Swap window right' })
 
 -- Resize windows
-vim.keymap.set('n', '<C-s>', '<cmd>resize -2<CR>', { silent = true, desc = 'Decrease window height' })
-vim.keymap.set('n', '<C-d>', '<cmd>resize +2<CR>', { silent = true, desc = 'Increase window height' })
-vim.keymap.set('n', '<C-f>', '<cmd>vertical resize -2<CR>', { silent = true, desc = 'Decrease window width' })
+vim.keymap.set('n', '<C-s>', '<cmd>vertical resize -2<CR>', { silent = true, desc = 'Decrease window width' })
+vim.keymap.set('n', '<C-d>', '<cmd>resize -2<CR>', { silent = true, desc = 'Decrease window height' })
+vim.keymap.set('n', '<C-f>', '<cmd>resize +2<CR>', { silent = true, desc = 'Increase window height' })
 vim.keymap.set('n', '<C-g>', '<cmd>vertical resize +2<CR>', { silent = true, desc = 'Increase window width' })
 
 -- File explorer

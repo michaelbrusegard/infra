@@ -5,7 +5,7 @@ return function(config)
   quick_domains.apply_to_config(config, {
     keys = {
       attach = {
-        mods = 'SUPER',
+        mods = 'SHIFT|SUPER',
         key = 'd',
         tbl = '',
       },
