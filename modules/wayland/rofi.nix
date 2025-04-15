@@ -84,6 +84,22 @@ in {
           background-color = mkLiteral "#0860f2e6";
           text-color = mkLiteral "#fff";
         };
+
+        "entry-wrapper" = {
+          orientation = 0;
+          horizontal-align = 0;
+          spacing = mkLiteral "4px";
+          vertical-align = mkLiteral "0.5";
+        };
+
+        "textbox" = {
+          padding = mkLiteral "8px 16px";
+          background-color = mkLiteral "transparent";
+          text-color = mkLiteral "inherit";
+          vertical-align = mkLiteral "0.5";
+          horizontal-align = 0;
+          font = "SF Pro Nerd Font 12";
+        };
       };
     };
   };
