@@ -7,6 +7,7 @@ in {
     wayland.windowManager.hyprland = {
       enable = true;
       package = hyprland.packages.${system}.hyprland;
+      portalPackage = hyprland.packages.${system}.xdg-desktop-portal-hyprland;
       xwayland.enable = true;
       settings = {
         env = [
