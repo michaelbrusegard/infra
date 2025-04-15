@@ -9,7 +9,7 @@ return function(config)
       disabled = true,
     },
     presentation_full = {
-      keybind = { key = 'p', mods = 'SUPER' },
+      keybind = { key = 'p', mods = 'SHIFT|SUPER' },
     },
   })
 end
