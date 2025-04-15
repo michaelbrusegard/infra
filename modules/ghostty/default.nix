@@ -32,13 +32,12 @@ in {
           # Global actions
           "super+c=copy_to_clipboard"
           "super+v=paste_from_clipboard"
-          "super+equal=increase_font_size"
-          "super+minus=decrease_font_size"
+          # "super+equal=increase_font_size"
+          # "super+minus=decrease_font_size"
           "super+zero=reset_font_size"
           "super+q=quit"
           "super+n=new_window"
           "super+t=new_tab"
-          "shift+super+t=spawn:nvim"
 
           # Pane actions
           "super+w=close_surface"
@@ -52,13 +51,13 @@ in {
           "super+k=goto_split:up"
           "super+l=goto_split:right"
 
-          # Resize panes
+          # # Resize panes
           "super+s=resize_split:left,2"
           "super+d=resize_split:down,2"
           "super+f=resize_split:up,2"
           "super+g=resize_split:right,2"
 
-          # Tab navigation
+          # # Tab navigation
           "ctrl+tab=next_tab"
           "shift+ctrl+tab=previous_tab"
           "shift+super+left_bracket=previous_tab"
@@ -71,13 +70,13 @@ in {
           "super+six=goto_tab:5"
           "super+seven=goto_tab:6"
           "super+eight=goto_tab:7"
-          "super+nine=goto_tab:last"
+          "super+nine=goto_tab:8"
 
-          # Move tabs
+          # # Move tabs
           "shift+super+p=move_tab:-1"
           "shift+super+n=move_tab:1"
 
-          # Basic actions
+          # # Basic actions
           "super+z=toggle_split_zoom"
         ];
       };
