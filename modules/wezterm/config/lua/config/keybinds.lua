@@ -16,7 +16,7 @@ local function keybinds(config)
 		{ key = "n", mods = "SUPER", action = wezterm.action.SpawnWindow },
 		{ key = "t", mods = "SUPER", action = wezterm.action.SpawnTab("CurrentPaneDomain") },
     { key = "t", mods = "SHIFT|SUPER", action = wezterm.action.SpawnCommandInNewTab({ args = { "nvim" } }) },
-    { key = 'd', mods = 'SHIFT|SUPER', action = wezterm.action.ShowDebugOverlay },
+    { key = "d", mods = "SHIFT|SUPER", action = wezterm.action.ShowDebugOverlay },
 
 		-- Pane actions
 		{ key = "w", mods = "SUPER", action = wezterm.action.CloseCurrentPane({ confirm = false }) },
@@ -75,6 +75,20 @@ local function keybinds(config)
         wezterm.plugin.update_all()
         wezterm.action.ReloadConfiguration()
       end),
+    },
+
+    -- Neovim
+    {
+      key = "s",
+      mods = "SUPER",
+      action = wezterm.action_callback(function(window, pane)
+        local process_name = pane:get_foreground_process_name() or ""
+        if process_name:match("vim") or process_name:match("nvim") then
+          window:perform_action(wezterm.action.SendKey({ key = ":" }), pane)
+          window:perform_action(wezterm.action.SendString("w"), pane)
+          window:perform_action(wezterm.action.SendKey({ key = "Enter" }), pane)
+        end
+      end)
     },
 	}
 
