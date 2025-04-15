@@ -38,11 +38,26 @@ in {
       cliphist.enable = true;
       playerctld.enable = true;
     };
-    home.packages = with pkgs; [
-      clipnotify
-      xclip
-      wl-clipboard
-      hyprpicker
-    ];
+    systemd.user.services.wl-clip-persist = {
+      Unit.PartOf = ["graphical-session.target"];
+      Service = {
+        ExecStart = "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard both";
+        Restart = "always";
+      };
+      Install.WantedBy = ["graphical-session.target"];
+    };
+    home = {
+      packages = with pkgs; [
+        wl-clipboard
+        hyprpicker
+      ];
+      file.".local/share/applications/hyprpicker.desktop".text = ''
+        [Desktop Entry]
+        Name=Color Picker
+        Exec=hyprpicker -a
+        Type=Application
+        Categories=Utility;
+      '';
+    };
   };
 }
