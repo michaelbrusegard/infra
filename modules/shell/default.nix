@@ -12,7 +12,7 @@ in {
         dotDir = ".config/zsh";
         enableVteIntegration = true;
         autocd = true;
-        defaultKeymap = "vicmd";
+        defaultKeymap = "viins";
         enableCompletion = true;
         autosuggestion = {
           enable = true;
@@ -36,8 +36,8 @@ in {
           searchDownKey = "^N";
         };
         initExtraFirst = ''
-          if [[ -r "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
-            source "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh"
+          if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+            source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
           fi
         '';
         initExtra = ''
