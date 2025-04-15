@@ -37,12 +37,13 @@ in {
           searchDownKey = "^N";
         };
         initExtraFirst = ''
-          if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
-            source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
-          fi
+          # if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+          #   source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+          # fi
+          source ${./config/p10k-instant-prompt.zsh}
         '';
         initExtra = ''
-          [[ ! -f ${./config/.p10k.zsh} ]] || source ${./config/.p10k.zsh}
+          [[ ! -f ${./config/p10k.zsh} ]] || source ${./config/p10k.zsh}
           bindkey '^Y' autosuggest-accept
           bindkey '^E' autosuggest-clear
         '';
