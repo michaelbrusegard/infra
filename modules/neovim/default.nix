@@ -18,9 +18,8 @@ in {
     };
     xdg.configFile."nvim" = {
       source = ./config;
-      exclude = [ "lazy-lock.json" ];
       onChange = ''
-        ln -sf /home/${userName}/Developer/dotfiles/modules/neovim/config/lazy-lock.json $HOME/.config/nvim/lazy-lock.json
+        ln -sf /home/${userName}/Developer/dotfiles/modules/neovim/lazy-lock.json $HOME/.config/nvim/lazy-lock.json
       '';
     };
     catppuccin.nvim.enable = true;
