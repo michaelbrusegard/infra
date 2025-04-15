@@ -1,4 +1,4 @@
-{ config, lib, hyprland, system, ... }:
+{ config, lib, ... }:
 
 let
   cfg = config.modules.wayland;
@@ -6,9 +6,10 @@ in {
   config = lib.mkIf cfg.enable {
     wayland.windowManager.hyprland = {
       enable = true;
-      package = hyprland.packages.${system}.hyprland;
-      portalPackage = hyprland.packages.${system}.xdg-desktop-portal-hyprland;
+      package = null;
+      portalPackage = null;
       xwayland.enable = true;
+      systemd.variables = ["--all"];
       settings = {
         exec-once = [ 
           "wl-paste --type text --watch cliphist store"

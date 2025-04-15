@@ -1,9 +1,11 @@
-{ pkgs, ... }: {
+{ pkgs, hyprland, system, ... }: {
   programs = {
     dconf.enable = true;
     hyprland = {
       enable = true;
       withUWSM = true;
+      package = hyprland.packages.${system}.hyprland;
+      portalPackage = hyprland.packages.${system}.xdg-desktop-portal-hyprland;
     };
     regreet = {
       enable = true;
