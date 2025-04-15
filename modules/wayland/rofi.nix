@@ -51,6 +51,7 @@ in {
         "listview" = {
           lines = 10;
           columns = 1;
+          fixed-height = false;
           border = mkLiteral "1px 0 0";
           border-color = mkLiteral "#7e7e7e80";
         };
