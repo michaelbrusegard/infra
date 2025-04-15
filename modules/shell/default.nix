@@ -37,6 +37,8 @@ in {
           searchDownKey = "^N";
         };
         initExtraFirst = ''
+          exec 2>>${config.xdg.cacheHome}/zsh_startup.log
+          set -x
           if [[ -r "${config.xdg.cacheHome}/p10k-instant-prompt-${"\${(%):-%n}"}.zsh" ]]; then
             source "${config.xdg.cacheHome}/p10k-instant-prompt-${"\${(%):-%n}"}.zsh"
           fi
