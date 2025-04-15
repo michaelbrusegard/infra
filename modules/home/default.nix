@@ -9,6 +9,9 @@
       gtk.enable = true;
       x11.enable = true;
     };
+    sessionVariables = lib.mkIf (!isDarwin) {
+      NIXOS_OZONE_WL = "1";
+    };
     shellAliases = {
       rebuild = if isDarwin then
         "sudo darwin-rebuild switch --flake ~/Developer/dotfiles#${hostName}"

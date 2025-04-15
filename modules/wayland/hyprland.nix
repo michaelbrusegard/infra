@@ -10,9 +10,6 @@ in {
       portalPackage = hyprland.packages.${system}.xdg-desktop-portal-hyprland;
       xwayland.enable = true;
       settings = {
-        env = [
-          "NIXOS_OZONE_WL,1"
-        ];
         exec-once = [ 
           "wl-paste --type text --watch cliphist store"
           "wl-paste --type image --watch cliphist store"
