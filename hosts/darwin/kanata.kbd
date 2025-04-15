@@ -25,13 +25,13 @@
   ; (tap-hold $tap-time $hold-time ; rctl)
   fnl (tap-hold 200 200 fn (layer-toggle fn))
 
-  å (tap-macro A-lbracket)
-  ø (tap-macro A-semicolon)
-  æ (tap-macro A-quote)
-  Å (tap-macro S-A-lbracket)
-  Ø (tap-macro S-A-semicolon)
-  Æ (tap-macro S-A-quote)
-  ´ (tap-macro A-e)
+  å (multi alt [)
+  ø (multi alt ;)
+  æ (multi alt ')
+  Å (multi alt S-[)
+  Ø (multi alt S-;)
+  Æ (multi alt S-')
+  ´ (multi alt e))
 )
 
 (deflayer base

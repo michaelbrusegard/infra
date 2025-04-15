@@ -4,21 +4,18 @@
       enable = true;
       keyboards.default = {
         config = ''
-          (defcfg
-            process-unmapped-keys yes)
-
           (defsrc
             f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
             caps a    s    d    f    j    k    l    ;    [    '    ])
 
           (defalias
-            å (tap-macro A-lbracket)
-            ø (tap-macro A-semicolon)
-            æ (tap-macro A-quote)
-            Å (tap-macro S-A-lbracket)
-            Ø (tap-macro S-A-semicolon)
-            Æ (tap-macro S-A-quote)
-            ´ (tap-macro A-e))
+            å (multi alt [)
+            ø (multi alt ;)
+            æ (multi alt ')
+            Å (multi alt S-[)
+            Ø (multi alt S-;)
+            Æ (multi alt S-')
+            ´ (multi alt e))
 
           (deflayer base
             _    _    _    _    _    _    _    _    _    _    _    _

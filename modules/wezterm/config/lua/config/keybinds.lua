@@ -35,10 +35,10 @@ local function keybinds(config)
 		{ key = "p", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Right", 2 }) },
 
     -- Move panes
-    { key = "h", mods = "SHIFT|SUPER", action = wezterm.action.SwapPaneDirection("Left") },
-    { key = "j", mods = "SHIFT|SUPER", action = wezterm.action.SwapPaneDirection("Down") },
-    { key = "k", mods = "SHIFT|SUPER", action = wezterm.action.SwapPaneDirection("Up") },
-    { key = "l", mods = "SHIFT|SUPER", action = wezterm.action.SwapPaneDirection("Right") },
+    { key = "h", mods = "SHIFT|SUPER", action = wezterm.action_callback(require('utils.pane').switch_pane_direction('Left')) },
+    { key = "j", mods = "SHIFT|SUPER", action = wezterm.action_callback(require('utils.pane').switch_pane_direction('Down')) },
+    { key = "k", mods = "SHIFT|SUPER", action = wezterm.action_callback(require('utils.pane').switch_pane_direction('Up')) },
+    { key = "l", mods = "SHIFT|SUPER", action = wezterm.action_callback(require('utils.pane').switch_pane_direction('Right')) },
 
 		-- Navigation between tabs
 		{ key = "Tab", mods = "CTRL", action = wezterm.action.ActivateTabRelative(1) },
