@@ -37,13 +37,12 @@ in {
           searchDownKey = "^N";
         };
         initExtraFirst = ''
-          source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
-          source ${./config/.p10k.zsh}
           if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
             source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
           fi
         '';
         initExtra = ''
+          source ${./config/.p10k.zsh}
           bindkey '^Y' autosuggest-accept
           bindkey '^E' autosuggest-clear
         '';
@@ -51,6 +50,7 @@ in {
           enable = true;
           useFriendlyNames = true;
           plugins = [
+            "romkatv/powerlevel10k"
             "getantidote/use-omz"
             "ohmyzsh/ohmyzsh path:lib"
             "ohmyzsh/ohmyzsh path:plugins/git"
