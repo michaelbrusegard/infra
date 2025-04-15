@@ -1,18 +1,23 @@
 -- Split windows
-vim.keymap.set({ 'n' }, '<C-\\>', '<cmd>vsplit<cr>', { silent = true, desc = 'Split window vertically' })
-vim.keymap.set({ 'n' }, '<C-S-\\>', '<cmd>split<cr>', { silent = true, desc = 'Split window horizontally' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-\\>', '<cmd>vsplit<cr>', { silent = true, desc = 'Split window vertically' })
+vim.keymap.set(
+  { 'i', 'x', 'n', 's' },
+  '<C-S-\\>',
+  '<cmd>split<cr>',
+  { silent = true, desc = 'Split window horizontally' }
+)
 
 -- Move between windows
-vim.keymap.set('n', '<C-h>', '<C-w>h', { silent = true, desc = 'Move to left window' })
-vim.keymap.set('n', '<C-j>', '<C-w>j', { silent = true, desc = 'Move to bottom window' })
-vim.keymap.set('n', '<C-k>', '<C-w>k', { silent = true, desc = 'Move to top window' })
-vim.keymap.set('n', '<C-l>', '<C-w>l', { silent = true, desc = 'Move to right window' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-h>', '<C-w>h', { silent = true, desc = 'Move to left window' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-j>', '<C-w>j', { silent = true, desc = 'Move to bottom window' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-k>', '<C-w>k', { silent = true, desc = 'Move to top window' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-l>', '<C-w>l', { silent = true, desc = 'Move to right window' })
 
 -- Swap windows
-vim.keymap.set('n', '<C-S-h>', '<C-w>H', { silent = true, desc = 'Swap window left' })
-vim.keymap.set('n', '<C-S-j>', '<C-w>J', { silent = true, desc = 'Swap window down' })
-vim.keymap.set('n', '<C-S-k>', '<C-w>K', { silent = true, desc = 'Swap window up' })
-vim.keymap.set('n', '<C-S-l>', '<C-w>L', { silent = true, desc = 'Swap window right' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-S-h>', '<C-w>H', { silent = true, desc = 'Swap window left' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-S-j>', '<C-w>J', { silent = true, desc = 'Swap window down' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-S-k>', '<C-w>K', { silent = true, desc = 'Swap window up' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-S-l>', '<C-w>L', { silent = true, desc = 'Swap window right' })
 
 -- File explorer
 vim.keymap.set('n', '-', function()
