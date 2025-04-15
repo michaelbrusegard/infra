@@ -12,7 +12,7 @@ in {
         dotDir = ".config/zsh";
         enableVteIntegration = true;
         autocd = true;
-        # defaultKeymap = "vicmd";
+        defaultKeymap = "vicmd";
         enableCompletion = true;
         autosuggestion = {
           enable = true;
