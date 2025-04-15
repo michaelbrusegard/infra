@@ -12,7 +12,7 @@ in {
         dotDir = ".config/zsh";
         enableVteIntegration = true;
         autocd = true;
-        defaultKeymap = "viins";
+        # defaultKeymap = "vicmd";
         enableCompletion = true;
         autosuggestion = {
           enable = true;
@@ -37,11 +37,10 @@ in {
           searchDownKey = "^N";
         };
         initExtraFirst = ''
-          if [[ -r "${config.xdg.cacheHome}/p10k-instant-prompt-${"\${(%):-%n}"}.zsh" ]]; then
-            source "${config.xdg.cacheHome}/p10k-instant-prompt-${"\${(%):-%n}"}.zsh"
+          set -x
+          if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+            source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
           fi
-          exec 2>> ${config.xdg.cacheHome}/zsh_startup.log
-          typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
         '';
         initExtra = ''
           source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
