@@ -21,8 +21,8 @@ local function keybinds(config)
 		-- Pane actions
 		{ key = "w", mods = "SUPER", action = wezterm.action.CloseCurrentPane({ confirm = false }) },
 		{ key = "w", mods = "SHIFT|SUPER", action = wezterm.action.CloseCurrentTab({ confirm = false }) },
-    { key = "\\", mods = "SUPER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
-    { key = "\\", mods = "SHIFT|SUPER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
+    { key = "\\", mods = "SUPER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
+    { key = "|", mods = "SHIFT|SUPER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
 
 		-- Pane navigation
 		{ key = "h", mods = "SUPER", action = wezterm.action.ActivatePaneDirection("Left") },
