@@ -18,6 +18,7 @@ in {
           enable = true;
           highlight = "fg=${colors.mocha.overlay0}";
         };
+        syntaxHighlighting.enable = true;
         history = {
           append = true;
           expireDuplicatesFirst = true;
@@ -36,8 +37,8 @@ in {
           searchDownKey = "^N";
         };
         initExtraFirst = ''
-          if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
-            source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+          if [[ -r "${config.xdg.cacheHome}/p10k-instant-prompt-${"\${(%):-%n}"}.zsh" ]]; then
+            source "${config.xdg.cacheHome}/p10k-instant-prompt-${"\${(%):-%n}"}.zsh"
           fi
         '';
         initExtra = ''
