@@ -1640,7 +1640,7 @@
     },
     {
       "id": "zen-compact-mode-toggle",
-      "key": "s",
+      "key": "",
       "keycode": "",
       "group": "zen-compact-mode",
       "l10nId": "zen-compact-mode-shortcut-toggle",
@@ -1648,7 +1648,7 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": true
+        "meta": false
       },
       "action": "cmd_zenCompactModeToggle",
       "disabled": false,
@@ -1657,7 +1657,7 @@
     },
     {
       "id": "zen-compact-mode-show-sidebar",
-      "key": "",
+      "key": "s",
       "keycode": "",
       "group": "zen-compact-mode",
       "l10nId": "zen-compact-mode-shortcut-show-sidebar",
@@ -1665,7 +1665,7 @@
         "control": false,
         "alt": false,
         "shift": false,
-        "meta": false,
+        "meta": true,
         "accel": false
       },
       "action": "cmd_zenCompactModeShowSidebar",
