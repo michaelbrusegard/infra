@@ -36,8 +36,7 @@ in {
           searchUpKey = "^P";
           searchDownKey = "^N";
         };
-        initExtraFirst = ''
-          set -x
+        initExtraBeforeCompInit = ''
           if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
             source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
           fi
