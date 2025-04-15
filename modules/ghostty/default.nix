@@ -30,11 +30,11 @@ in {
         cursor-style = "block";
         keybind = [
           # Global actions
-          "super+c=copy"
-          "super+v=paste"
+          "super+c=copy_to_clipboard"
+          "super+v=paste_from_clipboard"
           "super+equal=increase_font_size"
           "super+minus=decrease_font_size"
-          "super+0=reset_font_size"
+          "super+zero=reset_font_size"
           "super+q=quit"
           "super+n=new_window"
           "super+t=new_tab"
@@ -43,8 +43,8 @@ in {
           # Pane actions
           "super+w=close_surface"
           "shift+super+w=close_tab"
-          "super+backslash=split_horizontal"
-          "shift+super+backslash=split_vertical"
+          "super+backslash=new_split:down"
+          "shift+super+backslash=new_split:right"
 
           # Pane navigation
           "super+h=goto_split:left"
@@ -61,21 +61,21 @@ in {
           # Tab navigation
           "ctrl+tab=next_tab"
           "shift+ctrl+tab=previous_tab"
-          "shift+super+bracketleft=previous_tab"
-          "shift+super+bracketright=next_tab"
-          "super+1=goto_tab:0"
-          "super+2=goto_tab:1"
-          "super+3=goto_tab:2"
-          "super+4=goto_tab:3"
-          "super+5=goto_tab:4"
-          "super+6=goto_tab:5"
-          "super+7=goto_tab:6"
-          "super+8=goto_tab:7"
-          "super+9=goto_tab:last"
+          "shift+super+left_bracket=previous_tab"
+          "shift+super+right_bracket=next_tab"
+          "super+one=goto_tab:0"
+          "super+two=goto_tab:1"
+          "super+three=goto_tab:2"
+          "super+four=goto_tab:3"
+          "super+five=goto_tab:4"
+          "super+six=goto_tab:5"
+          "super+seven=goto_tab:6"
+          "super+eight=goto_tab:7"
+          "super+nine=goto_tab:last"
 
           # Move tabs
-          "shift+super+p=move_tab_backward"
-          "shift+super+n=move_tab_forward"
+          "shift+super+p=move_tab:-1"
+          "shift+super+n=move_tab:1"
 
           # Basic actions
           "super+z=toggle_split_zoom"
