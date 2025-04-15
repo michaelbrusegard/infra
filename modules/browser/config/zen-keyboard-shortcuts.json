@@ -1930,10 +1930,10 @@
       "group": "zen-split-view",
       "l10nId": "zen-split-view-shortcut-vertical",
       "modifiers": {
-        "control": false,
+        "control": true,
         "alt": false,
         "shift": true,
-        "meta": true,
+        "meta": false,
         "accel": false
       },
       "action": "cmd_zenSplitViewVertical",
@@ -1965,10 +1965,10 @@
       "group": "zen-split-view",
       "l10nId": "zen-split-view-shortcut-unsplit",
       "modifiers": {
-        "control": false,
+        "control": true,
         "alt": false,
         "shift": true,
-        "meta": true,
+        "meta": false,
         "accel": false
       },
       "action": "cmd_zenSplitViewUnsplit",
