@@ -20,6 +20,7 @@
     catppuccin.url = "github:catppuccin/nix";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     nix-darwin-browsers.url = "github:wuz/nix-darwin-browsers";
+    nix-proton.url = "github:DuskSystems/nix-proton";
     yazi.url = "github:sxyazi/yazi";
     hyprland.url = "github:hyprwm/Hyprland";
     secrets = {

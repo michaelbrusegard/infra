@@ -2050,7 +2050,7 @@
     },
     {
       "id": "key_inspectorMac",
-      "key": "c",
+      "key": "",
       "keycode": null,
       "group": "devTools",
       "l10nId": null,
@@ -2058,7 +2058,7 @@
         "control": false,
         "alt": false,
         "shift": true,
-        "meta": true,
+        "meta": false,
         "accel": false
       },
       "action": null,

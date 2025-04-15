@@ -1,4 +1,4 @@
-{ config, lib, pkgs, isDarwin, ... }:
+{ config, lib, pkgs, isDarwin, nix-proton, system, ... }:
 
 let
   cfg = config.modules.gui;
@@ -19,8 +19,8 @@ in {
       element-desktop
       legcord
       obsidian
-      protonmail-desktop
-      proton-pass
+      nix-proton.packages.${system}.proton-mail-desktop
+      nix-proton.packages.${system}.proton-pass-desktop
       protonvpn-gui
       davinci-resolve
     ]);
