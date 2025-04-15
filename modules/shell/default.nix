@@ -36,14 +36,14 @@ in {
           searchUpKey = "^P";
           searchDownKey = "^N";
         };
-        initExtraBeforeCompInit = ''
+        initExtraFirst = ''
+          source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
+          source ${./config/.p10k.zsh}
           if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
             source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
           fi
         '';
         initExtra = ''
-          source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
-          source ${./config/.p10k.zsh}
           bindkey '^Y' autosuggest-accept
           bindkey '^E' autosuggest-clear
         '';
