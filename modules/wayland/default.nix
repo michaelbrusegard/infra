@@ -2,9 +2,14 @@
 
 let
   cfg = config.modules.wayland;
-  clipsync = pkgs.writeShellScriptBin "clipsync" ''
-    ${builtins.readFile ./config/clipsync.sh}
-  '';
+  clipsync = pkgs.writeShellScriptBin "clipsync" {
+    text = builtins.readFile ./bin/clipsync.sh;
+    runtimeInputs = with pkgs; [
+      wl-clipboard
+      xclip
+      clipnotify
+    ];
+  };
 in {
   imports = [
     ./hypridle.nix
@@ -42,7 +47,10 @@ in {
       playerctld.enable = true;
     };
     systemd.user.services.clipsync = {
-      Unit.PartOf = "graphical-session.target";
+      Unit = {
+        After = ["graphical-session.target"];
+        PartOf = "graphical-session.target";
+      };
       Service = {
         ExecStart = "${clipsync}/bin/clipsync watch";
         ExecStop = "${clipsync}/bin/clipsync stop";
@@ -51,9 +59,6 @@ in {
       Install.WantedBy = ["graphical-session.target"];
     };
     home.packages = with pkgs; [
-      clipnotify
-      wl-clipboard
-      xclip
       hyprpicker
     ];
   };
