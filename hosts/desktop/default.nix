@@ -13,7 +13,6 @@
     ./services.nix
     ./swap-devices.nix
     ./system.nix
-    ./systemd.nix
     ./virtualisation.nix
     ./xdg.nix
   ];
