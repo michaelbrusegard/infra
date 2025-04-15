@@ -12,6 +12,7 @@
     sessionVariables = lib.mkIf (!isDarwin) {
       NIXOS_OZONE_WL = "1";
     };
+    shell.enableZshIntegration = true;
     shellAliases = {
       rebuild = if isDarwin then
         "sudo darwin-rebuild switch --flake ~/Developer/dotfiles#${hostName}"
@@ -29,6 +30,7 @@
       "....." = "cd ../../../..";
       "......" = "cd ../../../../..";
       "-" = "cd -";
+      f = "fuck";
       ls = "eza";
       cat = "bat";
       lzd = "lazygit";

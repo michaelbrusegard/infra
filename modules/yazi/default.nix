@@ -188,18 +188,18 @@ in {
         "yaziline" = "${yaziline-plugin}";
       };
       initLua = ''
-        -- require("git"):setup()
-        -- require("relative-motions"):setup({ show_numbers="relative", show_motion = true })
-        -- require("augment-command"):setup({
-        --   smart_tab_create = true,
-        --   smooth_scrolling = true,
-        -- })
-        -- require("yaziline"):setup({
-        --   color = "${colors.mocha.blue}",
-        --   separator_style = "curvy",
-        --   select_symbol = "",
-        --   yank_symbol = "󰆐",
-        -- })
+        require("git"):setup()
+        require("relative-motions"):setup({ show_numbers="relative", show_motion = true })
+        require("augment-command"):setup({
+          smart_tab_create = true,
+          smooth_scrolling = true,
+        })
+        require("yaziline"):setup({
+          color = "${colors.mocha.blue}",
+          separator_style = "curvy",
+          select_symbol = "",
+          yank_symbol = "󰆐",
+        })
       '';
       keymap = {
         input.prepend_keymap = [
