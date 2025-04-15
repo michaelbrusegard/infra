@@ -41,6 +41,7 @@ in {
           fi
         '';
         initExtra = ''
+          source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
           source ${./config/.p10k.zsh}
           bindkey '^Y' autosuggest-accept
           bindkey '^E' autosuggest-clear
@@ -117,9 +118,6 @@ in {
       jq.enable = true;
       fastfetch.enable = true;
     };
-    home.packages = with pkgs; [
-      zsh-powerlevel10k
-    ];
     catppuccin = {
       zsh-syntax-highlighting.enable = true;
       bat.enable = true;
