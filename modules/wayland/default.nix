@@ -49,20 +49,11 @@ in {
       playerctld.enable = true;
     };
     systemd.user.services.clipsync = {
-      Unit = {
-        After = ["graphical-session.target"];
-        PartOf = "graphical-session.target";
-      };
+      Unit.PartOf = "graphical-session.target";
       Service = {
-        Type = "simple";
-        Environment = [
-          "WAYLAND_DISPLAY=wayland-1"
-          "DISPLAY=:0"
-        ];
-        ExecStart = "${clipsync}/bin/clipsync watch";
+        ExecStart = "${clipsync}/bin/clipsync watch with-notifications";
         ExecStop = "${clipsync}/bin/clipsync stop";
-        Restart = "on-failure";
-        RestartSec = "1s";
+        Restart = "always";
       };
       Install.WantedBy = ["graphical-session.target"];
     };
