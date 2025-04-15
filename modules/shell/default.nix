@@ -36,9 +36,12 @@ in {
           searchDownKey = "^N";
         };
         initExtraFirst = ''
+          if [[ -r "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+            source "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh"
+          fi
         '';
         initExtra = ''
-          source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
+          source ${./config/.p10k.zsh}
           bindkey '^Y' autosuggest-accept
           bindkey '^E' autosuggest-clear
         '';
