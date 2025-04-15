@@ -1,8 +1,8 @@
-{ lib, pkgs, hostName, isDarwin, ... }:
+{ lib, config, pkgs, hostName, isDarwin, ... }:
 {
   home = {
     stateVersion = "25.05";
-    pointerCursor = lib.mkIf (!isDarwin) {
+    pointerCursor = lib.mkIf (config.modules.gui.enable && !isDarwin) {
       package = pkgs.apple-cursor;
       name = "macOS";
       size = 24;
