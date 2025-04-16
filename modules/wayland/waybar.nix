@@ -97,7 +97,7 @@ in {
       style = ''
         * {
           min-height: 0;
-          font-family: "Noto Sans";
+          font-family: "SF Pro Nerd Font";
           font-size: 10px;
           border: none;
           border-radius: 3px;
