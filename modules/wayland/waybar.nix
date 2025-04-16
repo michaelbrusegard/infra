@@ -39,7 +39,7 @@ in {
               headset = "󰋎";
               bluetooth = "󰂯";
             };
-            on-click-right = "easyeffects";
+            on-click = "easyeffects";
           };
 
           "hyprland/workspaces" = {
@@ -113,7 +113,11 @@ in {
           font-size: 20px;
         }
 
-        #pulseaudio, #network {
+        #network {
+          font-size: 22px;
+        }
+
+        #pulseaudio {
           font-size: 24px;
         }
 

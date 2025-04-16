@@ -50,6 +50,8 @@ in {
       packages = with pkgs; [
         wl-clipboard
         hyprpicker
+        grim
+        slurp
       ];
       file.".local/share/applications/hyprpicker.desktop".text = ''
         [Desktop Entry]

@@ -122,6 +122,8 @@ in {
           "super shift, v, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
           "super, q, killactive,"
           "super ctrl, q, exec, loginctl lock-session"
+          "super shift, 3, exec, grim -t png -q 100 ~/Pictures/Screenshots/$(date +'\%Y-\%m-\%d_\%H-\%M-\%S').png"
+          "super shift, 4, exec, grim -t png -q 100 -g \"$(slurp -d -w 2)\" ~/Pictures/Screenshots/$(date +'\%Y-\%m-\%d_\%H-\%M-\%S').png"
         ];
         binde = [
           # Resize window
