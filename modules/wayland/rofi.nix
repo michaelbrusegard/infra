@@ -7,81 +7,101 @@ in {
   config = lib.mkIf cfg.enable {
     programs.rofi = {
       enable = true;
-      location = "center";
-      yoffset = -200;
+      font = "SF Pro 10";
       terminal = "${pkgs.wezterm}/bin/wezterm";
-      font = "SF Pro Nerd Font 12";
       theme = {
         "*" = {
-          background-color = mkLiteral "transparent";
-          text-color = mkLiteral "#dedede";
-          margin = 0;
-          padding = 0;
-          spacing = 0;
+          bg = mkLiteral "#20272d";
+          fg = mkLiteral "#a5a5a5";
+          accent = mkLiteral "#a0c4e2";
         };
 
         "window" = {
-          background-color = mkLiteral "#242424e6";
-          location = mkLiteral "center";
-          width = 640;
-          border-radius = 8;
-        };
-
-        "inputbar" = {
-          font = "SF Pro Nerd Font 18";
-          padding = mkLiteral "12px";
-          spacing = mkLiteral "12px";
-          children = map mkLiteral [ "icon-search" "entry" ];
-        };
-
-        "icon-search" = {
-          expand = false;
-          filename = "search";
-          size = mkLiteral "28px";
-          vertical-align = mkLiteral "0.5";
+          transparency = "real";
+          background-color = mkLiteral "@bg";
+          text-color = mkLiteral "@fg";
+          border = 0;
+          border-radius = 0;
+          width = 400;
+          location = "center";
+          x-offset = 0;
+          y-offset = 0;
         };
 
         "entry" = {
-          font = mkLiteral "inherit";
-          placeholder = "Search for apps and commands";
-          placeholder-color = mkLiteral "#dedede80";
-          vertical-align = mkLiteral "0.5";
+          background-color = mkLiteral "@bg";
+          text-color = mkLiteral "@fg";
+          placeholder-color = mkLiteral "@fg";
+          placeholder = "";
+          expand = true;
+          horizontal-align = 0;
+          padding = mkLiteral "6px";
         };
 
         "listview" = {
-          lines = 10;
+          background-color = mkLiteral "@bg";
           columns = 1;
-          border = mkLiteral "1px 0 0";
-          border-color = mkLiteral "#7e7e7e80";
+          lines = 5;
+          spacing = mkLiteral "10px";
+          cycle = true;
+          dynamic = true;
+          layout = mkLiteral "horizontal";
+        };
+
+        "mainbox" = {
+          background-color = mkLiteral "@al";
+          children = map mkLiteral [ "listview" ];
+          spacing = mkLiteral "10px";
+          padding = mkLiteral "10px";
+          border = 0;
+          border-radius = 2;
+          border-color = mkLiteral "@accent";
         };
 
         "element" = {
-          padding = mkLiteral "8px 16px";
-          spacing = mkLiteral "16px";
-          background-color = mkLiteral "transparent";
+          background-color = mkLiteral "@bg";
+          text-color = mkLiteral "@fg";
+          orientation = mkLiteral "horizontal";
+          border = 0;
+          border-radius = 0;
+          padding = mkLiteral "20px 25px 20px 25px";
         };
 
         "element-icon" = {
-          size = mkLiteral "1em";
-          vertical-align = mkLiteral "0.5";
-        };
-
-        "element-text" = {
-          vertical-align = mkLiteral "0.5";
+          background-color = mkLiteral "inherit";
           text-color = mkLiteral "inherit";
+          horizontal-align = mkLiteral "0.5";
+          vertical-align = mkLiteral "0.5";
+          size = mkLiteral "0px";
+          border = 0;
         };
 
-        "element normal active" = {
-          text-color = mkLiteral "#0860f2e6";
+        "element selected" = {
+          background-color = mkLiteral "@accent";
+          text-color = mkLiteral "@bg";
+          border = 1;
+          border-radius = 2;
+          border-color = mkLiteral "@accent";
         };
 
-        "element alternate active" = {
-          text-color = mkLiteral "#0860f2e6";
+        "element.active, element.selected.urgent" = {
+          background-color = mkLiteral "@on";
+          text-color = mkLiteral "@background";
+          border-color = mkLiteral "@on";
         };
 
-        "element selected normal, element selected active" = {
-          background-color = mkLiteral "#0860f2e6";
-          text-color = mkLiteral "#fff";
+        "element.selected.urgent" = {
+          border-color = mkLiteral "@selected";
+        };
+
+        "element.urgent, element.selected.active" = {
+          background-color = mkLiteral "@off";
+          text-color = mkLiteral "@background";
+          border-color = mkLiteral "@off";
+        };
+
+        "element.selected.active" = {
+          border-color = mkLiteral "@selected";
         };
       };
     };
