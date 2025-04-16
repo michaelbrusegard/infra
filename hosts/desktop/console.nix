@@ -3,7 +3,7 @@
     enable = true;
     font = "${pkgs.terminus_font}/share/consolefonts/ter-120b.psf.gz";
     packages = [ pkgs.terminus_font ];
-    keyMap = "us";
+    useXkbConfig = true;
     colors = [
       "${builtins.substring 1 6 colors.mocha.crust}"
       "${builtins.substring 1 6 colors.mocha.red}"

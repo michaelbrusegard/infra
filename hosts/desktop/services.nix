@@ -71,6 +71,9 @@
         };
       };
     };
-    xserver.xkb.layout = "us";
+    xserver.xkb = {
+      layout = "us";
+      variant = "mac";
+    };
   };
 }
