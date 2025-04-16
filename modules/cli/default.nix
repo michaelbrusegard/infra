@@ -26,6 +26,7 @@ in {
       age
       sops
       testdisk
+      qmk
     ];
   };
 }
