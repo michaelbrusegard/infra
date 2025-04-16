@@ -76,28 +76,45 @@ in {
         * {
           font-family: "SF Pro Nerd Font";
           font-size: 16px;
-          font-weight: 600;
-          color: #ffffff;
+          font-weight: 500;
+          letter-spacing: 0.04em;
         }
 
-        #clock, #memory {
-          border-top-right-radius: 9999px;
-          border-bottom-right-radius: 9999px;
+        window#waybar {
+          background: transparent;
         }
 
-        #workspaces, #custom-power {
-          border-top-left-radius: 9999px;
-          border-bottom-left-radius: 9999px;
+        box.modules-left {
+          background: linear-gradient(90deg, rgba(255, 255, 255, 0.25) 0%, rgba(128, 128, 128, 0.25) 100%);
+          border-radius: 9999px;
+          padding-left: 4px;
+          padding-right: 8px;
         }
 
-        #clock, #network, #pulseaudio, #workspaces, #cpu, #temperature, #memory, #custom-power {
-          background: rgba(36, 36, 36, 0.7);
-          margin: 4px 0;
-          padding: 0 10px;
+        box.modules-right {
+          background: linear-gradient(90deg, rgba(128, 128, 128, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%);
+          border-radius: 9999px;
+          padding-left: 4px;
+          padding-right: 8px;
+        }
+
+        #custom-power, #cpu, #temperature, #memory,
+        #workspaces, #pulseaudio, #network, #clock {
+          padding: 0 12px;
         }
 
         #workspaces button.active {
-          background: rgba(255, 255, 255, 0.7);
+          background: #fff;
+          color: #7e7e7e;
+          border-radius: 8px;
+        }
+
+        #custom-power {
+          font-size: 20px;
+        }
+
+        #pulseaudio, #network {
+          font-size: 24px;
         }
       '';
     };
