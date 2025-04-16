@@ -14,7 +14,7 @@ in {
       font = "SF Pro Nerd Font 12";
       margin = "16";
       padding = "16";
-      backgroundColor = "#1e1e1edd";
+      backgroundColor = "rgba(36, 36, 36, 0.75)";
       textColor = "#fff";
       borderColor = "#7e7e7e";
       layer = "overlay";

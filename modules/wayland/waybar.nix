@@ -122,7 +122,7 @@ in {
 
           tooltip {
             border-radius: 10px;
-            background-color: #1e1e1edd;
+            background-color: rgba(36, 36, 36, 0.75);
             border: 1px solid #7e7e7e;
             padding: 10px;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
