@@ -43,7 +43,7 @@ in {
 
         "entry" = {
           font = mkLiteral "inherit";
-          placeholder = "Search for apps and commands";
+          placeholder = "Search";
           placeholder-color = mkLiteral "#dedede80";
           vertical-align = mkLiteral "0.5";
         };
@@ -85,5 +85,9 @@ in {
         };
       };
     };
+    home.packages = with pkgs; [
+      rofi-power-menu
+      rofi-network-manager
+    ];
   };
 }

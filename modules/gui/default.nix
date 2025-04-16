@@ -23,6 +23,7 @@ in {
       nix-proton.packages.${system}.proton-pass-desktop
       protonvpn-gui
       davinci-resolve
+      easyeffects
     ]);
   };
 }
