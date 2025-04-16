@@ -16,14 +16,14 @@
           (defalias
             alt (multi alt (layer-while-held alted-with-exceptions))
             sft-alt (multi sft (layer-while-held alted-with-exceptions-shifted))
-            å (multi (release-key alt) (ralt a))
-            æ (multi (release-key alt) (ralt '))
-            ø (multi (release-key alt) (ralt o))
-            é (multi (release-key alt) (ralt e) e)
-            Å (multi (release-key alt) (release-key sft) (sft ralt a))
-            Æ (multi (release-key alt) (release-key sft) (sft ralt '))
-            Ø (multi (release-key alt) (release-key sft) (sft ralt o))
-            É (multi (release-key alt) (release-key sft) (ralt e) (sft e))
+            å (multi (release-key alt) (unicode å))
+            æ (multi (release-key alt) (unicode æ))
+            ø (multi (release-key alt) (unicode ø))
+            é (multi (release-key alt) (unicode é))
+            Å (multi (release-key alt) (release-key sft) (unicode Å))
+            Æ (multi (release-key alt) (release-key sft) (unicode Æ))
+            Ø (multi (release-key alt) (release-key sft) (unicode Ø))
+            É (multi (release-key alt) (release-key sft) (unicode É))
           )
 
           (deflayer alted-with-exceptions
