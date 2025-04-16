@@ -3,39 +3,24 @@
     kanata = {
       enable = true;
       keyboards.default = {
-      config = ''
-        (defcfg
-          process-unmapped-keys yes  ;; process all keys
-          log-layer-changes yes      ;; enable logging
-        )
+        config = ''
+          (defsrc
+            f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+            caps a    s    d    f    j    k    l    ;    [    '    ])
 
-        (defsrc
-          esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
-          grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
-          tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
-          caps a    s    d    f    g    h    j    k    l    ;    '    ret
-          lsft z    x    c    v    b    n    m    ,    .    /    rsft
-          lctl lmet lalt           spc            ralt rmet rctl
-        )
+          (defalias
+            å (multi alt [)
+            ø (multi alt ;)
+            æ (multi alt ')
+            Å (multi alt S-[)
+            Ø (multi alt S-;)
+            Æ (multi alt S-')
+            ´ (multi alt e))
 
-        (defalias
-          å (multi alt [)
-          ø (multi alt ;)
-          æ (multi alt ')
-          Å (multi alt S-[)
-          Ø (multi alt S-;)
-          Æ (multi alt S-')
-          ´ (multi alt e))
-
-        (deflayer base
-          esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
-          grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
-          tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
-          caps a    s    d    f    g    h    j    k    l    ;    '    ret
-          lsft z    x    c    v    b    n    m    ,    .    /    rsft
-          lctl lmet lalt           spc            ralt rmet rctl
-        )
-      '';
+          (deflayer base
+            _    _    _    _    _    _    _    _    _    _    _    _
+            caps a    s    d    f    j    k    l    ;    [    '    ])
+        '';
       };
     };
     openssh = {
