@@ -86,12 +86,6 @@ in {
           "alt shift, j, movewindow, d"
           "alt shift, k, movewindow, u"
 
-          # Resize window
-          "alt, u, resizeactive, -20 0"
-          "alt, i, resizeactive, 0 20"
-          "alt, o, resizeactive, 0 -20"
-          "alt, p, resizeactive, 20 0"
-
           # Switch to specific workspace
           "alt, 1, workspace, 1"
           "alt, 2, workspace, 2"
@@ -128,6 +122,13 @@ in {
           "super shift, v, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
           "super, q, killactive,"
           "super ctrl, q, exec, loginctl lock-session"
+        ];
+        binde = [
+          # Resize window
+          "alt, u, resizeactive, -20 0"
+          "alt, i, resizeactive, 0 20"
+          "alt, o, resizeactive, 0 -20"
+          "alt, p, resizeactive, 20 0"
         ];
         bindm = [
           "alt, mouse:272, movewindow"
