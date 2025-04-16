@@ -4,8 +4,8 @@
 
 (defsrc
   f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
-  caps a s d f j k l ;
-  fn
+  caps a s d f j k l ; ' [ e
+  fn sft alt
 )
 
 (defvar
@@ -24,16 +24,39 @@
   l (tap-hold $tap-time $hold-time l ralt)
   ; (tap-hold $tap-time $hold-time ; rctl)
   fnl (tap-hold 200 200 fn (layer-toggle fn))
+
+  å (multi (release-key alt) (unicode å))
+  æ (multi (release-key alt) (unicode æ))
+  ø (multi (release-key alt) (unicode ø))
+  é (multi (release-key alt) (unicode é))
+  Å (multi (release-key alt) (release-key sft) (unicode Å))
+  Æ (multi (release-key alt) (release-key sft) (unicode Æ))
+  Ø (multi (release-key alt) (release-key sft) (unicode Ø))
+  É (multi (release-key alt) (release-key sft) (unicode É))
+  alt (multi alt (layer-while-held alted-with-exceptions))
+  sft-alt (multi sft (layer-while-held alted-with-exceptions-shifted))
 )
 
 (deflayer base
   brdn  brup  _    _    _    _   prev  pp  next  mute  vold  volu
-  @escctrl @a @s @d @f @j @k @l @;
-  @fnl
+  @escctrl @a @s @d @f @j @k @l @; @' @[ e
+  @fnl sft @alt
 )
 
 (deflayer fn
   f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
-  @escctrl
-  fn
+  @escctrl _ _ _ _ _ _ _ _ _ _ _
+  fn sft @alt
+)
+
+(deflayer alted-with-exceptions
+  _ _ _ _ _ _ _ _ _ _ _ _
+  @escctrl _ _ @å @æ @ø @é _ _ _ _ _
+  _ @sft-alt _
+)
+
+(deflayer alted-with-exceptions-shifted
+  _ _ _ _ _ _ _ _ _ _ _ _
+  @escctrl _ _ @Å @Æ @Ø @É _ _ _ _ _
+  _ _ _
 )
