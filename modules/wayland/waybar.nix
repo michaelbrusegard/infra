@@ -12,18 +12,18 @@ in {
           gtk-layer-shell = true;
           layer = "top";
           height = 24;
-          modules-left = ["custom/power" "cpu" "temperature" "memory"];
+          modules-left = ["custom/power" "cpu" "memory" "custom/cputemp" "custom/gpu" "custom/vram" "custom/gputemp"];
           modules-right = ["hyprland/workspaces" "pulseaudio" "network" "clock"];
 
           "clock" = {
             format = " {:%d %b %H:%M}";
-            tooltip = false;
+            tooltip-format = "{:%A, %B %d, %Y\nWeek %V\n%H:%M:%S}";
           };
 
           "network" = {
-            format-wifi = "󰤨";
-            format-ethernet = "󰈀";
-            format-disconnected = "󰤭";
+            format-wifi = "<span size='large'>󰤨</span>";
+            format-ethernet = "<span size='large'>󰈀</span>";
+            format-disconnected = "<span size='large'>󰤭</span>";
             tooltip-format-wifi = "{essid}";
             tooltip-format-ethernet = "{ipaddr}";
             tooltip-format-disconnected = "Disconnected";
@@ -31,8 +31,8 @@ in {
           };
 
           "pulseaudio" = {
-            format = "{icon}";
-            format-muted = "󰝟";
+            format = "<span size='large'>{icon}</span> {volume}%";
+            format-muted = "<span size='large'>󰝟</span> {volume}%";
             format-icons = {
               default = ["󰕿" "󰖀" "󰕾"];
               headphone = "󰋋";
@@ -49,24 +49,46 @@ in {
 
           "cpu" = {
             interval = 5;
-            format = " {usage}%";
+            format = "<span size='large'>󰍛</span> {usage}%";
             max-length = 10;
-          };
-
-          "temperature" = {
-            interval = 5;
-            format = " {temperatureC}°C";
           };
 
           "memory" = {
             interval = 10;
-            format = " {used:0.1f}GB";
-            tooltip = true;
+            format = "<span size='large'>󰘚</span> {used:0.1f}GB";
             tooltip-format = "Used: {used:0.1f}GB\nTotal: {total:0.1f}GB";
           };
 
+          "custom/cputemp" = {
+            interval = 5;
+            exec = "sensors | awk '/CPU:/ {gsub(/[+°C]/,\"\",$2); print $2}'";
+            format = "<span size='large'>󰔐</span> {}";
+            tooltip = false;
+          };
+
+          "custom/gpu" = {
+            interval = 5;
+            exec = "cat /sys/class/hwmon/hwmon*/device/gpu_busy_percent 2>/dev/null || echo 'N/A'";
+            format = "<span size='large'>󰢮</span> {}%";
+            tooltip = false;
+          };
+
+          "custom/vram" = {
+            interval = 5;
+            exec = "cat /sys/class/hwmon/hwmon*/device/mem_info_vram_used 2>/dev/null | awk '{printf \"%.1f\", $1/1073741824}' || echo 'N/A'";
+            format = "<span size='large'>󰆼</span> {}GB";
+            tooltip = false;
+          };
+
+          "custom/gputemp" = {
+            interval = 5;
+            exec = "sensors | awk '/junction/ {gsub(/[+°C]/,\"\",$2); print $2}'";
+            format = "<span size='large'>󰔏</span> {}°C";
+            tooltip = false;
+          };
+
           "custom/power" = {
-            format = "⏻";
+            format = "<span size='large'>⏻</span>";
             on-click = "rofi -show power-menu -modi power-menu:rofi-power-menu --choices=lockscreen/logout/reboot/shutdown --confirm=reboot/shutdown";
             tooltip = false;
           };
@@ -75,7 +97,7 @@ in {
       style = ''
         * {
           font-family: "SF Pro Nerd Font";
-          font-size: 16px;
+          font-size: 15px;
           font-weight: 500;
           letter-spacing: 0.04em;
         }
@@ -98,7 +120,8 @@ in {
           padding-right: 8px;
         }
 
-        #custom-power, #cpu, #temperature, #memory,
+        #custom-power, #cpu, #memory, #custom-cputemp,
+        #custom-gpu, #custom-vram, #custom-gputemp,
         #workspaces, #pulseaudio, #network, #clock {
           padding: 0 12px;
         }
@@ -107,18 +130,6 @@ in {
           background: #fff;
           color: #7e7e7e;
           border-radius: 8px;
-        }
-
-        #custom-power {
-          font-size: 20px;
-        }
-
-        #network {
-          font-size: 22px;
-        }
-
-        #pulseaudio {
-          font-size: 24px;
         }
 
         tooltip {
@@ -131,7 +142,7 @@ in {
         }
 
         tooltip label {
-          font-size: 14px;
+          font-size: 13px;
           padding: 2px 8px;
         }
 

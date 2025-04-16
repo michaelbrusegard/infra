@@ -76,20 +76,6 @@ local function keybinds(config)
         wezterm.action.ReloadConfiguration()
       end),
     },
-
-    -- Neovim
-    {
-      key = "s",
-      mods = "SUPER",
-      action = wezterm.action_callback(function(window, pane)
-        local process_name = pane:get_foreground_process_name() or ""
-        if process_name:match("vim") or process_name:match("nvim") then
-          window:perform_action(wezterm.action.SendKey({ key = ":" }), pane)
-          window:perform_action(wezterm.action.SendString("w"), pane)
-          window:perform_action(wezterm.action.SendKey({ key = "Enter" }), pane)
-        end
-      end)
-    },
 	}
 
   config.key_tables = {
