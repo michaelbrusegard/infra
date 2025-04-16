@@ -9,7 +9,7 @@ return function(config)
       disabled = true,
     },
     presentation_full = {
-      keybind = { key = 'x', mods = 'SUPER' },
+      keybind = { key = 'm', mods = 'SUPER' },
     },
   })
 end
