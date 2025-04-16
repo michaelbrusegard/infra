@@ -81,13 +81,13 @@ in {
         }
 
         #clock, #memory {
-          border-top-right-radius: 9999px
-          border-bottom-right-radius: 9999px
+          border-top-right-radius: 9999px;
+          border-bottom-right-radius: 9999px;
         };
 
         #workspaces, #custom-power {
-          border-top-left-radius: 9999px
-          border-bottom-left-radius: 9999px
+          border-top-left-radius: 9999px;
+          border-bottom-left-radius: 9999px;
         };
 
         #clock, #network, #pulseaudio, #workspaces, #cpu, #temperature, #memory, #custom-power {
