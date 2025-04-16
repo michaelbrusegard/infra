@@ -83,18 +83,18 @@ in {
         #clock, #memory {
           border-top-right-radius: 9999px;
           border-bottom-right-radius: 9999px;
-        };
+        }
 
         #workspaces, #custom-power {
           border-top-left-radius: 9999px;
           border-bottom-left-radius: 9999px;
-        };
+        }
 
         #clock, #network, #pulseaudio, #workspaces, #cpu, #temperature, #memory, #custom-power {
           background: rgba(36, 36, 36, 0.7);
           margin: 4px 0;
           padding: 0 10px;
-        };
+        }
 
         #workspaces button.active {
           background: rgba(255, 255, 255, 0.7);
