@@ -40,6 +40,9 @@ in {
                 bluetooth = "󰂯";
               };
               on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+              on-scroll-up = "wpctl set-volume @DEFAULT_AUDIO_SINK@ +5%";
+              on-scroll-down = "wpctl set-volume @DEFAULT_AUDIO_SINK@ -5%";
+              on-click-right = "easyeffects";
             };
 
             "hyprland/workspaces" = {
@@ -230,5 +233,8 @@ in {
         '';
       };
     };
+    home.packages = with pkgs; [
+      easyeffects
+    ];
   };
 }
