@@ -11,16 +11,11 @@ in {
         mainBar = {
           gtk-layer-shell = true;
           layer = "top";
-          height = 22;
-          margin = "16 16";
-          modules-left = ["custom/launcher" "cpu" "temperature" "memory"];
+          height = 28;
+          margin = "4 4";
+          modules-left = ["cpu" "temperature" "memory"];
           modules-center = ["hyprland/workspaces"];
           modules-right = ["backlight" "pulseaudio" "network" "battery" "clock" "custom/power"];
-
-          "custom/launcher" = {
-            format = " ";
-            tooltip = false;
-          };
 
           "cpu" = {
             interval = 5;
@@ -66,7 +61,7 @@ in {
           "network" = {
             format-wifi = " {essid}";
             format-ethernet = " {ipaddr}";
-            format-disconnected = "睊 Disconnected";
+            format-disconnected = "睊";
             tooltip = false;
           };
 
@@ -85,10 +80,12 @@ in {
           "clock" = {
             format = " {:%H:%M}";
             format-alt = " {:%a, %d %b}";
+            tooltip = false;
           };
 
           "custom/power" = {
-            format = "";
+            format = "⏻";
+            on-click = "rofi -show power-menu -modi power-menu:~/.local/bin/rofi-power-menu";
             tooltip = false;
           };
         };
@@ -98,18 +95,18 @@ in {
         * {
           min-height: 0;
           font-family: "SF Pro Nerd Font";
-          font-size: 10px;
+          font-size: 13px;
           border: none;
-          border-radius: 3px;
+          border-radius: 6px;
         }
 
         window#waybar {
-          background-color: transparent;
-          border-top: 8px transparent;
+          background-color: rgba(36, 36, 36, 0.90);
           border-radius: 8px;
-          color: #ffffff;
+          color: #dedede;
+          margin: 4px;
           transition-property: background-color;
-          transition-duration: 5s;
+          transition-duration: 0.5s;
         }
 
         window#waybar.hidden {
@@ -117,106 +114,67 @@ in {
         }
 
         #workspaces button {
-          background-color: #1e2021;
-          color: #b5e8e0;
-          margin: 4px 2px 0 2px;
-          min-width: 32px;
-          padding: 2px 0 0 0;
+          background-color: transparent;
+          color: #dedede;
+          margin: 4px 2px;
+          min-width: 24px;
+          padding: 2px 0;
         }
 
         #workspaces button.active {
-          background: linear-gradient(220deg, rgba(248,189,150,1) 0%, rgba(181,232,224,1) 49%, rgba(0,212,255,1) 100%);
-          color: #1e2021;
+          background: #0860f2e6;
+          color: #ffffff;
         }
 
         #workspaces button:hover {
-          color: #b4befe;
+          color: #ffffff;
+          background: rgba(8, 96, 242, 0.2);
         }
 
         #workspaces button.focused {
-          background-color: #bbccdd;
-          color: #1e2021;
+          background: #0860f2e6;
+          color: #ffffff;
         }
 
         #workspaces button.urgent {
-          background-color: #fae3b0;
+          background-color: #eb4d4b;
         }
 
-        #network {
-          background: #1e2021;
-          color: #bd93f9;
-          margin: 4px 0 0 4px;
+        #network,
+        #pulseaudio,
+        #battery,
+        #backlight,
+        #clock,
+        #memory,
+        #temperature,
+        #cpu,
+        #custom-power {
+          background: rgba(36, 36, 36, 0.7);
+          color: #dedede;
+          margin: 4px 2px;
           padding: 0 10px;
-        }
-
-        #pulseaudio {
-          background: #1e2021;
-          color: #fae3b0;
-          margin: 4px 0 0 4px;
-          padding: 0 10px;
-        }
-
-        #battery {
-          background: #1e2021;
-          color: #b5e8e0;
-          margin: 4px 0 0 4px;
-          padding: 0 7px 0 5px;
         }
 
         #battery.charging, #battery.plugged {
-          background-color: #1e2021;
-          color: #b5e8e0;
+          color: #26a65b;
         }
 
-        #backlight {
-          background: #1e2021;
-          color: #f8bd96;
-          margin: 4px 0 0 4px;
-          padding: 0 10px;
-        }
-
-        #clock {
-          background: #1e2021;
-          color: #abe9b3;
-          margin: 4px 0 0 4px;
-          padding: 0 7px 0 5px;
-        }
-
-        #memory {
-          background: #1e2021;
-          color: #ddb6f2;
-          margin: 4px 0 0 4px;
-          padding: 0 10px;
-        }
-
-        #temperature {
-          background: #1e2021;
-          color: #f8bd96;
-          margin: 4px 0 0 4px;
-          padding: 0 10px;
-        }
-
-        #cpu {
-          background: #1e2021;
-          color: #96cdfb;
-          margin: 4px 0 0 4px;
-          padding: 0 10px;
-        }
-
-        #custom-launcher {
-          background: #1e2021;
-          color: #fae3b0;
-          font-size: 15px;
-          margin: 4px 0 0 4px;
-          padding: 0 3px 0 11px;
+        #battery.critical:not(.charging) {
+          color: #eb4d4b;
+          animation: blink 0.5s linear infinite alternate;
         }
 
         #custom-power {
-          background: #1e2021;
-          color: #f28fad;
-          font-size: 10px;
-          margin: 4px 4px 0 4px;
-          padding: 2px 10px 0 10px;
+          color: #eb4d4b;
+          margin-right: 4px;
+          font-size: 15px;
+        }
+
+        @keyframes blink {
+          to {
+            background-color: #ff0000;
+            color: #ffffff;
+          }
         }
       '';
     };
