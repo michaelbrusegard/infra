@@ -5,21 +5,19 @@
       keyboards.default = {
         config = ''
           (defsrc
-            f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
-            caps a    s    d    f    j    k    l    ;    [    '    ])
+            e    ;    [    ')
 
           (defalias
-            å (multi alt [)
-            ø (multi alt ;)
-            æ (multi alt ')
-            Å (multi alt S-[)
-            Ø (multi alt S-;)
-            Æ (multi alt S-')
-            ´ (multi alt e))
+            å (multi lalt [)
+            ø (multi lalt ;)
+            æ (multi lalt ')
+            Å (multi lalt S-[)
+            Ø (multi lalt S-;)
+            Æ (multi lalt S-')
+            ´ (multi lalt e))
 
           (deflayer base
-            _    _    _    _    _    _    _    _    _    _    _    _
-            caps a    s    d    f    j    k    l    ;    [    '    ])
+            e    ;    [    ')
         '';
       };
     };
