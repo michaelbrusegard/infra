@@ -3,29 +3,36 @@
     kanata = {
       enable = true;
       keyboards.default = {
+        extraDefCfg = "process-unmapped-keys yes";
         config = ''
-(defsrc
-  caps grv         i
-              j    k    l
-  lsft rsft
-)
+          (defsrc
+            sft alt [ ; ' e
+          )
 
-(deflayer default
-  @cap @grv        _
-              _    _    _
-  _    _
-)
+          (deflayer base
+            sft @alt [ ; ' e
+          )
 
-(deflayer arrows
-  _    _           up
-              left down rght
-  _    _
-)
+          (defalias
+            alt (multi alt (layer-while-held alted-with-exceptions))
+            sft-alt (multi sft (layer-while-held alted-with-exceptions-shifted))
+            å (multi (release-key alt) (unicode å))
+            æ (multi (release-key alt) (unicode æ))
+            ø (multi (release-key alt) (unicode ø))
+            é (multi (release-key alt) (unicode é))
+            Å (multi (release-key alt) (release-key sft) (unicode Å))
+            Æ (multi (release-key alt) (release-key sft) (unicode Æ))
+            Ø (multi (release-key alt) (release-key sft) (unicode Ø))
+            É (multi (release-key alt) (release-key sft) (unicode É))
+          )
 
-(defalias
-  cap (tap-hold-press 200 200 caps lctl)
-  grv (tap-hold-press 200 200 grv (layer-toggle arrows))
-)
+          (deflayer alted-with-exceptions
+            @sft-alt _ @å @æ @ø @é
+          )
+
+          (deflayer alted-with-exceptions-shifted
+            _ _ @Å @Æ @Ø @É
+          )
         '';
       };
     };
