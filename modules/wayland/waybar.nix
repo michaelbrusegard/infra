@@ -51,11 +51,15 @@ in {
 
           "pulseaudio" = {
             format = "{icon} {volume}%";
-            format-muted = "婢 muted";
+            format-muted = "󰝟 muted";
             format-icons = {
-              default = ["" "奔" "墳"];
+              default = ["󰕿" "󰖀" "󰕾"];
+              headphone = "󰋋";
+              headset = "󰋎";
+              bluetooth = "󰂯";
             };
             on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+            tooltip = false;
           };
 
           "network" = {
@@ -90,7 +94,6 @@ in {
           };
         };
       };
-
       style = ''
         * {
           min-height: 0;
@@ -101,7 +104,7 @@ in {
         }
 
         window#waybar {
-          background-color: rgba(36, 36, 36, 0.90);
+          background: rgba(36, 36, 36, 0.90);
           border-radius: 8px;
           color: #dedede;
           margin: 4px;
@@ -114,7 +117,7 @@ in {
         }
 
         #workspaces button {
-          background-color: transparent;
+          background: transparent;
           color: #dedede;
           margin: 4px 2px;
           min-width: 24px;
@@ -122,7 +125,7 @@ in {
         }
 
         #workspaces button.active {
-          background: #0860f2e6;
+          background: rgba(8, 96, 242, 0.9);
           color: #ffffff;
         }
 
@@ -132,12 +135,12 @@ in {
         }
 
         #workspaces button.focused {
-          background: #0860f2e6;
+          background: rgba(8, 96, 242, 0.9);
           color: #ffffff;
         }
 
         #workspaces button.urgent {
-          background-color: #eb4d4b;
+          background: #eb4d4b;
         }
 
         #network,
@@ -172,7 +175,7 @@ in {
 
         @keyframes blink {
           to {
-            background-color: #ff0000;
+            background: #ff0000;
             color: #ffffff;
           }
         }
