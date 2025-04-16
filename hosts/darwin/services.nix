@@ -100,9 +100,9 @@
         alt - slash : yabai -m space --layout stack
 
         # System
-        alt - return : open -a WezTerm
-        alt + shift - return : open -a WezTerm --args -e sh -c 'yazi'
-        super - space : open -a "Raycast" || open -a "Spotlight"
+        alt - return : wezterm start --always-new-process
+        alt + shift - return : wezterm start --always-new-process -e sh -c 'yazi'
+        super - space : open -a "Raycast"
         super - q : yabai -m window --close
       '';
     };
