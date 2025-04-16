@@ -19,7 +19,7 @@ in {
         ];
         label = [
           {
-            text = "cmd[update:1000] date '+%A %d %B'";
+            text = "cmd[update:1000] LC_TIME=en_GB.UTF-8 date '+%A %d %B'";
             color = "rgba(255,255,255,0.8)";
             font_size = 24;
             font_family = "SF Pro";
