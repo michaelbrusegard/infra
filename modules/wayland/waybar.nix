@@ -66,8 +66,7 @@ in {
 
           "custom/power" = {
             format = "⏻";
-            on-click = "pkill -SIGRTMIN+8 waybar && notify-send 'System Shutdown' 'Click again to confirm' && sleep 5 && pkill -SIGRTMIN+8 waybar";
-            on-click-right = "systemctl poweroff";
+            on-click = "if pgrep -x 'notify-send' > /dev/null; then systemctl poweroff; else notify-send 'System Shutdown' 'Click again to confirm' && sleep 5 && notify-send --close-all; fi";
             tooltip = false;
           };
         };
