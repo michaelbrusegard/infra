@@ -4,7 +4,7 @@
 
 (defsrc
   f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
-  caps a s d f j k l ; [ ' ]
+  caps a s d f j k l ;
   fn
 )
 
@@ -24,19 +24,11 @@
   l (tap-hold $tap-time $hold-time l ralt)
   ; (tap-hold $tap-time $hold-time ; rctl)
   fnl (tap-hold 200 200 fn (layer-toggle fn))
-
-  å (multi alt [)
-  ø (multi alt ;)
-  æ (multi alt ')
-  Å (multi alt S-[)
-  Ø (multi alt S-;)
-  Æ (multi alt S-')
-  ´ (multi alt e))
 )
 
 (deflayer base
   brdn  brup  _    _    _    _   prev  pp  next  mute  vold  volu
-  @escctrl @a @s @d @f @j @k @l @; [ ' ]
+  @escctrl @a @s @d @f @j @k @l @;
   @fnl
 )
 
