@@ -4,20 +4,28 @@
       enable = true;
       keyboards.default = {
         config = ''
-          (defsrc
-            e    ;    [    ')
+(defsrc
+  caps grv         i
+              j    k    l
+  lsft rsft
+)
 
-          (defalias
-            å (multi lalt [)
-            ø (multi lalt ;)
-            æ (multi lalt ')
-            Å (multi lalt S-[)
-            Ø (multi lalt S-;)
-            Æ (multi lalt S-')
-            ´ (multi lalt e))
+(deflayer default
+  @cap @grv        _
+              _    _    _
+  _    _
+)
 
-          (deflayer base
-            e    ;    [    ')
+(deflayer arrows
+  _    _           up
+              left down rght
+  _    _
+)
+
+(defalias
+  cap (tap-hold-press 200 200 caps lctl)
+  grv (tap-hold-press 200 200 grv (layer-toggle arrows))
+)
         '';
       };
     };
