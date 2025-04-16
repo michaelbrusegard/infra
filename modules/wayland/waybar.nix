@@ -11,11 +11,40 @@ in {
         mainBar = {
           gtk-layer-shell = true;
           layer = "top";
-          height = 28;
-          margin = "4 4";
-          modules-left = ["cpu" "temperature" "memory"];
-          modules-center = ["hyprland/workspaces"];
-          modules-right = ["backlight" "pulseaudio" "network" "battery" "clock" "custom/power"];
+          height = 24;
+          modules-left = ["custom/power" "cpu" "temperature" "memory"];
+          modules-right = ["hyprland/workspaces" "pulseaudio" "network" "clock"];
+
+          "clock" = {
+            format = " {:%d %b %H:%M}";
+            tooltip = false;
+          };
+
+          "network" = {
+            format-wifi = "󰤨";
+            format-ethernet = "󰈀";
+            format-disconnected = "󰤭";
+            tooltip-format-wifi = "{essid}";
+            tooltip-format-ethernet = "{ipaddr}";
+            tooltip-format-disconnected = "Disconnected";
+          };
+
+          "pulseaudio" = {
+            format = "{icon}";
+            format-muted = "󰝟";
+            format-icons = {
+              default = ["󰕿" "󰖀" "󰕾"];
+              headphone = "󰋋";
+              headset = "󰋎";
+              bluetooth = "󰂯";
+            };
+            on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+          };
+
+          "hyprland/workspaces" = {
+            format = "{name}";
+            on-click = "activate";
+          };
 
           "cpu" = {
             interval = 5;
@@ -25,159 +54,50 @@ in {
 
           "temperature" = {
             interval = 5;
-            tooltip = false;
             format = " {temperatureC}°C";
-            max-length = 10;
           };
 
           "memory" = {
             interval = 10;
-            format = " {}%";
-            max-length = 10;
-          };
-
-          "hyprland/workspaces" = {
-            format = "{name}";
-            on-click = "activate";
-          };
-
-          "backlight" = {
-            format = "{icon} {percent}%";
-            format-icons = ["" "" "" ""];
-            on-scroll-up = "light -A 5";
-            on-scroll-down = "light -U 5";
-            interval = 2;
-          };
-
-          "pulseaudio" = {
-            format = "{icon} {volume}%";
-            format-muted = "󰝟 muted";
-            format-icons = {
-              default = ["󰕿" "󰖀" "󰕾"];
-              headphone = "󰋋";
-              headset = "󰋎";
-              bluetooth = "󰂯";
-            };
-            on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
-            tooltip = false;
-          };
-
-          "network" = {
-            format-wifi = " {essid}";
-            format-ethernet = " {ipaddr}";
-            format-disconnected = "睊";
-            tooltip = false;
-          };
-
-          "battery" = {
-            states = {
-              good = 95;
-              warning = 30;
-              critical = 20;
-            };
-            format = "{icon} {capacity}%";
-            format-charging = " {capacity}%";
-            format-plugged = " {capacity}%";
-            format-icons = ["" "" "" "" ""];
-          };
-
-          "clock" = {
-            format = " {:%H:%M}";
-            format-alt = " {:%a, %d %b}";
-            tooltip = false;
+            format = " {used:0.1f}GB";
+            tooltip = true;
+            tooltip-format = "Used: {used:0.1f}GB\nTotal: {total:0.1f}GB";
           };
 
           "custom/power" = {
             format = "⏻";
-            on-click = "rofi -show power-menu -modi power-menu:~/.local/bin/rofi-power-menu";
+            on-click = "pkill -SIGRTMIN+8 waybar && notify-send 'System Shutdown' 'Click again to confirm' && sleep 5 && pkill -SIGRTMIN+8 waybar";
+            on-click-right = "systemctl poweroff";
             tooltip = false;
           };
         };
       };
       style = ''
         * {
-          min-height: 0;
           font-family: "SF Pro Nerd Font";
-          font-size: 13px;
-          border: none;
-          border-radius: 6px;
+          font-size: 16px;
+          font-weight: 600;
+          color: #ffffff;
         }
 
-        window#waybar {
-          background: rgba(36, 36, 36, 0.90);
-          border-radius: 8px;
-          color: #dedede;
-          margin: 4px;
-          transition-property: background-color;
-          transition-duration: 0.5s;
-        }
+        #clock, #memory {
+          border-top-right-radius: 9999px
+          border-bottom-right-radius: 9999px
+        };
 
-        window#waybar.hidden {
-          opacity: 0.2;
-        }
+        #workspaces, #custom-power {
+          border-top-left-radius: 9999px
+          border-bottom-left-radius: 9999px
+        };
 
-        #workspaces button {
-          background: transparent;
-          color: #dedede;
-          margin: 4px 2px;
-          min-width: 24px;
-          padding: 2px 0;
-        }
+        #clock, #network, #pulseaudio, #workspaces, #cpu, #temperature, #memory, #custom-power {
+          background: rgba(36, 36, 36, 0.7);
+          margin: 4px 0;
+          padding: 0 10px;
+        };
 
         #workspaces button.active {
-          background: rgba(8, 96, 242, 0.9);
-          color: #ffffff;
-        }
-
-        #workspaces button:hover {
-          color: #ffffff;
-          background: rgba(8, 96, 242, 0.2);
-        }
-
-        #workspaces button.focused {
-          background: rgba(8, 96, 242, 0.9);
-          color: #ffffff;
-        }
-
-        #workspaces button.urgent {
-          background: #eb4d4b;
-        }
-
-        #network,
-        #pulseaudio,
-        #battery,
-        #backlight,
-        #clock,
-        #memory,
-        #temperature,
-        #cpu,
-        #custom-power {
-          background: rgba(36, 36, 36, 0.7);
-          color: #dedede;
-          margin: 4px 2px;
-          padding: 0 10px;
-        }
-
-        #battery.charging, #battery.plugged {
-          color: #26a65b;
-        }
-
-        #battery.critical:not(.charging) {
-          color: #eb4d4b;
-          animation: blink 0.5s linear infinite alternate;
-        }
-
-        #custom-power {
-          color: #eb4d4b;
-          margin-right: 4px;
-          font-size: 15px;
-        }
-
-        @keyframes blink {
-          to {
-            background: #ff0000;
-            color: #ffffff;
-          }
+          background: rgba(255, 255, 255, 0.7);
         }
       '';
     };
