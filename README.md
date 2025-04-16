@@ -16,9 +16,9 @@ cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfi
 
 ## Nix Options
 
-[nixpkgs](https://mynixos.com/nixpkgs/options)
-[nix-darwin](https://mynixos.com/nix-darwin/options)
-[home-manager](https://mynixos.com/home-manager/options)
+- [nixpkgs](https://mynixos.com/nixpkgs/options)
+- [nix-darwin](https://mynixos.com/nix-darwin/options)
+- [home-manager](https://mynixos.com/home-manager/options)
 
 ## Arch
 
