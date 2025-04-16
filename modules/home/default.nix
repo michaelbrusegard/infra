@@ -18,7 +18,7 @@
         "sudo darwin-rebuild switch --flake ~/Developer/dotfiles#${hostName}"
       else
         "sudo nixos-rebuild switch --flake ~/Developer/dotfiles#${hostName}";
-      reload = "source ~/.zshrc";
+      reload = "source ~/.config/zsh/.zshrc";
       c = "clear";
       dl = "cd ~/Downloads";
       dt = "cd ~/Desktop";

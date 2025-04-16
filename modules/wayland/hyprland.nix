@@ -122,8 +122,8 @@ in {
           "alt, slash, exec, hyprctl keyword general:layout master"
 
           # System
-          "alt, return, exec, wezterm"
-          "alt shift, return, exec, wezterm -e sh -c 'yazi'"
+          "alt, return, exec, wezterm start --always-new-process"
+          "alt shift, return, exec, wezterm start --always-new-process -e sh -c 'yazi'"
           "super, space, exec, rofi -show drun"
           "super shift, v, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
           "super, q, killactive,"
@@ -149,10 +149,6 @@ in {
           "workspace 7, class:^(Resolve)$"
         ];
       };
-    };
-    catppuccin.hyprland = {
-      enable = true;
-      accent = "blue";
     };
   };
 }
