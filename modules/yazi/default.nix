@@ -5,39 +5,33 @@ let
   yazi-plugins = pkgs.fetchFromGitHub {
     owner = "yazi-rs";
     repo = "plugins";
-    rev = "cb6165b25515b653a70f72a67889579d190facfe";
-    hash = "sha256-XDz67eHmVM5NrnQ/uPXN/jRgmrShs80anWnHpVmbPO8=";
+    rev = "b12a9ab085a8c2fe2b921e1547ee667b714185f9";
+    hash = "sha256-LWN0riaUazQl3llTNNUMktG+7GLAHaG/IxNj1gFhDRE=";
+
   };
   glow-plugin = pkgs.fetchFromGitHub {
     owner = "Reledia";
     repo = "glow.yazi";
-    rev = "c76bf4fb612079480d305fe6fe570bddfe4f99d3";
-    hash = "sha256-DPud1Mfagl2z490f5L69ZPnZmVCa0ROXtFeDbEegBBU=";
+    rev = "2da96e3ffd9cd9d4dd53e0b2636f83ff69fe9af0";
+    hash = "sha256-4krck4U/KWmnl32HWRsblYW/biuqzDPysrEn76buRck=";
   };
-  /*
-  miller-plugin = pkgs.fetchFromGitHub {
-    owner = "Reledia";
-    repo = "miller.yazi";
-    rev = "40e02654725a9902b689114537626207cbf23436";
-    hash = "sha256-GXZZ/vI52rSw573hoMmspnuzFoBXDLcA0fqjF76CdnY=";
+  duckdb-plugin = pkgs.fetchFromGitHub {
+    owner = "wylie102";
+    repo = "duckdb.yazi";
+    rev = "ee8cae3bcddfaf4467ef72791239afbd3309c007";
+    hash = "sha256-luVxgzRa21AykwQs/F8DB4O6ENcsEgF+Eb7dAkl0jhs=";
   };
-  hexyl-plugin = pkgs.fetchFromGitHub {
-    owner = "Reledia";
-    repo = "hexyl.yazi";
-    rev = "228a9ef2c509f43d8da1847463535adc5fd88794";
-    hash = "sha256-Xv1rfrwMNNDTgAuFLzpVrxytA2yX/CCexFt5QngaYDg=";
+  bat-plugin = pkgs.fetchFromGitHub {
+    owner = "mgumz";
+    repo = "yazi-plugin-bat";
+    rev = "190b898e2073231aff8f2d621131d5215b796e8a";
+    hash = "sha256-GKIEiFp9y8mAjbqoAU2wXPnDkeObMcNczs9xKz+naIU=";
   };
   mediainfo-plugin = pkgs.fetchFromGitHub {
     owner = "boydaihungst";
     repo = "mediainfo.yazi";
-    rev = "447fe95239a488459cfdbd12f3293d91ac6ae0d7";
-    hash = "sha256-U6rr3TrFTtnibrwJdJ4rN2Xco4Bt4QbwEVUTNXlWRps=";
-  };
-  eza-preview-plugin = pkgs.fetchFromGitHub {
-    owner = "ahkohd";
-    repo = "eza-preview.yazi";
-    rev = "6575a9a4806d8dc96ac75adf28791155551804fb";
-    hash = "sha256-RwJu79bjdgmKbRaDH++y8wreBKdGGwbyGOx4G/px2PE=";
+    rev = "436cb5f04d6e5e86ddc0386527254d87b7751ec8";
+    hash = "sha256-oFp8mJ62FsJX46mKQ7/o6qXPC9qx3+oSfqS0cKUZETI=";
   };
   torrent-preview-plugin = pkgs.fetchFromGitHub {
     owner = "kirasok";
@@ -48,34 +42,27 @@ let
   relative-motions-plugin = pkgs.fetchFromGitHub {
     owner = "dedukun";
     repo = "relative-motions.yazi";
-    rev = "810306563e1928855f5cf61f83801544e3eb3788";
-    hash = "sha256-sIS7vtpY8z8D1nHMmr/uZoKREeGsIZuNSG8SnKkjREI=";
-  };
-  rsync-plugin = pkgs.fetchFromGitHub {
-    owner = "GianniBYoung";
-    repo = "rsync.yazi";
-    rev = "3f431aa388a645cc95b8292659949a77c280ed8b";
-    hash = "sha256-xQHuMGg0wQQ16VbYKKnPLdLqKB6YgUlTpOOuxNNfhj8=";
+    rev = "ce2e890227269cc15cdc71d23b35a58fae6d2c27";
+    hash = "sha256-Ijz1wYt+L+24Fb/rzHcDR8JBv84z2UxdCIPqTdzbD14=";
   };
   lazygit-plugin = pkgs.fetchFromGitHub {
     owner = "Lil-Dank";
     repo = "lazygit.yazi";
-    rev = "9f924e34cde61d5965d6d620698b0b15436c8e08";
-    hash = "sha256-ns9DzIdI2H3IuCByoJjOtUWQQB9vITxmJ/QrYt+Rdao=";
+    rev = "7a08a0988c2b7481d3f267f3bdc58080e6047e7d";
+    hash = "sha256-OJJPgpSaUHYz8a9opVLCds+VZsK1B6T+pSRJyVgYNy8=";
   };
   augment-command-plugin = pkgs.fetchFromGitHub {
     owner = "hankertrix";
     repo = "augment-command.yazi";
-    rev = "5ae8424f2bdfa85a3da8e973c059227946d554c5";
-    hash = "sha256-Z/q1nXht9+y+VHnBeElR/u1qGpfPUyo2qTqG1Fb56D8=";
+    rev = "adebde061a891c01e6a25b349ade3cdb7e492e29";
+    hash = "sha256-/x27CTosS6tz6vIKqbc+xzjwSrHYh6FGc/QdYokggj0=";
   };
   yaziline-plugin = pkgs.fetchFromGitHub {
     owner = "llanosrocas";
     repo = "yaziline.yazi";
-    rev = "e06c47f7fc7a1c679e3935b45013108dadd09c96";
-    hash = "sha256-K7ydg+xazl20bgiiZpcBxwKLaRbF51Gibr35dfT0Mro=";
+    rev = "1342efed87fe7e408d44b6795ff3a62a478b381d";
+    hash = "sha256-95l2jgE9lvJl6eZXuo+AThn2HE380rQtUG5LRnBZorc=";
   };
-  */
 in {
   options.modules.yazi.enable = lib.mkEnableOption "Yazi configuration";
 
@@ -95,14 +82,42 @@ in {
           scrolloff = 8;
           mouse_events = ["click" "scroll" "touch" "move" "drag"];
           title_format = "{cwd}";
+          ratio = [ 1 3 5 ];
         };
         preview = {
           max_width = 1000;
           max_height = 1000;
         };
         plugin = {
-          /*
           prepend_preloaders = [
+            {
+              name = "*.csv";
+              run = "duckdb";
+              multi = false;
+            }
+            {
+              name = "*.tsv";
+              run = "duckdb";
+              multi = false;
+            }
+            {
+              name = "*.json";
+              run = "duckdb";
+              multi = false;
+            }
+            {
+              name = "*.parquet";
+              run = "duckdb";
+              multi = false;
+            }
+            {
+              name = "*.db";
+              run = "duckdb";
+            }
+            {
+              name = "*.duckdb";
+              run = "duckdb";
+            }
             {
               mime = "{audio,video,image}/*";
               run = "mediainfo";
@@ -112,55 +127,65 @@ in {
               run = "mediainfo";
             }
           ];
-          */
-          prepend_fetchers = [
+          prepend_previewers = [
             {
-              id = "git";
-              name = "*";
-              run = "git";
+              name = "*.md";
+              run = "glow";
             }
             {
-              id = "git";
+              name = "*.csv";
+              run = "duckdb";
+            }
+            {
+              name = "*.tsv";
+              run = "duckdb";
+            }
+            {
+              name = "*.json";
+              run = "bat";
+            }
+            {
+              name = "*.parquet";
+              run = "duckdb";
+            }
+            {
               name = "*/";
-              run = "git";
+              run = "folder";
+              sync = true;
             }
             {
-              id = "mime";
-              name = "*";
-              run = "mime-ext";
-              prio = "high";
+              mime = "text/*";
+              run = "bat";
+            }
+            {
+              mime = "*/xml";
+              run = "bat";
+            }
+            {
+              mime = "*/cs";
+              run = "bat";
+            }
+            {
+              mime = "*/javascript";
+              run = "bat";
+            }
+            {
+              mime = "*/x-wine-extension-ini";
+              run = "bat";
+            }
+            {
+              mime = "{audio,video,image}/*";
+              run = "mediainfo";
+            }
+            {
+              mime = "application/subrip";
+              run = "mediainfo";
+            }
+            {
+              mime = "application/bittorrent";
+              run = "torrent-preview";
             }
           ];
-          # prepend_previewers = [
-          #   {
-          #     name = "*/";
-          #     run = "eza-preview";
-          #   }
-          #   {
-          #     name = "*.md";
-          #     run = "glow";
-          #   }
-          #   {
-          #     mime = "text/csv";
-          #     run = "miller";
-          #   }
-          #   {
-          #     name = "*";
-          #     run = "hexyl";
-          #   }
-          #   {
-          #     mime = "{audio,video,image}/*";
-          #     run = "mediainfo";
-          #   }
-          #   {
-          #     mime = "application/subrip";
-          #     run = "mediainfo";
-          #   }
-          #   {
-          #     mime = "application/bittorrent";
-          #     run = "torrent-preview";
-          #   }
-          # ];
         };
       };
       plugins = {
@@ -168,47 +193,37 @@ in {
         mount = "${yazi-plugins}/mount.yazi";
         "jump-to-char" = "${yazi-plugins}/jump-to-char.yazi";
         "smart-filter" = "${yazi-plugins}/smart-filter.yazi";
-        git = "${yazi-plugins}/git.yazi";
         "vcs-files" = "${yazi-plugins}/vcs-files.yazi";
         diff = "${yazi-plugins}/diff.yazi";
-        "mime-ext" = "${yazi-plugins}/mime-ext.yazi";
         "toggle-pane" = "${yazi-plugins}/toggle-pane.yazi";
         glow = "${glow-plugin}";
-        /*
-        miller = "${miller-plugin}";
-        hexyl = "${hexyl-plugin}";
+        duckdb = "${duckdb-plugin}";
+        bat = "${bat-plugin}";
         mediainfo = "${mediainfo-plugin}";
-        "eza-preview" = "${eza-preview-plugin}";
         "torrent-preview" = "${torrent-preview-plugin}";
         "relative-motions" = "${relative-motions-plugin}";
-        rsync = "${rsync-plugin}";
         "lazygit" = "${lazygit-plugin}";
         "augment-command" = "${augment-command-plugin}";
         "yaziline" = "${yaziline-plugin}";
-        */
       };
-      /*
       initLua = ''
-        require("git"):setup()
+        require("duckdb"):setup()
         require("relative-motions"):setup({ show_numbers="relative", show_motion = true })
         require("augment-command"):setup({
           smart_tab_create = true,
           smooth_scrolling = true,
         })
-        require("yaziline"):setup({
-          color = "${colors.mocha.blue}",
-          separator_style = "curvy",
-          select_symbol = "",
-          yank_symbol = "󰆐",
-        })
+      require("yaziline"):setup({
+        color = "${colors.mocha.teal}",
+        separator_style = "curvy",
+      })
       '';
-      */
       keymap = {
         input.prepend_keymap = [
           { on = "<esc>"; run = "close"; desc = "Cancel input"; }
         ];
         manager.prepend_keymap = [
-          { on = ["c" "m"]; run = "plugin chmod"; desc = "Chmod on selected files"; }
+          { on = ["c" "m"]; run = "plugin chmod"; desc = "sha256-Ijz1wYt+L+24Fb/rzHcDR8JBv84z2UxdCIPqTdzbD14=Chmod on selected files"; }
           { on = "M"; run = "plugin mount"; desc = "Mount disk"; }
           { on = "f"; run = "plugin jump-to-char"; desc = "Jump to char"; }
           { on = "F"; run = "plugin smart-filter"; desc = "Smart filter"; }
@@ -216,10 +231,10 @@ in {
           { on = "<c-d>"; run = "plugin diff"; desc = "Diff the selected with the hovered file"; }
           { on = "T"; run = "plugin toggle-pane max-preview"; desc = "Maximize or restore the preview pane"; }
           { on = "t"; run = "plugin toggle-pane min-preview"; desc = "Show or hide the preview pane"; }
-          /*
+          { on = "H"; run = "plugin duckdb -1"; desc = "Scroll one column to the left"; }
+          { on = "L"; run = "plugin duckdb +1"; desc = "Scroll one column to the right"; }
           { on = "<c-e>"; run = "seek 5"; }
           { on = "<c-y>"; run = "seek -5"; }
-          { on = ["<space>" "E"]; run = "plugin eza-preview"; desc = "Toggle tree/list dir preview"; }
           { on = "1"; run = "plugin relative-motions 1"; desc = "Move in relative steps"; }
           { on = "2"; run = "plugin relative-motions 2"; desc = "Move in relative steps"; }
           { on = "3"; run = "plugin relative-motions 3"; desc = "Move in relative steps"; }
@@ -229,17 +244,13 @@ in {
           { on = "7"; run = "plugin relative-motions 7"; desc = "Move in relative steps"; }
           { on = "8"; run = "plugin relative-motions 8"; desc = "Move in relative steps"; }
           { on = "9"; run = "plugin relative-motions 9"; desc = "Move in relative steps"; }
-          { on = "R"; run = "plugin rsync"; desc = "Copy files using rsync"; }
-          { on = ["<space>" "g" "g"]; run = "plugin lazygit"; desc = "Run lazygit"; }
-          */
+          { on = ["g" "g"]; run = "plugin lazygit"; desc = "Run lazygit"; }
         ];
       };
     };
     home.packages = with pkgs; [
       glow
-      miller
-      hexyl
-      poppler
+      duckdb
       mediainfo
     ];
     catppuccin.yazi = {
