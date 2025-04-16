@@ -23,6 +23,7 @@
     nix-proton.url = "github:DuskSystems/nix-proton";
     yazi.url = "github:sxyazi/yazi";
     hyprland.url = "github:hyprwm/Hyprland";
+    fancontrol-gui.url = "github:JaysFreaky/fancontrol-gui";
     secrets = {
       url = "git+ssh://git@github.com/michaelbrusegard/dotfiles-private.git?ref=main&shallow=1";
       flake = false;

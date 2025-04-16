@@ -1,4 +1,4 @@
-{ config, pkgs, system, userName, hostName, catppuccin, nur, secrets, isDarwin, yazi, ... }:
+{ config, pkgs, system, userName, hostName, catppuccin, nur, secrets, yazi, fancontrol-gui, ... }:
 {
   imports = [
     catppuccin.nixosModules.catppuccin
@@ -29,7 +29,7 @@
       allowUnfree = true;
       allowBroken = true;
     };
-    overlays = [ nur.overlays.default yazi.overlays.default ];
+    overlays = [ nur.overlays.default yazi.overlays.default fancontrol-gui.overlays.default ];
   };
   networking.hostName = hostName;
   time.timeZone = "Europe/Oslo";

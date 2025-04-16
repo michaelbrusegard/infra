@@ -2,6 +2,7 @@
   boot = {
     kernelModules = [ 
       "kvm-amd"
+      "nct6775"
     ];
     kernelParams = [
       "quiet"
