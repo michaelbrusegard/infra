@@ -124,13 +124,15 @@
     },
     "dotfiles-private": {
       "inputs": {
-        "sops-nix": "sops-nix"
+        "sops-nix": [
+          "sops-nix"
+        ]
       },
       "locked": {
-        "lastModified": 1744921658,
-        "narHash": "sha256-5jt92ZsRs+z3dH5yOsDTFOYO0/+K5QhpwEoVFeh1uGU=",
+        "lastModified": 1744922359,
+        "narHash": "sha256-NlnBRqRlm4GPeMRR0txVAIVbczYRAR7AXC69V9vBI84=",
         "ref": "main",
-        "rev": "af562a1670f7c90d7b63a64eaf5d52ffcc1c4e6f",
+        "rev": "a01cd9526b75d1f9708f0fd946ded57bcba9d21b",
         "shallow": true,
         "type": "git",
         "url": "ssh://git@github.com/michaelbrusegard/dotfiles-private.git"
@@ -646,22 +648,6 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1744502386,
-        "narHash": "sha256-QAd1L37eU7ktL2WeLLLTmI6P9moz9+a/ONO8qNBYJgM=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "f6db44a8daa59c40ae41ba6e5823ec77fe0d2124",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs_2": {
-      "locked": {
         "lastModified": 1744463964,
         "narHash": "sha256-LWqduOgLHCFxiTNYi3Uj5Lgz0SR+Xhw3kr/3Xd0GPTM=",
         "owner": "NixOS",
@@ -746,9 +732,9 @@
         "nix-darwin-browsers": "nix-darwin-browsers",
         "nix-proton": "nix-proton",
         "nixos-hardware": "nixos-hardware",
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": "nixpkgs",
         "nur": "nur",
-        "sops-nix": "sops-nix_2",
+        "sops-nix": "sops-nix",
         "wezterm": "wezterm",
         "yazi": "yazi",
         "zen-browser": "zen-browser"
@@ -881,23 +867,6 @@
       }
     },
     "sops-nix": {
-      "inputs": {
-        "nixpkgs": "nixpkgs"
-      },
-      "locked": {
-        "lastModified": 1744669848,
-        "narHash": "sha256-pXyanHLUzLNd3MX9vsWG+6Z2hTU8niyphWstYEP3/GU=",
-        "owner": "Mic92",
-        "repo": "sops-nix",
-        "rev": "61154300d945f0b147b30d24ddcafa159148026a",
-        "type": "github"
-      },
-      "original": {
-        "id": "sops-nix",
-        "type": "indirect"
-      }
-    },
-    "sops-nix_2": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
