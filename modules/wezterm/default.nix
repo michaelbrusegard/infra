@@ -7,7 +7,17 @@ in {
 
   config = lib.mkIf cfg.enable {
     programs.wezterm.enableZshIntegration = true;
-    home.packages = with pkgs; [ wezterm ];
+    sops.secrets = {
+      "wezterm/resurrect/privateKey" = {};
+      "wezterm/resurrect/publicKey" = {};
+    };
+    home = {
+      packages = with pkgs; [ wezterm ];
+      sessionVariables = {
+        WEZTERM_RESURRECT_PRIVATE_KEY = config.sops.secrets."wezterm/resurrect/privateKey".path;
+        WEZTERM_RESURRECT_PUBLIC_KEY = builtins.readFile config.sops.secrets."wezterm/resurrect/publicKey".path;
+      };
+    };
     xdg.configFile."wezterm".source = config.lib.file.mkOutOfStoreSymlink 
       "${config.home.homeDirectory}/Developer/dotfiles/modules/wezterm/config";
   };

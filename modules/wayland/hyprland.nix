@@ -120,7 +120,7 @@ in {
           "alt shift, return, exec, wezterm start --always-new-process -e sh -c 'yazi'"
           "super, space, exec, rofi -show drun"
           "super shift, v, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
-          "super, q, exec, bash -c 'WID=$(hyprctl activewindow -j | jq -r .class); pkill -TERM -f \"$WID\"; sleep 0.5; pkill -KILL -f \"$WID\"'"
+          "super, q, exec, hyprctl dispatch killactive; WID=$(hyprctl activewindow -j | jq -r .class); pkill -TERM -f \"$WID\"; sleep 0.5; pkill -KILL -f \"$WID\""
           "super ctrl, q, exec, loginctl lock-session"
           "super shift, 3, exec, grim -t png -q 100 ~/Pictures/Screenshots/$(date +'\%Y-\%m-\%d_\%H-\%M-\%S').png"
           "super shift, 4, exec, grim -t png -q 100 -g \"$(slurp -d -w 2)\" ~/Pictures/Screenshots/$(date +'\%Y-\%m-\%d_\%H-\%M-\%S').png"

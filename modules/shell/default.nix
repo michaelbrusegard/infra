@@ -44,15 +44,7 @@ in {
           source ${./config/p10k.zsh}
           bindkey -v
           export KEYTIMEOUT=1
-          smart-accept() {
-            if [[ $BUFFER == *" " || -z $BUFFER ]]; then
-              zle autosuggest-accept
-            else
-              zle complete-word
-            fi
-          }
-          zle -N smart-accept
-          bindkey '^Y' smart-accept
+          bindkey '^Y' autosuggest-accept
           bindkey '^E' autosuggest-clear
         '';
         antidote = {

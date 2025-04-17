@@ -8,8 +8,8 @@ return function(config)
   resurrect.state_manager.set_encryption({
     enable = true,
     method = 'age',
-    private_key = '/path/to/private/key.txt',
-    public_key = 'age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p',
+    private_key = os.getenv('WEZTERM_RESURRECT_PRIVATE_KEY'),
+    public_key = os.getenv('WEZTERM_RESURRECT_PUBLIC_KEY'),
   })
 
   wezterm.on('smart_workspace_switcher.workspace_switcher.created', function(window, _, label)
