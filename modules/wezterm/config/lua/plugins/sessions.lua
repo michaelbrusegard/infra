@@ -8,8 +8,12 @@ return function(config)
   resurrect.state_manager.set_encryption({
     enable = true,
     method = 'age',
-    private_key = os.getenv('WEZTERM_RESURRECT_PRIVATE_KEY'),
-    public_key = os.getenv('WEZTERM_RESURRECT_PUBLIC_KEY'),
+    private_key = wezterm.home_dir .. '/.config/sops-nix/secrets/wezterm/resurrect/privateKey',
+    public_key = (function() 
+      local file = io.open(wezterm.home_dir .. '/.config/sops-nix/secrets/wezterm/resurrect/publicKey', 'r')
+      if not file then return nil end
+      local content = file:read('*a'); file:close(); return content
+    end)(),
   })
 
   wezterm.on('smart_workspace_switcher.workspace_switcher.created', function(window, _, label)
