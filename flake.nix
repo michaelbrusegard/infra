@@ -105,12 +105,16 @@
         };
       };
 
-      darwinConfigurations."*" = mkSystem {
-        system = builtins.currentSystem or "aarch64-darwin";
-        userName = "michaelbrusegard";
-        hostName = builtins.substring 0 (-1) (builtins.readFile (builtins.toFile "hostname" (
-          builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname"
-            "PATH=/usr/bin:/usr/sbin:$PATH; scutil --get LocalHostName")))));
-      };
+      darwinConfigurations =
+        if builtins.getEnv "HOSTNAME" != "" then
+          {
+            "${builtins.getEnv "HOSTNAME"}" = mkSystem {
+              system = builtins.currentSystem or "aarch64-darwin";
+              userName = "michaelbrusegard";
+              hostName = builtins.getEnv "HOSTNAME";
+            };
+          }
+        else
+          { };
     };
 }
