@@ -44,8 +44,6 @@
       "users/${userName}/hashedPassword" = {
         neededForUsers = true;
       };
-      "wezterm/resurrect/privateKey" = {};
-      "wezterm/resurrect/publicKey" = {};
     };
   };
   programs.zsh.enable = true;
