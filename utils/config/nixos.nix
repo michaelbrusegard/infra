@@ -1,8 +1,8 @@
-{ userName, home-manager, sops-nix, ... }:
+{ userName, home-manager, dotfiles-private, ... }:
 {
   imports = [
+    dotfiles-private.nixosModules.secrets
     home-manager.nixosModules.default
-    sops-nix.nixosModules.sops
   ];
   nix = {
     daemonCPUSchedPolicy = "idle";
@@ -20,7 +20,6 @@
       extraGroups = [ "wheel" ];
     };
   };
-  sops.age.keyFile = "/home/${userName}/.config/sops/age/keys.txt";
   i18n = {
     defaultLocale = "en_GB.UTF-8";
     supportedLocales = [

@@ -1,8 +1,8 @@
-{ userName, hostName, home-manager, sops-nix, ... }:
+{ userName, hostName, home-manager, dotfiles-private, ... }:
 {
   imports = [
+    dotfiles-private.darwinModules.secrets
     home-manager.darwinModules.default
-    sops-nix.darwinModules.sops
   ];
   nix = {
     settings = {
@@ -25,7 +25,6 @@
     home = "/Users/${userName}";
     extraGroups = [ "admin" ];
   };
-  sops.age.keyFile = "/Users/${userName}/.config/sops/age/keys.txt";
   security = {
     pam.enableSudoTouchIdAuth = true;
   };
