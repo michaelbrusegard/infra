@@ -13,9 +13,10 @@ in {
       settings = {
         monitor = [
           "DP-1,3440x1440@144,0x0,1, bitdepth, 10"
-          "DP-3,2560x1440@144,auto,1, bitdepth, 10"
+          "DP-3,2560x1440@144,3440x0,1, bitdepth, 10"
         ];
         exec-once = [ 
+          "hyprctl dispatch dpms on; sleep 1; hyprctl dispatch focusmonitor DP-1"
           "wl-paste --type text --watch cliphist store"
           "wl-paste --type image --watch cliphist store"
         ];

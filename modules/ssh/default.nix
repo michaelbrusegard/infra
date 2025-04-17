@@ -13,7 +13,7 @@ in {
       hashKnownHosts = true;
       addKeysToAgent = "yes";
       matchBlocks = {
-        "git" = {
+        git = {
           host = "github.com";
           user = "git";
           identityFile = config.secrets.gitSshKeyFile;
