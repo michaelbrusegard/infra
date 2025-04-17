@@ -19,8 +19,8 @@ local function keybinds(config)
     { key = "d", mods = "SHIFT|SUPER", action = wezterm.action.ShowDebugOverlay },
 
 		-- Pane actions
-		{ key = "w", mods = "SUPER", action = wezterm.action.CloseCurrentPane({ confirm = false }) },
-		{ key = "w", mods = "SHIFT|SUPER", action = wezterm.action.CloseCurrentTab({ confirm = false }) },
+		{ key = "w", mods = "SUPER", action = wezterm.action.CloseCurrentPane({ confirm = true }) },
+		{ key = "w", mods = "SHIFT|SUPER", action = wezterm.action.CloseCurrentTab({ confirm = true }) },
     { key = "\\", mods = "SUPER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
     { key = "|", mods = "SHIFT|SUPER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
 
