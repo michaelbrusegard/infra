@@ -18,6 +18,8 @@
         "sudo darwin-rebuild switch --flake ~/Developer/dotfiles#${hostName}"
       else
         "sudo nixos-rebuild switch --flake ~/Developer/dotfiles#${hostName}";
+      update = "nix flake update --flake ~/Developer/dotfiles";
+      update-secrets = "nix flake update secrets --flake ~/Developer/dotfiles";
       reload = "source ~/.config/zsh/.zshrc";
       c = "clear";
       dl = "cd ~/Downloads";

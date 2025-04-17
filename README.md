@@ -20,17 +20,11 @@ cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfi
 - [nix-darwin](https://mynixos.com/nix-darwin/options)
 - [home-manager](https://mynixos.com/home-manager/options)
 
-## Arch
+## NixOS
 
-### Creating symlinks for the config files
+## Darwin
 
-```zsh
-cd ~/dotfiles/arch && stow -t ~ home && sudo stow -t /etc etc
-```
-
-## MacOS
-
-Before setting up MacOS, System Intergrity Protection (SIP) needs to be partially disabled for the [yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) tiling window manager to work correctly.
+Before setting up MacOS, System Integrity Protection (SIP) needs to be partially disabled for the [yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) tiling window manager to work correctly.
 
 1. Turn off the mac, then press and hold the power button until "Loading startup options" appears.
    Click Options, then click Continue.
@@ -42,8 +36,6 @@ Before setting up MacOS, System Intergrity Protection (SIP) needs to be partiall
 ```zsh
 csrutil enable --without fs --without debug --without nvram
 ```
-
-Then go through each script below making sure it completes correctly before running the next.
 
 ### Installing apps & utilities using homebrew
 
