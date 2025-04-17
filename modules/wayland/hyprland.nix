@@ -11,6 +11,10 @@ in {
       xwayland.enable = true;
       systemd.variables = ["--all"];
       settings = {
+        monitor = [
+          "DP-1,3440x1440@144,0x0,1, bitdepth, 10"
+          "DP-3,2560x1440@144,auto,1, bitdepth, 10"
+        ];
         exec-once = [ 
           "wl-paste --type text --watch cliphist store"
           "wl-paste --type image --watch cliphist store"
