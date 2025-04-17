@@ -16,7 +16,7 @@
       else
         "sudo nixos-rebuild switch --flake ~/Developer/dotfiles#${hostName}";
       update = "nix flake update --flake ~/Developer/dotfiles";
-      update-secrets = "nix flake update secrets --flake ~/Developer/dotfiles";
+      update-secrets = "nix flake update dotfiles-private --flake ~/Developer/dotfiles";
       cleanup = "nix-collect-garbage -d && nix store optimise";
       reload = "source ~/.config/zsh/.zshrc";
       c = "clear";

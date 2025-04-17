@@ -122,6 +122,23 @@
         "type": "github"
       }
     },
+    "dotfiles-private": {
+      "locked": {
+        "lastModified": 1744917804,
+        "narHash": "sha256-P5t82GLIQNm/GlzCTtRayRilc0+KY7wiSMPkuSDgVOA=",
+        "ref": "main",
+        "rev": "336eca19d1172b1348b6ded34aace46b75252b5c",
+        "shallow": true,
+        "type": "git",
+        "url": "ssh://git@github.com/michaelbrusegard/dotfiles-private.git"
+      },
+      "original": {
+        "ref": "main",
+        "shallow": true,
+        "type": "git",
+        "url": "ssh://git@github.com/michaelbrusegard/dotfiles-private.git"
+      }
+    },
     "fancontrol-gui": {
       "inputs": {
         "nixpkgs": [
@@ -703,6 +720,7 @@
         "apple-fonts": "apple-fonts",
         "catppuccin": "catppuccin",
         "darwin": "darwin",
+        "dotfiles-private": "dotfiles-private",
         "fancontrol-gui": "fancontrol-gui",
         "home-manager": "home-manager",
         "hyprland": "hyprland",
@@ -711,7 +729,6 @@
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs",
         "nur": "nur",
-        "secrets": "secrets",
         "sops-nix": "sops-nix",
         "wezterm": "wezterm",
         "yazi": "yazi",
@@ -758,24 +775,6 @@
         "owner": "oxalica",
         "repo": "rust-overlay",
         "type": "github"
-      }
-    },
-    "secrets": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1744889218,
-        "narHash": "sha256-W7oaOOPEjvmVXZKmP1OoeKCKWrlmA8eJjigql1hWMAA=",
-        "ref": "main",
-        "rev": "14a4a7094c078adae88ab6309f937199ecb71972",
-        "shallow": true,
-        "type": "git",
-        "url": "ssh://git@github.com/michaelbrusegard/dotfiles-private.git"
-      },
-      "original": {
-        "ref": "main",
-        "shallow": true,
-        "type": "git",
-        "url": "ssh://git@github.com/michaelbrusegard/dotfiles-private.git"
       }
     },
     "sf-arabic": {

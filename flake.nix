@@ -59,9 +59,8 @@
       url = "github:JaysFreaky/fancontrol-gui";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    secrets = {
+    dotfiles-private = {
       url = "git+ssh://git@github.com/michaelbrusegard/dotfiles-private.git?ref=main&shallow=1";
-      flake = false;
     };
   };
 

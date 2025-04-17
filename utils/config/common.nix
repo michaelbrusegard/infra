@@ -1,6 +1,7 @@
-{ config, pkgs, system, userName, hostName, catppuccin, nur, secrets, yazi, fancontrol-gui, ... }:
+{ config, pkgs, system, userName, hostName, catppuccin, nur, dotfiles-private, yazi, fancontrol-gui, ... }:
 {
   imports = [
+    dotfiles-private.nixosModules.secrets
     catppuccin.nixosModules.catppuccin
   ];
   nix = {
@@ -39,7 +40,7 @@
     hashedPasswordFile = config.sops.secrets."users/${userName}/hashedPassword".path;
   };
   sops = {
-    defaultSopsFile = "${builtins.toString secrets}/secrets.yaml";
+    defaultSopsFile = "${builtins.toString dotfiles-private}/secrets.yaml";
     secrets = {
       "users/${userName}/hashedPassword" = {
         neededForUsers = true;
