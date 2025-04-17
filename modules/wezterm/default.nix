@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, wezterm, system, ... }:
 
 let
   cfg = config.modules.wezterm;
@@ -11,7 +11,7 @@ in {
       "wezterm/resurrect/privateKey" = {};
       "wezterm/resurrect/publicKey" = {};
     };
-    home.packages = with pkgs; [ wezterm ];
+    home.packages = [ wezterm.packages.${system}.default ];
     xdg.configFile."wezterm".source = config.lib.file.mkOutOfStoreSymlink 
       "${config.home.homeDirectory}/Developer/dotfiles/modules/wezterm/config";
   };

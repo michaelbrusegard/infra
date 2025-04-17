@@ -13,17 +13,52 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixos-hardware.url = "github:NixOS/nixos-hardware";
-    apple-emoji-linux.url = "github:samuelngs/apple-emoji-linux";
-    apple-fonts.url = "github:Lyndeno/apple-fonts.nix";
-    catppuccin.url = "github:catppuccin/nix";
-    zen-browser.url = "github:0xc000022070/zen-browser-flake";
-    nix-darwin-browsers.url = "github:wuz/nix-darwin-browsers";
-    nix-proton.url = "github:DuskSystems/nix-proton";
-    yazi.url = "github:sxyazi/yazi";
-    hyprland.url = "github:hyprwm/Hyprland";
-    fancontrol-gui.url = "github:JaysFreaky/fancontrol-gui";
+    apple-emoji-linux = {
+      url = "github:samuelngs/apple-emoji-linux";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    apple-fonts = {
+      url = "github:Lyndeno/apple-fonts.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    catppuccin = {
+      url = "github:catppuccin/nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nix-darwin-browsers = {
+      url = "github:wuz/nix-darwin-browsers";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
+    nix-proton = {
+      url = "github:DuskSystems/nix-proton";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    yazi = {
+      url = "github:sxyazi/yazi";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    hyprland = {
+      url = "github:hyprwm/Hyprland";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    wezterm = {
+      url = "github:wez/wezterm?dir=nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    fancontrol-gui = {
+      url = "github:JaysFreaky/fancontrol-gui";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     secrets = {
       url = "git+ssh://git@github.com/michaelbrusegard/dotfiles-private.git?ref=main&shallow=1";
       flake = false;

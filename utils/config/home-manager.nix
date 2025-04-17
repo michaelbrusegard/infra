@@ -7,7 +7,7 @@
     users.${userName} = {
       imports = [
         sops-nix.homeManagerModules.sops
-        catppuccin.homeManagerModules.catppuccin
+        catppuccin.homeModules.catppuccin
         ../../modules
         ../../users/${userName}
       ];

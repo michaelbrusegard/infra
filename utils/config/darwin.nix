@@ -1,4 +1,4 @@
-{ pkgs, userName, hostName, home-manager, sops-nix, ... }:
+{ userName, hostName, home-manager, sops-nix, ... }:
 {
   imports = [
     home-manager.darwinModules.default

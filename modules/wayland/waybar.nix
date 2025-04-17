@@ -12,7 +12,7 @@ in {
           gtk-layer-shell = true;
           layer = "top";
           height = 24;
-          modules-left = ["custom/power" "cpu" "memory" "custom/cputemp" "custom/gpu" "custom/vram" "custom/gputemp"];
+          modules-left = ["custom/power" "memory" "cpu"  "custom/cputemp" "custom/vram" "custom/gpu"  "custom/gputemp"];
           modules-right = ["hyprland/workspaces" "pulseaudio" "network" "clock"];
 
           "clock" = {
