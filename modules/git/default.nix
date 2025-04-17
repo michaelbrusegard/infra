@@ -14,7 +14,7 @@ in {
         userEmail = "56915010+michaelbrusegard@users.noreply.github.com";
         signing = {
           format = "ssh";
-          key = config.sops.secrets."hosts/github/sshKey".path;
+          key = config.sops.secrets."hosts/git/sshKey".path;
           signByDefault = true;
         };
         delta = {
