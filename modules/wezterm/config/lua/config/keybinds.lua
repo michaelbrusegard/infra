@@ -21,8 +21,8 @@ local function keybinds(config)
 		-- Pane actions
 		{ key = "w", mods = "SUPER", action = wezterm.action.CloseCurrentPane({ confirm = true }) },
 		{ key = "w", mods = "SHIFT|SUPER", action = wezterm.action.CloseCurrentTab({ confirm = true }) },
-    { key = "\\", mods = "SUPER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
-    { key = "|", mods = "SHIFT|SUPER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
+    { key = "/", mods = "SUPER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
+    { key = "?", mods = "SHIFT|SUPER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
 
 		-- Pane navigation
 		{ key = "h", mods = "SUPER", action = wezterm.action.ActivatePaneDirection("Left") },
@@ -43,11 +43,7 @@ local function keybinds(config)
 		-- Navigation between tabs
 		{ key = "Tab", mods = "CTRL", action = wezterm.action.ActivateTabRelative(1) },
 		{ key = "Tab", mods = "SHIFT|CTRL", action = wezterm.action.ActivateTabRelative(-1) },
-		{ key = "[", mods = "SHIFT|SUPER", action = wezterm.action.ActivateTabRelative(-1) },
-		{ key = "]", mods = "SHIFT|SUPER", action = wezterm.action.ActivateTabRelative(1) },
-		{ key = "{", mods = "SUPER", action = wezterm.action.ActivateTabRelative(-1) },
 		{ key = "{", mods = "SHIFT|SUPER", action = wezterm.action.ActivateTabRelative(-1) },
-		{ key = "}", mods = "SUPER", action = wezterm.action.ActivateTabRelative(1) },
 		{ key = "}", mods = "SHIFT|SUPER", action = wezterm.action.ActivateTabRelative(1) },
 		{ key = "1", mods = "SUPER", action = wezterm.action.ActivateTab(0) },
 		{ key = "2", mods = "SUPER", action = wezterm.action.ActivateTab(1) },
