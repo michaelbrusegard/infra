@@ -1925,14 +1925,14 @@
     },
     {
       "id": "zen-split-view-vertical",
-      "key": "=",
+      "key": "\\",
       "keycode": "",
       "group": "zen-split-view",
       "l10nId": "zen-split-view-shortcut-vertical",
       "modifiers": {
         "control": true,
         "alt": false,
-        "shift": true,
+        "shift": false,
         "meta": false,
         "accel": false
       },
@@ -1944,13 +1944,13 @@
     {
       "id": "zen-split-view-horizontal",
       "key": "",
-      "keycode": "",
+      "keycode": "|",
       "group": "zen-split-view",
       "l10nId": "zen-split-view-shortcut-horizontal",
       "modifiers": {
-        "control": false,
+        "control": true,
         "alt": false,
-        "shift": false,
+        "shift": true,
         "meta": false
       },
       "action": "cmd_zenSplitViewHorizontal",
@@ -1960,14 +1960,14 @@
     },
     {
       "id": "zen-split-view-unsplit",
-      "key": "-",
+      "key": "",
       "keycode": "",
       "group": "zen-split-view",
       "l10nId": "zen-split-view-shortcut-unsplit",
       "modifiers": {
-        "control": true,
+        "control": false,
         "alt": false,
-        "shift": true,
+        "shift": false,
         "meta": false,
         "accel": false
       },
