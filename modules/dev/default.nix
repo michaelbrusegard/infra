@@ -16,6 +16,9 @@ in {
         enable = true;
         enableGitIntegration = true;
       };
+      podman = {
+        enable = true;
+      };
     };
     home = {
       packages = with pkgs; [

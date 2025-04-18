@@ -1,8 +1,8 @@
-{ userName, ... }: {
+{ pkgs, userName, ... }: {
   system = {
     stateVersion = 5;
     defaults = {
-      .GlobalPreferences = {
+      GlobalPreferences = {
         "com.apple.mouse.scaling" = -1.0;
       };
       ActivityMonitor = {
@@ -197,7 +197,6 @@
           ShowFavoritesBar-v2 = false;
           DebugSnapshotsUpdatePolicy = 2;
           FindOnPageMatchesWordStartsOnly = false;
-          UniversalSearchEnabled = false;
           SuppressSearchSuggestions = true;
           WebContinuousSpellCheckingEnabled = true;
           WebAutomaticSpellingCorrectionEnabled = false;

@@ -18,7 +18,7 @@
     podman = {
       command = "${pkgs.podman}/bin/podman system service --time=0";
       serviceConfig = {
-        UserName = username;
+        UserName = userName;
         RunAtLoad = true;
         KeepAlive = true;
         StandardErrorPath = "/Users/${userName}/.logs/podman-error.log";
