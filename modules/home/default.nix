@@ -1,6 +1,6 @@
 { lib, config, pkgs, hostName, isDarwin, ... }:
 let
-  dev = pkgs.writescriptbin "dev" ''
+  dev = pkgs.writeScriptBin "dev" ''
     #!${pkgs.zsh}/bin/zsh
     FLAKE_DIR="$HOME/Developer/dotfiles"
 
