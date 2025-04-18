@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{ pkgs, config, ... }: {
   services = {
     kanata = {
       enable = true;
@@ -40,6 +40,19 @@
       enable = true;
       openFirewall = true;
       startWhenNeeded = true;
+      ports = config.secrets.desktopSshPorts;
+      authorizedKeysInHomedir = false;
+      authorizedKeysFiles = config.secrets.desktopAuthorizedKeysFiles;
+      hostKeys = [];
+      settings = {
+        PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+        PermitRootLogin = "no";
+      };
+    };
+    fail2ban = {
+      enable = true;
+      bantime = "1h";
     };
     pipewire = {
       enable = true;
