@@ -48,6 +48,8 @@ in {
     };
     home = {
       packages = with pkgs; [
+        pkg-config
+        wayland-protocols
         wl-clipboard
         hyprpicker
         grim

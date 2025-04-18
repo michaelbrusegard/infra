@@ -30,9 +30,6 @@ in {
         uv
         python3
 
-        # Rust
-        rustup
-
         # Go
         go
 
@@ -48,9 +45,6 @@ in {
         # Lua
         lua
         luarocks
-
-        # CLI
-        supabase-cli
       ];
       activation = {
         createDockerComposeSymlink = lib.hm.dag.entryAfter ["writeBoundary"] ''
