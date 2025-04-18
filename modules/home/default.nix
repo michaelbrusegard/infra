@@ -3,20 +3,8 @@ let
   dev = pkgs.writeScriptBin "dev" ''
     #!${pkgs.zsh}/bin/zsh
     FLAKE_DIR="$HOME/Developer/dotfiles"
-
-    list_shells() {
-      echo "Available dev shells:"
-      ${pkgs.nix}/bin/nix flake show --json "$FLAKE_DIR" | \
-        ${pkgs.jq}/bin/jq -r '.devShells."''${system}"|keys[]' | \
-        while read -r shell; do
-          echo "  - $shell"
-        done
-    }
-
     if [ $# -eq 0 ]; then
       echo "Usage: dev <shell-name>"
-      echo ""
-      list_shells
       exit 1
     fi
 
