@@ -72,12 +72,20 @@
       forAllSystems = nixpkgs.lib.genAttrs [
         "x86_64-linux"
         "aarch64-linux"
-        "x86_64-darwin"
         "aarch64-darwin"
       ];
     in
     {
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+
+      devShells = forAllSystems (system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in {
+          libgdx = import ./shells/libgdx { inherit pkgs; };
+          supabase = import ./shells/supabase { inherit pkgs; };
+        }
+      );
 
       nixosConfigurations = {
         desktop = mkSystem {
@@ -109,7 +117,7 @@
         if builtins.getEnv "HOSTNAME" != "" then
           {
             "${builtins.getEnv "HOSTNAME"}" = mkSystem {
-              system = builtins.currentSystem or "aarch64-darwin";
+              system = "aarch64-darwin";
               userName = "michaelbrusegard";
               hostName = builtins.getEnv "HOSTNAME";
             };

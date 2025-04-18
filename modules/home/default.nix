@@ -18,6 +18,7 @@
       update = "nix flake update --flake ~/Developer/dotfiles";
       update-secrets = "nix flake update dotfiles-private --flake ~/Developer/dotfiles";
       cleanup = "nix-collect-garbage -d && nix store optimise";
+      dev = "nix develop .#";
       reload = "source ~/.config/zsh/.zshrc";
       c = "clear";
       dl = "cd ~/Downloads";

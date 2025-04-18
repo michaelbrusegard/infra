@@ -39,13 +39,6 @@ in {
         nodejs
         nodePackages.pnpm
 
-        # Java
-        jdk
-        maven
-
-        # Kotlin
-        gradle
-
         # C
         clang
         cmake
