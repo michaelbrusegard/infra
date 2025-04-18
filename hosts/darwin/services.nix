@@ -30,7 +30,7 @@
         yabai -m rule --add app="^(Affinity Photo 2|Affinity Designer 2|Affinity Publisher 2)$" space=7
 
         # Make sure there are 9 spaces
-        current_spaces=$(yabai -m query --spaces | jq length)
+        current_spaces=$(yabai -m query --spaces | ${pkgs.jq}/bin/jq length)
         spaces_to_create=$((9 - current_spaces))
         spaces_to_delete=$((current_spaces - 9))
 
@@ -42,7 +42,7 @@
 
         if [[ $spaces_to_delete -gt 0 ]]; then
             for i in $(seq 1 $spaces_to_delete); do
-                last_space_id=$(yabai -m query --spaces | jq '.[-1].index')
+                last_space_id=$(yabai -m query --spaces | ${pkgs.jq}/bin/jq '.[-1].index')
                 yabai -m space --destroy $last_space_id
             done
         fi
@@ -79,7 +79,7 @@
         alt - 6 : yabai -m space --focus 6 || yabai -m space --focus recent
         alt - 7 : yabai -m space --focus 7 || yabai -m space --focus recent
         alt - 8 : yabai -m space --focus 8 || yabai -m space --focus recent
-        alt - 9 : yabai -m space --focus $(yabai -m query --spaces | jq '.[-1].index')
+        alt - 9 : yabai -m space --focus $(yabai -m query --spaces | ${pkgs.jq}/bin/jq '.[-1].index')
 
         # Move window to specific space
         alt + shift - 1 : yabai -m window --space 1 && yabai -m space --focus 1
@@ -90,7 +90,7 @@
         alt + shift - 6 : yabai -m window --space 6 && yabai -m space --focus 6
         alt + shift - 7 : yabai -m window --space 7 && yabai -m space --focus 7
         alt + shift - 8 : yabai -m window --space 8 && yabai -m space --focus 8
-        alt + shift - 9 : LAST_SPACE=$(yabai -m query --spaces | jq '.[-1].index'); yabai -m window --space $LAST_SPACE && yabai -m space --focus $LAST_SPACE
+        alt + shift - 9 : LAST_SPACE=$(yabai -m query --spaces | ${pkgs.jq}/bin/jq '.[-1].index'); yabai -m window --space $LAST_SPACE && yabai -m space --focus $LAST_SPACE
 
         # Toggle Floating Window
         alt - 0 : yabai -m window --toggle float

@@ -1,17 +1,13 @@
 { lib, config, pkgs, hostName, isDarwin, ... }:
 let
-  dev = pkgs.writeScriptBin "dev" ''
+  dev = pkgs.writescriptbin "dev" ''
     #!${pkgs.zsh}/bin/zsh
     FLAKE_DIR="$HOME/Developer/dotfiles"
 
     list_shells() {
       echo "Available dev shells:"
-      ${pkgs.nix}/bin/nix flake show "$FLAKE_DIR" | \
-        grep -A 100 "devShells" | \
-        grep -B 100 "}" | \
-        grep "└" | \
-        sed 's/.*└─ //g' | \
-        sed 's/://' | \
+      ${pkgs.nix}/bin/nix flake show --json "$FLAKE_DIR" | \
+        ${pkgs.jq}/bin/jq -r '.devShells."''${system}"|keys[]' | \
         while read -r shell; do
           echo "  - $shell"
         done
