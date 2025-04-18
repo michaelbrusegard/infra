@@ -17,7 +17,7 @@
     users.${userName} = {
       isNormalUser = true;
       home = "/home/${userName}";
-      extraGroups = [ "wheel" ];
+      extraGroups = [ "wheel" "networkmanager" "podman" ];
     };
   };
   i18n = {
