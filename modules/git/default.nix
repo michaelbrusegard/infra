@@ -29,6 +29,8 @@ in {
           "*.swp"
           "*.swo"
           ".env"
+          ".envrc"
+          ".direnv"
           "node_modules"
         ];
         extraConfig = {
