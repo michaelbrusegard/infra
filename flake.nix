@@ -81,10 +81,16 @@
       devShells = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-        in {
-          libgdx = import ./shells/libgdx { inherit pkgs; };
-          supabase = import ./shells/supabase { inherit pkgs; };
-        }
+          shellDirs = builtins.attrNames (builtins.readDir ./shells);
+          shells = builtins.listToAttrs (map
+            (name: {
+              inherit name;
+              value = import (./shells + "/${name}") { inherit pkgs; };
+            })
+            shellDirs
+          );
+        in
+        shells
       );
 
       nixosConfigurations = {
