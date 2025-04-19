@@ -48,13 +48,17 @@ in {
     };
     home = {
       packages = with pkgs; [
-        pkg-config
-        wayland-protocols
+        libGL
+        libxkbcommon
         wl-clipboard
         hyprpicker
         grim
         slurp
       ];
+      sessionVariables = {
+        LD_LIBRARY_PATH = "${pkgs.libGL}/lib:${pkgs.libxkbcommon}/lib:${pkgs.wayland}/lib";
+        NIXOS_OZONE_WL = "1";
+      };
       file.".local/share/applications/hyprpicker.desktop".text = ''
         [Desktop Entry]
         Name=Hyprpicker
