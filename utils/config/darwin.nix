@@ -6,8 +6,8 @@
   ];
   nix = {
     settings = {
-      allowed-users = ["@admin"];
-      trusted-users = ["@admin"];
+      allowed-users = [ "@admin" ];
+      trusted-users = [ "@admin" ];
     };
     linux-builder.enable = true;
   };
@@ -23,7 +23,7 @@
   };
   users.users.${userName} = {
     home = "/Users/${userName}";
-    extraGroups = [ "admin" ];
+    extraGroups = [ "admin" "podman" ];
   };
   security = {
     pam.enableSudoTouchIdAuth = true;

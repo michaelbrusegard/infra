@@ -8,8 +8,8 @@
     daemonCPUSchedPolicy = "idle";
     daemonIOSchedClass = "idle";
     settings = {
-      allowed-users = ["@wheel"];
-      trusted-users = ["@wheel"];
+      allowed-users = [ "@wheel" ];
+      trusted-users = [ "@wheel" ];
     };
   };
   users = {
@@ -17,7 +17,7 @@
     users.${userName} = {
       isNormalUser = true;
       home = "/home/${userName}";
-      extraGroups = [ "wheel" "networkmanager" "podman" "docker" ];
+      extraGroups = [ "wheel" "networkmanager" "podman" ];
     };
   };
   i18n = {
