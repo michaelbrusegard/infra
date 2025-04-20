@@ -14,7 +14,7 @@ return {
       copilot = {
         model = 'claude-3.5-sonnet',
       },
-      file_selector = {
+      selector = {
         provider = 'snacks',
       },
     },
