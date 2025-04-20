@@ -1,27 +1,75 @@
 return {
   { import = 'lazyvim.plugins.extras.ai.copilot' },
-  { import = 'lazyvim.plugins.extras.ai.copilot-chat' },
   { import = 'lazyvim.plugins.extras.ai.supermaven' },
   {
-    'CopilotC-Nvim/CopilotChat.nvim',
+    'yetone/avante.nvim',
+    event = 'VeryLazy',
+    dependencies = { 'stevearc/dressing.nvim' },
     opts = {
-      model = 'claude-3.5-sonnet',
-      show_help = false,
-      auto_insert_mode = false,
-      separator = '───',
+      hints = { enabled = false },
+      provider = 'gemini',
+      gemini = {
+        model = 'gemini-2.5-pro-exp-03-25',
+      },
+      copilot = {
+        model = 'claude-3.5-sonnet',
+      },
+      file_selector = {
+        provider = 'snacks',
+      },
     },
-    config = function(_, opts)
-      local chat = require('CopilotChat')
-      vim.api.nvim_create_autocmd('BufEnter', {
-        pattern = 'copilot-chat',
-        callback = function()
-          vim.opt_local.relativenumber = false
-          vim.opt_local.number = false
-          vim.keymap.set('n', '<C-s>', '<cmd>CopilotChatStop<cr>', { buffer = true })
-        end,
-      })
-
-      chat.setup(opts)
+    build = 'make',
+  },
+  {
+    'saghen/blink.cmp',
+    lazy = true,
+    dependencies = { 'saghen/blink.compat' },
+    opts = {
+      sources = {
+        default = { 'avante_commands', 'avante_mentions', 'avante_files' },
+        compat = {
+          'avante_commands',
+          'avante_mentions',
+          'avante_files',
+        },
+        providers = {
+          avante_commands = {
+            name = 'avante_commands',
+            module = 'blink.compat.source',
+            score_offset = 90,
+            opts = {},
+          },
+          avante_files = {
+            name = 'avante_files',
+            module = 'blink.compat.source',
+            score_offset = 100,
+            opts = {},
+          },
+          avante_mentions = {
+            name = 'avante_mentions',
+            module = 'blink.compat.source',
+            score_offset = 1000,
+            opts = {},
+          },
+        },
+      },
+    },
+  },
+  {
+    'MeanderingProgrammer/render-markdown.nvim',
+    ft = function(_, ft)
+      vim.list_extend(ft, { 'Avante' })
     end,
+    opts = function(_, opts)
+      opts.file_types = vim.list_extend(opts.file_types or {}, { 'Avante' })
+    end,
+  },
+  {
+    'folke/which-key.nvim',
+    opts = {
+      spec = {
+        { '<leader>a', group = 'ai' },
+      },
+    },
   },
 }
