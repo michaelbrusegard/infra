@@ -7,12 +7,14 @@ return {
     dependencies = { 'stevearc/dressing.nvim' },
     opts = {
       hints = { enabled = false },
-      provider = 'gemini',
+      provider = 'copilot',
       gemini = {
-        model = 'gemini-2.5-pro-exp-03-25',
+        model = 'gemini-2.5-pro-preview-03-25',
+        max_tokens = 1000000,
       },
       copilot = {
         model = 'claude-3.5-sonnet',
+        max_tokens = 200000,
       },
       selector = {
         provider = 'snacks',
