@@ -46,6 +46,9 @@ in {
         lua
         luarocks
       ];
+      sessionVariables = {
+        NODE_COMPILE_CACHE = "$HOME/.cache/nodejs-compile-cache";
+      };
       activation = {
         createDockerComposeSymlink = lib.hm.dag.entryAfter ["writeBoundary"] ''
           $DRY_RUN_CMD mkdir -p $HOME/.local/bin
