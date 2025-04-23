@@ -127,10 +127,10 @@ in {
         ];
         binde = [
           # Resize window
-          "alt, u, resizeactive, -20 0"
-          "alt, i, resizeactive, 0 20"
-          "alt, o, resizeactive, 0 -20"
-          "alt, p, resizeactive, 20 0"
+          "alt, left, resizeactive, -20 0"
+          "alt, down, resizeactive, 0 20"
+          "alt, up, resizeactive, 0 -20"
+          "alt, right, resizeactive, 20 0"
         ];
         bindm = [
           "alt, mouse:272, movewindow"

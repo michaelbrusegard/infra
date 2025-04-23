@@ -14,6 +14,12 @@ vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-S-j>', '<C-w>J', { silent = true, des
 vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-S-k>', '<C-w>K', { silent = true, desc = 'Swap window up' })
 vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-S-l>', '<C-w>L', { silent = true, desc = 'Swap window right' })
 
+-- Resize windows
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-Left>', '<C-w><', { silent = true, desc = 'Decrease window width' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-Down>', '<C-w>-', { silent = true, desc = 'Decrease window height' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-Up>', '<C-w>+', { silent = true, desc = 'Increase window height' })
+vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-Right>', '<C-w>>', { silent = true, desc = 'Increase window width' })
+
 -- File explorer
 vim.keymap.set('n', '-', function()
   Snacks.explorer({ cwd = LazyVim.root() })

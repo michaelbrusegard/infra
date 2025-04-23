@@ -29,10 +29,10 @@ local function keybinds(config)
 		{ key = "j", mods = "SUPER", action = wezterm.action.ActivatePaneDirection("Down") },
 		{ key = "k", mods = "SUPER", action = wezterm.action.ActivatePaneDirection("Up") },
 		{ key = "l", mods = "SUPER", action = wezterm.action.ActivatePaneDirection("Right") },
-		{ key = "u", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Left", 2 }) },
-		{ key = "i", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Down", 2 }) },
-		{ key = "o", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Up", 2 }) },
-		{ key = "p", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Right", 2 }) },
+		{ key = "LeftArrow", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Left", 2 }) },
+		{ key = "DownArrow", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Down", 2 }) },
+		{ key = "UpArrow", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Up", 2 }) },
+		{ key = "RightArrow", mods = "SUPER", action = wezterm.action.AdjustPaneSize({ "Right", 2 }) },
 
     -- Move panes
     { key = "h", mods = "SHIFT|SUPER", action = wezterm.action_callback(require('utils.pane').switch_pane_direction('Left')) },
