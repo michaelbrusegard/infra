@@ -11,10 +11,12 @@ return {
       gemini = {
         model = 'gemini-2.5-pro-preview-03-25',
         max_tokens = 1000000,
+        disable_tools = true,
       },
       copilot = {
         model = 'claude-3.5-sonnet',
         max_tokens = 200000,
+        disable_tools = true,
       },
       selector = {
         provider = 'snacks',
