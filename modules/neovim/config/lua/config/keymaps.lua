@@ -1,6 +1,6 @@
 -- Split windows
-vim.keymap.set({ 'x', 'n' }, '<C-/>', '<cmd>vsplit<cr>', { silent = true, desc = 'Split window vertically' })
-vim.keymap.set({ 'x', 's' }, '<C-S-/>', '<cmd>split<cr>', { silent = true, desc = 'Split window horizontally' })
+vim.keymap.set({ 'x', 'n' }, '<C-\\>', '<cmd>vsplit<cr>', { silent = true, desc = 'Split window vertically' })
+vim.keymap.set({ 'x', 's' }, '<C-S-|>', '<cmd>split<cr>', { silent = true, desc = 'Split window horizontally' })
 
 -- Move between windows
 vim.keymap.set({ 'i', 'x', 'n', 's' }, '<C-h>', '<C-w>h', { silent = true, desc = 'Move to left window' })
