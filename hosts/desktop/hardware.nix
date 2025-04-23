@@ -6,7 +6,9 @@
     graphics = {
       enable = true;
       extraPackages = with pkgs; [
-        rocmPackages.clr.icd
+        mesa
+        mesa.opencl
+        vulkan-loader
       ];
     };
     bluetooth = {
