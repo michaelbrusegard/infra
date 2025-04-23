@@ -5,34 +5,8 @@
       keyboards.default = {
         extraDefCfg = "process-unmapped-keys yes";
         config = ''
-          (defsrc
-            sft alt [ ; ' e
-          )
-
-          (deflayer base
-            sft @alt [ ; ' e
-          )
-
-          (defalias
-            alt (multi alt (layer-while-held alted-with-exceptions))
-            sft-alt (multi sft (layer-while-held alted-with-exceptions-shifted))
-            å (multi (release-key alt) (unicode å))
-            æ (multi (release-key alt) (unicode æ))
-            ø (multi (release-key alt) (unicode ø))
-            é (multi (release-key alt) (unicode é))
-            Å (multi (release-key alt) (release-key sft) (unicode Å))
-            Æ (multi (release-key alt) (release-key sft) (unicode Æ))
-            Ø (multi (release-key alt) (release-key sft) (unicode Ø))
-            É (multi (release-key alt) (release-key sft) (unicode É))
-          )
-
-          (deflayer alted-with-exceptions
-            @sft-alt _ @å @æ @ø @é
-          )
-
-          (deflayer alted-with-exceptions-shifted
-            _ _ @Å @Æ @Ø @É
-          )
+          (defsrc)
+          (deflayer base)
         '';
       };
     };
@@ -69,6 +43,8 @@
         default_session = {
           command = "${pkgs.hyprland}/bin/Hyprland -c ${pkgs.writeText "greetd-hyprland.conf" ''
             input {
+              kb_layout = "us"
+              kb_variant = "mac"
               repeat_rate = 65
               repeat_delay = 150
               follow_mouse = 1
@@ -85,9 +61,5 @@
       };
     };
     udisks2.enable = true;
-    xserver.xkb = {
-      layout = "us";
-      variant = "mac";
-    };
   };
 }
