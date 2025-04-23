@@ -43,8 +43,8 @@
         default_session = {
           command = "${pkgs.hyprland}/bin/Hyprland -c ${pkgs.writeText "greetd-hyprland.conf" ''
             input {
-              kb_layout = "us"
-              kb_variant = "mac"
+              kb_layout = us
+              kb_variant = mac
               repeat_rate = 65
               repeat_delay = 150
               follow_mouse = 1
