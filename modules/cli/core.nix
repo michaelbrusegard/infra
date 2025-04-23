@@ -10,6 +10,7 @@ in {
       coreutils
       gnused
       gnugrep
+      gnumake
       curl
       wget
       file
