@@ -51,6 +51,7 @@ in {
         input = {
           kb_layout = "us";
           kb_variant = "mac";
+          kb_options = "lv3:lalt_switch";
           repeat_rate = 65;
           repeat_delay = 150;
           follow_mouse = 1;
