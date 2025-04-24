@@ -14,6 +14,7 @@ in {
       gnumake
       curl
       wget
+      zstd
       file
       rsync
       fontconfig
