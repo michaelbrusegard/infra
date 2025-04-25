@@ -8,11 +8,13 @@ in {
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
       coreutils
+      findutils
       gnused
       gnugrep
       gnumake
       curl
       wget
+      zstd
       file
       rsync
       fontconfig

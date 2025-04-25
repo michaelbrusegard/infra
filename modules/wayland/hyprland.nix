@@ -78,49 +78,49 @@ in {
         binds.workspace_back_and_forth = true;
         bind = [
           # Focus window
-          "alt, h, movefocus, l"
-          "alt, l, movefocus, r"
-          "alt, j, movefocus, u"
-          "alt, k, movefocus, d"
+          "mod5, h, movefocus, l"
+          "mod5, l, movefocus, r"
+          "mod5, j, movefocus, u"
+          "mod5, k, movefocus, d"
 
           # Move window
-          "alt shift, h, movewindow, l"
-          "alt shift, l, movewindow, r"
-          "alt shift, j, movewindow, d"
-          "alt shift, k, movewindow, u"
+          "mod5 shift, h, movewindow, l"
+          "mod5 shift, l, movewindow, r"
+          "mod5 shift, j, movewindow, d"
+          "mod5 shift, k, movewindow, u"
 
           # Switch to specific workspace
-          "alt, 1, workspace, 1"
-          "alt, 2, workspace, 2"
-          "alt, 3, workspace, 3"
-          "alt, 4, workspace, 4"
-          "alt, 5, workspace, 5"
-          "alt, 6, workspace, 6"
-          "alt, 7, workspace, 7"
-          "alt, 8, workspace, 8"
-          "alt, 9, workspace, 9"
+          "mod5, 1, workspace, 1"
+          "mod5, 2, workspace, 2"
+          "mod5, 3, workspace, 3"
+          "mod5, 4, workspace, 4"
+          "mod5, 5, workspace, 5"
+          "mod5, 6, workspace, 6"
+          "mod5, 7, workspace, 7"
+          "mod5, 8, workspace, 8"
+          "mod5, 9, workspace, 9"
 
           # Move window to specific workspace
-          "alt shift, 1, movetoworkspace, 1"
-          "alt shift, 2, movetoworkspace, 2"
-          "alt shift, 3, movetoworkspace, 3"
-          "alt shift, 4, movetoworkspace, 4"
-          "alt shift, 5, movetoworkspace, 5"
-          "alt shift, 6, movetoworkspace, 6"
-          "alt shift, 7, movetoworkspace, 7"
-          "alt shift, 8, movetoworkspace, 8"
-          "alt shift, 9, movetoworkspace, 9"
+          "mod5 shift, 1, movetoworkspace, 1"
+          "mod5 shift, 2, movetoworkspace, 2"
+          "mod5 shift, 3, movetoworkspace, 3"
+          "mod5 shift, 4, movetoworkspace, 4"
+          "mod5 shift, 5, movetoworkspace, 5"
+          "mod5 shift, 6, movetoworkspace, 6"
+          "mod5 shift, 7, movetoworkspace, 7"
+          "mod5 shift, 8, movetoworkspace, 8"
+          "mod5 shift, 9, movetoworkspace, 9"
 
           # Toggle Floating Window
-          "alt, 0, togglefloating,"
+          "mod5, 0, togglefloating,"
 
           # Change between dwindle and master layout for space
-          "alt, comma, exec, hyprctl keyword general:layout dwindle"
-          "alt, slash, exec, hyprctl keyword general:layout master"
+          "mod5, comma, exec, hyprctl keyword general:layout dwindle"
+          "mod5, slash, exec, hyprctl keyword general:layout master"
 
           # System
-          "alt, return, exec, wezterm start --always-new-process"
-          "alt shift, return, exec, wezterm start --always-new-process -e sh -c 'yazi'"
+          "mod5, return, exec, wezterm start --always-new-process"
+          "mod5 shift, return, exec, wezterm start --always-new-process -e sh -c 'yazi'"
           "super, space, exec, rofi -show drun"
           "super shift, v, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
           "super, q, exec, hyprctl dispatch killactive"
@@ -131,14 +131,14 @@ in {
         ];
         binde = [
           # Resize window
-          "alt, left, resizeactive, -20 0"
-          "alt, down, resizeactive, 0 20"
-          "alt, up, resizeactive, 0 -20"
-          "alt, right, resizeactive, 20 0"
+          "mod5, left, resizeactive, -20 0"
+          "mod5, down, resizeactive, 0 20"
+          "mod5, up, resizeactive, 0 -20"
+          "mod5, right, resizeactive, 20 0"
         ];
         bindm = [
-          "alt, mouse:272, movewindow"
-          "alt, mouse:273, resizewindow"
+          "mod5, mouse:272, movewindow"
+          "mod5, mouse:273, resizewindow"
         ];
         bindl = [
           ", XF86AudioNext, exec, playerctld next"
