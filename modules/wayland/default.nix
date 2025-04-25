@@ -56,7 +56,11 @@ in {
         slurp
       ];
       sessionVariables = {
-        LD_LIBRARY_PATH = "${pkgs.libGL}/lib:${pkgs.libxkbcommon}/lib:${pkgs.wayland}/lib";
+        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+          pkgs.libGL
+          pkgs.libxkbcommon
+          pkgs.wayland
+        ];
         NIXOS_OZONE_WL = "1";
       };
       file.".local/share/applications/hyprpicker.desktop".text = ''
