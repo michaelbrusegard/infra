@@ -1,62 +1,62 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable?shallow=1";
     nur = {
-      url = "github:nix-community/NUR";
+      url = "github:nix-community/NUR?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     darwin = {
-      url = "github:lnl7/nix-darwin";
+      url = "github:lnl7/nix-darwin?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     sops-nix = {
-      url = "github:Mic92/sops-nix";
+      url = "github:Mic92/sops-nix?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixos-hardware.url = "github:NixOS/nixos-hardware";
+    nixos-hardware.url = "github:NixOS/nixos-hardware?shallow=1";
     apple-emoji-linux = {
-      url = "github:samuelngs/apple-emoji-linux";
+      url = "github:samuelngs/apple-emoji-linux?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     apple-fonts = {
-      url = "github:Lyndeno/apple-fonts.nix";
+      url = "github:Lyndeno/apple-fonts.nix?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     catppuccin = {
-      url = "github:catppuccin/nix";
+      url = "github:catppuccin/nix?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-darwin-browsers = {
-      url = "github:wuz/nix-darwin-browsers";
+      url = "github:wuz/nix-darwin-browsers?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     zen-browser = {
-      url = "github:0xc000022070/zen-browser-flake";
+      url = "github:0xc000022070/zen-browser-flake?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
     nix-proton = {
-      url = "github:DuskSystems/nix-proton";
+      url = "github:DuskSystems/nix-proton?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     yazi = {
-      url = "github:sxyazi/yazi";
+      url = "github:sxyazi/yazi?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     hyprland = {
-      url = "github:hyprwm/Hyprland";
+      url = "github:hyprwm/Hyprland?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     wezterm = {
-      url = "github:wez/wezterm?dir=nix";
+      url = "github:wez/wezterm?dir=nix&shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     fancontrol-gui = {
-      url = "github:JaysFreaky/fancontrol-gui";
+      url = "github:JaysFreaky/fancontrol-gui?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     dotfiles-private = {
