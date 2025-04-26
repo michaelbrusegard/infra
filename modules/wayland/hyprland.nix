@@ -155,8 +155,6 @@ in {
           "workspace 5, class:^(Element)$"
           "workspace 5, class:^(Slack)$"
           "workspace 7, class:^(resolve)$"
-          "remap SUPER,CONTROL,class:^(resolve)$"
-          "remap CONTROL,SUPER,class:^(resolve)$"
         ];
       };
     };

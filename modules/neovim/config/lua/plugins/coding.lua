@@ -5,7 +5,7 @@ return {
     lazy = true,
     dependencies = { 'saghen/blink.compat' },
     opts = {
-      keymap = { preset = 'default' }
+      keymap = { preset = 'default' },
       sources = {
         default = { 'avante_commands', 'avante_mentions', 'avante_files' },
         compat = {
