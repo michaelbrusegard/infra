@@ -23,7 +23,7 @@
         # Application rules
         yabai -m rule --add app="^(Calculator|System Settings|Archive Utility)$" manage=off
         yabai -m rule --add app="^(Safari|Zen Browser)$" space=2
-        yabai -m rule --add app="^(Proton Mail)$" space=3
+        yabai -m rule --add app="^(Proton Mail|Proton Pass)$" space=3
         yabai -m rule --add app="^(Notes|Obsidian)$" space=4
         yabai -m rule --add app="^(Messages|FaceTime|Element|Messenger|Legcord|Slack)$" space=5
         yabai -m rule --add app="^(Music|TV|Photos)$" space=6

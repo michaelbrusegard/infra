@@ -147,13 +147,16 @@ in {
           ", XF86AudioPrev, exec, playerctld previous"
         ];
         windowrulev2 = [
-          "workspace 2, class:^(Zen Browser)$"
+          "workspace 2, class:^(zen-beta)$"
           "workspace 3, class:^(Proton Mail)$"
-          "workspace 4, class:^(Obsidian)$"
-          "workspace 5, class:^(Legcord)$"
+          "workspace 3, class:^(Proton Pass)$"
+          "workspace 4, class:^(obsidian)$"
+          "workspace 5, class:^(legcord)$"
           "workspace 5, class:^(Element)$"
           "workspace 5, class:^(Slack)$"
-          "workspace 7, class:^(Resolve)$"
+          "workspace 7, class:^(resolve)$"
+          "remap SUPER,CONTROL,class:^(resolve)$"
+          "remap CONTROL,SUPER,class:^(resolve)$"
         ];
       };
     };
