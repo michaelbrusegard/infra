@@ -1,18 +1,12 @@
 # Dotfiles
 
-To get started, clone the repository into the home directory:
+To get started, clone the repository into `~/Developer/dotfiles` using SSH:
 
 ```zsh
-git clone https://github.com/michaelbrusegard/dotfiles.git ~/dotfiles
+git clone git@github.com:michaelbrusegard/dotfiles.git ~/Developer/dotfiles
 ```
-
-When finished switch to use SSH for the repository:
-
-```zsh
-cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfiles.git
-```
-
-**Heads-up:** The dotfiles in this repository are incomplete because I also maintain private dotfiles with sensitive information that I want to keep secure. The setup for the private dotfiles is the same.
+> [!NOTE]  
+> I also maintain a private repository with encrypted secrets that is added into the repository as a Nix flake. Directly copying the dotfiles will therefore most likely fail since it will fail to fetch the private repository.
 
 ## Nix Options
 
