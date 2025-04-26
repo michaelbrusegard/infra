@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ pkgs, config, lib, ... }:
 
 let
   cfg = config.modules.wayland;
@@ -15,9 +15,9 @@ in {
           "DP-1,3440x1440@144,0x0,1, bitdepth, 10"
           "DP-3,2560x1440@144,3440x0,1, bitdepth, 10"
         ];
-        exec-once = [ 
-          "wl-paste --type text --watch cliphist store"
-          "wl-paste --type image --watch cliphist store"
+        exec-once = [
+          "${pkgs.wl-clipboard}/bin/wl-paste --type text --watch ${pkgs.cliphist}/bin/cliphist store"
+          "${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store"
         ];
         ecosystem = {
           no_update_news = true;
@@ -115,19 +115,19 @@ in {
           "mod5, 0, togglefloating,"
 
           # Change between dwindle and master layout for space
-          "mod5, comma, exec, hyprctl keyword general:layout dwindle"
-          "mod5, slash, exec, hyprctl keyword general:layout master"
+          "mod5, comma, exec, ${pkgs.hyprland}/bin/hyprctl keyword general:layout dwindle"
+          "mod5, slash, exec, ${pkgs.hyprland}/bin/hyprctl keyword general:layout master"
 
           # System
-          "mod5, return, exec, wezterm start --always-new-process"
-          "mod5 shift, return, exec, wezterm start --always-new-process -e sh -c 'yazi'"
-          "super, space, exec, rofi -show drun"
-          "super shift, v, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
-          "super, q, exec, hyprctl dispatch killactive"
-          "super shift, q, exec, hyprctl dispatch killactive; WID=$(hyprctl activewindow -j | jq -r .class); pkill -KILL -f \"$WID\""
+          "mod5, return, exec, ${pkgs.wezterm}/bin/wezterm start --always-new-process"
+          "mod5 shift, return, exec, ${pkgs.wezterm}/bin/wezterm start --always-new-process -e ${pkgs.bash}/bin/sh -c '${pkgs.yazi}/bin/yazi'"
+          "super, space, exec, ${pkgs.rofi}/bin/rofi -show drun"
+          "super shift, v, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi}/bin/rofi -dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"
+          "super, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive"
+          "super shift, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive; WID=$(${pkgs.jq}/bin/jq -r .class <<< $(${pkgs.hyprland}/bin/hyprctl activewindow -j)); ${pkgs.coreutils}/bin/pkill -KILL -f \"$WID\""
           "super ctrl, q, exec, loginctl lock-session"
-          "super shift, 3, exec, grim -t png -q 100 ~/Pictures/screenshots/$(date +'\%Y-\%m-\%d_\%H-\%M-\%S').png"
-          "super shift, 4, exec, grim -t png -q 100 -g \"$(slurp -d -w 2)\" ~/Pictures/screenshots/$(date +'\%Y-\%m-\%d_\%H-\%M-\%S').png"
+          "super shift, 3, exec, ${pkgs.grim}/bin/grim -t png -o $(${pkgs.hyprland}/bin/hyprctl monitors -j | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name') $HOME/Pictures/screenshots/$(${pkgs.coreutils}/bin/date +'%Y-%m-%d_%H-%M-%S').png"
+          "super shift, 4, exec, ${pkgs.grim}/bin/grim -t png -g \"$(${pkgs.slurp}/bin/slurp -d -w 0)\" $HOME/Pictures/screenshots/$(${pkgs.coreutils}/bin/date +'%Y-%m-%d_%H-%M-%S').png"
         ];
         binde = [
           # Resize window
@@ -141,10 +141,10 @@ in {
           "mod5, mouse:273, resizewindow"
         ];
         bindl = [
-          ", XF86AudioNext, exec, playerctld next"
-          ", XF86AudioPause, exec, playerctld play-pause"
-          ", XF86AudioPlay, exec, playerctld play-pause"
-          ", XF86AudioPrev, exec, playerctld previous"
+          ", XF86AudioNext, exec, ${pkgs.playerctl}/bin/playerctld next"
+          ", XF86AudioPause, exec, ${pkgs.playerctl}/bin/playerctld play-pause"
+          ", XF86AudioPlay, exec, ${pkgs.playerctl}/bin/playerctld play-pause"
+          ", XF86AudioPrev, exec, ${pkgs.playerctl}/bin/playerctld previous"
         ];
         windowrulev2 = [
           "workspace 2, class:^(zen-beta)$"

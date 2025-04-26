@@ -54,6 +54,7 @@ in {
         hyprpicker
         grim
         slurp
+        wf-recorder
       ];
       sessionVariables = {
         LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
