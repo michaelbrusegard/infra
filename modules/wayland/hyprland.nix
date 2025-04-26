@@ -126,8 +126,8 @@ in {
           "super, q, exec, hyprctl dispatch killactive"
           "super shift, q, exec, hyprctl dispatch killactive; WID=$(hyprctl activewindow -j | jq -r .class); pkill -KILL -f \"$WID\""
           "super ctrl, q, exec, loginctl lock-session"
-          "super shift, 3, exec, grim -t png -q 100 ~/Pictures/Screenshots/$(date +'\%Y-\%m-\%d_\%H-\%M-\%S').png"
-          "super shift, 4, exec, grim -t png -q 100 -g \"$(slurp -d -w 2)\" ~/Pictures/Screenshots/$(date +'\%Y-\%m-\%d_\%H-\%M-\%S').png"
+          "super shift, 3, exec, grim -t png -q 100 ~/Pictures/screenshots/$(date +'\%Y-\%m-\%d_\%H-\%M-\%S').png"
+          "super shift, 4, exec, grim -t png -q 100 -g \"$(slurp -d -w 2)\" ~/Pictures/screenshots/$(date +'\%Y-\%m-\%d_\%H-\%M-\%S').png"
         ];
         binde = [
           # Resize window
