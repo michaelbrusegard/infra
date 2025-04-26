@@ -60,7 +60,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     dotfiles-private = {
-      url = "git+ssh://git@github.com/michaelbrusegard/dotfiles-private.git?ref=main&shallow=1";
+      url = "git+ssh://git@github.com/michaelbrusegard/dotfiles-private.git?shallow=1";
       inputs.sops-nix.follows = "sops-nix";
     };
   };
