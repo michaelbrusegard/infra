@@ -115,7 +115,7 @@ in
       f = "${pkgs.thefuck}/bin/fuck";
       ls = "${pkgs.eza}/bin/eza";
       cat = "${pkgs.bat}/bin/bat";
-      lzd = "${pkgs.lazygit}/bin/lazygit";
+      lzg = "${pkgs.lazygit}/bin/lazygit";
     };
     sessionPath = [
       "$HOME/.local/bin"

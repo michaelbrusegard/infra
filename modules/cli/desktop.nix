@@ -16,6 +16,7 @@ in {
       presenterm
       testdisk
       qmk
+      yt-dlp
     ];
   };
 }
