@@ -22,6 +22,10 @@ cd ~/dotfiles && git remote set-url origin git@github.com:michaelbrusegard/dotfi
 
 ## NixOS
 
+### Screenshots
+![2025-04-26_15-07-56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
+
+
 ## Darwin
 
 Before setting up MacOS, System Integrity Protection (SIP) needs to be partially disabled for the [yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) tiling window manager to work correctly.
@@ -61,7 +65,7 @@ cd ~/dotfiles && /opt/homebrew/bin/stow macos
 zsh ~/dotfiles/macos/scripts/login.zsh
 ```
 
-#### Screenshots
+### Screenshots
 
 <img width="560" alt="WezTerm" src="https://github.com/user-attachments/assets/d6c99c89-f4d5-465a-9faa-3756c8105962">
 
