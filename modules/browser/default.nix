@@ -55,6 +55,7 @@ in {
               angular-devtools
               proton-pass
               proton-vpn
+              refined-github
               font-inspect
             ];
           };
