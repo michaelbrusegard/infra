@@ -12,6 +12,7 @@ in {
       gnused
       gnugrep
       gnumake
+      psmisc
       curl
       wget
       zstd
