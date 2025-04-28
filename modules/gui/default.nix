@@ -10,19 +10,21 @@ in {
       transmission_4
       slack
       zoom-us
-    ] 
+      gimp-with-plugins
+      inkscape-with-extensions
+    ]
     ++ (lib.optionals isDarwin [
       raycast
       ice-bar
     ])
     ++ (lib.optionals (!isDarwin) [
+      easyeffects
       element-desktop
       legcord
       obsidian
       nix-proton.packages.${system}.proton-mail-desktop
       nix-proton.packages.${system}.proton-pass-desktop
       davinci-resolve
-      easyeffects
     ]);
   };
 }
