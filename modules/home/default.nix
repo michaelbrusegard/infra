@@ -117,6 +117,9 @@ in
       cat = "${pkgs.bat}/bin/bat";
       lzg = "${pkgs.lazygit}/bin/lazygit";
     };
+    sessionVariables = {
+      GEMINI_API_KEY = config.secrets.apiKeys.gemini;
+    };
     sessionPath = [
       "$HOME/.local/bin"
       "$HOME/bin"
