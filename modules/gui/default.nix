@@ -10,7 +10,7 @@ in {
       transmission_4
       slack
       zoom-us
-      gimp-with-plugins
+      gimp3-with-plugins
       inkscape-with-extensions
     ]
     ++ (lib.optionals isDarwin [
