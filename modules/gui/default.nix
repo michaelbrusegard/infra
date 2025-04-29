@@ -7,7 +7,7 @@ in {
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
-      zathura-with-plugins
+      zathura
       transmission_4
       slack
       zoom-us
