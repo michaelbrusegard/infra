@@ -254,14 +254,14 @@
         chown ${userName} /Users/${userName}/.logs
       '';
       podmanDockerCompat.text = ''
-          mkdir -p ~/.config/containers
+          mkdir -p $HOME/.config/containers
           echo "[engine]
-      compatible = true" > ~/.config/containers/containers.conf
-          mkdir -p ~/bin
+      compatible = true" > $HOME/.config/containers/containers.conf
+          mkdir -p $HOME/bin
           ln -sf ${pkgs.podman}/bin/podman ~/bin/docker
-          mkdir -p ~/.local/share/containers/podman/machine
-          mkdir -p ~/.docker
-          ln -sf ~/.local/share/containers/podman/machine/podman.sock ~/.docker/docker.sock
+          mkdir -p $HOME/.local/share/containers/podman/machine
+          mkdir -p $HOME/.docker
+          ln -sf $HOME/.local/share/containers/podman/machine/podman.sock ~/.docker/docker.sock
         '';
     };
   };
