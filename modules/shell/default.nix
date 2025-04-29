@@ -35,12 +35,11 @@ in {
           searchUpKey = "^P";
           searchDownKey = "^N";
         };
-        initExtraFirst = ''
+        initContent = ''
           if [[ -r "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
               source "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh"
           fi
-        '';
-        initExtra = ''
+
           source ${./config/p10k.zsh}
           bindkey -v
           export KEYTIMEOUT=1

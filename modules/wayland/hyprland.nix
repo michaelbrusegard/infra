@@ -54,7 +54,7 @@ in {
           kb_options = "lv3:lalt_switch";
           repeat_rate = 65;
           repeat_delay = 150;
-          follow_mouse = 1;
+          follow_mouse = 0;
         };
         group = {
           auto_group = false;

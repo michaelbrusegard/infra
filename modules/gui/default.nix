@@ -16,15 +16,18 @@ in {
     ++ (lib.optionals isDarwin [
       raycast
       ice-bar
+      libreoffice-bin
     ])
     ++ (lib.optionals (!isDarwin) [
       easyeffects
+      imv
       element-desktop
       legcord
       obsidian
       nix-proton.packages.${system}.proton-mail-desktop
       nix-proton.packages.${system}.proton-pass-desktop
       davinci-resolve
+      libreoffice-fresh
     ]);
   };
 }

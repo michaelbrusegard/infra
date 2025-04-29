@@ -6,7 +6,7 @@
       enableScriptingAddition = true;
       config = {
         layout = "bsp";
-        focus_follows_mouse = "autoraise";
+        focus_follows_mouse = "off";
         mouse_modifier = "alt";
         top_padding = 6;
         bottom_padding = 12;
