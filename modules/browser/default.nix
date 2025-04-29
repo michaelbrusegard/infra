@@ -6,7 +6,7 @@ let
   font-inspect = pkgs.fetchFirefoxAddon {
     name = "font-inspect";
     url = "https://addons.mozilla.org/firefox/downloads/file/4073605/font_inspect-1.1.0.xpi";
-    sha256 = "sha256-BaNaWl0iggyymOv3wvA/svt3XZjn+MgkCtjlUkIm6Ps=";
+    hash = "sha256-BaNaWl0iggyymOv3wvA/svt3XZjn+MgkCtjlUkIm6Ps=";
   };
 
 in {
