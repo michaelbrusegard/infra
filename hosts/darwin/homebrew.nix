@@ -13,6 +13,7 @@
       "protonvpn"
       "proton-drive"
       "riscv-tools"
+      "safe-exam-browser"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
