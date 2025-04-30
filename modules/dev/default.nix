@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, isDarwin, ... }:
 
 let
   cfg = config.modules.dev;
@@ -34,14 +34,13 @@ in {
         nodejs
         nodePackages.pnpm
 
-        # C
-        clang
-        cmake
-        lldb
-
         # Lua
         lua
         luarocks
+      ] ++ lib.optionals (!isDarwin) [
+        clang
+        cmake
+        lldb
       ];
       sessionVariables = {
         NODE_COMPILE_CACHE = "$HOME/.cache/nodejs-compile-cache";
