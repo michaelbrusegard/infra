@@ -123,11 +123,11 @@
         default = mkSystem {
           system = "aarch64-darwin";
           userName = "michaelbrusegard";
-          hostName = nixpkgs.lib.removeSuffix ".local" (
-            nixpkgs.lib.removeSuffix "\n" (nixpkgs.legacyPackages.${"aarch64-darwin"}.runCommand "hostname" { } ''
+          hostName = let
+            hostCmd = nixpkgs.legacyPackages.${"aarch64-darwin"}.runCommand "hostname" { } ''
               hostname > $out
-            '')
-          );
+            '';
+          in builtins.readFile hostCmd;
         };
       };
     };
