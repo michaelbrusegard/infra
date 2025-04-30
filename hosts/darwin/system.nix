@@ -2,7 +2,7 @@
   system = {
     stateVersion = 5;
     defaults = {
-      GlobalPreferences = {
+      ".GlobalPreferences" = {
         "com.apple.mouse.scaling" = -1.0;
       };
       ActivityMonitor = {
