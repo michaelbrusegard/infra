@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, isDarwin, ... }:
 
 let
   cfg = config.modules.cli.core;
@@ -12,7 +12,6 @@ in {
       gnused
       gnugrep
       gnumake
-      psmisc
       curl
       wget
       zstd
@@ -22,6 +21,6 @@ in {
       yq
       age
       sops
-    ];
+    ] ++ lib.optional (!isDarwin) psmisc;
   };
 }
