@@ -123,15 +123,16 @@
         default = let
           system = "aarch64-darwin";
           pkgs = nixpkgs.legacyPackages.${system};
-          hostname = builtins.readFile (pkgs.runCommand "hostname" {
+          hostname = nixpkgs.lib.removeSuffix "\n" (builtins.readFile (pkgs.runCommand "hostname" {
             nativeBuildInputs = [ pkgs.darwin.system-tools ];
           } ''
             scutil --get LocalHostName > $out
-          '');
+          ''));
+          _ = builtins.trace "Detected macOS hostname: ${hostname}" null;
         in mkSystem {
           inherit system;
           userName = "michaelbrusegard";
-          hostName = builtins.trace "Detected hostname: ${hostname}" (nixpkgs.lib.removeSuffix "\n" hostname);
+          hostName = hostname;
         };
       };
     };
