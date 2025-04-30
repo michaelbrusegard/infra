@@ -84,7 +84,7 @@
       NSGlobalDomain = {
         "com.apple.mouse.tapBehavior" = 1;
         "com.apple.sound.beep.feedback" = 0;
-        "com.apple.sound.beep.volume" = 0;
+        "com.apple.sound.beep.volume" = 0.0;
         "com.apple.springing.delay" = 0;
         "com.apple.springing.enabled" = false;
         "com.apple.trackpad.forceClick" = false;
