@@ -99,7 +99,7 @@ in
         "sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}";
       update = "nix flake update --flake $HOME/Developer/dotfiles";
       update-secrets = "nix flake update dotfiles-private --flake $HOME/Developer/dotfiles";
-      cleanup = "nix-collect-garbage -d && ${pkgs.nix}/bin/nix store optimise";
+      cleanup = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
       reload = "source $HOME/.config/zsh/.zshrc";
       c = "clear";
       dl = "cd $HOME/Downloads";
