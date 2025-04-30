@@ -67,7 +67,6 @@
       loginwindow = {
         DisableConsoleAccess = true;
         GuestEnabled = false;
-        LoginwindowText = false;
         SHOWFULLNAME = true;
         PowerOffDisabledWhileLoggedIn = true;
         RestartDisabled = true;
