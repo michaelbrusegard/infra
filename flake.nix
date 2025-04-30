@@ -122,7 +122,7 @@
       darwinConfigurations = let
         hostName = let
           hostCmd = nixpkgs.legacyPackages.${"aarch64-darwin"}.runCommand "hostname" { } ''
-            /usr/sbin/scutil --get LocalHostName | tr '[:upper:]' '[:lower:]' | tr -d '\n' > $out
+            /usr/sbin/scutil --get LocalHostName | tr -d '\n' > $out
           '';
         in builtins.readFile hostCmd;
       in {
