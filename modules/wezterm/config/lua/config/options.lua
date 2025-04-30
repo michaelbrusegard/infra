@@ -7,7 +7,7 @@ local function options(config)
   }
 
   -- Disable update popup
-  config.show_update_window = false;
+  config.check_for_updates = false
 
   -- Quit wezterm when all windows are closed
   config.quit_when_all_windows_are_closed = true
@@ -43,7 +43,7 @@ local function options(config)
   config.font_size = 12.5
 
   -- Set window decorations
-  if wezterm.target_triple == "x86_64-apple-darwin" then
+  if wezterm.target_triple == "aarch64-apple-darwin" then
     config.window_decorations = 'RESIZE'
   else
     config.window_decorations = 'NONE'
