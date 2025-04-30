@@ -18,6 +18,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-hardware.url = "github:NixOS/nixos-hardware?shallow=1";
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew?shallow=1";
+    homebrew-core = {
+      url = "github:homebrew/homebrew-core";
+      flake = false;
+    };
+    homebrew-cask = {
+      url = "github:homebrew/homebrew-cask";
+      flake = false;
+    };
     apple-emoji-linux = {
       url = "github:samuelngs/apple-emoji-linux?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";

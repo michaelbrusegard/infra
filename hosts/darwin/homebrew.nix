@@ -1,4 +1,14 @@
-{ ... }: {
+{ userName, homebrew-core, homebrew-cask, ... }: {
+  nix-homebrew = {
+    enable = true;
+    enableRosetta = true;
+    user = userName;
+    taps = {
+      "homebrew/homebrew-core" = homebrew-core;
+      "homebrew/homebrew-cask" = homebrew-cask;
+    };
+    mutableTaps = false;
+  };
   homebrew = {
     enable = true;
     caskArgs.no_quarantine = true;

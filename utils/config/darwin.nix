@@ -1,8 +1,9 @@
-{ userName, hostName, home-manager, dotfiles-private, ... }:
+{ userName, hostName, home-manager, nix-homebrew, dotfiles-private, ... }:
 {
   imports = [
     dotfiles-private.darwinModules.secrets
     home-manager.darwinModules.default
+    nix-homebrew.darwinModules.nix-homebrew
   ];
   nix = {
     settings = {
