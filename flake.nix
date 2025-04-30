@@ -5,7 +5,7 @@
       url = "github:nix-community/NUR?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    darwin = {
+    nix-darwin = {
       url = "github:lnl7/nix-darwin?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -18,7 +18,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-hardware.url = "github:NixOS/nixos-hardware?shallow=1";
-    nix-homebrew.url = "github:zhaofengli/nix-homebrew?shallow=1";
+    nix-homebrew = {
+      url = "github:zhaofengli/nix-homebrew?shallow=1";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nix-darwin.follows = "nix-darwin";
+      };
+    };
     homebrew-core = {
       url = "github:homebrew/homebrew-core";
       flake = false;
@@ -45,8 +51,10 @@
     };
     zen-browser = {
       url = "github:0xc000022070/zen-browser-flake?shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.home-manager.follows = "home-manager";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        home-manager.follows = "home-manager";
+      };
     };
     nix-proton = {
       url = "github:DuskSystems/nix-proton?shallow=1";

@@ -27,6 +27,5 @@
       display = 20;
     };
     restartAfterFreeze = true;
-    restartAfterPowerFailure = true;
   };
 }
