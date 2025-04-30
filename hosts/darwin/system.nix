@@ -16,13 +16,13 @@
         globalstate = 1;
       };
       controlcenter = {
-        AirDrop = 24;
+        AirDrop = false;
         BatteryShowPercentage = true;
-        Bluetooth = 24;
-        Display = 24;
-        FocusModes = 24;
-        NowPlaying = 24;
-        Sound = 24;
+        Bluetooth = false;
+        Display = false;
+        FocusModes = false;
+        NowPlaying = false;
+        Sound = false;
       };
       dock = {
         autohide = true;
