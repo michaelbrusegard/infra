@@ -67,7 +67,6 @@
       loginwindow = {
         DisableConsoleAccess = true;
         GuestEnabled = false;
-        LoginwindowText = "sudo make me a sandwich";
         SHOWFULLNAME = true;
         PowerOffDisabledWhileLoggedIn = true;
         RestartDisabled = true;

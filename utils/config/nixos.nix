@@ -6,6 +6,7 @@
     home-manager.nixosModules.default
   ];
   nix = {
+    gc.dates = "weekly";
     daemonCPUSchedPolicy = "idle";
     daemonIOSchedClass = "idle";
     settings = {

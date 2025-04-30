@@ -6,6 +6,11 @@
     nix-homebrew.darwinModules.nix-homebrew
   ];
   nix = {
+    gc.interval = {
+      Weekday = 0;
+      Hour = 0;
+      Minute = 0;
+    };
     settings = {
       allowed-users = [ "@admin" ];
       trusted-users = [ "@admin" ];

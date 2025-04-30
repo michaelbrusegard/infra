@@ -82,6 +82,23 @@
         "type": "github"
       }
     },
+    "brew-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1742457334,
+        "narHash": "sha256-Gn7ruyb3NDFr+SsHBfA2NsJI8YkkWdECqLRj/xcjt+E=",
+        "owner": "Homebrew",
+        "repo": "brew",
+        "rev": "f3bd91d3afe086824d24708230e1f0c7f943135a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Homebrew",
+        "ref": "4.4.25",
+        "repo": "brew",
+        "type": "github"
+      }
+    },
     "catppuccin": {
       "inputs": {
         "nixpkgs": [
@@ -99,26 +116,6 @@
       "original": {
         "owner": "catppuccin",
         "repo": "nix",
-        "type": "github"
-      }
-    },
-    "darwin": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1745816321,
-        "narHash": "sha256-Gyh/fkCDqVNGM0BWvk+4UAS17w2UI6iwnbQQCmc1TDI=",
-        "owner": "lnl7",
-        "repo": "nix-darwin",
-        "rev": "4515dacafb0ccd42e5395aacc49fd58a43027e01",
-        "type": "github"
-      },
-      "original": {
-        "owner": "lnl7",
-        "repo": "nix-darwin",
         "type": "github"
       }
     },
@@ -310,6 +307,38 @@
       "original": {
         "owner": "nix-community",
         "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "homebrew-cask": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1746031018,
+        "narHash": "sha256-O8mSQThn0vbk8M5OysOCUNqbGhpo4Mjjs0dExjGy6KU=",
+        "owner": "homebrew",
+        "repo": "homebrew-cask",
+        "rev": "9e4aa4accd431d1c9b18f19a88ee1782e14ea6d4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "homebrew",
+        "repo": "homebrew-cask",
+        "type": "github"
+      }
+    },
+    "homebrew-core": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1746028800,
+        "narHash": "sha256-QjRdMNS1tZtiHp2wR5/gVrKuUluU0whQL2KYzy30bbc=",
+        "owner": "homebrew",
+        "repo": "homebrew-core",
+        "rev": "1cede0461851d75ee7bf03095fde701836f71ff6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "homebrew",
+        "repo": "homebrew-core",
         "type": "github"
       }
     },
@@ -591,6 +620,26 @@
         "type": "github"
       }
     },
+    "nix-darwin": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1745816321,
+        "narHash": "sha256-Gyh/fkCDqVNGM0BWvk+4UAS17w2UI6iwnbQQCmc1TDI=",
+        "owner": "lnl7",
+        "repo": "nix-darwin",
+        "rev": "4515dacafb0ccd42e5395aacc49fd58a43027e01",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lnl7",
+        "repo": "nix-darwin",
+        "type": "github"
+      }
+    },
     "nix-darwin-browsers": {
       "inputs": {
         "nixpkgs": [
@@ -608,6 +657,30 @@
       "original": {
         "owner": "wuz",
         "repo": "nix-darwin-browsers",
+        "type": "github"
+      }
+    },
+    "nix-homebrew": {
+      "inputs": {
+        "brew-src": "brew-src",
+        "nix-darwin": [
+          "nix-darwin"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1744563914,
+        "narHash": "sha256-0exTKCXDE/8G7gZQ9Gk3EcZBAL7lwzxhD7DtUBsnlGI=",
+        "owner": "zhaofengli",
+        "repo": "nix-homebrew",
+        "rev": "53507607d69c88efc816e806b8139607c7257285",
+        "type": "github"
+      },
+      "original": {
+        "owner": "zhaofengli",
+        "repo": "nix-homebrew",
         "type": "github"
       }
     },
@@ -724,12 +797,15 @@
         "apple-emoji-linux": "apple-emoji-linux",
         "apple-fonts": "apple-fonts",
         "catppuccin": "catppuccin",
-        "darwin": "darwin",
         "dotfiles-private": "dotfiles-private",
         "fancontrol-gui": "fancontrol-gui",
         "home-manager": "home-manager",
+        "homebrew-cask": "homebrew-cask",
+        "homebrew-core": "homebrew-core",
         "hyprland": "hyprland",
+        "nix-darwin": "nix-darwin",
         "nix-darwin-browsers": "nix-darwin-browsers",
+        "nix-homebrew": "nix-homebrew",
         "nix-proton": "nix-proton",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs",
