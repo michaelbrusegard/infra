@@ -1,28 +1,36 @@
 # Dotfiles
 
-To get started, clone the repository into `~/Developer/dotfiles` using SSH:
+This is primarily a guide for myself on how to setup my own systems, feel free to copy any of the dotfiles, but do not expect a direct copy of everything to work for you.
+
+Make sure to follow the guide for each system step by step and to move over an SSH key for GitHub to get started with cloning the repository.
+Then, clone the repository into `~/Developer/dotfiles` using SSH:
 
 ```zsh
 git clone git@github.com:michaelbrusegard/dotfiles.git ~/Developer/dotfiles
 ```
-> [!NOTE]  
+
+> [!NOTE]
 > I also maintain a private repository with encrypted secrets that is added into the repository as a Nix flake. Directly copying the dotfiles will therefore most likely fail since it will fail to fetch the private repository.
 
-## Nix Options
+## Reference links
 
 - [nixpkgs](https://mynixos.com/nixpkgs/options)
 - [nix-darwin](https://mynixos.com/nix-darwin/options)
 - [home-manager](https://mynixos.com/home-manager/options)
 
-## NixOS
+## Desktop (NixOS)
 
 ### Screenshots
+
 ![2025-04-26_15-07-56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
+## Darwin systems
 
-## Darwin
+First install MacOS normally by following the instructions on the screen.
 
-Before setting up MacOS, System Integrity Protection (SIP) needs to be partially disabled for the [yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) tiling window manager to work correctly.
+### Disabling SIP
+
+System Integrity Protection (SIP) needs to be partially disabled for the [yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) tiling window manager to work correctly.
 
 1. Turn off the mac, then press and hold the power button until "Loading startup options" appears.
    Click Options, then click Continue.
@@ -31,47 +39,48 @@ Before setting up MacOS, System Integrity Protection (SIP) needs to be partially
 
 3. Run this:
 
-```zsh
+```sh
 csrutil enable --without fs --without debug --without nvram
 ```
 
-### Installing apps & utilities using homebrew
+### Command line tools
 
-```zsh
-zsh ~/dotfiles/macos/scripts/brew.zsh
+Install Xcode command line tools:
+
+```sh
+xcode-select --install
 ```
 
-### Setting sensible system settings for MacOS
+### Install Rosetta
 
-```zsh
-zsh ~/dotfiles/macos/scripts/defaults.zsh
+```sh
+softwareupdate --install-rosetta --agree-to-license
 ```
 
-### Creating symlinks for the config files
+### Install Nix
 
-```zsh
-cd ~/dotfiles && /opt/homebrew/bin/stow macos
+Run the following command to install Nix:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | \
+  sh -s -- install
 ```
 
-### Setup login items
+When prompted to install `Determinate Nix`, explicitly say `no`.
 
-```zsh
-zsh ~/dotfiles/macos/scripts/login.zsh
+### Initial build
+
+Build the system the first time using the following command:
+
+```sh
+nix run nix-darwin -- switch --flake $HOME/Developer/dotfiles
 ```
+
+Later rebuilds can use the `rebuild` alias.
 
 ### Screenshots
 
-<img width="560" alt="WezTerm" src="https://github.com/user-attachments/assets/d6c99c89-f4d5-465a-9faa-3756c8105962">
-
-<img width="560" alt="Neovim & Safari" src="https://github.com/user-attachments/assets/1bad8a88-f082-4d7f-9345-6744e1e2cc64">
-
-<img width="560" alt="Desktop wallpaper" src="https://github.com/user-attachments/assets/43a9b48a-b2b5-4a69-8afe-fd166f0f5380">
-
-My setup evolves over time, so the screenshots might not reflect the current state of my setup.
-
-## Espresso (Ubuntu Server)
-
-Espresso is my personal home server used for hosting various applications and services.
+## Espresso (Ubuntu Home Server)
 
 ### Installing packages
 
