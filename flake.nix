@@ -119,19 +119,15 @@
         };
       };
 
-      darwinConfigurations =
-        let
-          hostname = builtins.replaceStrings ["\n"] [""] (builtins.readFile (builtins.toFile "hostname" (builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname" ''
+      darwinConfigurations = {
+        default = mkSystem {
+          system = "aarch64-darwin";
+          userName = "michaelbrusegard";
+          hostName = builtins.replaceStrings ["\n"] [""] (builtins.readFile (builtins.toFile "hostname" (builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname" ''
             #!/bin/zsh
             scutil --get LocalHostName
           '')))));
-        in
-        {
-          "${hostname}" = mkSystem {
-            system = "aarch64-darwin";
-            userName = "michaelbrusegard";
-            hostName = hostname;
-          };
         };
+      };
     };
 }
