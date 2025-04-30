@@ -34,7 +34,7 @@
       flake = false;
     };
     homebrew-riscv = {
-      url = "github:riscv-software-src/homebrew-riscv?shallow=1";
+      url = "github:homebrew/homebrew-riscv?shallow=1";
       flake = false;
     };
     apple-emoji-linux = {

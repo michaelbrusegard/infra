@@ -6,7 +6,7 @@
     taps = {
       "homebrew/homebrew-core" = homebrew-core;
       "homebrew/homebrew-cask" = homebrew-cask;
-      "riscv-software-src/riscv" = homebrew-riscv;
+      "homebrew/homebrew-riscv" = homebrew-riscv;
     };
     mutableTaps = false;
   };
