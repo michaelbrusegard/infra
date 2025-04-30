@@ -15,7 +15,7 @@
     ssh.enable = true;
     wayland.enable = !isDarwin;
     wezterm.enable = true;
-    xdg.enable = true;
+    xdg.enable = !isDarwin;
     yazi.enable = true;
   };
 }

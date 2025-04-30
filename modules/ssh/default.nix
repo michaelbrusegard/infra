@@ -25,7 +25,6 @@ in {
   options.modules.ssh.enable = lib.mkEnableOption "SSH configuration";
 
   config = lib.mkIf cfg.enable {
-    services.ssh-agent.enable = true;
     programs.ssh = {
       enable = true;
       serverAliveInterval = 5;

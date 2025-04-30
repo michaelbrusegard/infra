@@ -24,9 +24,6 @@
   users.users.${userName} = {
     home = "/Users/${userName}";
   };
-  security = {
-    pam.enableSudoTouchIdAuth = true;
-  };
   power = {
     sleep = {
       allowSleepByPowerButton = false;

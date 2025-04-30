@@ -1,5 +1,6 @@
 { pkgs, hyprland, system, ... }: {
   programs = {
+    ssh.startAgent = true;
     dconf.enable = true;
     hyprland = {
       enable = true;

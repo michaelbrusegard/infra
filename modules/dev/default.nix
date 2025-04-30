@@ -18,9 +18,6 @@ in {
         enableGitIntegration = true;
       };
     };
-    services.podman = {
-      enable = true;
-    };
     home = {
       packages = with pkgs; [
         # Misc

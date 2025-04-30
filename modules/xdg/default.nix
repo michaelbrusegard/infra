@@ -1,4 +1,4 @@
-{ config, lib, isDarwin, ... }:
+{ config, lib, ... }:
 
 let
   cfg = config.modules.xdg;
@@ -8,10 +8,8 @@ in {
   config = lib.mkIf cfg.enable {
     xdg = {
       enable = true;
-      mime = lib.mkIf (!isDarwin) {
-        enable = true;
-      };
-      mimeApps = lib.mkIf (!isDarwin) {
+      mime.enable = true;
+      mimeApps = {
         enable = true;
         defaultApplications = {
           # Text files

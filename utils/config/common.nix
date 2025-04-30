@@ -1,13 +1,17 @@
 { pkgs, system, userName, hostName, nur, yazi, fancontrol-gui, ... }:
 {
   nix = {
+    optimise.automatic = true;
     gc = {
       automatic = true;
-      dates = "weekly";
+      interval = {
+        Weekday = 0;
+        Hour = 0;
+        Minute = 0;
+      };
       options = "--delete-older-than 30d";
     };
     settings = {
-      auto-optimise-store = true;
       builders-use-substitutes = true;
       extra-experimental-features = [ "flakes" "nix-command" ];
       substituters = [
