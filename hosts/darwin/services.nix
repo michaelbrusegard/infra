@@ -106,7 +106,7 @@
         super - q : yabai -m window --close
       '';
     };
-    yankyborders = {
+    jankyborders = {
       enable = true;
       hidpi = true;
       style = "round";
