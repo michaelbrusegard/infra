@@ -1,7 +1,7 @@
 { pkgs, userName, ... }: {
   launchd.user.agents = {
     kanata = {
-      command = "sudo ${pkgs.kanata}/bin/kanata --cfg ${./kanata.kbd} --nodelay";
+      command = "${pkgs.kanata}/bin/kanata --cfg ${./kanata.kbd} --nodelay";
       serviceConfig = {
         UserName = userName;
         RunAtLoad = true;
@@ -16,7 +16,7 @@
       };
     };
     podman = {
-      command = "${pkgs.podman}/bin/podman system service --time=0";
+      command = "${pkgs.podman}/bin/podman system service";
       serviceConfig = {
         UserName = userName;
         RunAtLoad = true;
@@ -28,4 +28,3 @@
     };
   };
 }
-
