@@ -1,4 +1,4 @@
-{ lib, config, pkgs, nix-darwin, hostName, isDarwin, ... }:
+{ lib, config, pkgs, hostName, isDarwin, ... }:
 let
   dev = pkgs.writeScriptBin "dev" ''
     #!${pkgs.zsh}/bin/zsh
