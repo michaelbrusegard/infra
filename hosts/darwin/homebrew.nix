@@ -19,7 +19,7 @@
       "legcord"
       "microsoft-outlook"
       "obsidian"
-      "proton-mail-bridge"
+      "proton-mail"
       "protonvpn"
       "proton-drive"
       "riscv-tools"
