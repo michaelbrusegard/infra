@@ -32,7 +32,7 @@
     sleep = {
       allowSleepByPowerButton = false;
       computer = "never";
-      hardDisk = "never";
+      harddisk = "never";
       display = 20;
     };
     restartAfterFreeze = true;
