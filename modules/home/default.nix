@@ -94,12 +94,12 @@ in
     ];
     shellAliases = {
       rebuild = if isDarwin then
-        "/run/current-system/sw/bin/darwin-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}"
+        "darwin-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}"
       else
-        "sudo ${pkgs.nixos-rebuild}/bin/nixos-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}";
-      update = "${pkgs.nix}/bin/nix flake update --flake $HOME/Developer/dotfiles";
-      update-secrets = "${pkgs.nix}/bin/nix flake update dotfiles-private --flake $HOME/Developer/dotfiles";
-      cleanup = "${pkgs.nix}/bin/nix-collect-garbage -d && ${pkgs.nix}/bin/nix store optimise";
+        "sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}";
+      update = "nix flake update --flake $HOME/Developer/dotfiles";
+      update-secrets = "nix flake update dotfiles-private --flake $HOME/Developer/dotfiles";
+      cleanup = "nix-collect-garbage -d && ${pkgs.nix}/bin/nix store optimise";
       reload = "source $HOME/.config/zsh/.zshrc";
       c = "clear";
       dl = "cd $HOME/Downloads";
@@ -112,10 +112,10 @@ in
       "....." = "cd ../../../..";
       "......" = "cd ../../../../..";
       "-" = "cd -";
-      f = "${pkgs.thefuck}/bin/fuck";
-      ls = "${pkgs.eza}/bin/eza";
-      cat = "${pkgs.bat}/bin/bat";
-      lzg = "${pkgs.lazygit}/bin/lazygit";
+      f = "fuck";
+      ls = "eza";
+      cat = "bat";
+      lzg = "lazygit";
     };
     sessionVariables = {
       GEMINI_API_KEY = config.secrets.apiKeys.gemini;

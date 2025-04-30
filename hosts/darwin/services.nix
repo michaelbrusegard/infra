@@ -49,7 +49,6 @@
     };
     skhd = {
       enable = true;
-      package = pkgs.skhd;
       skhdConfig = ''
         # Focus window
         alt - h : yabai -m window --focus west || yabai -m display --focus west
