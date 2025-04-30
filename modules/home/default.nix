@@ -94,7 +94,7 @@ in
     ];
     shellAliases = {
       rebuild = if isDarwin then
-        "sudo ${pkgs.darwin.darwin-rebuild}/bin/darwin-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}"
+        "sudo ${pkgs.darwin.darwin}/bin/darwin-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}"
       else
         "sudo ${pkgs.nixos-rebuild}/bin/nixos-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}";
       update = "${pkgs.nix}/bin/nix flake update --flake $HOME/Developer/dotfiles";
