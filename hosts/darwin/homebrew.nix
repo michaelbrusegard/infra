@@ -1,4 +1,4 @@
-{ userName, homebrew-core, homebrew-cask, homebrew-riscv, ... }: {
+{ userName, homebrew-core, homebrew-cask, ... }: {
   nix-homebrew = {
     enable = true;
     enableRosetta = true;
@@ -6,7 +6,6 @@
     taps = {
       "homebrew/homebrew-core" = homebrew-core;
       "homebrew/homebrew-cask" = homebrew-cask;
-      "riscv/riscv" = homebrew-riscv;
     };
     mutableTaps = false;
   };
@@ -24,9 +23,6 @@
       "protonvpn"
       "proton-drive"
       "safe-exam-browser"
-    ];
-    brews = [
-      "riscv-tools"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
