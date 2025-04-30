@@ -6,7 +6,6 @@ let
 
   commonModules = [
     ./config/common.nix
-    ../hosts/${hostName}
     ./config/home-manager.nix
   ];
 
@@ -23,11 +22,13 @@ in
     inputs.darwin.lib.darwinSystem (commonArgs // {
       modules = [
         ./config/darwin.nix
+        ../hosts/darwin
       ] ++ commonModules;
     })
   else
     inputs.nixpkgs.lib.nixosSystem (commonArgs // {
       modules = [
         ./config/nixos.nix
+        ../hosts/${hostName}
       ] ++ commonModules;
     })
