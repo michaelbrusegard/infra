@@ -19,6 +19,7 @@
       "legcord"
       "microsoft-outlook"
       "obsidian"
+      "proton-pass"
       "proton-mail"
       "protonvpn"
       "proton-drive"
