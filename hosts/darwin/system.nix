@@ -116,7 +116,7 @@
         NSNavPanelExpandedStateForSaveMode2 = true;
         NSTableViewDefaultSizeMode = 2;
         NSUseAnimatedFocusRing = false;
-        NSWindowResizeTime = 0;
+        NSWindowResizeTime = 0.0;
         NSWindowShouldDragOnGesture = true;
         PMPrintingExpandedStateForPrint = true;
         PMPrintingExpandedStateForPrint2 = true;
