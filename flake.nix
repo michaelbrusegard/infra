@@ -121,22 +121,18 @@
 
       darwinConfigurations =
         let
-          getDarwinHostName = if builtins.currentSystem == "aarch64-darwin" then
-            builtins.replaceStrings ["\n"] [""] (builtins.readFile (builtins.toFile "hostname" (builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname" ''
-              #!${nixpkgs.legacyPackages.aarch64-darwin.bash}/bin/bash
-              ${nixpkgs.legacyPackages.aarch64-darwin.systemconfig}/bin/scutil --get LocalHostName
-            '')))))
-          else "";
+          pkgs = nixpkgs.legacyPackages.aarch64-darwin;
+          hostname = builtins.replaceStrings ["\n"] [""] (builtins.readFile (builtins.toFile "hostname" (builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname" ''
+            #!${pkgs.bash}/bin/bash
+            ${pkgs.system-config}/bin/scutil --get LocalHostName
+          '')))));
         in
-        if getDarwinHostName != "" then
-          {
-            "${getDarwinHostName}" = mkSystem {
-              system = "aarch64-darwin";
-              userName = "michaelbrusegard";
-              hostName = getDarwinHostName;
-            };
-          }
-        else
-          { };
+        {
+          "${hostname}" = mkSystem {
+            system = "aarch64-darwin";
+            userName = "michaelbrusegard";
+            hostName = hostname;
+          };
+        };
     };
 }
