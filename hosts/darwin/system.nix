@@ -252,12 +252,18 @@
         mkdir -p /Users/${userName}/.logs
         chown ${userName} /Users/${userName}/.logs
       '';
+      podmanInit.text = ''
+        if ! ${pkgs.podman}/bin/podman machine list | grep -q 'podman-machine-default'; then
+          echo "Initializing Podman machine..."
+          ${pkgs.podman}/bin/podman machine init
+        fi
+      '';
       podmanDockerCompat.text = ''
           mkdir -p $HOME/.config/containers
           echo "[engine]
       compatible = true" > $HOME/.config/containers/containers.conf
           mkdir -p $HOME/bin
-          ln -sf ${pkgs.podman}/bin/podman ~/bin/docker
+          ln -sf ${pkgs.podman}/bin/podman $HOME/bin/docker
           mkdir -p $HOME/.local/share/containers/podman/machine
           mkdir -p $HOME/.docker
           ln -sf $HOME/.local/share/containers/podman/machine/podman.sock ~/.docker/docker.sock
