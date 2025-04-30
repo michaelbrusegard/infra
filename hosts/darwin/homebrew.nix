@@ -23,8 +23,10 @@
       "proton-mail"
       "protonvpn"
       "proton-drive"
-      "riscv-tools"
       "safe-exam-browser"
+    ];
+    brews = [
+      "riscv-tools"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
