@@ -121,10 +121,9 @@
 
       darwinConfigurations =
         let
-          pkgs = nixpkgs.legacyPackages.aarch64-darwin;
           hostname = builtins.replaceStrings ["\n"] [""] (builtins.readFile (builtins.toFile "hostname" (builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname" ''
-            #!${pkgs.bash}/bin/bash
-            ${pkgs.system-config}/bin/scutil --get LocalHostName
+            #!/bin/zsh
+            scutil --get LocalHostName
           '')))));
         in
         {
