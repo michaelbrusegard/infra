@@ -120,12 +120,20 @@
       };
 
       darwinConfigurations =
-        if builtins.getEnv "HOSTNAME" != "" then
+        let
+          getDarwinHostName = if builtins.currentSystem == "aarch64-darwin" then
+            builtins.replaceStrings ["\n"] [""] (builtins.readFile (builtins.toFile "hostname" (builtins.unsafeDiscardStringContext (builtins.readFile (builtins.toFile "get-hostname" ''
+              #!${nixpkgs.legacyPackages.aarch64-darwin.bash}/bin/bash
+              ${nixpkgs.legacyPackages.aarch64-darwin.systemconfig}/bin/scutil --get LocalHostName
+            '')))))
+          else "";
+        in
+        if getDarwinHostName != "" then
           {
-            "${builtins.getEnv "HOSTNAME"}" = mkSystem {
+            "${getDarwinHostName}" = mkSystem {
               system = "aarch64-darwin";
               userName = "michaelbrusegard";
-              hostName = builtins.getEnv "HOSTNAME";
+              hostName = getDarwinHostName;
             };
           }
         else
