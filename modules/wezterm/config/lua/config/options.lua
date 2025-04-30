@@ -42,13 +42,6 @@ local function options(config)
   -- Font size
   config.font_size = 12.5
 
-  -- Set window decorations
-  if wezterm.target_triple == "aarch64-apple-darwin" then
-    config.window_decorations = 'RESIZE'
-  else
-    config.window_decorations = 'NONE'
-  end
-
   -- Disable window padding
   config.window_padding = {
     left = 0,

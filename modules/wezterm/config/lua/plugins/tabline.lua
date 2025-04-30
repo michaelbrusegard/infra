@@ -46,5 +46,12 @@ return function(config)
     },
   })
   tabline.apply_to_config(config)
-  config.window_decorations = 'NONE'
+
+  -- Set window decorations
+  if wezterm.target_triple == "aarch64-apple-darwin" then
+    config.window_decorations = 'RESIZE'
+  else
+    config.window_decorations = 'NONE'
+  end
+
 end
