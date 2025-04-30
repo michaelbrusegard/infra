@@ -120,19 +120,12 @@
       };
 
       darwinConfigurations = {
-        default = let
+        default = mkSystem {
           system = "aarch64-darwin";
-          pkgs = nixpkgs.legacyPackages.${system};
-          hostname = nixpkgs.lib.removeSuffix "\n" (builtins.readFile (pkgs.runCommand "hostname" {
-            nativeBuildInputs = [ pkgs.darwin.system-tools ];
-          } ''
-            scutil --get LocalHostName > $out
-          ''));
-          _ = builtins.trace "Detected macOS hostname: ${hostname}" null;
-        in mkSystem {
-          inherit system;
           userName = "michaelbrusegard";
-          hostName = hostname;
+          hostName = nixpkgs.lib.removeSuffix "\n" (nixpkgs.legacyPackages.${"aarch64-darwin"}.runCommand "hostname" { } ''
+            scutil --get LocalHostName > $out
+          '');
         };
       };
     };
