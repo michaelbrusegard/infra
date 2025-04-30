@@ -6,6 +6,9 @@ local function options(config)
     PATH = '/usr/local/bin:/usr/bin:/bin:' .. (os.getenv('PATH') or ''),
   }
 
+  -- Disable update popup
+  config.show_update_window = false;
+
   -- Quit wezterm when all windows are closed
   config.quit_when_all_windows_are_closed = true
 
@@ -39,8 +42,12 @@ local function options(config)
   -- Font size
   config.font_size = 12.5
 
-  -- Disable window resize UI
-  config.window_decorations = 'NONE'
+  -- Set window decorations
+  if wezterm.target_triple == "x86_64-apple-darwin" then
+    config.window_decorations = 'RESIZE'
+  else
+    config.window_decorations = 'NONE'
+  end
 
   -- Disable window padding
   config.window_padding = {
