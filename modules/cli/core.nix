@@ -16,8 +16,6 @@ in {
       yq
       age
       sops
-    ] ++ lib.optionals isDarwin [
-      darwin.xcode
     ] ++ lib.optionals (!isDarwin) [
       psmisc
       coreutils

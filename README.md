@@ -43,6 +43,14 @@ System Integrity Protection (SIP) needs to be partially disabled for the [yabai]
 csrutil enable --without fs --without debug --without nvram
 ```
 
+### Command line tools
+
+Install Xcode command line tools:
+
+```sh
+xcode-select --install
+```
+
 ### Install Rosetta
 
 ```sh
