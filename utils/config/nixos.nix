@@ -1,6 +1,7 @@
-{ userName, home-manager, dotfiles-private, ... }:
+{ userName, home-manager, dotfiles-private, catppuccin, ... }:
 {
   imports = [
+    catppuccin.nixosModules.catppuccin
     dotfiles-private.nixosModules.secrets
     home-manager.nixosModules.default
   ];

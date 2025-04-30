@@ -1,8 +1,5 @@
-{ config, pkgs, system, userName, hostName, catppuccin, nur, yazi, fancontrol-gui, ... }:
+{ config, pkgs, system, userName, hostName, nur, yazi, fancontrol-gui, ... }:
 {
-  imports = [
-    catppuccin.nixosModules.catppuccin
-  ];
   nix = {
     gc = {
       automatic = true;
