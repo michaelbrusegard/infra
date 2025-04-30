@@ -25,7 +25,11 @@
       allowUnfree = true;
       allowBroken = true;
     };
-    overlays = [ nur.overlays.default yazi.overlays.default fancontrol-gui.overlays.default ];
+    overlays = [
+      nur.overlays.default
+      yazi.overlays.default
+      fancontrol-gui.overlays.default
+    ];
   };
   networking.hostName = hostName;
   time.timeZone = "Europe/Oslo";

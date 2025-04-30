@@ -1,7 +1,6 @@
 { pkgs, ... }: {
   services = {
     openssh.enable = true;
-    karabiner-elements.enable = true;
     yabai = {
       enable = true;
       enableScriptingAddition = true;
