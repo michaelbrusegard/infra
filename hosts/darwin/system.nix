@@ -101,7 +101,7 @@
         AppleShowScrollBars = "Always";
         AppleSpacesSwitchOnActivate = false;
         AppleTemperatureUnit = "Celsius";
-        AppleWindowTabbingMode = "manial";
+        AppleWindowTabbingMode = "manual";
         InitialKeyRepeat = 10;
         KeyRepeat = 1;
         NSAutomaticCapitalizationEnabled = false;
