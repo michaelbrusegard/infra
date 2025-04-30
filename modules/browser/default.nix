@@ -174,7 +174,9 @@ in {
           '';
         };
       };
-      chromium.enable = true;
+      chromium = lib.mkIf (!isDarwin) {
+        enable = true;
+      };
     };
     home = {
       file = lib.mkMerge [
