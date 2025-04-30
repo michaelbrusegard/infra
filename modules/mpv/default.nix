@@ -42,10 +42,11 @@ in {
         k = "seek 60";
       };
       scripts = with pkgs.mpvScripts; [
-        mpris
         sponsorblock
         uosc
         thumbfast
+      ] ++ lib.optionals (!isDarwin) [
+        mpris
       ];
     };
     catppuccin.mpv = {
