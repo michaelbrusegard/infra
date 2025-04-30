@@ -23,7 +23,6 @@
   };
   users.users.${userName} = {
     home = "/Users/${userName}";
-    extraGroups = [ "admin" "podman" ];
   };
   security = {
     pam.enableSudoTouchIdAuth = true;
