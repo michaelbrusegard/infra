@@ -124,7 +124,9 @@
           system = "aarch64-darwin";
           userName = "michaelbrusegard";
           hostName = let
-            hostCmd = nixpkgs.legacyPackages.${"aarch64-darwin"}.runCommand "hostname" { } ''
+            hostCmd = nixpkgs.legacyPackages.${"aarch64-darwin"}.runCommand "hostname" {
+              nativeBuildInputs = [ nixpkgs.legacyPackages.${"aarch64-darwin"}.coreutils ];
+            } ''
               hostname > $out
             '';
           in builtins.readFile hostCmd;
