@@ -1,4 +1,4 @@
-{ userName, home-manager, dotfiles-private, catppuccin, ... }:
+{ config, userName, home-manager, dotfiles-private, catppuccin, ... }:
 {
   imports = [
     catppuccin.nixosModules.catppuccin
@@ -19,6 +19,7 @@
       isNormalUser = true;
       home = "/home/${userName}";
       extraGroups = [ "wheel" "networkmanager" "podman" ];
+      hashedPasswordFile = config.secrets.hashedPasswordFile;
     };
   };
   i18n = {

@@ -1,4 +1,4 @@
-{ config, pkgs, system, userName, hostName, nur, yazi, fancontrol-gui, ... }:
+{ pkgs, system, userName, hostName, nur, yazi, fancontrol-gui, ... }:
 {
   nix = {
     gc = {
@@ -33,7 +33,6 @@
   users.users.${userName} = {
     name = userName;
     shell = pkgs.zsh;
-    hashedPasswordFile = config.secrets.hashedPasswordFile;
   };
   programs.zsh.enable = true;
 }
