@@ -26,7 +26,7 @@
       };
       dock = {
         autohide = true;
-        autohide-delay = 1000000;
+        autohide-delay = 1000000.0;
         autohide-time-modifier = 0;
         expose-animation-duration = 0;
         launchanim = false;
