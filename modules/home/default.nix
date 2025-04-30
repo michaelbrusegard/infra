@@ -118,6 +118,7 @@ in
       lzg = "lazygit";
     };
     sessionVariables = {
+      SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
       GEMINI_API_KEY = config.secrets.apiKeys.gemini;
     };
     sessionPath = [
