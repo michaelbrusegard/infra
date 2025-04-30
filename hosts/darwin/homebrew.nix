@@ -14,7 +14,7 @@
     caskArgs.no_quarantine = true;
     global.brewfile = true;
     casks = [
-      "element-desktop"
+      "element"
       "altserver"
       "legcord"
       "microsoft-outlook"
