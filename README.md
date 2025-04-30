@@ -10,7 +10,9 @@ git clone git@github.com:michaelbrusegard/dotfiles.git ~/Developer/dotfiles
 ```
 
 > [!NOTE]
-> I also maintain a private repository with encrypted secrets that is added into the repository as a Nix flake. Directly copying the dotfiles will therefore most likely fail since it will fail to fetch the private repository.
+> I also maintain a private repository with soft and hard secrets that is added into the repository as a Nix flake. Directly copying the dotfiles will therefore most likely fail since it will fail to fetch the private repository.
+
+Hard secrets are encrypted further inside the private repository using sops. To include them in the build, add the age keys to `~/.config/sops/age/keys.txt` and then do a rebuild.
 
 ## Reference links
 
