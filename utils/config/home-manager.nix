@@ -1,4 +1,4 @@
-{ pkgs, specialArgs, userName, catppuccin, dotfiles-private, ... }:
+{ pkgs, specialArgs, userName, catppuccin, dotfiles-private, mac-app-util, ... }:
 {
   home-manager = {
     useUserPackages = true;
@@ -8,6 +8,7 @@
       imports = [
         dotfiles-private.homeModules.secrets
         catppuccin.homeModules.catppuccin
+        mac-app-util.homeManagerModules.default
         ../../modules
         ../../users/${userName}
       ];

@@ -1,9 +1,10 @@
-{ userName, hostName, home-manager, nix-homebrew, dotfiles-private, ... }:
+{ userName, hostName, home-manager, mac-app-util, nix-homebrew, dotfiles-private, ... }:
 {
   imports = [
     dotfiles-private.darwinModules.secrets
     home-manager.darwinModules.default
     nix-homebrew.darwinModules.nix-homebrew
+    mac-app-util.darwinModules.default
   ];
   nix = {
     gc.interval = {

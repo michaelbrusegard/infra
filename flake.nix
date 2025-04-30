@@ -25,6 +25,10 @@
         nix-darwin.follows = "nix-darwin";
       };
     };
+    mac-app-util = {
+      url = "github:hraban/mac-app-util?shallow=1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     homebrew-core = {
       url = "github:homebrew/homebrew-core?shallow=1";
       flake = false;
