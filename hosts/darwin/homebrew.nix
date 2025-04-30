@@ -1,4 +1,4 @@
-{ userName, homebrew-core, homebrew-cask, ... }: {
+{ userName, homebrew-core, homebrew-cask, homebrew-riscv, ... }: {
   nix-homebrew = {
     enable = true;
     enableRosetta = true;
@@ -6,6 +6,7 @@
     taps = {
       "homebrew/homebrew-core" = homebrew-core;
       "homebrew/homebrew-cask" = homebrew-cask;
+      "riscv-software-src/riscv" = homebrew-riscv;
     };
     mutableTaps = false;
   };

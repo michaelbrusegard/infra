@@ -26,11 +26,15 @@
       };
     };
     homebrew-core = {
-      url = "github:homebrew/homebrew-core";
+      url = "github:homebrew/homebrew-core?shallow=1";
       flake = false;
     };
     homebrew-cask = {
-      url = "github:homebrew/homebrew-cask";
+      url = "github:homebrew/homebrew-cask?shallow=1";
+      flake = false;
+    };
+    homebrew-riscv = {
+      url = "github:riscv-software-src/homebrew-riscv?shallow=1";
       flake = false;
     };
     apple-emoji-linux = {
