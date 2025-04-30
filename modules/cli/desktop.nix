@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, isDarwin, ... }:
 
 let
   cfg = config.modules.cli.desktop;
@@ -14,10 +14,11 @@ in {
       p7zip
       chafa
       presenterm
-      testdisk
-      qmk
       yt-dlp
       openconnect
+    ] ++ lib.optionals (!isDarwin) [
+      testdisk
+      qmk
     ];
   };
 }

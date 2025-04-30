@@ -7,11 +7,6 @@ in {
 
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
-      coreutils
-      findutils
-      gnused
-      gnugrep
-      gnumake
       curl
       wget
       zstd
@@ -21,6 +16,13 @@ in {
       yq
       age
       sops
-    ] ++ lib.optional (!isDarwin) psmisc;
+    ] ++ lib.optionals (!isDarwin) [
+      psmisc
+      coreutils
+      findutils
+      gnused
+      gnugrep
+      gnumake
+    ];
   };
 }
