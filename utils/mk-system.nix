@@ -19,7 +19,7 @@ let
 
 in
   if isDarwin then
-    inputs.darwin.lib.darwinSystem (commonArgs // {
+    inputs.nix-darwin.lib.darwinSystem (commonArgs // {
       modules = [
         ./config/darwin.nix
         ../hosts/darwin

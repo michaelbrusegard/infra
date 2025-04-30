@@ -1,4 +1,4 @@
-{ lib, config, pkgs, hostName, isDarwin, ... }:
+{ lib, config, pkgs, nix-darwin, hostName, isDarwin, ... }:
 let
   dev = pkgs.writeScriptBin "dev" ''
     #!${pkgs.zsh}/bin/zsh
@@ -94,7 +94,7 @@ in
     ];
     shellAliases = {
       rebuild = if isDarwin then
-        "sudo darwin-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}"
+        "sudo ${nix-darwin}/bin/darwin-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}"
       else
         "sudo ${pkgs.nixos-rebuild}/bin/nixos-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}";
       update = "${pkgs.nix}/bin/nix flake update --flake $HOME/Developer/dotfiles";
