@@ -17,6 +17,7 @@ in {
       testdisk
       qmk
       yt-dlp
+      openconnect
     ];
   };
 }

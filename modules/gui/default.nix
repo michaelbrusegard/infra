@@ -13,7 +13,6 @@ in {
       zoom-us
       gimp3-with-plugins
       inkscape-with-extensions
-      openconnect
     ]
     ++ (lib.optionals isDarwin [
       raycast
