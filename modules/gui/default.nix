@@ -11,7 +11,6 @@ in {
       transmission_4
       slack
       zoom-us
-      gimp3-with-plugins
       inkscape-with-extensions
     ]
     ++ (lib.optionals isDarwin [
@@ -28,6 +27,7 @@ in {
       nix-proton.packages.${system}.proton-mail-desktop
       nix-proton.packages.${system}.proton-pass-desktop
       davinci-resolve
+      gimp3-with-plugins
       libreoffice-fresh
     ]);
   };
