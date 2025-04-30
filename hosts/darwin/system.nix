@@ -148,7 +148,7 @@
         reduceTransparency = true;
       };
       WindowManager = {
-        AppWindowGroupingBehavior = "One at a time";
+        AppWindowGroupingBehavior = false;
         EnableStandardClickToShowDesktop = false;
         EnableTiledWindowMargins = false;
         EnableTilingByEdgeDrag = false;
