@@ -111,7 +111,7 @@
       style = "round";
       active_color = "0xff89b4fa";
       inactive_color = "0xff45475a";
-      width = 6;
+      width = 6.0;
     };
   };
 }
