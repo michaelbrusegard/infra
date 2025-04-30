@@ -123,9 +123,7 @@
         default = mkSystem {
           system = "aarch64-darwin";
           userName = "michaelbrusegard";
-          hostName = nixpkgs.lib.removeSuffix "\n" (nixpkgs.legacyPackages.${"aarch64-darwin"}.runCommand "hostname" { } ''
-            scutil --get LocalHostName > $out
-          '');
+          hostName = nixpkgs.lib.removeSuffix ".local" (builtins.exec "hostname");
         };
       };
     };
