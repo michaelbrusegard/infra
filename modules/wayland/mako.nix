@@ -11,7 +11,7 @@ in {
       defaultTimeout = 5000;
       width = 360;
       height = 80;
-      font = "SF Pro Nerd Font 12";
+      font = "SFPro Nerd Font 12";
       margin = "16";
       padding = "16";
       backgroundColor = "#1e1e1edd";

@@ -22,7 +22,7 @@ in {
             text = "cmd[update:1000] LC_TIME=en_GB.UTF-8 date '+%A %d %B'";
             color = "rgba(255,255,255,0.8)";
             font_size = 24;
-            font_family = "SF Pro";
+            font_family = "SFPro";
             position = "0,580";
             halign = "center";
             valign = "center";
@@ -31,7 +31,7 @@ in {
             text = "cmd[update:1000] date '+%H:%M'";
             color = "rgba(255,255,255,0.8)";
             font_size = 96;
-            font_family = "SF Pro";
+            font_family = "SFPro";
             position = "0,500";
             halign = "center";
             valign = "center";
@@ -46,7 +46,7 @@ in {
             outer_color = "rgba(0,0,0,0)";
             inner_color = "rgba(78,78,78,0.8)";
             font_color = "rgba(222,222,222,1)";
-            font_family = "SF Pro";
+            font_family = "SFPro";
             placeholder_text = "Enter Password";
             fade_on_empty = false;
             position = "0,-580";

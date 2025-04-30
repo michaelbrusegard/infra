@@ -11,7 +11,7 @@
     regreet = {
       enable = true;
       font = {
-        name = "SF Pro";
+        name = "SFPro";
       };
       theme = {
         name = "Adwaita-dark";

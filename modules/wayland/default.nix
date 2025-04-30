@@ -25,7 +25,7 @@ in {
         name = "Papirus-Dark";
         package = pkgs.papirus-icon-theme;
       };
-      font.name = "SF Pro";
+      font.name = "SFPro";
     };
     qt = {
       enable = true;

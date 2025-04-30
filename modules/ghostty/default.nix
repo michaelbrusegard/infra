@@ -12,7 +12,7 @@ in {
       installBatSyntax = true;
       installVimSyntax = true;
       settings = {
-        font-family = "SF Mono Nerd Font";
+        font-family = "SFMono Nerd Font";
         font-size = 12.5;
         font-feature = ["-liga" "-dlig" "-calt"];
         unfocused-split-opacity = 0.9;

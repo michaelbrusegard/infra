@@ -96,7 +96,7 @@ in {
       };
       style = ''
         * {
-          font-family: "SF Pro Nerd Font";
+          font-family: "SFPro Nerd Font";
           font-size: 15px;
           font-weight: 500;
           letter-spacing: 0.04em;

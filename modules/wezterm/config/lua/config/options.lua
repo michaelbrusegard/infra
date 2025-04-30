@@ -31,7 +31,7 @@ local function options(config)
   -- Font style without ligatures
   config.font = require('wezterm').font_with_fallback({
     {
-      family = 'SF Mono Nerd Font',
+      family = 'SFMono Nerd Font',
       harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' },
     },
   })

@@ -12,9 +12,9 @@
     ];
     fontconfig = {
       defaultFonts = {
-        serif = [ "SF Pro" ];
-        sansSerif = [ "SF Pro" ];
-        monospace = [ "SF Mono" ];
+        serif = [ "SFPro" ];
+        sansSerif = [ "SFPro" ];
+        monospace = [ "SFMono" ];
         emoji = [ "Apple Color Emoji" ];
       };
       hinting.enable = true;

@@ -10,7 +10,7 @@ in {
       location = "center";
       yoffset = -240;
       terminal = "${pkgs.wezterm}/bin/wezterm";
-      font = "SF Pro Nerd Font 12";
+      font = "SFPro Nerd Font 12";
       theme = {
         "*" = {
           background-color = mkLiteral "transparent";
@@ -28,7 +28,7 @@ in {
         };
 
         "inputbar" = {
-          font = "SF Pro Nerd Font 18";
+          font = "SFPro Nerd Font 18";
           padding = mkLiteral "12px";
           spacing = mkLiteral "12px";
           children = map mkLiteral [ "icon-search" "entry" ];
