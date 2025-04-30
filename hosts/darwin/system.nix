@@ -141,7 +141,7 @@
         FirstClickThreshold = 0;
         SecondClickThreshold = 0;
         TrackpadRightClick = true;
-        TrackpadThreeFingerTapGesture = false;
+        TrackpadThreeFingerTapGesture = 0;
       };
       universalaccess = {
         reduceMotion = true;
