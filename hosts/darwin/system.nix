@@ -116,14 +116,14 @@
         NSTableViewDefaultSizeMode = 2;
         NSUseAnimatedFocusRing = false;
         NSWindowResizeTime = 0.0;
-        NSWindowShouldDragOnGesture = true;
+        NSWindowShouldDragOnGesture = false;
         PMPrintingExpandedStateForPrint = true;
         PMPrintingExpandedStateForPrint2 = true;
       };
       screencapture = {
         disable-shadow = true;
-        include-date = false;
-        location = "$HOME/Pictures/screenshots";
+        include-date = true;
+        location = "/Users/${userName}/Pictures/screenshots";
         show-thumbnail = false;
         type = "png";
       };
@@ -195,6 +195,7 @@
             "123" = { enabled = false; };
             "160" = { enabled = false; };
             "162" = { enabled = false; };
+            "163" = { enabled = false; };
             "98" = { enabled = false; };
             "99" = { enabled = false; };
             "65535" = { enabled = false; };
@@ -205,8 +206,6 @@
             "184" = { enabled = false; };
             "190" = { enabled = false; };
             "191" = { enabled = false; };
-            "162" = { enabled = false; };
-            "163" = { enabled = false; };
             "57" = { enabled = false; };
             "58" = { enabled = false; };
             "59" = { enabled = false; };
@@ -220,6 +219,26 @@
             "53" = { enabled = false; };
             "54" = { enabled = false; };
           };
+        };
+        "com.apple.driver.AppleBluetoothMultitouch.trackpad" = {
+          TrackpadThreeFingerHorizSwipeGesture = 0;
+          TrackpadThreeFingerVertSwipeGesture = 0;
+          TrackpadFourFingerHorizSwipeGesture = 0;
+          TrackpadFourFingerVertSwipeGesture = 0;
+          TrackpadTwoFingerFromRightEdgeSwipeGesture = 0;
+        };
+        "com.apple.AppleMultitouchTrackpad" = {
+          TrackpadThreeFingerHorizSwipeGesture = 0;
+          TrackpadThreeFingerVertSwipeGesture = 0;
+          TrackpadFourFingerHorizSwipeGesture = 0;
+          TrackpadFourFingerVertSwipeGesture = 0;
+          TrackpadTwoFingerFromRightEdgeSwipeGesture = 0;
+        };
+        "com.apple.dock" = {
+          showMissionControlGestureEnabled = false;
+          showAppExposeGestureEnabled = false;
+          showDesktopGestureEnabled = false;
+          showLaunchpadGestureEnabled = false;
         };
         "com.apple.Safari" = {
           AlwaysRestoreSessionAtLaunch = false;
@@ -293,6 +312,7 @@
     startup.chime = false;
     activationScripts.postActivation.text = ''
       yabai --load-sa
+      mkdir -p /Users/${userName}/Pictures/screenshots
       osascript -e '
       tell application "System Events"
         set desktopCount to count of desktops
