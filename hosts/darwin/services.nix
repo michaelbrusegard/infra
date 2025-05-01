@@ -97,7 +97,6 @@
         # System
         alt - return : wezterm start --always-new-process
         alt + shift - return : wezterm start --always-new-process -e sh -c 'yazi'
-        cmd - q : yabai -m window --close
       '';
     };
     jankyborders = {
