@@ -78,7 +78,7 @@
       menuExtraClock = {
         Show24Hour = true;
         ShowDate = 1;
-        ShowDayOfMonth = false;
+        ShowDayOfWeek = false;
       };
       NSGlobalDomain = {
         "com.apple.mouse.tapBehavior" = 1;
