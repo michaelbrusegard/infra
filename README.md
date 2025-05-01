@@ -45,6 +45,14 @@ System Integrity Protection (SIP) needs to be partially disabled for the [yabai]
 csrutil enable --without fs --without debug --without nvram
 ```
 
+After rebooting run this:
+
+```sh
+sudo nvram boot-args=-arm64e_preview_abi
+```
+
+Then reboot again.
+
 ### Command line tools
 
 Install Xcode command line tools:
