@@ -17,6 +17,24 @@
       };
     };
     user.agents = {
+      raycast = {
+        command = "open -a Raycast";
+        serviceConfig = {
+          UserName = userName;
+          RunAtLoad = true;
+          KeepAlive = false;
+          ProcessType = "Interactive";
+        };
+      };
+      ice = {
+        command = "open -a Ice";
+        serviceConfig = {
+          UserName = userName;
+          RunAtLoad = true;
+          KeepAlive = false;
+          ProcessType = "Interactive";
+        };
+      };
       podman = {
         command = "${pkgs.podman}/bin/podman machine start";
         serviceConfig = {
