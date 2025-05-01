@@ -115,6 +115,8 @@ in
       f = "fuck";
       ls = "eza";
       lzg = "lazygit";
+      vi = "nvim";
+      vim = "nvim";
     };
     sessionVariables = {
       SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
