@@ -51,7 +51,7 @@ in {
         pictures = "$HOME/Pictures";
         publicShare = "$HOME/Public";
         templates = "$HOME/Templates";
-        videos = "$HOME/Videos";
+        videos = "$HOME/Movies";
         extraConfig = {
           XDG_PROJECTS_DIR = "$HOME/Developer";
           XDG_SCREENSHOTS_DIR = "$HOME/Pictures/screenshots";
