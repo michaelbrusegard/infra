@@ -114,10 +114,6 @@ in {
           # Toggle Floating Window
           "mod5, 0, togglefloating,"
 
-          # Change between dwindle and master layout for space
-          "mod5, comma, exec, ${pkgs.hyprland}/bin/hyprctl keyword general:layout dwindle"
-          "mod5, slash, exec, ${pkgs.hyprland}/bin/hyprctl keyword general:layout master"
-
           # System
           "mod5, return, exec, ${pkgs.wezterm}/bin/wezterm start --always-new-process"
           "mod5 shift, return, exec, ${pkgs.wezterm}/bin/wezterm start --always-new-process -e ${pkgs.bash}/bin/sh -c '${pkgs.yazi}/bin/yazi'"

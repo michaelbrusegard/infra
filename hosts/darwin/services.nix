@@ -94,15 +94,11 @@
         # Toggle Floating Window
         alt - 0 : yabai -m window --toggle float
 
-        # Change between tiled and stacked layout for space
-        alt - comma : yabai -m space --layout bsp
-        alt - slash : yabai -m space --layout stack
-
         # System
         alt - return : wezterm start --always-new-process
         alt + shift - return : wezterm start --always-new-process -e sh -c 'yazi'
-        super - space : open -a "Raycast"
-        super - q : yabai -m window --close
+        cmd - space : open -a "Raycast"
+        cmd - q : yabai -m window --close
       '';
     };
     jankyborders = {
