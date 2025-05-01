@@ -247,10 +247,8 @@
       nonUS.remapTilde = true;
     };
     startup.chime = false;
-    activationScripts = {
-      postActivation.text = ''
-        yabai --load-sa
-      '';
-    };
+    activationScripts.postActivation.text = ''
+      yabai --load-sa
+    '';
   };
 }

@@ -9,9 +9,9 @@
         focus_follows_mouse = "off";
         mouse_modifier = "alt";
         top_padding = 6;
-        bottom_padding = 12;
-        left_padding = 12;
-        right_padding = 12;
+        bottom_padding = 6;
+        left_padding = 6;
+        right_padding = 6;
         window_gap = 6;
         insert_feedback_color = "0xff89b4fa";
       };
