@@ -16,7 +16,7 @@ in {
           modules-right = ["hyprland/workspaces" "pulseaudio" "network" "clock"];
 
           "clock" = {
-            format = " {:%d %b %H:%M}";
+            format = " {:%a %-d %b %H:%M}";
             tooltip-format = "{:%A, %B %d, %Y\nWeek %V\n%H:%M:%S}";
           };
 
