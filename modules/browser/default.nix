@@ -185,17 +185,26 @@ in {
           ".mozilla/firefox/${userName}/zen-themes.json".source = ./config/zen-themes.json;
         })
         (lib.mkIf isDarwin {
-          "Library/Application Support/Zen Browser/Profiles/default/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
-          "Library/Application Support/Zen Browser/Profiles/default/zen-themes.json".source = ./config/zen-themes.json;
+          "Library/Application Support/Firefox/Profiles/${userName}/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
+          "Library/Application Support/Firefox/Profiles/${userName}/zen-themes.json".source = ./config/zen-themes.json;
         })
       ];
-      activation = lib.mkIf (!isDarwin) {
-        linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
-          $DRY_RUN_CMD mkdir -p $HOME/.zen
-          $DRY_RUN_CMD rm -rf $HOME/.zen/*
-          $DRY_RUN_CMD ln -sf $HOME/.mozilla/firefox/* $HOME/.zen/
-        '';
-      };
+      activation = lib.mkMerge [
+        (lib.mkIf (!isDarwin) {
+          linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
+            $DRY_RUN_CMD mkdir -p $HOME/.zen
+            $DRY_RUN_CMD rm -rf $HOME/.zen/*
+            $DRY_RUN_CMD ln -sf $HOME/.mozilla/firefox/* $HOME/.zen/
+          '';
+        })
+        (lib.mkIf isDarwin {
+          linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
+            $DRY_RUN_CMD mkdir -p "$HOME/Library/Application Support/zen"
+            $DRY_RUN_CMD rm -rf "$HOME/Library/Application Support/zen"/*
+            $DRY_RUN_CMD ln -sf "$HOME/Library/Application Support/Firefox"/* "$HOME/Library/Application Support/zen"/
+          '';
+        })
+      ];
     };
   };
 }
