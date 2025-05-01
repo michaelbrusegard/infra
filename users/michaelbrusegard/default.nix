@@ -4,7 +4,7 @@
     cli.core.enable = true;
     cli.desktop.enable = true;
     dev.enable = true;
-    ghostty.enable = !isDarwin;
+    ghostty.enable = true;
     git.enable = true;
     gui.enable = true;
     mpv.enable = true;

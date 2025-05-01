@@ -24,6 +24,7 @@
       "protonvpn"
       "proton-drive"
       "safe-exam-browser"
+      "ghostty"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
