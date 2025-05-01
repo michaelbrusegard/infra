@@ -144,7 +144,7 @@
       };
       universalaccess = {
         reduceMotion = true;
-        reduceTransparency = true;
+        reduceTransparency = false;
       };
       WindowManager = {
         AppWindowGroupingBehavior = false;
@@ -249,6 +249,15 @@
     startup.chime = false;
     activationScripts.postActivation.text = ''
       yabai --load-sa
+      osascript -e '
+      tell application "System Events"
+        set desktopCount to count of desktops
+        repeat with i from 1 to desktopCount
+          tell desktop i
+            set picture to "/Users/${userName}/Developer/dotfiles/assets/wallpapers/twilight-peaks.png"
+          end tell
+        end repeat
+      end tell'
     '';
   };
 }
