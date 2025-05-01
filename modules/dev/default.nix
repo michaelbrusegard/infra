@@ -37,7 +37,8 @@ in {
         # Lua
         lua
         luarocks
-      ] ++ lib.optionals (!isDarwin) [
+
+        # C
         clang
         cmake
         lldb

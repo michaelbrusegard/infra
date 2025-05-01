@@ -16,13 +16,13 @@ in {
       yq
       age
       sops
-    ] ++ lib.optionals (!isDarwin) [
-      psmisc
       coreutils
       findutils
       gnused
       gnugrep
       gnumake
+    ] ++ lib.optionals (!isDarwin) [
+      psmisc
     ];
   };
 }

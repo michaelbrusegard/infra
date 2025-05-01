@@ -16,7 +16,6 @@ in {
       presenterm
       yt-dlp
       openconnect
-    ] ++ lib.optionals (!isDarwin) [
       testdisk
       qmk
     ];
