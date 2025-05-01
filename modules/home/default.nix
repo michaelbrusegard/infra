@@ -114,7 +114,6 @@ in
       "-" = "cd -";
       f = "fuck";
       ls = "eza";
-      cat = "bat";
       lzg = "lazygit";
     };
     sessionVariables = {
