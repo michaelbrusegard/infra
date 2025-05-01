@@ -178,33 +178,25 @@ in {
         enable = true;
       };
     };
-    home = {
-      file = lib.mkMerge [
-        (lib.mkIf (!isDarwin) {
-          ".mozilla/firefox/${userName}/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
-          ".mozilla/firefox/${userName}/zen-themes.json".source = ./config/zen-themes.json;
-        })
-        (lib.mkIf isDarwin {
-          "Library/Application Support/Firefox/Profiles/${userName}/zen-keyboard-shortcuts.json".source = ./config/zen-keyboard-shortcuts.json;
-          "Library/Application Support/Firefox/Profiles/${userName}/zen-themes.json".source = ./config/zen-themes.json;
-        })
-      ];
-      activation = lib.mkMerge [
-        (lib.mkIf (!isDarwin) {
-          linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
-            $DRY_RUN_CMD mkdir -p $HOME/.zen
-            $DRY_RUN_CMD rm -rf $HOME/.zen/*
-            $DRY_RUN_CMD ln -sf $HOME/.mozilla/firefox/* $HOME/.zen/
-          '';
-        })
-        (lib.mkIf isDarwin {
-          linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
-            $DRY_RUN_CMD mkdir -p "$HOME/Library/Application Support/zen"
-            $DRY_RUN_CMD rm -rf "$HOME/Library/Application Support/zen"/*
-            $DRY_RUN_CMD ln -sf "$HOME/Library/Application Support/Firefox"/* "$HOME/Library/Application Support/zen"/
-          '';
-        })
-      ];
-    };
+    home.activation = lib.mkMerge [
+      (lib.mkIf (!isDarwin) {
+        linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
+          # $DRY_RUN_CMD cp ${./config/zen-keyboard-shortcuts.json} $HOME/.mozilla/firefox/${userName}/zen-keyboard-shortcuts.json
+          $DRY_RUN_CMD cp ${./config/zen-themes.json} $HOME/.mozilla/firefox/${userName}/zen-themes.json
+          $DRY_RUN_CMD mkdir -p $HOME/.zen
+          $DRY_RUN_CMD rm -rf $HOME/.zen/*
+          $DRY_RUN_CMD ln -sf $HOME/.mozilla/firefox/* $HOME/.zen/
+        '';
+      })
+      (lib.mkIf isDarwin {
+        linkZenProfile = lib.hm.dag.entryAfter ["writeBoundary"] ''
+          # $DRY_RUN_CMD cp ${./config/zen-keyboard-shortcuts.json} "$HOME/Library/Application Support/Firefox/Profiles/${userName}/zen-keyboard-shortcuts.json"
+          $DRY_RUN_CMD cp ${./config/zen-themes.json} "$HOME/Library/Application Support/Firefox/Profiles/${userName}/zen-themes.json"
+          $DRY_RUN_CMD mkdir -p "$HOME/Library/Application Support/zen"
+          $DRY_RUN_CMD rm -rf "$HOME/Library/Application Support/zen"/*
+          $DRY_RUN_CMD ln -sf "$HOME/Library/Application Support/Firefox"/* "$HOME/Library/Application Support/zen"/
+        '';
+      })
+    ];
   };
 }
