@@ -24,13 +24,15 @@ Hard secrets are encrypted further inside the private repository using sops. To 
 
 ### Screenshots
 
-![2025-04-26_15-07-56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
+![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
 ## Darwin systems (Nix-darwin)
 
 First install MacOS normally by following the default installation guide. Then go through all the sections below for the initial setup.
 
 ### Screenshots
+
+![Screenshot 2025-05-02 at 15 03 38](https://github.com/user-attachments/assets/381c8dce-f0d0-4a91-b38f-544c30a3209a)
 
 ### Disabling SIP
 
