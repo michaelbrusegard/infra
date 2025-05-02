@@ -46,7 +46,7 @@ in {
       sessionVariables = {
         NODE_COMPILE_CACHE = "$HOME/.cache/nodejs-compile-cache";
       };
-      activation = {
+      activation = lib.mkIf isDarwin {
         initPodmanMachine = lib.hm.dag.entryAfter ["writeBoundary"] ''
           if ! ${pkgs.podman}/bin/podman machine inspect podman-machine-default >/dev/null 2>&1; then
             echo "Initializing default Podman machine..."
