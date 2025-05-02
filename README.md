@@ -24,13 +24,15 @@ Hard secrets are encrypted further inside the private repository using sops. To 
 
 ### Screenshots
 
-![2025-04-26_15-07-56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
+![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
 ## Darwin systems (Nix-darwin)
 
 First install MacOS normally by following the default installation guide. Then go through all the sections below for the initial setup.
 
 ### Screenshots
+
+![Screenshot 2025-05-02 at 15 03 38](https://github.com/user-attachments/assets/381c8dce-f0d0-4a91-b38f-544c30a3209a)
 
 ### Disabling SIP
 
@@ -96,7 +98,7 @@ Download the [Karabiner-DriverKit-VirtualHIDDevice](https://github.com/pqrs-org/
 
 Also make sure that `/run/current-system/sw/bin/kanata` is added as an allowed application under Security & Privacy -> Input Monitoring.
 
-Lastly, go to Keyboard -> Keyboard Shortcuts... -> Modifier Keys, and make sure the Karabiner DriverKit VirtualHIDDevice is selected for the keyboard you are using.
+Lastly, go to Keyboard -> Keyboard Shortcuts... -> Modifier Keys, and make sure the Karabiner DriverKit VirtualHIDDevice is selected as the keyboard.
 
 The nix configuration should handle the rest, for any problems check out [this discussion](https://github.com/jtroo/kanata/discussions/1537) in the kanata repository.
 
