@@ -105,7 +105,7 @@ in {
             "zen.tabs.show-newtab-vertical" = false;
             "zen.theme.color-prefs.amoled" = true;
             "zen.theme.accent-color" = 	colors.mocha.blue;
-            "zen.theme.color-prefs.use-workspace-colors" = false;
+            "zen.theme.color-prefs.use-workspace-colors" = true;
             "zen.themes.updated-value-observer" = false;
             "zen.splitView.change-on-hover" = true;
             "zen.glance.enabled" = false;
@@ -118,7 +118,7 @@ in {
             "extensions.activeThemeID" = "firefox-compact-dark@mozilla.org";
             "browser.theme.content-theme" = 0;
             "browser.theme.toolbar-theme" = 0;
-            "font.name.serif.x-western" = "SFPro";
+            "font.name.serif.x-western" = "SF Pro";
 
             # Language
             "intl.accept_languages" = "en,no";
