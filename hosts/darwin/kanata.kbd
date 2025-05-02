@@ -4,17 +4,16 @@
 
 (defsrc
   f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
-  caps a s d f j k l ;
+  a s d f j k l ;
   fn
 )
 
 (defvar
-  tap-time 150
+  tap-time 200
   hold-time 200
 )
 
 (defalias
-  escctrl (tap-hold 100 100 esc lctl)
   a (tap-hold $tap-time $hold-time a lctl)
   s (tap-hold $tap-time $hold-time s lalt)
   d (tap-hold $tap-time $hold-time d lsft)
@@ -28,12 +27,12 @@
 
 (deflayer base
   brdn  brup  _    _    _    _   prev  pp  next  mute  vold  volu
-  @escctrl @a @s @d @f @j @k @l @;
+  @a @s @d @f @j @k @l @;
   @fnl
 )
 
 (deflayer fn
   f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
-  @escctrl _ _ _ _ _ _ _ _
+  _ _ _ _ _ _ _ _
   fn
 )

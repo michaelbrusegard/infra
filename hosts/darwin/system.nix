@@ -306,6 +306,7 @@
     };
     keyboard = {
       enableKeyMapping = true;
+      remapCapsLockToEscape = true;
       nonUS.remapTilde = true;
     };
     startup.chime = false;

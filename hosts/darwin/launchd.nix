@@ -2,13 +2,8 @@
   launchd = {
     daemons = {
       kanata = {
-        command = "${pkgs.kanata}/bin/kanata";
+        command = "${pkgs.kanata}/bin/kanata -c ${./kanata.kbd}";
         serviceConfig = {
-          ProgramArguments = [
-            "${pkgs.kanata}/bin/kanata"
-            "-c"
-            "${./kanata.kbd}"
-          ];
           RunAtLoad = true;
           KeepAlive = true;
           StandardErrorPath = "/Library/Logs/Kanata/kanata.err.log";
