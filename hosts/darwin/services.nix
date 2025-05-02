@@ -24,10 +24,10 @@
         yabai -m rule --add app="^(Calculator|System Settings|Archive Utility)$" manage=off
         yabai -m rule --add app="^(Safari|Zen Browser)$" space=2
         yabai -m rule --add app="^(Proton Mail|Proton Pass)$" space=3
-        yabai -m rule --add app="^(Notes|Obsidian)$" space=4
+        yabai -m rule --add app="^(Notes|Obsidian|LibreOffice)$" space=4
         yabai -m rule --add app="^(Messages|FaceTime|Element|Messenger|Legcord|Slack)$" space=5
         yabai -m rule --add app="^(Music|TV|Photos)$" space=6
-        yabai -m rule --add app="^(Affinity Photo 2|Affinity Designer 2|Affinity Publisher 2)$" space=7
+        yabai -m rule --add app="^(Inkscape|Gimp|DaVinci Resolve)$" space=7
 
         # Make sure there are 9 spaces
         current_spaces=$(yabai -m query --spaces | ${pkgs.jq}/bin/jq length)
