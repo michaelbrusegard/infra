@@ -195,7 +195,6 @@
             "123" = { enabled = false; };
             "160" = { enabled = false; };
             "162" = { enabled = false; };
-            "163" = { enabled = false; };
             "98" = { enabled = false; };
             "99" = { enabled = false; };
             "65535" = { enabled = false; };
@@ -312,7 +311,6 @@
     startup.chime = false;
     activationScripts.postActivation.text = ''
       yabai --load-sa
-      mkdir -p /Users/${userName}/Pictures/screenshots
       osascript -e '
       tell application "System Events"
         set desktopCount to count of desktops

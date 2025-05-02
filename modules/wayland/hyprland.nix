@@ -122,8 +122,8 @@ in {
           "super, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive"
           "super shift, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive; WID=$(${pkgs.jq}/bin/jq -r .class <<< $(${pkgs.hyprland}/bin/hyprctl activewindow -j)); ${pkgs.coreutils}/bin/pkill -KILL -f \"$WID\""
           "super ctrl, q, exec, loginctl lock-session"
-          "super shift, 3, exec, ${pkgs.grim}/bin/grim -t png -o $(${pkgs.hyprland}/bin/hyprctl monitors -j | ${pkgs.jq}/bin/jq -r '\''.[] | select(.focused) | .name'\'') \"$HOME/Pictures/screenshots/Screenshot $(${pkgs.coreutils}/bin/date +'\''%Y-%m-%d_%H-%M-%S'\'').png\""
-          "super shift, 4, exec, ${pkgs.grim}/bin/grim -t png -g \"$(${pkgs.slurp}/bin/slurp -d -w 0)\" \"$HOME/Pictures/screenshots/Screenshot $(${pkgs.coreutils}/bin/date +'\''%Y-%m-%d_%H-%M-%S'\'').png\""
+          "super shift, 3, exec, ${pkgs.grim}/bin/grim -t png -o $(${pkgs.hyprland}/bin/hyprctl monitors -j | ${pkgs.jq}/bin/jq -r '\''.[] | select(.focused) | .name'\'') \"$HOME/Pictures/screenshots/Screenshot $(${pkgs.coreutils}/bin/date +'\''%Y-%m-%d at %H.%M.%S'\'').png\""
+          "super shift, 4, exec, ${pkgs.grim}/bin/grim -t png -g \"$(${pkgs.slurp}/bin/slurp -d -w 0)\" \"$HOME/Pictures/screenshots/Screenshot $(${pkgs.coreutils}/bin/date +'\''%Y-%m-%d at %H.%M.%S'\'').png\""
         ];
         binde = [
           # Resize window

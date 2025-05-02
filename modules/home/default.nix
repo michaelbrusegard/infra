@@ -126,5 +126,10 @@ in
       "$HOME/.local/bin"
       "$HOME/bin"
     ];
+    activation = lib.mkIf isDarwin {
+      createScreenshotsDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        $DRY_RUN_CMD mkdir -p "$HOME/Pictures/screenshots"
+      '';
+    };
   };
 }
