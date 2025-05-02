@@ -48,14 +48,6 @@
           ProcessType = "Interactive";
         };
       };
-      podman = {
-        command = "${pkgs.podman}/bin/podman machine start";
-        serviceConfig = {
-          UserName = userName;
-          RunAtLoad = true;
-          ProcessType = "Background";
-        };
-      };
     };
   };
 }
