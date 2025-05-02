@@ -23,6 +23,10 @@ in {
         languagePacks = [ "en-GB" ];
         policies = {
           DefaultDownloadDirectory = "$HOME/Downloads";
+          SearchEngines = {
+            Default = "DuckDuckGo";
+            PreventInstalls = true;
+          };
         };
         profiles.${userName} = {
           isDefault = true;
@@ -133,29 +137,6 @@ in {
                 "block-annoyances"
                 "adguard-social"
               ];
-            };
-          };
-
-          search = {
-            default = "search";
-            force = true;
-            order = ["search"];
-            engines = {
-              "search" = {
-                urls = [{
-                  template = "https://duckduckgo.com/?q={searchTerms}";
-                }];
-                icon = "https://duckduckgo.com/favicon.ico";
-                updateInterval = 24 * 60 * 60 * 1000;
-                definedAliases = ["@d"];
-              };
-              "google".metaData.remove = true;
-              "bing".metaData.remove = true;
-              "amazondotcom-us".metaData.remove = true;
-              "ddg".metaData.remove = true;
-              "ebay".metaData.remove = true;
-              "wikipedia".metaData.remove = true;
-              "youtube".metaData.remove = true;
             };
           };
           userChrome = ''
