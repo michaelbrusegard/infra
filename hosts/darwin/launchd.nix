@@ -37,7 +37,6 @@
         serviceConfig = {
           UserName = userName;
           RunAtLoad = true;
-          KeepAlive = false;
           ProcessType = "Interactive";
         };
       };
@@ -46,7 +45,6 @@
         serviceConfig = {
           UserName = userName;
           RunAtLoad = true;
-          KeepAlive = false;
           ProcessType = "Interactive";
         };
       };
@@ -55,7 +53,6 @@
         serviceConfig = {
           UserName = userName;
           RunAtLoad = true;
-          KeepAlive = true;
           ProcessType = "Background";
         };
       };
