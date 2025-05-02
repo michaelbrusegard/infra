@@ -25,6 +25,7 @@
       "proton-drive"
       "safe-exam-browser"
       "ghostty"
+      "chromium"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
