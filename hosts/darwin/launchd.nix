@@ -8,9 +8,6 @@
             "${pkgs.kanata}/bin/kanata"
             "-c"
             "${./kanata.kbd}"
-            "--port"
-            "10000"
-            "--debug"
           ];
           RunAtLoad = true;
           KeepAlive = true;
