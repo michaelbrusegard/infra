@@ -54,7 +54,7 @@
         CreateDesktop = false;
         FXDefaultSearchScope = "SCcf";
         FXEnableExtensionChangeWarning = false;
-        FXPreferredViewStyle = "NLsv";
+        FXPreferredViewStyle = "Nlsv";
         FXRemoveOldTrashItems = true;
         NewWindowTarget = "Desktop";
         ShowExternalHardDrivesOnDesktop = false;

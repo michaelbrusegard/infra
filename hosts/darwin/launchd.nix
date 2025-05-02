@@ -7,7 +7,7 @@
           ProgramArguments = [
             "${pkgs.kanata}/bin/kanata"
             "-c"
-            "${./kanata.cfg}"
+            "${./kanata.kbd}"
             "--port"
             "10000"
             "--debug"
