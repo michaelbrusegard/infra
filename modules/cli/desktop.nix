@@ -18,6 +18,7 @@ in {
       openconnect
       testdisk
       qmk
+      cmatrix
     ];
   };
 }
