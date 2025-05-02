@@ -27,20 +27,10 @@ in {
         profiles.${userName} = {
           isDefault = true;
           containers = {
-            personal = {
-              color = "red";
-              icon = "fingerprint";
-              id = 0;
-            };
-            development = {
-              color = "blue";
-              icon = "chill";
-              id = 1;
-            };
             work = {
               color = "orange";
               icon = "briefcase";
-              id = 2;
+              id = 0;
             };
           };
           containersForce = true;
