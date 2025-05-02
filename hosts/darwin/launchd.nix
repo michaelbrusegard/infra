@@ -2,17 +2,40 @@
   launchd = {
     daemons = {
       kanata = {
-        command = "${pkgs.kanata}/bin/kanata --cfg ${./kanata.kbd} --nodelay";
+        command = "${pkgs.kanata}/bin/kanata";
         serviceConfig = {
+          ProgramArguments = [
+            "${pkgs.kanata}/bin/kanata"
+            "-c"
+            "${./kanata.cfg}"
+            "--port"
+            "10000"
+            "--debug"
+          ];
           RunAtLoad = true;
-          KeepAlive = {
-            SuccessfulExit = false;
-            Crashed = true;
-          };
-          StandardErrorPath = "/Users/${userName}/.logs/kanata-error.log";
-          StandardOutPath = "/Users/${userName}/.logs/kanata-out.log";
-          ProcessType = "Interactive";
-          Nice = -30;
+          KeepAlive = true;
+          StandardErrorPath = "/Library/Logs/Kanata/kanata.err.log";
+          StandardOutPath = "/Library/Logs/Kanata/kanata.out.log";
+        };
+      };
+      karabiner-vhiddaemon = {
+        command = "/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice/Applications/Karabiner-VirtualHIDDevice-Daemon.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Daemon";
+        serviceConfig = {
+          ProgramArguments = [
+            "/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice/Applications/Karabiner-VirtualHIDDevice-Daemon.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Daemon"
+          ];
+          RunAtLoad = true;
+          KeepAlive = true;
+        };
+      };
+      karabiner-vhidmanager = {
+        command = "/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager activate";
+        serviceConfig = {
+          ProgramArguments = [
+            "/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager"
+            "activate"
+          ];
+          RunAtLoad = true;
         };
       };
     };
@@ -41,8 +64,6 @@
           UserName = userName;
           RunAtLoad = true;
           KeepAlive = true;
-          StandardErrorPath = "/Users/${userName}/.logs/podman-error.log";
-          StandardOutPath = "/Users/${userName}/.logs/podman-out.log";
           ProcessType = "Background";
         };
       };
