@@ -65,10 +65,6 @@ in {
             echo "Error: Could not determine Podman socket path. Is the machine running?"
           fi
         '';
-        createDockerComposeSymlink = lib.hm.dag.entryAfter ["writeBoundary"] ''
-          $DRY_RUN_CMD mkdir -p $HOME/.local/bin
-          $DRY_RUN_CMD ln -sf ${pkgs.podman-compose}/bin/podman-compose $HOME/.local/bin/docker-compose
-        '';
       };
     };
   };
