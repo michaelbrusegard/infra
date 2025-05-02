@@ -26,9 +26,11 @@ Hard secrets are encrypted further inside the private repository using sops. To 
 
 ![2025-04-26_15-07-56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
-## Darwin systems
+## Darwin systems (Nix-darwin)
 
-First install MacOS normally by following the instructions on the screen.
+First install MacOS normally by following the default installation guide. Then go through all the sections below for the initial setup.
+
+### Screenshots
 
 ### Disabling SIP
 
@@ -97,8 +99,6 @@ Also make sure that `/run/current-system/sw/bin/kanata` is added as an allowed a
 Lastly, go to Keyboard -> Keyboard Shortcuts... -> Modifier Keys, and make sure the Karabiner DriverKit VirtualHIDDevice is selected for the keyboard you are using.
 
 The nix configuration should handle the rest, for any problems check out [this discussion](https://github.com/jtroo/kanata/discussions/1537) in the kanata repository.
-
-### Screenshots
 
 ## Espresso (Ubuntu Home Server)
 
