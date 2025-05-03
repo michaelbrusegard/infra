@@ -278,6 +278,8 @@
           skip-verify = true;
           skip-verify-locked = true;
           skip-verify-remote = true;
+          auto-mount-removable = false;
+          auto-mount-notifications = false;
         };
         "com.apple.NetworkBrowser" = {
           BrowseAllInterfaces = true;
