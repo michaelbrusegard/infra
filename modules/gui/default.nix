@@ -11,13 +11,11 @@ in {
       transmission_4
       slack
       zoom-us
-      inkscape-with-extensions
     ]
     ++ (lib.optionals isDarwin [
       raycast
       ice-bar
       libreoffice-bin
-      gimp-with-plugins
     ])
     ++ (lib.optionals (!isDarwin) [
       easyeffects
@@ -29,6 +27,7 @@ in {
       element-desktop
       legcord
       davinci-resolve
+      inkscape-with-extensions
       gimp3-with-plugins
     ]);
   };

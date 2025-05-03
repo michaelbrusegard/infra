@@ -26,6 +26,8 @@
       "safe-exam-browser"
       "ghostty"
       "chromium"
+      "inkscape"
+      "gimp"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
