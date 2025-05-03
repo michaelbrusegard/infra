@@ -15,7 +15,6 @@ in {
     ++ (lib.optionals isDarwin [
       raycast
       ice-bar
-      libreoffice-bin
     ])
     ++ (lib.optionals (!isDarwin) [
       easyeffects
@@ -23,7 +22,6 @@ in {
       nix-proton.packages.${system}.proton-mail-desktop
       nix-proton.packages.${system}.proton-pass-desktop
       obsidian
-      libreoffice-fresh
       element-desktop
       legcord
       davinci-resolve
