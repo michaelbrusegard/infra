@@ -1,4 +1,4 @@
-{ config, lib, pkgs, isDarwin, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.modules.cli.desktop;
@@ -19,6 +19,7 @@ in {
       testdisk
       qmk
       cmatrix
+      bc
     ];
   };
 }
