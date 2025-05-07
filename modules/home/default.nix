@@ -119,7 +119,7 @@ in
       vim = "nvim";
       bc = ''
         (
-          echo "scale=2" > /tmp/bc_init.$$;
+          echo "scale=3" > /tmp/bc_init.$$;
           bc -q -s /tmp/bc_init.$$;
           rm /tmp/bc_init.$$;
         )'';
