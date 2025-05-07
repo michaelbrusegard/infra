@@ -9,3 +9,6 @@ vim.g.lazyvim_picker = 'snacks'
 
 -- Require config for prettier
 vim.g.lazyvim_prettier_needs_config = true
+
+-- Set zathura as the default latex viewer
+vim.g.vimtex_view_method = 'zathura'
