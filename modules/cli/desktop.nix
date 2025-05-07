@@ -19,7 +19,7 @@ in {
       testdisk
       qmk
       cmatrix
-      bc
+      gavin-bc
     ];
   };
 }
