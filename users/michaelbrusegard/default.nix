@@ -17,5 +17,6 @@
     wezterm.enable = true;
     xdg.enable = !isDarwin;
     yazi.enable = true;
+    zathura.enable = true;
   };
 }
