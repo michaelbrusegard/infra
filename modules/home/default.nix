@@ -117,6 +117,12 @@ in
       lzg = "lazygit";
       vi = "nvim";
       vim = "nvim";
+      bc = ''
+        (
+          echo "scale=2" > /tmp/bc_init.$$;
+          bc -q -s /tmp/bc_init.$$;
+          rm /tmp/bc_init.$$;
+        )'';
     };
     sessionVariables = {
       SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
