@@ -22,6 +22,15 @@ in {
           zen-browser.packages.${system}.default;
         languagePacks = [ "en-GB" ];
         policies = {
+          AutofillAddressEnabled = true;
+          AutofillCreditCardEnabled = false;
+          DisableAppUpdate = true;
+          DisableFeedbackCommands = true;
+          DisableFirefoxStudies = true;
+          DisablePocket = true;
+          DisableTelemetry = true;
+          NoDefaultBookmarks = true;
+          OfferToSaveLogins = false;
           DefaultDownloadDirectory = "$HOME/Downloads";
           SearchEngines = {
             Default = "DuckDuckGo";
