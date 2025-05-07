@@ -174,6 +174,7 @@
         };
         "com.apple.DiskArbitration.diskarbitrationd" = {
           DADisableEjectNotification = true;
+          AMDisableEjectNotification = true;
         };
       };
       CustomUserPreferences = {
