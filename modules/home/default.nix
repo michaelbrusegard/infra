@@ -120,7 +120,7 @@ in
       bc = ''
         (
           echo "scale=3" > /tmp/bc_init.$$;
-          bc -q -s /tmp/bc_init.$$;
+          ${pkgs.bc}/bin/bc -q -s /tmp/bc_init.$$;
           rm /tmp/bc_init.$$;
         )'';
     };
