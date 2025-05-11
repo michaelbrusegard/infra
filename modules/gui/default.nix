@@ -14,6 +14,7 @@ in {
     ++ (lib.optionals isDarwin [
       raycast
       ice-bar
+      libreoffice-bin
     ])
     ++ (lib.optionals (!isDarwin) [
       easyeffects
