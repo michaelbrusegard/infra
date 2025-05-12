@@ -115,7 +115,6 @@ in {
             "zen.glance.activation-method" = "meta";
             "zen.workspaces.force-container-workspace" = true;
             "zen.pinned-tab-manager.restore-pinned-tabs-to-pinned-url" = true;
-            "zen.workspaces.show-workspace-indicator" = false;
 
             # Theme
             "extensions.activeThemeID" = "firefox-compact-dark@mozilla.org";
@@ -151,6 +150,10 @@ in {
           userChrome = ''
             :root {
               --attention-dot-color: rgba(0, 0, 0, 0) !important;
+            }
+
+            #zen-current-workspace-indicator-container {
+              display: none;
             }
           '';
         };
