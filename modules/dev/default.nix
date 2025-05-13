@@ -38,6 +38,12 @@ in {
         lua
         luarocks
 
+        # Rust
+        rustup
+
+        # Windows cross-compile
+        nsis
+
         # C
         clang
         cmake
