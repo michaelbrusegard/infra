@@ -41,13 +41,15 @@ in {
         # Rust
         rustup
 
-        # Windows cross-compile
-        nsis
-
         # C
         clang
         cmake
         lldb
+        llvmPackages.llvm
+        llvmPackages.lld
+      ] ++ lib.optionals (!isDarwin) [
+        # Windows cross-compile
+        nsis
       ];
       sessionVariables = {
         NODE_COMPILE_CACHE = "$HOME/.cache/nodejs-compile-cache";
