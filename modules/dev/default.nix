@@ -20,9 +20,6 @@ in {
     };
     home = {
       packages = with pkgs; [
-        # Misc
-        podman-compose
-
         # Python
         uv
         python3
