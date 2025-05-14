@@ -52,6 +52,10 @@ in {
         NODE_COMPILE_CACHE = "$HOME/.cache/nodejs-compile-cache";
       };
       activation = lib.mkIf isDarwin {
+        linkDocker = lib.hm.dag.entryAfter ["writeBoundary"] ''
+          $DRY_RUN_CMD mkdir -p $HOME/.local/bin
+          $DRY_RUN_CMD ln -sf ${pkgs.podman}/bin/podman $HOME/.local/bin/docker
+        '';
         initPodmanMachine = lib.hm.dag.entryAfter ["writeBoundary"] ''
           if ! ${pkgs.podman}/bin/podman machine inspect podman-machine-default >/dev/null 2>&1; then
             echo "Initializing default Podman machine..."
