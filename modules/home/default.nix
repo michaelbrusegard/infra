@@ -131,6 +131,7 @@ in
     sessionPath = [
       "$HOME/.local/bin"
       "$HOME/bin"
+      "$HOME/.cargo/bin"
     ];
     activation = lib.mkIf isDarwin {
       createScreenshotsDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
