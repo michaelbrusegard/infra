@@ -760,26 +760,6 @@
         "type": "github"
       }
     },
-    "nix-proton": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1745926007,
-        "narHash": "sha256-t6p8vVORgj4/hsBaH5nm6EXwuS0z0Ad0d6nE4HhdzX0=",
-        "owner": "DuskSystems",
-        "repo": "nix-proton",
-        "rev": "48436278c942860532bee878f676aec65a6b48bf",
-        "type": "github"
-      },
-      "original": {
-        "owner": "DuskSystems",
-        "repo": "nix-proton",
-        "type": "github"
-      }
-    },
     "nixos-hardware": {
       "locked": {
         "lastModified": 1746814339,
@@ -883,7 +863,6 @@
         "nix-darwin": "nix-darwin",
         "nix-darwin-browsers": "nix-darwin-browsers",
         "nix-homebrew": "nix-homebrew",
-        "nix-proton": "nix-proton",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs",
         "nur": "nur",

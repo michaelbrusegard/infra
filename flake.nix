@@ -60,10 +60,6 @@
         home-manager.follows = "home-manager";
       };
     };
-    nix-proton = {
-      url = "github:DuskSystems/nix-proton?shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     yazi = {
       url = "github:sxyazi/yazi?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";

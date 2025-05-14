@@ -1,4 +1,4 @@
-{ config, lib, pkgs, isDarwin, nix-proton, system, ... }:
+{ config, lib, pkgs, isDarwin, ... }:
 
 let
   cfg = config.modules.gui;
@@ -19,8 +19,8 @@ in {
     ++ (lib.optionals (!isDarwin) [
       easyeffects
       imv
-      nix-proton.packages.${system}.proton-mail-desktop
-      nix-proton.packages.${system}.proton-pass-desktop
+      protonmail-desktop
+      proton-pass
       obsidian
       element-desktop
       legcord
