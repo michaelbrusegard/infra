@@ -132,6 +132,8 @@ in
       "$HOME/.local/bin"
       "$HOME/bin"
       "$HOME/.cargo/bin"
+    ] ++ lib.optionals isDarwin [
+      "/opt/homebrew/bin"
     ];
     activation = lib.mkIf isDarwin {
       createScreenshotsDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
