@@ -31,6 +31,7 @@
       "chromium"
       "inkscape"
       "gimp"
+      "android-file-transfer"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
