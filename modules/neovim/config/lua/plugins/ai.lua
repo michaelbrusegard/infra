@@ -9,7 +9,7 @@ return {
       hints = { enabled = false },
       provider = 'copilot',
       gemini = {
-        model = 'gemini-2.5-pro-preview-03-25',
+        model = 'gemini-2.5-pro-preview-05-06',
         max_tokens = 1000000,
         disable_tools = true,
       },
