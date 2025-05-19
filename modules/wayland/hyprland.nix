@@ -80,8 +80,8 @@ in {
           # Focus window
           "mod5, h, movefocus, l"
           "mod5, l, movefocus, r"
-          "mod5, j, movefocus, u"
-          "mod5, k, movefocus, d"
+          "mod5, j, movefocus, d"
+          "mod5, k, movefocus, u"
 
           # Move window
           "mod5 shift, h, movewindow, l"
