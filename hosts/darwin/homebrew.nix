@@ -26,7 +26,6 @@
       "proton-mail"
       "protonvpn"
       "proton-drive"
-      "safe-exam-browser"
       "ghostty"
       "chromium"
       "inkscape"
