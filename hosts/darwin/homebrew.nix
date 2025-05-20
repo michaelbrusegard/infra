@@ -13,6 +13,11 @@
     enable = true;
     caskArgs.no_quarantine = true;
     global.brewfile = true;
+    onActivation = {
+      autoUpdate = true;
+      cleanup = true;
+      upgrade = true;
+    };
     brews = [
       "nsis"
     ];
