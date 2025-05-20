@@ -15,7 +15,7 @@
     global.brewfile = true;
     onActivation = {
       autoUpdate = true;
-      cleanup = true;
+      cleanup = "zap";
       upgrade = true;
     };
     brews = [
