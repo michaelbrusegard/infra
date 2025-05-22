@@ -16,7 +16,15 @@
       allowed-users = [ "@admin" ];
       trusted-users = [ "@admin" ];
     };
-    linux-builder.enable = true;
+    linux-builder = {
+      enable = true;
+      systems = [
+        "aarch64-linux"
+        "x86_64-linux"
+      ];
+      maxJobs = 8;
+      speedFactor = 2;
+    };
   };
   networking = {
     computerName = hostName;
