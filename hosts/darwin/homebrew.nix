@@ -36,6 +36,7 @@
       "inkscape"
       "gimp"
       "android-file-transfer"
+      "bambu-studio"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;

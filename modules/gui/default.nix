@@ -28,6 +28,7 @@ in {
       inkscape-with-extensions
       gimp3-with-plugins
       libreoffice-fresh
+      bambu-studio
     ]);
   };
 }
