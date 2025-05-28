@@ -37,6 +37,7 @@
       "gimp"
       "android-file-transfer"
       "bambu-studio"
+      "freecad"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;

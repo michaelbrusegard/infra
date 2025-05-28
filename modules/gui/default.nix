@@ -29,6 +29,7 @@ in {
       gimp3-with-plugins
       libreoffice-fresh
       bambu-studio
+      freecad-wayland
     ]);
   };
 }
