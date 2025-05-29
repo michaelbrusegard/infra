@@ -127,6 +127,7 @@ in
     sessionVariables = {
       SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
       GEMINI_API_KEY = config.secrets.apiKeys.gemini;
+      TAURI_SIGNING_PRIVATE_KEY= config.secrets.tauriSigningPrivateKey;
     };
     sessionPath = [
       "$HOME/.local/bin"
