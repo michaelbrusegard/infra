@@ -35,8 +35,7 @@
       "chromium"
       "inkscape"
       "gimp"
-      "android-file-transfer"
-      "bambu-studio"
+      "orcaslicer"
       "freecad"
     ];
     masApps = {
