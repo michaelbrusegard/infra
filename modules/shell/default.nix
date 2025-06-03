@@ -110,11 +110,15 @@ in {
           "--exact"
         ];
       };
-      ripgrep.enable = true;
-      thefuck = {
+      pay-respects = {
         enable = true;
         enableZshIntegration = true;
+        options = [
+          "--alias"
+          "f"
+        ];
       };
+      ripgrep.enable = true;
       jq.enable = true;
       fastfetch.enable = true;
     };
