@@ -1,8 +1,10 @@
 { pkgs, ... }:
 pkgs.mkShell {
   buildInputs = with pkgs; [
+    clang
     cmake
-    gcc-arm-embedded
-    picotool
+    lldb
+    llvmPackages.llvm
+    llvmPackages.lld
   ];
 }

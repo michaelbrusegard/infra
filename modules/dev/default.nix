@@ -37,13 +37,6 @@ in {
 
         # Rust
         rustup
-
-        # C
-        clang
-        cmake
-        lldb
-        llvmPackages.llvm
-        llvmPackages.lld
       ] ++ lib.optionals (!isDarwin) [
         # Windows cross-compile
         nsis
