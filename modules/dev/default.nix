@@ -44,6 +44,8 @@ in {
         lldb
         llvmPackages.llvm
         llvmPackages.lld
+        gcc-arm-embedded-13
+        picotool
       ] ++ lib.optionals (!isDarwin) [
         # Windows cross-compile
         nsis
