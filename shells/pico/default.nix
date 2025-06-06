@@ -6,4 +6,7 @@ pkgs.mkShell {
     picotool
     pico-sdk
   ];
+  PICO_SDK_PATH = "${pkgs.pico-sdk}";
+  CC = "${pkgs.gcc-arm-embedded}/bin/arm-none-eabi-gcc";
+  CXX = "${pkgs.gcc-arm-embedded}/bin/arm-none-eabi-g++";
 }
