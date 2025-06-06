@@ -98,11 +98,12 @@
       devShells = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
+          lib = nixpkgs.lib;
           shellDirs = builtins.attrNames (builtins.readDir ./shells);
           shells = builtins.listToAttrs (map
             (name: {
               inherit name;
-              value = import (./shells + "/${name}") { inherit pkgs; };
+              value = import (./shells + "/${name}") { inherit pkgs lib; };
             })
             shellDirs
           );
