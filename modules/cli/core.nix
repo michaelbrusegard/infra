@@ -21,6 +21,7 @@ in {
       gnused
       gnugrep
       gnumake
+      screen
     ] ++ lib.optionals (!isDarwin) [
       psmisc
     ];
