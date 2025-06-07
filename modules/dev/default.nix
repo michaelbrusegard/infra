@@ -37,6 +37,9 @@ in {
 
         # Rust
         rustup
+
+        # Embedded
+        arduino-cli
       ] ++ lib.optionals (!isDarwin) [
         # Windows cross-compile
         nsis
