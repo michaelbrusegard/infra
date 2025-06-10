@@ -16,19 +16,61 @@ Hard secrets are encrypted further inside the private repository using sops. To 
 
 ## Reference links
 
-- [nixpkgs](https://mynixos.com/nixpkgs/options)
+### Package Repositories
+
+- [Nixpkgs](https://search.nixos.org/packages)
+- [Homebrew](https://brew.sh/)
+- [WinGet](https://winget.run/)
+
+### Nix Options
+
+- [nixos](https://mynixos.com/nixpkgs/options)
 - [nix-darwin](https://mynixos.com/nix-darwin/options)
 - [home-manager](https://mynixos.com/home-manager/options)
 
 ## Desktop (NixOS)
 
+Create an installer by downloading the graphical ISO image from [here](https://nixos.org/download/#nixos-iso) and flashing it to a USB drive using the following command:
+
+```sh
+sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
+```
+
+Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX` with the path to your USB drive.
+
 ### Screenshots
 
 ![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
+### Initial build
+
+After the installation we need a few things to get started to install the flake configuration:
+
+- Add `git` to system packages in `/etc/nixos/configuration.nix` and rebuild the system `sudo nixos-rebuild switch`.
+- Add both the SSH key and the age key to the system, so that we can clone the repository and decrypt secrets.
+- Verify that the dotfiles configuration has the same hardware configuration as the `/etc/nixos/hardware-configuration.nix`. Specifically, device file paths and partition UUIDs.
+
+Then we can install the flake configuration by running the following command:
+
+```sh
+sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#desktop
+```
+
+Afterwards delete the old NixOS configuration files:
+
+```sh
+sudo rm -rf /etc/nixos
+```
+
+And reboot the system:
+
+```sh
+sudo reboot now
+```
+
 ## Darwin systems (Nix-darwin)
 
-First install MacOS normally by following the default installation guide. Then go through all the sections below for the initial setup.
+First install MacOS normally by following the default installation guide on the Mac. To access the installer hold the power button during boot to access recovery options. Then go through all the sections below for the initial setup.
 
 ### Screenshots
 
