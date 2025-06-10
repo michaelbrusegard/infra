@@ -144,6 +144,33 @@ Lastly, go to Keyboard -> Keyboard Shortcuts... -> Modifier Keys, and make sure 
 
 The nix configuration should handle the rest, for any problems check out [this discussion](https://github.com/jtroo/kanata/discussions/1537) in the kanata repository.
 
+## Windows
+
+To create the installation ISO for Windows, use Chris Titus Tech's Windows Utility to create a clean telemetry-free ISO that does not require a Microsoft account (This has to be run on a Windows machine):
+
+```sh
+irm "https://christitus.com/win" | iex
+```
+
+### NixOS WSL
+
+Coming soon...
+
+### Installing packages
+
+We install windows packages using WinGet from the dotfiles repository in WSL:
+
+```sh
+winget import -i "\\wsl.localhost\Ubuntu-22.04\home\wsluser\packages.json" # Change later
+```
+
+Some packages are not available yet and has to be installed manually, such as:
+
+- [Zen Browser](https://zen-browser.app/download/)
+- [Proton Pass](https://proton.me/pass)
+
+### Applying system settings
+
 ## Espresso (Ubuntu Home Server)
 
 ### Installing packages
