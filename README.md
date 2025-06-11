@@ -159,7 +159,7 @@ After installation go to Windows Update and run it to make sure the system is up
 Start by installing Windows Subsystem for Linux (WSL):
 
 ```sh
-wsl --install
+wsl --install --no-distribution
 ```
 
 ### Installing packages
