@@ -181,7 +181,7 @@ wsl --install --from-file path\to\nixos-wsl.tar.gz
 We install windows packages using WinGet from the dotfiles repository in WSL:
 
 ```sh
-winget import -i "\\wsl.localhost\Ubuntu-22.04\home\wsluser\packages.json" # Change later
+winget import -i "\\wsl.localhost\NixOS\home\michaelbrusegard\packages.json"
 ```
 
 ### Applying system preferences
