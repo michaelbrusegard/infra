@@ -79,15 +79,15 @@ in {
         bind = [
           # Focus window
           "mod5, h, movefocus, l"
-          "mod5, l, movefocus, r"
           "mod5, j, movefocus, d"
           "mod5, k, movefocus, u"
+          "mod5, l, movefocus, r"
 
           # Move window
           "mod5 shift, h, movewindow, l"
-          "mod5 shift, l, movewindow, r"
           "mod5 shift, j, movewindow, d"
           "mod5 shift, k, movewindow, u"
+          "mod5 shift, l, movewindow, r"
 
           # Switch to specific workspace
           "mod5, 1, workspace, 1"
@@ -111,7 +111,7 @@ in {
           "mod5 shift, 8, movetoworkspace, 8"
           "mod5 shift, 9, movetoworkspace, 9"
 
-          # Toggle Floating Window
+          # Toggle floating window
           "mod5, 0, togglefloating,"
 
           # System
