@@ -69,6 +69,9 @@
       "PackageIdentifier": "RiotGames.LeagueOfLegends.EUW"
     },
     {
+      "PackageIdentifier": "Blitz.Blitz"
+    },
+    {
       "PackageIdentifier": "Modrinth.ModrinthApp"
     },
     {

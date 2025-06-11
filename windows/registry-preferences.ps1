@@ -2,7 +2,7 @@ function Set-RegistryValue {
     Param(
         [string]$Path,
         [string]$Name,
-        [int]$Value,
+        $Value,
         [string]$Type = "DWord"
     )
     try {
@@ -10,10 +10,10 @@ function Set-RegistryValue {
         if (-not (Test-Path $parentPath)) {
             New-Item -Path $parentPath -Force | Out-Null
         }
-        if ($Type -eq "DWord") {
-            Set-ItemProperty -Path $Path -Name $Name -Value $Value -Force -ErrorAction Stop
-        } elseif ($Type -eq "String") {
-            Set-ItemProperty -Path $Path -Name $Name -Value "$Value" -Force -ErrorAction Stop
+        switch ($Type) {
+            "DWord" { Set-ItemProperty -Path $Path -Name $Name -Value $Value -Force -ErrorAction Stop }
+            "String" { Set-ItemProperty -Path $Path -Name $Name -Value "$Value" -Force -ErrorAction Stop }
+            "Binary" { Set-ItemProperty -Path $Path -Name $Name -Value ([byte[]]$Value) -Force -ErrorAction Stop }
         }
     } catch {}
 }
@@ -64,8 +64,21 @@ Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explore
 # Set Taskbar Alignment to left
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Taskbar" -Name "TaskbarAl" -Value 0
 
+# Set Taskbar Position to Top
+$taskbarSettings = @(
+    0x28,0x00,0x00,0x00,0xFF,0xFF,0xFF,0xFF,0x02,0x00,0x00,0x00,0x01,0x00,0x00,0x00,
+    0x3E,0x00,0x00,0x00,0x2E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+)
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3" -Name "Settings" -Value $taskbarSettings -Type "Binary"
+
 # Remove Widget button from taskbar
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Taskbar" -Name "TaskbarDa" -Value 0
 
 # Disable emoticon display for crash control (Blue Screen of Death)
 Set-RegistryValue -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "DisplayParameters" -Value 1
+
+# Disable Windows Key combinations
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name "DisableLockWorkstation" -Value 1
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoWinKeys" -Value 1
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoLeftWindows" -Value 1
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoRightWindows" -Value 1
