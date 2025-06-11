@@ -20,7 +20,7 @@ Hard secrets are encrypted further inside the private repository using sops. To 
 
 - [Nixpkgs](https://search.nixos.org/packages)
 - [Homebrew](https://brew.sh/)
-- [WinGet](https://winget.run/)
+- [WinGet](https://winget.ragerworks.com/)
 
 ### Nix Options
 
@@ -152,6 +152,8 @@ To create the installation ISO for Windows, use Chris Titus Tech's Windows Utili
 irm "https://christitus.com/win" | iex
 ```
 
+After installation go to Windows Update and run it to make sure the system is updated. Then use the same WinUtil tool to apply tweaks, fix updates and activate the performance power plan.
+
 ### NixOS WSL
 
 Coming soon...
@@ -163,11 +165,6 @@ We install windows packages using WinGet from the dotfiles repository in WSL:
 ```sh
 winget import -i "\\wsl.localhost\Ubuntu-22.04\home\wsluser\packages.json" # Change later
 ```
-
-Some packages are not available yet and has to be installed manually, such as:
-
-- [Zen Browser](https://zen-browser.app/download/)
-- [Proton Pass](https://proton.me/pass)
 
 ### Applying system settings
 

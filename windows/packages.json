@@ -21,7 +21,28 @@
       "PackageIdentifier": "Rem0o.FanControl"
     },
     {
+      "PackageIdentifier": "Notepad++.Notepad++"
+    },
+    {
+      "PackageIdentifier": "VB-Audio.VoiceMeter"
+    },
+    {
       "PackageIdentifier": "Microsoft.PowerToys"
+    },
+    {
+      "PackageIdentifier": "Zen-Team.Zen-Browser"
+    },
+    {
+      "PackageIdentifier": "Proton.ProtonMail"
+    },
+    {
+      "PackageIdentifier": "Proton.ProtonPass"
+    },
+    {
+      "PackageIdentifier": "Proton.ProtonVPN"
+    },
+    {
+      "PackageIdentifier": "Proton.ProtonDrive"
     },
     {
       "PackageIdentifier": "OBSProject.OBSStudio"
@@ -48,10 +69,19 @@
       "PackageIdentifier": "RiotGames.LeagueOfLegends.EUW"
     },
     {
+      "PackageIdentifier": "Modrinth.ModrinthApp"
+    },
+    {
       "PackageIdentifier": "EpicGames.EpicGamesLauncher"
     },
     {
       "PackageIdentifier": "Ubisoft.Connect"
+    },
+    {
+      "PackageIdentifier": "Blizzard.BattleNet"
+    },
+    {
+      "PackageIdentifier": "FTB.App"
     }
   ]
 }
