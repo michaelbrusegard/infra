@@ -70,7 +70,7 @@ sudo reboot now
 
 ## Darwin systems (Nix-darwin)
 
-First install MacOS normally by following the default installation guide on the Mac. To access the installer hold the power button during boot to access recovery options. Then go through all the sections below for the initial setup.
+First install macOS normally by following the default installation guide on the mac. To access the installer hold the power button during boot to access recovery options. Then go through all the sections below for the initial setup.
 
 ### Screenshots
 
@@ -241,7 +241,7 @@ sh ~/dotfiles/espresso/scripts/login.sh
 
 - Andrey0189's [Nix Hyprland configuration](https://github.com/Andrey0189/nixos-config-reborn/tree/master/home-manager/modules/hyprland)
 - Notusknot's [nix-dotfiles](https://github.com/notusknot/dotfiles-nix)
-- Mathias Bynens and his [MacOS defaults](https://github.com/mathiasbynens/dotfiles/blob/main/.macos)
+- Mathias Bynens and his [macOS defaults](https://github.com/mathiasbynens/dotfiles/blob/main/.macos)
 - Dries Vints and his [SSH script](https://github.com/driesvints/dotfiles/blob/main/ssh.sh)
 - Antione Martin and his [GPG script](https://github.com/antoinemartin/create-gpg-key/blob/main/create_gpg_key.sh)
 - Elliot's fast and beautiful [.zshrc prompt](https://github.com/dreamsofautonomy/zensh/blob/main/.zshrc)
