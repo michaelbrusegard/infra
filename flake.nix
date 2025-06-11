@@ -128,17 +128,18 @@
           hostName = "wsl";
         };
 
+        leggero = mkSystem {
+          system = "aarch64-linux";
+          userName = "sysadmin";
+          hostName = "leggero";
+        };
+
         espresso = mkSystem {
           system = "x86_64-linux";
           userName = "sysadmin";
           hostName = "espresso";
         };
 
-        leggero = mkSystem {
-          system = "aarch64-linux";
-          userName = "sysadmin";
-          hostName = "leggero";
-        };
       };
 
       darwinConfigurations = let
