@@ -152,11 +152,15 @@ To create the installation ISO for Windows, use Chris Titus Tech's Windows Utili
 irm "https://christitus.com/win" | iex
 ```
 
-After installation go to Windows Update and run it to make sure the system is updated. Then use the same WinUtil tool to apply tweaks, fix updates and activate the performance power plan.
+After installation go to Windows Update and run it to make sure the system is updated.
 
 ### NixOS WSL
 
-Coming soon...
+Start by installing Windows Subsystem for Linux (WSL):
+
+```sh
+wsl --install
+```
 
 ### Installing packages
 
@@ -166,7 +170,38 @@ We install windows packages using WinGet from the dotfiles repository in WSL:
 winget import -i "\\wsl.localhost\Ubuntu-22.04\home\wsluser\packages.json" # Change later
 ```
 
-### Applying system settings
+### Applying system preferences
+
+First rerun the WinUtil tool:
+
+```sh
+irm "https://christitus.com/win" | iex
+```
+
+In the Tweaks tab, enable the Standard tweaks plus the following:
+
+- Disable Recall
+- Disable Background Apps
+- Disable Microsoft Copilot
+- Disable Intel MM
+- Disable Notification Tray/Calendar
+- Disable Windows Plaform Binary Table
+- Set Display for Performance
+- Set Classic Right-Click Menu
+- Set Time to UTC
+- Remove Microsoft Edge
+- Remove Home and Gallery from explorer
+- Remove OneDrive
+
+Then set the DNS to Cloudflare.
+
+In the Updates tab select "Security Settings" to prevent Windows Updates from automatically installing updates at the worst times.
+
+Lastly, run the `registry-preferences.ps1` script to apply custom system preferences:
+
+```sh
+.\registry-preferences.ps1
+```
 
 ## Espresso (Ubuntu Home Server)
 
