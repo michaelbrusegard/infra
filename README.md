@@ -163,7 +163,16 @@ irm "https://christitus.com/win" | iex
 
 In the tool we can download an ISO image from Microsoft and then modify it to remove telemetry and other unwanted features. When we have the MicroWin ISO we can flash a USB drive using Rufus.
 
+> [!INFO]
+> The current desktop setup uses the AMD RAID driver to run the two NVMe drives in RAID 0. This is not supported by the Windows installer, so we need to add the driver manually. It can be installed from the Motherboard's website. A guide for adding the driver can be found [here](https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/user-guides/56268_1_11.pdf). It can be found [here](https://rog.asus.com/motherboards/rog-crosshair/rog-crosshair-viii-impact-model/helpdesk_download/). Here
+
 After installation go to Windows Update and run it to make sure the system is updated.
+
+Also make sure to install updated drivers for the system, the download pages for the current system can be found below:
+
+- [Chipset and Motherboard](https://rog.asus.com/motherboards/rog-crosshair/rog-crosshair-viii-impact-model/helpdesk_download/)
+- [Processor](https://www.amd.com/en/support/downloads/drivers.html/processors/ryzen/ryzen-5000-series/amd-ryzen-9-5900x.html)
+- [Graphics](https://www.amd.com/en/support/downloads/drivers.html/graphics/radeon-rx/radeon-rx-6000-series/amd-radeon-rx-6800-xt.html)
 
 ### Screenshot
 
