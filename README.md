@@ -161,6 +161,8 @@ Then load the tool:
 irm "https://christitus.com/win" | iex
 ```
 
+In the tool we can download an ISO image from Microsoft and then modify it to remove telemetry and other unwanted features. When we have the MicroWin ISO we can flash a USB drive using Rufus.
+
 After installation go to Windows Update and run it to make sure the system is updated.
 
 ### Screenshot
