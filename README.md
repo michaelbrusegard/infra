@@ -156,10 +156,24 @@ After installation go to Windows Update and run it to make sure the system is up
 
 ### NixOS WSL
 
-Start by installing Windows Subsystem for Linux (WSL):
+First we need to build the NixOS WSL tarball. This can be done by running the following command in the dotfiles directory on a nix machine:
+
+```sh
+sudo nix run .#nixosConfigurations.wsl.config.system.build.tarballBuilder
+```
+
+Put this on a flash drive and copy it to the Windows machine.
+
+Then start by installing Windows Subsystem for Linux (WSL) on Windows:
 
 ```sh
 wsl --install --no-distribution
+```
+
+Install the NixOS WSL tarball by running the following command in PowerShell as administrator, replacing `path\to\nixos-wsl.tar.gz` with the path to the tarball:
+
+```sh
+wsl --install --from-file path\to\nixos-wsl.tar.gz
 ```
 
 ### Installing packages
