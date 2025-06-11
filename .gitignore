@@ -1,5 +1,8 @@
 # misc
 .DS_Store
 
-# builds
+# build images
 result
+
+# wsl
+nixos.wsl

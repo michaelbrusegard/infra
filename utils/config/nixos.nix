@@ -1,4 +1,4 @@
-{ config, userName, home-manager, dotfiles-private, catppuccin, ... }:
+{ config, lib, userName, isWsl, home-manager, dotfiles-private, catppuccin, ... }:
 {
   imports = [
     catppuccin.nixosModules.catppuccin
@@ -47,7 +47,7 @@
   networking = {
     enableIPv6 = true;
     firewall.enable = true;
-    nameservers = [
+    nameservers = lib.mkIf (!isWsl) [
       "1.1.1.1"
       "1.0.0.1"
       "2606:4700:4700::1111"
