@@ -38,7 +38,7 @@ sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
 
 Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX` with the path to your USB drive.
 
-### Screenshots
+### Screenshot
 
 ![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
@@ -73,7 +73,7 @@ sudo reboot now
 
 First install macOS normally by following the default installation guide on the mac. To access the installer hold the power button during boot to access recovery options. Then go through all the sections below for the initial setup.
 
-### Screenshots
+### Screenshot
 
 ![Screenshot 2025-05-02 at 15 03 38](https://github.com/user-attachments/assets/381c8dce-f0d0-4a91-b38f-544c30a3209a)
 
@@ -163,6 +163,8 @@ irm "https://christitus.com/win" | iex
 
 After installation go to Windows Update and run it to make sure the system is updated.
 
+### Screenshot
+
 ### NixOS WSL
 
 First we need to build the NixOS WSL tarball. This can be done by running the following command in the dotfiles directory on a nix machine:
@@ -190,7 +192,7 @@ wsl --install --from-file path\to\nixos-wsl.tar.gz
 We install windows packages using WinGet from the dotfiles repository in WSL:
 
 ```sh
-winget import -i "\\wsl.localhost\NixOS\home\michaelbrusegard\packages.json"
+winget import -i "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\windows\packages.json"
 ```
 
 ### Applying system preferences
@@ -220,11 +222,30 @@ Then set the DNS to Cloudflare.
 
 In the Updates tab select "Security Settings" to prevent Windows Updates from automatically installing updates at the worst times.
 
-Lastly, run the `registry-preferences.ps1` script to apply custom system preferences:
+Then copy over the `registry-preferences.ps1` script:
 
 ```sh
+cp \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\windows\registry-preferences.ps1 C:\Users\michaelbrusegard\Documents\
+```
+
+And run it to apply custom preferences:
+
+```sh
+cd C:\Users\michaelbrusegard\Documents
 .\registry-preferences.ps1
 ```
+
+### Keyboard
+
+The custom keyboard layout is set up like the default US layout, but with mac like behaviour for special characters when holding AltGr (This helps with typing Norwegian characters like æøå when using the US layout). It is configured with [MSKLC](https://www.microsoft.com/en-us/download/details.aspx?id=102134) and the configuration can be imported into the app to be edited via `keyboard.klc`.
+
+To apply the custom keyboard layout copy the `keyboard.zip` file from WSL:
+
+```sh
+cp \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\windows\keyboard.zip C:\Users\michaelbrusegard\Documents\
+```
+
+Then extract the file and open the keyboard directory. From there run the `setup.exe` file to install the custom keyboard layout. Make sure to set it as the default keyboard layout in the Windows settings.
 
 ## Espresso (Ubuntu Home Server)
 
@@ -248,6 +269,7 @@ sh ~/dotfiles/espresso/scripts/login.sh
 
 ## Inspiration…
 
+- LGUG2Z'z [nix-wsl-starter](https://github.com/LGUG2Z/nixos-wsl-starter)
 - Andrey0189's [Nix Hyprland configuration](https://github.com/Andrey0189/nixos-config-reborn/tree/master/home-manager/modules/hyprland)
 - Notusknot's [nix-dotfiles](https://github.com/notusknot/dotfiles-nix)
 - Mathias Bynens and his [macOS defaults](https://github.com/mathiasbynens/dotfiles/blob/main/.macos)
@@ -257,4 +279,3 @@ sh ~/dotfiles/espresso/scripts/login.sh
 - [Michael Bao's dotfiles](https://github.com/tcmmichaelb139/.dotfiles)
 - [Josean Martinez's dotfiles](https://github.com/josean-dev/dev-environment-files)
 - [TheBlueRuby's awesome Arch Linux setup](https://github.com/TheBlueRuby/dotfiles-arch)
-- [XLNC](https://github.com/naveenkrdy)
