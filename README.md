@@ -49,6 +49,7 @@ After the installation we need a few things to get started to install the flake 
 - Add `git` to system packages in `/etc/nixos/configuration.nix` and rebuild the system `sudo nixos-rebuild switch`.
 - Add both the SSH key and the age key to the system, so that we can clone the repository and decrypt secrets.
 - Verify that the dotfiles configuration has the same hardware configuration as the `/etc/nixos/hardware-configuration.nix`. Specifically, device file paths and partition UUIDs.
+- Create initial secure keys `nix shell nixpkgs#sbctl --command sudo sbctl create-keys`. For the rest of the secure boot setup (if needed) read [here](https://github.com/nix-community/lanzaboote/blob/master/docs/QUICK_START.md).
 
 Then we can install the flake configuration by running the following command:
 
