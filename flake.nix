@@ -29,6 +29,10 @@
         nix-darwin.follows = "nix-darwin";
       };
     };
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v0.4.2";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     mac-app-util = {
       url = "github:hraban/mac-app-util?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";

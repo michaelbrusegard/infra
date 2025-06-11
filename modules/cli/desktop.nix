@@ -19,6 +19,7 @@ in {
       testdisk
       qmk
       cmatrix
+      sbctl
     ] ++ lib.optionals (isDarwin) [
       duti
     ];

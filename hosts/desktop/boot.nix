@@ -1,4 +1,7 @@
-{ pkgs, apple-fonts, system, ... }: {
+{ pkgs, lib, lanzaboote, apple-fonts, system, ... }: {
+  imports = [
+    lanzaboote.nixosModules.lanzaboote
+  ];
   boot = {
     kernelModules = [
       "kvm-amd"
@@ -10,9 +13,12 @@
     ];
     consoleLogLevel = 3;
     loader = {
-      systemd-boot.enable = true;
+      systemd-boot.enable = lib.mkForce false;
       efi.canTouchEfiVariables = true;
-      timeout = 0;
+    };
+    lanzaboote = {
+      enable = true;
+      pkiBundle = "/var/lib/sbctl";
     };
     plymouth = {
       enable = true;
