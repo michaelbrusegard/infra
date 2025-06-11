@@ -147,7 +147,15 @@ The nix configuration should handle the rest, for any problems check out [this d
 
 ## Windows
 
-To create the installation ISO for Windows, use Chris Titus Tech's Windows Utility to create a clean telemetry-free ISO that does not require a Microsoft account (This has to be run on a Windows machine):
+To create the installation ISO for Windows, we use Chris Titus Tech's Windows Utility to create a clean telemetry-free ISO that does not require a Microsoft account (This has to be run on a Windows machine). The commands require administrator privileges, so make sure to run PowerShell as administrator.
+
+First, enable execution of scripts in PowerShell:
+
+```sh
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+Then load the tool:
 
 ```sh
 irm "https://christitus.com/win" | iex
