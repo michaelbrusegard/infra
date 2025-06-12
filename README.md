@@ -211,7 +211,7 @@ Now clone the dotfiles repository, add the age keys and rebuild.
 We install windows packages using WinGet from the dotfiles repository in WSL:
 
 ```sh
-winget import -i "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\windows\packages.json"
+winget import -i \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\packages.json
 ```
 
 ### Applying system preferences
@@ -241,17 +241,16 @@ Then set the DNS to Cloudflare.
 
 In the Updates tab select "Security Settings" to prevent Windows Updates from automatically installing updates at the worst times.
 
-Then copy over the `registry-preferences.ps1` script:
+Then set the execution policy to allow running scripts:
 
 ```sh
-cp \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\windows\registry-preferences.ps1 C:\Users\michaelbrusegard\Documents\
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-And run it to apply custom preferences:
+Apply custom preferences by running the `registry-preferences.ps1` script:
 
 ```sh
-cd C:\Users\michaelbrusegard\Documents
-.\registry-preferences.ps1
+powershell.exe -File \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\registry-preferences.ps1
 ```
 
 ### Keyboard
@@ -261,7 +260,7 @@ The custom keyboard layout is set up like the default US layout, but with mac li
 To apply the custom keyboard layout copy the `keyboard.zip` file from WSL:
 
 ```sh
-cp \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\windows\keyboard.zip C:\Users\michaelbrusegard\Documents\
+cp \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\keyboard.zip C:\Users\michaelbrusegard\Documents\
 ```
 
 Then extract the file and open the keyboard directory. From there run the `setup.exe` file to install the custom keyboard layout. Make sure to set it as the default keyboard layout in the Windows settings.
