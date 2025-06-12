@@ -50,6 +50,9 @@ function Set-ProtectedRegistryValue {
         [string]$Type = "DWord"
     )
     try {
+        if (-not (Test-Path $Path)) {
+            New-Item -Path $Path -Force | Out-Null
+        }
         $keyPathForAcl = "Registry::$Path"
         $key = Get-Item -Path $keyPathForAcl
         $acl = $key.GetAccessControl()
@@ -104,7 +107,6 @@ Set-RegistryValue -Path "HKLM:\SOFTWARE\Microsoft\PolicyManager\current\device\S
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value 0
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAl" -Value 0
-
 Set-ProtectedRegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDa" -Value 0
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarBadges" -Value 0
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarFlashing" -Value 0
@@ -115,9 +117,16 @@ Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explore
 
 Set-RegistryValue -Path "HKCU:\Control Panel\Keyboard" -Name "InitialKeyboardIndicators" -Value 0
 try {
+    Write-Host "Loading .DEFAULT user hive to modify keyboard settings..."
     reg load HKU\TempDefault "C:\Users\Default\NTUSER.DAT"
-    Set-RegistryValue -Path "HKU:\TempDefault\Control Panel\Keyboard" -Name "InitialKeyboardIndicators" -Value "0" -Type "String"
-} catch { Write-Error "Failed to modify .DEFAULT user hive. Error: $_" } finally { reg unload HKU\TempDefault | Out-Null }
+    reg add "HKU\TempDefault\Control Panel\Keyboard" /v InitialKeyboardIndicators /t REG_SZ /d 0 /f
+    Write-Host "Successfully set InitialKeyboardIndicators for .DEFAULT user."
+} catch {
+    Write-Error "Failed to modify .DEFAULT user hive. Error: $_"
+} finally {
+    reg unload HKU\TempDefault | Out-Null
+    Write-Host "Unloaded .DEFAULT user hive."
+}
 Set-RegistryValue -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay" -Value "0" -Type "String"
 Set-RegistryValue -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed" -Value "31" -Type "String"
 Set-RegistryValue -Path "HKCU:\Control Panel\Mouse" -Name "MouseSpeed" -Value 0
