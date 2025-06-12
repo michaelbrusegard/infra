@@ -265,6 +265,10 @@ Then extract the file and open the keyboard directory. From there run the `setup
 
 Create a shortcut for the executable by right-clicking on the GlazeWM executable -> Create shortcut. Put the shortcut in your startup folder, which you can get to by entering shell:startup in the top bar in File Explorer.
 
+### Fonts
+
+To make the SFMono Nerd Font work in WezTerm, each `.otf` font file needs to be manually downloaded and installed from [here](https://github.com/epk/SF-Mono-Nerd-Font/releases/tag/v18.0d1e1.0).
+
 ## Espresso (Ubuntu Home Server)
 
 ### Installing packages
