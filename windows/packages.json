@@ -1,122 +1,95 @@
 {
-	"$schema" : "https://aka.ms/winget-packages.schema.2.0.json",
-	"CreationDate" : "2025-06-12T01:37:29.202-00:00",
-	"Sources" : 
-	[
-		{
-			"Packages" : 
-			[
-				{
-					"PackageIdentifier" : "7zip.7zip"
-				},
-				{
-					"PackageIdentifier" : "Git.Git"
-				},
-				{
-					"PackageIdentifier" : "Modrinth.ModrinthApp"
-				},
-				{
-					"PackageIdentifier" : "Notepad++.Notepad++"
-				},
-				{
-					"PackageIdentifier" : "Proton.ProtonVPN"
-				},
-				{
-					"PackageIdentifier" : "Zen-Team.Zen-Browser"
-				},
-				{
-					"PackageIdentifier" : "glzr-io.zebar"
-				},
-				{
-					"PackageIdentifier" : "glzr-io.glazewm"
-				},
-				{
-					"PackageIdentifier" : "wez.wezterm"
-				},
-				{
-					"PackageIdentifier" : "Microsoft.Edge"
-				},
-				{
-					"PackageIdentifier" : "OBSProject.OBSStudio"
-				},
-				{
-					"PackageIdentifier" : "Valve.Steam"
-				},
-				{
-					"PackageIdentifier" : "Ubisoft.Connect"
-				},
-				{
-					"PackageIdentifier" : "Rem0o.FanControl"
-				},
-				{
-					"PackageIdentifier" : "Microsoft.VCRedist.2015+.x86"
-				},
-				{
-					"PackageIdentifier" : "EpicGames.EpicGamesLauncher"
-				},
-				{
-					"PackageIdentifier" : "Microsoft.DotNet.DesktopRuntime.8"
-				},
-				{
-					"PackageIdentifier" : "GOG.Galaxy"
-				},
-				{
-					"PackageIdentifier" : "Microsoft.VCRedist.2015+.x64"
-				},
-				{
-					"PackageIdentifier" : "Blitz.Blitz"
-				},
-				{
-					"PackageIdentifier" : "smartfrigde.Legcord"
-				},
-				{
-					"PackageIdentifier" : "FTB.App"
-				},
-				{
-					"PackageIdentifier" : "Proton.ProtonPass"
-				},
-				{
-					"PackageIdentifier" : "RiotGames.LeagueOfLegends.EUW"
-				},
-				{
-					"PackageIdentifier" : "RiotGames.Valorant.EU"
-				},
-				{
-					"PackageIdentifier" : "Rufus.Rufus"
-				},
-				{
-					"PackageIdentifier" : "Proton.ProtonMail"
-				},
-				{
-					"PackageIdentifier" : "uutils.coreutils"
-				},
-				{
-					"PackageIdentifier" : "Proton.ProtonDrive"
-				},
-				{
-					"PackageIdentifier" : "Microsoft.PowerToys"
-				},
-				{
-					"PackageIdentifier" : "Microsoft.AppInstaller"
-				},
-				{
-					"PackageIdentifier" : "Microsoft.UI.Xaml.2.8"
-				},
-				{
-					"PackageIdentifier" : "Microsoft.VCLibs.Desktop.14"
-				},
-				{
-					"PackageIdentifier" : "Microsoft.WindowsTerminal"
-				}
-			],
-			"SourceDetails" : 
-			{
-				"Argument" : "https://cdn.winget.microsoft.com/cache",
-				"Identifier" : "Microsoft.Winget.Source_8wekyb3d8bbwe",
-				"Name" : "winget",
-				"Type" : "Microsoft.PreIndexed.Package"
-			}
-		}
-	],
-	"WinGetVersion" : "1.10.390"
+  "$schema": "https://aka.ms/winget-packages.schema.2.0.json",
+  "CreationDate": "2025-06-12T01:37:29.202-00:00",
+  "Sources": [
+    {
+      "Packages": [
+        {
+          "PackageIdentifier": "Git.Git"
+        },
+        {
+          "PackageIdentifier": "uutils.coreutils"
+        },
+        {
+          "PackageIdentifier": "7zip.7zip"
+        },
+        {
+          "PackageIdentifier": "Rufus.Rufus"
+        },
+        {
+          "PackageIdentifier": "Rem0o.FanControl"
+        },
+        {
+          "PackageIdentifier": "Notepad++.Notepad++"
+        },
+        {
+          "PackageIdentifier": "VB-Audio.VoiceMeeter"
+        },
+        {
+          "PackageIdentifier": "Microsoft.PowerToys"
+        },
+        {
+          "PackageIdentifier": "glzr-io.glazewm"
+        },
+        {
+          "PackageIdentifier": "wez.wezterm"
+        },
+        {
+          "PackageIdentifier": "Zen-Team.Zen-Browser"
+        },
+        {
+          "PackageIdentifier": "Proton.ProtonMail"
+        },
+        {
+          "PackageIdentifier": "Proton.ProtonPass"
+        },
+        {
+          "PackageIdentifier": "Proton.ProtonVPN"
+        },
+        {
+          "PackageIdentifier": "Proton.ProtonDrive"
+        },
+        {
+          "PackageIdentifier": "smartfrigde.Legcord"
+        },
+        {
+          "PackageIdentifier": "OBSProject.OBSStudio"
+        },
+        {
+          "PackageIdentifier": "RiotGames.Valorant.EU"
+        },
+        {
+          "PackageIdentifier": "RiotGames.LeagueOfLegends.EUW"
+        },
+        {
+          "PackageIdentifier": "Blitz.Blitz"
+        },
+        {
+          "PackageIdentifier": "Valve.Steam"
+        },
+        {
+          "PackageIdentifier": "EpicGames.EpicGamesLauncher"
+        },
+        {
+          "PackageIdentifier": "GOG.Galaxy"
+        },
+        {
+          "PackageIdentifier": "Ubisoft.Connect"
+        },
+        {
+          "PackageIdentifier": "Modrinth.ModrinthApp"
+        },
+        {
+          "PackageIdentifier": "FTB.App"
+        }
+      ],
+      "SourceDetails": {
+        "Argument": "https://cdn.winget.microsoft.com/cache",
+        "Identifier": "Microsoft.Winget.Source_8wekyb3d8bbwe",
+        "Name": "winget",
+        "Type": "Microsoft.PreIndexed.Package"
+      }
+    }
+  ],
+  "WinGetVersion": "1.10.390"
 }
