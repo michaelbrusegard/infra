@@ -50,13 +50,10 @@ function Set-ProtectedRegistryValue {
         [string]$Type = "DWord"
     )
     try {
-        $key = $null
         if (-not (Test-Path $Path)) {
-            $key = New-Item -Path $Path -Force -PassThru
-        } else {
-            $key = Get-Item -Path $Path
+            New-Item -Path $Path -Force -PassThru | Out-Null
         }
-
+        $key = Get-Item -Path $Path
         $acl = $key.GetAccessControl()
         $originalOwner = $acl.Owner
         $administrators = [System.Security.Principal.NTAccount]"Administrators"
@@ -67,11 +64,12 @@ function Set-ProtectedRegistryValue {
             "FullControl",
             "Allow"
         )
-        $acl.SetAccessRule($rule)
+        $acl.AddAccessRule($rule)
         $key.SetAccessControl($acl)
         Set-RegistryValue -Path $Path -Name $Name -Value $Value -Type $Type
         $acl.SetOwner([System.Security.Principal.NTAccount]$originalOwner)
         $key.SetAccessControl($acl)
+
         Write-Host "Successfully set protected registry value for $Name"
     } catch {
         Write-Error "Failed to set protected registry value '$Name' at path '$Path'. Error: $_"
