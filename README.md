@@ -243,10 +243,10 @@ Under Performance Plan click "Add and Activate Ultimate Performance Profile".
 
 In the Updates tab select "Security Settings" to prevent Windows Updates from automatically installing updates at the worst times.
 
-Apply custom preferences by running the `registry-preferences.ps1` script:
+Apply custom preferences by running the `setup.ps1` script:
 
 ```sh
-powershell -ExecutionPolicy Bypass -File \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\registry-preferences.ps1
+powershell -ExecutionPolicy Bypass -File \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\setup.ps1
 ```
 
 ### Keyboard
