@@ -160,6 +160,9 @@ function Set-Wallpaper {
 
     Set-RegistryValue -Path "HKCU:\Control Panel\Desktop" -Name "WallpaperStyle" -Value $WallpaperStyle -Type "String"
     Set-RegistryValue -Path "HKCU:\Control Panel\Desktop" -Name "TileWallpaper" -Value $(if ($Style -eq 'Tile') { 1 } else { 0 }) -Type "String"
+    Set-RegistryValue -Path "HKCU:\Control Panel\Desktop" -Name "Wallpaper" -Value $WallpaperPath -Type "String"
+    Set-RegistryValue -Path "HKCU:\Control Panel\Desktop" -Name "TranscodedImageCount" -Value 1 -Type "DWord"
+    Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes" -Name "CurrentTheme" -Value $WallpaperPath -Type "String"
 
     Add-Type -TypeDefinition @"
         using System.Runtime.InteropServices;
@@ -182,7 +185,6 @@ function Set-Wallpaper {
 Set-Wallpaper -WallpaperPath "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\assets\wallpapers\twilight-peaks.png" -Style "Fill"
 
 # Set lock screen wallpaper
-$lockScreenPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP"
-Set-RegistryValue -Path $lockScreenPath -Name "LockScreenImagePath" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\assets\wallpapers\twilight-peaks.png" -Type "String"
-Set-RegistryValue -Path $lockScreenPath -Name "LockScreenImageUrl" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\assets\wallpapers\twilight-peaks.png" -Type "String"
-Set-RegistryValue -Path $lockScreenPath -Name "LockScreenImageStatus" -Value 1 -Type "DWord"
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lock Screen" -Name "LockScreenImagePath" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\assets\wallpapers\twilight-peaks.png" -Type "String"
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lock Screen" -Name "LockScreenImageUrl" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\assets\wallpapers\twilight-peaks.png" -Type "String"
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lock Screen" -Name "LockScreenImageStatus" -Value 1 -Type "DWord"
