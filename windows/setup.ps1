@@ -50,17 +50,23 @@ function Set-ProtectedRegistryValue {
         [string]$Type = "DWord"
     )
     try {
+        $key = $null
         if (-not (Test-Path $Path)) {
-            New-Item -Path $Path -Force | Out-Null
+            $key = New-Item -Path $Path -Force -PassThru
+        } else {
+            $key = Get-Item -Path $Path
         }
-        $keyPathForAcl = "Registry::$Path"
-        $key = Get-Item -Path $keyPathForAcl
+
         $acl = $key.GetAccessControl()
         $originalOwner = $acl.Owner
         $administrators = [System.Security.Principal.NTAccount]"Administrators"
         $acl.SetOwner($administrators)
         $key.SetAccessControl($acl)
-        $rule = New-Object System.Security.AccessControl.RegistryAccessRule($administrators, "FullControl", "Allow")
+        $rule = New-Object System.Security.AccessControl.RegistryAccessRule(
+            $administrators,
+            "FullControl",
+            "Allow"
+        )
         $acl.SetAccessRule($rule)
         $key.SetAccessControl($acl)
         Set-RegistryValue -Path $Path -Name $Name -Value $Value -Type $Type
