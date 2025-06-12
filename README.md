@@ -195,7 +195,7 @@ wsl --install --no-distribution
 Install the NixOS WSL tarball by running the following command in PowerShell as administrator, replacing `path\to\nixos-wsl.tar.gz` with the path to the tarball:
 
 ```sh
-wsl --install --from-file path\to\nixos-wsl.tar.gz
+wsl --install --from-file nixos.wsl
 ```
 
 ### Installing packages
