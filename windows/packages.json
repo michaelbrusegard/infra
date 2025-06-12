@@ -16,6 +16,10 @@
           "Scope": "user"
         },
         {
+          "PackageIdentifier": "uutils.coreutils",
+          "Scope": "user"
+        },
+        {
           "PackageIdentifier": "7zip.7zip",
           "Scope": "user"
         },
@@ -32,7 +36,7 @@
           "Scope": "user"
         },
         {
-          "PackageIdentifier": "VB-Audio.VoiceMeter",
+          "PackageIdentifier": "VB-Audio.VoiceMeeter",
           "Scope": "user"
         },
         {
@@ -69,10 +73,6 @@
         },
         {
           "PackageIdentifier": "Discord.Discord",
-          "Scope": "user"
-        },
-        {
-          "PackageIdentifier": "GnuWin32.CoreUtils",
           "Scope": "user"
         },
         {
