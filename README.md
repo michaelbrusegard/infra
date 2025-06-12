@@ -239,18 +239,14 @@ In the Tweaks tab, enable the Standard tweaks plus the following:
 
 Then set the DNS to Cloudflare.
 
+Under Performance Plan click "Add and Activate Ultimate Performance Profile".
+
 In the Updates tab select "Security Settings" to prevent Windows Updates from automatically installing updates at the worst times.
-
-Then set the execution policy to allow running scripts:
-
-```sh
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
 
 Apply custom preferences by running the `registry-preferences.ps1` script:
 
 ```sh
-powershell.exe -File \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\registry-preferences.ps1
+powershell -ExecutionPolicy Bypass -File \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\registry-preferences.ps1
 ```
 
 ### Keyboard
