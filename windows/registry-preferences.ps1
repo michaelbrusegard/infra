@@ -11,9 +11,18 @@ function Set-RegistryValue {
             New-Item -Path $parentPath -Force | Out-Null
         }
         switch ($Type) {
-            "DWord" { Set-ItemProperty -Path $Path -Name $Name -Value $Value -Force -ErrorAction Stop }
-            "String" { Set-ItemProperty -Path $Path -Name $Name -Value "$Value" -Force -ErrorAction Stop }
-            "Binary" { Set-ItemProperty -Path $Path -Name $Name -Value ([byte[]]$Value) -Force -ErrorAction Stop }
+            "DWord" { 
+                Set-ItemProperty -Path $Path -Name $Name -Value $Value -Force -ErrorAction Stop
+                Write-Host "Set $Path\$Name to $Value (DWord)"
+            }
+            "String" { 
+                Set-ItemProperty -Path $Path -Name $Name -Value "$Value" -Force -ErrorAction Stop
+                Write-Host "Set $Path\$Name to $Value (String)"
+            }
+            "Binary" { 
+                Set-ItemProperty -Path $Path -Name $Name -Value ([byte[]]$Value) -Force -ErrorAction Stop
+                Write-Host "Set $Path\$Name to Binary Value"
+            }
         }
     } catch {}
 }
@@ -34,7 +43,7 @@ Set-RegistryValue -Path "HKU\.DEFAULT\Control Panel\Keyboard" -Name "InitialKeyb
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name "VerboseStatus" -Value 0
 
 # Hide Recommended section in Start Menu
-Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideRecommendedSection" -Value 1
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name "HideRecommendedSection" -Value 1
 
 # Set environment to education mode
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Education" -Name "IsEducationEnvironment" -Value 1
@@ -62,17 +71,37 @@ Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search"
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
 
 # Set Taskbar Alignment to left
-Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Taskbar" -Name "TaskbarAl" -Value 0
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAl" -Value 0
 
-# Set Taskbar Position to Top
+# Set Taskbar Position to Top for main display
 $taskbarSettings = @(
     0x28,0x00,0x00,0x00,0xFF,0xFF,0xFF,0xFF,0x02,0x00,0x00,0x00,0x01,0x00,0x00,0x00,
-    0x3E,0x00,0x00,0x00,0x2E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+    0x3E,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 )
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3" -Name "Settings" -Value $taskbarSettings -Type "Binary"
 
+# Set Taskbar Position to Top for additional monitors
+$multiMonitorPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\MMStuckRects3"
+if (Test-Path $multiMonitorPath) {
+    $taskbarSettingsMultiMonitor = @(
+        0x28,0x00,0x00,0x00,0xFF,0xFF,0xFF,0xFF,0x02,0x00,0x00,0x00,0x01,0x00,0x00,0x00,
+        0x3E,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+    )
+    Set-RegistryValue -Path $multiMonitorPath -Name "Settings" -Value $taskbarSettingsMultiMonitor -Type "Binary"
+}
+
 # Remove Widget button from taskbar
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Taskbar" -Name "TaskbarDa" -Value 0
+
+# Disable badges on taskbar apps
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarBadges" -Value 0
+
+# Disable flashing of applications in the taskbar
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarFlashing" -Value 0
+
+# Disable "Show desktop" button in the far corner of taskbar
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowPeekButton" -Value 0
 
 # Disable emoticon display for crash control (Blue Screen of Death)
 Set-RegistryValue -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "DisplayParameters" -Value 1
@@ -82,6 +111,19 @@ Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policie
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoWinKeys" -Value 1
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoLeftWindows" -Value 1
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoRightWindows" -Value 1
+
+# Disable Sticky Keys
+Set-RegistryValue -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name "Flags" -Value 58
+
+# Disable Dynamic Lighting
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowDynamicLighting" -Value 0
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDynamicLighting" -Value 0
+
+# Set keyboard repeat delay
+Set-RegistryValue -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay" -Value "0" -Type "String"
+
+# Set keyboard repeat rate
+Set-RegistryValue -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed" -Value "31" -Type "String"
 
 # Set WezTerm config path
 Set-RegistryValue -Path "HKCU:\Environment" -Name "WEZTERM_CONFIG_FILE" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\modules\wezterm\config\wezterm.lua" -Type "String"
