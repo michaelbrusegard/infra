@@ -256,7 +256,7 @@ The custom keyboard layout is set up like the default US layout, but with mac li
 To apply the custom keyboard layout copy the `keyboard.zip` file from WSL:
 
 ```sh
-cp \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\keyboard.zip C:\Users\michaelbrusegard\Documents\
+cp \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\keyboard.zip C:\Users\michaelbrusegard\Downloads\
 ```
 
 Then extract the file and open the keyboard directory. From there run the `setup.exe` file to install the custom keyboard layout. Make sure to set it as the default keyboard layout in the Windows settings.
