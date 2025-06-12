@@ -40,6 +40,13 @@ in {
 
         # Embedded
         arduino-cli
+
+        # C
+        clang
+        cmake
+        lldb
+        llvmPackages.llvm
+        llvmPackages.lld
       ] ++ lib.optionals (!isDarwin) [
         # Windows cross-compile
         nsis
