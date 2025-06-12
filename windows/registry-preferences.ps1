@@ -125,8 +125,64 @@ Set-RegistryValue -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay" -Va
 # Set keyboard repeat rate
 Set-RegistryValue -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed" -Value "31" -Type "String"
 
+# Set UAC to never notify 
+Set-RegistryValue -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value 0
+Set-RegistryValue -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 1
+
 # Set WezTerm config path
 Set-RegistryValue -Path "HKCU:\Environment" -Name "WEZTERM_CONFIG_FILE" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\modules\wezterm\config\wezterm.lua" -Type "String"
 
 # Set GlazeWM config path
 Set-RegistryValue -Path "HKCU:\Environment" -Name "GLAZEWM_CONFIG_PATH" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\programs\glazewm\config.yaml" -Type "String"
+
+function Set-Wallpaper {
+    param(
+        [string]$WallpaperPath,
+        [ValidateSet('Fill', 'Fit', 'Stretch', 'Tile', 'Center', 'Span')]
+        [string]$Style = 'Fill'
+    )
+
+    $WallpaperStyle = switch ($Style) {
+        'Fill'    { 10 }
+        'Fit'     { 6 }
+        'Stretch' { 2 }
+        'Tile'    { 1 }
+        'Center'  { 0 }
+        'Span'    { 22 }
+    }
+
+    if (-not (Test-Path $WallpaperPath)) {
+        Write-Error "Wallpaper file not found: $WallpaperPath"
+        return
+    }
+
+    $WallpaperPath = (Resolve-Path $WallpaperPath).Path
+
+    Set-RegistryValue -Path "HKCU:\Control Panel\Desktop" -Name "WallpaperStyle" -Value $WallpaperStyle -Type "String"
+    Set-RegistryValue -Path "HKCU:\Control Panel\Desktop" -Name "TileWallpaper" -Value $(if ($Style -eq 'Tile') { 1 } else { 0 }) -Type "String"
+
+    Add-Type -TypeDefinition @"
+        using System.Runtime.InteropServices;
+        public class Wallpaper {
+            [DllImport("user32.dll", CharSet = CharSet.Auto)]
+            public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+        }
+"@
+
+    $SPI_SETDESKWALLPAPER = 0x0014
+    $UpdateIniFile = 0x01
+    $SendChangeEvent = 0x02
+    $fWinIni = $UpdateIniFile -bor $SendChangeEvent
+
+    [Wallpaper]::SystemParametersInfo($SPI_SETDESKWALLPAPER, 0, $WallpaperPath, $fWinIni)
+    Write-Host "Wallpaper set to: $WallpaperPath with style: $Style"
+}
+
+# Set wallpaper
+Set-Wallpaper -WallpaperPath "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\assets\wallpapers\twilight-peaks.png" -Style "Fill"
+
+# Set lock screen wallpaper
+$lockScreenPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP"
+Set-RegistryValue -Path $lockScreenPath -Name "LockScreenImagePath" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\assets\wallpapers\twilight-peaks.png" -Type "String"
+Set-RegistryValue -Path $lockScreenPath -Name "LockScreenImageUrl" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\assets\wallpapers\twilight-peaks.png" -Type "String"
+Set-RegistryValue -Path $lockScreenPath -Name "LockScreenImageStatus" -Value 1 -Type "DWord"
