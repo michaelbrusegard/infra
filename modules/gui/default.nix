@@ -17,6 +17,7 @@ in {
       libreoffice-bin
     ])
     ++ (lib.optionals (!isDarwin) [
+      burpsuite
       easyeffects
       imv
       protonmail-desktop
