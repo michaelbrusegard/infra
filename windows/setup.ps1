@@ -42,40 +42,6 @@ function Set-RegistryValue {
     }
 }
 
-function Set-ProtectedRegistryValue {
-    Param(
-        [string]$Path,
-        [string]$Name,
-        $Value,
-        [string]$Type = "DWord"
-    )
-    try {
-        if (-not (Test-Path $Path)) {
-            New-Item -Path $Path -Force -PassThru | Out-Null
-        }
-        $key = Get-Item -Path $Path
-        $acl = $key.GetAccessControl()
-        $originalOwner = $acl.Owner
-        $administrators = [System.Security.Principal.NTAccount]"Administrators"
-        $acl.SetOwner($administrators)
-        $key.SetAccessControl($acl)
-        $rule = New-Object System.Security.AccessControl.RegistryAccessRule(
-            $administrators,
-            "FullControl",
-            "Allow"
-        )
-        $acl.AddAccessRule($rule)
-        $key.SetAccessControl($acl)
-        Set-RegistryValue -Path $Path -Name $Name -Value $Value -Type $Type
-        $acl.SetOwner([System.Security.Principal.NTAccount]$originalOwner)
-        $key.SetAccessControl($acl)
-
-        Write-Host "Successfully set protected registry value for $Name"
-    } catch {
-        Write-Error "Failed to set protected registry value '$Name' at path '$Path'. Error: $_"
-    }
-}
-
 function Set-Wallpaper {
     param(
         [string]$WallpaperPath,
@@ -111,7 +77,7 @@ Set-RegistryValue -Path "HKLM:\SOFTWARE\Microsoft\PolicyManager\current\device\S
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value 0
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAl" -Value 0
-Set-ProtectedRegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDa" -Value 0
+Set-RegistryValue -Path "HKLM:\SOFTWARE\Policies\Microsoft\Dsh" -Name "AllowNewsAndInterests" -Value 0
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarBadges" -Value 0
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarFlashing" -Value 0
 Set-RegistryValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowPeekButton" -Value 0
