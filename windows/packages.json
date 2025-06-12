@@ -26,6 +26,9 @@
           "PackageIdentifier": "VB-Audio.Voicemeeter.Banana"
         },
         {
+          "PackageIdentifier": "FocusriteAudioEngineeringLtd.FocusriteControl"
+        },
+        {
           "PackageIdentifier": "Microsoft.PowerToys"
         },
         {
