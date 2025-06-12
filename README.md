@@ -192,11 +192,19 @@ Then start by installing Windows Subsystem for Linux (WSL) on Windows:
 wsl --install --no-distribution
 ```
 
-Install the NixOS WSL tarball by running the following command in PowerShell as administrator, replacing `path\to\nixos-wsl.tar.gz` with the path to the tarball:
+Then reboot the computer and install the NixOS WSL tarball by running the following command (You have to move the tarball to the current directory first from the flash drive):
 
 ```sh
 wsl --install --from-file nixos.wsl
 ```
+
+To enter the WSL environment, run:
+
+```sh
+wsl
+```
+
+Now clone the dotfiles repository, add the age keys and rebuild.
 
 ### Installing packages
 
