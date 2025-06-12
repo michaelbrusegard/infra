@@ -68,6 +68,30 @@ function Set-Wallpaper {
     Write-Host "Wallpaper set to: $WallpaperPath with style: $Style"
 }
 
+function Set-LockScreen {
+    param([string]$ImagePath)
+
+    if (-not (Test-Path $ImagePath)) {
+        Write-Warning "Lock screen image not found at $ImagePath. Skipping."
+        return
+    }
+
+    $cspPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP"
+
+    Write-Host "Setting lock screen image using PersonalizationCSP..."
+    Set-RegistryValue -Path $cspPath -Name "LockScreenImagePath" -Value $ImagePath -Type "String"
+    Set-RegistryValue -Path $cspPath -Name "LockScreenImageUrl" -Value $ImagePath -Type "String"
+    Set-RegistryValue -Path $cspPath -Name "LockScreenImageStatus" -Value 1 -Type "DWord"
+
+    Write-Host "Resetting permissions on SystemData cache to apply lock screen..."
+    try {
+        Start-Process -FilePath "icacls" -ArgumentList '"C:\ProgramData\Microsoft\Windows\SystemData" /reset /t /c /l' -Verb RunAs -Wait -WindowStyle Hidden -ErrorAction Stop
+        Write-Host "Successfully reset SystemData permissions."
+    } catch {
+        Write-Error "Failed to reset SystemData permissions. This may prevent the lock screen from updating. Error: $_"
+    }
+}
+
 Set-RegistryValue -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 0
 Set-RegistryValue -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 0
 
@@ -114,17 +138,17 @@ Set-RegistryValue -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policie
 Set-RegistryValue -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 1
 Set-RegistryValue -Path "HKLM:\SOFTWARE\Microsoft\PolicyManager\current\device\Education" -Name "IsEducationEnvironment" -Value 1
 
-Set-RegistryValue -Path "HKLM:\Software\Policies\Microsoft\Windows\DynamicLighting" -Name "EnableDynamicLighting" -Value 0
+Set-RegistryValue -Path "HKCU:\Software\Microsoft\Lighting" -Name "AmbientLightingEnabled" -Value 0
 
 Set-RegistryValue -Path "HKCU:\Environment" -Name "WEZTERM_CONFIG_FILE" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\modules\wezterm\config\wezterm.lua" -Type "String"
 Set-RegistryValue -Path "HKCU:\Environment" -Name "GLAZEWM_CONFIG_PATH" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\programs\glazewm\config.yaml" -Type "String"
 
 if (Test-Path $localWallpaperPath) {
     Set-Wallpaper -WallpaperPath $localWallpaperPath -Style "Fill"
-    Set-RegistryValue -Path "HKLM:\SOFTWARE\Microsoft\PolicyManager\current\device" -Name "LockScreenImage" -Value $localWallpaperPath -Type "String"
+    Set-LockScreen -ImagePath $localWallpaperPath
 }
 
 Write-Host "Applying UI changes by restarting explorer.exe..."
 Stop-Process -Name explorer -Force
 
-Write-Host "Script finished successfully. A reboot is recommended for all changes (like lock screen and system policies) to take full effect."
+Write-Host "Script finished successfully. A reboot is required for all changes to take full effect."
