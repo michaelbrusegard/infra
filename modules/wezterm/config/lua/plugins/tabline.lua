@@ -48,10 +48,9 @@ return function(config)
   tabline.apply_to_config(config)
 
   -- Set window decorations
-  if wezterm.target_triple == "aarch64-apple-darwin" then
-    config.window_decorations = 'RESIZE'
-  else
+  if wezterm.target_triple == 'x86_64-unknown-linux-gnu' then
     config.window_decorations = 'NONE'
+  else
+    config.window_decorations = 'RESIZE'
   end
-
 end
