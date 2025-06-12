@@ -72,6 +72,7 @@ window_rules:
         window_class: { regex: 'HwndWrapper\[PowerToys\.PowerAccent.*?\]' }
       - window_process: { equals: 'PowerToys' }
         window_title: { regex: '.*? - Peek' }
+      - window_title: { regex: ".*Palette.*" }
 
 keybindings:
   # Focus window
