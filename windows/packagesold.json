@@ -1,0 +1,125 @@
+{
+  "$schema": "https://aka.ms/winget-packages.schema.2.0.json",
+  "CreationDate": "2025-06-11T13:25:00.000-00:00",
+  "WinGetVersion": "1.6.0",
+  "Sources": [
+    {
+      "SourceDetails": {
+        "Name": "winget",
+        "Identifier": "Microsoft.Winget.Source_8wekyb3d8bbwe",
+        "Argument": "https://cdn.winget.microsoft.com/cache",
+        "Type": "Microsoft.PreIndexed.Package"
+      },
+      "Packages": [
+        {
+          "PackageIdentifier": "Git.Git",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "uutils.coreutils",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "7zip.7zip",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Rufus.Rufus",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Rem0o.FanControl",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Notepad++.Notepad++",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "VB-Audio.VoiceMeeter",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "glzr-io.glazewm",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Microsoft.PowerToys",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Zen-Team.Zen-Browser",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Proton.ProtonMail",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Proton.ProtonPass",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Proton.ProtonVPN",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Proton.ProtonDrive",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "OBSProject.OBSStudio",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Discord.Discord",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "wez.wezterm",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Valve.Steam",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "GOG.Galaxy",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "RiotGames.Valorant.EU",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "RiotGames.LeagueOfLegends.EUW",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Blitz.Blitz",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Modrinth.ModrinthApp",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "EpicGames.EpicGamesLauncher",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Ubisoft.Connect",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "Blizzard.BattleNet",
+          "Scope": "user"
+        },
+        {
+          "PackageIdentifier": "FTB.App",
+          "Scope": "user"
+        }
+      ]
+    }
+  ]
+}
