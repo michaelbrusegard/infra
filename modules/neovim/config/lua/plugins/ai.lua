@@ -7,16 +7,72 @@ return {
     dependencies = { 'stevearc/dressing.nvim' },
     opts = {
       hints = { enabled = false },
-      provider = 'copilot',
+      provider = 'copilot-gpt',
       gemini = {
-        model = 'gemini-2.5-pro-preview-05-06',
+        hide_in_model_selector = true,
         max_tokens = 1000000,
-        disable_tools = true,
       },
       copilot = {
-        model = 'claude-3.5-sonnet',
-        max_tokens = 200000,
-        disable_tools = true,
+        hide_in_model_selector = true,
+        max_tokens = 1000000,
+        extra_request_body = {
+          temperature = 0.5,
+          max_tokens = 1000000,
+        },
+      },
+      cohere = {
+        hide_in_model_selector = true,
+      },
+      openai = {
+        hide_in_model_selector = true,
+      },
+      ['openai-gpt-4o-mini'] = {
+        hide_in_model_selector = true,
+      },
+      bedrock = {
+        hide_in_model_selector = true,
+      },
+      ['bedrock-claude-3.7-sonnet'] = {
+        hide_in_model_selector = true,
+      },
+      claude = {
+        hide_in_model_selector = true,
+      },
+      ['claude-opus'] = {
+        hide_in_model_selector = true,
+      },
+      ['claude-haiku'] = {
+        hide_in_model_selector = true,
+      },
+      vertex = {
+        hide_in_model_selector = true,
+      },
+      vertex_claude = {
+        hide_in_model_selector = true,
+      },
+      aihubmix = {
+        hide_in_model_selector = true,
+      },
+      ['aihubmix-claude'] = {
+        hide_in_model_selector = true,
+      },
+      vendors = {
+        ['copilot-gpt'] = {
+          __inherited_from = 'copilot',
+          model = 'gpt-4.1',
+        },
+        ['copilot-claude'] = {
+          __inherited_from = 'copilot',
+          model = 'claude-sonnet-4',
+        },
+        ['copilot-gemini'] = {
+          __inherited_from = 'copilot',
+          model = 'gemini-2.5-pro',
+        },
+        ['gemini-api'] = {
+          __inherited_from = 'gemini',
+          model = 'gemini-2.5-pro-preview-06-05',
+        },
       },
       selector = {
         provider = 'snacks',
