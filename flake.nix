@@ -17,7 +17,7 @@
       url = "github:Mic92/sops-nix?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixos-hardware.url = "github:NixOS/nixos-hardware?shallow=1";
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi?shallow=1";
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
