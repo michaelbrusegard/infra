@@ -1,7 +1,6 @@
-{ config, lib, userName, isWsl, home-manager, dotfiles-private, catppuccin, ... }:
+{ config, lib, userName, isWsl, home-manager, dotfiles-private, ... }:
 {
   imports = [
-    catppuccin.nixosModules.catppuccin
     dotfiles-private.nixosModules.secrets
     home-manager.nixosModules.default
   ];
