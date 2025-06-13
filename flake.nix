@@ -159,5 +159,9 @@
           hostName = hostName;
         };
       };
+
+      packages = forAllSystems (system: {
+        leggero = self.nixosConfigurations.leggero.config.system.build.sdImage;
+      });
     };
 }

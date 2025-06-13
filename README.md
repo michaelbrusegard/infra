@@ -269,6 +269,39 @@ Create a shortcut for the executable by right-clicking on the GlazeWM executable
 
 To make the SFMono Nerd Font work in WezTerm, each `.otf` font file needs to be manually downloaded and installed from [here](https://github.com/epk/SF-Mono-Nerd-Font/releases/tag/v18.0d1e1.0).
 
+## Leggero (Raspberry Pi NixOS Mini Apartment Server)
+
+Build the SD image on a machine with `nix` using the following command:
+
+```sh
+nix build .#
+```
+
+The resulting image can be found in `result/sd-image/`. It is a compressed Zstandard archive that can be flashed to an SD card.
+
+## Flashing the SD Card
+
+We need to plug in the SD card and find out what the device path is for the SD card.
+
+On linux:
+
+```sh
+lsblk
+```
+
+On darwin:
+
+```sh
+diskutil list
+```
+
+On linux it is usually `/dev/sdX` where `X` is a letter, for example `/dev/sdb`. On darwon it is usually `/dev/diskX` where `X` is a number for example `/dev/disk6`.
+
+To flash the image to the SD card you can use the following command, make sure to replace `/dev/XXX` with the correct device path for your SD card:
+
+```sh
+zstd -dc result/sd-image/*.zst | sudo dd of=/dev/XXX bs=4M status=progress oflag=sync
+
 ## Espresso (Ubuntu Home Server)
 
 ### Installing packages
