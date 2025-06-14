@@ -5,79 +5,55 @@ return {
     'yetone/avante.nvim',
     event = 'VeryLazy',
     dependencies = { 'stevearc/dressing.nvim' },
-    opts = {
-      hints = { enabled = false },
-      provider = 'copilot-gpt',
-      gemini = {
-        hide_in_model_selector = true,
-        max_tokens = 1000000,
-      },
-      copilot = {
-        hide_in_model_selector = true,
-        max_tokens = 1000000,
-        extra_request_body = {
-          temperature = 0.5,
-          max_tokens = 1000000,
+    opts = function()
+      local opts = {
+        hints = { enabled = false },
+        provider = 'copilot/gpt-4.1',
+        providers = {
+          ['copilot/gpt-4.1'] = {
+            __inherited_from = 'copilot',
+            model = 'gpt-4.1',
+            display_name = 'copilot/gpt-4.1',
+          },
+          ['copilot/claude-sonnet-4'] = {
+            __inherited_from = 'copilot',
+            model = 'claude-sonnet-4',
+            display_name = 'copilot/claude-sonnet-4',
+          },
+          ['copilot/gemini-2.5-pro'] = {
+            __inherited_from = 'copilot',
+            model = 'gemini-2.5-pro',
+            display_name = 'copilot/gemini-2.5-pro',
+          },
+          ['api/gemini-2.5-pro'] = {
+            __inherited_from = 'gemini',
+            model = 'gemini-2.5-pro-preview-06-05',
+            display_name = 'api/gemini-2.5-pro',
+          },
         },
-      },
-      cohere = {
-        hide_in_model_selector = true,
-      },
-      openai = {
-        hide_in_model_selector = true,
-      },
-      ['openai-gpt-4o-mini'] = {
-        hide_in_model_selector = true,
-      },
-      bedrock = {
-        hide_in_model_selector = true,
-      },
-      ['bedrock-claude-3.7-sonnet'] = {
-        hide_in_model_selector = true,
-      },
-      claude = {
-        hide_in_model_selector = true,
-      },
-      ['claude-opus'] = {
-        hide_in_model_selector = true,
-      },
-      ['claude-haiku'] = {
-        hide_in_model_selector = true,
-      },
-      vertex = {
-        hide_in_model_selector = true,
-      },
-      vertex_claude = {
-        hide_in_model_selector = true,
-      },
-      aihubmix = {
-        hide_in_model_selector = true,
-      },
-      ['aihubmix-claude'] = {
-        hide_in_model_selector = true,
-      },
-      vendors = {
-        ['copilot-gpt'] = {
-          __inherited_from = 'copilot',
-          model = 'gpt-4.1',
+        selector = {
+          provider = 'snacks',
         },
-        ['copilot-claude'] = {
-          __inherited_from = 'copilot',
-          model = 'claude-sonnet-4',
-        },
-        ['copilot-gemini'] = {
-          __inherited_from = 'copilot',
-          model = 'gemini-2.5-pro',
-        },
-        ['gemini-api'] = {
-          __inherited_from = 'gemini',
-          model = 'gemini-2.5-pro-preview-06-05',
-        },
-      },
-      selector = {
-        provider = 'snacks',
-      },
-    },
+      }
+      local hidden_models = {
+        'copilot',
+        'gemini',
+        'openai',
+        'openai-gpt-4o-mini',
+        'vertex',
+        'vertex_claude',
+        'ollama',
+      }
+      for _, provider in pairs(opts.providers) do
+        provider.hide_in_model_selector = false
+      end
+
+      for _, model in ipairs(hidden_models) do
+        opts.providers[model] = { hide_in_model_selector = true }
+      end
+
+      return opts
+    end,
     build = 'make',
   },
   {
