@@ -28,6 +28,17 @@
       enable = true;
       bantime = "1h";
     };
+    avahi = {
+      enable = true;
+      nssmdns4 = true;
+      nssmdns6 = true;
+      allowInterfaces = [ "enp6s0" ];
+      publish = {
+        enable = true;
+        addresses = true;
+        workstation = true;
+      };
+    };
     pipewire = {
       enable = true;
       jack.enable = true;
