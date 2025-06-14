@@ -19,6 +19,7 @@ in {
       testdisk
       qmk
       cmatrix
+      openssl
     ] ++ lib.optionals (!isDarwin) [
       sbctl
     ] ++ lib.optionals (isDarwin) [
