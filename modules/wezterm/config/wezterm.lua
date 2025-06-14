@@ -15,11 +15,24 @@ require('config.keybinds')(config)
 
 -- Manage plugins
 local plugins_dir = wezterm.config_dir .. '/lua/plugins'
-local files = io.popen('ls ' .. wezterm.config_dir .. '/lua/plugins/*.lua')
+local files_command
+
+if wezterm.target_triple == 'x86_64-pc-windows-msvc' then
+  files_command = 'dir /B "' .. plugins_dir .. '\\*.lua"'
+else
+  files_command = 'ls "' .. plugins_dir .. '"/*.lua'
+end
+
+local files = io.popen(files_command)
 
 if files then
   for file in files:lines() do
-    local module_name = file:gsub(plugins_dir .. '/', ''):gsub('%.lua$', '')
+    local module_name
+    if wezterm.target_triple == 'x86_64-pc-windows-msvc' then
+      module_name = file:gsub('%.lua$', '')
+    else
+      module_name = file:gsub(plugins_dir .. '/', ''):gsub('%.lua$', '')
+    end
     require('plugins.' .. module_name)(config)
   end
 end
