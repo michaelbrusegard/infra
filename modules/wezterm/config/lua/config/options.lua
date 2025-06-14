@@ -41,7 +41,7 @@ local function options(config)
 
   -- Set PowerShell as default shell on Windows
   if wezterm.target_triple == 'x86_64-pc-windows-msvc' then
-    config.default_prog = { 'powershell', '-NoLogo' }
+    config.default_prog = { 'pwsh', '-NoLogo' }
   end
 
   -- Font size
