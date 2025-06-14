@@ -171,8 +171,7 @@ After installation go to Windows Update and run it to make sure the system is up
 Also make sure to install updated drivers for the system, the download pages for the current system can be found below:
 
 - [Chipset and Motherboard](https://rog.asus.com/motherboards/rog-crosshair/rog-crosshair-viii-impact-model/helpdesk_download/)
-- [Processor](https://www.amd.com/en/support/downloads/drivers.html/processors/ryzen/ryzen-5000-series/amd-ryzen-9-5900x.html)
-- [Graphics](https://www.amd.com/en/support/downloads/drivers.html/graphics/radeon-rx/radeon-rx-6000-series/amd-radeon-rx-6800-xt.html)
+- [Processor and Graphics](https://www.amd.com/en/support/download/drivers.html)
 
 ### Screenshot
 
