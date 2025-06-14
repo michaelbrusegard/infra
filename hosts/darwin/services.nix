@@ -98,8 +98,8 @@
         alt - 0 : yabai -m window --toggle float
 
         # System
-        alt - return : wezterm start --always-new-process
-        alt + shift - return : wezterm start --always-new-process -e sh -c 'yazi'
+        alt - return : open -na "WezTerm" --args start --always-new-process
+        alt + shift - return : open -na "WezTerm" --args start --always-new-process -e sh -c 'yazi'
       '';
     };
     jankyborders = {
