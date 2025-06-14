@@ -34,9 +34,15 @@ return function(config)
         { 'cwd', padding = { left = 0, right = 1 } },
         { 'zoomed', padding = 0 },
       },
-      tab_inactive = { 'index', { 'process', icons_only = true, padding = 0 } },
+      tab_inactive = {
+        'index',
+        { 'process', icons_only = true, padding = 0 },
+      },
       tabline_x = {},
-      tabline_y = { 'ram', 'cpu' },
+      tabline_y = {
+        { 'ram', use_pwsh = true },
+        { 'cpu', use_pwsh = true },
+      },
     },
     extensions = {
       'resurrect',
