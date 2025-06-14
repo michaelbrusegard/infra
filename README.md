@@ -269,6 +269,10 @@ Create a shortcut for the executable by right-clicking on the GlazeWM executable
 
 To make the SFMono Nerd Font work in WezTerm, each `.otf` font file needs to be manually downloaded and installed from [here](https://github.com/epk/SF-Mono-Nerd-Font/releases/tag/v18.0d1e1.0).
 
+### BitLocker
+
+Lastly remember to enable BitLocker on the system drive to encrypt the system drive. This is done by going to Settings -> Privacy & Security -> Device Encryption and enabling it. If you have a TPM chip, it will be used to store the encryption keys securely.
+
 ## Leggero (Raspberry Pi NixOS Mini Apartment Server)
 
 Build the SD image on a machine with `nix` using the following command:
