@@ -1,8 +1,5 @@
-{ config, ... }: {
+{ ... }: {
   networking = {
-    firewall = {
-      allowedTCPPorts = config.secrets.desktopSshPorts;
-    };
     wireless.iwd.enable = true;
     networkmanager = {
       enable = true;
