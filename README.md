@@ -175,6 +175,8 @@ Also make sure to install updated drivers for the system, the download pages for
 
 ### Screenshot
 
+![Screenshot 2025-06-14 at 19 55 23](https://github.com/user-attachments/assets/c56e99a1-d473-4817-b2ee-eaad579ac415)
+
 ### NixOS WSL
 
 First we need to build the NixOS WSL tarball. This can be done by running the following command in the dotfiles directory on a nix machine:
