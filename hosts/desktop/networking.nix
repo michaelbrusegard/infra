@@ -1,15 +1,14 @@
-{ ... }: {
+{ config, ... }: {
   networking = {
     firewall = {
-      allowedTCPPorts = [ 22 ];
+      allowedTCPPorts = config.secrets.desktopSshPorts;
     };
     wireless.iwd.enable = true;
     networkmanager = {
       enable = true;
-      dhcp = "dhcpcd";
       wifi.backend = "iwd";
     };
-    dhcpcd.enable = true;
+    dhcpcd.enable = false;
     wireguard.enable = true;
   };
 }
