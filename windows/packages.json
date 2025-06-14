@@ -11,6 +11,9 @@
           "PackageIdentifier": "uutils.coreutils"
         },
         {
+          "PackageIdentifier": "Fastfetch-cli.Fastfetch"
+        },
+        {
           "PackageIdentifier": "7zip.7zip"
         },
         {
