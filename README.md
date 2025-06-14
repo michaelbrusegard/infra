@@ -205,15 +205,7 @@ wsl
 
 Now clone the dotfiles repository, add the age keys and rebuild.
 
-### Installing packages
-
-We install windows packages using WinGet from the dotfiles repository in WSL:
-
-```sh
-winget import -i \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\packages.json
-```
-
-### Applying system preferences
+### Applying system preferences and installing packages
 
 First rerun the WinUtil tool:
 
@@ -242,7 +234,7 @@ Under Performance Plan click "Add and Activate Ultimate Performance Profile".
 
 In the Updates tab select "Security Settings" to prevent Windows Updates from automatically installing updates at the worst times.
 
-Apply custom preferences by running the `setup.ps1` script:
+Then run the `setup.ps1` script to install packages and apply registry tweaks:
 
 ```sh
 powershell -ExecutionPolicy Bypass -File \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\setup.ps1
@@ -264,10 +256,9 @@ Then extract the file and open the keyboard directory. From there run the `setup
 
 Create a shortcut for the executable by right-clicking on the GlazeWM executable -> Create shortcut. Put the shortcut in your startup folder, which you can get to by entering shell:startup in the top bar in File Explorer.
 
-### Terminal
+### Fonts
 
 To make the SFMono Nerd Font work in WezTerm, each `.otf` font file needs to be manually downloaded and installed from [here](https://github.com/epk/SF-Mono-Nerd-Font/releases/tag/v18.0d1e1.0).
-Adding the PowerShell prompt can be done by adding the following PowerShell package [pure-pwsh](https://github.com/nickcox/pure-pwsh).
 
 ### BitLocker
 
