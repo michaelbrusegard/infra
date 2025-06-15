@@ -8,9 +8,9 @@ return function(config)
   resurrect.state_manager.set_encryption({
     enable = true,
     method = 'age',
-    private_key = wezterm.home_dir .. '/.config/sops-nix/secrets/wezterm/resurrect/privateKey',
+    private_key = wezterm.home_dir .. '/.config/sops-nix/secrets/wezterm/private-key',
     public_key = (function()
-      local file = io.open(wezterm.home_dir .. '/.config/sops-nix/secrets/wezterm/resurrect/publicKey', 'r')
+      local file = io.open(wezterm.home_dir .. '/.config/sops-nix/secrets/wezterm/public-key', 'r')
       if not file then
         return nil
       end
