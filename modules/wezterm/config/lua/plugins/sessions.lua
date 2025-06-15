@@ -9,10 +9,14 @@ return function(config)
     enable = true,
     method = 'age',
     private_key = wezterm.home_dir .. '/.config/sops-nix/secrets/wezterm/resurrect/privateKey',
-    public_key = (function() 
+    public_key = (function()
       local file = io.open(wezterm.home_dir .. '/.config/sops-nix/secrets/wezterm/resurrect/publicKey', 'r')
-      if not file then return nil end
-      local content = file:read('*a'); file:close(); return content
+      if not file then
+        return nil
+      end
+      local content = file:read('*a')
+      file:close()
+      return content
     end)(),
   })
 

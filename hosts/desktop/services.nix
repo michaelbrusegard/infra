@@ -14,9 +14,9 @@
       enable = true;
       openFirewall = true;
       startWhenNeeded = true;
-      ports = config.secrets.desktopSshPorts;
+      ports = config.secrets.desktop.sshPorts;
       authorizedKeysInHomedir = false;
-      authorizedKeysFiles = config.secrets.desktopAuthorizedKeysFiles;
+      authorizedKeysFiles = config.secrets.desktop.authorizedKeysFiles;
       hostKeys = [];
       settings = {
         PasswordAuthentication = false;

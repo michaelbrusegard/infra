@@ -114,8 +114,8 @@ in
       "-" = "cd -";
       ls = "eza";
       lzg = "lazygit";
-      vi = "nvim";
       vim = "nvim";
+      vi = "nvim";
       bc = ''
         (
           echo "scale=3" > /tmp/bc_init.$$;
@@ -125,8 +125,8 @@ in
     };
     sessionVariables = {
       SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
-      GEMINI_API_KEY = config.secrets.apiKeys.gemini;
-      TAURI_SIGNING_PRIVATE_KEY= config.secrets.tauriSigningPrivateKey;
+      GEMINI_API_KEY = "$(${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.geminiKey})";
+      TAURI_SIGNING_PRIVATE_KEY= "$(${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.tauriSigningKey})";
     };
     sessionPath = [
       "$HOME/.local/bin"

@@ -34,10 +34,10 @@ in {
         git = {
           host = "github.com";
           user = "git";
-          identityFile = config.secrets.gitSshKeyFile;
+          identityFile = config.secrets.ssh.gitKeyFile;
           identitiesOnly = true;
         };
-      } // config.secrets.hostMatchBlocks;
+      } // config.secrets.ssh.hostMatchBlocks;
     };
     home.packages = [ wol ];
   };

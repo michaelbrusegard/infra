@@ -4,9 +4,9 @@
       enable = true;
       openFirewall = true;
       startWhenNeeded = true;
-      ports = config.secrets.leggeroSshPorts;
+      ports = config.secrets.leggero.sshPorts;
       authorizedKeysInHomedir = false;
-      authorizedKeysFiles = config.secrets.leggeroAuthorizedKeysFiles;
+      authorizedKeysFiles = config.secrets.leggero.authorizedKeysFiles;
       hostKeys = [];
       settings = {
         PasswordAuthentication = false;
@@ -28,6 +28,13 @@
         addresses = true;
         workstation = true;
       };
+    };
+    cloudflare-dyndns = {
+      enable = true;
+      apiTokenFile = config.secrets.credentialFiles.cloudflareToken;
+      domains = config.secrets.leggero.ddnsDomains;
+      ipv4 = true;
+      ipv6 = true;
     };
   };
 }
