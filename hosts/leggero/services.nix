@@ -34,7 +34,7 @@
       apiTokenFile = config.secrets.credentialFiles.cloudflareToken;
       domains = config.secrets.leggero.ddnsDomains;
       ipv4 = true;
-      ipv6 = true;
+      ipv6 = false;
     };
   };
 }
