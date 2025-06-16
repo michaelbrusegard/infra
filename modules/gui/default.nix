@@ -31,6 +31,7 @@ in {
       libreoffice-fresh
       orca-slicer
       freecad-wayland
+      betaflight-configurator
     ]);
   };
 }

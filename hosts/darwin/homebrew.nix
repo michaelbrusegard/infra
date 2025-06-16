@@ -37,6 +37,7 @@
       "gimp"
       "orcaslicer"
       "freecad"
+      "betaflight-configurator"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
