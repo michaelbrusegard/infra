@@ -20,6 +20,7 @@ in {
       qmk
       cmatrix
       openssl
+      wireguard-tools
     ] ++ lib.optionals (!isDarwin) [
       sbctl
     ] ++ lib.optionals (isDarwin) [

@@ -118,7 +118,10 @@ in {
           "f"
         ];
       };
-      nix-index.enable = true;
+      nix-index = {
+        enable = true;
+        enableZshIntegration = true;
+      };
       ripgrep.enable = true;
       jq.enable = true;
       fastfetch.enable = true;
