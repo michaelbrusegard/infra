@@ -292,7 +292,7 @@ On darwin:
 diskutil list
 ```
 
-On linux it is usually `/dev/sdX` where `X` is a letter, for example `/dev/sdb`. On darwon it is usually `/dev/diskX` where `X` is a number for example `/dev/disk6`.
+On linux it is usually `/dev/sdX` where `X` is a letter, for example `/dev/sdb`. On darwin it is usually `/dev/diskX` where `X` is a number for example `/dev/disk6`.
 
 To flash the image to the SD card you can use the following command, make sure to replace `/dev/XXX` with the correct device path for your SD card:
 
