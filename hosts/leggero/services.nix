@@ -128,6 +128,38 @@
     home-assistant = {
       enable = true;
       openFirewall = true;
+      extraComponents = [
+        "default_config"
+        "system_health"
+        "history"
+        "logbook"
+        "recorder"
+        "met"
+        "mobile_app"
+        "zha"
+      ];
+      config = {
+        homeassistant = {
+          name = config.secrets.leggero.homeAssistant.name;
+          latitude = config.secrets.leggero.homeAssistant.latitude;
+          longitude = config.secrets.leggero.homeAssistant.longitude;
+          time_zone = "Europe/Oslo";
+          unit_system = "metric";
+          temperature_unit = "C";
+        };
+        zha.usb_path = "/dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2400001-if00";
+      };
+      lovelaceConfig = {
+        title = "My Awesome Home";
+        views = [ {
+          title = "Example";
+          cards = [ {
+            type = "markdown";
+            title = "Lovelace";
+            content = "Welcome to your **Lovelace UI**.";
+          } ];
+        } ];
+      };
     };
   };
 }
