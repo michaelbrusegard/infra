@@ -10,7 +10,7 @@
       externalInterface = "eth0";
     };
     wireguard.interfaces.wg0 = {
-      ipAddress = "10.10.62.1/24";
+      ips = [ "10.10.62.1/24" ];
       listenPort = 51820;
       privateKeyFile = config.secrets.leggero.wireguard.privateKeyFile;
       peers = [
