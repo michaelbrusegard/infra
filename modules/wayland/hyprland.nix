@@ -9,7 +9,7 @@ in {
       package = null;
       portalPackage = null;
       xwayland.enable = true;
-      systemd.variables = ["--all"];
+      systemd.variables = [ "--all" ];
       settings = {
         monitor = [
           "DP-1,3440x1440@144,0x0,1, bitdepth, 10"
@@ -54,6 +54,8 @@ in {
           kb_options = "lv3:lalt_switch";
           repeat_rate = 65;
           repeat_delay = 150;
+          accel_profile = "flat";
+          sensitivity = -0.2;
           follow_mouse = 0;
         };
         group = {
