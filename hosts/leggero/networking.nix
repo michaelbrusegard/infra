@@ -7,7 +7,7 @@
     nat = {
       enable = true;
       internalInterfaces = [ "wg0" ];
-      externalInterface = "eth0";
+      externalInterface = "end0";
     };
     wireguard.interfaces.wg0 = {
       ips = [ "10.10.62.1/24" ];

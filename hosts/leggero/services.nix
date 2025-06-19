@@ -20,7 +20,7 @@
       enable = true;
       nssmdns4 = true;
       nssmdns6 = true;
-      allowInterfaces = [ "eth0" ];
+      allowInterfaces = [ "end0" ];
       publish = {
         enable = true;
         addresses = true;
