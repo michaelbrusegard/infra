@@ -2,6 +2,7 @@
   services = {
     openssh = {
       enable = true;
+      openFirewall = true;
       startWhenNeeded = true;
       ports = config.secrets.leggero.sshPorts;
       authorizedKeysInHomedir = false;
