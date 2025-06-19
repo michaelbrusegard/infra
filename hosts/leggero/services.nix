@@ -92,6 +92,7 @@
     };
     grafana = {
       enable = true;
+      settings.server.http_addr = "0.0.0.0";
       provision = {
         enable = true;
         datasources = {
