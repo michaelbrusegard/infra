@@ -5,5 +5,6 @@
     ./networking.nix
     ./services.nix
     ./system.nix
+    ./users.nix
   ];
 }

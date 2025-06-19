@@ -4,9 +4,8 @@
       enable = true;
       openFirewall = true;
       startWhenNeeded = true;
-      ports = config.secrets.leggero.sshPorts;
+      ports = config.secrets.leggero.ssh.ports;
       authorizedKeysInHomedir = false;
-      authorizedKeysFiles = config.secrets.leggero.authorizedKeysFiles;
       settings = {
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
@@ -31,7 +30,7 @@
     cloudflare-dyndns = {
       enable = true;
       apiTokenFile = config.secrets.credentialFiles.cloudflareToken;
-      domains = config.secrets.leggero.ddnsDomains;
+      domains = config.secrets.leggero.ddns.domains;
       ipv4 = true;
       ipv6 = false;
     };
