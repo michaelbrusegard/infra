@@ -1,7 +1,7 @@
 { config, ... }: {
   networking = {
     firewall = {
-      allowedTCPPorts = [ 53 3000 ];
+      allowedTCPPorts = [ 53 3000 ] ++ config.secrets.leggero.sshPorts;
       allowedUDPPorts = [ 51820 53 ];
     };
     nat = {
