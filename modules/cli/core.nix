@@ -22,6 +22,7 @@ in {
       gnugrep
       gnumake
       screen
+      clang
     ] ++ lib.optionals (!isDarwin) [
       psmisc
     ];

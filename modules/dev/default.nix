@@ -42,7 +42,6 @@ in {
         arduino-cli
 
         # C
-        clang
         cmake
         lldb
         llvmPackages.llvm
