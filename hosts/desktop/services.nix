@@ -17,7 +17,6 @@
       ports = config.secrets.desktop.sshPorts;
       authorizedKeysInHomedir = false;
       authorizedKeysFiles = config.secrets.desktop.authorizedKeysFiles;
-      hostKeys = [];
       settings = {
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;

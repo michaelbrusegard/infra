@@ -7,7 +7,6 @@
       ports = config.secrets.leggero.sshPorts;
       authorizedKeysInHomedir = false;
       authorizedKeysFiles = config.secrets.leggero.authorizedKeysFiles;
-      hostKeys = [];
       settings = {
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
