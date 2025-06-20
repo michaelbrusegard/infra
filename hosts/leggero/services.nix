@@ -1,4 +1,4 @@
-{ config, ... }: {
+{ config, userName, ... }: {
   services = {
     openssh = {
       enable = true;
@@ -94,6 +94,12 @@
       enable = true;
       settings = {
         server.http_addr = "0.0.0.0";
+        security = {
+          admin_email = "";
+          admin_user = userName;
+          admin_password = userName;
+        };
+        users.default_language = "en-GB";
       };
       provision = {
         enable = true;
