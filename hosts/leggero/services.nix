@@ -92,7 +92,13 @@
     };
     grafana = {
       enable = true;
-      settings.server.http_addr = "0.0.0.0";
+      settings = {
+        server.http_addr = "0.0.0.0";
+        auth.anonymous = {
+          enabled = true;
+          org_role = "Viewer";
+        };
+      };
       provision = {
         enable = true;
         datasources = {
