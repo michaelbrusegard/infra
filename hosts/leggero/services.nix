@@ -68,7 +68,7 @@
           ];
         };
         clientLookup = {
-          upstream = "10.10.61.1";
+          upstream = "10.0.61.1";
         };
         caching = {
           minTime = "5m";
