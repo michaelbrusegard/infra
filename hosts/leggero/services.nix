@@ -1,4 +1,4 @@
-{ config, userName, ... }: {
+{ pkgs, config, userName, ... }: {
   services = {
     openssh = {
       enable = true;
@@ -130,6 +130,24 @@
               }
             ];
           };
+        };
+        dashboards = {
+          settings.providers = [
+            {
+              name = "default";
+              orgId = 1;
+              folder = "Blocky";
+              type = "file";
+              disableDeletion = false;
+              editable = true;
+              options = {
+                path = pkgs.fetchurl {
+                  url = "https://grafana.com/api/dashboards/13558/revisions/6/download";
+                  hash = "";
+                };
+              };
+            }
+          ];
         };
       };
     };
