@@ -37,10 +37,14 @@
     blocky = {
       enable = true;
       settings = {
+        bootstrapDns = [
+          "1.1.1.1"
+          "9.9.9.9"
+        ];
         upstreams.groups.default = [
+          "https://1.1.1.1/dns-query"
           "https://dns.quad9.net/dns-query"
           "https://dns.adguard-dns.com/dns-query"
-          "https://1.1.1.1/dns-query"
         ];
         blocking = {
           denylists = {
@@ -84,7 +88,7 @@
           job_name = "blocky";
           static_configs = [
             {
-              targets = [ "localhost:4000" ];
+              targets = [ "127.0.0.1::4000" ];
             }
           ];
         }
@@ -142,8 +146,8 @@
               editable = true;
               options = {
                 path = pkgs.fetchurl {
-                  url = "https://grafana.com/api/dashboards/13558/revisions/6/download";
-                  hash = "";
+                  url = "https://0xerr0r.github.io/blocky/latest/blocky-grafana.json";
+                  hash = "sha256-InIKXAmovhDfYqBFGDNk/Cyj0hQQVjTuyDdTumV2yOg=";
                 };
               };
             }
