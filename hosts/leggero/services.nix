@@ -153,14 +153,22 @@
       enable = true;
       openFirewall = true;
       extraComponents = [
-        "default_config"
-        "system_health"
+        "backup"
+        "bluetooth"
+        "config"
+        "dhcp"
+        "energy"
         "history"
+        "homeassistant_alerts"
         "logbook"
-        "recorder"
-        "met"
         "mobile_app"
+        "my"
+        "ssdp"
+        "sun"
+        "usb"
+        "zeroconf"
         "zha"
+        "met"
       ];
       config = {
         homeassistant = {
@@ -171,7 +179,6 @@
           unit_system = "metric";
           temperature_unit = "C";
         };
-        zha.usb_path = "/dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2400001-if00";
       };
     };
   };
