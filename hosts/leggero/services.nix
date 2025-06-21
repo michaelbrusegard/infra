@@ -37,10 +37,6 @@
     blocky = {
       enable = true;
       settings = {
-        bootstrapDns = [
-          "1.1.1.1"
-          "9.9.9.9"
-        ];
         upstreams.groups.default = [
           "https://1.1.1.1/dns-query"
           "https://dns.quad9.net/dns-query"
@@ -67,13 +63,11 @@
             "privacy"
           ];
         };
-        clientLookup = {
-          upstream = "10.0.61.1";
-        };
         caching = {
           minTime = "5m";
           maxTime = "30m";
         };
+        ports.http = 4000;
         prometheus.enable = true;
       };
     };
