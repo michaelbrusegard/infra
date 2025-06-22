@@ -152,6 +152,7 @@
     home-assistant = {
       enable = true;
       openFirewall = true;
+      config = null;
       extraComponents = [
         "backup"
         "bluetooth"
