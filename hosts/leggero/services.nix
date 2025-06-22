@@ -185,9 +185,10 @@
     matter-server.enable = true;
     openthread-border-router = {
       enable = true;
+      package = pkgs-otbr.openthread-border-router;
+      backboneInterface = "end0";
       radio = {
         device = "/dev/serial/by-id/usb-dresden_elektronik_Thread_RCP__ConBee_II__DE2688235-if00";
-        baudRate = 115200;
         flowControl = true;
       };
     };
