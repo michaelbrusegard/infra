@@ -1,4 +1,7 @@
-{ pkgs, config, userName, ... }: {
+{ pkgs, config, userName, nixpkgs-openthread-border-router, ... }: {
+  imports = [
+    nixpkgs-openthread-border-router.nixosModules.services.hardware.openthread-border-router
+  ];
   services = {
     openssh = {
       enable = true;
@@ -175,7 +178,18 @@
         "zha"
         "met"
         "otbr"
+        "thread"
+        "matter"
       ];
+    };
+    matter-server.enable = true;
+    openthread-border-router = {
+      enable = true;
+      radio = {
+        device = "/dev/serial/by-id/usb-dresden_elektronik_Thread_RCP__ConBee_II__DE2688235-if00";
+        baudRate = 115200;
+        flowControl = true;
+      };
     };
   };
 }
