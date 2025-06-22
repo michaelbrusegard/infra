@@ -298,6 +298,7 @@ To flash the image to the SD card you can use the following command, make sure t
 
 ```sh
 zstd -dc result/sd-image/*.zst | sudo dd of=/dev/XXX bs=4M status=progress oflag=sync
+```
 
 ## Espresso (Ubuntu Home Server)
 
@@ -328,6 +329,6 @@ sh ~/dotfiles/espresso/scripts/login.sh
 - Dries Vints and his [SSH script](https://github.com/driesvints/dotfiles/blob/main/ssh.sh)
 - Antione Martin and his [GPG script](https://github.com/antoinemartin/create-gpg-key/blob/main/create_gpg_key.sh)
 - Elliot's fast and beautiful [.zshrc prompt](https://github.com/dreamsofautonomy/zensh/blob/main/.zshrc)
-- [Michael Bao's dotfiles](https://github.com/tcmmichaelb139/.dotfiles)
-- [Josean Martinez's dotfiles](https://github.com/josean-dev/dev-environment-files)
-- [TheBlueRuby's awesome Arch Linux setup](https://github.com/TheBlueRuby/dotfiles-arch)
+- Michael Bao's [dotfiles](https://github.com/tcmmichaelb139/.dotfiles)
+- Josean Martinez's [dev environment files](https://github.com/josean-dev/dev-environment-files)
+- TheBlueRuby's [awesome Arch Linux setup](https://github.com/TheBlueRuby/dotfiles-arch)
