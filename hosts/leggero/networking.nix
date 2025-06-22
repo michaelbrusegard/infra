@@ -1,7 +1,7 @@
 { config, ... }: {
   networking = {
     firewall = {
-      allowedTCPPorts = [ 53 9090 3000 ];
+      allowedTCPPorts = [ 53 9090 3000 8123 ];
       allowedUDPPorts = [ 51820 53 ];
     };
     nat = {
