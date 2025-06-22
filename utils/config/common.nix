@@ -1,4 +1,4 @@
-{ pkgs, system, userName, hostName, nur, yazi, fancontrol-gui, ... }:
+{ pkgs, system, userName, hostName, nur, yazi, fancontrol-gui, nixpkgs-otbr, ... }:
 {
   nix = {
     optimise.automatic = true;
@@ -31,6 +31,12 @@
       nur.overlays.default
       yazi.overlays.default
       fancontrol-gui.overlays.default
+      (final: prev: {
+        openthread-border-router = (import nixpkgs-otbr {
+          system = prev.system;
+          config = prev.config;
+        }).openthread-border-router;
+      })
     ];
   };
   networking.hostName = hostName;
