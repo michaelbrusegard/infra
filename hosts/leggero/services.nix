@@ -1,6 +1,6 @@
 { pkgs, config, userName, nixpkgs-otbr, ... }: {
   imports = [
-    "${nixpkgs-otbr}/nixos/modules/services/networking/openthread-border-router.nix"
+    "${nixpkgs-otbr}/nixos/modules/services/home-automation/openthread-border-router.nix"
   ];
   services = {
     openssh = {

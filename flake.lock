@@ -976,6 +976,21 @@
         "type": "github"
       }
     },
+    "nixpkgs-otbr": {
+      "locked": {
+        "lastModified": 1705791553,
+        "narHash": "sha256-HMFv0Bsz26b/zJ6T69DZve6YnqYdy/AT+/BWnoHRDrI=",
+        "owner": "mrene",
+        "repo": "nixpkgs",
+        "rev": "ba5b895db511528f1e4bbf47865f3cc2d315b9eb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mrene",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-stable": {
       "locked": {
         "lastModified": 1730741070,
@@ -1111,6 +1126,7 @@
         "nixos-raspberrypi": "nixos-raspberrypi",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_2",
+        "nixpkgs-otbr": "nixpkgs-otbr",
         "nur": "nur",
         "sops-nix": "sops-nix",
         "wezterm": "wezterm",
