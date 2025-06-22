@@ -18,7 +18,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi?shallow=1";
-    nixpkgs-openthread-border-router.utl = "github:mrene/nixpkgs/?shallow=1";
+    nixpkgs-openthread-border-router.url = "github:mrene/nixpkgs/?shallow=1";
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
