@@ -153,22 +153,10 @@
       enable = true;
       config = null;
       extraComponents = [
-        "backup"
-        "bluetooth"
-        "config"
-        "dhcp"
-        "energy"
-        "history"
-        "homeassistant_alerts"
-        "logbook"
-        "mobile_app"
-        "my"
-        "ssdp"
-        "sun"
-        "usb"
-        "zeroconf"
+        "default_config"
         "zha"
         "met"
+        "otbr"
       ];
     };
   };
