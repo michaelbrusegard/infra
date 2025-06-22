@@ -170,16 +170,6 @@
         "zha"
         "met"
       ];
-      config = {
-        homeassistant = {
-          name = config.secrets.leggero.homeAssistant.name;
-          latitude = config.secrets.leggero.homeAssistant.latitude;
-          longitude = config.secrets.leggero.homeAssistant.longitude;
-          time_zone = "Europe/Oslo";
-          unit_system = "metric";
-          temperature_unit = "C";
-        };
-      };
     };
   };
 }
