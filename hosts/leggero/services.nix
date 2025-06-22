@@ -187,6 +187,8 @@
       enable = true;
       package = pkgs-otbr.openthread-border-router;
       backboneInterface = "end0";
+      rest.listenAddress = "0.0.0.0";
+      web.listenAddress = "0.0.0.0";
       radio = {
         device = "/dev/serial/by-id/usb-dresden_elektronik_Thread_RCP__ConBee_II__DE2688235-if00";
         flowControl = true;
