@@ -1,9 +1,7 @@
-{ pkgs, config, userName, nixpkgs-otbr, pkgs-otbr, ... }:
-let
-  otbr-module = { pkgs, ... }@args:
-    (import "${nixpkgs-otbr}/nixos/modules/services/home-automation/openthread-border-router.nix") (args // { pkgs = pkgs-otbr; });
-in {
-  imports = [ otbr-module ];
+{ pkgs, config, userName, nixpkgs-otbr, ... }: {
+  imports = [
+    "${nixpkgs-otbr}/nixos/modules/services/networking/openthread-border-router.nix"
+  ];
   services = {
     openssh = {
       enable = true;
