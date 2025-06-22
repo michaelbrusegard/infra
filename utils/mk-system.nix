@@ -6,6 +6,11 @@ let
   isAarch64Linux = system == "aarch64-linux";
   isWsl = hostName == "wsl";
 
+  pkgs-otbr = import inputs.nixpkgs-otbr {
+    inherit system;
+    config = {};
+  };
+
   commonModules = [
     ./config/common.nix
     ./config/home-manager.nix
@@ -14,8 +19,8 @@ let
   commonArgs = {
     inherit system;
     specialArgs = {
-      inherit system userName hostName colors isDarwin isWsl;
-      inherit (inputs) nixpkgs nix-darwin home-manager sops-nix nixos-raspberrypi nixpkgs-openthread-border-router nixos-wsl nur lanzaboote mac-app-util nix-homebrew homebrew-core homebrew-cask apple-fonts apple-emoji-linux catppuccin zen-browser nix-darwin-browsers hyprland yazi wezterm fancontrol-gui dotfiles-private;
+      inherit system userName hostName colors isDarwin isWsl pkgs-otbr;
+      inherit (inputs) nixpkgs nix-darwin home-manager sops-nix nixos-raspberrypi nixpkgs-otbr nixos-wsl nur lanzaboote mac-app-util nix-homebrew homebrew-core homebrew-cask apple-fonts apple-emoji-linux catppuccin zen-browser nix-darwin-browsers hyprland yazi wezterm fancontrol-gui dotfiles-private;
     };
   };
 
