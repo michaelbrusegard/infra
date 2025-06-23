@@ -47,11 +47,6 @@
           "https://dns.quad9.net/dns-query"
           "https://dns.adguard-dns.com/dns-query"
         ];
-        conditional = {
-          mapping = {
-            local = "udp:127.0.0.53";
-          };
-        };
         blocking = {
           denylists = {
             ads_and_trackers = [
