@@ -119,7 +119,7 @@
                 type = "prometheus";
                 access = "proxy";
                 orgId = 1;
-                url = "http://localhost:9090";
+                url = "http://127.0.0.1:9090";
                 isDefault = true;
                 jsonData = {
                   graphiteVersion = "1.1";
@@ -150,6 +150,15 @@
             }
           ];
         };
+      };
+    };
+    caddy = {
+      enable = true;
+      user = userName;
+      virtualHosts.${config.secrets.caddy.homeAssistantHost} = {
+        extraConfig = ''
+          reverse_proxy 127.0.0.1:8123
+        '';
       };
     };
     home-assistant = {
