@@ -24,6 +24,7 @@
       nssmdns4 = true;
       nssmdns6 = true;
       reflector = true;
+      openFirewall = true;
       allowInterfaces = [ "end0" "wg0" ];
       publish = {
         enable = true;
