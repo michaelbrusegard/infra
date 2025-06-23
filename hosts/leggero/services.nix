@@ -154,7 +154,6 @@
     };
     caddy = {
       enable = true;
-      user = userName;
       virtualHosts.${config.secrets.leggero.caddy.homeAssistantHost} = {
         extraConfig = ''
           reverse_proxy 127.0.0.1:8123
