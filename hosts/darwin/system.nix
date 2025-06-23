@@ -143,7 +143,7 @@
         TrackpadThreeFingerTapGesture = 0;
       };
       universalaccess = {
-        reduceMotion = true;
+        reduceMotion = false;
         reduceTransparency = false;
       };
       WindowManager = {
