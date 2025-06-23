@@ -125,8 +125,8 @@ in
     };
     sessionVariables = {
       SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
-      GEMINI_API_KEY = "$(${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.geminiKey})";
-      TAURI_SIGNING_PRIVATE_KEY= "$(${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.tauriSigningKey})";
+      GEMINI_API_KEY = "$( [ -f ${config.secrets.credentialFiles.geminiKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.geminiKey} )";
+      TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.credentialFiles.tauriSigningKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.tauriSigningKey} )";
     };
     sessionPath = [
       "$HOME/.local/bin"
