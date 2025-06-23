@@ -14,6 +14,9 @@
       listenPort = 51820;
       privateKeyFile = config.secrets.leggero.wireguard.privateKeyFile;
       peers = config.secrets.leggero.wireguard.peers;
+      postSetup = ''
+        ip link set wg0 multicast on
+      '';
     };
   };
 }
