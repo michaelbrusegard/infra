@@ -8,7 +8,7 @@ return {
     opts = function()
       local opts = {
         hints = { enabled = false },
-        provider = 'copilot/gpt-4.1',
+        provider = 'copilot/gemini-2.5-pro',
         providers = {
           ['copilot/gpt-4.1'] = {
             __inherited_from = 'copilot',
