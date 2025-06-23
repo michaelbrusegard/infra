@@ -23,7 +23,8 @@
       enable = true;
       nssmdns4 = true;
       nssmdns6 = true;
-      allowInterfaces = [ "end0" ];
+      reflector = true;
+      allowInterfaces = [ "end0" "wg0" ];
       publish = {
         enable = true;
         addresses = true;
