@@ -188,7 +188,6 @@
         "otbr"
         "thread"
         "matter"
-        "homekit"
       ];
     };
     matter-server.enable = true;
