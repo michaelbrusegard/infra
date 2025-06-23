@@ -23,6 +23,7 @@ in {
       gnumake
       screen
       clang
+      nix-index
     ] ++ lib.optionals (!isDarwin) [
       psmisc
     ];
