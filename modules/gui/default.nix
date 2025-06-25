@@ -32,6 +32,7 @@ in {
       orca-slicer
       freecad-wayland
       betaflight-configurator
+      blender
     ]);
   };
 }
