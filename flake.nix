@@ -124,25 +124,25 @@
         desktop = mkSystem {
           system = "x86_64-linux";
           userName = "michaelbrusegard";
-          hostName = "desktop";
+          hostName = "Desktop";
         };
 
         wsl = mkSystem {
           system = "x86_64-linux";
           userName = "michaelbrusegard";
-          hostName = "wsl";
+          hostName = "WSL";
         };
 
         leggero = mkSystem {
           system = "aarch64-linux";
           userName = "sysadmin";
-          hostName = "leggero";
+          hostName = "Leggero";
         };
 
         espresso = mkSystem {
           system = "x86_64-linux";
           userName = "sysadmin";
-          hostName = "espresso";
+          hostName = "Espresso";
         };
 
       };
