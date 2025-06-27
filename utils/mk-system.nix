@@ -36,13 +36,13 @@ in
     inputs.nixos-raspberrypi.lib.nixosSystem (commonArgs // {
       modules = [
         ./config/nixos.nix
-        ../hosts/${builtins.toLower hostName}
+        ../hosts/${builtins.stringToLower hostName}
       ] ++ commonModules;
     })
   else
     inputs.nixpkgs.lib.nixosSystem (commonArgs // {
       modules = [
         ./config/nixos.nix
-        ../hosts/${builtins.toLower hostName}
+        ../hosts/${builtins.stringToLower hostName}
       ] ++ commonModules;
     })
