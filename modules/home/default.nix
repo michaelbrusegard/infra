@@ -123,6 +123,16 @@ in
           ${pkgs.bc}/bin/bc -q -s /tmp/bc_init.$$;
           rm /tmp/bc_init.$$;
         )'';
+    } // lib.optionalAttrs isDarwin {
+      kanata-toggle = ''
+        if [ -n "$(sudo launchctl list | grep org.nixos.kanata | awk '{print $1}' | grep -E '^[0-9]+$')" ]; then
+          echo 'Kanata running, stopping...';
+          sudo launchctl bootout system /Library/LaunchDaemons/org.nixos.kanata.plist && echo 'Kanata stopped.'
+        else
+          echo 'Kanata not running, starting...';
+          sudo launchctl bootstrap system /Library/LaunchDaemons/org.nixos.kanata.plist && echo 'Kanata started.'
+        fi
+      '';
     };
     sessionVariables = {
       SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
