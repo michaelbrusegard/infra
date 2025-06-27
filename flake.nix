@@ -121,25 +121,25 @@
       );
 
       nixosConfigurations = {
-        desktop = mkSystem {
+        Desktop = mkSystem {
           system = "x86_64-linux";
           userName = "michaelbrusegard";
           hostName = "Desktop";
         };
 
-        wsl = mkSystem {
+        WSL = mkSystem {
           system = "x86_64-linux";
           userName = "michaelbrusegard";
           hostName = "WSL";
         };
 
-        leggero = mkSystem {
+        Leggero = mkSystem {
           system = "aarch64-linux";
           userName = "sysadmin";
           hostName = "Leggero";
         };
 
-        espresso = mkSystem {
+        Espresso = mkSystem {
           system = "x86_64-linux";
           userName = "sysadmin";
           hostName = "Espresso";
