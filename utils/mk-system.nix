@@ -1,6 +1,7 @@
 inputs:
 { system, userName, hostName }:
 let
+  lib = inputs.nixpkgs.lib;
   colors = import ./colors.nix;
   isDarwin = system == "aarch64-darwin";
   isAarch64Linux = system == "aarch64-linux";
@@ -36,13 +37,13 @@ in
     inputs.nixos-raspberrypi.lib.nixosSystem (commonArgs // {
       modules = [
         ./config/nixos.nix
-        ../hosts/${builtins.stringToLower hostName}
+        ../hosts/${lib.strings.toLower hostName}
       ] ++ commonModules;
     })
   else
     inputs.nixpkgs.lib.nixosSystem (commonArgs // {
       modules = [
         ./config/nixos.nix
-        ../hosts/${builtins.stringToLower hostName}
+        ../hosts/${lib.strings.toLower hostName}
       ] ++ commonModules;
     })
