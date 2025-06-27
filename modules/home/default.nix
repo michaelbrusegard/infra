@@ -113,6 +113,7 @@ in
       "......" = "cd ../../../../..";
       "-" = "cd -";
       ls = "eza";
+      top = "btop";
       lzg = "lazygit";
       vim = "nvim";
       vi = "nvim";

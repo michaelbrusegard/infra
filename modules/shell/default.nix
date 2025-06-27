@@ -121,10 +121,12 @@ in {
       ripgrep.enable = true;
       jq.enable = true;
       fastfetch.enable = true;
+      btop.enable = true;
     };
     catppuccin = {
       zsh-syntax-highlighting.enable = true;
       bat.enable = true;
+      btop.enable = true;
       fzf = {
         enable = true;
         accent = "blue";
