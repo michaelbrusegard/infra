@@ -8,7 +8,7 @@ return {
     opts = function()
       local opts = {
         hints = { enabled = false },
-        provider = 'copilot/gemini-2.5-pro',
+        provider = 'copilot/gpt-4.1',
         providers = {
           ['copilot/gpt-4.1'] = {
             __inherited_from = 'copilot',
@@ -20,14 +20,24 @@ return {
             model = 'claude-sonnet-4',
             display_name = 'copilot/claude-sonnet-4',
           },
+          ['copilot/gemini-2.0-flash'] = {
+            __inherited_from = 'copilot',
+            model = 'gemini-2.0-flash-001',
+            display_name = 'copilot/gemini-2.0-flash',
+          },
           ['copilot/gemini-2.5-pro'] = {
             __inherited_from = 'copilot',
             model = 'gemini-2.5-pro',
             display_name = 'copilot/gemini-2.5-pro',
           },
+          ['api/gemini-2.5-flash'] = {
+            __inherited_from = 'gemini',
+            model = 'gemini-2.5-flash',
+            display_name = 'api/gemini-2.5-flash',
+          },
           ['api/gemini-2.5-pro'] = {
             __inherited_from = 'gemini',
-            model = 'gemini-2.5-pro-preview-06-05',
+            model = 'gemini-2.5-pro',
             display_name = 'api/gemini-2.5-pro',
           },
         },
