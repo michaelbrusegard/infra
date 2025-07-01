@@ -124,7 +124,7 @@ in
           rm /tmp/bc_init.$$;
         )'';
     } // lib.optionalAttrs isDarwin {
-      kanata-toggle = ''
+      toggle-kanata = ''
         if [ -n "$(sudo launchctl list | grep org.nixos.kanata | awk '{print $1}' | grep -E '^[0-9]+$')" ]; then
           echo 'Kanata running, stopping...';
           sudo launchctl bootout system /Library/LaunchDaemons/org.nixos.kanata.plist && echo 'Kanata stopped.'
