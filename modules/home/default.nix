@@ -98,8 +98,9 @@ in
       else
         "sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}";
       update-nix = "nix flake update nixpkgs nix-darwin nur home-manager sops-nix nixos-raspberrypi nixos-wsl nixpkgs-otbr nix-homebrew lanzaboote mac-app-util homebrew-core homebrew-cask apple-emoji-linux apple-fonts catppuccin --flake $HOME/Developer/dotfiles";
+      update-hyprland = "nix flake update hyprland --flake $HOME/Developer/dotfiles";
       update-browser = "nix flake update zen-browser nix-darwin-browsers --flake $HOME/Developer/dotfiles";
-      update-apps = "nix flake update yazi hyprland wezterm fancontrol-gui --flake $HOME/Developer/dotfiles";
+      update-apps = "nix flake update yazi wezterm fancontrol-gui --flake $HOME/Developer/dotfiles";
       update-secrets = "nix flake update dotfiles-private --flake $HOME/Developer/dotfiles";
       clean = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
       reload = "source $HOME/.config/zsh/.zshrc";
