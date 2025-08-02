@@ -23,13 +23,7 @@
       url = "github:nix-community/NixOS-WSL/main?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-homebrew = {
-      url = "github:zhaofengli/nix-homebrew?shallow=1";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        nix-darwin.follows = "nix-darwin";
-      };
-    };
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew?shallow=1";
     lanzaboote = {
       url = "github:nix-community/lanzaboote/v0.4.2?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";

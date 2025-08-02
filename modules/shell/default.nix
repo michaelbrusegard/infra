@@ -9,7 +9,7 @@ in {
     programs = {
       zsh = {
         enable = true;
-        dotDir = ".config/zsh";
+        dotDir = "${config.xdg.configHome}/zsh";
         enableVteIntegration = true;
         autocd = true;
         enableCompletion = true;

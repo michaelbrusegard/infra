@@ -26,6 +26,9 @@
     config = {
       allowUnfree = true;
       allowBroken = true;
+      permittedInsecurePackages = [
+        "libsoup-2.74.3"
+      ];
     };
     overlays = [
       nur.overlays.default
