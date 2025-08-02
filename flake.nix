@@ -20,7 +20,7 @@
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi?shallow=1";
     nixpkgs-otbr.url = "github:mrene/nixpkgs/openthread-border-router?shallow=1";
     nixos-wsl = {
-      url = "github:nix-community/NixOS-WSL/main";
+      url = "github:nix-community/NixOS-WSL/main?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-homebrew = {
@@ -31,7 +31,7 @@
       };
     };
     lanzaboote = {
-      url = "github:nix-community/lanzaboote/v0.4.2";
+      url = "github:nix-community/lanzaboote/v0.4.2?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     mac-app-util = {
