@@ -94,7 +94,7 @@ in
     ];
     shellAliases = {
       rebuild = if isDarwin then
-        "darwin-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}"
+        "sudo darwin-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}"
       else
         "sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}";
       update-nix = "nix flake update nixpkgs nix-darwin nur home-manager sops-nix nixos-raspberrypi nixos-wsl nixpkgs-otbr nix-homebrew lanzaboote mac-app-util homebrew-core homebrew-cask apple-emoji-linux apple-fonts catppuccin --flake $HOME/Developer/dotfiles";

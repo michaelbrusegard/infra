@@ -27,6 +27,10 @@
     };
   };
   networking = {
+    applicationFirewall = {
+      enable = true;
+      blockAllIncoming = true;
+    };
     computerName = hostName;
     localHostName = hostName;
   };

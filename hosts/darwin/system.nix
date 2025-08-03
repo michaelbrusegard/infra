@@ -1,6 +1,7 @@
 { pkgs, userName, ... }: {
   system = {
     stateVersion = 5;
+    primaryUser = userName;
     defaults = {
       ".GlobalPreferences" = {
         "com.apple.mouse.scaling" = -1.0;
@@ -11,9 +12,6 @@
         ShowCategory = 100;
         SortColumn = "CPUUsage";
         SortDirection = 0;
-      };
-      alf = {
-        globalstate = 1;
       };
       controlcenter = {
         AirDrop = false;
@@ -315,7 +313,7 @@
     startup.chime = false;
     activationScripts.postActivation.text = ''
       echo "Loading yabai scripting addition..."
-      yabai --load-sa
+      ${pkgs.yabai}/bin/yabai --load-sa
 
       echo "Checking for podman socket..."
       if [ -f "/Users/${userName}/.config/podman/socket_path" ]; then
