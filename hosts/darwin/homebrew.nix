@@ -39,6 +39,7 @@
       "freecad"
       "betaflight-configurator"
       "blender"
+      "microsoft-teams"
     ];
     masApps = {
       "Proton Pass for Safari" = 6502835663;
