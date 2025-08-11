@@ -22,6 +22,7 @@
       "nsis"
     ];
     casks = [
+      "raycast"
       "element"
       "altserver"
       "legcord"

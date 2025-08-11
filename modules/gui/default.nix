@@ -12,9 +12,9 @@ in {
       zoom-us
     ]
     ++ (lib.optionals isDarwin [
-      raycast
       ice-bar
       libreoffice-bin
+      notion-app
     ])
     ++ (lib.optionals (!isDarwin) [
       burpsuite
@@ -33,6 +33,7 @@ in {
       freecad-wayland
       betaflight-configurator
       blender
+      notion
     ]);
   };
 }
