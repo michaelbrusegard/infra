@@ -146,6 +146,7 @@ in
       "$HOME/.local/bin"
       "$HOME/bin"
       "$HOME/.cargo/bin"
+      "$HOME/.local/share/pnpm"
     ] ++ lib.optionals isDarwin [
       "/opt/homebrew/bin"
     ];
