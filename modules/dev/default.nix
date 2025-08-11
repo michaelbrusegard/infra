@@ -23,6 +23,8 @@ in {
         # Python
         uv
         python3
+        gdal
+        geos
 
         # Go
         go
@@ -52,6 +54,8 @@ in {
       ];
       sessionVariables = {
         NODE_COMPILE_CACHE = "$HOME/.cache/nodejs-compile-cache";
+        GDAL_LIBRARY_PATH = "$(gdal-config --prefix)/lib/libgdal.dylib";
+        GEOS_LIBRARY_PATH = "$(geos-config --prefix)/lib/libgeos_c.dylib";
       };
       activation = lib.mkIf isDarwin {
         linkDocker = lib.hm.dag.entryAfter ["writeBoundary"] ''

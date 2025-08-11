@@ -3,5 +3,6 @@
     kanata
     podman
     podman-compose
+    docker-compose
   ];
 }
