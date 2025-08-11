@@ -78,6 +78,7 @@ in {
             nerdFontsVersion = "3";
           };
           git = {
+            overrideGpg = true;
             paging = {
               colorArg = "always";
               pager = "delta --dark --paging=never";
