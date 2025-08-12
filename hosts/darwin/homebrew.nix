@@ -23,6 +23,7 @@
     ];
     casks = [
       "raycast"
+      "linearmouse"
       "element"
       "altserver"
       "legcord"
