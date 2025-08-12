@@ -5,14 +5,14 @@ let
   yazi-plugins = pkgs.fetchFromGitHub {
     owner = "yazi-rs";
     repo = "plugins";
-    rev = "b12a9ab085a8c2fe2b921e1547ee667b714185f9";
+    rev = "e95c7b384e7b0a9793fe1471f0f8f7810ef2a7ed";
     hash = "sha256-LWN0riaUazQl3llTNNUMktG+7GLAHaG/IxNj1gFhDRE=";
 
   };
   glow-plugin = pkgs.fetchFromGitHub {
     owner = "Reledia";
     repo = "glow.yazi";
-    rev = "2da96e3ffd9cd9d4dd53e0b2636f83ff69fe9af0";
+    rev = "bd3eaa58c065eaf216a8d22d64c62d8e0e9277e9";
     hash = "sha256-4krck4U/KWmnl32HWRsblYW/biuqzDPysrEn76buRck=";
   };
   duckdb-plugin = pkgs.fetchFromGitHub {
