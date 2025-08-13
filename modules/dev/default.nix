@@ -54,6 +54,7 @@ in {
       ];
       sessionVariables = {
         NODE_COMPILE_CACHE = "$HOME/.cache/nodejs-compile-cache";
+      } // lib.optionalAttrs isDarwin {
         GDAL_LIBRARY_PATH = "$(gdal-config --prefix)/lib/libgdal.dylib";
         GEOS_LIBRARY_PATH = "$(geos-config --prefix)/lib/libgeos_c.dylib";
       };
