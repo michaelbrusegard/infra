@@ -108,6 +108,12 @@ Install Xcode command line tools:
 xcode-select --install
 ```
 
+Accept the license agreement:
+
+```sh
+sudo xcodebuild -license accept
+```
+
 ### Install Rosetta
 
 ```sh
