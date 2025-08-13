@@ -6,62 +6,62 @@ let
     owner = "yazi-rs";
     repo = "plugins";
     rev = "e95c7b384e7b0a9793fe1471f0f8f7810ef2a7ed";
-    hash = "sha256-LWN0riaUazQl3llTNNUMktG+7GLAHaG/IxNj1gFhDRE=";
+    hash = "sha256-TUS+yXxBOt6tL/zz10k4ezot8IgVg0/2BbS8wPs9KcE=";
 
   };
   glow-plugin = pkgs.fetchFromGitHub {
     owner = "Reledia";
     repo = "glow.yazi";
     rev = "bd3eaa58c065eaf216a8d22d64c62d8e0e9277e9";
-    hash = "sha256-4krck4U/KWmnl32HWRsblYW/biuqzDPysrEn76buRck=";
+    hash = "sha256-mzW/ut/LTEriZiWF8YMRXG9hZ70OOC0irl5xObTNO40=";
   };
   duckdb-plugin = pkgs.fetchFromGitHub {
     owner = "wylie102";
     repo = "duckdb.yazi";
-    rev = "ee8cae3bcddfaf4467ef72791239afbd3309c007";
-    hash = "sha256-luVxgzRa21AykwQs/F8DB4O6ENcsEgF+Eb7dAkl0jhs=";
+    rev = "3f8c8633d4b02d3099cddf9e892ca5469694ba22";
+    hash = "sha256-XQM459V3HbPgXKgd9LnAIKRQOAaJPdZA/Tp91TSGHqY=";
   };
   bat-plugin = pkgs.fetchFromGitHub {
     owner = "mgumz";
     repo = "yazi-plugin-bat";
-    rev = "190b898e2073231aff8f2d621131d5215b796e8a";
-    hash = "sha256-GKIEiFp9y8mAjbqoAU2wXPnDkeObMcNczs9xKz+naIU=";
+    rev = "4dea0a584f30247b8ca4183dc2bd38c80da0d7ea";
+    hash = "sha256-OPa8afKLZaBFL69pq5itI8xRg7u05FJthst88t6HZo0=";
   };
   mediainfo-plugin = pkgs.fetchFromGitHub {
     owner = "boydaihungst";
     repo = "mediainfo.yazi";
-    rev = "436cb5f04d6e5e86ddc0386527254d87b7751ec8";
-    hash = "sha256-oFp8mJ62FsJX46mKQ7/o6qXPC9qx3+oSfqS0cKUZETI=";
+    rev = "0e2ae47cfb2b7c7a32d714c753b1cebbaa75d127";
+    hash = "sha256-CHigaujMHd1BuYyyxzI5B4ZYQhuH2YZptVVJToq39sY=";
   };
   torrent-preview-plugin = pkgs.fetchFromGitHub {
     owner = "kirasok";
     repo = "torrent-preview.yazi";
-    rev = "4ca5996a8264457cbefff8e430acfca4900a0453";
-    hash = "sha256-vaeOdNa56wwzBV6DgJjprRlrAcz2yGUYsOveTJKFv6M=";
+    rev = "f46528243c458de3ffce38c44607d5a0cde67559";
+    hash = "sha256-VhJvNRKHxVla4v2JJeSnP0MOMBFSm4k7gfqjrHOMVlo=";
   };
   relative-motions-plugin = pkgs.fetchFromGitHub {
     owner = "dedukun";
     repo = "relative-motions.yazi";
-    rev = "ce2e890227269cc15cdc71d23b35a58fae6d2c27";
-    hash = "sha256-Ijz1wYt+L+24Fb/rzHcDR8JBv84z2UxdCIPqTdzbD14=";
+    rev = "a603d9ea924dfc0610bcf9d3129e7cba605d4501";
+    hash = "sha256-9i6x/VxGOA3bB3FPieB7mQ1zGaMK5wnMhYqsq4CvaM4=";
   };
   lazygit-plugin = pkgs.fetchFromGitHub {
     owner = "Lil-Dank";
     repo = "lazygit.yazi";
-    rev = "7a08a0988c2b7481d3f267f3bdc58080e6047e7d";
-    hash = "sha256-OJJPgpSaUHYz8a9opVLCds+VZsK1B6T+pSRJyVgYNy8=";
+    rev = "8f37dc5795f165021098b17d797c7b8f510aeca9";
+    hash = "sha256-rR7SMTtQYrvQjhkzulDaNH/LAA77UnXkcZ50WwBX2Uw=";
   };
   augment-command-plugin = pkgs.fetchFromGitHub {
     owner = "hankertrix";
     repo = "augment-command.yazi";
-    rev = "adebde061a891c01e6a25b349ade3cdb7e492e29";
-    hash = "sha256-/x27CTosS6tz6vIKqbc+xzjwSrHYh6FGc/QdYokggj0=";
+    rev = "120406f79b6a5bf4db6120dd99c1106008ada5cf";
+    hash = "sha256-t9X7cNrMR3fFqiM13COQbBDHYr8UKgxW708V6ndZVgY=";
   };
   yaziline-plugin = pkgs.fetchFromGitHub {
     owner = "llanosrocas";
     repo = "yaziline.yazi";
-    rev = "1342efed87fe7e408d44b6795ff3a62a478b381d";
-    hash = "sha256-95l2jgE9lvJl6eZXuo+AThn2HE380rQtUG5LRnBZorc=";
+    rev = "e7042a8b4ee9de4ebfb6e4106a6edf346cef99fb";
+    hash = "sha256-cwuPh2aMh0oj9HEGyvrvkNTguER6VoXjnFklCTNPoeY=";
   };
 in {
   options.modules.yazi.enable = lib.mkEnableOption "Yazi configuration";
