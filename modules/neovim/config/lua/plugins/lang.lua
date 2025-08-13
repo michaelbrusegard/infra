@@ -16,4 +16,13 @@ return {
   { import = 'lazyvim.plugins.extras.lang.tex' },
   { import = 'lazyvim.plugins.extras.lang.toml' },
   { import = 'lazyvim.plugins.extras.lang.typescript' },
+  {
+    'benomahony/uv.nvim',
+    opts = {
+      picker_integration = true,
+      keymaps = {
+        prefix = '<leader>cu',
+      },
+    },
+  },
 }
