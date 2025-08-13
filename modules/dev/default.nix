@@ -57,6 +57,7 @@ in {
       } // lib.optionalAttrs isDarwin {
         GDAL_LIBRARY_PATH = "$(gdal-config --prefix)/lib/libgdal.dylib";
         GEOS_LIBRARY_PATH = "$(geos-config --prefix)/lib/libgeos_c.dylib";
+        PNPM_HOME = "$HOME/.local/state/pnpm";
       };
       activation = lib.mkIf isDarwin {
         linkDocker = lib.hm.dag.entryAfter ["writeBoundary"] ''
