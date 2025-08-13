@@ -151,12 +151,14 @@ in {
           "workspace 3, class:^(Proton Pass)$"
           "workspace 4, class:^(obsidian)$"
           "workspace 4, class:^(libreoffice)$"
+          "workspace 4, class:^(Notion)$"
           "workspace 5, class:^(legcord)$"
           "workspace 5, class:^(Element)$"
           "workspace 5, class:^(Slack)$"
           "workspace 7, class:^(resolve)$"
           "workspace 7, class:^(Gimp)$"
           "workspace 7, class:^(org.inkscape.Inkscape)$"
+          "workspace 7, class:^(FreeCAD)$"
         ];
       };
     };
