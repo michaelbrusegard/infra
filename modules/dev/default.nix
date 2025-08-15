@@ -20,6 +20,10 @@ in {
     };
     home = {
       packages = with pkgs; [
+        # LLM CLIS
+        opencode
+        gemini-cli
+
         # Python
         uv
         python3
