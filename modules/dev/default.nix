@@ -59,30 +59,6 @@ in {
         GEOS_LIBRARY_PATH = "$(geos-config --prefix)/lib/libgeos_c.dylib";
         PNPM_HOME = "$HOME/.local/state/pnpm";
       };
-      activation = lib.mkIf isDarwin {
-        linkDocker = lib.hm.dag.entryAfter ["writeBoundary"] ''
-          $DRY_RUN_CMD mkdir -p $HOME/.local/bin
-          $DRY_RUN_CMD ln -sf ${pkgs.podman}/bin/podman $HOME/.local/bin/docker
-        '';
-        initPodmanMachine = lib.hm.dag.entryAfter ["writeBoundary"] ''
-          if ! ${pkgs.podman}/bin/podman machine inspect podman-machine-default >/dev/null 2>&1; then
-            echo "Initializing default Podman machine..."
-            $DRY_RUN_CMD ${pkgs.podman}/bin/podman machine init
-          else
-            echo "Default Podman machine already exists."
-          fi
-        '';
-        storePodmanSocket = lib.hm.dag.entryAfter ["writeBoundary"] ''
-          SOCKET_PATH=$(${pkgs.podman}/bin/podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')
-          if [ -n "$SOCKET_PATH" ]; then
-            echo "Storing Podman socket path..."
-            $DRY_RUN_CMD mkdir -p $HOME/.config/podman
-            echo "$SOCKET_PATH" > $HOME/.config/podman/socket_path
-          else
-            echo "Error: Could not determine Podman socket path. Is the machine running?"
-          fi
-        '';
-      };
     };
   };
 }

@@ -312,30 +312,12 @@
     };
     startup.chime = false;
     activationScripts.postActivation.text = ''
+      echo "Deleting yabai cache..."
+      if [ -d "/tmp/yabai" ]; then
+      rm -rf /tmp/yabai/*
+      fi
       echo "Loading yabai scripting addition..."
       ${pkgs.yabai}/bin/yabai --load-sa
-      echo "Deleting yabai cache..."
-      if [ -f "/tmp/yabai" ]; then
-        rm /tmp/yabai/*
-      fi
-
-      echo "Checking for podman socket..."
-      if [ -f "/Users/${userName}/.config/podman/socket_path" ]; then
-        echo "Found podman socket path file"
-        PODMAN_SOCKET=$(${pkgs.coreutils}/bin/cat "/Users/${userName}/.config/podman/socket_path")
-        if [ -n "$PODMAN_SOCKET" ]; then
-          echo "Creating docker socket directory..."
-          mkdir -p /var/run/docker
-          echo "Linking docker socket to podman socket: $PODMAN_SOCKET"
-          ln -sf "$PODMAN_SOCKET" /var/run/docker/docker.sock
-          echo "Docker socket linked successfully"
-        else
-          echo "Error: Podman socket path is empty"
-        fi
-      else
-        echo "Warning: Podman socket path file not found"
-      fi
-
       echo "Setting wallpaper..."
       osascript -e '
       tell application "System Events"

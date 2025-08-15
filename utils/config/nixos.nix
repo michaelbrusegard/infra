@@ -18,7 +18,7 @@
     users.${userName} = {
       isNormalUser = true;
       home = "/home/${userName}";
-      extraGroups = [ "wheel" "networkmanager" "podman" ];
+      extraGroups = [ "wheel" "networkmanager" "docker" ];
       hashedPasswordFile = config.secrets.hashedPasswordFile;
     };
   };
