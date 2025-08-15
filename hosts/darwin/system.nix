@@ -315,7 +315,9 @@
       echo "Loading yabai scripting addition..."
       ${pkgs.yabai}/bin/yabai --load-sa
       echo "Deleting yabai cache..."
-      rm /tmp/yabai/*
+      if [ -f "/tmp/yabai" ]; then
+        rm /tmp/yabai/*
+      fi
 
       echo "Checking for podman socket..."
       if [ -f "/Users/${userName}/.config/podman/socket_path" ]; then
