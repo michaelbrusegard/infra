@@ -1,9 +1,7 @@
 { ... }: {
-  virtualisation.podman = {
+  virtualisation.docker = {
     enable = true;
-    dockerCompat = true;
-    dockerSocket.enable = true;
+    enableOnBoot = true;
     autoPrune.enable = true;
-    defaultNetwork.settings.dns_enabled = true;
   };
 }
