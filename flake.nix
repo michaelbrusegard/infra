@@ -133,6 +133,12 @@
           hostName = "Leggero";
         };
 
+        Macchiato = mkSystem {
+          system = "aarch64-linux";
+          userName = "sysadmin";
+          hostName = "Macchiato";
+        };
+
         Espresso = mkSystem {
           system = "x86_64-linux";
           userName = "sysadmin";
@@ -156,7 +162,8 @@
       };
 
       packages = forAllSystems (system: {
-        leggero = self.nixosConfigurations.leggero.config.system.build.sdImage;
+        Leggero = self.nixosConfigurations.Leggero.config.system.build.sdImage;
+        Macchiato = self.nixosConfigurations.Macchiato.config.system.build.sdImage;
       });
     };
 }
