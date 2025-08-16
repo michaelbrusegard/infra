@@ -315,6 +315,8 @@
       echo "Deleting yabai cache..."
       if [ -d "/tmp/yabai" ]; then
       rm -rf /tmp/yabai/*
+      rm -rf /tmp/yabai*
+      else
       fi
       echo "Loading yabai scripting addition..."
       ${pkgs.yabai}/bin/yabai --load-sa
