@@ -21,6 +21,7 @@ in {
       gnused
       gnugrep
       gnumake
+      gnutar
       screen
       clang
       nix-index

@@ -10,6 +10,7 @@ in {
       whois
       unzip
       ffmpeg
+      sqlite
       imagemagick
       p7zip
       chafa

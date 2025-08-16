@@ -9,47 +9,11 @@ let
     hash = "sha256-TUS+yXxBOt6tL/zz10k4ezot8IgVg0/2BbS8wPs9KcE=";
 
   };
-  glow-plugin = pkgs.fetchFromGitHub {
-    owner = "Reledia";
-    repo = "glow.yazi";
-    rev = "bd3eaa58c065eaf216a8d22d64c62d8e0e9277e9";
-    hash = "sha256-mzW/ut/LTEriZiWF8YMRXG9hZ70OOC0irl5xObTNO40=";
-  };
-  duckdb-plugin = pkgs.fetchFromGitHub {
-    owner = "wylie102";
-    repo = "duckdb.yazi";
-    rev = "3f8c8633d4b02d3099cddf9e892ca5469694ba22";
-    hash = "sha256-XQM459V3HbPgXKgd9LnAIKRQOAaJPdZA/Tp91TSGHqY=";
-  };
-  bat-plugin = pkgs.fetchFromGitHub {
-    owner = "mgumz";
-    repo = "yazi-plugin-bat";
-    rev = "4dea0a584f30247b8ca4183dc2bd38c80da0d7ea";
-    hash = "sha256-OPa8afKLZaBFL69pq5itI8xRg7u05FJthst88t6HZo0=";
-  };
-  mediainfo-plugin = pkgs.fetchFromGitHub {
-    owner = "boydaihungst";
-    repo = "mediainfo.yazi";
-    rev = "0e2ae47cfb2b7c7a32d714c753b1cebbaa75d127";
-    hash = "sha256-CHigaujMHd1BuYyyxzI5B4ZYQhuH2YZptVVJToq39sY=";
-  };
-  torrent-preview-plugin = pkgs.fetchFromGitHub {
-    owner = "kirasok";
-    repo = "torrent-preview.yazi";
-    rev = "f46528243c458de3ffce38c44607d5a0cde67559";
-    hash = "sha256-VhJvNRKHxVla4v2JJeSnP0MOMBFSm4k7gfqjrHOMVlo=";
-  };
   relative-motions-plugin = pkgs.fetchFromGitHub {
     owner = "dedukun";
     repo = "relative-motions.yazi";
     rev = "a603d9ea924dfc0610bcf9d3129e7cba605d4501";
     hash = "sha256-9i6x/VxGOA3bB3FPieB7mQ1zGaMK5wnMhYqsq4CvaM4=";
-  };
-  lazygit-plugin = pkgs.fetchFromGitHub {
-    owner = "Lil-Dank";
-    repo = "lazygit.yazi";
-    rev = "8f37dc5795f165021098b17d797c7b8f510aeca9";
-    hash = "sha256-rR7SMTtQYrvQjhkzulDaNH/LAA77UnXkcZ50WwBX2Uw=";
   };
   augment-command-plugin = pkgs.fetchFromGitHub {
     owner = "hankertrix";
@@ -62,6 +26,12 @@ let
     repo = "yaziline.yazi";
     rev = "e7042a8b4ee9de4ebfb6e4106a6edf346cef99fb";
     hash = "sha256-cwuPh2aMh0oj9HEGyvrvkNTguER6VoXjnFklCTNPoeY=";
+  };
+  lazygit-plugin = pkgs.fetchFromGitHub {
+    owner = "Lil-Dank";
+    repo = "lazygit.yazi";
+    rev = "8f37dc5795f165021098b17d797c7b8f510aeca9";
+    hash = "sha256-rR7SMTtQYrvQjhkzulDaNH/LAA77UnXkcZ50WwBX2Uw=";
   };
 in {
   options.modules.yazi.enable = lib.mkEnableOption "Yazi configuration";
@@ -89,101 +59,86 @@ in {
           max_height = 1000;
         };
         plugin = {
-          prepend_preloaders = [
-            {
-              name = "*.csv";
-              run = "duckdb";
-              multi = false;
-            }
-            {
-              name = "*.tsv";
-              run = "duckdb";
-              multi = false;
-            }
-            {
-              name = "*.json";
-              run = "duckdb";
-              multi = false;
-            }
-            {
-              name = "*.parquet";
-              run = "duckdb";
-              multi = false;
-            }
-            {
-              name = "*.db";
-              run = "duckdb";
-            }
-            {
-              name = "*.duckdb";
-              run = "duckdb";
-            }
-            {
-              mime = "{audio,video,image}/*";
-              run = "mediainfo";
-            }
-            {
-              mime = "application/subrip";
-              run = "mediainfo";
-            }
-          ];
           prepend_previewers = [
             {
               name = "*.md";
-              run = "glow";
+              run = "piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dark \"$1\"";
             }
             {
               name = "*.csv";
-              run = "duckdb";
+              run = "piper -- duckdb -c 'SELECT * FROM \"$1\"'";
             }
             {
               name = "*.tsv";
-              run = "duckdb";
+              run = "piper -- duckdb -c 'SELECT * FROM \"$1\"'";
             }
             {
               name = "*.json";
-              run = "bat";
+              run = "piper -- bat -p --color=always \"$1\"";
             }
             {
               name = "*.parquet";
-              run = "duckdb";
+              run = "piper -- duckdb -c 'SELECT * FROM \"$1\"'";
+            }
+            {
+              name = "*.pdf";
+              run = "piper -- pdftotext \"$1\" -";
+            }
+            {
+              name = "*.{sqlite,sqlite3,db}";
+              run = "piper -- sqlite3 \"$1\" .schema";
             }
             {
               name = "*/";
-              run = "folder";
-              sync = true;
+              run = "piper -- eza -TL=3 --color=always --icons=always --group-directories-first --no-quotes -I 'node_modules' \"$1\"";
+            }
+            {
+              name = "*.tar*";
+              run = "piper --format=url -- tar tf \"$1\"";
+            }
+            {
+              name = "*.zst";
+              run = "piper --format=url -- zstd -l \"$1\"";
             }
             {
               mime = "text/*";
-              run = "bat";
+              run = "piper -- bat -p --color=always \"$1\"";
             }
             {
               mime = "*/xml";
-              run = "bat";
+              run = "piper -- bat -p --color=always \"$1\"";
             }
             {
               mime = "*/cs";
-              run = "bat";
+              run = "piper -- bat -p --color=always \"$1\"";
             }
             {
               mime = "*/javascript";
-              run = "bat";
+              run = "piper -- bat -p --color=always \"$1\"";
             }
             {
               mime = "*/x-wine-extension-ini";
-              run = "bat";
+              run = "piper -- bat -p --color=always \"$1\"";
             }
             {
-              mime = "{audio,video,image}/*";
-              run = "mediainfo";
+              mime = "{audio,video}/*"; run = "piper -- mediainfo \"$1\"";
+            }
+            {
+              mime = "image/*"; run = "piper -- chafa -s \"$w\"x\"$h\" --animate=false \"$1\"";
             }
             {
               mime = "application/subrip";
-              run = "mediainfo";
+              run = "piper -- mediainfo \"$1\"";
             }
             {
               mime = "application/bittorrent";
-              run = "torrent-preview";
+              run = "piper -- transmission-show \"$1\"";
+            }
+          ];
+          append_previewers = [
+            {
+              name = "*";
+              run = "piper -- hexyl --border=none --terminal-width=$w \"$1\"";
             }
           ];
         };
@@ -196,18 +151,13 @@ in {
         "vcs-files" = "${yazi-plugins}/vcs-files.yazi";
         diff = "${yazi-plugins}/diff.yazi";
         "toggle-pane" = "${yazi-plugins}/toggle-pane.yazi";
-        glow = "${glow-plugin}";
-        duckdb = "${duckdb-plugin}";
-        bat = "${bat-plugin}";
-        mediainfo = "${mediainfo-plugin}";
-        "torrent-preview" = "${torrent-preview-plugin}";
+        piper = "${yazi-plugins}/piper.yazi";
         "relative-motions" = "${relative-motions-plugin}";
-        "lazygit" = "${lazygit-plugin}";
         "augment-command" = "${augment-command-plugin}";
         "yaziline" = "${yaziline-plugin}";
+        "lazygit" = "${lazygit-plugin}";
       };
       initLua = ''
-        require("duckdb"):setup()
         require("relative-motions"):setup({ show_numbers="relative", show_motion = true })
         require("augment-command"):setup({
           smart_tab_create = true,
@@ -223,18 +173,15 @@ in {
           { on = "<esc>"; run = "close"; desc = "Cancel input"; }
         ];
         manager.prepend_keymap = [
-          { on = ["c" "m"]; run = "plugin chmod"; desc = "sha256-Ijz1wYt+L+24Fb/rzHcDR8JBv84z2UxdCIPqTdzbD14=Chmod on selected files"; }
+          { on = "<c-e>"; run = "seek 5"; }
+          { on = "<c-y>"; run = "seek -5"; }
+          { on = ["c" "m"]; run = "plugin chmod"; desc = "Chmod on selected files"; }
           { on = "M"; run = "plugin mount"; desc = "Mount disk"; }
           { on = "f"; run = "plugin jump-to-char"; desc = "Jump to char"; }
-          { on = "F"; run = "plugin smart-filter"; desc = "Smart filter"; }
           { on = ["g" "c"]; run = "plugin vcs-files"; desc = "Show Git file changes"; }
           { on = "<c-d>"; run = "plugin diff"; desc = "Diff the selected with the hovered file"; }
           { on = "T"; run = "plugin toggle-pane max-preview"; desc = "Maximize or restore the preview pane"; }
           { on = "t"; run = "plugin toggle-pane min-preview"; desc = "Show or hide the preview pane"; }
-          { on = "H"; run = "plugin duckdb -1"; desc = "Scroll one column to the left"; }
-          { on = "L"; run = "plugin duckdb +1"; desc = "Scroll one column to the right"; }
-          { on = "<c-e>"; run = "seek 5"; }
-          { on = "<c-y>"; run = "seek -5"; }
           { on = "1"; run = "plugin relative-motions 1"; desc = "Move in relative steps"; }
           { on = "2"; run = "plugin relative-motions 2"; desc = "Move in relative steps"; }
           { on = "3"; run = "plugin relative-motions 3"; desc = "Move in relative steps"; }
@@ -252,6 +199,8 @@ in {
       glow
       duckdb
       mediainfo
+      hexyl
+      poppler-utils
     ];
     catppuccin.yazi = {
       enable = true;
