@@ -27,7 +27,6 @@
       "element"
       "altserver"
       "legcord"
-      "microsoft-outlook"
       "obsidian"
       "proton-pass"
       "proton-mail"
@@ -41,7 +40,6 @@
       "freecad"
       "betaflight-configurator"
       "blender"
-      "microsoft-teams"
     ];
     masApps = {
       "BrightIntosh" = 6452471855;
