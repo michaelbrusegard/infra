@@ -149,5 +149,32 @@
           ];
       };
     };
+    homebridge = {
+      enable = true;
+      openFirewall = true;
+      settings = {
+        bridge.name = "Hjemmesentral";
+      };
+    };
+    zigbee2mqtt = {
+      enable = true;
+      settings = {
+        mqtt.server = "mqtt://127.0.0.1:1883";
+        serial = {
+          port = "/dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2690606-if00";
+          adapter = "deconz";
+        };
+      };
+    };
+    mosquitto = {
+      enable = true;
+      listeners = [
+        {
+          port = 1883;
+          address = "127.0.0.1";
+        }
+      ];
+      settings.allow_anonymous = true;
+    };
   };
 }
