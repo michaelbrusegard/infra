@@ -12,6 +12,7 @@ in {
       zoom-us
     ]
     ++ (lib.optionals isDarwin [
+      aldente
       ice-bar
       libreoffice-bin
       notion-app
