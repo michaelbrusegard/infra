@@ -1,7 +1,4 @@
-{ pkgs, config, userName, pkgs-homebridge ... }: {
-  imports = [
-    "${pkgs-homebridge.path}/nixos/modules/services/home-automation/homebridge.nix"
-  ];
+{ pkgs, config, userName, ... }: {
   services = {
     openssh = {
       enable = true;
@@ -154,7 +151,6 @@
     };
     homebridge = {
       enable = true;
-      package = pkgs-homebridge.homebridge;
       openFirewall = true;
       settings = {
         bridge.name = "Hjemmesentral";
