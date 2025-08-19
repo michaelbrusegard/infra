@@ -55,4 +55,22 @@ return {
       { 'pO', ':-1put<CR>==', desc = 'Paste Line Above' },
     },
   },
+  {
+    'piersolenski/import.nvim',
+    dependencies = {
+      'folke/snacks.nvim',
+    },
+    opts = {
+      picker = 'snacks',
+    },
+    keys = {
+      {
+        '<leader>i',
+        function()
+          require('import').pick()
+        end,
+        desc = 'Import',
+      },
+    },
+  },
 }
