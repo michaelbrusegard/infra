@@ -277,7 +277,7 @@ Lastly remember to enable BitLocker on the system drive to encrypt the system dr
 Build the SD image on a machine with `nix` using the following command:
 
 ```sh
-nix build .#leggero
+nix build .#Leggero
 ```
 
 The resulting image can be found in `result/sd-image/`. It is a compressed Zstandard archive that can be flashed to an SD card.
@@ -311,7 +311,7 @@ zstd -dc result/sd-image/*.zst | sudo dd of=/dev/XXX bs=4M status=progress oflag
 Build the SD image on a machine with `nix` using the following command:
 
 ```sh
-nix build .#macchiato
+nix build .#Macchiato
 ```
 
 The resulting image can be found in `result/sd-image/`. It is a compressed Zstandard archive that can be flashed to an SD card.
