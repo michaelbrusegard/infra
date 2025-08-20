@@ -40,6 +40,7 @@
       "freecad"
       "betaflight-configurator"
       "blender"
+      "qgis"
     ];
     masApps = {
       "Amphetamine" = 937984704;

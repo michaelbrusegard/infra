@@ -35,6 +35,7 @@ in {
       betaflight-configurator
       blender
       notion
+      qgis
     ]);
   };
 }
