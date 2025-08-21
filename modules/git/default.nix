@@ -55,6 +55,13 @@ in {
           };
           merge = {
             conflictstyle = "diff3";
+            tool = "nvimdiff";
+          };
+          "mergetool \"nvimdiff\"" = {
+            cmd = "nvim -c 'DiffviewOpen -uno'";
+          };
+          mergetool = {
+            prompt = false;
           };
           diff = {
             colorMoved = "default";
