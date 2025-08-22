@@ -66,6 +66,9 @@ in {
           diff = {
             colorMoved = "default";
           };
+          rerere = {
+            enabled = true;
+          };
         };
       };
       lazygit = {
