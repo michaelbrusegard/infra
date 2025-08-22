@@ -31,7 +31,7 @@
     };
     user.agents = {
       colima = {
-        command = "${pkgs.colima}/bin/colima start --cpu 4 --memory 8 --disk 60";
+        command = "${pkgs.colima}/bin/colima start --cpu 4 --memory 8 --disk 100 --arch x86_64 --vm-type vz --vz-rosetta --mount-type virtiofs";
         serviceConfig = {
           EnvironmentVariables = {
             PATH = "${pkgs.docker}/bin:${pkgs.colima}/bin:/usr/local/bin:/usr/bin:/bin";
