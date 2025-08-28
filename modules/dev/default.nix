@@ -21,7 +21,8 @@ in {
     home = {
       packages = with pkgs; [
         # Database
-        libpq
+        sqlite
+        postgresql
 
         # LLM CLIS
         opencode
