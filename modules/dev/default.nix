@@ -20,6 +20,9 @@ in {
     };
     home = {
       packages = with pkgs; [
+        # Database
+        libpq
+
         # LLM CLIS
         opencode
         gemini-cli
