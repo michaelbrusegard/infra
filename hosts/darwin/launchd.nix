@@ -87,6 +87,14 @@
           ProcessType = "Interactive";
         };
       };
+      amphetamine = {
+        command = "open -a Amphetamine";
+        serviceConfig = {
+          UserName = userName;
+          RunAtLoad = true;
+          ProcessType = "Interactive";
+        };
+      };
     };
   };
 }

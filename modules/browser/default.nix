@@ -160,6 +160,10 @@ in {
       };
       chromium = lib.mkIf (!isDarwin) {
         enable = true;
+        package = pkgs.vivaldi;
+      };
+      qutebrowser = {
+        enable = true;
       };
     };
     home.activation = lib.mkMerge [
