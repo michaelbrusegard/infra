@@ -11,12 +11,6 @@ in {
       slack
       zoom-us
     ]
-    ++ (lib.optionals isDarwin [
-      aldente
-      ice-bar
-      libreoffice-bin
-      notion-app
-    ])
     ++ (lib.optionals (!isDarwin) [
       burpsuite
       easyeffects
