@@ -312,10 +312,6 @@
     };
     startup.chime = false;
     activationScripts.postActivation.text = ''
-      echo "Deleting yabai cache..."
-      if [ -d "/tmp/yabai" ]; then
-        rm -rf /tmp/yabai*
-      fi
       echo "Loading yabai scripting addition..."
       ${pkgs.yabai}/bin/yabai --load-sa
       echo "Setting wallpaper..."
