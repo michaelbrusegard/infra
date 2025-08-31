@@ -71,6 +71,22 @@
           ProcessType = "Interactive";
         };
       };
+      linearmouse = {
+        command = "open -a LinearMouse";
+        serviceConfig = {
+          UserName = userName;
+          RunAtLoad = true;
+          ProcessType = "Interactive";
+        };
+      };
+      aldente = {
+        command = "open -a AlDente";
+        serviceConfig = {
+          UserName = userName;
+          RunAtLoad = true;
+          ProcessType = "Interactive";
+        };
+      };
     };
   };
 }
