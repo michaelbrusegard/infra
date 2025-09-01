@@ -36,9 +36,9 @@ in {
           "video/quicktime" = ["mpv.desktop"];
 
           # Web
-          "text/html" = ["zen-browser.desktop"];
-          "x-scheme-handler/http" = ["zen-browser.desktop"];
-          "x-scheme-handler/https" = ["zen-browser.desktop"];
+          "text/html" = ["vivaldi-stable.desktop"];
+          "x-scheme-handler/http" = ["vivaldi-stable.desktop"];
+          "x-scheme-handler/https" = ["vivaldi-stable.desktop"];
         };
       };
       userDirs = {

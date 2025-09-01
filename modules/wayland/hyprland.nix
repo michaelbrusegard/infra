@@ -146,7 +146,7 @@ in {
           ", XF86AudioPrev, exec, ${pkgs.playerctl}/bin/playerctld previous"
         ];
         windowrulev2 = [
-          "workspace 2, class:^(zen-beta)$"
+          "workspace 2, class:^(Vivaldi)$"
           "workspace 3, class:^(Proton Mail)$"
           "workspace 3, class:^(Proton Pass)$"
           "workspace 4, class:^(obsidian)$"

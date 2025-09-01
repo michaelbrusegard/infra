@@ -848,26 +848,6 @@
         "type": "github"
       }
     },
-    "nix-darwin-browsers": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1754875475,
-        "narHash": "sha256-rK+YpZ0Dc2+0z1ebxh3YAPH2rfwG+JsH6gZZ6YZP4gI=",
-        "owner": "wuz",
-        "repo": "nix-darwin-browsers",
-        "rev": "4374f106845ae59a8bd5bf8a39773c393c2ae1ee",
-        "type": "github"
-      },
-      "original": {
-        "owner": "wuz",
-        "repo": "nix-darwin-browsers",
-        "type": "github"
-      }
-    },
     "nix-homebrew": {
       "inputs": {
         "brew-src": "brew-src"
@@ -1115,7 +1095,6 @@
         "lanzaboote": "lanzaboote",
         "mac-app-util": "mac-app-util",
         "nix-darwin": "nix-darwin",
-        "nix-darwin-browsers": "nix-darwin-browsers",
         "nix-homebrew": "nix-homebrew",
         "nixos-raspberrypi": "nixos-raspberrypi",
         "nixos-wsl": "nixos-wsl",
@@ -1124,8 +1103,7 @@
         "nur": "nur",
         "sops-nix": "sops-nix",
         "wezterm": "wezterm",
-        "yazi": "yazi",
-        "zen-browser": "zen-browser"
+        "yazi": "yazi"
       }
     },
     "rust-overlay": {
@@ -1464,29 +1442,6 @@
       "original": {
         "owner": "sxyazi",
         "repo": "yazi",
-        "type": "github"
-      }
-    },
-    "zen-browser": {
-      "inputs": {
-        "home-manager": [
-          "home-manager"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1754972926,
-        "narHash": "sha256-2CEQSI3o7XWMc/DOdeNf6gTKjgGf8hHS0TB0HYPmSmA=",
-        "owner": "0xc000022070",
-        "repo": "zen-browser-flake",
-        "rev": "508a7c0c5c993d237773be89f5ca91ff8c997b44",
-        "type": "github"
-      },
-      "original": {
-        "owner": "0xc000022070",
-        "repo": "zen-browser-flake",
         "type": "github"
       }
     },

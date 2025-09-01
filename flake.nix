@@ -52,17 +52,6 @@
       url = "github:catppuccin/nix?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-darwin-browsers = {
-      url = "github:wuz/nix-darwin-browsers?shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    zen-browser = {
-      url = "github:0xc000022070/zen-browser-flake?shallow=1";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        home-manager.follows = "home-manager";
-      };
-    };
     yazi = {
       url = "github:sxyazi/yazi?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
