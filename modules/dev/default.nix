@@ -20,11 +20,14 @@ in {
     };
     home = {
       packages = with pkgs; [
+        # CLI tools
+        google-cloud-sdk
+
         # Database
         sqlite
         postgresql
 
-        # LLM CLIS
+        # LLMs
         opencode
         gemini-cli
 
