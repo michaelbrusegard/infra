@@ -1,4 +1,4 @@
-{ config, lib, pkgs, isDarwin, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.modules.gui;
@@ -10,8 +10,6 @@ in {
       transmission_4
       slack
       zoom-us
-    ]
-    ++ (lib.optionals (!isDarwin) [
       burpsuite
       easyeffects
       imv
@@ -30,6 +28,6 @@ in {
       blender
       notion
       qgis
-    ]);
+    ];
   };
 }

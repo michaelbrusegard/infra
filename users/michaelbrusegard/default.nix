@@ -6,7 +6,7 @@
     dev.enable = true;
     ghostty.enable = !isWsl;
     git.enable = true;
-    gui.enable = !isWsl;
+    gui.enable = !(isDarwin || isWsl);
     mpv.enable = !isWsl;
     neovim.enable = true;
     pentest.enable = true;
