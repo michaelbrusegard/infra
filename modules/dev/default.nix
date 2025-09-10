@@ -22,6 +22,8 @@ in {
       packages = with pkgs; [
         # CLI tools
         google-cloud-sdk
+        gh
+        act
 
         # Database
         sqlite
