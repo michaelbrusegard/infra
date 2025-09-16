@@ -7,7 +7,6 @@ return {
     dependencies = { 'stevearc/dressing.nvim' },
     opts = {
       hints = { enabled = false },
-      provider = 'copilot/gpt-4.1',
       selector = {
         provider = 'snacks',
       },
