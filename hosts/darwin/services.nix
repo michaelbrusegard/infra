@@ -18,6 +18,7 @@
       extraConfig = ''
         # Space layout settings
         yabai -m config --space 3 layout stack
+        yabai -m config --space 6 layout stack
         yabai -m config --space 9 layout float
 
         # Application rules
@@ -26,8 +27,8 @@
         yabai -m rule --add app="^(Proton Mail|Proton Pass)$" space=3
         yabai -m rule --add app="^(Notes|Obsidian|LibreOffice|Notion)$" space=4
         yabai -m rule --add app="^(Messages|FaceTime|Element|Messenger|Legcord|Slack)$" space=5
-        yabai -m rule --add app="^(Music|TV|Photos|OrcaSlicer)$" space=6
-        yabai -m rule --add app="^(Inkscape|Gimp|DaVinci Resolve|FreeCAD)$" space=7
+        yabai -m rule --add app="^(Inkscape|Gimp|DaVinci Resolve|FreeCAD|OrcaSlicer)$" space=6
+        yabai -m rule --add app="^(Music|Photos)$" space=7
 
         # Make sure there are 9 spaces
         current_spaces=$(yabai -m query --spaces | ${pkgs.jq}/bin/jq length)

@@ -44,10 +44,7 @@ in {
             color = "0x66000000";
           };
         };
-        animations = {
-          enabled = false;
-          first_launch_animation = false;
-        };
+        animations.enabled = false;
         input = {
           kb_layout = "us";
           kb_variant = "mac";
@@ -155,11 +152,11 @@ in {
           "workspace 5, class:^(legcord)$"
           "workspace 5, class:^(Element)$"
           "workspace 5, class:^(Slack)$"
-          "workspace 7, class:^(OrcaSlicer)$"
-          "workspace 7, class:^(resolve)$"
-          "workspace 7, class:^(Gimp)$"
-          "workspace 7, class:^(org.inkscape.Inkscape)$"
-          "workspace 7, class:^(org.freecad.FreeCAD)$"
+          "workspace 6, class:^(OrcaSlicer)$"
+          "workspace 6, class:^(resolve)$"
+          "workspace 6, class:^(Gimp)$"
+          "workspace 6, class:^(org.inkscape.Inkscape)$"
+          "workspace 6, class:^(org.freecad.FreeCAD)$"
         ];
       };
     };
