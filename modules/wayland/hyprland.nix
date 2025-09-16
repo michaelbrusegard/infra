@@ -146,7 +146,7 @@ in {
           ", XF86AudioPrev, exec, ${pkgs.playerctl}/bin/playerctld previous"
         ];
         windowrulev2 = [
-          "workspace 2, class:^(Vivaldi)$"
+          "workspace 2, class:^(Vivaldi-stable)$"
           "workspace 3, class:^(Proton Mail)$"
           "workspace 3, class:^(Proton Pass)$"
           "workspace 4, class:^(obsidian)$"
@@ -155,10 +155,11 @@ in {
           "workspace 5, class:^(legcord)$"
           "workspace 5, class:^(Element)$"
           "workspace 5, class:^(Slack)$"
+          "workspace 7, class:^(OrcaSlicer)$"
           "workspace 7, class:^(resolve)$"
           "workspace 7, class:^(Gimp)$"
           "workspace 7, class:^(org.inkscape.Inkscape)$"
-          "workspace 7, class:^(FreeCAD)$"
+          "workspace 7, class:^(org.freecad.FreeCAD)$"
         ];
       };
     };
