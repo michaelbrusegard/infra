@@ -28,26 +28,4 @@ return {
       num_separator = ' ',
     },
   },
-  {
-    'wildfunctions/myeyeshurt',
-    opts = {},
-    keys = {
-      {
-        '<leader>ms',
-        mode = { 'n' },
-        function()
-          require('myeyeshurt').start()
-        end,
-        desc = 'Start snowfall',
-      },
-      {
-        '<leader>mx',
-        mode = { 'n' },
-        function()
-          require('myeyeshurt').stop()
-        end,
-        desc = 'Stop snowfall',
-      },
-    },
-  },
 }

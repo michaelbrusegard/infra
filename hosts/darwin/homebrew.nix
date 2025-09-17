@@ -48,6 +48,7 @@
       "betaflight-configurator"
       "blender"
       "qgis"
+      "breaktimer"
     ];
     masApps = {
       "Amphetamine" = 937984704;
