@@ -1,5 +1,6 @@
 return {
   { import = 'lazyvim.plugins.extras.coding.yanky' },
+  { import = 'lazyvim.plugins.extras.coding.mini-surround' },
   {
     'saghen/blink.cmp',
     lazy = true,
