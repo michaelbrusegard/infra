@@ -19,6 +19,10 @@
         insert_feedback_color = "0xff89b4fa";
       };
       extraConfig = ''
+        # Load the scripting-addition into Dock.app
+        yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+        sudo yabai --load-sa
+
         # Space layout settings
         yabai -m config --space 3 layout stack
         yabai -m config --space 6 layout stack
@@ -112,7 +116,7 @@
       style = "round";
       active_color = "0xff89b4fa";
       inactive_color = "0xff45475a";
-      width = 6.0;
+      width = 2.0;
     };
   };
 }

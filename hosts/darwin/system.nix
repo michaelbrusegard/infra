@@ -312,8 +312,6 @@
     };
     startup.chime = false;
     activationScripts.postActivation.text = ''
-      echo "Loading yabai scripting addition..."
-      ${pkgs.yabai}/bin/yabai --load-sa
       echo "Setting wallpaper..."
       osascript -e '
       tell application "System Events"
