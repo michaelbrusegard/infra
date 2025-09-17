@@ -21,5 +21,8 @@ in {
     };
     xdg.configFile."nvim".source = config.lib.file.mkOutOfStoreSymlink
       "${config.home.homeDirectory}/Developer/dotfiles/modules/neovim/config";
+    home.packages = with pkgs; [
+      tree-sitter
+    ];
   };
 }
