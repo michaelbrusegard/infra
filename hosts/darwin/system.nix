@@ -1,4 +1,4 @@
-{ pkgs, userName, ... }: {
+{ userName, ... }: {
   system = {
     stateVersion = 5;
     primaryUser = userName;
@@ -178,8 +178,6 @@
       CustomUserPreferences = {
         "com.apple.symbolichotkeys" = {
           AppleSymbolicHotKeys = {
-            "64" = { enabled = false; };
-            "65" = { enabled = false; };
             "32" = { enabled = false; };
             "33" = { enabled = false; };
             "34" = { enabled = false; };

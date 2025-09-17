@@ -54,9 +54,6 @@
                 yabai -m space --destroy $last_space_id
             done
         fi
-
-        # Update current space in raycast menu bar extension
-        yabai -m signal --add event=space_changed action="open -g raycast://extensions/krzysztoff1/yabai/screens-menu-bar?launchType=background > /dev/null 2>&1" &
       '';
     };
     skhd = {

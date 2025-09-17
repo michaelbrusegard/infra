@@ -55,14 +55,6 @@
           StandardOutPath = "${config.users.users.${userName}.home}/Library/Logs/Docker/docker-prune.out.log";
         };
       };
-      raycast = {
-        command = "open -a Raycast";
-        serviceConfig = {
-          UserName = userName;
-          RunAtLoad = true;
-          ProcessType = "Interactive";
-        };
-      };
       ice = {
         command = "open -a Ice";
         serviceConfig = {
@@ -89,6 +81,14 @@
       };
       amphetamine = {
         command = "open -a Amphetamine";
+        serviceConfig = {
+          UserName = userName;
+          RunAtLoad = true;
+          ProcessType = "Interactive";
+        };
+      };
+      breaktimer = {
+        command = "open -a BreakTimer";
         serviceConfig = {
           UserName = userName;
           RunAtLoad = true;

@@ -25,7 +25,6 @@
       { name = "yabai"; args = [ "HEAD" ]; }
     ];
     casks = [
-      "raycast"
       "jordanbaird-ice"
       "linearmouse"
       "aldente"
