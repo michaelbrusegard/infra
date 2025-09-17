@@ -499,6 +499,22 @@
         "type": "github"
       }
     },
+    "homebrew-koekeishiya": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1747579322,
+        "narHash": "sha256-e7NybFVmFDHHy8m+cJPnDugGKzfYkMvh/3c+O7jMM2Y=",
+        "owner": "koekeishiya",
+        "repo": "homebrew-formulae",
+        "rev": "f5711b9c70e104bffc79e3525e2ed0dc335bdbba",
+        "type": "github"
+      },
+      "original": {
+        "owner": "koekeishiya",
+        "repo": "homebrew-formulae",
+        "type": "github"
+      }
+    },
     "hyprcursor": {
       "inputs": {
         "hyprlang": [
@@ -1107,6 +1123,7 @@
         "home-manager": "home-manager",
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",
+        "homebrew-koekeishiya": "homebrew-koekeishiya",
         "hyprland": "hyprland",
         "lanzaboote": "lanzaboote",
         "mac-app-util": "mac-app-util",

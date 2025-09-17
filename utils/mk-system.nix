@@ -21,7 +21,7 @@ let
     inherit system;
     specialArgs = {
       inherit system userName hostName colors isDarwin isWsl pkgs-otbr;
-      inherit (inputs) nixpkgs nix-darwin home-manager sops-nix nixos-raspberrypi nixpkgs-otbr nixos-wsl nur lanzaboote mac-app-util nix-homebrew homebrew-core homebrew-cask apple-fonts apple-emoji-linux catppuccin hyprland yazi wezterm fancontrol-gui dotfiles-private;
+      inherit (inputs) nixpkgs nix-darwin home-manager sops-nix nixos-raspberrypi nixpkgs-otbr nixos-wsl nur lanzaboote mac-app-util nix-homebrew homebrew-core homebrew-cask homebrew-koekeishiya apple-fonts apple-emoji-linux catppuccin hyprland yazi wezterm fancontrol-gui dotfiles-private;
     };
   };
 

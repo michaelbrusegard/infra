@@ -4,6 +4,9 @@
     yabai = {
       enable = true;
       enableScriptingAddition = true;
+      package = pkgs.writeShellScriptBin "yabai" ''
+        exec /opt/homebrew/bin/yabai "$@"
+      '';
       config = {
         layout = "bsp";
         focus_follows_mouse = "off";

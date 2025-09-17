@@ -40,6 +40,10 @@
       url = "github:homebrew/homebrew-cask?shallow=1";
       flake = false;
     };
+    homebrew-koekeishiya = {
+      url = "github:koekeishiya/homebrew-formulae?shallow=1";
+      flake = false;
+    };
     apple-emoji-linux = {
       url = "github:samuelngs/apple-emoji-linux?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
