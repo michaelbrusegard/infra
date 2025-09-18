@@ -26,6 +26,7 @@
       speedFactor = 2;
     };
   };
+  system.stateVersion = 5;
   networking = {
     applicationFirewall = {
       enable = true;

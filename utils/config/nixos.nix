@@ -1,4 +1,4 @@
-{ config, lib, userName, isWsl, home-manager, dotfiles-private, ... }:
+{ config, lib, stateVersion, userName, isWsl, home-manager, dotfiles-private, ... }:
 {
   imports = [
     dotfiles-private.nixosModules.secrets
@@ -13,6 +13,7 @@
       trusted-users = [ "@wheel" ];
     };
   };
+  system.stateVersion = stateVersion;
   users = {
     mutableUsers = false;
     users.${userName} = {

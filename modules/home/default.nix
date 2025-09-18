@@ -1,4 +1,4 @@
-{ lib, config, pkgs, hostName, isDarwin, ... }:
+{ lib, config, pkgs, stateVersion, hostName, isDarwin, ... }:
 let
   dev = pkgs.writeScriptBin "dev" ''
     #!${pkgs.zsh}/bin/zsh
@@ -79,7 +79,7 @@ let
 in
 {
   home = {
-    stateVersion = "25.05";
+    stateVersion = stateVersion;
     pointerCursor = lib.mkIf (config.modules.gui.enable && !isDarwin) {
       package = pkgs.apple-cursor;
       name = "macOS";

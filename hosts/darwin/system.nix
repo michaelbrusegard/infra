@@ -1,6 +1,5 @@
 { userName, ... }: {
   system = {
-    stateVersion = 5;
     primaryUser = userName;
     defaults = {
       ".GlobalPreferences" = {

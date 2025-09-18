@@ -1,5 +1,4 @@
 { ... }: {
-  system.stateVersion = "25.05";
   documentation = {
     enable = false;
     doc.enable = false;

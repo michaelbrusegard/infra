@@ -113,30 +113,35 @@
           system = "x86_64-linux";
           userName = "michaelbrusegard";
           hostName = "Desktop";
+          stateVersion = "25.05";
         };
 
         WSL = mkSystem {
           system = "x86_64-linux";
           userName = "michaelbrusegard";
           hostName = "WSL";
+          stateVersion = "25.05";
         };
 
         Leggero = mkSystem {
           system = "aarch64-linux";
           userName = "sysadmin";
           hostName = "Leggero";
+          stateVersion = "25.05";
         };
 
         Macchiato = mkSystem {
           system = "aarch64-linux";
           userName = "sysadmin";
           hostName = "Macchiato";
+          stateVersion = "25.11";
         };
 
         Espresso = mkSystem {
           system = "x86_64-linux";
           userName = "sysadmin";
           hostName = "Espresso";
+          stateVersion = "25.11";
         };
 
       };
@@ -152,6 +157,7 @@
           system = "aarch64-darwin";
           userName = "michaelbrusegard";
           hostName = hostName;
+          stateVersion = "25.05";
         };
       };
 

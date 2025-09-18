@@ -11,7 +11,6 @@
     ./programs.nix
     ./services.nix
     ./swap-devices.nix
-    ./system.nix
     ./users.nix
     ./virtualisation.nix
     ./xdg.nix

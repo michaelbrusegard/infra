@@ -1,5 +1,5 @@
 inputs:
-{ system, userName, hostName }:
+{ system, userName, hostName, stateVersion }:
 let
   lib = inputs.nixpkgs.lib;
   colors = import ./colors.nix;
@@ -25,7 +25,7 @@ let
   commonArgs = {
     inherit system;
     specialArgs = {
-      inherit system userName hostName colors isDarwin isWsl pkgs-otbr pkgs-homebridge;
+      inherit system userName hostName stateVersion colors isDarwin isWsl pkgs-otbr pkgs-homebridge;
       inherit (inputs) nixpkgs nix-darwin home-manager sops-nix nixos-raspberrypi nixos-wsl nur lanzaboote mac-app-util nix-homebrew homebrew-core homebrew-cask homebrew-koekeishiya apple-fonts apple-emoji-linux catppuccin hyprland yazi wezterm fancontrol-gui dotfiles-private;
     };
   };
