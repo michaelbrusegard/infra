@@ -2,7 +2,7 @@
   services = {
     kanata = {
       enable = true;
-      keyboards.default.configFile = ../../assets/keyboard/kanata.kbd;
+      keyboards.default.configFile = ../../assets/keyboard/kanata-linux.kbd;
     };
     openssh = {
       enable = true;
