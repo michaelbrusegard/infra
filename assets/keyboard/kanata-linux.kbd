@@ -3,7 +3,7 @@
 )
 
 (defsrc
-  a s d f j k l ;
+  caps a s d f j k l ;
 )
 
 (defvar
@@ -23,5 +23,5 @@
 )
 
 (deflayer base
-  @a @s @d @f @j @k @l @;
+  esc @a @s @d @f @j @k @l @;
 )
