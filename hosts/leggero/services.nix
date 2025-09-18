@@ -195,7 +195,6 @@
     matter-server.enable = true;
     openthread-border-router = {
       enable = true;
-      package = pkgs-otbr.openthread-border-router;
       backboneInterface = "end0";
       rest.listenAddress = "0.0.0.0";
       web.listenAddress = "0.0.0.0";
