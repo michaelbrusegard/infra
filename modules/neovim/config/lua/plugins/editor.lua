@@ -8,7 +8,7 @@ return {
   { import = 'lazyvim.plugins.extras.editor.snacks_explorer' },
   { 'saecki/live-rename.nvim', event = 'InsertEnter' },
   {
-    'echasnovski/mini.move',
+    'nvim-mini/mini.move',
     opts = {
       mappings = {
         left = '<s-h>',
