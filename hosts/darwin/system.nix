@@ -310,6 +310,8 @@
     };
     startup.chime = false;
     activationScripts.postActivation.text = ''
+      echo "Loading yabai scripting addition..."
+      /opt/homebrew/bin/yabai --load-sa
       echo "Setting wallpaper..."
       osascript -e '
       tell application "System Events"
