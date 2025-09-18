@@ -26,7 +26,6 @@
     ];
     casks = [
       "jordanbaird-ice"
-      "swiftbar"
       "linearmouse"
       "aldente"
       "element"

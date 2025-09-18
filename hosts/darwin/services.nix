@@ -54,12 +54,6 @@
                 yabai -m space --destroy $last_space_id
             done
         fi
-
-        # Signals for swiftbar plugin
-        yabai -m signal --add event=space_changed action="set SHELL=/bin/sh && open -g \"bitbar://refreshPlugin?name=yabai-window-info.*?.sh\""
-        yabai -m signal --add event=window_resized action="set SHELL=/bin/sh && open -g \"bitbar://refreshPlugin?name=yabai-window-info.*?.sh\""
-        yabai -m signal --add event=window_focused action="set SHELL=/bin/sh && open -g \"bitbar://refreshPlugin?name=yabai-window-info.*?.sh\""
-        yabai -m signal --add event=application_activated action="set SHELL=/bin/sh && open -g \"bitbar://refreshPlugin?name=yabai-window-info.*?.sh\""
       '';
     };
     skhd = {
