@@ -135,6 +135,16 @@ in
           sudo launchctl bootstrap system /Library/LaunchDaemons/org.nixos.kanata.plist && echo 'Kanata started.'
         fi
       '';
+    } // lib.optionalAttrs (!isDarwin) {
+      toggle-kanata = ''
+        if systemctl is-active --quiet kanata.service; then
+                  echo 'Kanata running, stopping...';
+                  sudo systemctl stop kanata.service && echo 'Kanata stopped.'
+                else
+                  echo 'Kanata not running, starting...';
+                  sudo systemctl start kanata.service && echo 'Kanata started.'
+        fi
+      '';
     };
     sessionVariables = {
       SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
