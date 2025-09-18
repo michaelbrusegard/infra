@@ -63,6 +63,14 @@
           ProcessType = "Interactive";
         };
       };
+      swiftbar = {
+        command = "open -a SwiftBar";
+        serviceConfig = {
+          UserName = userName;
+          RunAtLoad = true;
+          ProcessType = "Interactive";
+        };
+      };
       linearmouse = {
         command = "open -a LinearMouse";
         serviceConfig = {
