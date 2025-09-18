@@ -137,12 +137,12 @@ in
       '';
     } // lib.optionalAttrs (!isDarwin) {
       toggle-kanata = ''
-        if systemctl is-active --quiet kanata.service; then
-                  echo 'Kanata running, stopping...';
-                  sudo systemctl stop kanata.service && echo 'Kanata stopped.'
-                else
-                  echo 'Kanata not running, starting...';
-                  sudo systemctl start kanata.service && echo 'Kanata started.'
+        if systemctl is-active --quiet kanata-default.service; then
+          echo 'Kanata running, stopping...';
+          sudo systemctl stop kanata-default.service && echo 'Kanata stopped.'
+        else
+          echo 'Kanata not running, starting...';
+          sudo systemctl start kanata-default.service && echo 'Kanata started.'
         fi
       '';
     };
