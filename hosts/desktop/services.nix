@@ -2,13 +2,7 @@
   services = {
     kanata = {
       enable = true;
-      keyboards.default = {
-        extraDefCfg = "process-unmapped-keys yes";
-        config = ''
-          (defsrc)
-          (deflayer base)
-        '';
-      };
+      keyboards.default.configFile = ../../assets/keyboard/kanata.kbd;
     };
     openssh = {
       enable = true;

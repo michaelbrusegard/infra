@@ -2,7 +2,7 @@
   launchd = {
     daemons = {
       kanata = {
-        command = "${pkgs.kanata}/bin/kanata -c ${./kanata.kbd}";
+        command = "${pkgs.kanata}/bin/kanata -c ${../../assets/keyboard/kanata.kbd}";
         serviceConfig = {
           RunAtLoad = true;
           KeepAlive = true;
