@@ -79,6 +79,7 @@ let
 in
 {
   home = {
+    enableNixpkgsReleaseCheck = false;
     stateVersion = stateVersion;
     pointerCursor = lib.mkIf (config.modules.gui.enable && !isDarwin) {
       package = pkgs.apple-cursor;
