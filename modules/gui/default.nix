@@ -23,6 +23,7 @@ in {
       gimp3-with-plugins
       libreoffice-fresh
       orca-slicer
+      bambu-studio
       freecad-wayland
       betaflight-configurator
       blender

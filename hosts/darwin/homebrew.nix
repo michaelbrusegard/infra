@@ -45,6 +45,7 @@
       "inkscape"
       "gimp"
       "orcaslicer"
+      "bambu-studio"
       "freecad"
       "notion"
       "betaflight-configurator"
