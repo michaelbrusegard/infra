@@ -28,10 +28,7 @@
   };
   system.stateVersion = 5;
   networking = {
-    applicationFirewall = {
-      enable = true;
-      blockAllIncoming = true;
-    };
+    applicationFirewall.enable = true;
     computerName = hostName;
     localHostName = hostName;
   };
