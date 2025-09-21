@@ -31,7 +31,6 @@ in {
 
         # LLMs
         opencode
-        gemini-cli
 
         # Python
         uv
