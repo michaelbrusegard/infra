@@ -63,6 +63,14 @@
           ProcessType = "Interactive";
         };
       };
+      yabaiindicator = {
+        command = "open -a YabaiIndicator";
+        serviceConfig = {
+          UserName = userName;
+          RunAtLoad = true;
+          ProcessType = "Interactive";
+        };
+      };
       linearmouse = {
         command = "open -a LinearMouse";
         serviceConfig = {

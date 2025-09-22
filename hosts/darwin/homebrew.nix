@@ -1,4 +1,4 @@
-{ config, userName, homebrew-core, homebrew-cask, homebrew-koekeishiya, ... }: {
+{ config, userName, homebrew-core, homebrew-cask, homebrew-extras, homebrew-koekeishiya, ... }: {
   nix-homebrew = {
     enable = true;
     enableRosetta = true;
@@ -7,6 +7,7 @@
       "homebrew/homebrew-core" = homebrew-core;
       "homebrew/homebrew-cask" = homebrew-cask;
       "koekeishiya/homebrew-formulae" = homebrew-koekeishiya;
+      "michaelbrusegard/homebrew-extras" = homebrew-extras;
     };
     mutableTaps = false;
   };
@@ -26,6 +27,7 @@
     ];
     casks = [
       "jordanbaird-ice"
+      "yabai-indicator"
       "linearmouse"
       "aldente"
       "element"

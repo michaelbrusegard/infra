@@ -499,6 +499,22 @@
         "type": "github"
       }
     },
+    "homebrew-extras": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1758583629,
+        "narHash": "sha256-g9zLTaz1HvthnYmmjSMw3990y5P/1G+2GfDbEP77NKk=",
+        "owner": "michaelbrusegard",
+        "repo": "homebrew-extras",
+        "rev": "29c66f576c86ddec2e051083fa1345d9569ccd71",
+        "type": "github"
+      },
+      "original": {
+        "owner": "michaelbrusegard",
+        "repo": "homebrew-extras",
+        "type": "github"
+      }
+    },
     "homebrew-koekeishiya": {
       "flake": false,
       "locked": {
@@ -1139,6 +1155,7 @@
         "home-manager": "home-manager",
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",
+        "homebrew-extras": "homebrew-extras",
         "homebrew-koekeishiya": "homebrew-koekeishiya",
         "hyprland": "hyprland",
         "lanzaboote": "lanzaboote",

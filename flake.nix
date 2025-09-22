@@ -41,6 +41,10 @@
       url = "github:homebrew/homebrew-cask?shallow=1";
       flake = false;
     };
+    homebrew-extras = {
+      url = "github:michaelbrusegard/homebrew-extras?shallow=1";
+      flake = false;
+    };
     homebrew-koekeishiya = {
       url = "github:koekeishiya/homebrew-formulae?shallow=1";
       flake = false;
