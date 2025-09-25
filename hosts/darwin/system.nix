@@ -177,6 +177,8 @@
       CustomUserPreferences = {
         "com.apple.symbolichotkeys" = {
           AppleSymbolicHotKeys = {
+            "64" = { enabled = false; };
+            "65" = { enabled = false; };
             "32" = { enabled = false; };
             "33" = { enabled = false; };
             "34" = { enabled = false; };
@@ -198,7 +200,6 @@
             "36" = { enabled = false; };
             "37" = { enabled = false; };
             "179" = { enabled = false; };
-            "184" = { enabled = false; };
             "190" = { enabled = false; };
             "191" = { enabled = false; };
             "57" = { enabled = false; };
