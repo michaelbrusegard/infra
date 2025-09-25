@@ -116,6 +116,7 @@
 
         # System
         cmd - space : open -a Apps
+        cmd - tab : open -a Apps && osascript -e 'tell application "System Events" to key code 21 using {command down}'
         alt - return : open -na "WezTerm" --args start --always-new-process
         alt + shift - return : open -na "WezTerm" --args start --always-new-process -e sh -c 'yazi'
       '';

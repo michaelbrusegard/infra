@@ -117,7 +117,7 @@ in {
           "mod5, return, exec, ${pkgs.wezterm}/bin/wezterm start --always-new-process"
           "mod5 shift, return, exec, ${pkgs.wezterm}/bin/wezterm start --always-new-process -e ${pkgs.bash}/bin/sh -c '${pkgs.yazi}/bin/yazi'"
           "super, space, exec, ${pkgs.rofi}/bin/rofi -show drun"
-          "super shift, v, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi}/bin/rofi -dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"
+          "super, tab, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi}/bin/rofi -dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"
           "super, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive"
           "super shift, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive; WID=$(${pkgs.jq}/bin/jq -r .class <<< $(${pkgs.hyprland}/bin/hyprctl activewindow -j)); ${pkgs.coreutils}/bin/pkill -KILL -f \"$WID\""
           "super ctrl, q, exec, loginctl lock-session"
