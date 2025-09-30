@@ -54,6 +54,7 @@
       "blender"
       "qgis"
       "breaktimer"
+      "openscad"
     ];
     masApps = {
       "Amphetamine" = 937984704;

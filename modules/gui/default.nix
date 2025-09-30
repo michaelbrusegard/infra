@@ -29,6 +29,7 @@ in {
       blender
       notion
       qgis
+      openscad
     ];
   };
 }
