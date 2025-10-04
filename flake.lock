@@ -982,22 +982,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-homebridge": {
-      "locked": {
-        "lastModified": 1753125514,
-        "narHash": "sha256-eYgAkRt7qNZ4ix+8jaDty8vB7eEOY5tWMn8R9lpANoA=",
-        "owner": "fmoda3",
-        "repo": "nixpkgs",
-        "rev": "d8fb994c9774344bb64afe082e51117f8d7f54e6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "fmoda3",
-        "ref": "add-homebridge",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-otbr": {
       "locked": {
         "lastModified": 1751030343,
@@ -1165,7 +1149,6 @@
         "nixos-raspberrypi": "nixos-raspberrypi",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_3",
-        "nixpkgs-homebridge": "nixpkgs-homebridge",
         "nixpkgs-otbr": "nixpkgs-otbr",
         "nur": "nur",
         "sops-nix": "sops-nix",

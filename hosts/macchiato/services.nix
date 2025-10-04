@@ -1,6 +1,6 @@
-{ pkgs, config, userName, pkgs-homebridge, ... }: {
+{ pkgs, config, userName, pkgs-unstable, ... }: {
   imports = [
-    "${pkgs-homebridge.path}/nixos/modules/services/home-automation/homebridge.nix"
+    "${pkgs-unstable.path}/nixos/modules/services/home-automation/homebridge.nix"
   ];
   services = {
     openssh = {

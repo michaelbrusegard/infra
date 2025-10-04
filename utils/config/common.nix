@@ -1,4 +1,4 @@
-{ pkgs, system, userName, hostName, nur, yazi, fancontrol-gui, pkgs-otbr, pkgs-homebridge, ... }:
+{ pkgs, system, userName, hostName, nur, yazi, fancontrol-gui, pkgs-unstable, pkgs-otbr, ... }:
 {
   nix = {
     optimise.automatic = true;
@@ -34,9 +34,9 @@
       nur.overlays.default
       yazi.overlays.default
       fancontrol-gui.overlays.default
+      (final: prev: { homebridge = pkgs-unstable.homebridge; })
+      (final: prev: { homebridge-config-ui-x = pkgs-unstable.homebridge-config-ui-x; })
       (final: prev: { openthread-border-router = pkgs-otbr.openthread-border-router; })
-      (final: prev: { homebridge = pkgs-homebridge.homebridge; })
-      (final: prev: { homebridge-config-ui-x = pkgs-homebridge.homebridge-config-ui-x; })
     ];
   };
   networking.hostName = hostName;

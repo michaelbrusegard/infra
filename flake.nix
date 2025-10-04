@@ -19,7 +19,6 @@
     };
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi?shallow=1";
     nixpkgs-otbr.url = "github:mrene/nixpkgs/openthread-border-router?shallow=1";
-    nixpkgs-homebridge.url = "github:fmoda3/nixpkgs/add-homebridge?shallow=1";
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -163,10 +163,10 @@ in {
           smart_tab_create = true,
           smooth_scrolling = true,
         })
-      require("yaziline"):setup({
-        color = "${colors.mocha.teal}",
-        separator_style = "curvy",
-      })
+        require("yaziline"):setup({
+          color = "${colors.mocha.teal}",
+          separator_style = "curvy",
+        })
       '';
       keymap = {
         input.prepend_keymap = [
