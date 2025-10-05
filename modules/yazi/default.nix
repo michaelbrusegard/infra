@@ -172,7 +172,7 @@ in {
         input.prepend_keymap = [
           { on = "<esc>"; run = "close"; desc = "Cancel input"; }
         ];
-        manager.prepend_keymap = [
+        mgr.prepend_keymap = [
           { on = "<c-e>"; run = "seek 5"; }
           { on = "<c-y>"; run = "seek -5"; }
           { on = ["c" "m"]; run = "plugin chmod"; desc = "Chmod on selected files"; }
