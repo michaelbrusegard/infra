@@ -163,6 +163,7 @@
       enable = true;
       settings = {
         mqtt.server = "mqtt://127.0.0.1:1883";
+        frontend.enabled = true;
         serial = {
           port = "/dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2690606-if00";
           adapter = "deconz";
