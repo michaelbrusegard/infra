@@ -27,8 +27,6 @@ in {
       nix-index
     ] ++ lib.optionals (!isDarwin) [
       psmisc
-    ] ++ lib.optionals (isDarwin) [
-      iproute2mac
     ];
   };
 }
