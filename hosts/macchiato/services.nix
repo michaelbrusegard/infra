@@ -173,8 +173,8 @@
       enable = true;
       listeners = [
         {
-          port = 1883;
           address = "127.0.0.1";
+          settings.allow_anonymous = true;
         }
       ];
     };
