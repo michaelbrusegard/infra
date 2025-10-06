@@ -164,11 +164,6 @@
         };
         platforms = [
           {
-            name = "Config";
-            port = 8581;
-            platform = "config";
-          }
-          {
             platform = "zigbee2mqtt";
             mqtt = {
               server = "mqtt://127.0.0.1:1883";
