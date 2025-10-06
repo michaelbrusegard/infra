@@ -1,4 +1,4 @@
-{ pkgs, config, userName, pkgs-unstable, ... }: {
+{ pkgs, config, userName, pkgs-unstable, pkgs-23_05, ... }: {
   imports = [
     "${pkgs-unstable.path}/nixos/modules/services/home-automation/homebridge.nix"
   ];
@@ -181,6 +181,7 @@
     };
     zigbee2mqtt = {
       enable = true;
+      package = pkgs-23_05.zigbee2mqtt;
       settings = {
         mqtt.server = "mqtt://127.0.0.1:1883";
         frontend.enabled = true;
