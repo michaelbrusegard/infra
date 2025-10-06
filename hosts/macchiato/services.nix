@@ -156,7 +156,27 @@
       enable = true;
       openFirewall = true;
       settings = {
-        bridge.name = "Hjemmesentral";
+        bridge = {
+          name = "Hjemmesentral";
+          username = config.secrets.macchiato.homebridge.username;
+          port = 51826;
+          pin = config.secrets.macchiato.homebridge.pin;
+        };
+        platforms = [
+          {
+            name = "Config";
+            port = 8581;
+            platform = "config";
+          }
+          {
+            platform = "zigbee2mqtt";
+            mqtt = {
+              server = "mqtt://127.0.0.1:1883";
+              base_topic = "zigbee2mqtt";
+              version = 5;
+            };
+          }
+        ];
       };
     };
     zigbee2mqtt = {
