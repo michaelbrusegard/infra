@@ -11,7 +11,7 @@ let
     config.allowUnfree = true;
   };
 
-  pkgs-23_05 = import inputs.nixpkgs-23_05 {
+  pkgs-23_11 = import inputs.nixpkgs-23_11 {
     inherit system;
     config.allowUnfree = true;
   };
@@ -29,7 +29,7 @@ let
   commonArgs = {
     inherit system;
     specialArgs = {
-      inherit system userName hostName stateVersion colors isDarwin isWsl pkgs-unstable pkgs-23_05 pkgs-otbr;
+      inherit system userName hostName stateVersion colors isDarwin isWsl pkgs-unstable pkgs-23_11 pkgs-otbr;
       inherit (inputs) nixpkgs nix-darwin home-manager sops-nix nixos-raspberrypi nixos-wsl nur lanzaboote mac-app-util nix-homebrew homebrew-core homebrew-cask homebrew-extras homebrew-koekeishiya apple-fonts apple-emoji-linux catppuccin hyprland yazi wezterm fancontrol-gui dotfiles-private;
     };
   };
