@@ -8,7 +8,6 @@ in {
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
       whois
-      unzip
       ffmpeg
       imagemagick
       p7zip

@@ -11,6 +11,8 @@ in {
       wget
       zstd
       file
+      unzip
+      unrar
       rsync
       fontconfig
       yq
