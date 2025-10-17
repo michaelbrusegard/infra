@@ -518,11 +518,11 @@
     "homebrew-koekeishiya": {
       "flake": false,
       "locked": {
-        "lastModified": 1747579322,
-        "narHash": "sha256-e7NybFVmFDHHy8m+cJPnDugGKzfYkMvh/3c+O7jMM2Y=",
+        "lastModified": 1759843705,
+        "narHash": "sha256-4dLzkwdIw02V8rbNzdOZ4h3ZwtpqRof2WV3KwXN/EXE=",
         "owner": "koekeishiya",
         "repo": "homebrew-formulae",
-        "rev": "f5711b9c70e104bffc79e3525e2ed0dc335bdbba",
+        "rev": "c9fc60dcb9746ae35a08e1fa8e6eaa2f604a3b92",
         "type": "github"
       },
       "original": {
@@ -982,22 +982,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-23_11": {
-      "locked": {
-        "lastModified": 1720535198,
-        "narHash": "sha256-zwVvxrdIzralnSbcpghA92tWu2DV2lwv89xZc8MTrbg=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "205fd4226592cc83fd4c0885a3e4c9c400efabb5",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-23.11",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-otbr": {
       "locked": {
         "lastModified": 1751030343,
@@ -1165,7 +1149,6 @@
         "nixos-raspberrypi": "nixos-raspberrypi",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_3",
-        "nixpkgs-23_11": "nixpkgs-23_11",
         "nixpkgs-otbr": "nixpkgs-otbr",
         "nur": "nur",
         "sops-nix": "sops-nix",
