@@ -1,6 +1,9 @@
 -- Spellcheck
 vim.opt.spelllang = 'en,nb'
 
+-- Reload files changed outside of Neovim
+vim.opt.autoread = true
+
 -- Disable order check
 vim.g.lazyvim_check_order = false
 

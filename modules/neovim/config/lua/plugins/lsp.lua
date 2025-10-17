@@ -12,13 +12,13 @@ return {
       }
       keys[#keys + 1] = {
         'crn',
-        "<cmd>lua require('live-rename').rename()<cr>",
+        '<cmd>lua require("live-rename").rename()<cr>',
         desc = 'Rename',
         has = 'rename',
       }
       keys[#keys + 1] = {
         '<leader>cr',
-        "<cmd>lua require('live-rename').rename()<cr>",
+        '<cmd>lua require("live-rename").rename()<cr>',
         desc = 'Rename',
         has = 'rename',
       }

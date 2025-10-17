@@ -1,25 +1,31 @@
 return {
   { import = 'lazyvim.plugins.extras.ai.copilot' },
-  { import = 'lazyvim.plugins.extras.ai.supermaven' },
   {
-    'yetone/avante.nvim',
-    event = 'VeryLazy',
-    dependencies = { 'stevearc/dressing.nvim' },
-    opts = {
-      hints = { enabled = false },
-      selector = {
-        provider = 'snacks',
+    'NickvanDyke/opencode.nvim',
+    keys = {
+      {
+        '<leader>aa',
+        '<cmd>lua require("opencode").ask("@this: ", { submit = true })<cr>',
+        mode = { 'n', 'x' },
+        desc = 'Ask about this',
+      },
+      { '<leader>as', '<cmd>lua require("opencode").select()<cr>', mode = { 'n', 'x' }, desc = 'Select prompt' },
+      { '<leader>ac', '<cmd>lua require("opencode").prompt("@this")<cr>', mode = { 'n', 'x' }, desc = 'Add this' },
+      { '<leader>at', '<cmd>lua require("opencode").toggle()<cr>', desc = 'Toggle embedded' },
+      { '<leader>an', '<cmd>lua require("opencode").command("session_new")<cr>', desc = 'New session' },
+      { '<leader>ai', '<cmd>lua require("opencode").command("session_interrupt")<cr>', desc = 'Interrupt session' },
+      { '<leader>aA', '<cmd>lua require("opencode").command("agent_cycle")<cr>', desc = 'Cycle selected agent' },
+      {
+        '<S-C-u>',
+        '<cmd>lua require("opencode").command("messages_half_page_up")<cr>',
+        desc = 'Messages half page up',
+      },
+      {
+        '<S-C-d>',
+        '<cmd>lua require("opencode").command("messages_half_page_down")<cr>',
+        desc = 'Messages half page down',
       },
     },
-  },
-  {
-    'MeanderingProgrammer/render-markdown.nvim',
-    ft = function(_, ft)
-      vim.list_extend(ft, { 'Avante' })
-    end,
-    opts = function(_, opts)
-      opts.file_types = vim.list_extend(opts.file_types or {}, { 'Avante' })
-    end,
   },
   {
     'folke/which-key.nvim',

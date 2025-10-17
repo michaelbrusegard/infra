@@ -1,4 +1,4 @@
-local sql_ft = { "sql", "mysql", "plsql" }
+local sql_ft = { 'sql', 'mysql', 'plsql' }
 return {
   { import = 'lazyvim.plugins.extras.lang.angular' },
   { import = 'lazyvim.plugins.extras.lang.cmake' },
@@ -34,38 +34,42 @@ return {
     })
   end,
   {
-    "kndndrj/nvim-dbee",
+    'kndndrj/nvim-dbee',
     dependencies = {
-      "MunifTanjim/nui.nvim",
+      'MunifTanjim/nui.nvim',
     },
     build = function()
-      require("dbee").install()
+      require('dbee').install()
     end,
     keys = {
-      { "<leader>D", function()
-        require("dbee").toggle()
-      end, desc = "Toggle DBee" },
+      {
+        '<leader>D',
+        function()
+          require('dbee').toggle()
+        end,
+        desc = 'Toggle DBee',
+      },
     },
-    opts = {};
+    opts = {},
   },
   {
-    "nvim-treesitter/nvim-treesitter",
+    'nvim-treesitter/nvim-treesitter',
     optional = true,
-    opts = { ensure_installed = { "sql" } },
+    opts = { ensure_installed = { 'sql' } },
   },
   {
-    "mason-org/mason.nvim",
-    opts = { ensure_installed = { "sqlfluff" } },
+    'mason-org/mason.nvim',
+    opts = { ensure_installed = { 'sqlfluff' } },
   },
   {
-    "stevearc/conform.nvim",
+    'stevearc/conform.nvim',
     opts = function(_, opts)
       opts.formatters.sqlfluff = {
-        args = { "format", "--dialect=ansi", "-" },
+        args = { 'format', '--dialect=ansi', '-' },
       }
       for _, ft in ipairs(sql_ft) do
         opts.formatters_by_ft[ft] = opts.formatters_by_ft[ft] or {}
-        table.insert(opts.formatters_by_ft[ft], "sqlfluff")
+        table.insert(opts.formatters_by_ft[ft], 'sqlfluff')
       end
     end,
   },

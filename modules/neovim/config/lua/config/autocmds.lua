@@ -7,5 +7,5 @@ vim.api.nvim_create_autocmd('BufEnter', {
 -- Auto save on buffer leave or focus lost
 vim.api.nvim_create_autocmd({ 'BufLeave', 'FocusLost' }, {
   group = vim.api.nvim_create_augroup('auto_save', { clear = true }),
-  command = [[if &modified && !&readonly && expand("%") != "" && &buftype == "" | silent! update | endif]],
+  command = [[if &modified && !&readonly && expand('%') != '' && &buftype == '' | silent! update | endif]],
 })

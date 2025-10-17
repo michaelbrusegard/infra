@@ -11,7 +11,7 @@ return {
       {
         '<leader>fs',
         mode = { 'n', 'x' },
-        "<cmd>lua require('nvim-silicon').clip()<cr>",
+        '<cmd>lua require("nvim-silicon").clip()<cr>',
         desc = 'Take Screenshot',
       },
     },
