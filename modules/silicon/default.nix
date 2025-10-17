@@ -16,7 +16,7 @@ in {
       --background "${colors.mocha.lavender}"
     '';
 
-    xdg.configFile."silicon/themes/catppuccin-mocha.tmTheme".source = ./../../assets/theme/catppuccin-mocha.tmTheme;
+    xdg.configFile."silicon/themes/catppuccin-mocha.tmTheme".source = ../../assets/theme/catppuccin-mocha.tmTheme;
 
     xdg.configFile."silicon/syntaxes/.keep".text = "";
 
