@@ -29,9 +29,6 @@ in {
         sqlite
         postgresql
 
-        # LLMs
-        opencode
-
         # Python
         uv
         python3

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "theme": "catppuccin",
+  "tools": {
+    "bash": true,
+    "edit": true,
+    "write": true,
+    "read": true,
+    "grep": true,
+    "glob": true,
+    "list": true,
+    "patch": true,
+    "todowrite": true,
+    "todoread": true,
+    "webfetch": true
+  },
+  "agent": {
+    "plan": {
+      "tools": {
+        "bash": false,
+        "edit": false,
+        "write": false,
+        "patch": false
+      }
+    },
+    "build": {
+      "permission": {
+        "bash": {
+          "git *": "deny",
+          "*": "ask"
+        }
+      }
+    }
+  }
+}
