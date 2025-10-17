@@ -6,11 +6,8 @@ in {
   options.modules.opencode.enable = lib.mkEnableOption "OpenCode Configuration";
 
   config = lib.mkIf cfg.enable {
-      packages = with pkgs; [
-         opencode
-       ];
     home.packages = with pkgs; [
-    opencode
+      opencode
     ];
     xdg.configFile."opencode".source = "${config.home.homeDirectory}/Developer/dotfiles/modules/opencode/config";
   };
