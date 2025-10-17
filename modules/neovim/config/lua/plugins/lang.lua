@@ -20,6 +20,7 @@ return {
   { import = 'lazyvim.plugins.extras.lang.python' },
   {
     'benomahony/uv.nvim',
+    ft = { 'python' },
     opts = {
       picker_integration = true,
       keymaps = {
