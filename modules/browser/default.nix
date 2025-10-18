@@ -12,9 +12,6 @@ in {
         enable = true;
         package = pkgs.vivaldi;
       };
-      qutebrowser = {
-        enable = true;
-      };
     };
   };
 }
