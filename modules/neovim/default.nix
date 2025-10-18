@@ -16,6 +16,8 @@ in {
       withNodeJs = true;
       withRuby = true;
       extraPackages = with pkgs; [
+        lua5_1
+        lua51Packages.luarocks
         texliveFull
       ];
     };
