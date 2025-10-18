@@ -47,7 +47,10 @@ in {
         luarocks
 
         # Rust
-        rustup
+        rustc
+        cargo
+        clippy
+        rustfmt
 
         # Embedded
         arduino-cli
