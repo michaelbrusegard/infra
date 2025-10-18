@@ -9,6 +9,6 @@ in {
     home.packages = with pkgs; [
       opencode
     ];
-    xdg.configFile."opencode".source = "${config.home.homeDirectory}/Developer/dotfiles/modules/opencode/config";
+    xdg.configFile."opencode".source = ./config;
   };
 }
