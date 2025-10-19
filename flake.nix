@@ -76,6 +76,10 @@
       url = "github:JaysFreaky/fancontrol-gui?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     dotfiles-private = {
       url = "git+ssh://git@github.com/michaelbrusegard/dotfiles-private.git?ref=main";
       inputs.sops-nix.follows = "sops-nix";

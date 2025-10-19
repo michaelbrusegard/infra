@@ -1,4 +1,4 @@
-{ config, lib, pkgs, isDarwin, ... }:
+{ config, lib, pkgs, system, isDarwin, fenix, ... }:
 
 let
   cfg = config.modules.dev;
@@ -47,10 +47,13 @@ in {
         luarocks
 
         # Rust
-        rustc
-        cargo
-        clippy
-        rustfmt
+        (fenix.packages.${system}.stable.withComponents [
+          "rustc"
+          "cargo"
+          "clippy"
+          "rust-src"
+          "rustfmt"
+        ])
 
         # Embedded
         arduino-cli
