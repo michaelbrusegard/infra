@@ -1,4 +1,4 @@
-{ config, lib, pkgs-unstable, ... }:
+{ config, lib, pkgs-unstable, pkgs, ... }:
 
 let
   cfg = config.modules.gui;
@@ -23,7 +23,7 @@ in {
       gimp3-with-plugins
       libreoffice-fresh
       orca-slicer
-      bambu-studio
+      pkgs.bambu-studio
       freecad-wayland
       betaflight-configurator
       blender
