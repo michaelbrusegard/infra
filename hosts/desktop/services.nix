@@ -58,7 +58,7 @@
               disable_splash_rendering = true
               disable_hyprland_qtutils_check = true
             }
-            exec-once = ${pkgs.regreet}/bin/regreet; ${pkgs.hyprland}/bin/hyprctl dispatch exit
+            exec-once = ${pkgs.greetd.regreet}/bin/regreet; ${pkgs.hyprland}/bin/hyprctl dispatch exit
           ''}";
           user = "greeter";
         };

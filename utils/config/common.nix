@@ -1,4 +1,4 @@
-{ pkgs, system, userName, hostName, nur, yazi, fancontrol-gui, pkgs-unstable, pkgs-otbr, ... }:
+{ pkgs, system, userName, hostName, nur, yazi, wezterm, hyprland, fancontrol-gui, pkgs-unstable, pkgs-otbr, ... }:
 {
   nix = {
     optimise.automatic = true;
@@ -34,6 +34,12 @@
       nur.overlays.default
       yazi.overlays.default
       fancontrol-gui.overlays.default
+      (final: prev: {
+        hyprland = hyprland.packages.${prev.system}.hyprland;
+        xdg-desktop-portal-hyprland = hyprland.packages.${prev.system}.xdg-desktop-portal-hyprland;
+      })
+      (final: prev: { neovim = pkgs-unstable.neovim; })
+      (final: prev: { wezterm = wezterm.packages.${prev.system}.default; })
       (final: prev: { homebridge = pkgs-unstable.homebridge; })
       (final: prev: { homebridge-config-ui-x = pkgs-unstable.homebridge-config-ui-x; })
       (final: prev: { openthread-border-router = pkgs-otbr.openthread-border-router; })

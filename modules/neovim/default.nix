@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs-unstable, ... }:
 
 let
   cfg = config.modules.neovim;
@@ -15,7 +15,7 @@ in {
       withPython3 = true;
       withNodeJs = true;
       withRuby = true;
-      extraPackages = with pkgs; [
+      extraPackages = with pkgs-unstable; [
         lua5_1
         lua51Packages.luarocks
         texliveFull
@@ -23,7 +23,7 @@ in {
     };
     xdg.configFile."nvim".source = config.lib.file.mkOutOfStoreSymlink
       "${config.home.homeDirectory}/Developer/dotfiles/modules/neovim/config";
-    home.packages = with pkgs; [
+    home.packages = with pkgs-unstable; [
       tree-sitter
     ];
   };

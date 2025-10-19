@@ -1,33 +1,33 @@
-{ config, lib, pkgs, colors, ... }:
+{ config, lib, pkgs-unstable, colors, ... }:
 
 let
   cfg = config.modules.yazi;
-  yazi-plugins = pkgs.fetchFromGitHub {
+  yazi-plugins = pkgs-unstable.fetchFromGitHub {
     owner = "yazi-rs";
     repo = "plugins";
     rev = "e95c7b384e7b0a9793fe1471f0f8f7810ef2a7ed";
     hash = "sha256-TUS+yXxBOt6tL/zz10k4ezot8IgVg0/2BbS8wPs9KcE=";
 
   };
-  relative-motions-plugin = pkgs.fetchFromGitHub {
+  relative-motions-plugin = pkgs-unstable.fetchFromGitHub {
     owner = "dedukun";
     repo = "relative-motions.yazi";
     rev = "a603d9ea924dfc0610bcf9d3129e7cba605d4501";
     hash = "sha256-9i6x/VxGOA3bB3FPieB7mQ1zGaMK5wnMhYqsq4CvaM4=";
   };
-  augment-command-plugin = pkgs.fetchFromGitHub {
+  augment-command-plugin = pkgs-unstable.fetchFromGitHub {
     owner = "hankertrix";
     repo = "augment-command.yazi";
     rev = "120406f79b6a5bf4db6120dd99c1106008ada5cf";
     hash = "sha256-t9X7cNrMR3fFqiM13COQbBDHYr8UKgxW708V6ndZVgY=";
   };
-  yaziline-plugin = pkgs.fetchFromGitHub {
+  yaziline-plugin = pkgs-unstable.fetchFromGitHub {
     owner = "llanosrocas";
     repo = "yaziline.yazi";
     rev = "e7042a8b4ee9de4ebfb6e4106a6edf346cef99fb";
     hash = "sha256-cwuPh2aMh0oj9HEGyvrvkNTguER6VoXjnFklCTNPoeY=";
   };
-  lazygit-plugin = pkgs.fetchFromGitHub {
+  lazygit-plugin = pkgs-unstable.fetchFromGitHub {
     owner = "Lil-Dank";
     repo = "lazygit.yazi";
     rev = "8f37dc5795f165021098b17d797c7b8f510aeca9";
@@ -195,7 +195,7 @@ in {
         ];
       };
     };
-    home.packages = with pkgs; [
+    home.packages = with pkgs-unstable; [
       glow
       duckdb
       mediainfo

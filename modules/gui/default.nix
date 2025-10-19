@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs-unstable, ... }:
 
 let
   cfg = config.modules.gui;
@@ -6,7 +6,7 @@ in {
   options.modules.gui.enable = lib.mkEnableOption "GUI applications";
 
   config = lib.mkIf cfg.enable {
-    home.packages = with pkgs; [
+    home.packages = with pkgs-unstable; [
       transmission_4
       slack
       zoom-us

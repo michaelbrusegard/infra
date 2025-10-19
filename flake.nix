@@ -1,6 +1,8 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable?shallow=1";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05?shallow=1";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable?shallow=1";
+    nixpkgs-otbr.url = "github:mrene/nixpkgs/openthread-border-router?shallow=1";
     nur = {
       url = "github:nix-community/NUR?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -18,7 +20,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi?shallow=1";
-    nixpkgs-otbr.url = "github:mrene/nixpkgs/openthread-border-router?shallow=1";
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -62,15 +63,15 @@
     };
     yazi = {
       url = "github:sxyazi/yazi?shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     hyprland = {
       url = "github:hyprwm/Hyprland?shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     wezterm = {
       url = "github:wez/wezterm?dir=nix&shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     fancontrol-gui = {
       url = "github:JaysFreaky/fancontrol-gui?shallow=1";

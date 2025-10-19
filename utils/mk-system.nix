@@ -6,7 +6,7 @@ let
   isAarch64Linux = system == "aarch64-linux";
   isWsl = hostName == "wsl";
 
-  pkgs-unstable = import inputs.nixpkgs {
+  pkgs-unstable = import inputs.nixpkgs-unstable {
     inherit system;
     config.allowUnfree = true;
   };
