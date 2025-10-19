@@ -48,6 +48,7 @@ in {
 
         # Rust
         rustc
+        rust-src
         cargo
         clippy
         rustfmt
