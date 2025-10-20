@@ -26,9 +26,6 @@
     config = {
       allowUnfree = true;
       allowBroken = true;
-      permittedInsecurePackages = [
-        "libsoup-2.74.3"
-      ];
     };
     overlays = [
       nur.overlays.default
@@ -38,6 +35,8 @@
         hyprland = hyprland.packages.${prev.system}.hyprland;
         xdg-desktop-portal-hyprland = hyprland.packages.${prev.system}.xdg-desktop-portal-hyprland;
       })
+      (final: prev: { yabai = pkgs-unstable.yabai; })
+      (final: prev: { jankyborders = pkgs-unstable.jankyborders; })
       (final: prev: { neovim = pkgs-unstable.neovim; })
       (final: prev: { wezterm = wezterm.packages.${prev.system}.default; })
       (final: prev: { homebridge = pkgs-unstable.homebridge; })

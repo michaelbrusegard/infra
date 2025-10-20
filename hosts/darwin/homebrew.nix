@@ -1,4 +1,4 @@
-{ config, userName, homebrew-core, homebrew-cask, homebrew-extras, homebrew-koekeishiya, ... }: {
+{ config, userName, homebrew-core, homebrew-cask, homebrew-extras, ... }: {
   nix-homebrew = {
     enable = true;
     enableRosetta = true;
@@ -6,7 +6,6 @@
     taps = {
       "homebrew/homebrew-core" = homebrew-core;
       "homebrew/homebrew-cask" = homebrew-cask;
-      "koekeishiya/homebrew-formulae" = homebrew-koekeishiya;
       "michaelbrusegard/homebrew-extras" = homebrew-extras;
     };
     mutableTaps = false;
@@ -23,7 +22,6 @@
     taps = builtins.attrNames config.nix-homebrew.taps;
     brews = [
       "nsis"
-      { name = "yabai"; args = [ "HEAD" ]; }
     ];
     casks = [
       "jordanbaird-ice"

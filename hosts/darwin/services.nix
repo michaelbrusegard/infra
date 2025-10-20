@@ -4,9 +4,6 @@
     yabai = {
       enable = true;
       enableScriptingAddition = true;
-      package = pkgs.writeShellScriptBin "yabai" ''
-        exec /opt/homebrew/bin/yabai "$@"
-      '';
       config = {
         layout = "bsp";
         focus_follows_mouse = "off";
@@ -122,12 +119,12 @@
       '';
     };
     jankyborders = {
-      enable = false;
+      enable = true;
       hidpi = true;
       style = "round";
       active_color = "0xff89b4fa";
       inactive_color = "0xff45475a";
-      width = 2.0;
+      width = 4.0;
     };
   };
 }

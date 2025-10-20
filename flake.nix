@@ -3,12 +3,12 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05?shallow=1";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable?shallow=1";
     nixpkgs-otbr.url = "github:mrene/nixpkgs/openthread-border-router?shallow=1";
-    nur = {
-      url = "github:nix-community/NUR?shallow=1";
+    nix-darwin = {
+      url = "github:lnl7/nix-darwin/nix-darwin-25.05?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-darwin = {
-      url = "github:lnl7/nix-darwin?shallow=1";
+    nur = {
+      url = "github:nix-community/NUR?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
@@ -43,10 +43,6 @@
     };
     homebrew-extras = {
       url = "github:michaelbrusegard/homebrew-extras?shallow=1";
-      flake = false;
-    };
-    homebrew-koekeishiya = {
-      url = "github:koekeishiya/homebrew-formulae?shallow=1";
       flake = false;
     };
     apple-emoji-linux = {
