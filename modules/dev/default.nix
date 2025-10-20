@@ -38,8 +38,9 @@ in {
         # Go
         go
 
-        # Node
+        # JavaScript
         nodejs
+        ni
         nodePackages.pnpm
 
         # Lua
