@@ -1,4 +1,4 @@
-{ userName, ... }: {
+{ userName, pkgs-unstable, ... }: {
   system = {
     primaryUser = userName;
     defaults = {
@@ -311,7 +311,7 @@
     startup.chime = false;
     activationScripts.postActivation.text = ''
       echo "Loading yabai scripting addition..."
-      /opt/homebrew/bin/yabai --load-sa
+      ${pkgs-unstable.yabai}/bin/yabai --load-sa
       echo "Setting wallpaper..."
       osascript -e '
       tell application "System Events"
