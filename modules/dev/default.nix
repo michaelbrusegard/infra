@@ -61,9 +61,9 @@ in {
 
         # C
         cmake
+        clang
         lldb
-        llvmPackages.llvm
-        llvmPackages.lld
+        libiconv
       ] ++ lib.optionals (!isDarwin) [
         # Windows cross-compile
         nsis
@@ -74,6 +74,8 @@ in {
         GDAL_LIBRARY_PATH = "$(gdal-config --prefix)/lib/libgdal.dylib";
         GEOS_LIBRARY_PATH = "$(geos-config --prefix)/lib/libgeos_c.dylib";
         PNPM_HOME = "$HOME/.local/state/pnpm";
+        LIBRARY_PATH = "${pkgs.libiconv}/lib:$LIBRARY_PATH";
+        CPATH = "${pkgs.libiconv}/include:$CPATH";
       };
     };
   };
