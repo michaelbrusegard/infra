@@ -63,6 +63,7 @@ in {
         cmake
         clang
         lldb
+        llvm
         libiconv
       ] ++ lib.optionals (!isDarwin) [
         # Windows cross-compile
