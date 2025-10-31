@@ -25,8 +25,8 @@ in {
       gnumake
       gnutar
       screen
-      clang
       nix-index
+      lsof
     ] ++ lib.optionals (!isDarwin) [
       psmisc
     ] ++ lib.optionals (isDarwin) [
