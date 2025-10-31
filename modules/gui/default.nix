@@ -15,6 +15,12 @@ in {
   options.modules.gui.enable = lib.mkEnableOption "GUI applications";
 
   config = lib.mkIf cfg.enable {
+    xdg.desktopEntries.breaktimer = {
+      name = "BreakTimer";
+      exec = "breaktimer %U";
+      type = "Application";
+      categories = [ "Utility" ];
+    };
     home.packages = with pkgs-unstable; [
       easyeffects
       breaktimer
