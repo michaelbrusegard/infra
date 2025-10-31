@@ -98,10 +98,11 @@ in
         "sudo darwin-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}"
       else
         "sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}";
-      update-nix = "nix flake update nixpkgs nur nix-darwin  home-manager sops-nix nixos-raspberrypi nixpkgs-otbr nixpkgs-homebridge nixos-wsl nix-homebrew lanzaboote mac-app-util homebrew-core homebrew-cask homebrew-extras homebrew-koekeishiya apple-emoji-linux apple-fonts catppuccin --flake $HOME/Developer/dotfiles";
+      update-nix = "nix flake update nixpkgs nixpkgs-unstable nix-darwin nur home-manager sops-nix nixos-raspberrypi nixpkgs-otbr nixpkgs-homebridge nixos-wsl lanzaboote mac-app-util apple-emoji-linux apple-fonts catppuccin --flake $HOME/Developer/dotfiles";
       update-hyprland = "nix flake update hyprland --flake $HOME/Developer/dotfiles";
-      update-apps = "nix flake update yazi wezterm fancontrol-gui --flake $HOME/Developer/dotfiles";
+      update-apps = "nix flake update yazi wezterm fancontrol-gui affi --flake $HOME/Developer/dotfiles";
       update-secrets = "nix flake update dotfiles-private --flake $HOME/Developer/dotfiles";
+      update-homebrew = "nix flake update nix-homebrew homebrew-core homebrew-cask homebrew-extras --flake $HOME/Developer/dotfiles";
       clean = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
       reload = "source $HOME/.config/zsh/.zshrc";
       c = "clear";

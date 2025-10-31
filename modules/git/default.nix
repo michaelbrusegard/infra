@@ -10,19 +10,10 @@ in {
       git = {
         enable = true;
         lfs.enable = true;
-        userName = "Michael Brusegard";
-        userEmail = "56915010+michaelbrusegard@users.noreply.github.com";
         signing = {
           format = "ssh";
           key = config.secrets.ssh.gitKeyFile;
           signByDefault = true;
-        };
-        delta = {
-          enable = true;
-          options = {
-            navigate = true;
-            side-by-side = true;
-          };
         };
         ignores = [
           ".DS_Store"
@@ -33,7 +24,11 @@ in {
           ".direnv"
           "node_modules"
         ];
-        extraConfig = {
+        settings = {
+          user = {
+            name = "Michael Brusegard";
+            email = "56915010+michaelbrusegard@users.noreply.github.com";
+          };
           init = {
             defaultBranch = "main";
           };
@@ -69,6 +64,14 @@ in {
           rerere = {
             enabled = true;
           };
+        };
+      };
+      delta = {
+        enable = true;
+        enableGitIntegration = true;
+        options = {
+          navigate = true;
+          side-by-side = true;
         };
       };
       lazygit = {

@@ -152,10 +152,13 @@ in {
           "workspace 5, class:^(legcord)$"
           "workspace 5, class:^(Element)$"
           "workspace 5, class:^(Slack)$"
+
+          "workspace 6, class:^(Affinity)$"
           "workspace 6, class:^(OrcaSlicer)$"
           "workspace 6, class:^(resolve)$"
           "workspace 6, class:^(Gimp)$"
           "workspace 6, class:^(org.inkscape.Inkscape)$"
+          "workspace 6, class:^(Scribus)$"
           "workspace 6, class:^(org.freecad.FreeCAD)$"
         ];
       };

@@ -74,8 +74,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     fenix = {
-      url = "github:nix-community/fenix";
+      url = "github:nix-community/fenix?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    affinity = {
+      url = "github:mrshmllow/affinity-nix/mrshmllow/v3?shallow=1";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     dotfiles-private = {
       url = "git+ssh://git@github.com/michaelbrusegard/dotfiles-private.git?ref=main";

@@ -1,18 +1,4 @@
 return {
-  { import = 'lazyvim.plugins.extras.ai.copilot' },
-  {
-    'zbirenbaum/copilot.lua',
-    init = function()
-      vim.cmd('Copilot disable')
-    end,
-    keys = {
-      {
-        '<leader>cp',
-        '<cmd>Copilot toggle<cr>',
-        desc = 'Toggle Copilot suggestions',
-      },
-    },
-  },
   {
     'NickvanDyke/opencode.nvim',
     keys = {

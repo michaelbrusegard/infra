@@ -31,7 +31,7 @@
         yabai -m rule --add app="^(Proton Mail|Proton Pass)$" space=3
         yabai -m rule --add app="^(Notes|Obsidian|LibreOffice|Notion)$" space=4
         yabai -m rule --add app="^(Messages|FaceTime|Element|Messenger|Legcord|Slack)$" space=5
-        yabai -m rule --add app="^(Inkscape|Gimp|DaVinci Resolve|FreeCAD|OrcaSlicer)$" space=6
+        yabai -m rule --add app="^(Affinity|Inkscape|Gimp|Scribus|DaVinci Resolve|FreeCAD|OrcaSlicer)$" space=6
         yabai -m rule --add app="^(Music|Photos)$" space=7
 
         # Make sure there are 9 spaces
