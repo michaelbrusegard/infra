@@ -61,10 +61,7 @@
       url = "github:sxyazi/yazi?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
-    hyprland = {
-      url = "github:hyprwm/Hyprland?shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
+    hyprland.url = "github:hyprwm/Hyprland?shallow=1";
     wezterm = {
       url = "github:wez/wezterm?dir=nix&shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";

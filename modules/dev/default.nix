@@ -65,6 +65,9 @@ in {
         lldb
         llvm
         libiconv
+
+        # c#
+        dotnet-sdk
       ] ++ lib.optionals (!isDarwin) [
         # Windows cross-compile
         nsis
