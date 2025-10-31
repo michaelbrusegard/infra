@@ -34,7 +34,10 @@ in {
         package = pkgs.adwaita-qt;
       };
     };
-    services = { 
+    dconf.settings."org/gnome/desktop/interface" = {
+      color-scheme = "prefer-dark";
+    };
+    services = {
       cliphist.enable = true;
       playerctld.enable = true;
     };
