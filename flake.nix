@@ -75,7 +75,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     affinity = {
-      url = "github:mrshmllow/affinity-nix/mrshmllow/v3?shallow=1";
+      url = "github:mrshmllow/affinity-nix?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     dotfiles-private = {
