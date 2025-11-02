@@ -8,7 +8,7 @@ let
     version = "2.0.1";
      src = pkgs.fetchurl {
        url = "https://github.com/tom-james-watson/breaktimer-app/releases/download/v2.0.1/BreakTimer.AppImage";
-       hash = "sha256:1533b2de8073413c8a4ddc62852e546b5541e18971ad0324ea47a7369e214f36";
+       hash = "sha256-FTOy3oBzQTyKTdxihS5Ua1VB4YlxrQMk6kenNp4hTzY=";
      };
   };
 in {
