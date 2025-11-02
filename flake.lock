@@ -14,16 +14,15 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1761912170,
-        "narHash": "sha256-wAakz5r7tk5/LDu8qCoDjnDB2mvPPlokid8k3e9kn0k=",
+        "lastModified": 1762041851,
+        "narHash": "sha256-fIMpGLNZtNCCfvDRsc1cq3MAWC4Vdqf1qVr5PzWOod4=",
         "owner": "mrshmllow",
         "repo": "affinity-nix",
-        "rev": "20293d03a6d833d232f75d5f7cf1eb5348d8db04",
+        "rev": "4df9bc0531dac30f6e3bc9d7d613da85b1d2440a",
         "type": "github"
       },
       "original": {
         "owner": "mrshmllow",
-        "ref": "mrshmllow/v3",
         "repo": "affinity-nix",
         "type": "github"
       }
