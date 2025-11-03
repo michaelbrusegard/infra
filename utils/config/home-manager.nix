@@ -1,4 +1,4 @@
-{ pkgs, specialArgs, userName, catppuccin, dotfiles-private, mac-app-util, ... }:
+{ pkgs, specialArgs, userName, catppuccin, dotfiles-private, mac-app-util, dankMaterialShell, ... }:
 {
   home-manager = {
     useUserPackages = true;
@@ -9,6 +9,7 @@
         dotfiles-private.homeModules.secrets
         catppuccin.homeModules.catppuccin
         mac-app-util.homeManagerModules.default
+        dankMaterialShell.homeModules.dankMaterialShell.default
         ../../modules
         ../../users/${userName}
       ];

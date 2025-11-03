@@ -62,6 +62,20 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     hyprland.url = "github:hyprwm/Hyprland?shallow=1";
+    dgop = {
+      url = "github:AvengeMedia/dgop";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+    dms-cli = {
+      url = "github:AvengeMedia/danklinux";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+    dankMaterialShell = {
+      url = "github:AvengeMedia/DankMaterialShell";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.dgop.follows = "dgop";
+      inputs.dms-cli.follows = "dms-cli";
+    };
     wezterm = {
       url = "github:wez/wezterm?dir=nix&shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";

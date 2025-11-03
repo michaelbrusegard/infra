@@ -1,4 +1,7 @@
-{ pkgs, ... }: {
+{ userName, dankMaterialShell, ... }: {
+  imports = [
+    dankMaterialShell.nixosModules.greeter
+  ];
   programs = {
     ssh.startAgent = true;
     dconf.enable = true;
@@ -6,29 +9,10 @@
       enable = true;
       withUWSM = true;
     };
-    regreet = {
+    dankMaterialShell.greeter = {
       enable = true;
-      font = {
-        name = "SFPro";
-      };
-      theme = {
-        name = "Adwaita-dark";
-        package = pkgs.gnome-themes-extra;
-      };
-      settings = {
-        background = {
-          path = ../../assets/wallpapers/twilight-peaks.png;
-          fit = "Cover";
-        };
-        appearance = {
-          greeting_msg = "Authenticating into Desktop";
-        };
-        "widget.clock" = {
-          format = "%A %-d %B %H:%M";
-          timezone = "Europe/Oslo";
-          label_width = 200;
-        };
-      };
+      compositor.name = "hyprland";
+      configHome = "/home/${userName}";
     };
   };
 }
