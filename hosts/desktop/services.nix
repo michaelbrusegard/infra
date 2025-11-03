@@ -1,4 +1,4 @@
-{ pkgs, config, dankMaterialShell, ... }: {
+{ config, ... }: {
   services = {
     kanata = {
       enable = true;
@@ -40,15 +40,7 @@
         support32Bit = true;
       };
     };
-    greetd = {
-      enable = true;
-      settings = {
-        default_session = {
-          command = "${dankMaterialShell.packages.${pkgs.system}.dankMaterialShell}/etc/xdg/quickshell/dms/Modules/Greetd/assets/dms-greeter --command hyprland";
-          user = "greeter";
-        };
-      };
-    };
+    greetd.enable = true;
     udisks2.enable = true;
   };
 }

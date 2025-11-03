@@ -37,6 +37,7 @@
         hyprland = hyprland.packages.${prev.system}.hyprland;
         xdg-desktop-portal-hyprland = hyprland.packages.${prev.system}.xdg-desktop-portal-hyprland;
       })
+      (final: prev: { quickshell = pkgs-unstable.quickshell; })
       (final: prev: { yabai = pkgs-unstable.yabai; })
       (final: prev: { jankyborders = pkgs-unstable.jankyborders; })
       (final: prev: { neovim = pkgs-unstable.neovim; })

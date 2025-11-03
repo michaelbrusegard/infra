@@ -63,15 +63,15 @@
     };
     hyprland.url = "github:hyprwm/Hyprland?shallow=1";
     dgop = {
-      url = "github:AvengeMedia/dgop";
+      url = "github:AvengeMedia/dgop?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     dms-cli = {
-      url = "github:AvengeMedia/danklinux";
+      url = "github:AvengeMedia/danklinux?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     dankMaterialShell = {
-      url = "github:AvengeMedia/DankMaterialShell";
+      url = "github:AvengeMedia/DankMaterialShell?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
       inputs.dgop.follows = "dgop";
       inputs.dms-cli.follows = "dms-cli";

@@ -4,6 +4,10 @@ let
   cfg = config.modules.wayland;
 in {
   config = lib.mkIf cfg.enable {
+    programs.quickshell = {
+      enable = true;
+      systemd.enable = true;
+    };
     programs.hyprlock = {
       enable = true;
       settings = {
