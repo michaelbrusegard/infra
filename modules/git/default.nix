@@ -109,10 +109,7 @@ in {
     ];
     catppuccin = {
       delta.enable = true;
-      lazygit = {
-        enable = true;
-        accent = "blue";
-      };
+      lazygit.enable = true;
     };
   };
 }

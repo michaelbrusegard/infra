@@ -1,26 +1,26 @@
-{ pkgs, colors, ... }: {
+{ pkgs, ... }: {
   console = {
     enable = true;
     font = "${pkgs.terminus_font}/share/consolefonts/ter-120b.psf.gz";
     packages = [ pkgs.terminus_font ];
     keyMap = "us";
     colors = [
-      "${builtins.substring 1 6 colors.mocha.crust}"
-      "${builtins.substring 1 6 colors.mocha.red}"
-      "${builtins.substring 1 6 colors.mocha.green}"
-      "${builtins.substring 1 6 colors.mocha.yellow}"
-      "${builtins.substring 1 6 colors.mocha.blue}"
-      "${builtins.substring 1 6 colors.mocha.mauve}"
-      "${builtins.substring 1 6 colors.mocha.teal}"
-      "${builtins.substring 1 6 colors.mocha.subtext0}"
-      "${builtins.substring 1 6 colors.mocha.surface0}"
-      "${builtins.substring 1 6 colors.mocha.peach}"
-      "${builtins.substring 1 6 colors.mocha.sapphire}"
-      "${builtins.substring 1 6 colors.mocha.rosewater}"
-      "${builtins.substring 1 6 colors.mocha.lavender}"
-      "${builtins.substring 1 6 colors.mocha.pink}"
-      "${builtins.substring 1 6 colors.mocha.sky}"
-      "${builtins.substring 1 6 colors.mocha.text}"
+      pkgs.catppuccin.bare.mocha.crust
+      pkgs.catppuccin.bare.mocha.red
+      pkgs.catppuccin.bare.mocha.green
+      pkgs.catppuccin.bare.mocha.yellow
+      pkgs.catppuccin.bare.mocha.blue
+      pkgs.catppuccin.bare.mocha.mauve
+      pkgs.catppuccin.bare.mocha.teal
+      pkgs.catppuccin.bare.mocha.subtext0
+      pkgs.catppuccin.bare.mocha.surface0
+      pkgs.catppuccin.bare.mocha.peach
+      pkgs.catppuccin.bare.mocha.sapphire
+      pkgs.catppuccin.bare.mocha.rosewater
+      pkgs.catppuccin.bare.mocha.lavender
+      pkgs.catppuccin.bare.mocha.pink
+      pkgs.catppuccin.bare.mocha.sky
+      pkgs.catppuccin.bare.mocha.text
     ];
   };
 }

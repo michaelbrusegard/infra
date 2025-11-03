@@ -57,6 +57,9 @@
       url = "github:catppuccin/nix?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    catppuccin-themes = {
+      url = "github:abhinandh-s/catppuccin-nix?shallow=1";
+    };
     yazi = {
       url = "github:sxyazi/yazi?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";

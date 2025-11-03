@@ -1,4 +1,4 @@
-{ pkgs, lib, lanzaboote, apple-fonts, system, ... }: {
+{ lib, lanzaboote, apple-fonts, system, ... }: {
   imports = [
     lanzaboote.nixosModules.lanzaboote
   ];
@@ -22,12 +22,7 @@
     };
     plymouth = {
       enable = true;
-      logo = pkgs.runCommand "empty.png" {} ''
-        ${pkgs.graphicsmagick}/bin/gm convert -size 1x1 xc:transparent $out
-      '';
       font = "${apple-fonts.packages.${system}.sf-pro}/share/fonts/truetype/SF-Pro.ttf";
-      themePackages = [ pkgs.adi1090x-plymouth-themes ];
-      theme = "lone";
     };
     initrd = {
       availableKernelModules = [ "nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod" ];
@@ -39,5 +34,9 @@
     binfmt.emulatedSystems = [
       "aarch64-linux"
     ];
+  };
+  catppuccin = {
+    tty.enable = true;
+    plymouth.enable = true;
   };
 }

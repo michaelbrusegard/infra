@@ -47,5 +47,9 @@ in {
       notion
       davinci-resolve
     ];
+    catppuccin = {
+      element-desktop.enable = true;
+      imv.enable = true;
+    };
   };
 }

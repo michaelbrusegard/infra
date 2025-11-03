@@ -14,6 +14,8 @@
       compositor.name = "hyprland";
       configHome = "/home/${userName}";
       compositor.customConfig = ''
+        env = XCURSOR_THEME,macOS
+        env = XCURSOR_SIZE,24
         input {
           kb_layout = us
           kb_variant = mac

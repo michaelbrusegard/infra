@@ -1,4 +1,4 @@
-{ config, lib, pkgs-unstable, colors, ... }:
+{ pkgs, config, lib, pkgs-unstable, ... }:
 
 let
   cfg = config.modules.yazi;
@@ -164,7 +164,7 @@ in {
           smooth_scrolling = true,
         })
         require("yaziline"):setup({
-          color = "${colors.mocha.teal}",
+          color = "${pkgs.catppuccin.mocha.teal}",
           separator_style = "curvy",
         })
       '';
@@ -202,9 +202,6 @@ in {
       hexyl
       poppler-utils
     ];
-    catppuccin.yazi = {
-      enable = true;
-      accent = "blue";
-    };
+    catppuccin.yazi.enable = true;
   };
 }

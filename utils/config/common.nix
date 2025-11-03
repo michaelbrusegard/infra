@@ -1,4 +1,4 @@
-{ pkgs, system, userName, hostName, nur, yazi, wezterm, hyprland, fancontrol-gui, pkgs-unstable, pkgs-otbr, ... }:
+{ pkgs, system, userName, hostName, nur, yazi, wezterm, hyprland, fancontrol-gui, pkgs-unstable, pkgs-otbr, catppuccin-themes, ... }:
 {
   nix = {
     optimise.automatic = true;
@@ -33,6 +33,7 @@
       nur.overlays.default
       yazi.overlays.default
       fancontrol-gui.overlays.default
+      catppuccin-themes.overlays.default
       (final: prev: {
         hyprland = hyprland.packages.${prev.system}.hyprland;
         xdg-desktop-portal-hyprland = hyprland.packages.${prev.system}.xdg-desktop-portal-hyprland;

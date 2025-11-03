@@ -13,5 +13,6 @@ in {
         package = pkgs.vivaldi;
       };
     };
+    catppuccin.vivaldi.enable = true;
   };
 }

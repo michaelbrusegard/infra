@@ -1,7 +1,6 @@
 inputs:
 { system, userName, hostName, stateVersion }:
 let
-  colors = import ./colors.nix;
   isDarwin = system == "aarch64-darwin";
   isAarch64Linux = system == "aarch64-linux";
   isWsl = hostName == "wsl";
@@ -24,8 +23,8 @@ let
   commonArgs = {
     inherit system;
     specialArgs = {
-      inherit system userName hostName stateVersion colors isDarwin isWsl pkgs-unstable pkgs-otbr;
-      inherit (inputs) nixpkgs nix-darwin home-manager sops-nix nixos-raspberrypi nixos-wsl nur lanzaboote mac-app-util nix-homebrew homebrew-core homebrew-cask homebrew-extras apple-fonts apple-emoji-linux catppuccin hyprland dgop dms-cli dankMaterialShell yazi wezterm fancontrol-gui fenix affinity dotfiles-private;
+      inherit system userName hostName stateVersion isDarwin isWsl pkgs-unstable pkgs-otbr;
+      inherit (inputs) nixpkgs nix-darwin home-manager sops-nix nixos-raspberrypi nixos-wsl nur lanzaboote mac-app-util nix-homebrew homebrew-core homebrew-cask homebrew-extras apple-fonts apple-emoji-linux catppuccin catppuccin-themes hyprland dgop dms-cli dankMaterialShell yazi wezterm fancontrol-gui fenix affinity dotfiles-private;
     };
   };
 

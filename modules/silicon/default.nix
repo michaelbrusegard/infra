@@ -1,4 +1,4 @@
-{ config, lib, pkgs, colors, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.modules.silicon;
@@ -13,7 +13,7 @@ in {
       --font "SFMono Nerd Font"
       --theme="Catppuccin Mocha"
       --output "$HOME/Pictures/screenshots/code.png"
-      --background "${colors.mocha.lavender}"
+      --background "${pkgs.catppuccin.mocha.lavender}"
     '';
 
     xdg.configFile."silicon/themes/catppuccin-mocha.tmTheme".source = ../../assets/theme/catppuccin-mocha.tmTheme;

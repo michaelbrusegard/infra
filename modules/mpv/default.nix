@@ -49,9 +49,6 @@ in {
         mpris
       ];
     };
-    catppuccin.mpv = {
-      enable = true;
-      accent = "blue";
-    };
+    catppuccin.mpv.enable = true;
   };
 }

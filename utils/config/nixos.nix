@@ -1,8 +1,9 @@
-{ config, lib, stateVersion, userName, isWsl, home-manager, dotfiles-private, ... }:
+{ config, lib, stateVersion, userName, isWsl, home-manager, dotfiles-private, catppuccin, ... }:
 {
   imports = [
     dotfiles-private.nixosModules.secrets
     home-manager.nixosModules.default
+    catppuccin.nixosModules.catppuccin
   ];
   nix = {
     gc.dates = "weekly";

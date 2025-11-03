@@ -12,5 +12,6 @@ in {
         selection-clipboard = "clipboard";
       };
     };
+    catppuccin.zathura.enable = true;
   };
 }

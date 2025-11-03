@@ -1,4 +1,4 @@
-{ config, lib, colors, ... }:
+{ pkgs, config, lib, ... }:
 
 let
   cfg = config.modules.shell;
@@ -15,7 +15,7 @@ in {
         enableCompletion = true;
         autosuggestion = {
           enable = true;
-          highlight = "fg=${colors.mocha.overlay0}";
+          highlight = "fg=${pkgs.catppuccin.mocha.overlay0}";
         };
         syntaxHighlighting.enable = true;
         history = {
@@ -127,10 +127,7 @@ in {
       zsh-syntax-highlighting.enable = true;
       bat.enable = true;
       btop.enable = true;
-      fzf = {
-        enable = true;
-        accent = "blue";
-      };
+      fzf.enable = true;
     };
   };
 }

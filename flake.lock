@@ -162,6 +162,21 @@
         "type": "github"
       }
     },
+    "catppuccin-themes": {
+      "locked": {
+        "lastModified": 1760672867,
+        "narHash": "sha256-hbBM+5fS39YrDXdQKBLP33D0cu54FQ5hk/7XESTTRXY=",
+        "owner": "abhinandh-s",
+        "repo": "catppuccin-nix",
+        "rev": "b482f6e3ee1ae61c83e52f50653e54bf72900b13",
+        "type": "github"
+      },
+      "original": {
+        "owner": "abhinandh-s",
+        "repo": "catppuccin-nix",
+        "type": "github"
+      }
+    },
     "cl-nix-lite": {
       "locked": {
         "lastModified": 1728174978,
@@ -1509,6 +1524,7 @@
         "apple-emoji-linux": "apple-emoji-linux",
         "apple-fonts": "apple-fonts",
         "catppuccin": "catppuccin",
+        "catppuccin-themes": "catppuccin-themes",
         "dankMaterialShell": "dankMaterialShell",
         "dgop": "dgop",
         "dms-cli": "dms-cli",
