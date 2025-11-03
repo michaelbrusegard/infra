@@ -5,10 +5,6 @@ let
 in {
   config = lib.mkIf cfg.enable {
     programs = {
-      quickshell = {
-        enable = true;
-        systemd.enable = true;
-      };
       dankMaterialShell = {
         enable = true;
         enableSystemd = true;
