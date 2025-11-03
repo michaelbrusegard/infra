@@ -4,57 +4,43 @@ let
   cfg = config.modules.wayland;
 in {
   imports = [
-    ./hypridle.nix
+    ./dank-material-shell.nix
     ./hyprland.nix
-    ./hyprlock.nix
-    ./hyprpaper.nix
-    ./mako.nix
-    ./rofi.nix
-    ./waybar.nix
   ];
   options.modules.wayland.enable = lib.mkEnableOption "Wayland configuration";
 
   config = lib.mkIf cfg.enable {
-    gtk = {
-      enable = true;
-      theme = {
-        name = "Adwaita-dark";
-        package = pkgs.gnome-themes-extra;
-      };
-      iconTheme = {
-        name = "Papirus-Dark";
-        package = pkgs.papirus-icon-theme;
-      };
-      font.name = "SFPro";
-    };
-    qt = {
-      enable = true;
-      style = {
-        name = "adwaita-dark";
-        package = pkgs.adwaita-qt;
-      };
-    };
-    dconf.settings."org/gnome/desktop/interface" = {
-      color-scheme = "prefer-dark";
-    };
-    services = {
-      cliphist.enable = true;
-      playerctld.enable = true;
-    };
-    systemd.user.services.wl-clip-persist = {
-      Unit.PartOf = ["graphical-session.target"];
-      Service = {
-        ExecStart = "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard both";
-        Restart = "always";
-      };
-      Install.WantedBy = ["graphical-session.target"];
-    };
+    # gtk = {
+    #   enable = true;
+    #   theme = {
+    #     name = "Adwaita-dark";
+    #     package = pkgs.gnome-themes-extra;
+    #   };
+    #   iconTheme = {
+    #     name = "Papirus-Dark";
+    #     package = pkgs.papirus-icon-theme;
+    #   };
+    #   font.name = "SFPro";
+    # };
+    # qt = {
+    #   enable = true;
+    #   style = {
+    #     name = "adwaita-dark";
+    #     package = pkgs.adwaita-qt;
+    #   };
+    # };
+    # dconf.settings."org/gnome/desktop/interface" = {
+    #   color-scheme = "prefer-dark";
+    # };
+    services.cliphist.enable = true;
     home = {
       packages = with pkgs; [
         libGL
         libxkbcommon
+        pciutils
         wl-clipboard
-        hyprpicker
+        cava
+        polkit_gnome
         grim
         slurp
         wf-recorder
@@ -65,15 +51,11 @@ in {
           pkgs.libxkbcommon
           pkgs.wayland
         ];
-        NIXOS_OZONE_WL = "1";
+        QT_QPA_PLATFORM = "wayland";
+        ELECTRON_OZONE_PLATFORM_HINT = "auto";
+        QT_QPA_PLATFORMTHEME = "gtk3";
+        QT_QPA_PLATFORMTHEME_QT6 = "gtk3";
       };
-      file.".local/share/applications/hyprpicker.desktop".text = ''
-        [Desktop Entry]
-        Name=Hyprpicker
-        Exec=hyprpicker -a
-        Type=Application
-        Categories=Utility;
-      '';
     };
   };
 }

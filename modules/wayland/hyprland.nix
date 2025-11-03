@@ -18,6 +18,8 @@ in {
         exec-once = [
           "${pkgs.wl-clipboard}/bin/wl-paste --type text --watch ${pkgs.cliphist}/bin/cliphist store"
           "${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store"
+          "dms run"
+          "${pkgs.polkit_gnome}/bin/polkit-gnome-authentication-agent-1 &"
         ];
         ecosystem = {
           no_update_news = true;
@@ -33,15 +35,13 @@ in {
           "col.inactive_border" = "0xff45475a";
         };
         decoration = {
-          rounding = 10;
+          rounding = 12;
           blur.enabled = false;
           shadow = {
-            range = 20;
-            render_power = 3;
-            ignore_window = true;
-            offset = "0 4";
-            scale = 0.97;
-            color = "0x66000000";
+            range = 30;
+            render_power = 5;
+            offset = "0 5";
+            color = "0x00000070";
           };
         };
         animations.enabled = false;
@@ -74,6 +74,9 @@ in {
         cursor = {
           no_warps = true;
         };
+        layerrule = [
+          "noanim, ^(quickshell)$"
+        ];
         binds.workspace_back_and_forth = true;
         bind = [
           # Focus window
@@ -116,11 +119,11 @@ in {
           # System
           "mod5, return, exec, ${pkgs.wezterm}/bin/wezterm start --always-new-process"
           "mod5 shift, return, exec, ${pkgs.wezterm}/bin/wezterm start --always-new-process -e ${pkgs.bash}/bin/sh -c '${pkgs.yazi}/bin/yazi'"
-          "super, space, exec, ${pkgs.rofi}/bin/rofi -show drun"
-          "super, tab, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi}/bin/rofi -dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"
+          "super, space, exec, dms ipc call spotlight toggle"
+          "super, tab, exec, dms ipc call clipboard toggle"
           "super, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive"
           "super shift, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive; WID=$(${pkgs.jq}/bin/jq -r .class <<< $(${pkgs.hyprland}/bin/hyprctl activewindow -j)); ${pkgs.coreutils}/bin/pkill -KILL -f \"$WID\""
-          "super ctrl, q, exec, loginctl lock-session"
+          "super ctrl, q, exec, dms ipc call lock lock"
           "super ctrl, f, fullscreen, 0"
           "super shift, 3, exec, ${pkgs.grim}/bin/grim -t png -o $(${pkgs.hyprland}/bin/hyprctl monitors -j | ${pkgs.jq}/bin/jq -r '\''.[] | select(.focused) | .name'\'') \"$HOME/Pictures/screenshots/Screenshot $(${pkgs.coreutils}/bin/date +'\''%Y-%m-%d at %H.%M.%S'\'').png\""
           "super shift, 4, exec, ${pkgs.grim}/bin/grim -t png -g \"$(${pkgs.slurp}/bin/slurp -d -w 0)\" \"$HOME/Pictures/screenshots/Screenshot $(${pkgs.coreutils}/bin/date +'\''%Y-%m-%d at %H.%M.%S'\'').png\""
@@ -132,15 +135,18 @@ in {
           "mod5, up, resizeactive, 0 -20"
           "mod5, right, resizeactive, 20 0"
         ];
+        bindel = [
+          ", XF86AudioRaiseVolume, exec, dms ipc call audio increment 3"
+          ", XF86AudioLowerVolume, exec, dms ipc call audio decrement 3"
+          ", XF86MonBrightnessUp, exec, dms ipc call brightness increment 5"
+          ", XF86MonBrightnessDown, exec, dms ipc call brightness decrement 5"
+        ];
         bindm = [
           "mod5, mouse:272, movewindow"
           "mod5, mouse:273, resizewindow"
         ];
         bindl = [
-          ", XF86AudioNext, exec, ${pkgs.playerctl}/bin/playerctld next"
-          ", XF86AudioPause, exec, ${pkgs.playerctl}/bin/playerctld play-pause"
-          ", XF86AudioPlay, exec, ${pkgs.playerctl}/bin/playerctld play-pause"
-          ", XF86AudioPrev, exec, ${pkgs.playerctl}/bin/playerctld previous"
+          ", XF86AudioMute, exec, dms ipc call audio mute"
         ];
         windowrulev2 = [
           "workspace 2, class:^(vivaldi-stable)$"
