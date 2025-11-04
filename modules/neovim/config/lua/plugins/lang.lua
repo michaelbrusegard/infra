@@ -1,5 +1,6 @@
 local sql_ft = { 'sql', 'mysql', 'plsql' }
 return {
+  { import = 'lazyvim.plugins.extras.lang.angular' },
   { import = 'lazyvim.plugins.extras.lang.cmake' },
   { import = 'lazyvim.plugins.extras.lang.docker' },
   { import = 'lazyvim.plugins.extras.lang.git' },
