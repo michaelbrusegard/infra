@@ -15,12 +15,6 @@ in {
           "DP-1,3440x1440@144,0x0,1, bitdepth, 10"
           "DP-3,2560x1440@144,3440x0,1, bitdepth, 10"
         ];
-        exec-once = [
-          "${pkgs.wl-clipboard}/bin/wl-paste --type text --watch ${pkgs.cliphist}/bin/cliphist store"
-          "${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store"
-          "dms run"
-          "${pkgs.polkit_gnome}/bin/polkit-gnome-authentication-agent-1 &"
-        ];
         ecosystem = {
           no_update_news = true;
           no_donation_nag = true;
