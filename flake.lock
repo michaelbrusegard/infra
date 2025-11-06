@@ -1323,6 +1323,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-unstable-updated": {
+      "locked": {
+        "lastModified": 1762111121,
+        "narHash": "sha256-4vhDuZ7OZaZmKKrnDpxLZZpGIJvAeMtK6FKLJYUtAdw=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "b3d51a0365f6695e7dd5cdf3e180604530ed33b4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-wine": {
       "locked": {
         "lastModified": 1735834308,
@@ -1545,6 +1561,7 @@
         "nixpkgs": "nixpkgs_6",
         "nixpkgs-otbr": "nixpkgs-otbr",
         "nixpkgs-unstable": "nixpkgs-unstable",
+        "nixpkgs-unstable-updated": "nixpkgs-unstable-updated",
         "nur": "nur",
         "sops-nix": "sops-nix",
         "wezterm": "wezterm",
