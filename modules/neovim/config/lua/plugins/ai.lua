@@ -11,17 +11,18 @@ return {
       { '<leader>as', '<cmd>lua require("opencode").select()<cr>', mode = { 'n', 'x' }, desc = 'Select prompt' },
       { '<leader>ac', '<cmd>lua require("opencode").prompt("@this")<cr>', mode = { 'n', 'x' }, desc = 'Add this' },
       { '<leader>at', '<cmd>lua require("opencode").toggle()<cr>', desc = 'Toggle embedded' },
-      { '<leader>an', '<cmd>lua require("opencode").command("session_new")<cr>', desc = 'New session' },
-      { '<leader>ai', '<cmd>lua require("opencode").command("session_interrupt")<cr>', desc = 'Interrupt session' },
-      { '<leader>aA', '<cmd>lua require("opencode").command("agent_cycle")<cr>', desc = 'Cycle selected agent' },
+      { '<leader>an', '<cmd>lua require("opencode").command("session.new")<cr>', desc = 'New session' },
+      { '<leader>ai', '<cmd>lua require("opencode").command("session.interrupt")<cr>', desc = 'Interrupt session' },
+      { '<leader>aA', '<cmd>lua require("opencode").command("agent.cycle")<cr>', desc = 'Cycle selected agent' },
+
       {
         '<S-C-u>',
-        '<cmd>lua require("opencode").command("messages_half_page_up")<cr>',
+        '<cmd>lua require("opencode").command("session.half.page.up")<cr>',
         desc = 'Messages half page up',
       },
       {
         '<S-C-d>',
-        '<cmd>lua require("opencode").command("messages_half_page_down")<cr>',
+        '<cmd>lua require("opencode").command("session.half.page.down")<cr>',
         desc = 'Messages half page down',
       },
     },
