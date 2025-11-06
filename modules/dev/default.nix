@@ -62,6 +62,7 @@ in {
         # C
         cmake
         clang
+        clang-tools
         lldb
         llvm
         libiconv
