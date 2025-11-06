@@ -1,11 +1,11 @@
-{ pkgs, ... }:
+{ pkgs, pkgs-unstable, ... }:
 let
-  pico-sdk-with-submodules = pkgs.pico-sdk.override {
+  pico-sdk-with-submodules = pkgs-unstable.pico-sdk.override {
     withSubmodules = true;
   };
 in
 pkgs.mkShell {
-  buildInputs = with pkgs; [
+  buildInputs = with pkgs-unstable; [
     cmake
     gcc-arm-embedded
     picotool
