@@ -24,6 +24,7 @@ in {
         google-cloud-sdk
         gh
         act
+        pkg-config
 
         # Database
         sqlite
