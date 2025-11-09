@@ -46,7 +46,7 @@ in {
         wf-recorder
       ];
       sessionVariables = {
-        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+        LD_LIBRARY_PATH = lib.makeLibraryPath [
           pkgs.libGL
           pkgs.libxkbcommon
           pkgs.wayland
