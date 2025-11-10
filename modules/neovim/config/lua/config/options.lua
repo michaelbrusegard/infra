@@ -18,3 +18,10 @@ vim.g.vimtex_view_method = 'zathura'
 
 -- Use basedpyright
 vim.g.lazyvim_python_lsp = 'basedpyright'
+
+-- Filetypes
+vim.filetype.add({
+  extension = {
+    gs = 'javascript',
+  },
+})
