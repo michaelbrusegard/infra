@@ -6,6 +6,7 @@
     kernelModules = [
       "kvm-amd"
       "nct6775"
+      "asus_ec_sensors"
     ];
     kernelParams = [
       "quiet"
