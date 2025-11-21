@@ -71,6 +71,9 @@ in {
         # c#
         dotnet-sdk
       ] ++ lib.optionals (!isDarwin) [
+        # System utilities
+        systemd
+
         # Windows cross-compile
         nsis
       ];
