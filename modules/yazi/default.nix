@@ -5,8 +5,8 @@ let
   yazi-plugins = pkgs-unstable.fetchFromGitHub {
     owner = "yazi-rs";
     repo = "plugins";
-    rev = "e95c7b384e7b0a9793fe1471f0f8f7810ef2a7ed";
-    hash = "sha256-TUS+yXxBOt6tL/zz10k4ezot8IgVg0/2BbS8wPs9KcE=";
+    rev = "2301ff803a033cd16d16e62697474d6cb9a94711";
+    hash = "sha256-+lirIBXv3EvztE/1b3zHnQ9r5N3VWBCUuH3gZR52fE0=";
 
   };
   relative-motions-plugin = pkgs-unstable.fetchFromGitHub {
@@ -58,90 +58,6 @@ in {
           max_width = 1000;
           max_height = 1000;
         };
-        plugin = {
-          prepend_previewers = [
-            {
-              name = "*.md";
-              run = "piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dark \"$1\"";
-            }
-            {
-              name = "*.csv";
-              run = "piper -- duckdb -c 'SELECT * FROM \"$1\"'";
-            }
-            {
-              name = "*.tsv";
-              run = "piper -- duckdb -c 'SELECT * FROM \"$1\"'";
-            }
-            {
-              name = "*.json";
-              run = "piper -- bat -p --color=always \"$1\"";
-            }
-            {
-              name = "*.parquet";
-              run = "piper -- duckdb -c 'SELECT * FROM \"$1\"'";
-            }
-            {
-              name = "*.pdf";
-              run = "piper -- pdftotext \"$1\" -";
-            }
-            {
-              name = "*.{sqlite,sqlite3,db}";
-              run = "piper -- sqlite3 \"$1\" .schema";
-            }
-            {
-              name = "*/";
-              run = "piper -- eza -TL=3 --color=always --icons=always --group-directories-first --no-quotes -I 'node_modules' \"$1\"";
-            }
-            {
-              name = "*.tar*";
-              run = "piper --format=url -- tar tf \"$1\"";
-            }
-            {
-              name = "*.zst";
-              run = "piper --format=url -- zstd -l \"$1\"";
-            }
-            {
-              mime = "text/*";
-              run = "piper -- bat -p --color=always \"$1\"";
-            }
-            {
-              mime = "*/xml";
-              run = "piper -- bat -p --color=always \"$1\"";
-            }
-            {
-              mime = "*/cs";
-              run = "piper -- bat -p --color=always \"$1\"";
-            }
-            {
-              mime = "*/javascript";
-              run = "piper -- bat -p --color=always \"$1\"";
-            }
-            {
-              mime = "*/x-wine-extension-ini";
-              run = "piper -- bat -p --color=always \"$1\"";
-            }
-            {
-              mime = "{audio,video}/*"; run = "piper -- mediainfo \"$1\"";
-            }
-            {
-              mime = "image/*"; run = "piper -- chafa -s \"$w\"x\"$h\" --animate=false \"$1\"";
-            }
-            {
-              mime = "application/subrip";
-              run = "piper -- mediainfo \"$1\"";
-            }
-            {
-              mime = "application/bittorrent";
-              run = "piper -- transmission-show \"$1\"";
-            }
-          ];
-          append_previewers = [
-            {
-              name = "*";
-              run = "piper -- hexyl --border=none --terminal-width=$w \"$1\"";
-            }
-          ];
-        };
       };
       plugins = {
         chmod = "${yazi-plugins}/chmod.yazi";
@@ -151,7 +67,6 @@ in {
         "vcs-files" = "${yazi-plugins}/vcs-files.yazi";
         diff = "${yazi-plugins}/diff.yazi";
         "toggle-pane" = "${yazi-plugins}/toggle-pane.yazi";
-        piper = "${yazi-plugins}/piper.yazi";
         "relative-motions" = "${relative-motions-plugin}";
         "augment-command" = "${augment-command-plugin}";
         "yaziline" = "${yaziline-plugin}";
@@ -196,11 +111,8 @@ in {
       };
     };
     home.packages = with pkgs-unstable; [
-      glow
-      duckdb
-      mediainfo
-      hexyl
       poppler-utils
+      resvg
     ];
     catppuccin.yazi.enable = true;
   };
