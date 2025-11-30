@@ -1,4 +1,4 @@
-{ config, lib, pkgs, system, isDarwin, fenix, ... }:
+{ config, lib, pkgs, system, isDarwin, fenix, pkgs-unstable, ... }:
 
 let
   cfg = config.modules.dev;
@@ -16,6 +16,7 @@ in {
       bun = {
         enable = true;
         enableGitIntegration = true;
+        package = pkgs-unstable.bun;
       };
     };
     home = {
