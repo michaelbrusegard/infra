@@ -139,6 +139,7 @@ in
         fi
       '';
       restart-yabai = "launchctl kickstart -k gui/$(id -u)/org.nixos.yabai";
+      groundctl = "cd $HOME/Developer/Telescope/tooling/groundctl && uv run groundctl";
     } // lib.optionalAttrs (!isDarwin) {
       toggle-kanata = ''
         if systemctl is-active --quiet kanata-default.service; then
