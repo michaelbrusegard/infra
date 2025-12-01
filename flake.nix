@@ -115,23 +115,6 @@
     {
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
 
-      devShells = forAllSystems (system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-          pkgs-unstable = inputs.nixpkgs-unstable.legacyPackages.${system};
-          lib = nixpkgs.lib;
-          shellDirs = builtins.attrNames (builtins.readDir ./shells);
-          shells = builtins.listToAttrs (map
-            (name: {
-              inherit name;
-              value = import (./shells + "/${name}") { inherit pkgs pkgs-unstable lib; };
-            })
-            shellDirs
-          );
-        in
-        shells
-      );
-
       nixosConfigurations = {
         Desktop = mkSystem {
           system = "x86_64-linux";
