@@ -46,6 +46,7 @@ in {
       qgis
       notion
       davinci-resolve
+      audacity
     ];
     catppuccin = {
       element-desktop.enable = true;

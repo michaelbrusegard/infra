@@ -54,6 +54,7 @@
       "betaflight-configurator"
       "qgis"
       "notion"
+      "audacity"
     ];
     masApps = {
       "Amphetamine" = 937984704;
