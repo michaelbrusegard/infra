@@ -243,11 +243,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1764680375,
-        "narHash": "sha256-ICvJIRbTasFNwf7NiPXGoQQFRSKe29Fb22dZrJu98xE=",
+        "lastModified": 1765184063,
+        "narHash": "sha256-stefBgFZK8Gvvw+NkGuTutlNde0e335O6WT23YlEU3A=",
         "ref": "main",
-        "rev": "09d8f5cae61e6a2166eea83a34b83215af249402",
-        "revCount": 118,
+        "rev": "d54cd8025b91c888358e6cb75e78e031839ee325",
+        "revCount": 120,
         "type": "git",
         "url": "ssh://git@github.com/michaelbrusegard/dotfiles-private.git"
       },
