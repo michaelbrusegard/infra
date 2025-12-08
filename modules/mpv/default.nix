@@ -8,9 +8,16 @@ in {
   config = lib.mkIf cfg.enable {
     programs.mpv = {
       enable = true;
+      package = if isDarwin then
+        (pkgs.runCommand "mpv" {} ''
+          mkdir -p $out/bin
+          ln -s /opt/homebrew/bin/mpv $out/bin/mpv
+        '')
+      else
+        pkgs.mpv;
       config = {
         profile = "gpu-hq";
-        vo = "gpu";
+        vo = if isDarwin then "libmpv" else "gpu-next";
         hwdec = "auto-safe";
         scale = "ewa_lanczossharp";
         cscale = "ewa_lanczossharp";
@@ -41,13 +48,6 @@ in {
         j = "seek -60";
         k = "seek 60";
       };
-      scripts = with pkgs.mpvScripts; [
-        sponsorblock
-        uosc
-        thumbfast
-      ] ++ lib.optionals (!isDarwin) [
-        mpris
-      ];
     };
     catppuccin.mpv.enable = true;
   };

@@ -29,6 +29,7 @@
       "linearmouse"
       "aldente"
       "breaktimer"
+      "mpv"
       "altserver"
       "ghostty"
       "vivaldi"
