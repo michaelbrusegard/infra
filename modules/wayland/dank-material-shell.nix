@@ -7,7 +7,6 @@ in {
     programs = {
       dankMaterialShell = {
         enable = true;
-        enableSystemd = true;
         enableSystemMonitoring = true;
         enableClipboard = true;
         enableVPN = true;
@@ -15,6 +14,7 @@ in {
         enableAudioWavelength = true;
         enableCalendarEvents = true;
         enableSystemSound = true;
+        systemd.enable = true;
         default.settings = {
           currentThemeName = "cat-blue";
           customThemeFile = "";

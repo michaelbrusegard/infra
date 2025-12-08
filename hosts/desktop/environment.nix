@@ -6,7 +6,6 @@
     };
     systemPackages = with pkgs; [
       apple-cursor
-      fancontrol_gui
       lm_sensors
     ];
   };

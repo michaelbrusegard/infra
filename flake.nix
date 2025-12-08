@@ -1,11 +1,11 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05?shallow=1";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11?shallow=1";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable?shallow=1";
     nixpkgs-unstable-updated.url = "github:NixOS/nixpkgs/nixos-unstable?shallow=1";
     nixpkgs-otbr.url = "github:mrene/nixpkgs/openthread-border-router?shallow=1";
     nix-darwin = {
-      url = "github:lnl7/nix-darwin/nix-darwin-25.05?shallow=1";
+      url = "github:lnl7/nix-darwin/nix-darwin-25.11?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nur = {
@@ -27,7 +27,7 @@
     };
     nix-homebrew.url = "github:zhaofengli/nix-homebrew?shallow=1";
     lanzaboote = {
-      url = "github:nix-community/lanzaboote/v0.4.2?shallow=1";
+      url = "github:nix-community/lanzaboote?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     mac-app-util = {
@@ -70,23 +70,14 @@
       url = "github:AvengeMedia/dgop?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
-    dms-cli = {
-      url = "github:AvengeMedia/danklinux?shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
     dankMaterialShell = {
       url = "github:AvengeMedia/DankMaterialShell?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
       inputs.dgop.follows = "dgop";
-      inputs.dms-cli.follows = "dms-cli";
     };
     wezterm = {
       url = "github:wez/wezterm?dir=nix&shallow=1";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
-    fancontrol-gui = {
-      url = "github:JaysFreaky/fancontrol-gui?shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     fenix = {
       url = "github:nix-community/fenix?shallow=1";

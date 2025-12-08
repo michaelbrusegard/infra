@@ -68,9 +68,6 @@ in {
         cursor = {
           no_warps = true;
         };
-        layerrule = [
-          "noanim, ^(quickshell)$"
-        ];
         binds.workspace_back_and_forth = true;
         bind = [
           # Focus window

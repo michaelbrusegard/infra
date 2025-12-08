@@ -91,10 +91,12 @@ in {
           };
           git = {
             overrideGpg = true;
-            paging = {
+            pagers = [
+              {
               colorArg = "always";
               pager = "delta --dark --paging=never";
-            };
+              }
+            ];
             parseEmoji = true;
           };
           quitOnTopLevelReturn = true;
