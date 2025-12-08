@@ -68,7 +68,6 @@
       "Numbers" = 409203825;
       "Developer" = 640199958;
       "Xcode" = 497799835;
-      "Messenger" = 1480068668;
       "DaVinci Resolve" = 571213070;
     };
   };
