@@ -25,7 +25,6 @@ in {
         # CLI tools
         google-cloud-sdk
         gh
-        act
         pkg-config
 
         # Database
@@ -59,9 +58,6 @@ in {
           "rustfmt"
         ])
 
-        # Embedded
-        arduino-cli
-
         # C
         cmake
         clang
@@ -70,8 +66,6 @@ in {
         llvm
         libiconv
 
-        # c#
-        dotnet-sdk
       ] ++ lib.optionals (!isDarwin) [
         # System utilities
         systemd
