@@ -42,8 +42,6 @@
       (final: prev: { jankyborders = pkgs-unstable.jankyborders; })
       (final: prev: { neovim = pkgs-unstable.neovim; })
       (final: prev: { wezterm = wezterm.packages.${prev.system}.default; })
-      (final: prev: { homebridge = pkgs-unstable.homebridge; })
-      (final: prev: { homebridge-config-ui-x = pkgs-unstable.homebridge-config-ui-x; })
       (final: prev: { openthread-border-router = pkgs-otbr.openthread-border-router; })
     ];
   };
