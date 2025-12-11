@@ -131,10 +131,24 @@
           stateVersion = "25.11";
         };
 
-        Espresso = mkSystem {
+        Espresso1 = mkSystem {
           system = "x86_64-linux";
           userName = "sysadmin";
-          hostName = "Espresso";
+          hostName = "Espresso1";
+          stateVersion = "25.11";
+        };
+
+        Espresso2 = mkSystem {
+          system = "x86_64-linux";
+          userName = "sysadmin";
+          hostName = "Espresso2";
+          stateVersion = "25.11";
+        };
+
+        Espresso3 = mkSystem {
+          system = "x86_64-linux";
+          userName = "sysadmin";
+          hostName = "Espresso3";
           stateVersion = "25.11";
         };
 

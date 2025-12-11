@@ -49,9 +49,12 @@ in
       ] ++ commonModules;
     })
   else
+    let
+      hostDir = if inputs.nixpkgs.lib.strings.hasPrefix "Espresso" hostName then "espresso" else inputs.nixpkgs.lib.strings.toLower hostName;
+    in
     inputs.nixpkgs.lib.nixosSystem (commonArgs // {
       modules = [
         ./config/nixos.nix
-        ../hosts/${inputs.nixpkgs.lib.strings.toLower hostName}
+        ../hosts/${hostDir}
       ] ++ commonModules;
     })

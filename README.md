@@ -282,7 +282,7 @@ nix build .#Leggero
 
 The resulting image can be found in `result/sd-image/`. It is a compressed Zstandard archive that can be flashed to an SD card.
 
-## Flashing the SD Card
+### Flashing the SD Card
 
 We need to plug in the SD card and find out what the device path is for the SD card.
 
@@ -292,13 +292,13 @@ On linux:
 lsblk
 ```
 
-On darwin:
+On Darwin:
 
 ```sh
 diskutil list
 ```
 
-On linux it is usually `/dev/sdX` where `X` is a letter, for example `/dev/sdb`. On darwin it is usually `/dev/diskX` where `X` is a number for example `/dev/disk6`.
+On Linux it is usually `/dev/sdX` where `X` is a letter, for example `/dev/sdb`. On Darwin it is usually `/dev/diskX` where `X` is a number for example `/dev/disk6`.
 
 To flash the image to the SD card you can use the following command, make sure to replace `/dev/XXX` with the correct device path for your SD card:
 
@@ -316,23 +316,23 @@ nix build .#Macchiato
 
 The resulting image can be found in `result/sd-image/`. It is a compressed Zstandard archive that can be flashed to an SD card.
 
-## Flashing the SD Card
+### Flashing the SD Card
 
 We need to plug in the SD card and find out what the device path is for the SD card.
 
-On linux:
+On Linux:
 
 ```sh
 lsblk
 ```
 
-On darwin:
+On Darwin:
 
 ```sh
 diskutil list
 ```
 
-On linux it is usually `/dev/sdX` where `X` is a letter, for example `/dev/sdb`. On darwin it is usually `/dev/diskX` where `X` is a number for example `/dev/disk6`.
+On Linux it is usually `/dev/sdX` where `X` is a letter, for example `/dev/sdb`. On Darwin it is usually `/dev/diskX` where `X` is a number for example `/dev/disk6`.
 
 To flash the image to the SD card you can use the following command, make sure to replace `/dev/XXX` with the correct device path for your SD card:
 
@@ -340,25 +340,35 @@ To flash the image to the SD card you can use the following command, make sure t
 zstd -dc result/sd-image/*.zst | sudo dd of=/dev/XXX bs=4M status=progress oflag=sync
 ```
 
-## Espresso (Ubuntu Home Server)
+## Espresso (NixOS K3s Cluster)
 
-### Installing packages
+The Espresso setup consists of HA k3s nodes (espresso1, espresso2, espresso3) for running containerized homelab and business services like websites, media hosting and automation.
 
-```sh
-sh ~/dotfiles/espresso/scripts/apt.sh
-```
+### Prerequisites
 
-### Setting up symlinks
+Obtain MAC addresses for each node and assign a static IP to each from the router.
 
-```sh
-cd ~/dotfiles/espresso && stow --adopt -t ~ home && sudo stow --adopt -t /etc etc && stow --adopt -t /data data && git restore .
-```
+_Add commands here later_
 
-### Setup login items
+### Bootstrap with NixOS Anywhere
 
-```sh
-sh ~/dotfiles/espresso/scripts/login.sh
-```
+For each node, run:
+
+  ```sh
+  nixos-anywhere --flake ~/Developer/dotfiles#Espresso1 user@node-ip
+  ```
+
+  Replace `Espresso1` with `Espresso2`/`Espresso3` and the correct IP.
+
+### Post-Bootstrap
+
+- Copy sops keys to each node (e.g., via SSH or USB)
+
+### Cluster Management
+
+- Access via `kubectl` after connecting to any node
+- Drain nodes for maintenance: `kubectl drain espresso1`
+- Uncordon after: `kubectl uncordon espresso1`
 
 ## Inspiration…
 

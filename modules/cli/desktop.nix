@@ -20,6 +20,7 @@ in {
       cmatrix
       openssl
       wireguard-tools
+      nixos-anywhere
     ] ++ lib.optionals (!isDarwin) [
       sbctl
     ] ++ lib.optionals (isDarwin) [
