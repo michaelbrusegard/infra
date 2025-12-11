@@ -1,15 +1,5 @@
 { lib, config, pkgs, stateVersion, hostName, isDarwin, ... }:
 let
-  dev = pkgs.writeScriptBin "dev" ''
-    #!${pkgs.zsh}/bin/zsh
-    FLAKE_DIR="$HOME/Developer/dotfiles"
-    if [ $# -eq 0 ]; then
-      echo "Usage: dev <shell-name>"
-      exit 1
-    fi
-
-    ${pkgs.nix}/bin/nix develop "$FLAKE_DIR#$1"
-  '';
   to_dnxhr = pkgs.writeScriptBin "to-dnxhr" ''
     #!${pkgs.zsh}/bin/zsh
     convert_file() {
@@ -90,7 +80,6 @@ in
     };
     shell.enableZshIntegration = true;
     packages = [
-      dev
       to_dnxhr
     ];
     shellAliases = {
