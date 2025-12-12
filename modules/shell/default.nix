@@ -123,6 +123,14 @@ in {
       fastfetch.enable = true;
       btop.enable = true;
     };
+    home.packages = with pkgs; [
+      trash-cli
+      libqalculate
+      moor
+      dust
+      duf
+      procs
+    ];
     catppuccin = {
       zsh-syntax-highlighting.enable = true;
       bat.enable = true;

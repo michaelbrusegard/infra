@@ -1,6 +1,6 @@
 { lib, config, pkgs, stateVersion, hostName, isDarwin, ... }:
 let
-  to_dnxhr = pkgs.writeScriptBin "to-dnxhr" ''
+  toDnxhr = pkgs.writeScriptBin "to-dnxhr" ''
     #!${pkgs.zsh}/bin/zsh
     convert_file() {
       local input_file="''$1"
@@ -66,6 +66,14 @@ let
 
     process_path "''$1"
   '';
+  safeRm = pkgs.writeScriptBin "rm" ''
+    #!${pkgs.zsh}/bin/zsh
+    # If exactly one arg and it's NOT a flag, use trash
+    if [ $# -eq 1 ] && [[ "$1" != -* ]]; then
+      exec ${pkgs.trash-cli}/bin/trash "$1"
+    fi
+    exec ${pkgs.coreutils}/bin/rm "$@"
+  '';
 in
 {
   home = {
@@ -80,7 +88,8 @@ in
     };
     shell.enableZshIntegration = true;
     packages = [
-      to_dnxhr
+      safeRm
+      toDnxhr
     ];
     shellAliases = {
       rebuild = if isDarwin then
@@ -107,16 +116,18 @@ in
       "......" = "cd ../../../../..";
       "-" = "cd -";
       ls = "eza";
+      cat = "bat";
+      htop = "btop";
       top = "btop";
       lzg = "lazygit";
       vim = "nvim";
       vi = "nvim";
-      bc = ''
-        (
-          echo "scale=3" > /tmp/bc_init.$$;
-          ${pkgs.bc}/bin/bc -q -s /tmp/bc_init.$$;
-          rm /tmp/bc_init.$$;
-        )'';
+      bc = "qalc";
+      less = "moor";
+      more = "moor";
+      du = "dust";
+      df = "duf";
+      ps = "procs";
     } // lib.optionalAttrs isDarwin {
       toggle-kanata = ''
         if [ -n "$(sudo launchctl list | grep org.nixos.kanata | awk '{print $1}' | grep -E '^[0-9]+$')" ]; then
@@ -141,6 +152,7 @@ in
       '';
     };
     sessionVariables = {
+      PAGER = "moor";
       SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
       GEMINI_API_KEY = "$( [ -f ${config.secrets.credentialFiles.geminiKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.geminiKey} )";
       TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.credentialFiles.tauriSigningPrivateKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.tauriSigningPrivateKey} )";
