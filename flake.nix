@@ -172,22 +172,16 @@
       packages = forAllSystems (system: {
         Leggero = self.nixosConfigurations.Leggero.config.system.build.sdImage;
         Macchiato = self.nixosConfigurations.Macchiato.config.system.build.sdImage;
-        bootstrapIsoX86 = let
-          targetSystem = "x86_64-linux";
-        in if builtins.elem system ["x86_64-linux" "aarch64-darwin"] then (nixpkgs.lib.nixosSystem {
-          system = system;
-          crossSystem = if system != targetSystem then targetSystem else null;
+        bootstrapIsoX86 = (nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
           specialArgs = { dotfiles-private = inputs.dotfiles-private; };
           modules = [ ./hosts/bootstrap ];
-        }).config.system.build.isoImage else null;
-        bootstrapIsoArm = let
-          targetSystem = "aarch64-linux";
-        in if builtins.elem system ["aarch64-linux" "aarch64-darwin"] then (nixpkgs.lib.nixosSystem {
-          system = system;
-          crossSystem = if system != targetSystem then targetSystem else null;
+        }).config.system.build.isoImage;
+        bootstrapIsoArm = (nixpkgs.lib.nixosSystem {
+          system = "aarch64-linux";
           specialArgs = { dotfiles-private = inputs.dotfiles-private; };
           modules = [ ./hosts/bootstrap ];
-        }).config.system.build.isoImage else null;
+        }).config.system.build.isoImage;
       });
     };
 }
