@@ -243,11 +243,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1765184063,
-        "narHash": "sha256-stefBgFZK8Gvvw+NkGuTutlNde0e335O6WT23YlEU3A=",
+        "lastModified": 1765708946,
+        "narHash": "sha256-jfvJcObnz45UUlw6nZs4lRfqSpDiV+x08h/7iflSrQw=",
         "ref": "main",
-        "rev": "d54cd8025b91c888358e6cb75e78e031839ee325",
-        "revCount": 120,
+        "rev": "e43eadfa676520eecc22b3d9097170362e5fe0d8",
+        "revCount": 121,
         "type": "git",
         "url": "ssh://git@github.com/michaelbrusegard/dotfiles-private.git"
       },
@@ -1184,11 +1184,11 @@
     },
     "nixpkgs-unstable-updated": {
       "locked": {
-        "lastModified": 1764950072,
-        "narHash": "sha256-BmPWzogsG2GsXZtlT+MTcAWeDK5hkbGRZTeZNW42fwA=",
+        "lastModified": 1765472234,
+        "narHash": "sha256-9VvC20PJPsleGMewwcWYKGzDIyjckEz8uWmT0vCDYK0=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "f61125a668a320878494449750330ca58b78c557",
+        "rev": "2fbfb1d73d239d2402a8fe03963e37aab15abe8b",
         "type": "github"
       },
       "original": {

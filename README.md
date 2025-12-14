@@ -346,19 +346,31 @@ The Espresso setup consists of HA k3s nodes (espresso1, espresso2, espresso3) fo
 
 ### Prerequisites
 
-Obtain MAC addresses for each node and assign a static IP to each from the router.
-
-_Add commands here later_
+Start with obtaining MAC addresses for each node by enabling PXE (Preboot Execution Environment) and writing down the MAC address. Then disable PXE again and assign a static IP to each node from the router.
 
 ### Bootstrap with NixOS Anywhere
 
-For each node, run:
+First, build the appropriate bootstrap ISO:
 
-  ```sh
-  nixos-anywhere --flake ~/Developer/dotfiles#Espresso1 user@node-ip
-  ```
+```sh
+nix build .#bootstrapIsoX86
+```
 
-  Replace `Espresso1` with `Espresso2`/`Espresso3` and the correct IP.
+Flash the resulting ISO (`result/iso/*.iso`) to a USB drive:
+
+```sh
+sudo dd if=result/iso/*.iso of=/dev/sdX bs=4M status=progress oflag=sync
+```
+
+Boot each node from the USB drive. Once booted, the node will have SSH enabled with your key.
+
+Then, for each node, run:
+
+```sh
+nixos-anywhere --flake ~/Developer/dotfiles#Espresso1 -i ~/.config/sops-nix/secrets/ssh/bootstrap/private-key root@node-ip
+```
+
+Replace `Espresso1` with `Espresso2`/`Espresso3` and the correct IP.
 
 ### Post-Bootstrap
 
