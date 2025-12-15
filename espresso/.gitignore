@@ -1,7 +1,0 @@
-home/nginx/data
-home/nginx/letsencrypt
-home/vpn/data
-home/home/data
-home/pihole/data
-data/minecraft/data
-.env
