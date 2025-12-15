@@ -39,7 +39,6 @@ in {
       scribus
       affinity.packages.x86_64-linux.v3
       blender
-      freecad-wayland
       orca-slicer
       pkgs.bambu-studio
       betaflight-configurator

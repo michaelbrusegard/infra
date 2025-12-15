@@ -1,0 +1,53 @@
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide2 import QtWidgets
+import Part
+
+def create_through_all_pocket():
+    doc = App.ActiveDocument
+    if not doc:
+        QtWidgets.QMessageBox.warning(None, "Erreur", "Aucun document actif.")
+        return
+    selection = Gui.Selection.getSelectionEx()
+    
+    if not selection or len(selection) != 1:
+        QtWidgets.QMessageBox.warning(None, "Erreur", "Veuillez sélectionner une esquisse, une face ou un contour fermé d'esquisse.")
+        return
+    
+    obj = selection[0].Object
+    body = obj.getParentGeoFeatureGroup()
+    
+    if not body or body.TypeId != "PartDesign::Body":
+        QtWidgets.QMessageBox.warning(None, "Erreur", "L'objet sélectionné doit être dans un Body.")
+        return
+    
+    # Si l'utilisateur sélectionne une esquisse entière
+    if obj.TypeId == "Sketcher::SketchObject" and not selection[0].SubElementNames:
+        pocket = body.newObject("PartDesign::Pocket", "Pocket")
+        pocket.Profile = obj
+        pocket.Type = 1  # "Through All"
+        pocket.Midplane = True  # Symétrique
+        obj.Visibility = False  # Masquer l'esquisse après usage
+
+    # Si l'utilisateur sélectionne une face
+    elif selection[0].SubObjects and isinstance(selection[0].SubObjects[0], Part.Face):
+        pocket = body.newObject("PartDesign::Pocket", "Pocket")
+        pocket.Profile = (obj, selection[0].SubElementNames)  # Utilisation directe de la face
+        pocket.Type = 1  # "Through All"
+        pocket.Midplane = True  # Symétrique
+
+    # Si l'utilisateur sélectionne un contour fermé dans une esquisse
+    elif obj.TypeId == "Sketcher::SketchObject" and selection[0].SubElementNames:
+        pocket = body.newObject("PartDesign::Pocket", "Pocket")
+        pocket.Profile = (obj, selection[0].SubElementNames)  # Utilisation des éléments sélectionnés
+        pocket.Type = 1  # "Through All"
+        pocket.Midplane = True  # Symétrique
+    
+    else:
+        QtWidgets.QMessageBox.warning(None, "Erreur", "Sélection non valide. Veuillez sélectionner une esquisse, une face ou un contour fermé d'esquisse.")
+        return
+
+    doc.recompute()
+
+# Exécuter la macro
+create_through_all_pocket()

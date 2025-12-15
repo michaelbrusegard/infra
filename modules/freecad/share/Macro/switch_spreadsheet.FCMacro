@@ -1,0 +1,11 @@
+import FreeCADGui
+
+def switch_to_spreadsheet():
+    """Change le workbench actif vers Spreadsheet."""
+    try:
+        FreeCADGui.activateWorkbench("SpreadsheetWorkbench")
+        print("Workbench changé vers Spreadsheet.")
+    except Exception as e:
+        print(f"Erreur : {e}")
+
+switch_to_spreadsheet()

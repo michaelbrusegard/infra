@@ -4,6 +4,7 @@
     cli.core.enable = true;
     cli.desktop.enable = true;
     dev.enable = true;
+    freecad.enable = true;
     ghostty.enable = !isWsl;
     git.enable = true;
     gui.enable = !(isDarwin || isWsl);

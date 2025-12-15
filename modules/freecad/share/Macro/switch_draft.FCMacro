@@ -1,0 +1,11 @@
+import FreeCADGui as Gui
+
+def change_to_draft():
+    """Change vers le Workbench Draft."""
+    try:
+        Gui.activateWorkbench("DraftWorkbench")
+        print("✅ Workbench changé en : Draft")
+    except Exception as e:
+        print(f"⚠️ Erreur : {str(e)}")
+
+change_to_draft()

@@ -1,0 +1,12 @@
+import FreeCADGui as Gui
+
+def change_to_part():
+    """Change vers le Workbench Part."""
+    try:
+        Gui.activateWorkbench("PartWorkbench")
+        print("✅ Workbench changé en : Part")
+    except Exception as e:
+        print(f"⚠️ Erreur : {str(e)}")
+
+# Appel de la fonction pour changer de Workbench
+change_to_part()

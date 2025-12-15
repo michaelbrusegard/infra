@@ -1,0 +1,44 @@
+import FreeCAD as App
+import FreeCADGui as Gui
+import PartDesign
+from PySide2 import QtWidgets
+
+def create_symmetric_extrusion():
+    doc = App.ActiveDocument
+    if not doc:
+        QtWidgets.QMessageBox.warning(None, "Erreur", "Aucun document actif.")
+        return
+    
+    # Vérifier si une esquisse est sélectionnée
+    selection = Gui.Selection.getSelection()
+    if not selection or not isinstance(selection[0], App.DocumentObject) or selection[0].TypeId != "Sketcher::SketchObject":
+        QtWidgets.QMessageBox.warning(None, "Erreur", "Veuillez sélectionner une esquisse valide.")
+        return
+    
+    sketch = selection[0]
+    body = sketch.getParentGeoFeatureGroup()
+    if not body or body.TypeId != "PartDesign::Body":
+        QtWidgets.QMessageBox.warning(None, "Erreur", "L'esquisse doit être dans un Body.")
+        return
+    
+    # Activer le body
+    Gui.ActiveDocument.ActiveView.setActiveObject("pdbody", body)
+    doc.recompute()
+    
+    # Fenêtre de dialogue pour demander l'épaisseur
+    thickness, ok = QtWidgets.QInputDialog.getDouble(None, "Extrusion Symétrique", "Épaisseur totale:", 10.0, 0.1, 1000.0, 2)
+    if not ok:
+        return
+    
+    # Création de la fonction de pad symétrique dans le body actif
+    pad = body.newObject("PartDesign::Pad", "Pad")
+    pad.Profile = sketch
+    pad.Length = thickness  # Épaisseur totale au lieu de la moitié
+    pad.Midplane = True
+    
+    doc.recompute()
+    
+    # Masquer l'esquisse après l'extrusion
+    sketch.Visibility = False
+
+create_symmetric_extrusion()

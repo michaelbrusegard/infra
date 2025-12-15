@@ -1,0 +1,11 @@
+import FreeCADGui as Gui
+
+def change_to_techdraw():
+    """Change vers le Workbench TechDraw."""
+    try:
+        Gui.activateWorkbench("TechDrawWorkbench")
+        print("✅ Workbench changé en : TechDraw")
+    except Exception as e:
+        print(f"⚠️ Erreur : {str(e)}")
+
+change_to_techdraw()
