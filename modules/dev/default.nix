@@ -32,10 +32,7 @@ in {
         postgresql
 
         # Python
-        uv
         python3
-        gdal
-        geos
 
         # Go
         go
