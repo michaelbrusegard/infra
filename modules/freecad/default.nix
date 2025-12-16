@@ -13,11 +13,11 @@ in {
     home.file = lib.mkMerge [
       (lib.mkIf isDarwin {
         "Library/Preferences/FreeCAD".source = config.lib.file.mkOutOfStoreSymlink ./config;
-        "Library/Application Support/FreeCAD".source = config.lib.file.mkOutOfStoreSymlink ./share;
+        "Library/Application Support/FreeCAD/Macro".source = config.lib.file.mkOutOfStoreSymlink ./share/Macro;
       })
       (lib.mkIf (!isDarwin) {
         ".config/FreeCAD".source = config.lib.file.mkOutOfStoreSymlink ./config;
-        ".local/share/FreeCAD".source = config.lib.file.mkOutOfStoreSymlink ./share;
+        ".local/share/FreeCAD/Macro".source = config.lib.file.mkOutOfStoreSymlink ./share/Macro;
       })
     ];
   };
