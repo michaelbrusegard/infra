@@ -1,4 +1,4 @@
-{ config, lib, pkgs-unstable-updated, isDarwin, ... }:
+{ config, lib, pkgs-unstable, isDarwin, ... }:
 
 let
   cfg = config.modules.freecad;
@@ -6,7 +6,7 @@ in {
   options.modules.freecad.enable = lib.mkEnableOption "FreeCAD Configuration";
 
   config = lib.mkIf cfg.enable {
-    home.packages = with pkgs-unstable-updated; lib.optionals (!isDarwin) [
+    home.packages = with pkgs-unstable; lib.optionals (!isDarwin) [
       freecad-wayland
     ];
 

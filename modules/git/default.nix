@@ -107,6 +107,7 @@ in {
     home.packages = with pkgs; [
       git-filter-repo
       git-lfs
+      gh
     ];
     catppuccin = {
       delta.enable = true;

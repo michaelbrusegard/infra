@@ -2,7 +2,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11?shallow=1";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable?shallow=1";
-    nixpkgs-unstable-updated.url = "github:NixOS/nixpkgs/nixos-unstable?shallow=1";
     nixpkgs-otbr.url = "github:mrene/nixpkgs/openthread-border-router?shallow=1";
     nix-darwin = {
       url = "github:lnl7/nix-darwin/nix-darwin-25.11?shallow=1";

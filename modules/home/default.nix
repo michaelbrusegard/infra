@@ -97,7 +97,6 @@ in
       else
         "sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}";
       update-nix = "nix flake update nixpkgs nixpkgs-unstable nix-darwin nur home-manager sops-nix nixos-raspberrypi nixpkgs-otbr nixos-wsl lanzaboote apple-emoji-linux apple-fonts catppuccin --flake $HOME/Developer/dotfiles";
-      update-nix-unstable = "nix flake update nixpkgs-unstable-updated";
       update-desktop = "nix flake update hyprland dgop dms-cli dankMaterialShell --flake $HOME/Developer/dotfiles";
       update-apps = "nix flake update yazi wezterm affinity --flake $HOME/Developer/dotfiles";
       update-secrets = "nix flake update dotfiles-private --flake $HOME/Developer/dotfiles";

@@ -22,31 +22,12 @@ in {
     };
     home = {
       packages = with pkgs; [
-        # CLI tools
-        google-cloud-sdk
-        gh
-        pkg-config
-
-        # Database
         sqlite
-        postgresql
-
-        # Python
         python3
-
-        # Go
         go
-
-        # JavaScript
         nodejs
-        ni
-        nodePackages.pnpm
-
-        # Lua
         lua
         luarocks
-
-        # Rust
         (fenix.packages.${system}.stable.withComponents [
           "rustc"
           "cargo"
@@ -54,30 +35,11 @@ in {
           "rust-src"
           "rustfmt"
         ])
-
-        # C
-        cmake
-        clang
-        clang-tools
-        lldb
-        llvm
-        libiconv
-
-      ] ++ lib.optionals (!isDarwin) [
-        # System utilities
-        systemd
-
-        # Windows cross-compile
-        nsis
       ];
       sessionVariables = {
         NODE_COMPILE_CACHE = "$HOME/.cache/nodejs-compile-cache";
       } // lib.optionalAttrs isDarwin {
-        GDAL_LIBRARY_PATH = "$(gdal-config --prefix)/lib/libgdal.dylib";
-        GEOS_LIBRARY_PATH = "$(geos-config --prefix)/lib/libgeos_c.dylib";
-        PNPM_HOME = "$HOME/.local/state/pnpm";
         LIBRARY_PATH = "${pkgs.libiconv}/lib:$LIBRARY_PATH";
-        CPATH = "${pkgs.libiconv}/include:$CPATH";
       };
     };
   };
