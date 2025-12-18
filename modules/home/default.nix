@@ -153,7 +153,7 @@ in
     sessionVariables = {
       PAGER = "moor";
       SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
-      GEMINI_API_KEY = "$( [ -f ${config.secrets.credentialFiles.geminiKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.geminiKey} )";
+      GOOGLE_GENERATIVE_AI_API_KEY = "$( [ -f ${config.secrets.credentialFiles.googleGenerativeAiApiKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.googleGenerativeAiApiKey} )";
       TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.credentialFiles.tauriSigningPrivateKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.tauriSigningPrivateKey} )";
     };
     sessionPath = [
