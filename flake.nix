@@ -1,85 +1,85 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11?shallow=1";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable?shallow=1";
-    nixpkgs-otbr.url = "github:mrene/nixpkgs/openthread-border-router?shallow=1";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-otbr.url = "github:mrene/nixpkgs/openthread-border-router";
     nix-darwin = {
-      url = "github:lnl7/nix-darwin/nix-darwin-25.11?shallow=1";
+      url = "github:lnl7/nix-darwin/nix-darwin-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nur = {
-      url = "github:nix-community/NUR?shallow=1";
+      url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
-      url = "github:nix-community/home-manager?shallow=1";
+      url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     sops-nix = {
-      url = "github:Mic92/sops-nix?shallow=1";
+      url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi?shallow=1";
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
     nixos-wsl = {
-      url = "github:nix-community/NixOS-WSL/main?shallow=1";
+      url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-homebrew.url = "github:zhaofengli/nix-homebrew?shallow=1";
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
     lanzaboote = {
-      url = "github:nix-community/lanzaboote?shallow=1";
+      url = "github:nix-community/lanzaboote";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     homebrew-core = {
-      url = "github:homebrew/homebrew-core?shallow=1";
+      url = "github:homebrew/homebrew-core";
       flake = false;
     };
     homebrew-cask = {
-      url = "github:homebrew/homebrew-cask?shallow=1";
+      url = "github:homebrew/homebrew-cask";
       flake = false;
     };
     homebrew-extras = {
-      url = "github:michaelbrusegard/homebrew-extras?shallow=1";
+      url = "github:michaelbrusegard/homebrew-extras";
       flake = false;
     };
     apple-emoji-linux = {
-      url = "github:samuelngs/apple-emoji-linux?shallow=1";
+      url = "github:samuelngs/apple-emoji-linux";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     apple-fonts = {
-      url = "github:Lyndeno/apple-fonts.nix?shallow=1";
+      url = "github:Lyndeno/apple-fonts.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     catppuccin = {
-      url = "github:catppuccin/nix?shallow=1";
+      url = "github:catppuccin/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     catppuccin-themes = {
-      url = "github:abhinandh-s/catppuccin-nix?shallow=1";
+      url = "github:abhinandh-s/catppuccin-nix";
     };
     yazi = {
-      url = "github:sxyazi/yazi?shallow=1";
+      url = "github:sxyazi/yazi";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
-    hyprland.url = "github:hyprwm/Hyprland?shallow=1";
+    hyprland.url = "github:hyprwm/Hyprland";
     dgop = {
-      url = "github:AvengeMedia/dgop?shallow=1";
+      url = "github:AvengeMedia/dgop";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     dankMaterialShell = {
-      url = "github:AvengeMedia/DankMaterialShell?shallow=1";
+      url = "github:AvengeMedia/DankMaterialShell";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
       inputs.dgop.follows = "dgop";
     };
     wezterm = {
-      url = "github:wez/wezterm?dir=nix&shallow=1";
+      url = "github:wez/wezterm?dir=nix";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     fenix = {
-      url = "github:nix-community/fenix?shallow=1";
+      url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     affinity = {
-      url = "github:mrshmllow/affinity-nix?shallow=1";
+      url = "github:mrshmllow/affinity-nix";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     dotfiles-private = {
