@@ -25,7 +25,7 @@ let
     process_path() {
       local path="''$1"
       if [ -f "''$path" ]; then
-      if ${pkgs.file}/bin/file -b --mime-type "''$path" | ${pkgs.gnugrep}/bin/grep -q "^video/"; then
+      if ${pkgs.file}/bin/file -b --mime-type "''$path" | ${pkgs.ripgrep}/bin/rg -q "^video/"; then
         if [[ "''$path" == *"_dnxhr"* ]]; then
           echo "Skipping: '''$path' (already in DNxHR format)"
         else
@@ -39,7 +39,7 @@ let
         local count=0
         local failed=0
         while IFS= read -r -d ''$'\0' file; do
-          if ${pkgs.file}/bin/file -b --mime-type "''$file" | ${pkgs.gnugrep}/bin/grep -q "^video/"; then
+          if ${pkgs.file}/bin/file -b --mime-type "''$file" | ${pkgs.ripgrep}/bin/rg -q "^video/"; then
             count=''$((count + 1))
             convert_file "''$file" || failed=''$((failed + 1))
           fi
@@ -68,7 +68,6 @@ let
   '';
   safeRm = pkgs.writeScriptBin "rm" ''
     #!${pkgs.zsh}/bin/zsh
-    # If exactly one arg and it's NOT a flag, use trash
     if [ $# -eq 1 ] && [[ "$1" != -* ]]; then
       exec ${pkgs.trash-cli}/bin/trash "$1"
     fi
@@ -116,6 +115,7 @@ in
       "-" = "cd -";
       ls = "eza";
       cat = "bat";
+      sed = "sd";
       htop = "btop";
       top = "btop";
       lzg = "lazygit";

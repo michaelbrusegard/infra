@@ -18,10 +18,9 @@ in {
       yq
       age
       sops
-      coreutils
+      uutils-coreutils
       findutils
-      gnused
-      gnugrep
+      sd
       gnumake
       gnutar
       screen
