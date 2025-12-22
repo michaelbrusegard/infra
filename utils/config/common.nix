@@ -28,7 +28,9 @@
     };
   };
   nixpkgs = {
-    hostPlatform = system;
+    hostPlatform = {
+      system = system;
+    };
     config = {
       allowUnfree = true;
       allowBroken = true;
@@ -38,14 +40,14 @@
       yazi.overlays.default
       catppuccin-themes.overlays.default
       (final: prev: {
-        hyprland = hyprland.packages.${prev.system}.hyprland;
-        xdg-desktop-portal-hyprland = hyprland.packages.${prev.system}.xdg-desktop-portal-hyprland;
+        hyprland = hyprland.packages.${prev.stdenv.hostPlatform.system}.hyprland;
+        xdg-desktop-portal-hyprland = hyprland.packages.${prev.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
       })
       (final: prev: { quickshell = pkgs-unstable.quickshell; })
       (final: prev: { yabai = pkgs-unstable.yabai; })
       (final: prev: { jankyborders = pkgs-unstable.jankyborders; })
       (final: prev: { neovim = pkgs-unstable.neovim; })
-      (final: prev: { wezterm = wezterm.packages.${prev.system}.default; })
+      (final: prev: { wezterm = wezterm.packages.${prev.stdenv.hostPlatform.system}.default; })
       (final: prev: { openthread-border-router = pkgs-otbr.openthread-border-router; })
     ];
   };
