@@ -1,7 +1,18 @@
-{ ... }: {
+{ inputs, ... }:
+
+{
   imports = [
-    ./hardware.nix
+    inputs.self.nixosModules.boot
+    inputs.self.nixosModules.catppuccin
+    inputs.self.nixosModules.disable-documentation
+    inputs.self.nixosModules.home-manager
+    inputs.self.nixosModules.locale
+    inputs.self.nixosModules.networking
+    inputs.self.nixosModules.nix
+    inputs.self.nixosModules.security
+    ./k3s.nix
     ./networking.nix
-    ./services.nix
   ];
+
+  system.stateVersion = "25.11";
 }

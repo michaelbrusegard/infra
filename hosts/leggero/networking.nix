@@ -1,4 +1,6 @@
-{ config, ... }: {
+{ config, ... }:
+
+{
   networking = {
     firewall = {
       allowedTCPPorts = [ 53 9090 3000 8123 5580 8081 8082 80 443 ];
@@ -12,11 +14,9 @@
     wireguard.interfaces.wg0 = {
       ips = [ "10.0.62.1/24" ];
       listenPort = 51820;
-      privateKeyFile = config.secrets.leggero.wireguard.privateKeyFile;
-      peers = config.secrets.leggero.wireguard.peers;
-      postSetup = ''
-        ip link set wg0 multicast on
-      '';
+      privateKeyFile = config.secrets.wireguard.privateKeyFile;
+      peers = config.secrets.wireguard.peers;
     };
   };
+  services.avahi.allowInterfaces = [ "end0" "wg0" ];
 }

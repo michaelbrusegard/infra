@@ -24,11 +24,16 @@
       url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    disko = {
+      url = "github:nix-community/disko/latest";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     lanzaboote = {
       url = "github:nix-community/lanzaboote";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    colmena.url = "github:zhaofengli/colmena";
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
     homebrew-core = {
       url = "github:homebrew/homebrew-core";
       flake = false;
@@ -39,6 +44,10 @@
     };
     homebrew-extras = {
       url = "github:michaelbrusegard/homebrew-extras";
+      flake = false;
+    };
+    homebrew-zathura = {
+      url = "github:homebrew-zathura/homebrew-zathura";
       flake = false;
     };
     apple-emoji-linux = {
@@ -82,7 +91,7 @@
       url = "github:mrshmllow/affinity-nix";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
-    dotfiles-private = {
+    nix-secrets = {
       url = "git+ssh://git@github.com/michaelbrusegard/dotfiles-private.git?ref=main";
       inputs.sops-nix.follows = "sops-nix";
     };
@@ -90,97 +99,57 @@
 
   outputs = { self, nixpkgs, ... }@inputs:
     let
-      mkSystem = import ./utils/mk-system.nix inputs;
-
-      forAllSystems = nixpkgs.lib.genAttrs [
-        "x86_64-linux"
-        "aarch64-linux"
-        "aarch64-darwin"
-      ];
+      lib = import ./lib inputs;
     in
     {
-      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
-
-      nixosConfigurations = {
-        Desktop = mkSystem {
-          system = "x86_64-linux";
-          userName = "michaelbrusegard";
-          hostName = "Desktop";
-          stateVersion = "25.05";
-        };
-
-        WSL = mkSystem {
-          system = "x86_64-linux";
-          userName = "michaelbrusegard";
-          hostName = "WSL";
-          stateVersion = "25.05";
-        };
-
-        Leggero = mkSystem {
-          system = "aarch64-linux";
-          userName = "sysadmin";
-          hostName = "Leggero";
-          stateVersion = "25.05";
-        };
-
-        Macchiato = mkSystem {
-          system = "aarch64-linux";
-          userName = "sysadmin";
-          hostName = "Macchiato";
-          stateVersion = "25.11";
-        };
-
-        Espresso1 = mkSystem {
-          system = "x86_64-linux";
-          userName = "sysadmin";
-          hostName = "Espresso1";
-          stateVersion = "25.11";
-        };
-
-        Espresso2 = mkSystem {
-          system = "x86_64-linux";
-          userName = "sysadmin";
-          hostName = "Espresso2";
-          stateVersion = "25.11";
-        };
-
-        Espresso3 = mkSystem {
-          system = "x86_64-linux";
-          userName = "sysadmin";
-          hostName = "Espresso3";
-          stateVersion = "25.11";
-        };
-
+      inherit lib;
+      formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+      packages = lib.forAllSystems (system:
+        import ./packages {
+          pkgs = nixpkgs.legacyPackages.${system};
+        }
+      );
+      overlays = {
+        default = import ./overlays { inherit inputs; };
       };
+      nixosModules = import ./modules/nixos;
+      darwinModules = import ./modules/darwin;
+      homeManagerModules = import ./modules/home;
 
-      darwinConfigurations = let
-        hostName = let
-          hostCmd = nixpkgs.legacyPackages.${"aarch64-darwin"}.runCommand "hostname" { } ''
-            /usr/sbin/scutil --get LocalHostName | tr -d '\n' > $out
-          '';
-        in builtins.readFile hostCmd;
-      in {
-        ${hostName} = mkSystem {
+      nixosConfigurations = lib.merge [
+        (lib.mkSystem {
+          hostname = "ristretto";
+          system = "x86_64-linux";
+          users = [ "michaelbrusegard" ];
+        })
+
+        (lib.mkSystem {
+          hostname = "macchiato";
+          system = "aarch64-linux";
+          users = [ "ops" ];
+          platform = "raspberrypi";
+        })
+
+        (lib.mkSystem {
+          hostname = "leggero";
+          system = "aarch64-linux";
+          users = [ "ops" ];
+          platform = "raspberrypi";
+        })
+
+        (lib.mkCluster {
+          hostnames = [ "espresso-1" "espresso-2" "espresso-3" ];
+          system = "x86_64-linux";
+          users = [ "ops" ];
+        })
+      ];
+
+      darwinConfigurations = lib.merge [
+        (lib.mkSystem {
+          hostname = "lungo";
           system = "aarch64-darwin";
-          userName = "michaelbrusegard";
-          hostName = hostName;
-          stateVersion = "25.05";
-        };
-      };
-
-      packages = forAllSystems (system: {
-        Leggero = self.nixosConfigurations.Leggero.config.system.build.sdImage;
-        Macchiato = self.nixosConfigurations.Macchiato.config.system.build.sdImage;
-        bootstrapIsoX86 = (nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { dotfiles-private = inputs.dotfiles-private; };
-          modules = [ ./hosts/bootstrap ];
-        }).config.system.build.isoImage;
-        bootstrapIsoArm = (nixpkgs.lib.nixosSystem {
-          system = "aarch64-linux";
-          specialArgs = { dotfiles-private = inputs.dotfiles-private; };
-          modules = [ ./hosts/bootstrap ];
-        }).config.system.build.isoImage;
-      });
+          users = [ "michaelbrusegard" ];
+        })
+      ];
     };
 }

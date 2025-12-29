@@ -1,173 +1,25 @@
-{ lib, config, pkgs, stateVersion, hostName, isDarwin, ... }:
-let
-  toDnxhr = pkgs.writeScriptBin "to-dnxhr" ''
-    #!${pkgs.zsh}/bin/zsh
-    convert_file() {
-      local input_file="''$1"
-      local dir="''$(${pkgs.coreutils}/bin/dirname "''$input_file")"
-      local base="''$(${pkgs.coreutils}/bin/basename "''${input_file%.*}")"
-      local output_file="''$dir/''$base"_dnxhr.mov
-      if [ -f "''$output_file" ]; then
-        echo "Skipping: '''$input_file' (output already exists)"
-        return
-      fi
-
-      echo "Converting: '''$input_file'"
-      echo "Output:     '''$output_file'"
-      if ${pkgs.ffmpeg}/bin/ffmpeg -hide_banner -loglevel error -stats -nostdin -i "''$input_file" -c:v dnxhd -profile:v dnxhr_hq -c:a pcm_s16le -pix_fmt yuv422p "''$output_file"; then
-        echo "✓ Conversion successful: ''$input_file"
-      else
-        echo "✗ Conversion failed: ''$input_file"
-        return 1
-      fi
-    }
-
-    process_path() {
-      local path="''$1"
-      if [ -f "''$path" ]; then
-      if ${pkgs.file}/bin/file -b --mime-type "''$path" | ${pkgs.ripgrep}/bin/rg -q "^video/"; then
-        if [[ "''$path" == *"_dnxhr"* ]]; then
-          echo "Skipping: '''$path' (already in DNxHR format)"
-        else
-          convert_file "''$path"
-        fi
-        else
-          echo "Skipping: '''$path' (not a video file)"
-        fi
-      elif [ -d "''$path" ]; then
-        echo "Processing directory: '''$path'"
-        local count=0
-        local failed=0
-        while IFS= read -r -d ''$'\0' file; do
-          if ${pkgs.file}/bin/file -b --mime-type "''$file" | ${pkgs.ripgrep}/bin/rg -q "^video/"; then
-            count=''$((count + 1))
-            convert_file "''$file" || failed=''$((failed + 1))
-          fi
-        done < <(${pkgs.findutils}/bin/find "''$path" -type f -print0)
-        echo "Directory processing complete:"
-        echo "- Total videos processed: ''$count"
-        echo "- Successful: ''$((count - failed))"
-        echo "- Failed: ''$failed"
-      else
-        echo "Error: '''$path' is not a valid file or directory"
-        return 1
-      fi
-    }
-
-    if [ -z "''$1" ]; then
-      echo "Usage: ''$(basename ''$0) <input_path>"
-      echo "Converts video(s) to DNxHR HQ MOV with PCM audio for DaVinci Resolve."
-      echo ""
-      echo "Input can be either:"
-      echo "  - A single video file"
-      echo "  - A directory (will process all video files recursively)"
-      exit 1
-    fi
-
-    process_path "''$1"
-  '';
-  safeRm = pkgs.writeScriptBin "rm" ''
-    #!${pkgs.zsh}/bin/zsh
-    if [ $# -eq 1 ] && [[ "$1" != -* ]]; then
-      exec ${pkgs.trash-cli}/bin/trash "$1"
-    fi
-    exec ${pkgs.coreutils}/bin/rm "$@"
-  '';
-in
 {
-  home = {
-    enableNixpkgsReleaseCheck = false;
-    stateVersion = stateVersion;
-    pointerCursor = lib.mkIf (config.modules.gui.enable && !isDarwin) {
-      package = pkgs.apple-cursor;
-      name = "macOS";
-      size = 24;
-      gtk.enable = true;
-      x11.enable = true;
-    };
-    shell.enableZshIntegration = true;
-    packages = [
-      safeRm
-      toDnxhr
-    ];
-    shellAliases = {
-      rebuild = if isDarwin then
-        "sudo darwin-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}"
-      else
-        "sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#${hostName}";
-      update-nix = "nix flake update nixpkgs nixpkgs-unstable nix-darwin nur home-manager sops-nix nixos-raspberrypi nixpkgs-otbr nixos-wsl lanzaboote apple-emoji-linux apple-fonts catppuccin --flake $HOME/Developer/dotfiles";
-      update-desktop = "nix flake update hyprland dgop dms-cli dankMaterialShell --flake $HOME/Developer/dotfiles";
-      update-apps = "nix flake update yazi wezterm affinity --flake $HOME/Developer/dotfiles";
-      update-secrets = "nix flake update dotfiles-private --flake $HOME/Developer/dotfiles";
-      update-homebrew = "nix flake update nix-homebrew homebrew-core homebrew-cask homebrew-extras --flake $HOME/Developer/dotfiles";
-      clean = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
-      reload = "source $HOME/.config/zsh/.zshrc";
-      c = "clear";
-      dl = "cd $HOME/Downloads";
-      dt = "cd $HOME/Desktop";
-      dc = "cd $HOME/Documents";
-      dp = "cd $HOME/Developer";
-      ".." = "cd ..";
-      "..." = "cd ../..";
-      "...." = "cd ../../..";
-      "....." = "cd ../../../..";
-      "......" = "cd ../../../../..";
-      "-" = "cd -";
-      ls = "eza";
-      cat = "bat";
-      sed = "sd";
-      htop = "btop";
-      top = "btop";
-      lzg = "lazygit";
-      vim = "nvim";
-      vi = "nvim";
-      bc = "qalc";
-      less = "moor";
-      more = "moor";
-      du = "dust";
-      df = "duf";
-      ps = "procs";
-    } // lib.optionalAttrs isDarwin {
-      toggle-kanata = ''
-        if [ -n "$(sudo launchctl list | grep org.nixos.kanata | awk '{print $1}' | grep -E '^[0-9]+$')" ]; then
-          echo 'Kanata running, stopping...';
-          sudo launchctl bootout system /Library/LaunchDaemons/org.nixos.kanata.plist && echo 'Kanata stopped.'
-        else
-          echo 'Kanata not running, starting...';
-          sudo launchctl bootstrap system /Library/LaunchDaemons/org.nixos.kanata.plist && echo 'Kanata started.'
-        fi
-      '';
-      restart-yabai = "launchctl kickstart -k gui/$(id -u)/org.nixos.yabai";
-      groundctl = "cd $HOME/Developer/Telescope/tooling/groundctl && uv run groundctl";
-    } // lib.optionalAttrs (!isDarwin) {
-      toggle-kanata = ''
-        if systemctl is-active --quiet kanata-default.service; then
-          echo 'Kanata running, stopping...';
-          sudo systemctl stop kanata-default.service && echo 'Kanata stopped.'
-        else
-          echo 'Kanata not running, starting...';
-          sudo systemctl start kanata-default.service && echo 'Kanata started.'
-        fi
-      '';
-    };
-    sessionVariables = {
-      PAGER = "moor";
-      SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
-      GOOGLE_GENERATIVE_AI_API_KEY = "$( [ -f ${config.secrets.credentialFiles.googleGenerativeAiApiKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.googleGenerativeAiApiKey} )";
-      TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.credentialFiles.tauriSigningPrivateKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.tauriSigningPrivateKey} )";
-    };
-    sessionPath = [
-      "$HOME/.local/bin"
-      "$HOME/bin"
-      "$HOME/.cargo/bin"
-      "$HOME/.local/state/pnpm"
-    ] ++ lib.optionals isDarwin [
-      "/opt/homebrew/bin"
-    ];
-    activation = lib.mkIf isDarwin {
-      createScreenshotsDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        $DRY_RUN_CMD mkdir -p "$HOME/Pictures/screenshots"
-      '';
-    };
-  };
+  browser = import ./browser.nix;
+  catppuccin = import ./catppuccin.nix;
+  cli-base = import ./cli-base.nix;
+  cli-interactive = import ./cli-interactive.nix;
+  cli-desktop = import ./cli-desktop.nix;
+  desktop-apps = import ./desktop-apps.nix;
+  dev = import ./dev.nix;
+  dms = import ./dms.nix;
+  freecad = import ./freecad.nix;
+  ghostty = import ./ghostty.nix;
+  git = import ./git.nix;
+  hyprland = import ./hyprland.nix;
+  mpv = import ./mpv.nix;
+  neovim = import ./neovim;
+  opencode = import ./opencode.nix;
+  pentest = import ./pentest.nix;
+  shell = import ./shell.nix;
+  silicon = import ./silicon.nix;
+  ssh = import ./ssh.nix;
+  wezterm = import ./wezterm.nix;
+  xdg = import ./xdg.nix;
+  yazi = import ./yazi.nix;
+  zathura = import ./zathura.nix;
 }
