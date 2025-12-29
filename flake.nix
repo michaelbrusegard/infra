@@ -70,14 +70,9 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     hyprland.url = "github:hyprwm/Hyprland";
-    dgop = {
-      url = "github:AvengeMedia/dgop";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
-    dankMaterialShell = {
+    dms = {
       url = "github:AvengeMedia/DankMaterialShell";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
-      inputs.dgop.follows = "dgop";
     };
     wezterm = {
       url = "github:wez/wezterm?dir=nix";

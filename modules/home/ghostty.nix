@@ -1,10 +1,22 @@
-{ pkgs, ... }:
+{ pkgs, lib, isWsl, ... }:
 
+let
+  ghosttyDarwin =
+    pkgs.runCommand "ghostty-homebrew-wrapper" { } ''
+      mkdir -p $out/bin
+      ln -s /opt/homebrew/bin/ghostty $out/bin/ghostty
+    '';
+in
 {
-  programs.ghostty = {
+  programs.ghostty = lib.mkIf (!isWsl && (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin)) {
     enable = true;
     enableZshIntegration = true;
-    package = if pkgs.stdenv.isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
+
+    package =
+      if pkgs.stdenv.isDarwin
+      then ghosttyDarwin
+      else pkgs.ghostty;
+
     installBatSyntax = true;
     installVimSyntax = true;
 

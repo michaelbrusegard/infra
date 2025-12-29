@@ -2,7 +2,6 @@
 
 {
   imports = [
-    ./home.nix
     inputs.catppuccin.homeModules.catppuccin
   ];
 

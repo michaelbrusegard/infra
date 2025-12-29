@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, inputs, ... }:
 
 let
   weztermDarwin =
@@ -7,7 +7,7 @@ let
       ln -s /opt/homebrew/bin/wezterm $out/bin/wezterm
     '';
 
-  weztermConfig = ../../config/wezterm;
+  weztermConfig = inputs.self + "/config/wezterm";
 in
 {
   programs.wezterm = {

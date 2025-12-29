@@ -1,7 +1,7 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, inputs, ... }:
 
 let
-  nvimConfig = ../../config/nvim;
+  nvimConfig = inputs.self + "/config/nvim";
 in
 {
   programs.neovim = {

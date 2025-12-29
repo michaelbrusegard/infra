@@ -1,8 +1,8 @@
-{ config, ... }: {
+{ config, inputs, ... }: {
   services = {
     kanata = {
       enable = true;
-      keyboards.default.configFile = ../../assets/keyboard/kanata-linux.kbd;
+      keyboards.default.configFile = inputs.self + "/assets/keyboard/kanata-linux.kbd";
     };
     openssh = {
       enable = true;

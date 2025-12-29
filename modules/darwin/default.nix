@@ -8,6 +8,7 @@
   networking = import ./networking.nix;
   nix = import ./nix.nix;
   openssh = import ./openssh.nix;
+  secrets = import ./secrets.nix;
   security = import ./security.nix;
   system = import ./system.nix;
   virtualisation = import ./virtualisation.nix;

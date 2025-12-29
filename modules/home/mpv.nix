@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, isWsl, ... }:
 
 let
   mpvDarwin =
@@ -8,7 +8,7 @@ let
     '';
 in
 {
-  programs.mpv = {
+  programs.mpv = lib.mkIf (!isWsl) {
     enable = true;
 
     package =

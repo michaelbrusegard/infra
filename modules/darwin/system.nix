@@ -311,14 +311,14 @@
       nonUS.remapTilde = true;
     };
     startup.chime = false;
-    power = {
-      sleep = {
-        allowSleepByPowerButton = false;
-        computer = "never";
-        harddisk = "never";
-        display = 20;
-      };
-      restartAfterFreeze = true;
+  };
+  power = {
+    sleep = {
+      allowSleepByPowerButton = false;
+      computer = "never";
+      harddisk = "never";
+      display = 20;
     };
+    restartAfterFreeze = true;
   };
 }

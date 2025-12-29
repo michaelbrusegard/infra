@@ -13,11 +13,12 @@ inputs.nix-darwin.lib.darwinSystem {
 
   specialArgs = {
     inherit inputs users hostname;
+    isWsl = false;
   };
 
   modules =
-    [ ../hosts/${hostname} ]
+    [ (inputs.self + "/hosts/${hostname}") ]
     ++ map
-      (u: ../../users/${u}/darwin.nix)
+      (user: inputs.self + "/users/${user}/darwin.nix")
       users;
 }

@@ -13,11 +13,12 @@ inputs.nixos-raspberrypi.lib.nixosSystem {
 
   specialArgs = {
     inherit inputs hostname users;
+    nixos-raspberrypi = inputs.nixos-raspberrypi;
   };
 
   modules =
-    [ ../hosts/${hostname} ]
+    [ (inputs.self + "/hosts/${hostname}") ]
     ++ map
-      (u: ../../users/${u}/nixos.nix)
+      (user: inputs.self + "/users/${user}/nixos.nix")
       users;
 }

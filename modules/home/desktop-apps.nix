@@ -1,45 +1,31 @@
-{ pkgs, inputs, ... }:
+{ pkgs, lib, inputs, isWsl, ... }:
 
 {
-  home.packages = with pkgs; [
-    # Audio / media
-    easyeffects
-    imv
-    audacity
+  home.packages = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) (with pkgs; [
+    breaktimer
     mpv
-
-    # Communication
+    imv
+    burpsuite
     element-desktop
     slack
     legcord
-
-    # Productivity
     obsidian
-    protonmail-desktop
     proton-pass
+    protonmail-desktop
     libreoffice-fresh
-    notion
-
-    # File / download
     transmission_4
-
-    # Graphics / design
     inkscape-with-extensions
     gimp3-with-plugins
     scribus
-    blender
     inputs.affinity.packages.x86_64-linux.v3
-
-    # CAD / engineering
+    davinci-resolve
+    blender
+    freecad
     orca-slicer
     bambu-studio
-    qgis
-    freecad
     betaflight-configurator
-    davinci-resolve
-
-    # Utilities
-    burpsuite
-    breaktimer
-  ];
+    qgis
+    notion
+    audacity
+  ]);
 }

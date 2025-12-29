@@ -18,6 +18,7 @@
   openssh = import ./openssh.nix;
   openthread-border-router = import ./openthread-border-router.nix;
   prometheus = import ./prometheus.nix;
+  secrets = import ./secrets.nix;
   security = import ./security.nix;
   virtualisation = import ./virtualisation.nix;
 }

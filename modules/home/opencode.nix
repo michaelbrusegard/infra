@@ -1,7 +1,7 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, inputs, ... }:
 
 let
-  opencodeConfig = ../../config/opencode;
+  opencodeConfig = inputs.self + "/config/opencode";
 in
 {
   home.packages = [

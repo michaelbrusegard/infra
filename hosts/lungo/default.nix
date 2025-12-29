@@ -11,6 +11,7 @@
     inputs.self.darwinModules.networking
     inputs.self.darwinModules.nix
     inputs.self.darwinModules.openssh
+    inputs.self.darwinModules.secrets
     inputs.self.darwinModules.security
     inputs.self.darwinModules.system
     inputs.self.darwinModules.virtualisation

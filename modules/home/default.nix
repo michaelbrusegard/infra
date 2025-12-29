@@ -12,9 +12,10 @@
   git = import ./git.nix;
   hyprland = import ./hyprland.nix;
   mpv = import ./mpv.nix;
-  neovim = import ./neovim;
+  neovim = import ./neovim.nix;
   opencode = import ./opencode.nix;
   pentest = import ./pentest.nix;
+  secrets = import ./secrets.nix;
   shell = import ./shell.nix;
   silicon = import ./silicon.nix;
   ssh = import ./ssh.nix;

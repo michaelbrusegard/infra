@@ -1,17 +1,17 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, inputs, isWsl, ... }:
 
 let
-  freecadConfig = ../../config/freecad;
+  freecadConfig = inputs.self + "/config/freecad";
 in
 {
   home.packages =
-    lib.optionals pkgs.stdenv.isLinux [
+    lib.optionals (pkgs.stdenv.isLinux && !isWsl) [
       pkgs.freecad-wayland
     ];
 
   home.file =
     lib.mkMerge [
-      (lib.mkIf pkgs.stdenv.isLinux {
+      (lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
         ".config/FreeCAD".source =
           lib.file.mkOutOfStoreSymlink freecadConfig;
 

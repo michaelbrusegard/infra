@@ -17,8 +17,8 @@ inputs.nixpkgs.lib.nixosSystem {
   };
 
   modules =
-    [ ../hosts/${hostname} ]
+    [ (inputs.self + "/hosts/${hostname}") ]
     ++ map
-      (u: ../../users/${u}/nixos.nix)
+      (user: inputs.self + "/users/${user}/nixos.nix")
       users;
 }

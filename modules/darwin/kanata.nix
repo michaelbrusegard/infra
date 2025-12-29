@@ -1,10 +1,10 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 
 {
   environment.systemPackages = [ pkgs.kanata ];
   launchd.daemons = {
     kanata = {
-      command = "${pkgs.kanata}/bin/kanata -c ${../../config/kanata/darwin.kbd}";
+      command = "${pkgs.kanata}/bin/kanata -c ${inputs.self + "/config/kanata/darwin.kbd"}";
       serviceConfig = {
         RunAtLoad = true;
         KeepAlive = true;

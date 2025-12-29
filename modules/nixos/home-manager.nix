@@ -15,9 +15,9 @@
 
   home-manager.users =
     builtins.listToAttrs (
-      map (u: {
-        name = u;
-        value = import ../../users/${u}/home.nix;
+      map (user: {
+        name = user;
+        value = import (inputs.self + "/users/${user}/home.nix");
       }) users
     );
 }

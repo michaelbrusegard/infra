@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, isWsl, ... }:
 
 let
   zathuraDarwin =
@@ -8,7 +8,7 @@ let
     '';
 in
 {
-  programs.zathura = {
+  programs.zathura = lib.mkIf (!isWsl) {
     enable = true;
 
     package =

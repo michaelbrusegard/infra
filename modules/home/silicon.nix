@@ -1,7 +1,7 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, inputs, ... }:
 
 let
-  siliconConfig = ../../config/silicon;
+  siliconConfig = inputs.self + "/config/silicon";
 in
 {
   home.packages = [
