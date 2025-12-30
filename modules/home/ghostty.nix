@@ -2,13 +2,15 @@
 
 let
   ghosttyDarwin =
-    pkgs.runCommand "ghostty-homebrew-wrapper" { } ''
+    pkgs.runCommand "ghostty-homebrew-wrapper" {
+      meta.mainProgram = "ghostty";
+    } ''
       mkdir -p $out/bin
       ln -s /opt/homebrew/bin/ghostty $out/bin/ghostty
     '';
 in
 {
-  programs.ghostty = lib.mkIf (!isWsl && (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin)) {
+  programs.ghostty = lib.mkIf (!isWsl && (pkgs.stdenv.isLinux)) {
     enable = true;
     enableZshIntegration = true;
 
