@@ -1,4 +1,4 @@
-{ pkgs, lib, inputs, ... }:
+{ pkgs, lib, config, inputs, ... }:
 
 let
   siliconConfig = inputs.self + "/config/silicon";
@@ -9,10 +9,10 @@ in
   ];
 
   xdg.configFile."silicon/config".source =
-    lib.file.mkOutOfStoreSymlink "${siliconConfig}/config";
+    config.lib.file.mkOutOfStoreSymlink "${siliconConfig}/config";
 
   xdg.configFile."silicon/themes/catppuccin-mocha.tmTheme".source =
-    lib.file.mkOutOfStoreSymlink "${siliconConfig}/themes/catppuccin-mocha.tmTheme";
+    config.lib.file.mkOutOfStoreSymlink "${siliconConfig}/themes/catppuccin-mocha.tmTheme";
 
   xdg.configFile."silicon/syntaxes/.keep".text = "";
 

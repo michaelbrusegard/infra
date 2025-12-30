@@ -1,4 +1,4 @@
-{ pkgs, lib, inputs, ... }:
+{ pkgs, config, inputs, ... }:
 
 let
   weztermDarwin =
@@ -19,5 +19,5 @@ in
   };
 
   xdg.configFile."wezterm".source =
-    lib.file.mkOutOfStoreSymlink weztermConfig;
+    config.lib.file.mkOutOfStoreSymlink weztermConfig;
 }

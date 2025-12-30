@@ -1,4 +1,4 @@
-{ pkgs, lib, inputs, ... }:
+{ pkgs, config, inputs, ... }:
 
 let
   opencodeConfig = inputs.self + "/config/opencode";
@@ -9,5 +9,5 @@ in
   ];
 
   xdg.configFile."opencode".source =
-    lib.file.mkOutOfStoreSymlink opencodeConfig;
+    config.lib.file.mkOutOfStoreSymlink opencodeConfig;
 }

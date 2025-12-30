@@ -1,4 +1,4 @@
-{ pkgs, lib, inputs, ... }:
+{ pkgs, config, inputs, ... }:
 
 let
   nvimConfig = inputs.self + "/config/nvim";
@@ -24,7 +24,7 @@ in
   };
 
   xdg.configFile."nvim".source =
-    lib.file.mkOutOfStoreSymlink nvimConfig;
+    config.lib.file.mkOutOfStoreSymlink nvimConfig;
 
   home.packages = with pkgs; [
     tree-sitter
