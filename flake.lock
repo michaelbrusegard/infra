@@ -622,15 +622,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1764998300,
-        "narHash": "sha256-fZatn/KLfHLDXnF0wy7JxXqGaZmGDTVufT4o/AOlj44=",
+        "lastModified": 1767024057,
+        "narHash": "sha256-B1aycRjMRvb6QOGbnqDhiDzZwMebj5jxZ5qyJzaKvpI=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "27a6182347ccae90a88231ae0dc5dfa7d15815bb",
+        "rev": "34578a2fdfce4257ce5f5baf6e7efbd4e4e252b1",
         "type": "github"
       },
       "original": {
         "owner": "nix-community",
+        "ref": "release-25.11",
         "repo": "home-manager",
         "type": "github"
       }
@@ -1125,11 +1126,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1767017509,
-        "narHash": "sha256-pjCgVMyVTxrKwAOaQVw6fzFJK6/Vuk0ugBXT2yNhbjk=",
+        "lastModified": 1767127831,
+        "narHash": "sha256-f4ZvGX5rdZzSuPZcEyHSFpzlcVU18V+1c+5R52osl40=",
         "ref": "main",
-        "rev": "898db3d9406a8cbb22fb533b8bf76cbd0db2e9b0",
-        "revCount": 138,
+        "rev": "8ff6b6fb0f286dfa77e9c065aadab99364f10423",
+        "revCount": 139,
         "type": "git",
         "url": "ssh://git@github.com/michaelbrusegard/dotfiles-private.git"
       },

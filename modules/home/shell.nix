@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, config, inputs, ... }:
 
 let
   safeRm = pkgs.writeScriptBin "rm" ''
@@ -110,7 +110,7 @@ in
           source "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh"
       fi
 
-      source ${./config/p10k.zsh}
+      source ${inputs.self}/config/zsh/p10k.zsh
       bindkey -v
       export KEYTIMEOUT=1
       bindkey '^Y' autosuggest-accept
@@ -281,8 +281,8 @@ in
   home.sessionVariables = {
     PAGER = "moor";
     SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
-    GOOGLE_GENERATIVE_AI_API_KEY = "$( [ -f ${config.secrets.credentialFiles.googleGenerativeAiApiKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.googleGenerativeAiApiKey} )";
-    TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.credentialFiles.tauriSigningPrivateKey} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.credentialFiles.tauriSigningPrivateKey} )";
+    GOOGLE_GENERATIVE_AI_API_KEY = "$( [ -f ${config.secrets.keys.googleGenerativeAiApiKeyFile} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.keys.googleGenerativeAiApiKeyFile} )";
+    TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.keys.tauriSigningPrivateKeyFile} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.keys.tauriSigningPrivateKeyFile} )";
   };
 
   home.sessionPath =

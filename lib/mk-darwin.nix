@@ -2,14 +2,8 @@ inputs:
 
 { hostname, system, users }:
 
-let
-  pkgs = import inputs.nixpkgs {
-    inherit system;
-    overlays = inputs.self.overlays.default;
-  };
-in
 inputs.nix-darwin.lib.darwinSystem {
-  inherit system pkgs;
+  inherit system;
 
   specialArgs = {
     inherit inputs users hostname;
@@ -17,7 +11,10 @@ inputs.nix-darwin.lib.darwinSystem {
   };
 
   modules =
-    [ (inputs.self + "/hosts/${hostname}") ]
+    [
+      (inputs.self + "/hosts/${hostname}")
+      { nixpkgs.overlays = inputs.self.overlays.default; }
+    ]
     ++ map
       (user: inputs.self + "/users/${user}/darwin.nix")
       users;

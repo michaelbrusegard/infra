@@ -2,14 +2,8 @@ inputs:
 
 { hostname, system, users }:
 
-let
-  pkgs = import inputs.nixpkgs {
-    inherit system;
-    overlays = inputs.self.overlays.default;
-  };
-in
 inputs.nixos-raspberrypi.lib.nixosSystem {
-  inherit system pkgs;
+  inherit system;
 
   specialArgs = {
     inherit inputs hostname users;
@@ -17,7 +11,10 @@ inputs.nixos-raspberrypi.lib.nixosSystem {
   };
 
   modules =
-    [ (inputs.self + "/hosts/${hostname}") ]
+    [
+      (inputs.self + "/hosts/${hostname}")
+      { nixpkgs.overlays = inputs.self.overlays.default; }
+    ]
     ++ map
       (user: inputs.self + "/users/${user}/nixos.nix")
       users;

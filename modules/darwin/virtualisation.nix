@@ -17,21 +17,21 @@
           };
           RunAtLoad = true;
           KeepAlive = true;
-          StandardErrorPath = "$HOME/Library/Logs/Colima/colima.err.log";
-          StandardOutPath = "$HOME/Library/Logs/Colima/colima.out.log";
+          StandardErrorPath = "${config.users.users.${config.system.primaryUser}.home}/Library/Logs/Colima/colima.err.log";
+          StandardOutPath = "${config.users.users.${config.system.primaryUser}.home}/Library/Logs/Colima/colima.out.log";
         };
       };
       docker-auto-prune = {
         command = "${pkgs.docker}/bin/docker system prune -af";
         serviceConfig = {
-          UserName = config.users.primaryUser;
+          UserName = config.system.primaryUser;
           StartCalendarInterval = {
             Weekday = 0;
             Hour = 3;
             Minute = 0;
           };
-          StandardErrorPath = "$HOME/Library/Logs/Docker/docker-prune.err.log";
-          StandardOutPath = "$HOME/Library/Logs/Docker/docker-prune.out.log";
+          StandardErrorPath = "${config.users.users.${config.system.primaryUser}.home}/Library/Logs/Docker/docker-prune.err.log";
+          StandardOutPath = "${config.users.users.${config.system.primaryUser}.home}/Library/Logs/Docker/docker-prune.out.log";
         };
       };
     };
