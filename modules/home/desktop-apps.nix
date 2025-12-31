@@ -29,14 +29,13 @@
   ]
   ++ lib.optionals pkgs.stdenv.isDarwin [
     ice-bar
-    raycast
+    brewCasks.raycast
     brewCasks.linearmouse
     brewCasks.breaktimer
     brewCasks.legcord
     brewCasks.obsidian
     brewCasks.proton-pass
     brewCasks.protonvpn
-    brewCasks.proton-drive
     libreoffice-bin
     brewCasks.gimp
     brewCasks.blender

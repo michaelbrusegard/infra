@@ -1,10 +1,10 @@
 { pkgs, lib, isWsl, ... }:
 
 {
-  config = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+  config = lib.mkIf (!isWsl) {
     programs.chromium = {
       enable = true;
-      package = pkgs.vivaldi;
+      package = pkgs.brave;
     };
   };
 }

@@ -148,7 +148,7 @@
         ];
 
         windowrulev2 = [
-          "workspace 2, class:^(vivaldi-stable)$"
+          "workspace 2, class:^(brave)$"
           "workspace 3, class:^(Proton Mail)$"
           "workspace 3, class:^(Proton Pass)$"
           "workspace 4, class:^(obsidian)$"

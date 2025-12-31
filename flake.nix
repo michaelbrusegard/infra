@@ -43,6 +43,19 @@
       inputs.nix-darwin.follows = "nix-darwin";
       inputs.brew-api.follows = "brew-api";
     };
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    homebrew-core = {
+      url = "github:homebrew/homebrew-core";
+      flake = false;
+    };
+    homebrew-cask = {
+      url = "github:homebrew/homebrew-cask";
+      flake = false;
+    };
+    homebrew-extras = {
+      url = "github:michaelbrusegard/homebrew-extras";
+      flake = false;
+    };
     apple-emoji-linux = {
       url = "github:samuelngs/apple-emoji-linux";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -29,7 +29,7 @@
 
       # Application rules
       ${pkgs.yabai}/bin/yabai -m rule --add app="^(Calculator|System Settings|Archive Utility)$" manage=off
-      ${pkgs.yabai}/bin/yabai -m rule --add app="^(Vivaldi)$" space=2
+      ${pkgs.yabai}/bin/yabai -m rule --add app="^(Brave)$" space=2
       ${pkgs.yabai}/bin/yabai -m rule --add app="^(Proton Mail|Proton Pass)$" space=3
       ${pkgs.yabai}/bin/yabai -m rule --add app="^(Notes|Obsidian|LibreOffice|Notion)$" space=4
       ${pkgs.yabai}/bin/yabai -m rule --add app="^(Messages|FaceTime|Element|Legcord|Slack)$" space=5
@@ -115,9 +115,8 @@
       alt - 0 : ${pkgs.yabai}/bin/yabai -m window --toggle float
 
       # System
-      cmd - space : open "${pkgs.raycast}/Applications/Raycast.app"
-      alt - return : ${pkgs.wezterm}/bin/wezterm start --always-new-process
-      alt + shift - return : ${pkgs.wezterm}/bin/wezterm start --always-new-process -e sh -c 'yazi'
+      alt - return : open -na "WezTerm" --args start --always-new-process
+      alt + shift - return : open -na "WezTerm" --args start --always-new-process -e sh -c 'yazi'
     '';
   };
 
