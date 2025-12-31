@@ -15,7 +15,7 @@
       videos = "$HOME/Movies";
 
       extraConfig = {
-        XDG_PROJECTS_DIR = "$HOME/Developer";
+        XDG_PROJECTS_DIR = "$HOME/Projects";
         XDG_SCREENSHOTS_DIR = "$HOME/Pictures/screenshots";
       };
     };

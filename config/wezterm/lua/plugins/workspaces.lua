@@ -16,7 +16,7 @@ return function(config)
     key = 'Enter',
     mods = 'SUPER',
     action = workspace_switcher.switch_workspace({
-      extra_args = " | grep -E \"^$(echo ~/Developer | sed 's:/*$::')/\" | awk -F'/' 'NF<=5'",
+      extra_args = " | grep -E \"^$(echo ~/Projects | sed 's:/*$::')/\" | awk -F'/' 'NF<=5'",
     }),
   })
 end

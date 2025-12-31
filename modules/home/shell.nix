@@ -215,24 +215,22 @@ in
 
   home.shellAliases =
     {
-      rebuild =
+      nrs =
         if pkgs.stdenv.isDarwin
         then "sudo darwin-rebuild switch --flake $HOME/Developer/dotfiles#$(hostname)"
         else "sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#$(hostname)";
-
-      update-nix = "nix flake update nixpkgs nixpkgs-unstable nix-darwin nur home-manager sops-nix nixos-raspberrypi nixpkgs-otbr nixos-wsl lanzaboote apple-emoji-linux apple-fonts catppuccin --flake $HOME/Developer/dotfiles";
-      update-desktop = "nix flake update hyprland dgop dms-cli dankMaterialShell --flake $HOME/Developer/dotfiles";
-      update-apps = "nix flake update yazi wezterm affinity --flake $HOME/Developer/dotfiles";
-      update-secrets = "nix flake update dotfiles-private --flake $HOME/Developer/dotfiles";
-      update-homebrew = "nix flake update nix-homebrew homebrew-core homebrew-cask homebrew-extras --flake $HOME/Developer/dotfiles";
-
-      clean = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
-      reload = "source $HOME/.config/zsh/.zshrc";
+      nrt =
+        if pkgs.stdenv.isDarwin
+        then "sudo darwin-rebuild test --flake $HOME/Developer/dotfiles#$(hostname)"
+        else "sudo nixos-rebuild test --flake $HOME/Developer/dotfiles#$(hostname)";
+      ngc = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
+      nfc = "nix flake check $HOME/Developer/dotfiles";
+      nfu = "nix flake update $HOME/Developer/dotfiles";
 
       dl = "cd $HOME/Downloads";
       dt = "cd $HOME/Desktop";
       dc = "cd $HOME/Documents";
-      dp = "cd $HOME/Developer";
+      dp = "cd $HOME/Projects";
 
       ".." = "cd ..";
       "..." = "cd ../..";
@@ -274,7 +272,7 @@ in
         fi
       '';
       restart-yabai = "launchctl kickstart -k gui/$(id -u)/org.nixos.yabai";
-      groundctl = "cd $HOME/Developer/Telescope/tooling/groundctl && uv run groundctl";
+      groundctl = "cd $HOME/Projects/Telescope/tooling/groundctl && uv run groundctl";
     };
 
   home.sessionVariables = {
