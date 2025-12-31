@@ -101,7 +101,6 @@
   };
 
   outputs = {
-    self,
     nixpkgs,
     ...
   } @ inputs: let

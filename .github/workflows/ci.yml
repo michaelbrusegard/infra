@@ -21,5 +21,8 @@ jobs:
       - name: Check linting
         run: nix run nixpkgs#statix -- check .
 
+      - name: Check for dead code
+        run: nix run nixpkgs#deadnix -- --fail .
+
       - name: Validate flake
         run: nix flake check

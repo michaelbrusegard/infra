@@ -1,19 +1,19 @@
 {inputs}: let
   inherit (inputs.nixpkgs.lib) composeManyExtensions;
 in composeManyExtensions [
-  (final: prev: import ../packages {pkgs = final;})
+  (final: _: import ../packages {pkgs = final;})
   inputs.nur.overlays.default
   inputs.yazi.overlays.default
   inputs.catppuccin-themes.overlays.default
   inputs.brew-nix.overlays.default
-  (final: prev: {
+  (_: prev: {
     inherit (inputs.hyprland.packages.${prev.stdenv.hostPlatform.system}) hyprland;
     inherit (inputs.hyprland.packages.${prev.stdenv.hostPlatform.system}) xdg-desktop-portal-hyprland;
   })
-  (final: prev: {wezterm = inputs.wezterm.packages.${prev.stdenv.hostPlatform.system}.default;})
-  (final: prev: {inherit (inputs.nixpkgs-otbr.legacyPackages.${prev.stdenv.hostPlatform.system}) openthread-border-router;})
+  (_: prev: {wezterm = inputs.wezterm.packages.${prev.stdenv.hostPlatform.system}.default;})
+  (_: prev: {inherit (inputs.nixpkgs-otbr.legacyPackages.${prev.stdenv.hostPlatform.system}) openthread-border-router;})
   (
-    final: prev: let
+    _: prev: let
       inherit (prev.stdenv.hostPlatform) system;
       pkgs-unstable = import inputs.nixpkgs-unstable {
         inherit system;
