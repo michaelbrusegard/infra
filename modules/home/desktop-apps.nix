@@ -1,31 +1,50 @@
 { pkgs, lib, inputs, isWsl, ... }:
 
 {
-  home.packages = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) (with pkgs; [
-    breaktimer
-    mpv
-    imv
-    burpsuite
+  home.packages = lib.mkIf (!isWsl) (with pkgs; [
     element-desktop
     slack
+    protonmail-desktop
+    transmission_4
+    inkscape-with-extensions
+    audacity
+  ]
+  ++ lib.optionals pkgs.stdenv.isLinux [
+    imv
+    breaktimer
     legcord
     obsidian
     proton-pass
-    protonmail-desktop
     libreoffice-fresh
-    transmission_4
-    inkscape-with-extensions
-    gimp3-with-plugins
     scribus
+    gimp-with-plugins
+    blender
     inputs.affinity.packages.x86_64-linux.v3
     davinci-resolve
-    blender
-    freecad
     orca-slicer
     bambu-studio
     betaflight-configurator
     qgis
-    notion
-    audacity
+    notion-app-enhanced
+  ]
+  ++ lib.optionals pkgs.stdenv.isDarwin [
+    ice-bar
+    raycast
+    brewCasks.linearmouse
+    brewCasks.breaktimer
+    brewCasks.legcord
+    brewCasks.obsidian
+    brewCasks.proton-pass
+    brewCasks.protonvpn
+    brewCasks.proton-drive
+    libreoffice-bin
+    brewCasks.gimp
+    brewCasks.blender
+    brewCasks.affinity
+    brewCasks.orcaslicer
+    brewCasks.bambu-studio
+    brewCasks.betaflight-configurator
+    brewCasks.qgis
+    notion-app
   ]);
 }

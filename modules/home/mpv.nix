@@ -1,18 +1,8 @@
 { pkgs, lib, isWsl, ... }:
 
-let
-  mpvDarwin =
-    pkgs.runCommand "mpv-homebrew-wrapper" { } ''
-      mkdir -p $out/bin
-      ln -s /opt/homebrew/bin/mpv $out/bin/mpv
-    '';
-in
 {
   programs.mpv = lib.mkIf (!isWsl) {
     enable = true;
-
-    package =
-      if pkgs.stdenv.isDarwin then mpvDarwin else pkgs.mpv;
 
     config = {
       profile = "gpu-hq";

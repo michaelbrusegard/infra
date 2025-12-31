@@ -13,7 +13,12 @@ inputs.nixpkgs.lib.nixosSystem {
   modules =
     [
       (inputs.self + "/hosts/${hostname}")
-      { nixpkgs.overlays = inputs.self.overlays.default; }
+      {
+        nixpkgs.overlays = inputs.self.overlays.default;
+        imports = [
+          inputs.nix-secrets.nixosModules.secrets
+        ];
+      }
     ]
     ++ map
       (user: inputs.self + "/users/${user}/nixos.nix")

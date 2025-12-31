@@ -1,9 +1,9 @@
-{ ... }:
+{ pkgs, ... }:
 
 {
   launchd.user.agents = {
     ice = {
-      command = "open -a Ice";
+      command = "open ${pkgs.ice-bar}/Applications/Ice.app";
       serviceConfig = {
         RunAtLoad = true;
         ProcessType = "Interactive";
@@ -17,14 +17,7 @@
       };
     };
     linearmouse = {
-      command = "open -a LinearMouse";
-      serviceConfig = {
-        RunAtLoad = true;
-        ProcessType = "Interactive";
-      };
-    };
-    aldente = {
-      command = "open -a AlDente";
+      command = "open ${pkgs.brewCasks.linearmouse}/Applications/LinearMouse.app";
       serviceConfig = {
         RunAtLoad = true;
         ProcessType = "Interactive";
@@ -38,7 +31,7 @@
       };
     };
     breaktimer = {
-      command = "open -a BreakTimer";
+      command = "open ${pkgs.brewCasks.breaktimer}/Applications/BreakTimer.app";
       serviceConfig = {
         RunAtLoad = true;
         ProcessType = "Interactive";

@@ -17,7 +17,12 @@
     builtins.listToAttrs (
       map (user: {
         name = user;
-        value = import (inputs.self + "/users/${user}/home.nix");
+        value = { ... }: {
+          imports = [
+            (inputs.self + "/users/${user}/home.nix")
+            inputs.nix-secrets.homeManagerModules.secrets
+          ];
+        };
       }) users
     );
 }

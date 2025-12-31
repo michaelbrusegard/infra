@@ -3,6 +3,7 @@
   inputs.nur.overlays.default
   inputs.yazi.overlays.default
   inputs.catppuccin-themes.overlays.default
+  inputs.brew-nix.overlays.default
   (final: prev: {
     hyprland = inputs.hyprland.packages.${prev.stdenv.hostPlatform.system}.hyprland;
     xdg-desktop-portal-hyprland = inputs.hyprland.packages.${prev.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;

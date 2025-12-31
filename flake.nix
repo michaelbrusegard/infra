@@ -33,22 +33,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     colmena.url = "github:zhaofengli/colmena";
-    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
-    homebrew-core = {
-      url = "github:homebrew/homebrew-core";
+    brew-api = {
+      url = "github:BatteredBunny/brew-api";
       flake = false;
     };
-    homebrew-cask = {
-      url = "github:homebrew/homebrew-cask";
-      flake = false;
-    };
-    homebrew-extras = {
-      url = "github:michaelbrusegard/homebrew-extras";
-      flake = false;
-    };
-    homebrew-zathura = {
-      url = "github:homebrew-zathura/homebrew-zathura";
-      flake = false;
+    brew-nix = {
+      url = "github:BatteredBunny/brew-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nix-darwin.follows = "nix-darwin";
+      inputs.brew-api.follows = "brew-api";
     };
     apple-emoji-linux = {
       url = "github:samuelngs/apple-emoji-linux";

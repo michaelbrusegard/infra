@@ -13,7 +13,13 @@ inputs.nix-darwin.lib.darwinSystem {
   modules =
     [
       (inputs.self + "/hosts/${hostname}")
-      { nixpkgs.overlays = inputs.self.overlays.default; }
+      {
+        nixpkgs.overlays = inputs.self.overlays.default;
+        imports = [
+          inputs.nix-secrets.darwinModules.secrets
+          inputs.brew-nix.darwinModules.default
+        ];
+      }
     ]
     ++ map
       (user: inputs.self + "/users/${user}/darwin.nix")
