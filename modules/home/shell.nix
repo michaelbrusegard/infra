@@ -229,7 +229,6 @@ in
       clean = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
       reload = "source $HOME/.config/zsh/.zshrc";
 
-      c = "clear";
       dl = "cd $HOME/Downloads";
       dt = "cd $HOME/Desktop";
       dc = "cd $HOME/Documents";

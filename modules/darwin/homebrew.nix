@@ -34,7 +34,6 @@
       "proton-drive"
     ];
     masApps = {
-      "BrightIntosh" = 6452471855;
       "Proton Pass for Safari" = 6502835663;
       "Wipr" = 1662217862;
       "WireGuard" = 1451685025;
