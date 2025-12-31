@@ -2,7 +2,7 @@
   inherit (inputs.nixpkgs.lib) composeManyExtensions;
 in
   composeManyExtensions [
-    (final: _: import ../packages {pkgs = final;})
+    (_: prev: import ../packages {pkgs = prev;})
     inputs.nur.overlays.default
     inputs.yazi.overlays.default
     inputs.catppuccin-themes.overlays.default

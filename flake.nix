@@ -95,8 +95,11 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     nix-secrets = {
-      url = "git+ssh://git@github.com/michaelbrusegard/nix-secrets.git?ref=main";
-      inputs.sops-nix.follows = "sops-nix";
+      url = "git+ssh://git@github.com/michaelbrusegard/nix-secrets.git";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        sops-nix.follows = "sops-nix";
+      };
     };
   };
 
