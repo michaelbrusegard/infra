@@ -14,7 +14,6 @@ jobs:
       - uses: actions/checkout@v6
       - uses: DeterminateSystems/nix-installer-action@main
         with:
-          flakehub: false
           diagnostic-endpoint: ""
       - uses: DeterminateSystems/magic-nix-cache-action@main
         with:
