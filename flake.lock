@@ -1158,12 +1158,12 @@
         "rev": "34992b4db936fc51f8d5f61fe30dc53c97083ae5",
         "revCount": 140,
         "type": "git",
-        "url": "ssh://git@github.com/michaelbrusegard/dotfiles-private.git"
+        "url": "ssh://git@github.com/michaelbrusegard/nix-secrets.git"
       },
       "original": {
         "ref": "main",
         "type": "git",
-        "url": "ssh://git@github.com/michaelbrusegard/dotfiles-private.git"
+        "url": "ssh://git@github.com/michaelbrusegard/nix-secrets.git"
       }
     },
     "nixos-images": {

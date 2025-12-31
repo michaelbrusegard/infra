@@ -8,7 +8,7 @@
       set desktopCount to count of desktops
       repeat with i from 1 to desktopCount
         tell desktop i
-          set picture to "$HOME/Projects/dotfiles/wallpapers/twilight-peaks.png"
+          set picture to "$HOME/Projects/nix-config/wallpapers/twilight-peaks.png"
         end tell
       end repeat
     end tell'

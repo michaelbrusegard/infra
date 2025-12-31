@@ -93,7 +93,7 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     nix-secrets = {
-      url = "git+ssh://git@github.com/michaelbrusegard/dotfiles-private.git?ref=main";
+      url = "git+ssh://git@github.com/michaelbrusegard/nix-secrets.git?ref=main";
       inputs.sops-nix.follows = "sops-nix";
     };
   };

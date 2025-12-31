@@ -1,7 +1,7 @@
-# Dotfiles
+# nix-config
 
 This is primarily a guide for myself on how to setup my own systems, feel free
-to copy any of the dotfiles, but do not expect a direct copy of everything to
+to copy anything, but do not expect a direct copy of everything to
 work for you.
 
 Make sure to follow the guide for each system step by step and to move over

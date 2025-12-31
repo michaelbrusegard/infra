@@ -13,7 +13,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 # WALLPAPER SETUP
 # =============================================================================
 Write-Host "--- Initializing Wallpaper Setup ---"
-$wslWallpaperPath = "\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\dotfiles\assets\wallpapers\twilight-peaks.png"
+$wslWallpaperPath = "\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\nix-config\wallpapers\twilight-peaks.png"
 $localWallpaperDir = Join-Path -Path $env:USERPROFILE -ChildPath "Pictures\Wallpapers"
 $localWallpaperPath = Join-Path -Path $localWallpaperDir -ChildPath "twilight-peaks.png"
 
@@ -183,7 +183,7 @@ else {
 # =============================================================================
 Write-Host "`n--- Setting up PowerShell 7 Profile ---"
 
-$wslProfilePath = "\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\dotfiles\windows\programs\powershell\profile.ps1"
+$wslProfilePath = "\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\nix-config\windows\programs\powershell\profile.ps1"
 $documentsFolder = [Environment]::GetFolderPath('MyDocuments')
 $ps7ProfileDirectory = Join-Path -Path $documentsFolder -ChildPath "PowerShell"
 $ps7ProfilePath = Join-Path -Path $ps7ProfileDirectory -ChildPath "profile.ps1"
@@ -295,9 +295,9 @@ Set-RegistryValue -Path "HKCU:\Software\Microsoft\Lighting" -Name "AmbientLighti
 
 Write-Host "`n--- Setting Environment Variables ---"
 Write-Host "Setting WEZTERM_CONFIG_FILE environment variable."
-Set-RegistryValue -Path "HKCU:\Environment" -Name "WEZTERM_CONFIG_FILE" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\dotfiles\modules\wezterm\config\wezterm.lua" -Type "String"
+Set-RegistryValue -Path "HKCU:\Environment" -Name "WEZTERM_CONFIG_FILE" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\nix-config\config\wezterm\wezterm.lua" -Type "String"
 Write-Host "Setting GLAZEWM_CONFIG_PATH environment variable."
-Set-RegistryValue -Path "HKCU:\Environment" -Name "GLAZEWM_CONFIG_PATH" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\dotfiles\windows\programs\glazewm\config.yaml" -Type "String"
+Set-RegistryValue -Path "HKCU:\Environment" -Name "GLAZEWM_CONFIG_PATH" -Value "\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\nix-config\windows\programs\glazewm\config.yaml" -Type "String"
 
 # =============================================================================
 # APPLYING VISUAL CHANGES

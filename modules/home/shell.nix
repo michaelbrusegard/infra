@@ -217,15 +217,15 @@ in
     {
       nrs =
         if pkgs.stdenv.isDarwin
-        then "sudo darwin-rebuild switch --flake $HOME/Developer/dotfiles#$(hostname)"
-        else "sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#$(hostname)";
+        then "sudo darwin-rebuild switch --flake $HOME/Projects/nix-config#$(hostname)"
+        else "sudo nixos-rebuild switch --flake $HOME/Projects/nix-config#$(hostname)";
       nrt =
         if pkgs.stdenv.isDarwin
-        then "sudo darwin-rebuild test --flake $HOME/Developer/dotfiles#$(hostname)"
-        else "sudo nixos-rebuild test --flake $HOME/Developer/dotfiles#$(hostname)";
+        then "sudo darwin-rebuild test --flake $HOME/Projects/nix-config#$(hostname)"
+        else "sudo nixos-rebuild test --flake $HOME/Projects/nix-config#$(hostname)";
       ngc = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
-      nfc = "nix flake check $HOME/Developer/dotfiles";
-      nfu = "nix flake update $HOME/Developer/dotfiles";
+      nfc = "nix flake check $HOME/Projects/nix-config";
+      nfu = "nix flake update $HOME/Projects/nix-config";
 
       dl = "cd $HOME/Downloads";
       dt = "cd $HOME/Desktop";
