@@ -1,4 +1,6 @@
-{inputs}: [
+{inputs}: let
+  inherit (inputs.nixpkgs.lib) composeManyExtensions;
+in composeManyExtensions [
   (final: prev: import ../packages {pkgs = final;})
   inputs.nur.overlays.default
   inputs.yazi.overlays.default
