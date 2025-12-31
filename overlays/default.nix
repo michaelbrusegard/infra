@@ -1,5 +1,6 @@
 { inputs }:
 [
+  (final: prev: import ../packages { pkgs = final; })
   inputs.nur.overlays.default
   inputs.yazi.overlays.default
   inputs.catppuccin-themes.overlays.default
@@ -31,5 +32,4 @@
       opencode = pkgs-unstable.opencode;
     }
   )
-  (final: prev: { breaktimer = import ../packages/breaktimer.nix { pkgs = final; }; })
 ]

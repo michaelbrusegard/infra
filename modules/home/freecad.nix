@@ -7,6 +7,8 @@ in
   home.packages =
     lib.optionals (pkgs.stdenv.isLinux && !isWsl) [
       pkgs.freecad-wayland
+    ] ++ lib.optionals (pkgs.stdenv.isDarwin) [
+      pkgs.brewCasks.freecad
     ];
 
   home.file =
