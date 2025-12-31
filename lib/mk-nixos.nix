@@ -15,7 +15,7 @@ inputs.nixpkgs.lib.nixosSystem {
     [
       (inputs.self + "/hosts/${hostname}")
       {
-        nixpkgs.overlays = [ inputs.self.overlays.default ];
+        nixpkgs.overlays = [inputs.self.overlays.default];
         imports = [
           inputs.nix-secrets.nixosModules.secrets
         ];

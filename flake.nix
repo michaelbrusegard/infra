@@ -100,10 +100,7 @@
     };
   };
 
-  outputs = {
-    nixpkgs,
-    ...
-  } @ inputs: let
+  outputs = {nixpkgs, ...} @ inputs: let
     lib = import ./lib inputs;
   in {
     inherit lib;
