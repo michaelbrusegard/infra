@@ -12,8 +12,13 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+       - uses: DeterminateSystems/nix-installer-action@main
+         with:
+           diagnostic-endpoint: ""
+       - uses: DeterminateSystems/magic-nix-cache-action@main
+         with:
+           flakehub: false
+           diagnostic-endpoint: ""
 
       - name: Check formatting
         run: nix fmt -- --check .
