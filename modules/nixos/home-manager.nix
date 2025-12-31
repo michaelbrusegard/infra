@@ -9,9 +9,11 @@
     inputs.home-manager.nixosModules.home-manager
   ];
 
-  home-manager.useGlobalPkgs = true;
-  home-manager.useUserPackages = true;
-  home-manager.backupFileExtension = "backup";
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    backupFileExtension = "backup";
+  };
 
   home-manager.extraSpecialArgs = {
     inherit inputs hostname isWsl;

@@ -70,7 +70,7 @@ in {
 
       "relative-motions" = relativeMotions;
       "augment-command" = augmentCommand;
-      yaziline = yaziline;
+      inherit yaziline;
       lazygit = lazygitPlugin;
     };
 

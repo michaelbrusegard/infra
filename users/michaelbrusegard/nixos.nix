@@ -7,7 +7,7 @@
     isNormalUser = true;
     extraGroups = ["wheel" "networkmanager" "docker"];
     shell = pkgs.zsh;
-    hashedPasswordFile = config.secrets.users.michaelbrusegard.hashedPasswordFile;
+    inherit (config.secrets.users.michaelbrusegard) hashedPasswordFile;
   };
   programs.zsh.enable = true;
 }

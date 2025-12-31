@@ -1,4 +1,4 @@
-{...}: {
+_: {
   services.blocky = {
     enable = true;
 

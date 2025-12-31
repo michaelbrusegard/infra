@@ -1,6 +1,6 @@
 {config, ...}: {
   services.caddy = {
     enable = true;
-    virtualHosts = config.secrets.caddy.virtualHosts;
+    inherit (config.secrets.caddy) virtualHosts;
   };
 }

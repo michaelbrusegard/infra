@@ -1,4 +1,4 @@
-{...}: {
+_: {
   services.blocky.settings.prometheus.enable = true;
 
   services.prometheus.scrapeConfigs = [

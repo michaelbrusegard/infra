@@ -12,7 +12,7 @@ in {
     lib.optionals (pkgs.stdenv.isLinux && !isWsl) [
       pkgs.freecad-wayland
     ]
-    ++ lib.optionals (pkgs.stdenv.isDarwin) [
+    ++ lib.optionals pkgs.stdenv.isDarwin [
       pkgs.brewCasks.freecad
     ];
 

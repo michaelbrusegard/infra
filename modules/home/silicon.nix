@@ -11,13 +11,15 @@ in {
     pkgs.silicon
   ];
 
-  xdg.configFile."silicon/config".source =
-    config.lib.file.mkOutOfStoreSymlink "${siliconConfig}/config";
+  xdg.configFile = {
+    "silicon/config".source =
+      config.lib.file.mkOutOfStoreSymlink "${siliconConfig}/config";
 
-  xdg.configFile."silicon/themes/catppuccin-mocha.tmTheme".source =
-    config.lib.file.mkOutOfStoreSymlink "${siliconConfig}/themes/catppuccin-mocha.tmTheme";
+    "silicon/themes/catppuccin-mocha.tmTheme".source =
+      config.lib.file.mkOutOfStoreSymlink "${siliconConfig}/themes/catppuccin-mocha.tmTheme";
 
-  xdg.configFile."silicon/syntaxes/.keep".text = "";
+    "silicon/syntaxes/.keep".text = "";
+  };
 
   home.activation.buildSiliconCache = lib.hm.dag.entryAfter ["writeBoundary"] ''
     if command -v silicon >/dev/null 2>&1; then

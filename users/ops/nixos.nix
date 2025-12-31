@@ -7,7 +7,7 @@
     isNormalUser = true;
     extraGroups = ["wheel"];
     shell = pkgs.zsh;
-    hashedPasswordFile = config.secrets.users.ops.hashedPasswordFile;
+    inherit (config.secrets.users.ops) hashedPasswordFile;
   };
   programs.zsh.enable = true;
 }

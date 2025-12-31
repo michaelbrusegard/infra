@@ -12,7 +12,7 @@
       enable = true;
       openFirewall = true;
       startWhenNeeded = true;
-      ports = config.secrets.desktop.ssh.ports;
+      inherit (config.secrets.desktop.ssh) ports;
       authorizedKeysInHomedir = false;
       settings = {
         PasswordAuthentication = false;

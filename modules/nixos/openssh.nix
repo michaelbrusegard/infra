@@ -3,7 +3,7 @@
     enable = true;
     openFirewall = true;
     startWhenNeeded = true;
-    ports = config.secrets.openssh.ports;
+    inherit (config.secrets.openssh) ports;
     authorizedKeys.keys = config.secrets.openssh.authorizedKeys.keys;
     authorizedKeysInHomedir = false;
     settings = {

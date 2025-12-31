@@ -12,8 +12,8 @@
     wireguard.interfaces.wg0 = {
       ips = ["10.0.62.1/24"];
       listenPort = 51820;
-      privateKeyFile = config.secrets.wireguard.privateKeyFile;
-      peers = config.secrets.wireguard.peers;
+      inherit (config.secrets.wireguard) privateKeyFile;
+      inherit (config.secrets.wireguard) peers;
     };
   };
   services.avahi.allowInterfaces = ["end0" "wg0"];
