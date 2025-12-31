@@ -1,6 +1,4 @@
-{ ... }:
-
-{
+{...}: {
   nix = {
     optimise.automatic = true;
 
@@ -11,7 +9,7 @@
 
     settings = {
       builders-use-substitutes = true;
-      extra-experimental-features = [ "nix-command" "flakes" ];
+      extra-experimental-features = ["nix-command" "flakes"];
 
       substituters = [
         "https://cache.nixos.org"

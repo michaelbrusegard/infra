@@ -1,12 +1,18 @@
-{ pkgs, lib, isWsl, ... }:
-
 {
+  pkgs,
+  lib,
+  isWsl,
+  ...
+}: {
   programs.mpv = lib.mkIf (!isWsl) {
     enable = true;
 
     config = {
       profile = "gpu-hq";
-      vo = if pkgs.stdenv.isDarwin then "libmpv" else "gpu-next";
+      vo =
+        if pkgs.stdenv.isDarwin
+        then "libmpv"
+        else "gpu-next";
       hwdec = "auto-safe";
 
       scale = "ewa_lanczossharp";

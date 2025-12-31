@@ -1,6 +1,4 @@
-{ pkgs, ... }:
-
-{
+{pkgs, ...}: {
   launchd.user.agents = {
     ice = {
       command = "open ${pkgs.ice-bar}/Applications/Ice.app";

@@ -1,6 +1,4 @@
-{ ... }:
-
-{
+{...}: {
   imports = [
     ../common/nix.nix
   ];
@@ -9,8 +7,8 @@
     daemonCPUSchedPolicy = "idle";
     daemonIOSchedClass = "idle";
     settings = {
-      allowed-users = [ "@wheel" ];
-      trusted-users = [ "@wheel" ];
+      allowed-users = ["@wheel"];
+      trusted-users = ["@wheel"];
     };
   };
   users.mutableUsers = false;

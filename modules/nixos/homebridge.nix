@@ -1,6 +1,4 @@
-{ config, ... }:
-
-{
+{config, ...}: {
   services.homebridge = {
     enable = true;
     openFirewall = true;
@@ -32,14 +30,14 @@
       availability.enabled = true;
     };
   };
-  users.users.zigbee2mqtt.extraGroups = [ "dialout" ];
+  users.users.zigbee2mqtt.extraGroups = ["dialout"];
 
   services.mosquitto = {
     enable = true;
     listeners = [
       {
         address = "127.0.0.1";
-        acl = [ "pattern readwrite #" ];
+        acl = ["pattern readwrite #"];
         omitPasswordAuth = true;
         settings.allow_anonymous = true;
       }

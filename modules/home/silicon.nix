@@ -1,9 +1,12 @@
-{ pkgs, lib, config, inputs, ... }:
-
-let
-  siliconConfig = inputs.self + "/config/silicon";
-in
 {
+  pkgs,
+  lib,
+  config,
+  inputs,
+  ...
+}: let
+  siliconConfig = inputs.self + "/config/silicon";
+in {
   home.packages = [
     pkgs.silicon
   ];
@@ -16,13 +19,12 @@ in
 
   xdg.configFile."silicon/syntaxes/.keep".text = "";
 
-  home.activation.buildSiliconCache =
-    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if command -v silicon >/dev/null 2>&1; then
-        $DRY_RUN_CMD silicon --build-cache
-        $VERBOSE_ECHO "Silicon cache rebuilt"
-      else
-        $VERBOSE_ECHO "Silicon not yet installed, skipping cache rebuild"
-      fi
-    '';
+  home.activation.buildSiliconCache = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    if command -v silicon >/dev/null 2>&1; then
+      $DRY_RUN_CMD silicon --build-cache
+      $VERBOSE_ECHO "Silicon cache rebuilt"
+    else
+      $VERBOSE_ECHO "Silicon not yet installed, skipping cache rebuild"
+    fi
+  '';
 }

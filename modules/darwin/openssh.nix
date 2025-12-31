@@ -1,6 +1,4 @@
-{ ... }:
-
-{
+{...}: {
   services.openssh = {
     enable = true;
     extraConfig = ''

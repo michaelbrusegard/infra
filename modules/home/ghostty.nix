@@ -1,11 +1,17 @@
-{ pkgs, lib, isWsl, ... }:
-
 {
+  pkgs,
+  lib,
+  isWsl,
+  ...
+}: {
   programs.ghostty = lib.mkIf (!isWsl) {
     enable = true;
     enableZshIntegration = true;
 
-    package = if pkgs.stdenv.isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
+    package =
+      if pkgs.stdenv.isDarwin
+      then pkgs.ghostty-bin
+      else pkgs.ghostty;
 
     installBatSyntax = true;
     installVimSyntax = true;
@@ -13,7 +19,7 @@
     settings = {
       font-family = "SFMono Nerd Font";
       font-size = 12.5;
-      font-feature = [ "-liga" "-dlig" "-calt" ];
+      font-feature = ["-liga" "-dlig" "-calt"];
       unfocused-split-opacity = 0.9;
       window-theme = "dark";
       macos-option-as-alt = true;

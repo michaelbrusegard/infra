@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   gtk.iconCache.enable = true;
   environment = {
     variables = {

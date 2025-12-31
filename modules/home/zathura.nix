@@ -1,6 +1,8 @@
-{ lib, isWsl, ... }:
-
 {
+  lib,
+  isWsl,
+  ...
+}: {
   programs.zathura = lib.mkIf (!isWsl) {
     enable = true;
     options = {

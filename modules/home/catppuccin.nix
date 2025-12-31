@@ -1,6 +1,8 @@
-{ inputs, lib, ... }:
-
 {
+  inputs,
+  lib,
+  ...
+}: {
   imports = [
     inputs.catppuccin.homeModules.catppuccin
   ];

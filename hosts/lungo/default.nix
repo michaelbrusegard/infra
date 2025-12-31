@@ -1,6 +1,4 @@
-{ inputs, ... }:
-
-{
+{inputs, ...}: {
   imports = [
     inputs.self.darwinModules.fonts
     inputs.self.darwinModules.home-manager

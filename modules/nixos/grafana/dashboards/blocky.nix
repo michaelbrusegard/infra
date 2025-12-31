@@ -1,6 +1,4 @@
- { pkgs, ... }:
-
-{
+{pkgs, ...}: {
   services.grafana.provision.dashboards.settings.providers = [
     {
       name = "blocky";

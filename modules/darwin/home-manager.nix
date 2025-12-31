@@ -1,6 +1,10 @@
-{ inputs, users, hostname, isWsl, ... }:
-
 {
+  inputs,
+  users,
+  hostname,
+  isWsl,
+  ...
+}: {
   imports = [
     inputs.home-manager.darwinModules.home-manager
   ];
@@ -13,16 +17,16 @@
     inherit inputs hostname isWsl;
   };
 
-  home-manager.users =
-    builtins.listToAttrs (
-      map (user: {
-        name = user;
-        value = { ... }: {
-          imports = [
-            (inputs.self + "/users/${user}/home.nix")
-            inputs.nix-secrets.homeManagerModules.secrets
-          ];
-        };
-      }) users
-    );
+  home-manager.users = builtins.listToAttrs (
+    map (user: {
+      name = user;
+      value = {...}: {
+        imports = [
+          (inputs.self + "/users/${user}/home.nix")
+          inputs.nix-secrets.homeManagerModules.secrets
+        ];
+      };
+    })
+    users
+  );
 }

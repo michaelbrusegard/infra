@@ -1,6 +1,8 @@
-{ pkgs, inputs, ... }:
-
 {
+  pkgs,
+  inputs,
+  ...
+}: {
   fonts.packages = [
     inputs.apple-fonts.packages.${pkgs.stdenv.hostPlatform.system}.sf-pro
     inputs.apple-fonts.packages.${pkgs.stdenv.hostPlatform.system}.sf-mono

@@ -98,59 +98,62 @@
     };
   };
 
-  outputs = { self, nixpkgs, ... }@inputs:
-    let
-      lib = import ./lib inputs;
-    in
-    {
-      inherit lib;
-      formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
-      packages = lib.forAllSystems (system:
+  outputs = {
+    self,
+    nixpkgs,
+    ...
+  } @ inputs: let
+    lib = import ./lib inputs;
+  in {
+    inherit lib;
+    formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+    packages = lib.forAllSystems (
+      system:
         import ./packages {
           pkgs = nixpkgs.legacyPackages.${system};
         }
-      );
-      overlays = {
-        default = import ./overlays { inherit inputs; };
-      };
-      nixosModules = import ./modules/nixos;
-      darwinModules = import ./modules/darwin;
-      homeManagerModules = import ./modules/home;
-
-      nixosConfigurations = lib.merge [
-        (lib.mkSystem {
-          hostname = "ristretto";
-          system = "x86_64-linux";
-          users = [ "michaelbrusegard" ];
-        })
-
-        (lib.mkSystem {
-          hostname = "macchiato";
-          system = "aarch64-linux";
-          users = [ "ops" ];
-          platform = "raspberrypi";
-        })
-
-        (lib.mkSystem {
-          hostname = "leggero";
-          system = "aarch64-linux";
-          users = [ "ops" ];
-          platform = "raspberrypi";
-        })
-
-        (lib.mkCluster {
-          hostnames = [ "espresso-1" "espresso-2" "espresso-3" ];
-          system = "x86_64-linux";
-          users = [ "ops" ];
-        })
-      ];
-
-      darwinConfigurations = lib.merge [
-        (lib.mkSystem {
-          hostname = "lungo";
-          system = "aarch64-darwin";
-          users = [ "michaelbrusegard" ];
-        })
-      ];
+    );
+    overlays = {
+      default = import ./overlays {inherit inputs;};
     };
+    nixosModules = import ./modules/nixos;
+    darwinModules = import ./modules/darwin;
+    homeManagerModules = import ./modules/home;
+
+    nixosConfigurations = lib.merge [
+      (lib.mkSystem {
+        hostname = "ristretto";
+        system = "x86_64-linux";
+        users = ["michaelbrusegard"];
+      })
+
+      (lib.mkSystem {
+        hostname = "macchiato";
+        system = "aarch64-linux";
+        users = ["ops"];
+        platform = "raspberrypi";
+      })
+
+      (lib.mkSystem {
+        hostname = "leggero";
+        system = "aarch64-linux";
+        users = ["ops"];
+        platform = "raspberrypi";
+      })
+
+      (lib.mkCluster {
+        hostnames = ["espresso-1" "espresso-2" "espresso-3"];
+        system = "x86_64-linux";
+        users = ["ops"];
+      })
+    ];
+
+    darwinConfigurations = lib.merge [
+      (lib.mkSystem {
+        hostname = "lungo";
+        system = "aarch64-darwin";
+        users = ["michaelbrusegard"];
+      })
+    ];
+  };
 }

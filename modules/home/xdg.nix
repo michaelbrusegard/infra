@@ -1,6 +1,8 @@
-{ pkgs, lib, ... }:
-
 {
+  pkgs,
+  lib,
+  ...
+}: {
   xdg = lib.mkIf pkgs.stdenv.isLinux {
     enable = true;
 
@@ -23,10 +25,10 @@
     mimeApps = {
       enable = true;
       defaultApplications = {
-        "application/pdf" = [ "org.pwmt.zathura.desktop" ];
-        "image/png" = [ "imv.desktop" ];
-        "image/jpeg" = [ "imv.desktop" ];
-        "video/mp4" = [ "mpv.desktop" ];
+        "application/pdf" = ["org.pwmt.zathura.desktop"];
+        "image/png" = ["imv.desktop"];
+        "image/jpeg" = ["imv.desktop"];
+        "video/mp4" = ["mpv.desktop"];
       };
     };
   };

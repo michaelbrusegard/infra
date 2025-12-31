@@ -1,6 +1,10 @@
-{ pkgs, lib, config, inputs, ... }:
-
-let
+{
+  pkgs,
+  lib,
+  config,
+  inputs,
+  ...
+}: let
   safeRm = pkgs.writeScriptBin "rm" ''
     #!${pkgs.zsh}/bin/zsh
     if [ $# -eq 1 ] && [[ "$1" != -* ]]; then
@@ -75,8 +79,7 @@ let
 
     process_path "''$1"
   '';
-in
-{
+in {
   programs.zsh = {
     enable = true;
     dotDir = "${config.xdg.configHome}/zsh";
@@ -294,9 +297,8 @@ in
     ];
 
   home.activation = lib.optionalAttrs pkgs.stdenv.isDarwin {
-    createScreenshotsDir =
-      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        $DRY_RUN_CMD mkdir -p "$HOME/Pictures/screenshots"
-      '';
+    createScreenshotsDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      $DRY_RUN_CMD mkdir -p "$HOME/Pictures/screenshots"
+    '';
   };
 }

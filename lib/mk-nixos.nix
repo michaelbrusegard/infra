@@ -1,7 +1,8 @@
-inputs:
-
-{ hostname, system, users }:
-
+inputs: {
+  hostname,
+  system,
+  users,
+}:
 inputs.nixpkgs.lib.nixosSystem {
   inherit system;
 
@@ -21,6 +22,6 @@ inputs.nixpkgs.lib.nixosSystem {
       }
     ]
     ++ map
-      (user: inputs.self + "/users/${user}/nixos.nix")
-      users;
+    (user: inputs.self + "/users/${user}/nixos.nix")
+    users;
 }

@@ -1,6 +1,4 @@
-{ pkgs, ... }:
-
-let
+{pkgs, ...}: let
   yaziPlugins = pkgs.fetchFromGitHub {
     owner = "yazi-rs";
     repo = "plugins";
@@ -35,8 +33,7 @@ let
     rev = "8f37dc5795f165021098b17d797c7b8f510aeca9";
     hash = "sha256-rR7SMTtQYrvQjhkzulDaNH/LAA77UnXkcZ50WwBX2Uw=";
   };
-in
-{
+in {
   programs.yazi = {
     enable = true;
     enableZshIntegration = true;
@@ -51,9 +48,9 @@ in
         show_hidden = true;
         show_symlink = true;
         scrolloff = 8;
-        mouse_events = [ "click" "scroll" "touch" "move" "drag" ];
+        mouse_events = ["click" "scroll" "touch" "move" "drag"];
         title_format = "{cwd}";
-        ratio = [ 1 3 5 ];
+        ratio = [1 3 5];
       };
 
       preview = {
@@ -96,33 +93,102 @@ in
 
     keymap = {
       input.prepend_keymap = [
-        { on = "<esc>"; run = "close"; desc = "Cancel input"; }
+        {
+          on = "<esc>";
+          run = "close";
+          desc = "Cancel input";
+        }
       ];
 
       mgr.prepend_keymap = [
-        { on = "<c-e>"; run = "seek 5"; }
-        { on = "<c-y>"; run = "seek -5"; }
+        {
+          on = "<c-e>";
+          run = "seek 5";
+        }
+        {
+          on = "<c-y>";
+          run = "seek -5";
+        }
 
-        { on = [ "c" "m" ]; run = "plugin chmod"; desc = "Chmod on selected files"; }
-        { on = "M"; run = "plugin mount"; desc = "Mount disk"; }
-        { on = "f"; run = "plugin jump-to-char"; desc = "Jump to char"; }
-        { on = [ "g" "c" ]; run = "plugin vcs-files"; desc = "Show Git file changes"; }
-        { on = "<c-d>"; run = "plugin diff"; desc = "Diff selected with hovered"; }
+        {
+          on = ["c" "m"];
+          run = "plugin chmod";
+          desc = "Chmod on selected files";
+        }
+        {
+          on = "M";
+          run = "plugin mount";
+          desc = "Mount disk";
+        }
+        {
+          on = "f";
+          run = "plugin jump-to-char";
+          desc = "Jump to char";
+        }
+        {
+          on = ["g" "c"];
+          run = "plugin vcs-files";
+          desc = "Show Git file changes";
+        }
+        {
+          on = "<c-d>";
+          run = "plugin diff";
+          desc = "Diff selected with hovered";
+        }
 
-        { on = "T"; run = "plugin toggle-pane max-preview"; desc = "Maximize preview"; }
-        { on = "t"; run = "plugin toggle-pane min-preview"; desc = "Toggle preview"; }
+        {
+          on = "T";
+          run = "plugin toggle-pane max-preview";
+          desc = "Maximize preview";
+        }
+        {
+          on = "t";
+          run = "plugin toggle-pane min-preview";
+          desc = "Toggle preview";
+        }
 
-        { on = "1"; run = "plugin relative-motions 1"; }
-        { on = "2"; run = "plugin relative-motions 2"; }
-        { on = "3"; run = "plugin relative-motions 3"; }
-        { on = "4"; run = "plugin relative-motions 4"; }
-        { on = "5"; run = "plugin relative-motions 5"; }
-        { on = "6"; run = "plugin relative-motions 6"; }
-        { on = "7"; run = "plugin relative-motions 7"; }
-        { on = "8"; run = "plugin relative-motions 8"; }
-        { on = "9"; run = "plugin relative-motions 9"; }
+        {
+          on = "1";
+          run = "plugin relative-motions 1";
+        }
+        {
+          on = "2";
+          run = "plugin relative-motions 2";
+        }
+        {
+          on = "3";
+          run = "plugin relative-motions 3";
+        }
+        {
+          on = "4";
+          run = "plugin relative-motions 4";
+        }
+        {
+          on = "5";
+          run = "plugin relative-motions 5";
+        }
+        {
+          on = "6";
+          run = "plugin relative-motions 6";
+        }
+        {
+          on = "7";
+          run = "plugin relative-motions 7";
+        }
+        {
+          on = "8";
+          run = "plugin relative-motions 8";
+        }
+        {
+          on = "9";
+          run = "plugin relative-motions 9";
+        }
 
-        { on = [ "g" "g" ]; run = "plugin lazygit"; desc = "Run lazygit"; }
+        {
+          on = ["g" "g"];
+          run = "plugin lazygit";
+          desc = "Run lazygit";
+        }
       ];
     };
   };

@@ -1,6 +1,4 @@
-{ users, ... }:
-
-{
+{users, ...}: {
   wsl = {
     enable = true;
     defaultUser = builtins.head users;

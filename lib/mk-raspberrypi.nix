@@ -1,7 +1,8 @@
-inputs:
-
-{ hostname, system, users }:
-
+inputs: {
+  hostname,
+  system,
+  users,
+}:
 inputs.nixos-raspberrypi.lib.nixosSystem {
   inherit system;
 
@@ -21,6 +22,6 @@ inputs.nixos-raspberrypi.lib.nixosSystem {
       }
     ]
     ++ map
-      (user: inputs.self + "/users/${user}/nixos.nix")
-      users;
+    (user: inputs.self + "/users/${user}/nixos.nix")
+    users;
 }

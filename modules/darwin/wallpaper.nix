@@ -1,6 +1,4 @@
-{ ... }:
-
-{
+{...}: {
   system.activationScripts.wallpaper.text = ''
     echo "Setting wallpaper..."
     osascript -e '

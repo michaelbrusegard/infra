@@ -1,6 +1,4 @@
-{ hostname, ... }:
-
-{
+{hostname, ...}: {
   networking = {
     applicationFirewall = {
       enable = true;

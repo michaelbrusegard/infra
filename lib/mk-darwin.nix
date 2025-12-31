@@ -1,7 +1,8 @@
-inputs:
-
-{ hostname, system, users }:
-
+inputs: {
+  hostname,
+  system,
+  users,
+}:
 inputs.nix-darwin.lib.darwinSystem {
   inherit system;
 
@@ -22,6 +23,6 @@ inputs.nix-darwin.lib.darwinSystem {
       }
     ]
     ++ map
-      (user: inputs.self + "/users/${user}/darwin.nix")
-      users;
+    (user: inputs.self + "/users/${user}/darwin.nix")
+    users;
 }

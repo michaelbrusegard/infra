@@ -1,9 +1,11 @@
-{ pkgs, config, ... }:
-
 {
+  pkgs,
+  config,
+  ...
+}: {
   users.users.ops = {
     isNormalUser = true;
-    extraGroups = [ "wheel" ];
+    extraGroups = ["wheel"];
     shell = pkgs.zsh;
     hashedPasswordFile = config.secrets.users.ops.hashedPasswordFile;
   };

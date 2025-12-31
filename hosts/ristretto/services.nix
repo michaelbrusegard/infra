@@ -1,4 +1,8 @@
-{ config, inputs, ... }: {
+{
+  config,
+  inputs,
+  ...
+}: {
   services = {
     kanata = {
       enable = true;
@@ -24,7 +28,7 @@
       enable = true;
       nssmdns4 = true;
       nssmdns6 = true;
-      allowInterfaces = [ "enp6s0" ];
+      allowInterfaces = ["enp6s0"];
       publish = {
         enable = true;
         addresses = true;

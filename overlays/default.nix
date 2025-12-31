@@ -1,6 +1,5 @@
-{ inputs }:
-[
-  (final: prev: import ../packages { pkgs = final; })
+{inputs}: [
+  (final: prev: import ../packages {pkgs = final;})
   inputs.nur.overlays.default
   inputs.yazi.overlays.default
   inputs.catppuccin-themes.overlays.default
@@ -9,10 +8,10 @@
     hyprland = inputs.hyprland.packages.${prev.stdenv.hostPlatform.system}.hyprland;
     xdg-desktop-portal-hyprland = inputs.hyprland.packages.${prev.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
   })
-  (final: prev: { wezterm = inputs.wezterm.packages.${prev.stdenv.hostPlatform.system}.default; })
-  (final: prev: { openthread-border-router = inputs.nixpkgs-otbr.legacyPackages.${prev.stdenv.hostPlatform.system}.openthread-border-router; })
-  (final: prev:
-    let
+  (final: prev: {wezterm = inputs.wezterm.packages.${prev.stdenv.hostPlatform.system}.default;})
+  (final: prev: {openthread-border-router = inputs.nixpkgs-otbr.legacyPackages.${prev.stdenv.hostPlatform.system}.openthread-border-router;})
+  (
+    final: prev: let
       system = prev.stdenv.hostPlatform.system;
       pkgs-unstable = import inputs.nixpkgs-unstable {
         inherit system;

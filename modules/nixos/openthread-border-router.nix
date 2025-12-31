@@ -1,6 +1,8 @@
-{ pkgs, nixpkgs-otbr, ... }:
-
 {
+  pkgs,
+  nixpkgs-otbr,
+  ...
+}: {
   imports = [
     "${nixpkgs-otbr.${pkgs.stdenv.hostPlatform.system}.path}/nixos/modules/services/home-automation/openthread-border-router.nix"
   ];

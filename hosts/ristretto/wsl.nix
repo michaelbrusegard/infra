@@ -1,4 +1,4 @@
-{ userName, ... }: {
+{userName, ...}: {
   wsl = {
     enable = true;
     defaultUser = userName;

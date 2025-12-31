@@ -1,4 +1,8 @@
-{ userName, dankMaterialShell, ... }: {
+{
+  userName,
+  dankMaterialShell,
+  ...
+}: {
   imports = [
     dankMaterialShell.nixosModules.greeter
   ];

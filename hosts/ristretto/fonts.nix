@@ -1,4 +1,10 @@
-{ pkgs, system, apple-fonts, apple-emoji-linux, ... }: {
+{
+  pkgs,
+  system,
+  apple-fonts,
+  apple-emoji-linux,
+  ...
+}: {
   fonts = {
     packages = with pkgs; [
       apple-fonts.packages.${system}.sf-pro
@@ -12,10 +18,10 @@
     ];
     fontconfig = {
       defaultFonts = {
-        serif = [ "SFPro" ];
-        sansSerif = [ "SFPro" ];
-        monospace = [ "SFMono" ];
-        emoji = [ "Apple Color Emoji" ];
+        serif = ["SFPro"];
+        sansSerif = ["SFPro"];
+        monospace = ["SFMono"];
+        emoji = ["Apple Color Emoji"];
       };
       hinting.enable = true;
       antialias = true;

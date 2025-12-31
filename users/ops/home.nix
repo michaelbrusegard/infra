@@ -1,6 +1,4 @@
-{ inputs, ... }:
-
-{
+{inputs, ...}: {
   imports = [
     inputs.self.homeManagerModules.cli-base
     inputs.self.homeManagerModules.git

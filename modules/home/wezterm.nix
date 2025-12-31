@@ -1,9 +1,10 @@
-{ config, inputs, ... }:
-
-let
-  weztermConfig = inputs.self + "/config/wezterm";
-in
 {
+  config,
+  inputs,
+  ...
+}: let
+  weztermConfig = inputs.self + "/config/wezterm";
+in {
   programs.wezterm = {
     enable = true;
     enableZshIntegration = true;

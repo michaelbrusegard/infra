@@ -1,6 +1,4 @@
- { ... }:
-
-{
+{...}: {
   services.prometheus = {
     enable = true;
 

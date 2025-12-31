@@ -1,6 +1,4 @@
-{ ... }:
-
-{
+{...}: {
   imports = [
     ../common/nix.nix
   ];
@@ -11,8 +9,8 @@
       Minute = 0;
     };
     settings = {
-      allowed-users = [ "@admin" ];
-      trusted-users = [ "@admin" ];
+      allowed-users = ["@admin"];
+      trusted-users = ["@admin"];
     };
     linux-builder = {
       enable = true;

@@ -1,49 +1,54 @@
-{ pkgs, lib, inputs, isWsl, ... }:
-
 {
-  home.packages = lib.mkIf (!isWsl) (with pkgs; [
-    element-desktop
-    slack
-    protonmail-desktop
-    transmission_4
-    inkscape-with-extensions
-    audacity
-  ]
-  ++ lib.optionals pkgs.stdenv.isLinux [
-    imv
-    breaktimer
-    legcord
-    obsidian
-    proton-pass
-    libreoffice-fresh
-    scribus
-    gimp-with-plugins
-    blender
-    inputs.affinity.packages.x86_64-linux.v3
-    davinci-resolve
-    orca-slicer
-    bambu-studio
-    betaflight-configurator
-    qgis
-    notion-app-enhanced
-  ]
-  ++ lib.optionals pkgs.stdenv.isDarwin [
-    ice-bar
-    brewCasks.raycast
-    brewCasks.linearmouse
-    brewCasks.breaktimer
-    brewCasks.legcord
-    brewCasks.obsidian
-    brewCasks.proton-pass
-    brewCasks.protonvpn
-    libreoffice-bin
-    brewCasks.gimp
-    brewCasks.blender
-    brewCasks.affinity
-    brewCasks.orcaslicer
-    brewCasks.bambu-studio
-    brewCasks.betaflight-configurator
-    brewCasks.qgis
-    notion-app
-  ]);
+  pkgs,
+  lib,
+  inputs,
+  isWsl,
+  ...
+}: {
+  home.packages = lib.mkIf (!isWsl) (with pkgs;
+    [
+      element-desktop
+      slack
+      protonmail-desktop
+      transmission_4
+      inkscape-with-extensions
+      audacity
+    ]
+    ++ lib.optionals pkgs.stdenv.isLinux [
+      imv
+      breaktimer
+      legcord
+      obsidian
+      proton-pass
+      libreoffice-fresh
+      scribus
+      gimp-with-plugins
+      blender
+      inputs.affinity.packages.x86_64-linux.v3
+      davinci-resolve
+      orca-slicer
+      bambu-studio
+      betaflight-configurator
+      qgis
+      notion-app-enhanced
+    ]
+    ++ lib.optionals pkgs.stdenv.isDarwin [
+      ice-bar
+      brewCasks.raycast
+      brewCasks.linearmouse
+      brewCasks.breaktimer
+      brewCasks.legcord
+      brewCasks.obsidian
+      brewCasks.proton-pass
+      brewCasks.protonvpn
+      libreoffice-bin
+      brewCasks.gimp
+      brewCasks.blender
+      brewCasks.affinity
+      brewCasks.orcaslicer
+      brewCasks.bambu-studio
+      brewCasks.betaflight-configurator
+      brewCasks.qgis
+      notion-app
+    ]);
 }

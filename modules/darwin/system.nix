@@ -1,6 +1,4 @@
-{ users, ... }:
-
-{
+{users, ...}: {
   system = {
     primaryUser = builtins.head users;
     defaults = {
@@ -179,43 +177,43 @@
       CustomUserPreferences = {
         "com.apple.symbolichotkeys" = {
           AppleSymbolicHotKeys = {
-            "64" = { enabled = false; };
-            "65" = { enabled = false; };
-            "32" = { enabled = false; };
-            "33" = { enabled = false; };
-            "34" = { enabled = false; };
-            "35" = { enabled = false; };
-            "60" = { enabled = false; };
-            "61" = { enabled = false; };
-            "118" = { enabled = false; };
-            "119" = { enabled = false; };
-            "120" = { enabled = false; };
-            "121" = { enabled = false; };
-            "122" = { enabled = false; };
-            "123" = { enabled = false; };
-            "160" = { enabled = false; };
-            "162" = { enabled = false; };
-            "98" = { enabled = false; };
-            "99" = { enabled = false; };
-            "65535" = { enabled = false; };
-            "786528" = { enabled = false; };
-            "36" = { enabled = false; };
-            "37" = { enabled = false; };
-            "179" = { enabled = false; };
-            "190" = { enabled = false; };
-            "191" = { enabled = false; };
-            "57" = { enabled = false; };
-            "58" = { enabled = false; };
-            "59" = { enabled = false; };
-            "79" = { enabled = false; };
-            "80" = { enabled = false; };
-            "81" = { enabled = false; };
-            "82" = { enabled = false; };
-            "146" = { enabled = false; };
-            "147" = { enabled = false; };
-            "52" = { enabled = false; };
-            "53" = { enabled = false; };
-            "54" = { enabled = false; };
+            "64" = {enabled = false;};
+            "65" = {enabled = false;};
+            "32" = {enabled = false;};
+            "33" = {enabled = false;};
+            "34" = {enabled = false;};
+            "35" = {enabled = false;};
+            "60" = {enabled = false;};
+            "61" = {enabled = false;};
+            "118" = {enabled = false;};
+            "119" = {enabled = false;};
+            "120" = {enabled = false;};
+            "121" = {enabled = false;};
+            "122" = {enabled = false;};
+            "123" = {enabled = false;};
+            "160" = {enabled = false;};
+            "162" = {enabled = false;};
+            "98" = {enabled = false;};
+            "99" = {enabled = false;};
+            "65535" = {enabled = false;};
+            "786528" = {enabled = false;};
+            "36" = {enabled = false;};
+            "37" = {enabled = false;};
+            "179" = {enabled = false;};
+            "190" = {enabled = false;};
+            "191" = {enabled = false;};
+            "57" = {enabled = false;};
+            "58" = {enabled = false;};
+            "59" = {enabled = false;};
+            "79" = {enabled = false;};
+            "80" = {enabled = false;};
+            "81" = {enabled = false;};
+            "82" = {enabled = false;};
+            "146" = {enabled = false;};
+            "147" = {enabled = false;};
+            "52" = {enabled = false;};
+            "53" = {enabled = false;};
+            "54" = {enabled = false;};
           };
         };
         "com.apple.driver.AppleBluetoothMultitouch.trackpad" = {

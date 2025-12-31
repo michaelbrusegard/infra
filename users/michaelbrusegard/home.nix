@@ -1,8 +1,5 @@
-{ inputs, ... }:
-
-{
-imports =
-  [
+{inputs, ...}: {
+  imports = [
     inputs.self.homeManagerModules.browser
     inputs.self.homeManagerModules.catppuccin
     inputs.self.homeManagerModules.cli-base

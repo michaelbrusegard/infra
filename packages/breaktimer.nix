@@ -1,5 +1,4 @@
-{ pkgs }:
-
+{pkgs}:
 pkgs.appimageTools.wrapType2 {
   pname = "breaktimer";
   version = "2.0.1";
@@ -15,7 +14,7 @@ pkgs.appimageTools.wrapType2 {
       desktopName = "BreakTimer";
       exec = "breaktimer %U";
       icon = "breaktimer";
-      categories = [ "Utility" ];
+      categories = ["Utility"];
     }}/share/applications/*.desktop \
       $out/share/applications/breaktimer.desktop
   '';

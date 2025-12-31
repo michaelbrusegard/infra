@@ -1,9 +1,11 @@
-{ pkgs, config, inputs, ... }:
-
-let
-  nvimConfig = inputs.self + "/config/nvim";
-in
 {
+  pkgs,
+  config,
+  inputs,
+  ...
+}: let
+  nvimConfig = inputs.self + "/config/nvim";
+in {
   programs.neovim = {
     enable = true;
 

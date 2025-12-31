@@ -1,6 +1,4 @@
-{ config, ... }:
-
-{
+{config, ...}: {
   services.cloudflare-dyndns = {
     enable = true;
     apiTokenFile = config.secrets.cloudflare-dyndns.apiTokenFile;

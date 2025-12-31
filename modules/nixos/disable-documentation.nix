@@ -1,6 +1,4 @@
-{ ... }:
-
-{
+{...}: {
   documentation = {
     enable = false;
     doc.enable = false;
