@@ -9,7 +9,6 @@ return {
   { import = 'lazyvim.plugins.extras.lang.kotlin' },
   { import = 'lazyvim.plugins.extras.lang.markdown' },
   { import = 'lazyvim.plugins.extras.lang.nix' },
-  { import = 'lazyvim.plugins.extras.lang.dotnet' },
   { import = 'lazyvim.plugins.extras.lang.rust' },
   { import = 'lazyvim.plugins.extras.lang.tailwind' },
   { import = 'lazyvim.plugins.extras.lang.tex' },
