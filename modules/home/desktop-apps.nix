@@ -10,7 +10,6 @@
       element-desktop
       slack
       protonmail-desktop
-      transmission_4
       inkscape-with-extensions
       audacity
     ]
@@ -19,6 +18,7 @@
       breaktimer
       legcord
       obsidian
+      transmission_4
       proton-pass
       libreoffice-fresh
       scribus
@@ -39,6 +39,7 @@
       brewCasks.breaktimer
       brewCasks.legcord
       brewCasks.obsidian
+      brewCasks.transmission
       brewCasks.proton-pass
       brewCasks.protonvpn
       libreoffice-bin

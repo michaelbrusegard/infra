@@ -28,7 +28,7 @@
 
         # Application rules
         ${pkgs.yabai}/bin/yabai -m rule --add app="^(Calculator|System Settings|Archive Utility)$" manage=off
-        ${pkgs.yabai}/bin/yabai -m rule --add app="^(Brave)$" space=2
+        ${pkgs.yabai}/bin/yabai -m rule --add app="^(Brave Browser)$" space=2
         ${pkgs.yabai}/bin/yabai -m rule --add app="^(Proton Mail|Proton Pass)$" space=3
         ${pkgs.yabai}/bin/yabai -m rule --add app="^(Notes|Obsidian|LibreOffice|Notion)$" space=4
         ${pkgs.yabai}/bin/yabai -m rule --add app="^(Messages|FaceTime|Element|Legcord|Slack)$" space=5
