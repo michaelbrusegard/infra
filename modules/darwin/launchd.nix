@@ -7,6 +7,13 @@
         ProcessType = "Interactive";
       };
     };
+    raycast = {
+      command = "open ${pkgs.brewCasks.raycast}/Applications/Raycast.app";
+      serviceConfig = {
+        RunAtLoad = true;
+        ProcessType = "Interactive";
+      };
+    };
     yabaiindicator = {
       command = "open -a YabaiIndicator";
       serviceConfig = {
