@@ -11,6 +11,7 @@
   disable-documentation = import ./disable-documentation.nix;
   dms-greeter = import ./dms-greeter.nix;
   dms-shell = import ./dms-shell.nix;
+  fonts = import ./fonts.nix;
   grafana = import ./grafana.nix;
   grafana-blocky = import ./grafana-dashboard-blocky.nix;
   gtk = import ./gtk.nix;

@@ -4,7 +4,6 @@
     openFirewall = true;
     startWhenNeeded = true;
     inherit (config.secrets.openssh) ports;
-    authorizedKeys.keys = config.secrets.openssh.authorizedKeys.keys;
     authorizedKeysInHomedir = false;
     settings = {
       PasswordAuthentication = false;
