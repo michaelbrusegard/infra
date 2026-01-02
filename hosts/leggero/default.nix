@@ -18,12 +18,11 @@
     inputs.self.nixosModules.networking
     inputs.self.nixosModules.nix
     inputs.self.nixosModules.openssh
+    inputs.self.nixosModules.openthread-border-router
     inputs.self.nixosModules.prometheus
     inputs.self.nixosModules.security
     ./hardware.nix
     ./networking.nix
-    ./openthread-border-router.nix
-    ./home-assistant.nix
   ];
 
   system.stateVersion = "25.11";
