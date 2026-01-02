@@ -9,13 +9,6 @@
   dmsConfig = inputs.self + "/config/dms";
 in {
   home = {
-    packages = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) (with pkgs; [
-      polkit_gnome
-      grim
-      slurp
-      wf-recorder
-    ]);
-
     sessionVariables = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
       QT_QPA_PLATFORM = "wayland";
       ELECTRON_OZONE_PLATFORM_HINT = "auto";
