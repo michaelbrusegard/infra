@@ -1,7 +1,4 @@
-{
-  nixpkgs-otbr,
-  ...
-}: {
+{nixpkgs-otbr, ...}: {
   imports = [
     "${nixpkgs-otbr}/nixos/modules/services/home-automation/openthread-border-router.nix"
   ];
