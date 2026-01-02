@@ -17,13 +17,14 @@ inputs: let
     hostnames,
     system,
     users,
+    hostConfig,
     platform ? null,
   }:
     merge (
       map
       (hostname:
         mkSystem {
-          inherit hostname system users platform;
+          inherit hostname system users platform hostConfig;
         })
       hostnames
     );

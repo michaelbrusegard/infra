@@ -143,6 +143,7 @@
         hostnames = ["espresso-1" "espresso-2" "espresso-3"];
         system = "x86_64-linux";
         users = ["ops"];
+        hostConfig = "espresso";
       })
     ];
 
