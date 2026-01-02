@@ -1,13 +1,12 @@
 {
-  pkgs,
-  inputs,
   lib,
   isWsl,
+  inputs,
   ...
 }: {
   # TODO: Remove when updating to nixpkgs 26.05
   imports = [
-    "${inputs.nixpkgs-unstable.${pkgs.stdenv.hostPlatform.system}.path}/nixos/modules/services/display-managers/dms-greeter.nix"
+    "${inputs.nixpkgs-unstable}/nixos/modules/programs/wayland/dms-shell.nix"
   ];
 
   programs.dms-shell = lib.mkIf (!isWsl) {

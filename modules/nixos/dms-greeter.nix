@@ -5,7 +5,7 @@
 }: {
   # TODO: Remove when updating to nixpkgs 26.05
   imports = [
-    "${inputs.nixpkgs-unstable.${pkgs.stdenv.hostPlatform.system}.path}/nixos/modules/services/display-managers/dms-greeter.nix"
+    "${inputs.nixpkgs-unstable}/nixos/modules/services/display-managers/dms-greeter.nix"
   ];
 
   environment.systemPackages = [pkgs.apple-cursor];
