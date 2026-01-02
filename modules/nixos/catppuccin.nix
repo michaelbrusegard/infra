@@ -1,4 +1,4 @@
-{inputs, ...}: {
+{config, inputs, ...}: {
   imports = [
     inputs.catppuccin.nixosModules.catppuccin
   ];
@@ -7,5 +7,6 @@
     accent = "blue";
     flavor = "mocha";
     cache.enable = true;
+    tty.enable = !config._module.check;
   };
 }

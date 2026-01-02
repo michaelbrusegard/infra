@@ -32,4 +32,4 @@ jobs:
         run: nix run nixpkgs#deadnix -- --fail .
 
       - name: Validate flake
-        run: nix flake check --no-build
+        run: nix flake check
