@@ -1,6 +1,6 @@
 {
   inputs,
-  lib,
+  config,
   ...
 }: {
   imports = [
@@ -12,6 +12,9 @@
     accent = "blue";
     flavor = "mocha";
 
-    mpv.enable = lib.mkForce false;
+    mpv.enable = false;
+    fzf.enable = !config._module.check;
+    zsh.enable = !config._module.check;
+    bat.enable = !config._module.check;
   };
 }
