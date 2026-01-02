@@ -211,14 +211,6 @@ in {
       toDnxhr
     ];
 
-    pointerCursor = lib.mkIf (!pkgs.stdenv.isDarwin) {
-      package = pkgs.apple-cursor;
-      name = "macOS";
-      size = 24;
-      gtk.enable = true;
-      x11.enable = true;
-    };
-
     shellAliases =
       {
         nrs =
@@ -230,8 +222,8 @@ in {
           then "sudo darwin-rebuild test --flake $HOME/Projects/nix-config#$(hostname)"
           else "sudo nixos-rebuild test --flake $HOME/Projects/nix-config#$(hostname)";
         ngc = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
-        nfc = "nix flake check";
-        nfu = "nix flake update";
+        nfc = "nix flake check $HOME/Projects/nix-config";
+        nfu = "nix flake update $HOME/Projects/nix-config";
 
         dl = "cd $HOME/Downloads";
         dt = "cd $HOME/Desktop";
