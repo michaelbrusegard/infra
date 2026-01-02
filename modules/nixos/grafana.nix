@@ -7,7 +7,7 @@
 
       security = {
         admin_user = "admin";
-        admin_password = config.sops.secrets.grafana.settings.security.adminPasswordFile;
+        admin_password = config.secrets.grafana.settings.security.adminPasswordFile;
       };
 
       users.default_language = "en-GB";
