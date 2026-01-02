@@ -86,7 +86,7 @@ in {
       })
 
       require("yaziline"):setup({
-        color = "${pkgs.catppuccin.mocha.teal}",
+        color = "#94e2d5",
         separator_style = "curvy",
       })
     '';

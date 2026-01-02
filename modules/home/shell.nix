@@ -89,7 +89,7 @@ in {
       enableCompletion = true;
       autosuggestion = {
         enable = true;
-        highlight = "fg=${pkgs.catppuccin.mocha.overlay0}";
+        highlight = "fg=#6c7086";
       };
       syntaxHighlighting.enable = true;
       history = {

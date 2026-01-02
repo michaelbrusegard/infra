@@ -70,9 +70,6 @@
       url = "github:catppuccin/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    catppuccin-themes = {
-      url = "github:abhinandh-s/catppuccin-nix";
-    };
     yazi = {
       url = "github:sxyazi/yazi";
       inputs.nixpkgs.follows = "nixpkgs-unstable";

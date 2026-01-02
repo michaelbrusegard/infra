@@ -5,7 +5,6 @@ in
     (_: prev: import ../packages {pkgs = prev;})
     inputs.nur.overlays.default
     inputs.yazi.overlays.default
-    inputs.catppuccin-themes.overlays.default
     inputs.brew-nix.overlays.default
     (_: prev: {
       inherit (inputs.hyprland.packages.${prev.stdenv.hostPlatform.system}) hyprland;
