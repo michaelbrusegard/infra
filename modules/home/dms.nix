@@ -22,8 +22,7 @@ in {
     QT_QPA_PLATFORMTHEME_QT6 = "gtk3";
   };
 
-  xdg.configFile."DankMaterialShell".source =
-    lib.mkIf (pkgs.stdenv.isLinux && !isWsl)
-    config.lib.file.mkOutOfStoreSymlink
-    dmsConfig;
+  xdg.configFile = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+    "DankMaterialShell".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
+  };
 }
