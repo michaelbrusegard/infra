@@ -26,6 +26,7 @@ in
         };
       in {
         inherit (pkgs-unstable) quickshell;
+        inherit (pkgs-unstable) dgop;
         inherit (pkgs-unstable) yabai;
         inherit (pkgs-unstable) jankyborders;
         inherit (pkgs-unstable) neovim;
