@@ -14,7 +14,6 @@
 
     mpv.enable = false;
     fzf.enable = !config._module.check;
-    zsh.enable = !config._module.check;
     bat.enable = !config._module.check;
   };
 }
