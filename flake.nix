@@ -117,9 +117,9 @@
     overlays = {
       default = import ./overlays {inherit inputs;};
     };
-    nixosModules = import ./modules/nixos;
-    darwinModules = import ./modules/darwin;
-    homeManagerModules = import ./modules/home;
+    nixosModules = lib.exportModules ./modules/nixos;
+    darwinModules = lib.exportModules ./modules/darwin;
+    homeManagerModules = lib.exportModules ./modules/home;
 
     nixosConfigurations = lib.merge [
       (lib.mkSystem {
