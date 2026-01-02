@@ -1,6 +1,6 @@
-{nixpkgs-otbr, ...}: {
+{inputs, ...}: {
   imports = [
-    "${nixpkgs-otbr}/nixos/modules/services/home-automation/openthread-border-router.nix"
+    "${inputs.nixpkgs-otbr}/nixos/modules/services/home-automation/openthread-border-router.nix"
   ];
   services.matter-server.enable = true;
   services.openthread-border-router = {
