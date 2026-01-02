@@ -276,7 +276,11 @@ in {
     sessionVariables = {
       PAGER = "moor";
       SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
+    }
+    // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? googleGenerativeAiApiKeyFile) {
       GOOGLE_GENERATIVE_AI_API_KEY = "$( [ -f ${config.secrets.keys.googleGenerativeAiApiKeyFile} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.keys.googleGenerativeAiApiKeyFile} )";
+    }
+    // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? tauriSigningPrivateKeyFile) {
       TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.keys.tauriSigningPrivateKeyFile} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.keys.tauriSigningPrivateKeyFile} )";
     };
 
