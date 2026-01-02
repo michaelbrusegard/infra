@@ -9,6 +9,7 @@ inputs.nixos-raspberrypi.lib.nixosSystem {
   specialArgs = {
     inherit inputs hostname users;
     inherit (inputs) nixos-raspberrypi;
+    isWsl = false;
   };
 
   modules =
