@@ -1,7 +1,7 @@
 {
   avahi = import ./avahi.nix;
-  blocky = import ./blocky;
-  blocky-prometheus = import ./blocky/prometheus.nix;
+  blocky = import ./blocky.nix;
+  blocky-prometheus = import ./blocky-prometheus.nix;
   bluetooth = import ./bluetooth.nix;
   boot = import ./boot.nix;
   caddy = import ./caddy.nix;
@@ -11,8 +11,8 @@
   disable-documentation = import ./disable-documentation.nix;
   dms-greeter = import ./dms-greeter.nix;
   dms-shell = import ./dms-shell.nix;
-  grafana = import ./grafana;
-  grafana-blocky = import ./grafana/dashboards/blocky.nix;
+  grafana = import ./grafana.nix;
+  grafana-blocky = import ./grafana-dashboard-blocky.nix;
   gtk = import ./gtk.nix;
   homebridge = import ./homebridge.nix;
   home-manager = import ./home-manager.nix;
