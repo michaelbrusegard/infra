@@ -1,9 +1,11 @@
 {
   pkgs,
   inputs,
+  isWsl,
+  lib,
   ...
 }: {
-  fonts = {
+  fonts = lib.mkIf (!isWsl) {
     packages = with pkgs; [
       inputs.apple-fonts.packages.${pkgs.stdenv.hostPlatform.system}.sf-pro
       inputs.apple-fonts.packages.${pkgs.stdenv.hostPlatform.system}.sf-mono

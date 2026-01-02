@@ -1,5 +1,10 @@
-{pkgs, ...}: {
-  xdg = {
+{
+  lib,
+  pkgs,
+  isWsl,
+  ...
+}: {
+  xdg = lib.mkIf (!isWsl) {
     portal = {
       extraPortals = [
         pkgs.xdg-desktop-portal-gtk

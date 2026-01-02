@@ -1,6 +1,8 @@
 {
+  lib,
   pkgs,
   inputs,
+  isWsl,
   ...
 }: {
   # TODO: Remove when updating to nixpkgs 26.05
@@ -8,9 +10,9 @@
     "${inputs.nixpkgs-unstable}/nixos/modules/services/display-managers/dms-greeter.nix"
   ];
 
-  environment.systemPackages = [pkgs.apple-cursor];
+  environment.systemPackages = lib.mkIf (!isWsl) [pkgs.apple-cursor];
 
-  services.displayManager.dms-greeter = {
+  services.displayManager.dms-greeter = lib.mkIf (!isWsl) {
     enable = true;
     compositor.name = "hyprland";
     compositor.customConfig = ''

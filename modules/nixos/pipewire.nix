@@ -1,5 +1,9 @@
-_: {
-  services.pipewire = {
+{
+  lib,
+  isWsl,
+  ...
+}: {
+  services.pipewire = lib.mkIf (!isWsl) {
     enable = true;
     jack.enable = true;
     pulse.enable = true;

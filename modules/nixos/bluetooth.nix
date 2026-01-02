@@ -1,3 +1,7 @@
-_: {
-  hardware.bluetooth.enable = true;
+{
+  lib,
+  isWsl,
+  ...
+}: {
+  hardware.bluetooth.enable = !isWsl;
 }

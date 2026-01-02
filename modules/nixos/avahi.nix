@@ -1,5 +1,9 @@
-_: {
-  services.avahi = {
+{
+  lib,
+  isWsl,
+  ...
+}: {
+  services.avahi = lib.mkIf (!isWsl) {
     enable = true;
     nssmdns4 = true;
     nssmdns6 = true;
