@@ -10,4 +10,5 @@
     inherit (config.secrets.users.michaelbrusegard) hashedPasswordFile;
     openssh.authorizedKeys.keys = config.secrets.users.michaelbrusegard.openssh.authorizedKeys.keys;
   };
+  programs.zsh.enable = true;
 }

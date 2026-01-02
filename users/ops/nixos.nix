@@ -10,4 +10,5 @@
     inherit (config.secrets.users.ops) hashedPasswordFile;
     openssh.authorizedKeys.keys = config.secrets.users.ops.openssh.authorizedKeys.keys;
   };
+  programs.zsh.enable = true;
 }
