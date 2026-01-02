@@ -4,7 +4,7 @@
   inputs,
   ...
 }: let
-  nvimConfig = inputs.self + "/config/nvim";
+  neovimConfig = inputs.self + "/config/neovim";
 in {
   programs.neovim = {
     enable = true;
@@ -26,7 +26,7 @@ in {
   };
 
   xdg.configFile."nvim".source =
-    config.lib.file.mkOutOfStoreSymlink nvimConfig;
+    config.lib.file.mkOutOfStoreSymlink neovimConfig;
 
   home.packages = with pkgs; [
     tree-sitter

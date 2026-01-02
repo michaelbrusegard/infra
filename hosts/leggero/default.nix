@@ -3,9 +3,11 @@
     inputs.self.nixosModules.avahi
     inputs.self.nixosModules.blocky
     inputs.self.nixosModules.blocky-prometheus
+    inputs.self.nixosModules.bluetooth
     inputs.self.nixosModules.boot
     inputs.self.nixosModules.caddy
     inputs.self.nixosModules.catppuccin
+    inputs.self.nixosModules.console
     inputs.self.nixosModules.cloudflare-dyndns
     inputs.self.nixosModules.disable-documentation
     inputs.self.nixosModules.grafana
@@ -23,4 +25,6 @@
     ./openthread-border-router.nix
     ./home-assistant.nix
   ];
+
+  system.stateVersion = "25.11";
 }

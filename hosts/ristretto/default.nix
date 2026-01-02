@@ -1,18 +1,35 @@
-{...}: {
+{inputs, ...}: {
   imports = [
-    ./boot.nix
-    ./console.nix
-    ./environment.nix
-    ./file-systems.nix
-    ./fonts.nix
+    inputs.self.nixosModules.avahi
+    inputs.self.nixosModules.boot
+    inputs.self.nixosModules.bluetooth
+    inputs.self.nixosModules.catppuccin
+    inputs.self.nixosModules.console
+    inputs.self.nixosModules.dms-greeter
+    inputs.self.nixosModules.dms-shell
+    inputs.self.nixosModules.fonts
+    inputs.self.nixosModules.gtk
+    inputs.self.nixosModules.home-manager
+    inputs.self.nixosModules.hyprland
+    inputs.self.nixosModules.kanata
+    inputs.self.nixosModules.lanzaboote
+    inputs.self.nixosModules.locale
+    inputs.self.nixosModules.location
+    inputs.self.nixosModules.networking
+    inputs.self.nixosModules.nix
+    inputs.self.nixosModules.openssh
+    inputs.self.nixosModules.pipewire
+    inputs.self.nixosModules.plymouth
+    inputs.self.nixosModules.security
+    inputs.self.nixosModules.ssh-agent
+    inputs.self.nixosModules.udisks2
+    inputs.self.nixosModules.virtualisation
+    inputs.self.nixosModules.xdg-portal
     ./hardware.nix
-    ./location.nix
     ./networking.nix
-    ./programs.nix
-    ./services.nix
-    ./swap-devices.nix
-    ./users.nix
-    ./virtualisation.nix
-    ./xdg.nix
   ];
+
+  system.stateVersion = "25.11";
+
+  services.displayManager.dms-greeter.configHome = "/home/michaelbrusegard";
 }

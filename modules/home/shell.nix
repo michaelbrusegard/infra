@@ -114,7 +114,7 @@ in {
             source "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh"
         fi
 
-        source ${inputs.self}/config/zsh/p10k.zsh
+        source ${inputs.self}/config/shell/p10k.zsh
         bindkey -v
         export KEYTIMEOUT=1
         bindkey '^Y' autosuggest-accept
@@ -230,8 +230,8 @@ in {
           then "sudo darwin-rebuild test --flake $HOME/Projects/nix-config#$(hostname)"
           else "sudo nixos-rebuild test --flake $HOME/Projects/nix-config#$(hostname)";
         ngc = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
-        nfc = "nix flake check $HOME/Projects/nix-config";
-        nfu = "nix flake update $HOME/Projects/nix-config";
+        nfc = "nix flake check";
+        nfu = "nix flake update";
 
         dl = "cd $HOME/Downloads";
         dt = "cd $HOME/Desktop";

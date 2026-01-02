@@ -31,6 +31,7 @@
       betaflight-configurator
       qgis
       notion-app-enhanced
+      wootility
     ]
     ++ lib.optionals pkgs.stdenv.isDarwin [
       ice-bar
@@ -51,5 +52,6 @@
       brewCasks.betaflight-configurator
       brewCasks.qgis
       notion-app
+      brewCasks.wootility
     ]);
 }
