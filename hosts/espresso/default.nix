@@ -11,6 +11,7 @@
     inputs.self.nixosModules.security
     ./k3s.nix
     ./networking.nix
+    ./hardware.nix
   ];
 
   system.stateVersion = "25.11";
