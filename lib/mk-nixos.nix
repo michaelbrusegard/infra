@@ -1,5 +1,5 @@
 inputs: {
-  hostname,
+  name,
   system,
   users,
   hostConfig ? null,
@@ -7,13 +7,13 @@ inputs: {
   resolvedHostConfig =
     if hostConfig != null
     then hostConfig
-    else hostname;
+    else name;
 in
   inputs.nixpkgs.lib.nixosSystem {
     inherit system;
 
     specialArgs = {
-      inherit inputs hostname users;
+      inherit inputs name users;
       hostConfig = resolvedHostConfig;
       isWsl = builtins.pathExists /proc/sys/fs/binfmt_misc/WSLInterop;
     };
@@ -22,7 +22,6 @@ in
       [
         (inputs.self + "/hosts/${resolvedHostConfig}")
         {
-          nixpkgs.overlays = [inputs.self.overlays.default];
           imports = [
             inputs.nix-secrets.nixosModules.secrets
           ];

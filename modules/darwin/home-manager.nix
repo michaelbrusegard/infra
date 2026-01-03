@@ -1,7 +1,7 @@
 {
   inputs,
   users,
-  hostname,
+  name,
   isWsl,
   ...
 }: {
@@ -16,7 +16,7 @@
   };
 
   home-manager.extraSpecialArgs = {
-    inherit inputs hostname isWsl;
+    inherit inputs name isWsl;
   };
 
   home-manager.users = builtins.listToAttrs (

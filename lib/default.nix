@@ -13,8 +13,11 @@ inputs: let
   mkSystem =
     import ./mk-system.nix inputs;
 
+  mkNode =
+    import ./mk-node.nix inputs;
+
   mkCluster = {
-    hostnames,
+    names,
     system,
     users,
     hostConfig,
@@ -22,11 +25,11 @@ inputs: let
   }:
     merge (
       map
-      (hostname:
+      (name:
         mkSystem {
-          inherit hostname system users platform hostConfig;
+          inherit name system users platform hostConfig;
         })
-      hostnames
+      names
     );
 
   exportModules = dir: let
@@ -51,6 +54,7 @@ in {
     forAllSystems
     merge
     mkSystem
+    mkNode
     mkCluster
     exportModules
     ;

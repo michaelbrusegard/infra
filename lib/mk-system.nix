@@ -1,5 +1,5 @@
 inputs: {
-  hostname,
+  name,
   system,
   users,
   hostConfig ? null,
@@ -9,17 +9,20 @@ inputs: {
     if inputs.nixpkgs.lib.hasSuffix "-darwin" system
     then
       (import ./mk-darwin.nix inputs) {
-        inherit hostname system users hostConfig;
+        inherit system users hostConfig;
+        hostname = name;
       }
     else if platform == "raspberrypi"
     then
       (import ./mk-raspberrypi.nix inputs) {
-        inherit hostname system users hostConfig;
+        inherit system users hostConfig;
+        hostname = name;
       }
     else
       (import ./mk-nixos.nix inputs) {
-        inherit hostname system users hostConfig;
+        inherit system users hostConfig;
+        hostname = name;
       };
 in {
-  ${hostname} = sys;
+  ${name} = sys;
 }

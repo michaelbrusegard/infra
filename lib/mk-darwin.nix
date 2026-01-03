@@ -1,5 +1,5 @@
 inputs: {
-  hostname,
+  name,
   system,
   users,
   hostConfig ? null,
@@ -7,13 +7,13 @@ inputs: {
   resolvedHostConfig =
     if hostConfig != null
     then hostConfig
-    else hostname;
+    else name;
 in
   inputs.nix-darwin.lib.darwinSystem {
     inherit system;
 
     specialArgs = {
-      inherit inputs users hostname;
+      inherit inputs name users;
       hostConfig = resolvedHostConfig;
       isWsl = false;
     };
@@ -22,7 +22,6 @@ in
       [
         (inputs.self + "/hosts/${resolvedHostConfig}")
         {
-          nixpkgs.overlays = [inputs.self.overlays.default];
           imports = [
             inputs.nix-secrets.darwinModules.secrets
             inputs.brew-nix.darwinModules.default

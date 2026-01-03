@@ -1,5 +1,5 @@
 inputs: {
-  hostname,
+  name,
   system,
   users,
   hostConfig ? null,
@@ -7,13 +7,13 @@ inputs: {
   resolvedHostConfig =
     if hostConfig != null
     then hostConfig
-    else hostname;
+    else name;
 in
   inputs.nixos-raspberrypi.lib.nixosSystem {
     inherit system;
 
     specialArgs = {
-      inherit inputs hostname users;
+      inherit inputs name users;
       hostConfig = resolvedHostConfig;
       inherit (inputs) nixos-raspberrypi;
       isWsl = false;
@@ -23,7 +23,6 @@ in
       [
         (inputs.self + "/hosts/${resolvedHostConfig}")
         {
-          nixpkgs.overlays = [inputs.self.overlays.default];
           imports = [
             inputs.nix-secrets.nixosModules.secrets
           ];

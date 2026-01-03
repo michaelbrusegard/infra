@@ -3,8 +3,6 @@
   config,
   ...
 }: let
-  hostname = config.networking.hostName;
-
   diskIds = {
     "espresso-1" = {
       main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso1";
@@ -21,7 +19,7 @@
     };
   };
 
-  currentDisks = diskIds.${hostname};
+  currentDisks = diskIds.${config.networking.hostName};
 in {
   disko.devices = {
     disk =

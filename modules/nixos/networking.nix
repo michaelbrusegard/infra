@@ -1,6 +1,6 @@
-{hostname, ...}: {
+{name, ...}: {
   networking = {
-    hostName = hostname;
+    hostName = name;
     enableIPv6 = true;
     firewall.enable = true;
   };

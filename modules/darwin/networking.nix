@@ -1,11 +1,11 @@
-{hostname, ...}: {
+{name, ...}: {
   networking = {
     applicationFirewall = {
       enable = true;
       allowSigned = true;
       allowSignedApp = true;
     };
-    hostName = hostname;
-    computerName = hostname;
+    hostName = name;
+    computerName = name;
   };
 }

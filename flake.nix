@@ -120,27 +120,27 @@
 
     nixosConfigurations = lib.merge [
       (lib.mkSystem {
-        hostname = "ristretto";
+        name = "ristretto";
         system = "x86_64-linux";
         users = ["michaelbrusegard"];
       })
 
       (lib.mkSystem {
-        hostname = "macchiato";
+        name = "macchiato";
         system = "aarch64-linux";
         users = ["ops"];
         platform = "raspberrypi";
       })
 
       (lib.mkSystem {
-        hostname = "leggero";
+        name = "leggero";
         system = "aarch64-linux";
         users = ["ops"];
         platform = "raspberrypi";
       })
 
       (lib.mkCluster {
-        hostnames = ["espresso-1" "espresso-2" "espresso-3"];
+        names = ["espresso-1" "espresso-2" "espresso-3"];
         system = "x86_64-linux";
         users = ["ops"];
         hostConfig = "espresso";
@@ -154,5 +154,41 @@
         users = ["michaelbrusegard"];
       })
     ];
+
+    colmenaHive = inputs.colmena.lib.makeHive (lib.merge [
+      {
+        meta = {
+          specialArgs = {
+            inherit inputs;
+          };
+        };
+      }
+      (lib.mkNode {
+        name = "espresso-1";
+        hostConfig = "espresso";
+        system = "x86_64-linux";
+        buildOnTarget = true;
+      })
+      (lib.mkNode {
+        name = "espresso-2";
+        hostConfig = "espresso";
+        system = "x86_64-linux";
+        buildOnTarget = true;
+      })
+      (lib.mkNode {
+        name = "espresso-3";
+        hostConfig = "espresso";
+        system = "x86_64-linux";
+        buildOnTarget = true;
+      })
+      (lib.mkNode {
+        name = "macchiato";
+        system = "aarch64-linux";
+      })
+      (lib.mkNode {
+        name = "leggero";
+        system = "aarch64-linux";
+      })
+    ]);
   };
 }
