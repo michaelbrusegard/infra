@@ -36,67 +36,13 @@ and then do a rebuild.
 - [nix-darwin](https://mynixos.com/nix-darwin/options)
 - [home-manager](https://mynixos.com/home-manager/options)
 
-## Desktop (NixOS)
+## Lungo (Nix-darwin)
 
-Create an installer by downloading the graphical ISO image from
-[NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
-a USB drive
-using the following command:
-
-```sh
-sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
-```
-
-Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
-with the path to your USB drive.
-
-### Screenshot (Desktop)
-
-![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
-
-### Initial Build (Desktop)
-
-After the installation we need a few things to get started to install the
-flake configuration:
-
-- Add `git` to system packages in `/etc/nixos/configuration.nix` and rebuild
-  the system `sudo nixos-rebuild switch`.
-- Add both the SSH key and the age key to the system, so that we can clone
-  the repository and decrypt secrets.
-- Verify that the dotfiles configuration has the same hardware configuration
-  as the `/etc/nixos/hardware-configuration.nix`. Specifically, device file
-  paths and partition UUIDs.
-- Create initial secure keys `nix shell nixpkgs#sbctl --command sudo sbctl
-  create-keys`. For the rest of the secure boot setup read
-  [lanzaboote docs](https://github.com/nix-community/lanzaboote/blob/master/docs/QUICK_START.md).
-  In short, reboot and clear the secure boot keys in the UEFI settings, then
-  enroll the keys using `sbctl enroll-keys --microsoft` and reboot the system.
-
-Then we can install the flake configuration by running the following command:
-
-```sh
-sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#desktop
-```
-
-Afterwards delete the old NixOS configuration files:
-
-```sh
-sudo rm -rf /etc/nixos
-```
-
-And reboot the system:
-
-```sh
-sudo reboot now
-```
-
-## Darwin systems (Nix-darwin)
-
-First install macOS normally by following the default installation guide on
+First install macOS normally by following the default installation on
 the mac. To access the installer hold the power button during boot to access
 recovery options. Then go through all the sections below for the initial setup.
 
-### Screenshot (Darwin)
+### Screenshot (Lungo)
 
 ![Screenshot 2025-05-02 at 15 03 38](https://github.com/user-attachments/assets/381c8dce-f0d0-4a91-b38f-544c30a3209a)
 
@@ -163,10 +109,10 @@ When prompted to install `Determinate Nix`, explicitly say `no`.
 Build the system the first time using the following command:
 
 ```sh
-nix run nix-darwin -- switch --flake $HOME/Developer/dotfiles
+nix run nix-darwin -- switch --flake $HOME/Projects/nix-config#lungo
 ```
 
-Later rebuilds can use the `rebuild` alias.
+Later rebuilds can use the `nrs` alias.
 
 ### Keyboard daemon for kanata
 
@@ -187,6 +133,60 @@ sure the Karabiner DriverKit VirtualHIDDevice is selected as the keyboard.
 The nix configuration should handle the rest, for any problems check out
 [this discussion](https://github.com/jtroo/kanata/discussions/1537) in the
 kanata repository.
+
+## Desktop (NixOS)
+
+Create an installer by downloading the graphical ISO image from
+[NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
+a USB drive
+using the following command:
+
+```sh
+sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
+```
+
+Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
+with the path to your USB drive.
+
+### Screenshot (Desktop)
+
+![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
+
+### Initial Build (Desktop)
+
+After the installation we need a few things to get started to install the
+flake configuration:
+
+- Add `git` to system packages in `/etc/nixos/configuration.nix` and rebuild
+  the system `sudo nixos-rebuild switch`.
+- Add both the SSH key and the age key to the system, so that we can clone
+  the repository and decrypt secrets.
+- Verify that the dotfiles configuration has the same hardware configuration
+  as the `/etc/nixos/hardware-configuration.nix`. Specifically, device file
+  paths and partition UUIDs.
+- Create initial secure keys `nix shell nixpkgs#sbctl --command sudo sbctl
+  create-keys`. For the rest of the secure boot setup read
+  [lanzaboote docs](https://github.com/nix-community/lanzaboote/blob/master/docs/QUICK_START.md).
+  In short, reboot and clear the secure boot keys in the UEFI settings, then
+  enroll the keys using `sbctl enroll-keys --microsoft` and reboot the system.
+
+Then we can install the flake configuration by running the following command:
+
+```sh
+sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#desktop
+```
+
+Afterwards delete the old NixOS configuration files:
+
+```sh
+sudo rm -rf /etc/nixos
+```
+
+And reboot the system:
+
+```sh
+sudo reboot now
+```
 
 ## Windows
 
