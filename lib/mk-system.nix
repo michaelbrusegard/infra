@@ -9,19 +9,16 @@ inputs: {
     if inputs.nixpkgs.lib.hasSuffix "-darwin" system
     then
       (import ./mk-darwin.nix inputs) {
-        inherit system users hostConfig;
-        hostname = name;
+        inherit name system users hostConfig;
       }
     else if platform == "raspberrypi"
     then
       (import ./mk-raspberrypi.nix inputs) {
-        inherit system users hostConfig;
-        hostname = name;
+        inherit name system users hostConfig;
       }
     else
       (import ./mk-nixos.nix inputs) {
-        inherit system users hostConfig;
-        hostname = name;
+        inherit name system users hostConfig;
       };
 in {
   ${name} = sys;
