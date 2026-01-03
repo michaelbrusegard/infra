@@ -1,41 +1,16 @@
 {
   pkgs,
-  modulesPath,
   ...
 }: {
-  imports = [(modulesPath + "/installer/scan/not-detected.nix")];
-
   boot = {
     initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
     kernelModules = ["kvm-amd" "nct6775"];
-    initrd.luks.devices = {
-      "luks-c3fbdb7e-8668-43d3-ae74-1c8dd400f0d8".device = "/dev/disk/by-uuid/c3fbdb7e-8668-43d3-ae74-1c8dd400f0d8";
-      "luks-3326ca76-4cad-48a9-9c88-6aadd59e63fa".device = "/dev/disk/by-uuid/3326ca76-4cad-48a9-9c88-6aadd59e63fa";
-    };
     kernelParams = ["quiet"];
     consoleLogLevel = 3;
     binfmt.emulatedSystems = [
       "aarch64-linux"
     ];
   };
-
-  fileSystems = {
-    "/" = {
-      device = "/dev/disk/by-uuid/803ad914-684f-4789-b283-238fe939db9b";
-      fsType = "ext4";
-    };
-    "/boot" = {
-      device = "/dev/disk/by-uuid/33B3-FDF1";
-      fsType = "vfat";
-      options = ["fmask=0077" "dmask=0077"];
-    };
-  };
-
-  swapDevices = [
-    {
-      device = "/dev/disk/by-uuid/40192a94-2b4e-4f30-b54b-87a3e49a01aa";
-    }
-  ];
 
   hardware = {
     enableRedistributableFirmware = true;

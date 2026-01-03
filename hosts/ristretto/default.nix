@@ -5,6 +5,7 @@
     inputs.self.nixosModules.bluetooth
     inputs.self.nixosModules.catppuccin
     inputs.self.nixosModules.console
+    inputs.self.nixosModules.disko
     inputs.self.nixosModules.dms-greeter
     inputs.self.nixosModules.dms-shell
     inputs.self.nixosModules.fonts
@@ -25,6 +26,7 @@
     inputs.self.nixosModules.udisks2
     inputs.self.nixosModules.virtualisation
     inputs.self.nixosModules.xdg-portal
+    ./disko.nix
     ./hardware.nix
     ./networking.nix
   ];
