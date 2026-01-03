@@ -1,7 +1,6 @@
 {
   inputs,
   users,
-  name,
   isWsl,
   ...
 }: {
