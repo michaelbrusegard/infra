@@ -1,7 +1,7 @@
 _: {
   disko.devices.disk.main = {
     type = "disk";
-    device = "/dev/nvme0n1";
+    device = "/dev/disk/by-id/ata-Samsung_SSD_860_PRO_1TB_S42NNX0R301973E";
     content = {
       type = "gpt";
       partitions = {
