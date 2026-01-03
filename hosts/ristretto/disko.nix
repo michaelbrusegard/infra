@@ -15,7 +15,7 @@
             type = "filesystem";
             format = "vfat";
             mountpoint = "/boot";
-            mountOptions = [ "umask=0077" ];
+            mountOptions = ["umask=0077"];
           };
         };
         root = {
@@ -30,19 +30,19 @@
             passwordFile = "/tmp/secret.key";
             content = {
               type = "btrfs";
-              extraArgs = [ "-f" ];
+              extraArgs = ["-f"];
               subvolumes = {
                 "/root" = {
                   mountpoint = "/";
-                  mountOptions = [ "compress=zstd" "noatime" ];
+                  mountOptions = ["compress=zstd" "noatime"];
                 };
                 "/home" = {
                   mountpoint = "/home";
-                  mountOptions = [ "compress=zstd" "noatime" ];
+                  mountOptions = ["compress=zstd" "noatime"];
                 };
                 "/nix" = {
                   mountpoint = "/nix";
-                  mountOptions = [ "compress=zstd" "noatime" ];
+                  mountOptions = ["compress=zstd" "noatime"];
                 };
                 "/swap" = {
                   mountpoint = "/.swapvol";
