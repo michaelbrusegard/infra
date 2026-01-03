@@ -16,7 +16,7 @@
   };
 
   home-manager.extraSpecialArgs = {
-    inherit inputs name isWsl;
+    inherit inputs isWsl;
   };
 
   home-manager.users = builtins.listToAttrs (
