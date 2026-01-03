@@ -19,6 +19,7 @@ in {
     nvidia = lib.mkIf hasNvidia {
       modesetting.enable = true;
       powerManagement.enable = false;
+      open = false;
     };
   };
 
