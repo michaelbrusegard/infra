@@ -149,7 +149,7 @@
 
     darwinConfigurations = lib.merge [
       (lib.mkSystem {
-        hostname = "lungo";
+        name = "lungo";
         system = "aarch64-darwin";
         users = ["michaelbrusegard"];
       })
