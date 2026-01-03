@@ -3,14 +3,32 @@
   config,
   ...
 }: let
-  hasSataDrives = builtins.elem config.networking.hostName ["espresso-2" "espresso-3"];
+  hostname = config.networking.hostName;
+
+  diskIds = {
+    "espresso-1" = {
+      main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso1";
+    };
+    "espresso-2" = {
+      main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso2";
+      data1 = "/dev/disk/by-id/CHANGE_ME_sata_ssd1_espresso2";
+      data2 = "/dev/disk/by-id/CHANGE_ME_sata_ssd2_espresso2";
+    };
+    "espresso-3" = {
+      main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso3";
+      data1 = "/dev/disk/by-id/CHANGE_ME_sata_ssd1_espresso3";
+      data2 = "/dev/disk/by-id/CHANGE_ME_sata_ssd2_espresso3";
+    };
+  };
+
+  currentDisks = diskIds.${hostname};
 in {
   disko.devices = {
     disk =
       {
         main = {
           type = "disk";
-          device = "/dev/nvme0n1";
+          device = currentDisks.main;
           content = {
             type = "gpt";
             partitions = {
@@ -53,10 +71,6 @@ in {
                         mountpoint = "/nix";
                         mountOptions = ["compress=zstd" "noatime"];
                       };
-                      "/swap" = {
-                        mountpoint = "/.swapvol";
-                        swap.swapfile.size = "8G";
-                      };
                     };
                   };
                 };
@@ -65,10 +79,10 @@ in {
           };
         };
       }
-      // lib.optionalAttrs hasSataDrives {
+      // lib.optionalAttrs (builtins.hasAttr "data1" currentDisks) {
         data1 = {
           type = "disk";
-          device = "/dev/sda";
+          device = currentDisks.data1;
           content = {
             type = "gpt";
             partitions = {
@@ -83,14 +97,10 @@ in {
                   };
                   passwordFile = "/tmp/secret.key";
                   content = {
-                    type = "btrfs";
-                    extraArgs = ["-f"];
-                    subvolumes = {
-                      "/data1" = {
-                        mountpoint = "/data/disk1";
-                        mountOptions = ["compress=zstd" "noatime"];
-                      };
-                    };
+                    type = "filesystem";
+                    format = "ext4";
+                    mountpoint = "/data/disk1";
+                    mountOptions = ["noatime"];
                   };
                 };
               };
@@ -99,7 +109,7 @@ in {
         };
         data2 = {
           type = "disk";
-          device = "/dev/sdb";
+          device = currentDisks.data2;
           content = {
             type = "gpt";
             partitions = {
@@ -114,14 +124,10 @@ in {
                   };
                   passwordFile = "/tmp/secret.key";
                   content = {
-                    type = "btrfs";
-                    extraArgs = ["-f"];
-                    subvolumes = {
-                      "/data2" = {
-                        mountpoint = "/data/disk2";
-                        mountOptions = ["compress=zstd" "noatime"];
-                      };
-                    };
+                    type = "filesystem";
+                    format = "ext4";
+                    mountpoint = "/data/disk2";
+                    mountOptions = ["noatime"];
                   };
                 };
               };
