@@ -4,23 +4,14 @@ This is primarily a guide for myself on how to setup my own systems, feel free
 to copy anything, but do not expect a direct copy of everything to
 work for you.
 
-Make sure to follow the guide for each system step by step and to move over
-an SSH key for GitHub to get started with cloning the repository.
-Then, clone the repository into `~/Developer/dotfiles` using SSH:
-
-```zsh
-git clone git@github.com:michaelbrusegard/dotfiles.git ~/Developer/dotfiles
-```
+Note to self: Make sure to follow the guide for each system step by step.
 
 > [!NOTE]
-> I also maintain a private repository with soft and hard secrets that is added
-> into the repository as a Nix flake.
-> Directly copying the dotfiles will therefore
-> most likely fail since it will fail to fetch the private repository.
-
-Hard secrets are encrypted further inside the private repository using sops.
-To include them in the build, add the age keys to `~/.config/sops/age/keys.txt`
-and then do a rebuild.
+> I also maintain a private repository with a nix flake containing soft
+> and hard secrets. Directly copying the configuration will therefore fail
+> since it will fail to fetch the private repository. The private flake uses
+> Age keys to further encrypt the most critical secrets. To include them in
+> the build, add the age keys to `~/.config/sops/age/keys.txt`
 
 ## Reference links
 
@@ -104,7 +95,16 @@ curl --proto '=https' --tlsv1.2 -sSf -L \
 
 When prompted to install `Determinate Nix`, explicitly say `no`.
 
-### Initial Build (Darwin)
+### Clone nix configuration (Lungo)
+
+Move over the GitHub SSH private key and the Age keys needed.
+Then clone the nix configuration:
+
+```sh
+git clone git@github.com:michaelbrusegard/nix-config.git ~/Projects/nix-config
+```
+
+### Initial Build (Lungo)
 
 Build the system the first time using the following command:
 
@@ -134,9 +134,9 @@ The nix configuration should handle the rest, for any problems check out
 [this discussion](https://github.com/jtroo/kanata/discussions/1537) in the
 kanata repository.
 
-## Desktop (NixOS)
+## Ristretto (NixOS/Windows)
 
-Create an installer by downloading the graphical ISO image from
+Create an installer by downloading the minimal ISO image from
 [NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
 a USB drive
 using the following command:
@@ -148,47 +148,24 @@ sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
 Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
 with the path to your USB drive.
 
-### Screenshot (Desktop)
+### Screenshot (Ristretto)
 
 ![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
-### Initial Build (Desktop)
+### Clone nix configuration (Ristretto)
 
-After the installation we need a few things to get started to install the
-flake configuration:
-
-- Add `git` to system packages in `/etc/nixos/configuration.nix` and rebuild
-  the system `sudo nixos-rebuild switch`.
-- Add both the SSH key and the age key to the system, so that we can clone
-  the repository and decrypt secrets.
-- Verify that the dotfiles configuration has the same hardware configuration
-  as the `/etc/nixos/hardware-configuration.nix`. Specifically, device file
-  paths and partition UUIDs.
-- Create initial secure keys `nix shell nixpkgs#sbctl --command sudo sbctl
-  create-keys`. For the rest of the secure boot setup read
-  [lanzaboote docs](https://github.com/nix-community/lanzaboote/blob/master/docs/QUICK_START.md).
-  In short, reboot and clear the secure boot keys in the UEFI settings, then
-  enroll the keys using `sbctl enroll-keys --microsoft` and reboot the system.
-
-Then we can install the flake configuration by running the following command:
+Move over the GitHub SSH private key and the Age keys needed.
+Then clone the nix configuration:
 
 ```sh
-sudo nixos-rebuild switch --flake $HOME/Developer/dotfiles#desktop
+git clone git@github.com:michaelbrusegard/nix-config.git ~/Projects/nix-config
 ```
 
-Afterwards delete the old NixOS configuration files:
+### Initial Build (Ristretto)
 
-```sh
-sudo rm -rf /etc/nixos
-```
+TO BE CONTINUED
 
-And reboot the system:
-
-```sh
-sudo reboot now
-```
-
-## Windows
+### Create Windows installer
 
 To create the installation ISO for Windows, we use Chris Titus Tech's Windows
 Utility to create a clean telemetry-free ISO that does not require a Microsoft
@@ -212,7 +189,7 @@ to remove telemetry and other unwanted features. When we have the MicroWin
 ISO we can flash a USB drive using Rufus.
 
 > [!INFO]
-> The current desktop setup uses the AMD RAID driver to run the two NVMe
+> The current setup uses the AMD RAID driver to run the two NVMe
 > drives in RAID 0. This is not supported by the Windows installer, so we need
 > to add the driver manually. It can be installed from the Motherboard's
 > website. A guide for adding the driver can be found
@@ -294,8 +271,6 @@ In the Tweaks tab, enable the Standard tweaks plus the following:
 - Remove Home and Gallery from explorer
 - Remove OneDrive
 
-Then set the DNS to Cloudflare.
-
 Under Performance Plan click "Add and Activate Ultimate Performance Profile".
 
 In the Updates tab select "Security Settings" to prevent Windows Updates
@@ -327,7 +302,7 @@ cp $SRC C:\Users\michaelbrusegard\Downloads
 The resulting image can be found in `result/sd-image/`. It is a compressed
 Zstandard archive that can be flashed to an SD card.
 
-### Flashing the SD Card (Leggero)
+## Flashing the SD Card (Leggero)
 
 We need to plug in the SD card and find out what the device path is for
 the SD card.
