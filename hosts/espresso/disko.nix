@@ -4,15 +4,15 @@
   ...
 }: let
   diskIds = {
-    "espresso-1" = {
+    "espresso-0" = {
       main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso1";
     };
-    "espresso-2" = {
+    "espresso-1" = {
       main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso2";
       data1 = "/dev/disk/by-id/CHANGE_ME_sata_ssd1_espresso2";
       data2 = "/dev/disk/by-id/CHANGE_ME_sata_ssd2_espresso2";
     };
-    "espresso-3" = {
+    "espresso-2" = {
       main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso3";
       data1 = "/dev/disk/by-id/CHANGE_ME_sata_ssd1_espresso3";
       data2 = "/dev/disk/by-id/CHANGE_ME_sata_ssd2_espresso3";
