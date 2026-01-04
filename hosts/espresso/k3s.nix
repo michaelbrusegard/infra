@@ -1,4 +1,4 @@
-{config}: {
+{config, ...}: {
   services.k3s = {
     enable = true;
     clusterInit = config.networking.hostName == "espresso-0";
