@@ -4,7 +4,6 @@ _: {
     networkmanager = {
       enable = true;
       wifi.backend = "iwd";
-      dns = "systemd-resolved";
     };
     dhcpcd.enable = false;
     wireguard.enable = true;
