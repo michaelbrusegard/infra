@@ -2,7 +2,7 @@
   "currentThemeName": "cat-blue",
   "customThemeFile": "",
   "matugenScheme": "scheme-tonal-spot",
-  "runUserMatugenTemplates": false,
+  "runUserMatugenTemplates": true,
   "matugenTargetMonitor": "",
   "popupTransparency": 1,
   "dockTransparency": 1,
@@ -107,7 +107,9 @@
   "appLauncherGridColumns": 4,
   "spotlightCloseNiriOverview": true,
   "niriOverviewOverlayEnabled": true,
-  "useAutoLocation": true,
+  "weatherLocation": "Oslo",
+  "weatherCoordinates": "59.9133301,10.7389701",
+  "useAutoLocation": false,
   "weatherEnabled": true,
   "networkPreference": "ethernet",
   "vpnLastConnected": "",
@@ -271,10 +273,6 @@
         },
         {
           "id": "cpuUsage",
-          "enabled": true
-        },
-        {
-          "id": "vpn",
           "enabled": true
         },
         {
