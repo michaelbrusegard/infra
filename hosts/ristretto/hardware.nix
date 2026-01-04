@@ -2,11 +2,17 @@
   boot = {
     initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
     kernelModules = ["kvm-amd" "nct6775"];
+
     kernelParams = ["quiet"];
     consoleLogLevel = 3;
+
     binfmt.emulatedSystems = [
       "aarch64-linux"
     ];
+
+    initrd.luks.devices.crypted = {
+      crypttabExtraOpts = ["tpm2-device=auto"];
+    };
   };
 
   hardware = {
