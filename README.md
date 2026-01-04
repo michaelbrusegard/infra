@@ -174,7 +174,7 @@ For remote installation using the minimal NixOS ISO:
 4. **Post-Install**:
    - Add user Age key to `~/.config/sops/age/keys.txt`).
    - Move over the GitHub SSH private key and clone the nix configuration: `git clone git@github.com:michaelbrusegard/nix-config.git ~/Projects/nix-config`.
-   - For TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+2+7 /dev/disk/by-id/ata-Samsung_SSD_860_PRO_1TB_S42NNX0R301973E`.
+   - For TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+2+7 /dev/sda2`.
 
 ### Create Windows installer
 
