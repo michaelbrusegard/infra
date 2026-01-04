@@ -10,6 +10,7 @@
     fontconfig
     age
     sops
+    ssh-to-age
     uutils-coreutils
     findutils
     gnumake
