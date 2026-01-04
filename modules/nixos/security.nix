@@ -23,5 +23,7 @@ _: {
         value = "524288";
       }
     ];
+
+    tpm2.enable = true;
   };
 }
