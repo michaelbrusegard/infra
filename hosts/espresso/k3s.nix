@@ -1,8 +1,9 @@
-_: {
+{config}: {
   services.k3s = {
     enable = true;
-    clusterInit = true;
+    clusterInit = config.networking.hostName == "espresso-0";
     gracefulNodeShutdown.enable = true;
+    inherit (config.services.k3s) tokenFile;
     extraFlags = [
       "--write-kubeconfig-mode=0644"
     ];
