@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  inputs,
   ...
 }: let
   weztermConfig = "${config.home.homeDirectory}/Projects/nix-config/config/wezterm";

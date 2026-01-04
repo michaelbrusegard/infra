@@ -2,7 +2,6 @@
   pkgs,
   lib,
   config,
-  inputs,
   ...
 }: let
   siliconConfig = "${config.home.homeDirectory}/Projects/nix-config/config/silicon";

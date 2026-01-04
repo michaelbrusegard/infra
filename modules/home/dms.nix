@@ -3,7 +3,6 @@
   lib,
   config,
   isWsl,
-  inputs,
   ...
 }: let
   dmsConfig = "${config.home.homeDirectory}/Projects/nix-config/config/dms";

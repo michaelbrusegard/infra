@@ -1,7 +1,6 @@
 {
   pkgs,
   config,
-  inputs,
   ...
 }: let
   opencodeConfig = "${config.home.homeDirectory}/Projects/nix-config/config/opencode";

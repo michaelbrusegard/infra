@@ -2,7 +2,6 @@
   pkgs,
   lib,
   config,
-  inputs,
   ...
 }: let
   neovimConfig = "${config.home.homeDirectory}/Projects/nix-config/config/neovim";
