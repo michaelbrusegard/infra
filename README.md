@@ -152,18 +152,29 @@ with the path to your USB drive.
 
 ![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
-### Clone nix configuration (Ristretto)
+### Remote Install with nixos-anywhere (Using Minimal NixOS Installer)
 
-Move over the GitHub SSH private key and the Age keys needed.
-Then clone the nix configuration:
+For remote installation using the minimal NixOS ISO:
 
-```sh
-git clone git@github.com:michaelbrusegard/nix-config.git ~/Projects/nix-config
-```
+1. **Prepare the Target**:
+   - Boot desktop into NixOS minimal ISO.
+   - Set password: `passwd` (for SSH access).
+   - Run `ip a` to get the IP address
 
-### Initial Build (Ristretto)
+2. **Prepare Local Files**:
+   - Create LUKS passphrase file: `./secret.key`.
+   - Get host SSH key: `./keys/etc/ssh/ssh_host_ed25519_key` and `./keys/etc/ssh/ssh_host_ed25519_key.pub`
 
-TO BE CONTINUED
+3. **Run Install**:
+
+   ```
+   nixos-anywhere --extra-files ./keys --flake .#ristretto --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
+   ```
+
+4. **Post-Install**:
+   - Add user Age key to `~/.config/sops/age/keys.txt`).
+   - Move over the GitHub SSH private key and clone the nix configuration: `git clone git@github.com:michaelbrusegard/nix-config.git ~/Projects/nix-config`.
+   - For TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+2+7 /dev/disk/by-id/ata-Samsung_SSD_860_PRO_1TB_S42NNX0R301973E`.
 
 ### Create Windows installer
 
