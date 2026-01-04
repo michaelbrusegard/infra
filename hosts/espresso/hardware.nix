@@ -3,10 +3,22 @@
   lib,
   ...
 }: let
-  hasNvidia = builtins.elem config.networking.hostName ["espresso-2" "espresso-3"];
+  hasNvidia = builtins.elem config.networking.hostName ["espresso-1" "espresso-2"];
+  hasDataDisks = builtins.elem config.networking.hostName ["espresso-1" "espresso-2"];
 in {
-  boot.initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
-  boot.kernelModules = ["kvm-amd"];
+  boot = {
+    initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
+    kernelModules = ["kvm-amd"];
+
+    initrd.luks.devices =
+      {
+        crypted.crypttabExtraOpts = ["tpm2-device=auto"];
+      }
+      // lib.optionalAttrs hasDataDisks {
+        crypted-data1.crypttabExtraOpts = ["tpm2-device=auto"];
+        crypted-data2.crypttabExtraOpts = ["tpm2-device=auto"];
+      };
+  };
 
   hardware = {
     enableRedistributableFirmware = true;
