@@ -4,7 +4,7 @@
   inputs,
   ...
 }: let
-  opencodeConfig = inputs.self + "/config/opencode";
+  opencodeConfig = "${config.home.homeDirectory}/Projects/nix-config/config/opencode";
 in {
   home.packages = [
     pkgs.opencode

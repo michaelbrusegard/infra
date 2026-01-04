@@ -2,7 +2,7 @@
   "currentThemeName": "cat-blue",
   "customThemeFile": "",
   "matugenScheme": "scheme-tonal-spot",
-  "runUserMatugenTemplates": true,
+  "runUserMatugenTemplates": false,
   "matugenTargetMonitor": "",
   "popupTransparency": 1,
   "dockTransparency": 1,
@@ -107,7 +107,7 @@
   "appLauncherGridColumns": 4,
   "spotlightCloseNiriOverview": true,
   "niriOverviewOverlayEnabled": true,
-  "useAutoLocation": false,
+  "useAutoLocation": true,
   "weatherEnabled": true,
   "networkPreference": "ethernet",
   "vpnLastConnected": "",
@@ -144,8 +144,7 @@
   "batterySuspendTimeout": 0,
   "batterySuspendBehavior": 0,
   "batteryProfileName": "",
-  "lockBeforeSuspend": false,
-  "preventIdleForMedia": false,
+  "lockBeforeSuspend": true,
   "loginctlLockIntegration": true,
   "fadeToLockEnabled": false,
   "fadeToLockGracePeriod": 5,
@@ -220,6 +219,9 @@
   "screenPreferences": {
     "dock": [
       "all"
+    ],
+    "wallpaper": [
+      "all"
     ]
   },
   "showOnLastDisplay": {
@@ -236,8 +238,18 @@
       ],
       "showOnLastDisplay": true,
       "leftWidgets": [
-        "launcherButton",
-        "workspaceSwitcher",
+        {
+          "id": "controlCenterButton",
+          "enabled": true
+        },
+        {
+          "id": "launcherButton",
+          "enabled": true
+        },
+        {
+          "id": "workspaceSwitcher",
+          "enabled": true
+        },
         {
           "id": "runningApps",
           "enabled": true
@@ -267,10 +279,6 @@
         },
         {
           "id": "network_speed_monitor",
-          "enabled": true
-        },
-        {
-          "id": "controlCenterButton",
           "enabled": true
         },
         {

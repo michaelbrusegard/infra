@@ -1,10 +1,11 @@
 {
   pkgs,
+  lib,
   config,
   inputs,
   ...
 }: let
-  neovimConfig = inputs.self + "/config/neovim";
+  neovimConfig = "${config.home.homeDirectory}/Projects/nix-config/config/neovim";
 in {
   programs.neovim = {
     enable = true;
@@ -27,6 +28,7 @@ in {
 
   xdg.configFile."nvim".source =
     config.lib.file.mkOutOfStoreSymlink neovimConfig;
+  xdg.configFile."nvim/init.lua".enable = lib.mkForce false;
 
   home.packages = with pkgs; [
     tree-sitter

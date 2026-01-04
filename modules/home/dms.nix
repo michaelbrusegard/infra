@@ -6,7 +6,7 @@
   inputs,
   ...
 }: let
-  dmsConfig = inputs.self + "/config/dms";
+  dmsConfig = "${config.home.homeDirectory}/Projects/nix-config/config/dms";
 in {
   home = {
     sessionVariables = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {

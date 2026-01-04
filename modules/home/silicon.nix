@@ -5,7 +5,7 @@
   inputs,
   ...
 }: let
-  siliconConfig = inputs.self + "/config/silicon";
+  siliconConfig = "${config.home.homeDirectory}/Projects/nix-config/config/silicon";
 in {
   home.packages = [
     pkgs.silicon
