@@ -140,7 +140,7 @@
       })
 
       (lib.mkCluster {
-        names = ["espresso-1" "espresso-2" "espresso-3"];
+        names = ["espresso-0" "espresso-1" "espresso-2"];
         system = "x86_64-linux";
         users = ["ops"];
         hostConfig = "espresso";
@@ -164,6 +164,12 @@
         };
       }
       (lib.mkNode {
+        name = "espresso-0";
+        hostConfig = "espresso";
+        system = "x86_64-linux";
+        buildOnTarget = true;
+      })
+      (lib.mkNode {
         name = "espresso-1";
         hostConfig = "espresso";
         system = "x86_64-linux";
@@ -171,12 +177,6 @@
       })
       (lib.mkNode {
         name = "espresso-2";
-        hostConfig = "espresso";
-        system = "x86_64-linux";
-        buildOnTarget = true;
-      })
-      (lib.mkNode {
-        name = "espresso-3";
         hostConfig = "espresso";
         system = "x86_64-linux";
         buildOnTarget = true;
