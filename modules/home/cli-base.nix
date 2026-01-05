@@ -16,5 +16,6 @@
     gnumake
     gnutar
     openssl
+    dos2unix
   ];
 }
