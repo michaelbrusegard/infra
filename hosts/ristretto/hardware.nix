@@ -22,6 +22,7 @@
       enable = true;
       extraPackages = [pkgs.mesa.opencl];
     };
+
     fancontrol = {
       enable = true;
       # Fan 1 is all chassis fans. That includes the fan underneath the power supply, the fan at the back of the case and the two fans on top of the case.
@@ -42,6 +43,8 @@
         AVERAGE=hwmon2/pwm1=1 hwmon2/pwm2=1 hwmon2/pwm3=1
       '';
     };
+
+    wooting.enable = true;
   };
   environment.variables.RUSTICL_ENABLE = "radeonsi";
 

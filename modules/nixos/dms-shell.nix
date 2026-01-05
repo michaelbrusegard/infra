@@ -20,7 +20,6 @@
     enableSystemMonitoring = true;
     enableClipboard = true;
     enableVPN = true;
-    enableDynamicTheming = true;
     enableAudioWavelength = true;
     enableCalendarEvents = true;
   };
