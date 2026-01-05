@@ -7,19 +7,18 @@
 )
 
 (defvar
-  tap-time 200
-  hold-time 200
+  tapping_term 200
 )
 
 (defalias
-  a (tap-hold $tap-time $hold-time a lctl)
-  s (tap-hold $tap-time $hold-time s lalt)
-  d (tap-hold $tap-time $hold-time d lsft)
-  f (tap-hold $tap-time $hold-time f lmet)
-  j (tap-hold $tap-time $hold-time j rmet)
-  k (tap-hold $tap-time $hold-time k rsft)
-  l (tap-hold $tap-time $hold-time l ralt)
-  ; (tap-hold $tap-time $hold-time ; rctl)
+  a (tap-hold-release $tapping_term $tapping_term a lctl)
+  s (tap-hold-release $tapping_term $tapping_term s lalt)
+  d (tap-hold-release $tapping_term $tapping_term d lsft)
+  f (tap-hold-release $tapping_term $tapping_term f lmet)
+  j (tap-hold-release $tapping_term $tapping_term j rmet)
+  k (tap-hold-release $tapping_term $tapping_term k rsft)
+  l (tap-hold-release $tapping_term $tapping_term l ralt)
+  ; (tap-hold-release $tapping_term $tapping_term ; rctl)
 )
 
 (deflayer base
