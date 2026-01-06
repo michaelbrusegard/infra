@@ -100,11 +100,34 @@
         os.editPreset = "nvim-remote";
       };
     };
+    gh = {
+      enable = true;
+      hosts = {
+        "github.com" = {
+          user = "michaelbrusegard";
+        };
+      };
+      extensions = with pkgs; [gh-eco gh-poi gh-dash gh-skyline];
+    };
+
+    gh-dash = {
+      enable = true;
+      settings = {
+        keybindings = {
+          universal = [
+            {
+              key = "g";
+              name = "lazygit";
+              command = "cd {{.RepoPath}} && lazygit";
+            }
+          ];
+        };
+      };
+    };
   };
 
   home.packages = with pkgs; [
     git-filter-repo
     git-lfs
-    gh
   ];
 }
