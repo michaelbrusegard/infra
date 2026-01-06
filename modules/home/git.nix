@@ -114,10 +114,9 @@
       enable = true;
       settings = {
         keybindings = {
-          universal = [
+          prs = [
             {
               key = "g";
-              name = "lazygit";
               command = "cd {{.RepoPath}} && lazygit";
             }
           ];
