@@ -110,19 +110,7 @@
       extensions = with pkgs; [gh-eco gh-poi gh-dash gh-skyline];
     };
 
-    gh-dash = {
-      enable = true;
-      settings = {
-        keybindings = {
-          prs = [
-            {
-              key = "g";
-              command = "cd {{.RepoPath}} && lazygit";
-            }
-          ];
-        };
-      };
-    };
+    gh-dash.enable = true;
   };
 
   home.packages = with pkgs; [
