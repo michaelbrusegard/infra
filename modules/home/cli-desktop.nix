@@ -13,5 +13,6 @@
     cmatrix
     wireguard-tools
     nixos-anywhere
+    rclone
   ];
 }
