@@ -15,7 +15,6 @@
     bun = {
       enable = true;
       enableGitIntegration = true;
-      package = pkgs.bun;
     };
 
     k9s.enable = true;
