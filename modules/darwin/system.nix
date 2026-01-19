@@ -1,4 +1,8 @@
-{users, ...}: {
+{
+  config,
+  users,
+  ...
+}: {
   system = {
     primaryUser = builtins.head users;
     defaults = {
@@ -120,7 +124,7 @@
       screencapture = {
         disable-shadow = true;
         include-date = true;
-        location = "$HOME/Pictures/screenshots";
+        location = "${config.users.users.${config.system.primaryUser}.home}/Pictures/screenshots";
         show-thumbnail = false;
         type = "png";
       };
