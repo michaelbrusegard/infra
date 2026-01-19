@@ -202,16 +202,10 @@ ISO we can flash a USB drive using Rufus.
 > [!INFO]
 > The current setup uses the AMD RAID driver to run the two NVMe
 > drives in RAID 0. This is not supported by the Windows installer, so we need
-> to add the driver manually. It can be installed from the Motherboard's
-> website. A guide for adding the driver can be found
-> [AMD RAID guide](
-> https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/user-guides/56268_1_11.pdf
-> ).
-> It can be found
-> [ASUS motherboard downloads](
+> to add the drivers manually. It can be downloaded from here [ASUS motherboard downloads](
 > https://rog.asus.com/motherboards/rog-crosshair/rog-crosshair-viii-impact-model/helpdesk_download/
-> ).
-> Here
+> ). Create a directory on the installer and add the rcbottom.inf,
+> rcraid.inf and rccfg.inf. They should be loaded in the same order.
 
 After installation go to Windows Update and run it to make sure the
 system is updated.
