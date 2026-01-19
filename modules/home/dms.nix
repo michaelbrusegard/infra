@@ -28,7 +28,8 @@ in {
     "DankMaterialShell".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
   };
 
-  home.packages = with pkgs; lib.optionals (stdenv.isLinux && !isWsl) [
-    kdePackages.qt6ct
-  ];
+  home.packages = with pkgs;
+    lib.optionals (stdenv.isLinux && !isWsl) [
+      kdePackages.qt6ct
+    ];
 }
