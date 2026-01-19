@@ -27,4 +27,8 @@ in {
   xdg.configFile = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
     "DankMaterialShell".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
   };
+
+  home.packages = with pkgs; [
+    kdePackages.qt6ct
+  ];
 }
