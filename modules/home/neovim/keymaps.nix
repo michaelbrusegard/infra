@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{...}: {
   programs.nvf.settings.vim.keymaps = [
     # better up/down
     {
