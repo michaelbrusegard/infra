@@ -14,6 +14,13 @@
     "todoread": true,
     "webfetch": true
   },
+  "mcp": {
+    "ark-ui": {
+      "type": "local",
+      "command": ["npx", "-y", "@ark-ui/mcp"],
+      "enabled": true
+    }
+  },
   "agent": {
     "plan": {
       "tools": {
