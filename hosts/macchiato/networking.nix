@@ -51,8 +51,6 @@ in {
   };
 
   services = {
-    avahi.allowInterfaces = ["br0" "wg0"];
-
     dnsmasq = {
       enable = true;
       settings = {

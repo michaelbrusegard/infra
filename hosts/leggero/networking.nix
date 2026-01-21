@@ -19,5 +19,5 @@
     };
   };
 
-  services.avahi.allowInterfaces = ["end0" "wg0"];
+
 }

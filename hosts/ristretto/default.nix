@@ -1,6 +1,6 @@
 {inputs, ...}: {
   imports = [
-    inputs.self.nixosModules.avahi
+
     inputs.self.nixosModules.boot
     inputs.self.nixosModules.bluetooth
     inputs.self.nixosModules.catppuccin

@@ -1,6 +1,6 @@
 {inputs, ...}: {
   imports = [
-    inputs.self.nixosModules.avahi
+
     inputs.self.nixosModules.blocky
     inputs.self.nixosModules.blocky-prometheus
     inputs.self.nixosModules.bluetooth

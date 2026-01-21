@@ -9,5 +9,5 @@ _: {
     wireguard.enable = true;
   };
 
-  services.avahi.allowInterfaces = ["enp6s0"];
+
 }
