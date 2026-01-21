@@ -17,7 +17,20 @@
   "mcp": {
     "ark-ui": {
       "type": "local",
-      "command": ["npx", "-y", "@ark-ui/mcp"],
+      "command": [
+        "npx",
+        "-y",
+        "@ark-ui/mcp"
+      ],
+      "enabled": true
+    },
+    "shadcn": {
+      "type": "local",
+      "command": [
+        "npx",
+        "shadcn@latest",
+        "mcp"
+      ],
       "enabled": true
     }
   },
