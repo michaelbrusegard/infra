@@ -14,6 +14,7 @@
     inputs.self.nixosModules.grafana-blocky
     inputs.self.nixosModules.homebridge
     inputs.self.nixosModules.home-manager
+    inputs.self.nixosModules.lanzaboote
     inputs.self.nixosModules.locale
     inputs.self.nixosModules.networking
     inputs.self.nixosModules.nix
