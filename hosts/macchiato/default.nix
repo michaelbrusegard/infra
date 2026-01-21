@@ -1,6 +1,5 @@
 {inputs, ...}: {
   imports = [
-
     inputs.self.nixosModules.boot
     inputs.self.nixosModules.blocky
     inputs.self.nixosModules.blocky-prometheus
@@ -10,8 +9,6 @@
     inputs.self.nixosModules.cloudflare-dyndns
     inputs.self.nixosModules.disable-documentation
     inputs.self.nixosModules.disko
-    inputs.self.nixosModules.grafana
-    inputs.self.nixosModules.grafana-blocky
     inputs.self.nixosModules.homebridge
     inputs.self.nixosModules.home-manager
     inputs.self.nixosModules.lanzaboote
