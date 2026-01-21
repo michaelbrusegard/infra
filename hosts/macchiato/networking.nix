@@ -24,13 +24,19 @@ in {
     firewall = {
       enable = true;
 
-      interfaces.br0.allowedTCPPorts = [53 9090 3000 1883 8080 8581];
-      interfaces.br0.allowedUDPPorts = [53 67];
+      interfaces = {
+        br0 = {
+          allowedTCPPorts = [53 9090 3000 1883 8080 8581];
+          allowedUDPPorts = [53 67];
+        };
 
-      interfaces.wg0.allowedTCPPorts = [53 9090 3000 1883 8080 8581];
-      interfaces.wg0.allowedUDPPorts = [53];
+        wg0 = {
+          allowedTCPPorts = [53 9090 3000 1883 8080 8581];
+          allowedUDPPorts = [53];
+        };
 
-      interfaces."${wanInterface}".allowedUDPPorts = [51820];
+        "${wanInterface}".allowedUDPPorts = [51820];
+      };
     };
 
     wireguard.interfaces.wg0 = {
