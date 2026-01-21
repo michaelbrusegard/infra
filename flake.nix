@@ -131,9 +131,8 @@
 
       (lib.mkSystem {
         name = "macchiato";
-        system = "aarch64-linux";
+        system = "x86_64-linux";
         users = ["ops"];
-        platform = "raspberrypi";
       })
 
       (lib.mkSystem {
@@ -187,7 +186,8 @@
       })
       (lib.mkNode {
         name = "macchiato";
-        system = "aarch64-linux";
+        system = "x86_64-linux";
+        buildOnTarget = true;
       })
       (lib.mkNode {
         name = "leggero";
