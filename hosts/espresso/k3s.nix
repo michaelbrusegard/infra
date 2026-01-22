@@ -1,4 +1,5 @@
 {
+  pkgs,
   config,
   lib,
   ...
@@ -19,24 +20,32 @@
     ];
   };
 
-  system.activationScripts.fluxBootstrap.text = ''
-    if kubectl get ns flux-system >/dev/null 2>&1; then
-      echo "Flux already bootstrapped"
-      exit 0
-    fi
+  systemd.services.flux-bootstrap = {
+    after = ["k3s.service"];
+    wantedBy = ["multi-user.target"];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      if ${pkgs.kubectl}/bin/kubectl get ns flux-system >/dev/null 2>&1; then
+        echo "Flux already bootstrapped"
+        exit 0
+      fi
 
-    if ! gh auth status >/dev/null 2>&1; then
-      echo "Flux bootstrap skipped: no GitHub auth found."
-      echo "Run 'gh auth login' then rebuild."
-      exit 0
-    fi
+      if ! ${pkgs.gh}/bin/gh auth status >/dev/null 2>&1; then
+        echo "Flux bootstrap skipped: no GitHub auth found."
+        echo "Run 'gh auth login' then rebuild."
+        exit 0
+      fi
 
-    echo "Bootstrapping Flux..."
-    flux bootstrap github \
-      --owner=michaelbrusegard \
-      --repository=nix-config \
-      --branch=main \
-      --path=gitops/espresso  \
-      --personal
-  '';
+      echo "Bootstrapping Flux..."
+      ${pkgs.fluxcd}/bin/flux bootstrap github \
+        --owner=michaelbrusegard \
+        --repository=nix-config \
+        --branch=main \
+        --path=gitops/espresso \
+        --personal
+    '';
+  };
 }
