@@ -10,6 +10,7 @@
     inputs.self.nixosModules.locale
     inputs.self.nixosModules.networking
     inputs.self.nixosModules.nix
+    inputs.self.nixosModules.openssh
     inputs.self.nixosModules.security
     ./k3s.nix
     ./networking.nix
