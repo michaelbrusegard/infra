@@ -19,11 +19,4 @@
   ];
 
   system.stateVersion = "25.11";
-
-  systemd.tmpfiles.rules = [
-    "d /var/lib/longhorn 0755 root root - -"
-    "h /var/lib/longhorn - - - - +C"
-    "d /var/lib/rancher/k3s 0755 root root - -"
-    "h /var/lib/rancher/k3s - - - - +C"
-  ];
 }

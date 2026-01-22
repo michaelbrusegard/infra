@@ -53,4 +53,12 @@
         --personal
     '';
   };
+
+  # Disable btrfs copy on write for main drive directories used by k3s
+  systemd.tmpfiles.rules = [
+    "d /var/lib/longhorn 0755 root root - -"
+    "h /var/lib/longhorn - - - - +C"
+    "d /var/lib/rancher/k3s 0755 root root - -"
+    "h /var/lib/rancher/k3s - - - - +C"
+  ];
 }
