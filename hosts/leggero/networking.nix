@@ -18,6 +18,4 @@
       inherit (config.secrets.wireguard) peers;
     };
   };
-
-
 }

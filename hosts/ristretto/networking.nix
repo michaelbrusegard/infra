@@ -8,6 +8,4 @@ _: {
     dhcpcd.enable = false;
     wireguard.enable = true;
   };
-
-
 }
