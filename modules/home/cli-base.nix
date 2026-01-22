@@ -7,6 +7,7 @@
     unzip
     unrar
     rsync
+    rclone
     fontconfig
     age
     sops
@@ -17,5 +18,7 @@
     gnutar
     openssl
     dos2unix
+    kubectl
+    fluxcd
   ];
 }
