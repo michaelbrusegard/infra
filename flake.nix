@@ -161,6 +161,7 @@
     colmenaHive = inputs.colmena.lib.makeHive (lib.merge [
       {
         meta = {
+          allowApplyAll = false;
           specialArgs = {
             inherit inputs;
           };
