@@ -158,14 +158,7 @@
     ];
 
     colmena = lib.merge [
-      {
-        meta = {
-          allowApplyAll = false;
-          specialArgs = {
-            inherit inputs;
-          };
-        };
-      }
+      (lib.mkColmenaMeta inputs)
       (lib.mkNode {
         name = "espresso-0";
         hostConfig = "espresso";

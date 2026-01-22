@@ -16,6 +16,9 @@ inputs: let
   mkNode =
     import ./mk-node.nix inputs;
 
+  mkColmenaMeta =
+    import ./mk-colmena-meta.nix inputs;
+
   mkCluster = {
     names,
     system,
@@ -55,6 +58,7 @@ in {
     merge
     mkSystem
     mkNode
+    mkColmenaMeta
     mkCluster
     exportModules
     ;
