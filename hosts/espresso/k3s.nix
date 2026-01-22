@@ -20,6 +20,11 @@
     ];
   };
 
+  environment = {
+    etc."kubeconfig".source = "/etc/rancher/k3s/k3s.yaml";
+    sessionVariables.KUBECONFIG = "/etc/kubeconfig";
+  };
+
   systemd.services.flux-bootstrap = {
     after = ["k3s.service"];
     wantedBy = ["multi-user.target"];
