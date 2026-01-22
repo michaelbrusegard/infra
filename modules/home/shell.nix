@@ -10,15 +10,15 @@
     if [ $# -eq 1 ] && [[ "$1" != -* ]]; then
       exec ${pkgs.trash-cli}/bin/trash "$1"
     fi
-    exec ${pkgs.coreutils}/bin/rm "$@"
+    exec ${pkgs.uutils-coreutils}/bin/rm "$@"
   '';
 
   toDnxhr = pkgs.writeScriptBin "to-dnxhr" ''
     #!${pkgs.zsh}/bin/zsh
     convert_file() {
       local input_file="''$1"
-      local dir="''$(${pkgs.coreutils}/bin/dirname "''$input_file")"
-      local base="''$(${pkgs.coreutils}/bin/basename "''${input_file%.*}")"
+      local dir="''$(${pkgs.uutils-coreutils}/bin/dirname "''$input_file")"
+      local base="''$(${pkgs.uutils-coreutils}/bin/basename "''${input_file%.*}")"
       local output_file="''$dir/''$base"_dnxhr.mov
       if [ -f "''$output_file" ]; then
         echo "Skipping: '''$input_file' (output already exists)"
@@ -279,10 +279,10 @@ in {
         SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
       }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? googleGenerativeAiApiKeyFile) {
-        GOOGLE_GENERATIVE_AI_API_KEY = "$( [ -f ${config.secrets.keys.googleGenerativeAiApiKeyFile} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.keys.googleGenerativeAiApiKeyFile} )";
+        GOOGLE_GENERATIVE_AI_API_KEY = "$( [ -f ${config.secrets.keys.googleGenerativeAiApiKeyFile} ] && ${pkgs.uutils-coreutils}/bin/cat ${config.secrets.keys.googleGenerativeAiApiKeyFile} )";
       }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? tauriSigningPrivateKeyFile) {
-        TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.keys.tauriSigningPrivateKeyFile} ] && ${pkgs.coreutils}/bin/cat ${config.secrets.keys.tauriSigningPrivateKeyFile} )";
+        TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.keys.tauriSigningPrivateKeyFile} ] && ${pkgs.uutils-coreutils}/bin/cat ${config.secrets.keys.tauriSigningPrivateKeyFile} )";
       };
 
     sessionPath =
