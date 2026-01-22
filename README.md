@@ -388,6 +388,11 @@ again and assign a static IP to each node from the router.
 
 ### Bootstrap with NixOS Anywhere
 
+```sh
+nixos-anywhere --extra-files ./keys --flake .#espresso-1 --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@10.0.186.19
+
+```
+
 First, build the appropriate bootstrap ISO:
 
 ```sh
