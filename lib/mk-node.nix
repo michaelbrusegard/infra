@@ -19,7 +19,7 @@ inputs: {
         inputs.nix-secrets.nixosModules.secrets
         (inputs.self + "/hosts/${hostConfig}")
       ]
-      ++ map (u: inputs.self + "/users/${u}/nixos.nix") users;
+      ++ map (user: inputs.self + "/users/${user}/nixos.nix") users;
 
     _module.args = {
       hostname = name;
