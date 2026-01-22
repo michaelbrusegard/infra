@@ -1,15 +1,15 @@
 inputs: {
   meta = {
     allowApplyAll = false;
-    nixpkgs = system:
-      import inputs.nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-        overlays = [inputs.self.overlays.default];
+    nixpkgs = import inputs.nixpkgs {
+      system = builtins.currentSystem;
+      config = {
+        allowUnfree = true;
       };
+      overlays = [inputs.self.overlays.default];
+    };
     specialArgs = {
       inherit inputs;
     };
   };
 }
-

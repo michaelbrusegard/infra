@@ -131,20 +131,20 @@
       (lib.mkSystem {
         name = "macchiato";
         system = "x86_64-linux";
-        users = ["ops"];
+        users = ["admin" "deploy"];
       })
 
       (lib.mkSystem {
         name = "leggero";
         system = "aarch64-linux";
-        users = ["ops"];
+        users = ["admin" "deploy"];
         platform = "raspberrypi";
       })
 
       (lib.mkCluster {
         names = ["espresso-0" "espresso-1" "espresso-2"];
         system = "x86_64-linux";
-        users = ["ops"];
+        users = ["admin" "deploy"];
         hostConfig = "espresso";
       })
     ];
@@ -158,7 +158,7 @@
     ];
 
     colmena = lib.merge [
-      (lib.mkColmenaMeta inputs)
+      lib.mkColmenaMeta
       (lib.mkNode {
         name = "espresso-0";
         hostConfig = "espresso";

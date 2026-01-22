@@ -16,5 +16,6 @@
         };
       }
       // config.secrets.ssh.hostMatchBlocks;
+    inherit (config.secrets.ssh) extraConfig;
   };
 }

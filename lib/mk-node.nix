@@ -3,11 +3,12 @@ inputs: {
   hostConfig ? name,
   system,
   buildOnTarget ? false,
-  users ? ["ops"],
+  users ? ["admin" "deploy"],
 }: {
   ${name} = {
     deployment = {
       targetHost = name;
+      targetUser = "deploy";
       inherit buildOnTarget;
     };
 
