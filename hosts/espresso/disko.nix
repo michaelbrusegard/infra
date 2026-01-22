@@ -8,9 +8,9 @@
       main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso1";
     };
     "espresso-1" = {
-      main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso2";
-      data1 = "/dev/disk/by-id/CHANGE_ME_sata_ssd1_espresso2";
-      data2 = "/dev/disk/by-id/CHANGE_ME_sata_ssd2_espresso2";
+      main = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB58943B";
+      data1 = "/dev/disk/by-id/ata-M27LM3T8HMLP0D3_S37MNX0J600459";
+      data2 = "/dev/disk/by-id/ata-M27LM3T8HMLP0D3_S37MNX0J900816";
     };
     "espresso-2" = {
       main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso3";
