@@ -32,7 +32,6 @@
       url = "github:nix-community/lanzaboote";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    colmena.url = "github:zhaofengli/colmena";
     brew-api = {
       url = "github:BatteredBunny/brew-api";
       flake = false;
@@ -158,7 +157,7 @@
       })
     ];
 
-    colmenaHive = inputs.colmena.lib.makeHive (lib.merge [
+    colmena = lib.merge [
       {
         meta = {
           allowApplyAll = false;
@@ -194,6 +193,6 @@
         name = "leggero";
         system = "aarch64-linux";
       })
-    ]);
+    ];
   };
 }

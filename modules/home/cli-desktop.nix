@@ -12,6 +12,7 @@
     qmk
     cmatrix
     wireguard-tools
+    colmena
     nixos-anywhere
   ];
 }
