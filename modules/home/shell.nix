@@ -275,7 +275,6 @@ in {
 
     sessionVariables =
       {
-        COLMENA_IMPURE = 1;
         PAGER = "moor";
         SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
       }
