@@ -18,7 +18,8 @@
           identityFile = config.secrets.ssh.gitKeyFile;
         };
       }
-      // config.secrets.ssh.hostMatchBlocks;
-    inherit (config.secrets.ssh) extraConfig;
+      // config.secrets.ssh.hostMatchBlocks
+      // config.secrets.ssh.deployMatchBlocks
+      // config.secrets.ssh.telescopeMatchBlocks;
   };
 }

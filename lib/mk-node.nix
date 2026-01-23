@@ -7,7 +7,7 @@ inputs: {
 }: {
   ${name} = {
     deployment = {
-      targetHost = name;
+      targetHost = "deploy-${name}";
       targetUser = "deploy";
       inherit buildOnTarget;
     };
