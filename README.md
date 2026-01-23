@@ -27,7 +27,7 @@ Note to self: Make sure to follow the guide for each system step by step.
 - [nix-darwin](https://mynixos.com/nix-darwin/options)
 - [home-manager](https://mynixos.com/home-manager/options)
 
-## Lungo (Nix-darwin)
+## Lungo (Nix-darwin MacBook)
 
 First install macOS normally by following the default installation on
 the mac. To access the installer hold the power button during boot to access
@@ -97,7 +97,8 @@ When prompted to install `Determinate Nix`, explicitly say `no`.
 
 ### Clone nix configuration (Lungo)
 
-Move over the GitHub SSH private key and the Age keys needed.
+Move over the GitHub SSH private key and make sure SSH works.
+Move the user secrets Age key to `~/.config/sops/age/keys.txt`.
 Then clone the nix configuration:
 
 ```sh
@@ -130,16 +131,11 @@ Kanata is updated since the Nix Store path would change.
 Lastly, go to Keyboard -> Keyboard Shortcuts... -> Modifier Keys, and make
 sure the Karabiner DriverKit VirtualHIDDevice is selected as the keyboard.
 
-The nix configuration should handle the rest, for any problems check out
-[this discussion](https://github.com/jtroo/kanata/discussions/1537) in the
-kanata repository.
-
-## Ristretto (NixOS/Windows)
+## Ristretto (NixOS/Windows Desktop)
 
 Create an installer by downloading the minimal ISO image from
 [NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
-a USB drive
-using the following command:
+an USB drive using the following command:
 
 ```sh
 sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
@@ -152,26 +148,22 @@ with the path to your USB drive.
 
 ![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
-### Remote Install with nixos-anywhere (Using Minimal NixOS Installer)
+### Install NicOS with nixos-anywhere (Using Minimal NixOS Installer)
 
-For remote installation using the minimal NixOS ISO:
+Plug in the installer USB and set a temporary password using the `passwd` command for SSH access.
+You can run `ip a` to find the IP address.
 
-1. **Prepare the Target**:
-   - Boot desktop into NixOS minimal ISO.
-   - Set password: `passwd` (for SSH access).
-   - Run `ip a` to get the IP address
-
-2. **Prepare Local Files**:
+1. **Prepare Local Files**:
    - Create LUKS passphrase file: `./secret.key`.
    - Get host SSH key: `./keys/etc/ssh/ssh_host_ed25519_key` and `./keys/etc/ssh/ssh_host_ed25519_key.pub`
 
-3. **Run Install**:
+2. **Run Install**:
 
    ```sh
    nixos-anywhere --extra-files ./keys --flake .#ristretto --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
    ```
 
-4. **Post-Install**:
+3. **Post-Install**:
    - Add user Age key to `~/.config/sops/age/keys.txt`).
    - Move over the GitHub SSH private key and clone the nix configuration: `git clone git@github.com:michaelbrusegard/nix-config.git ~/Projects/nix-config`.
    - For TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+2+7 /dev/sda2`.
