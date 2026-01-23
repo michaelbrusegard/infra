@@ -10,7 +10,7 @@
     serverAddr =
       lib.mkIf
       (config.networking.hostName != "espresso-0")
-      "https://10.0.168.18:6443";
+      "https://10.0.186.18:6443";
     gracefulNodeShutdown.enable = true;
     inherit (config.secrets.services.k3s) tokenFile;
     extraFlags = [
