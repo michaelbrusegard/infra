@@ -6,3 +6,7 @@ result
 
 # wsl
 nixos.wsl
+
+# secrets
+secret.key
+keys
