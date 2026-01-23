@@ -120,11 +120,11 @@
         "super, space, exec, dms ipc call spotlight toggle"
         "super shift, v, exec, dms ipc call clipboard toggle"
         "super, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive"
-        "super shift, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive; WID=$(${pkgs.jq}/bin/jq -r .class <<< $(${pkgs.hyprland}/bin/hyprctl activewindow -j)); ${pkgs.uutils-coreutils}/bin/pkill -KILL -f \"$WID\""
+        "super shift, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive; WID=$(${pkgs.jq}/bin/jq -r .class <<< $(${pkgs.hyprland}/bin/hyprctl activewindow -j)); ${pkgs.uutils-coreutils}/bin/uutils-pkill -KILL -f \"$WID\""
         "super ctrl, q, exec, dms ipc call lock lock"
         "super ctrl, f, fullscreen, 0"
-        "super shift, 3, exec, ${pkgs.grim}/bin/grim -t png -o $(${pkgs.hyprland}/bin/hyprctl monitors -j | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name') \"$HOME/Pictures/screenshots/Screenshot $(${pkgs.uutils-coreutils}/bin/date +'%Y-%m-%d at %H.%M.%S').png\""
-        "super shift, 4, exec, ${pkgs.grim}/bin/grim -t png -g \"$(${pkgs.slurp}/bin/slurp -d -w 0)\" \"$HOME/Pictures/screenshots/Screenshot $(${pkgs.uutils-coreutils}/bin/date +'%Y-%m-%d at %H.%M.%S').png\""
+        "super shift, 3, exec, ${pkgs.grim}/bin/grim -t png -o $(${pkgs.hyprland}/bin/hyprctl monitors -j | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name') \"$HOME/Pictures/screenshots/Screenshot $(${pkgs.uutils-coreutils}/bin/uutils-date +'%Y-%m-%d at %H.%M.%S').png\""
+        "super shift, 4, exec, ${pkgs.grim}/bin/grim -t png -g \"$(${pkgs.slurp}/bin/slurp -d -w 0)\" \"$HOME/Pictures/screenshots/Screenshot $(${pkgs.uutils-coreutils}/bin/uutils-date +'%Y-%m-%d at %H.%M.%S').png\""
       ];
 
       binde = [
