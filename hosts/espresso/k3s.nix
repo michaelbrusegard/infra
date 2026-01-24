@@ -3,17 +3,26 @@
   config,
   lib,
   ...
-}: {
+}: let
+  nodeIPs = {
+    "espresso-0" = "10.0.186.18";
+    "espresso-1" = "10.0.186.19";
+    "espresso-2" = "10.0.186.20";
+  };
+  nodeIP = nodeIPs.${config.networking.hostName};
+in {
   services.k3s = {
     enable = true;
     clusterInit = config.networking.hostName == "espresso-0";
     serverAddr =
       lib.mkIf
       (config.networking.hostName != "espresso-0")
-      "https://10.0.186.18:6443";
+      "https://${nodeIPs."espresso-0"}:6443";
     gracefulNodeShutdown.enable = true;
     inherit (config.secrets.services.k3s) tokenFile;
     extraFlags = [
+      "--node-ip=${nodeIP}"
+      "--advertise-address=${nodeIP}"
       "--write-kubeconfig-mode=0644"
       "--disable=traefik"
       "--disable=servicelb"
