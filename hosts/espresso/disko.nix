@@ -5,7 +5,7 @@
 }: let
   diskIds = {
     "espresso-0" = {
-      main = "/dev/disk/by-id/CHANGE_ME_nvme_ssd_espresso1";
+      main = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB59074B";
     };
     "espresso-1" = {
       main = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB58943B";
