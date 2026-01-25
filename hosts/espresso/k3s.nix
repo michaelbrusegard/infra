@@ -1,4 +1,5 @@
 {
+  pkgs,
   config,
   lib,
   ...
@@ -14,7 +15,7 @@ in {
     enable = true;
     nodeName = config.networking.hostName;
     inherit nodeIP;
-    inherit (config.secrets.services.k3s) tokenFile;
+    inherit (config.secrets.k3s) tokenFile;
     clusterInit = config.networking.hostName == "espresso-0";
     serverAddr =
       lib.mkIf
@@ -33,46 +34,38 @@ in {
 
   environment.sessionVariables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
 
-  # systemd.services.flux-bootstrap =
-  #   lib.mkIf
-  #   (config.networking.hostName == "espresso-0")
-  #   {
-  #     after = ["k3s.service"];
-  #     wantedBy = ["multi-user.target"];
-  #
-  #     serviceConfig = {
-  #       Type = "oneshot";
-  #       RemainAfterExit = true;
-  #     };
-  #
-  #     script = ''
-  #       set -euo pipefail
-  #
-  #       echo "Waiting for Kubernetes API..."
-  #       ${pkgs.kubectl}/bin/kubectl wait \
-  #         --for=condition=Ready nodes --all \
-  #         --timeout=180s
-  #
-  #       if ${pkgs.kubectl}/bin/kubectl get ns flux-system >/dev/null 2>&1; then
-  #         echo "Flux already bootstrapped"
-  #         exit 0
-  #       fi
-  #
-  #       if ! ${pkgs.gh}/bin/gh auth status >/dev/null 2>&1; then
-  #         echo "Flux bootstrap skipped: no GitHub auth found."
-  #         echo "Run 'gh auth login' then rebuild."
-  #         exit 0
-  #       fi
-  #
-  #       echo "Bootstrapping Flux..."
-  #       ${pkgs.fluxcd}/bin/flux bootstrap github \
-  #         --owner=michaelbrusegard \
-  #         --repository=nix-config \
-  #         --branch=main \
-  #         --path=gitops/espresso \
-  #         --personal
-  #     '';
-  #   };
+  systemd.services.flux-bootstrap =
+    lib.mkIf
+    (config.networking.hostName == "espresso-0")
+    {
+      after = ["k3s.service"];
+      wantedBy = ["multi-user.target"];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        EnvironmentFile = config.secrets.k3s.flux.envFile;
+      };
+      script = ''
+        set -euo pipefail
+        export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+        echo "Waiting for Kubernetes API..."
+        until ${pkgs.kubectl}/bin/kubectl get nodes >/dev/null 2>&1; do
+          sleep 2
+        done
+        if ${pkgs.kubectl}/bin/kubectl get ns flux-system >/dev/null 2>&1; then
+          echo "Flux already bootstrapped"
+          exit 0
+        fi
+        echo "Bootstrapping Flux..."
+        ${pkgs.fluxcd}/bin/flux bootstrap github \
+          --owner=michaelbrusegard \
+          --repository=nix-config \
+          --branch=main \
+          --path=gitops/espresso \
+          --personal
+      '';
+    };
 
   # Disable btrfs copy on write for main drive directories used by k3s
   systemd.tmpfiles.rules = [
