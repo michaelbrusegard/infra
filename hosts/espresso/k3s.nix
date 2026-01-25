@@ -63,6 +63,7 @@ in {
           --repository=nix-config \
           --branch=main \
           --path=gitops/espresso \
+          --author-name="Flux (espresso)" \
           --personal
       '';
     };
