@@ -372,6 +372,9 @@ The Espresso setup consists of HA k3s nodes (espresso1, espresso2, espresso3)
 for running containerized homelab and business services like websites, media
 hosting and automation.
 
+sudo systemctl stop k3s
+sudo rm -rf /var/lib/rancher/k3s
+
 ### Prerequisites
 
 Start with obtaining MAC addresses for each node by enabling PXE (Preboot
