@@ -1,0 +1,24 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: longhorn
+      version: "1.6.x"
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+        namespace: flux-system
+      interval: 1h
+  values:
+    persistence:
+      defaultClass: true
+    defaultSettings:
+      replicaCount: 2
+      storageOverProvisioningPercentage: 150
+      autoSalvage: true
+      autoDeletePodWhenVolumeDetachedUnexpectedly: true
