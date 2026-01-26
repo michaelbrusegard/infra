@@ -12,8 +12,6 @@
   nodeIP = nodeIPs.${config.networking.hostName};
 in {
   services.k3s = {
-    enable = true;
-    nodeName = config.networking.hostName;
     inherit nodeIP;
     inherit (config.secrets.k3s) tokenFile;
     clusterInit = config.networking.hostName == "espresso-0";
@@ -21,15 +19,6 @@ in {
       lib.mkIf
       (config.networking.hostName != "espresso-0")
       "https://${nodeIPs."espresso-0"}:6443";
-    gracefulNodeShutdown.enable = true;
-    extraFlags = [
-      "--write-kubeconfig-mode=0644"
-    ];
-    disable = [
-      "traefik"
-      "servicelb"
-      "local-storage"
-    ];
   };
 
   environment.sessionVariables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";

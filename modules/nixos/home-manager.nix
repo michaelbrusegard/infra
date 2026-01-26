@@ -21,7 +21,7 @@
   home-manager.users = builtins.listToAttrs (
     map (user: {
       name = user;
-      value = {...}: {
+      value = _: {
         imports = [
           (inputs.self + "/users/${user}/home.nix")
           inputs.nix-secrets.homeManagerModules.secrets

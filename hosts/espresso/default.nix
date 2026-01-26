@@ -5,14 +5,16 @@
     inputs.self.nixosModules.console
     inputs.self.nixosModules.disable-documentation
     inputs.self.nixosModules.disko
+    inputs.self.nixosModules.k3s
     inputs.self.nixosModules.home-manager
     inputs.self.nixosModules.lanzaboote
     inputs.self.nixosModules.locale
     inputs.self.nixosModules.networking
     inputs.self.nixosModules.nix
+    inputs.self.nixosModules.openiscsi
     inputs.self.nixosModules.openssh
     inputs.self.nixosModules.security
-    ./k3s.nix
+    ./cluster.nix
     ./networking.nix
     ./hardware.nix
     ./disko.nix
