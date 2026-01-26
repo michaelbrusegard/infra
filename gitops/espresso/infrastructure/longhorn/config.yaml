@@ -1,0 +1,16 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: longhorn-config
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./gitops/espresso/infrastructure/longhorn
+  prune: true
+  dependsOn:
+    - name: longhorn-install
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  only:
+    - nodes.yaml
