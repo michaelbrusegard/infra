@@ -18,7 +18,6 @@
     };
 
     enableSystemMonitoring = true;
-    enableClipboard = true;
     enableVPN = true;
     enableAudioWavelength = true;
     enableCalendarEvents = true;
