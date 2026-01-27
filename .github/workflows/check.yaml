@@ -39,7 +39,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.NIX_SECRETS_DEPLOY_KEY }}
       - uses: DeterminateSystems/nix-installer-action@v21
-      - uses: DeterminateSystems/magic-nix-cache-action@v2
+      - uses: DeterminateSystems/magic-nix-cache-action@v13
       - name: Check formatting (Nix)
         run: nix fmt -- --check .
       - name: Check formatting (YAML)
@@ -74,7 +74,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.NIX_SECRETS_DEPLOY_KEY }}
       - uses: DeterminateSystems/nix-installer-action@v21
-      - uses: DeterminateSystems/magic-nix-cache-action@v2
+      - uses: DeterminateSystems/magic-nix-cache-action@v13
       - name: Evaluate Host (NixOS)
         if: runner.os == 'Linux'
         run: nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel --dry-run
@@ -88,7 +88,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: DeterminateSystems/nix-installer-action@v21
-      - uses: DeterminateSystems/magic-nix-cache-action@v2
+      - uses: DeterminateSystems/magic-nix-cache-action@v13
       - name: Install Tools
         run: nix profile install nixpkgs#kustomize nixpkgs#kubeconform
       - name: Validate Kubernetes Manifests
