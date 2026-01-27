@@ -36,6 +36,12 @@
         "nix"
       ],
       "groupName": "nix flake updates"
+    },
+    {
+      "matchPackagePatterns": [
+        "nix-secrets"
+      ],
+      "enabled": false
     }
   ],
   "separateMajorMinor": true,
