@@ -10,7 +10,6 @@
       "traefik"
       "servicelb"
       "local-storage"
-      "metrics-server"
     ];
   };
 }
