@@ -38,10 +38,10 @@
       "groupName": "nix flake updates"
     },
     {
-      "matchPackagePatterns": [
-        "nix-secrets"
-      ],
-      "enabled": false
+      "enabled": false,
+      "matchPackageNames": [
+        "/nix-secrets/"
+      ]
     }
   ],
   "separateMajorMinor": true,
