@@ -4,30 +4,43 @@
     "config:recommended"
   ],
   "dependencyDashboard": true,
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "commitMessagePrefix": "chore(deps): ",
   "nix": {
     "enabled": true
   },
   "kubernetes": {
-    "fileMatch": ["gitops/.*\\.yaml$"]
+    "managerFilePatterns": [
+      "/gitops/.*\\.yaml$/"
+    ]
   },
   "helmv3": {
     "enabled": true
   },
   "packageRules": [
     {
-      "matchUpdateTypes": ["minor", "patch"],
-      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "all non-major dependencies",
-      "groupSlug": "all-minor-patch"
+      "groupSlug": "all-minor-patch",
+      "matchPackageNames": [
+        "*"
+      ]
     },
     {
-      "matchManagers": ["nix"],
+      "matchManagers": [
+        "nix"
+      ],
       "groupName": "nix flake updates"
     }
   ],
   "separateMajorMinor": true,
   "timezone": "UTC",
-  "schedule": ["before 5am on monday"]
+  "schedule": [
+    "before 5am on monday"
+  ]
 }
