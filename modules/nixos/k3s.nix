@@ -11,6 +11,7 @@
       "servicelb"
       "local-storage"
       "metrics-server"
+      "coredns"
     ];
   };
 }

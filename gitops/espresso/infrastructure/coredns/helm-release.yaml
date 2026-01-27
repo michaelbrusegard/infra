@@ -1,0 +1,25 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: coredns
+  namespace: kube-system
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: coredns
+      version: "1.x"
+      sourceRef:
+        kind: HelmRepository
+        name: coredns
+        namespace: flux-system
+      interval: 1h
+  values:
+    isClusterService: true
+    service:
+      name: kube-dns
+      clusterIP: 10.43.0.10
+    replicaCount: 3
+    prometheus:
+      monitor:
+        enabled: false

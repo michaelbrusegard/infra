@@ -4,4 +4,4 @@ resources:
   - longhorn/longhorn-install.yaml
   - longhorn/longhorn-config.yaml
   - metrics-server/metrics-server-install.yaml
-  - configs/coredns-config.yaml
+  - coredns/coredns-install.yaml
