@@ -1,0 +1,33 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "commitMessagePrefix": "chore(deps): ",
+  "nix": {
+    "enabled": true
+  },
+  "kubernetes": {
+    "fileMatch": ["gitops/.*\\.yaml$"]
+  },
+  "helmv3": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchPackagePatterns": ["*"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    },
+    {
+      "matchManagers": ["nix"],
+      "groupName": "nix flake updates"
+    }
+  ],
+  "separateMajorMinor": true,
+  "timezone": "UTC",
+  "schedule": ["before 5am on monday"]
+}
