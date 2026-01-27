@@ -21,8 +21,6 @@ in {
       "https://${nodeIPs."espresso-0"}:6443";
   };
 
-  environment.sessionVariables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
-
   systemd.services.flux-bootstrap =
     lib.mkIf
     (config.networking.hostName == "espresso-0")

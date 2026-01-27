@@ -16,8 +16,6 @@
       enable = true;
       enableGitIntegration = true;
     };
-
-    k9s.enable = true;
   };
 
   home = {

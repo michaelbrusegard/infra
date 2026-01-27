@@ -12,6 +12,7 @@
     inputs.self.homeManagerModules.ghostty
     inputs.self.homeManagerModules.git
     inputs.self.homeManagerModules.hyprland
+    inputs.self.homeManagerModules.k8s
     inputs.self.homeManagerModules.mpv
     inputs.self.homeManagerModules.neovim
     inputs.self.homeManagerModules.opencode

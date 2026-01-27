@@ -18,7 +18,5 @@
     gnutar
     openssl
     dos2unix
-    kubectl
-    fluxcd
   ];
 }
