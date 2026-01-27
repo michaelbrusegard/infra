@@ -46,10 +46,10 @@ jobs:
         run: nix flake check --show-trace
       - name: Evaluate Host (NixOS)
         if: runner.os == 'Linux'
-        run: nix eval .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel --dry-run
+        run: nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel --dry-run
       - name: Evaluate Host (Darwin)
         if: runner.os == 'macOS'
-        run: nix eval .#darwinConfigurations.${{ matrix.host }}.system --dry-run
+        run: nix build .#darwinConfigurations.${{ matrix.host }}.system --dry-run
   validate-kubernetes:
     runs-on: ubuntu-latest
     steps:
