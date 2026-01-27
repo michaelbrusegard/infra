@@ -7,7 +7,12 @@ spec:
   interval: 10m
   path: ./gitops/espresso/infrastructure/longhorn/install
   prune: true
-  wait: false
+  wait: true
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: DaemonSet
+      name: longhorn-manager
+      namespace: longhorn-system
   sourceRef:
     kind: GitRepository
     name: flux-system
