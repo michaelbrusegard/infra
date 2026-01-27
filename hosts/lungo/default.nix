@@ -4,7 +4,6 @@
     inputs.self.darwinModules.home-manager
     inputs.self.darwinModules.homebrew
     inputs.self.darwinModules.kanata
-    inputs.self.darwinModules.launchd
     inputs.self.darwinModules.mime
     inputs.self.darwinModules.networking
     inputs.self.darwinModules.nix
