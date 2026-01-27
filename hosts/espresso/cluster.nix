@@ -57,11 +57,17 @@ in {
       '';
     };
 
-  # Disable btrfs copy on write for main drive directories used by k3s
   systemd.tmpfiles.rules = [
-    "d /var/lib/longhorn 0755 root root - -"
-    "h /var/lib/longhorn - - - - +C"
+    # Disable btrfs copy on write for main drive directories used by k3s
     "d /var/lib/rancher/k3s 0755 root root - -"
     "h /var/lib/rancher/k3s - - - - +C"
+
+    # Disable btrfs copy on write for main drive directories used by longhorn
+    "d /var/lib/longhorn 0755 root root - -"
+    "h /var/lib/longhorn - - - - +C"
+
+    # Make iscsiadm and mount visible on a standard linux path
+    "L+ /usr/bin/iscsiadm - - - - /run/current-system/sw/bin/iscsiadm"
+    "L+ /usr/bin/mount    - - - - /run/current-system/sw/bin/mount"
   ];
 }
