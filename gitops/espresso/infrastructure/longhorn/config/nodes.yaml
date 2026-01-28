@@ -4,11 +4,15 @@ metadata:
   name: espresso-0
   namespace: longhorn-system
 spec:
+  tags:
+    - fast
   disks:
     root:
       path: /var/lib/longhorn
       allowScheduling: true
-      storageReserved: 75000000000
+      storageReserved: 80530636800
+      tags:
+        - nvme
 ---
 apiVersion: longhorn.io/v1beta2
 kind: Node
@@ -16,17 +20,26 @@ metadata:
   name: espresso-1
   namespace: longhorn-system
 spec:
+  tags:
+    - fast
+    - large
   disks:
     root:
       path: /var/lib/longhorn
       allowScheduling: true
-      storageReserved: 75000000000
+      storageReserved: 80530636800
+      tags:
+        - nvme
     data1:
       path: /data/disk1
       allowScheduling: true
+      tags:
+        - sata
     data2:
       path: /data/disk2
       allowScheduling: true
+      tags:
+        - sata
 ---
 apiVersion: longhorn.io/v1beta2
 kind: Node
@@ -34,14 +47,23 @@ metadata:
   name: espresso-2
   namespace: longhorn-system
 spec:
+  tags:
+    - fast
+    - large
   disks:
     root:
       path: /var/lib/longhorn
       allowScheduling: true
-      storageReserved: 75000000000
+      storageReserved: 80530636800
+      tags:
+        - nvme
     data1:
       path: /data/disk1
       allowScheduling: true
+      tags:
+        - sata
     data2:
       path: /data/disk2
       allowScheduling: true
+      tags:
+        - sata

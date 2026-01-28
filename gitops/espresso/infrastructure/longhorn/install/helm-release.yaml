@@ -22,3 +22,10 @@ spec:
       storageOverProvisioningPercentage: 150
       autoSalvage: true
       autoDeletePodWhenVolumeDetachedUnexpectedly: true
+      concurrentReplicaRebuildPerNodeLimit: 2
+      replicaSoftAntiAffinity: false
+      storageMinimalAvailablePercentage: 15
+      nodeDownRebuildWaitInterval: 30
+      replicaAutoBalance: least-effort
+      guaranteedEngineManagerCPU: 12
+      guaranteedReplicaManagerCPU: 12
