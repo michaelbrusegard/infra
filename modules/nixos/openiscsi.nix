@@ -20,4 +20,10 @@
     PrivateMounts = "yes";
     BindPaths = "/run/current-system/sw/bin:/bin";
   };
+
+  # Make iscsiadm and mount visible on a standard linux path
+  systemd.tmpfiles.rules = [
+    "L+ /usr/bin/iscsiadm - - - - /run/current-system/sw/bin/iscsiadm"
+    "L+ /usr/bin/mount    - - - - /run/current-system/sw/bin/mount"
+  ];
 }
