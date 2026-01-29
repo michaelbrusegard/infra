@@ -196,11 +196,11 @@ in {
     jq.enable = true;
     fastfetch.enable = true;
     btop.enable = true;
-    nix-index.enable = true;
   };
 
   home = {
     packages = with pkgs; [
+      nix-search-cli
       trash-cli
       libqalculate
       moor
