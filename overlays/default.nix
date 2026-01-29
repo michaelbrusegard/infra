@@ -6,20 +6,20 @@ in
     inputs.nur.overlays.default
     inputs.yazi.overlays.default
     inputs.brew-nix.overlays.default
-    (_: prev: {
-      inherit (inputs.hyprland.packages.${prev.stdenv.hostPlatform.system}) hyprland;
-      inherit (inputs.hyprland.packages.${prev.stdenv.hostPlatform.system}) xdg-desktop-portal-hyprland;
-    })
-    (_: prev: {
-      dms-shell = inputs.dms.packages.${prev.stdenv.hostPlatform.system}.default;
-      dms-greeter = inputs.dms.packages.${prev.stdenv.hostPlatform.system}.default;
-    })
-    (_: prev: {
-      dsearch = inputs.dsearch.packages.${prev.stdenv.hostPlatform.system}.default;
-    })
-    (_: prev: {wezterm = inputs.wezterm.packages.${prev.stdenv.hostPlatform.system}.default;})
-    (_: prev: {quickshell = inputs.quickshell.packages.${prev.stdenv.hostPlatform.system}.default;})
-    (_: prev: {inherit (inputs.nixpkgs-otbr.legacyPackages.${prev.stdenv.hostPlatform.system}) openthread-border-router;})
+    (
+      _: prev: let
+        inherit (prev.stdenv.hostPlatform) system;
+      in {
+        inherit (inputs.hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
+        inherit (inputs.nixpkgs-otbr.legacyPackages.${system}) openthread-border-router;
+
+        quickshell = inputs.quickshell.packages.${system}.default;
+        dms-shell = inputs.dms.packages.${system}.default;
+        dms-greeter = inputs.dms.packages.${system}.default;
+        dsearch = inputs.dsearch.packages.${system}.default;
+        wezterm = inputs.wezterm.packages.${system}.default;
+      }
+    )
     (
       _: prev: let
         inherit (prev.stdenv.hostPlatform) system;
@@ -28,17 +28,20 @@ in
           config.allowUnfree = true;
         };
       in {
-        inherit (pkgs-unstable) dgop;
-        inherit (pkgs-unstable) yabai;
-        inherit (pkgs-unstable) jankyborders;
-        inherit (pkgs-unstable) neovim;
-        inherit (pkgs-unstable) tree-sitter;
-        inherit (pkgs-unstable) lua5_1;
+        inherit
+          (pkgs-unstable)
+          dgop
+          yabai
+          jankyborders
+          neovim
+          tree-sitter
+          lua5_1
+          texliveFull
+          opencode
+          ;
         lua51Packages = {
           inherit (pkgs-unstable.lua51Packages) luarocks;
         };
-        inherit (pkgs-unstable) texliveFull;
-        inherit (pkgs-unstable) opencode;
       }
     )
   ]
