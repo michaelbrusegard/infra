@@ -150,23 +150,23 @@
         ", XF86AudioMute, exec, dms ipc call audio mute"
       ];
 
-      windowrulev2 = [
-        "workspace 2, class:^(Brave-browser)$"
-        "workspace 3, class:^(Proton Mail)$"
-        "workspace 3, class:^(Proton Pass)$"
-        "workspace 4, class:^(obsidian)$"
-        "workspace 4, class:^(libreoffice)$"
-        "workspace 4, class:^(Notion)$"
-        "workspace 5, class:^(legcord)$"
-        "workspace 5, class:^(Element)$"
-        "workspace 5, class:^(Slack)$"
-        "workspace 6, class:^(zenity)$"
-        "workspace 6, class:^(OrcaSlicer)$"
-        "workspace 6, class:^(resolve)$"
-        "workspace 6, class:^(Gimp)$"
-        "workspace 6, class:^(org.inkscape.Inkscape)$"
-        "workspace 6, class:^(scribus)$"
-        "workspace 6, class:^(org.freecad.FreeCAD)$"
+      windowrule = [
+        "match:class ^(Brave-browser)$, workspace 2"
+        "match:class ^(Proton Mail)$, workspace 3"
+        "match:class ^(Proton Pass)$, workspace 3"
+        "match:class ^(obsidian)$, workspace 4"
+        "match:class ^(libreoffice)$, workspace 4"
+        "match:class ^(Notion)$, workspace 4"
+        "match:class ^(legcord)$, workspace 5"
+        "match:class ^(Element)$, workspace 5"
+        "match:class ^(Slack)$, workspace 5"
+        "match:class ^(zenity)$, workspace 6"
+        "match:class ^(OrcaSlicer)$, workspace 6"
+        "match:class ^(resolve)$, workspace 6"
+        "match:class ^(Gimp)$, workspace 6"
+        "match:class ^(org.inkscape.Inkscape)$, workspace 6"
+        "match:class ^(scribus)$, workspace 6"
+        "match:class ^(org.freecad.FreeCAD)$, workspace 6"
       ];
     };
   };
