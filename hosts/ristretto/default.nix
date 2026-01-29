@@ -7,6 +7,7 @@
     inputs.self.nixosModules.disko
     inputs.self.nixosModules.dms-greeter
     inputs.self.nixosModules.dms-shell
+    inputs.self.nixosModules.dsearch
     inputs.self.nixosModules.fonts
     inputs.self.nixosModules.gtk
     inputs.self.nixosModules.home-manager

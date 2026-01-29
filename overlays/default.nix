@@ -14,6 +14,9 @@ in
       dms-shell = inputs.dms.packages.${prev.stdenv.hostPlatform.system}.default;
       dms-greeter = inputs.dms.packages.${prev.stdenv.hostPlatform.system}.default;
     })
+    (_: prev: {
+      dsearch = inputs.dsearch.packages.${prev.stdenv.hostPlatform.system}.default;
+    })
     (_: prev: {wezterm = inputs.wezterm.packages.${prev.stdenv.hostPlatform.system}.default;})
     (_: prev: {quickshell = inputs.quickshell.packages.${prev.stdenv.hostPlatform.system}.default;})
     (_: prev: {inherit (inputs.nixpkgs-otbr.legacyPackages.${prev.stdenv.hostPlatform.system}) openthread-border-router;})
