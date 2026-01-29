@@ -1,8 +1,6 @@
 {
   pkgs,
   inputs,
-  isWsl,
-  lib,
   ...
 }: {
   imports = [
@@ -13,7 +11,7 @@
     pkgs.sbctl
   ];
 
-  boot = lib.mkIf (!isWsl) {
+  boot = {
     loader.systemd-boot.enable = false;
     loader.efi.canTouchEfiVariables = true;
     lanzaboote = {

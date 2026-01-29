@@ -1,7 +1,3 @@
-{
-  isWsl,
-  lib,
-  ...
-}: {
-  location.provider = lib.mkIf (!isWsl) "geoclue2";
+{...}: {
+  location.provider = "geoclue2";
 }

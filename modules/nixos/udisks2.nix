@@ -1,3 +1,3 @@
-{isWsl, ...}: {
-  services.udisks2.enable = !isWsl;
+{...}: {
+  services.udisks2.enable = true;
 }

@@ -96,7 +96,7 @@
     clipboard = {
       enable = true;
       providers = {
-        wl-copy.enable = pkgs.stdenv.hostPlatform.isLinux;
+        wl-copy.enable = pkgs.stdenv.isLinux;
       };
     };
     extraConfigLua = ''

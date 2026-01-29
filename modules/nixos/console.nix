@@ -1,9 +1,5 @@
-{
-  isWsl,
-  lib,
-  ...
-}: {
-  console = lib.mkIf (!isWsl) {
+{...}: {
+  console = {
     enable = true;
     keyMap = "us";
     colors = [

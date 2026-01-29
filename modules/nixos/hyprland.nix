@@ -1,9 +1,5 @@
-{
-  lib,
-  isWsl,
-  ...
-}: {
-  programs.hyprland = lib.mkIf (!isWsl) {
+{...}: {
+  programs.hyprland = {
     enable = true;
     withUWSM = true;
   };

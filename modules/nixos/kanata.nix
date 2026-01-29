@@ -1,10 +1,5 @@
-{
-  lib,
-  inputs,
-  isWsl,
-  ...
-}: {
-  services.kanata = lib.mkIf (!isWsl) {
+{inputs, ...}: {
+  services.kanata = {
     enable = true;
     keyboards.default.configFile = inputs.self + "/config/kanata/linux.kbd";
   };

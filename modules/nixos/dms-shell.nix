@@ -1,15 +1,10 @@
-{
-  lib,
-  isWsl,
-  inputs,
-  ...
-}: {
+{inputs, ...}: {
   # TODO: Remove when updating to nixpkgs 26.05
   imports = [
     "${inputs.nixpkgs-unstable}/nixos/modules/programs/wayland/dms-shell.nix"
   ];
 
-  programs.dms-shell = lib.mkIf (!isWsl) {
+  programs.dms-shell = {
     enable = true;
 
     systemd = {
