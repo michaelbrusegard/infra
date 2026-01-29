@@ -53,5 +53,6 @@
       brewCasks.qgis
       notion-app
       brewCasks.wootility
+      utm
     ]);
 }
