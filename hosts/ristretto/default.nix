@@ -16,6 +16,7 @@
     inputs.self.nixosModules.hyprland
     inputs.self.nixosModules.kanata
     inputs.self.nixosModules.lanzaboote
+    inputs.self.nixosModules.libvirt
     inputs.self.nixosModules.locale
     inputs.self.nixosModules.location
     inputs.self.nixosModules.networking
