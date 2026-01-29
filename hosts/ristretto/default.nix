@@ -1,7 +1,4 @@
-{
-  inputs,
-  ...
-}: {
+{inputs, ...}: {
   imports = [
     inputs.self.nixosModules.boot
     inputs.self.nixosModules.bluetooth

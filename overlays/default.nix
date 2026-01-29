@@ -15,6 +15,7 @@ in
       dms-greeter = inputs.dms.packages.${prev.stdenv.hostPlatform.system}.default;
     })
     (_: prev: {wezterm = inputs.wezterm.packages.${prev.stdenv.hostPlatform.system}.default;})
+    (_: prev: {quickshell = inputs.quickshell.packages.${prev.stdenv.hostPlatform.system}.default;})
     (_: prev: {inherit (inputs.nixpkgs-otbr.legacyPackages.${prev.stdenv.hostPlatform.system}) openthread-border-router;})
     (
       _: prev: let
@@ -24,7 +25,6 @@ in
           config.allowUnfree = true;
         };
       in {
-        inherit (pkgs-unstable) quickshell;
         inherit (pkgs-unstable) dgop;
         inherit (pkgs-unstable) yabai;
         inherit (pkgs-unstable) jankyborders;
