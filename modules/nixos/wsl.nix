@@ -5,7 +5,7 @@
   inputs,
   ...
 }: {
-  imports = lib.optional isWsl inputs.nixos-wsl.nixosModules.default;
+  imports = [inputs.nixos-wsl.nixosModules.default];
 
   config = lib.mkIf isWsl {
     wsl = {
