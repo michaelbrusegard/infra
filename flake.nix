@@ -130,6 +130,14 @@
       })
 
       (lib.mkSystem {
+        name = "ristretto-wsl";
+        system = "x86_64-linux";
+        users = ["michaelbrusegard"];
+        hostConfig = "ristretto";
+        platform = "wsl";
+      })
+
+      (lib.mkSystem {
         name = "macchiato";
         system = "x86_64-linux";
         users = ["admin" "deploy"];

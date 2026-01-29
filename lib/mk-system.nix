@@ -18,7 +18,7 @@ inputs: {
       }
     else
       (import ./mk-nixos.nix inputs) {
-        inherit name system users hostConfig;
+        inherit name system users hostConfig platform;
       };
 in {
   ${name} = sys;

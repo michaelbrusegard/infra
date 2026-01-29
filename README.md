@@ -215,10 +215,10 @@ pages for the current system can be found below:
 ### NixOS WSL
 
 First we need to build the NixOS WSL tarball. This can be done by running
-the following command in the dotfiles directory on a nix machine:
+the following command on a nix machine:
 
 ```sh
-sudo nix run .#nixosConfigurations.wsl.config.system.build.tarballBuilder
+sudo nix run .#nixosConfigurations.ristretto-wsl.config.system.build.tarballBuilder
 ```
 
 Put this on a flash drive and copy it to the Windows machine.
@@ -243,7 +243,7 @@ To enter the WSL environment, run:
 wsl
 ```
 
-Now clone the dotfiles repository, add the age keys and rebuild.
+Now clone the nix-config repository, add the age keys and rebuild.
 
 ### Applying system preferences and installing packages
 

@@ -3,6 +3,7 @@ inputs: {
   system,
   users,
   hostConfig ? null,
+  platform ? null,
 }: let
   resolvedHostConfig =
     if hostConfig != null
@@ -15,7 +16,7 @@ in
     specialArgs = {
       inherit inputs name users;
       hostConfig = resolvedHostConfig;
-      isWsl = builtins.pathExists /proc/sys/fs/binfmt_misc/WSLInterop;
+      isWsl = platform == "wsl";
     };
 
     modules =

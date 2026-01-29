@@ -128,7 +128,7 @@ $packages = @(
   "Microsoft.PowerToys",
   "glzr-io.glazewm",
   "wez.wezterm",
-  "Brave.Brave",
+  "Zen-Team.Zen-Browser",
   "Proton.ProtonMail",
   "Proton.ProtonPass",
   "Proton.ProtonVPN",
