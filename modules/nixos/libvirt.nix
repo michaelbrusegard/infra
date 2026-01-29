@@ -1,7 +1,7 @@
 {pkgs, ...}: {
   virtualisation.libvirtd = {
     enable = true;
-    qemu.wtpm.enable = true;
+    qemu.swtpm.enable = true;
   };
 
   programs.virt-manager.enable = true;
