@@ -172,7 +172,7 @@ You can run `ip a` to find the IP address.
 
 To create the installation ISO for Windows, we use Chris Titus Tech's Windows
 Utility to create a clean telemetry-free ISO that does not require a Microsoft
-account (This has to be run on a Windows machine). The commands require
+account (This has to be run on a Windows machine or in a VM). The commands require
 administrator privileges, so make sure to run PowerShell as administrator.
 
 First, enable execution of scripts in PowerShell:
@@ -187,19 +187,23 @@ Then load the tool:
 irm "https://christitus.com/win" | iex
 ```
 
-In the tool we can download an ISO image from Microsoft and then modify it
-to remove telemetry and other unwanted features. When we have the MicroWin
-ISO we can flash a USB drive using Rufus.
+In the tool we can download the newest Windows ISO image from Microsoft.
+Then choose the username and password.
+Append the tweaks settings from `windows/winutil.json` and start the process.
+
+When we have the MicroWin
+ISO we can flash an USB drive using Rufus.
 
 > [!INFO]
-> The current setup uses the AMD RAID driver to run the two NVMe
+> The current setup also requires the AMD RAID driver to run the two NVMe
 > drives in RAID 0. This is not supported by the Windows installer, so we need
-> to add the drivers manually. It can be downloaded from here
+> to add the drivers manually. They can be downloaded from here
 > [ASUS motherboard downloads](https://rog.asus.com/motherboards/rog-crosshair/rog-crosshair-viii-impact-model/helpdesk_download/).
-> Create a directory on the installer and add the rcbottom.inf,
-> rcraid.inf and rccfg.inf. They should be loaded in the same order.
 
-After installation go to Windows Update and run it to make sure the
+Create a `drivers` directory on the installer USB and add the rcbottom.inf,
+rcraid.inf and rccfg.inf. They should be loaded in that order during the installation.
+
+After installation has finished go to Windows Update and run it to make sure the
 system is updated.
 
 Also make sure to install updated drivers for the system, the download
@@ -252,21 +256,6 @@ First rerun the WinUtil tool:
 ```sh
 irm "https://christitus.com/win" | iex
 ```
-
-In the Tweaks tab, enable the Standard tweaks plus the following:
-
-- Disable Recall
-- Disable Background Apps
-- Disable Microsoft Copilot
-- Disable Intel MM
-- Disable Notification Tray/Calendar
-- Disable Windows Plaform Binary Table
-- Set Display for Performance
-- Set Classic Right-Click Menu
-- Set Time to UTC
-- Remove Microsoft Edge
-- Remove Home and Gallery from explorer
-- Remove OneDrive
 
 Under Performance Plan click "Add and Activate Ultimate Performance Profile".
 
