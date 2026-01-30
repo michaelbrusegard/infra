@@ -49,9 +49,9 @@ in {
 
     iconTheme = {
       name = "Papirus-Dark";
-      package = pkgs.catppuccin-papirus-folders.override {
+      package = lib.mkForce (pkgs.catppuccin-papirus-folders.override {
         inherit (config.catppuccin) accent flavor;
-      };
+      });
     };
 
     font = {
