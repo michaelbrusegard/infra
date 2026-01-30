@@ -20,20 +20,13 @@ in {
       x11.enable = true;
       hyprcursor.enable = true;
     };
-
-    file.".config/Kvantum/kvantum.kvconfig" = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
-      text = ''
-        [General]
-        theme=Catppuccin-Mocha
-      '';
-    };
   };
 
-  qt = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
-    enable = true;
-    style.name = "kvantum";
-
-    qt5ctSettings = {
+  qt = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) ({
+      enable = true;
+      style.name = "kvantum";
+    }
+    // (lib.genAttrs ["qt5ctSettings" "qt6ctSettings"] (_: {
       Appearance = {
         style = "kvantum";
         icon_theme = "Papirus-Dark";
@@ -44,31 +37,21 @@ in {
         general = "RobotoMono Nerd Font,11";
         fixed = "RobotoMono Nerd Font,11";
       };
-    };
-    qt6ctSettings = {
-      Appearance = {
-        style = "kvantum";
-        icon_theme = "Papirus-Dark";
-        standard_dialogs = "xdgdesktopportal";
-      };
-      Fonts = {
-        general = "RobotoMono Nerd Font,11";
-        fixed = "RobotoMono Nerd Font,11";
-      };
-    };
-  };
+    })));
 
   gtk = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
     enable = true;
 
     theme = {
-      name = "Catppuccin-Mocha-Standard-Blue-Dark";
-      package = pkgs.catppuccin-gtk;
+      name = "Catppuccin-BL-MB-dark";
+      package = pkgs.magnetic-catppuccin-gtk;
     };
 
     iconTheme = {
       name = "Papirus-Dark";
-      package = pkgs.papirus-icon-theme;
+      package = pkgs.catppuccin-papirus-folders.override {
+        inherit (config.catppuccin) accent flavor;
+      };
     };
 
     font = {
@@ -82,8 +65,6 @@ in {
       kvantum
       kvantum-qt5
       kvantum-qt6
-      papirus-icon-theme
-      catppuccin-kvantum
     ];
 
   xdg.configFile = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
