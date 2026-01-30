@@ -45,7 +45,7 @@ local function options(config)
   end
 
   -- Font size
-  config.font_size = 14
+  config.font_size = 15
 
   -- Disable window padding
   config.window_padding = {
