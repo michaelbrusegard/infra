@@ -31,6 +31,7 @@ in {
 
   qt = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
     enable = true;
+    style.name = "kvantum";
 
     qt5ctSettings = {
       Appearance = {
