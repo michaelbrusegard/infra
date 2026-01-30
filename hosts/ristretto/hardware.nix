@@ -1,8 +1,12 @@
-{pkgs, config, ...}: {
+{
+  pkgs,
+  config,
+  ...
+}: {
   boot = {
     initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
     kernelModules = ["kvm-amd" "nct6775" "ddcci_backlight"];
-    extraModulePackages = with config.boot.kernelPackages; [ ddcci-driver ];
+    extraModulePackages = with config.boot.kernelPackages; [ddcci-driver];
 
     kernelParams = ["quiet"];
     consoleLogLevel = 3;
