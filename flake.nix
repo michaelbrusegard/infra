@@ -57,14 +57,6 @@
       url = "github:michaelbrusegard/homebrew-extras";
       flake = false;
     };
-    apple-emoji-linux = {
-      url = "github:samuelngs/apple-emoji-linux";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    apple-fonts = {
-      url = "github:Lyndeno/apple-fonts.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     catppuccin = {
       url = "github:catppuccin/nix";
       inputs.nixpkgs.follows = "nixpkgs";

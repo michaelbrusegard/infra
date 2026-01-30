@@ -13,8 +13,8 @@ in {
     };
 
     pointerCursor = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
-      package = pkgs.apple-cursor;
-      name = "macOS";
+      package = pkgs.bibata-cursors;
+      name = "Bibata-Modern-Classic";
       size = 24;
       gtk.enable = true;
       x11.enable = true;
@@ -40,8 +40,8 @@ in {
       };
 
       Fonts = {
-        general = "SFPro Nerd Font,11";
-        fixed = "SFMono Nerd Font,11";
+        general = "RobotoMono Nerd Font,11";
+        fixed = "RobotoMono Nerd Font,11";
       };
     };
     qt6ctSettings = {
@@ -51,8 +51,8 @@ in {
         standard_dialogs = "xdgdesktopportal";
       };
       Fonts = {
-        general = "SFPro Nerd Font,11";
-        fixed = "SFMono Nerd Font,11";
+        general = "RobotoMono Nerd Font,11";
+        fixed = "RobotoMono Nerd Font,11";
       };
     };
   };
@@ -71,13 +71,8 @@ in {
     };
 
     font = {
-      name = "SFPro Nerd Font";
+      name = "RobotoMono Nerd Font";
       size = 11;
-    };
-
-    cursorTheme = {
-      name = "macOS";
-      size = 24;
     };
   };
 

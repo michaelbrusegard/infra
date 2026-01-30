@@ -8,13 +8,13 @@
     "${inputs.nixpkgs-unstable}/nixos/modules/services/display-managers/dms-greeter.nix"
   ];
 
-  environment.systemPackages = [pkgs.apple-cursor];
+  environment.systemPackages = [pkgs.bibata-cursors];
 
   services.displayManager.dms-greeter = {
     enable = true;
     compositor.name = "hyprland";
     compositor.customConfig = ''
-      env = XCURSOR_THEME,macOS
+      env = XCURSOR_THEME,Bibata-Modern-Classic
       env = XCURSOR_SIZE,24
       input {
         kb_layout = us
