@@ -167,7 +167,9 @@
         "match:class ^(org.inkscape.Inkscape)$, workspace 6"
         "match:class ^(scribus)$, workspace 6"
         "match:class ^(org.freecad.FreeCAD)$, workspace 6"
-        "match:class ^(org.freedesktop.impl.portal.desktop.kde)$, float"
+        "match:class ^(termfilechooser)$, float"
+        "match:class ^(termfilechooser)$, size 80% 80%"
+        "match:class ^(termfilechooser)$, center"
       ];
     };
   };
