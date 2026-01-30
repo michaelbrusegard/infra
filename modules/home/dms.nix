@@ -9,10 +9,7 @@
 in {
   home = {
     sessionVariables = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
-      QT_QPA_PLATFORM = "wayland";
       ELECTRON_OZONE_PLATFORM_HINT = "auto";
-      QT_QPA_PLATFORMTHEME = "gtk3";
-      QT_QPA_PLATFORMTHEME_QT6 = "gtk3";
     };
 
     pointerCursor = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
@@ -21,15 +18,79 @@ in {
       size = 24;
       gtk.enable = true;
       x11.enable = true;
+      hyprcursor.enable = true;
+    };
+
+    file.".config/Kvantum/kvantum.kvconfig" = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+      text = ''
+        [General]
+        theme=Catppuccin-Mocha
+      '';
     };
   };
 
-  xdg.configFile = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
-    "DankMaterialShell".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
+  qt = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+    enable = true;
+
+    qt5ctSettings = {
+      Appearance = {
+        style = "kvantum";
+        icon_theme = "Papirus-Dark";
+        standard_dialogs = "xdgdesktopportal";
+      };
+
+      Fonts = {
+        general = "SFPro Nerd Font,11";
+        fixed = "SFMono Nerd Font,11";
+      };
+    };
+    qt6ctSettings = {
+      Appearance = {
+        style = "kvantum";
+        icon_theme = "Papirus-Dark";
+        standard_dialogs = "xdgdesktopportal";
+      };
+      Fonts = {
+        general = "SFPro Nerd Font,11";
+        fixed = "SFMono Nerd Font,11";
+      };
+    };
+  };
+
+  gtk = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+    enable = true;
+
+    theme = {
+      name = "Catppuccin-Mocha-Standard-Blue-Dark";
+      package = pkgs.catppuccin-gtk;
+    };
+
+    iconTheme = {
+      name = "Papirus-Dark";
+      package = pkgs.papirus-icon-theme;
+    };
+
+    font = {
+      name = "SFPro Nerd Font";
+      size = 11;
+    };
+
+    cursorTheme = {
+      name = "macOS";
+      size = 24;
+    };
   };
 
   home.packages = with pkgs;
     lib.optionals (stdenv.isLinux && !isWsl) [
-      kdePackages.qt6ct
+      kvantum
+      kvantum-qt5
+      kvantum-qt6
+      papirus-icon-theme
+      catppuccin-kvantum
     ];
+
+  xdg.configFile = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+    "DankMaterialShell".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
+  };
 }

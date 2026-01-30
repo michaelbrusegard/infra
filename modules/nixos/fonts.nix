@@ -15,9 +15,9 @@
       inter
     ];
     fontconfig.defaultFonts = {
-      serif = ["SFPro"];
-      sansSerif = ["SFPro"];
-      monospace = ["SFMono"];
+      serif = ["SFPro Nerd Font"];
+      sansSerif = ["SFPro Nerd Font"];
+      monospace = ["SFMono Nerd Font"];
       emoji = ["Apple Color Emoji"];
     };
     enableDefaultPackages = false;
