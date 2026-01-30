@@ -34,13 +34,14 @@ in {
       };
 
       Fonts = {
-        general = "RobotoMono Nerd Font,11";
+        general = "Roboto,11";
         fixed = "RobotoMono Nerd Font,11";
       };
     })));
 
   gtk = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
     enable = true;
+    colorScheme = "dark";
 
     theme = {
       name = "Catppuccin-BL-MB-dark";
@@ -55,17 +56,11 @@ in {
     };
 
     font = {
-      name = "RobotoMono Nerd Font";
+      name = "Roboto";
       size = 11;
+      package = pkgs.roboto;
     };
   };
-
-  home.packages = with pkgs;
-    lib.optionals (stdenv.isLinux && !isWsl) [
-      kvantum
-      kvantum-qt5
-      kvantum-qt6
-    ];
 
   xdg.configFile = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
     "DankMaterialShell".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
