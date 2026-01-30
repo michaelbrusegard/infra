@@ -1,4 +1,4 @@
-{...}: {
+_: {
   console = {
     enable = true;
     keyMap = "us";
