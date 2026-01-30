@@ -1,7 +1,4 @@
-{
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   fonts.packages = with pkgs; [
     roboto
     roboto-serif
@@ -11,9 +8,9 @@
     inter
   ];
   fontconfig.defaultFonts = {
-    sansSerif = [ "Roboto" ];
-    serif = [ "Roboto Serif" ];
-    monospace = [ "RobotoMono Nerd Font" ];
-    emoji = [ "Noto Color Emoji" ];
+    sansSerif = ["Roboto"];
+    serif = ["Roboto Serif"];
+    monospace = ["RobotoMono Nerd Font"];
+    emoji = ["Noto Color Emoji"];
   };
 }
