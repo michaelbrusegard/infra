@@ -1,7 +1,8 @@
-{pkgs, ...}: {
+{pkgs, config, ...}: {
   boot = {
     initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
-    kernelModules = ["kvm-amd" "nct6775"];
+    kernelModules = ["kvm-amd" "nct6775" "ddcci_backlight"];
+    extraModulePackages = with config.boot.kernelPackages; [ ddcci-driver ];
 
     kernelParams = ["quiet"];
     consoleLogLevel = 3;
@@ -22,6 +23,7 @@
       enable = true;
       extraPackages = [pkgs.mesa.opencl];
     };
+    i2c.enable = true;
 
     fancontrol = {
       enable = true;

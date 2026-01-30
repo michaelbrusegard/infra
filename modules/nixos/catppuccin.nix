@@ -10,6 +10,7 @@
     enable = true;
     accent = "blue";
     flavor = "mocha";
+    gtk.enable = false;
     cache.enable = true;
     tty.enable = !config._module.check;
   };
