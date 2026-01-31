@@ -32,6 +32,16 @@
         "mcp"
       ],
       "enabled": true
+    },
+    "tanstack": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@tanstack/cli",
+        "mcp"
+      ],
+      "enabled": true
     }
   },
   "agent": {
