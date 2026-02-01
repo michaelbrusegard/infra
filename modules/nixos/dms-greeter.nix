@@ -2,6 +2,7 @@
   pkgs,
   inputs,
   lib,
+  users,
   ...
 }: {
   # TODO: Remove when updating to nixpkgs 26.05
@@ -42,6 +43,7 @@
 
     services.displayManager.dms-greeter = {
       enable = true;
+      configHome = "/home/${builtins.head users}";
       compositor.name = "hyprland";
       compositor.customConfig = ''
         env = XCURSOR_THEME,Bibata-Modern-Classic

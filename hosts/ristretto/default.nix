@@ -43,6 +43,4 @@
     ];
 
   system.stateVersion = "25.11";
-
-  services.displayManager.dms-greeter.configHome = "/home/michaelbrusegard";
 }
