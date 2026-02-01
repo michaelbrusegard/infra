@@ -38,6 +38,7 @@ in
           lua5_1
           texliveFull
           opencode
+          beads
           ;
         lua51Packages = {
           inherit (pkgs-unstable.lua51Packages) luarocks;

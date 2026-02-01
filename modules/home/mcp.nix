@@ -4,7 +4,7 @@ _: {
     servers = {
       ark-ui = {
         command = "bunx";
-        args = [ "-y" "@ark-ui/mcp"];
+        args = ["-y" "@ark-ui/mcp"];
       };
       shadcn = {
         command = "bunx";
@@ -12,7 +12,7 @@ _: {
       };
       tanstack = {
         command = "bunx";
-        args = [ "-y" "@tanstack/cli" "mcp"];
+        args = ["-y" "@tanstack/cli" "mcp"];
       };
     };
   };
