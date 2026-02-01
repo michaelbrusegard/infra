@@ -8,30 +8,28 @@
   imports = [
     "${inputs.nixpkgs-unstable}/nixos/modules/services/display-managers/dms-greeter.nix"
   ];
-  config = {
-    environment.systemPackages = [pkgs.bibata-cursors];
+  environment.systemPackages = [pkgs.bibata-cursors];
 
-    services.displayManager.dms-greeter = {
-      enable = true;
-      configHome = "/home/${builtins.head users}";
-      compositor.name = "hyprland";
-      compositor.customConfig = ''
-        env = XCURSOR_THEME,Bibata-Modern-Classic
-        env = XCURSOR_SIZE,24
-        input {
-          kb_layout = us
-          kb_variant = mac
-          kb_options = lv3:lalt_switch
-          repeat_rate = 65
-          repeat_delay = 150
-          follow_mouse = 1
-        }
-        misc {
-          disable_hyprland_logo = true
-          disable_splash_rendering = true
-          disable_watchdog_warning = true
-        }
-      '';
-    };
+  services.displayManager.dms-greeter = {
+    enable = true;
+    configHome = "/home/${builtins.head users}";
+    compositor.name = "hyprland";
+    compositor.customConfig = ''
+      env = XCURSOR_THEME,Bibata-Modern-Classic
+      env = XCURSOR_SIZE,24
+      input {
+        kb_layout = us
+        kb_variant = mac
+        kb_options = lv3:lalt_switch
+        repeat_rate = 65
+        repeat_delay = 150
+        follow_mouse = 1
+      }
+      misc {
+        disable_hyprland_logo = true
+        disable_splash_rendering = true
+        disable_watchdog_warning = true
+      }
+    '';
   };
 }

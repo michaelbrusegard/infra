@@ -1,6 +1,8 @@
 {lib, ...}: {
-  gtk.iconCache.enable = true;
-  programs.dconf.enable = true;
+  config = {
+    gtk.iconCache.enable = true;
+    programs.dconf.enable = true;
+  };
 
   # TODO: Remove when updating to nixpkgs 26.05
   # Provide compatibility shim for services.displayManager.generic
@@ -30,5 +32,4 @@
       description = "Additional environment variables needed by the display manager.";
     };
   };
-
 }
