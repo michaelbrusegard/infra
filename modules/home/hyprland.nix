@@ -151,7 +151,7 @@
       ];
 
       windowrule = [
-        "match:class ^(Brave-browser)$, workspace 2"
+        "match:class ^(zen-beta)$, workspace 2"
         "match:class ^(Proton Mail)$, workspace 3"
         "match:class ^(Proton Pass)$, workspace 3"
         "match:class ^(obsidian)$, workspace 4"
