@@ -3,7 +3,6 @@
 in
   composeManyExtensions [
     (_: prev: import ../packages {pkgs = prev;})
-    inputs.nur.overlays.default
     inputs.yazi.overlays.default
     inputs.brew-nix.overlays.default
     (

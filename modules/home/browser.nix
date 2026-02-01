@@ -4,7 +4,9 @@
   isWsl,
   inputs,
   ...
-}: {
+}: let
+  nixSnowflakeIcon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+in {
   imports = [
     inputs.zen-browser.homeModules.beta
   ];
@@ -406,6 +408,151 @@
             display: none;
           }
         '';
+        search = {
+          force = true;
+          default = "ddg";
+          privateDefault = "ddg";
+          engines = {
+            bing.metaData.hidden = "true";
+            google.metaData.hidden = "true";
+            "ddg" = {
+              urls = [
+                {
+                  template = "https://duckduckgo.com";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                    {
+                      name = "origin";
+                      value = "your_ass";
+                    }
+                  ];
+                }
+              ];
+              definedAliases = ["duck" "ddg" "dck" "dckk"];
+            };
+            "Maps" = {
+              urls = [
+                {
+                  template = "http://maps.apple.com";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              definedAliases = ["maps"];
+            };
+            "Nix Packages" = {
+              urls = [
+                {
+                  template = "https://search.nixos.org/packages";
+                  params = [
+                    {
+                      name = "type";
+                      value = "packages";
+                    }
+                    {
+                      name = "channel";
+                      value = "unstable";
+                    }
+                    {
+                      name = "query";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              icon = nixSnowflakeIcon;
+              definedAliases = ["pkgs"];
+            };
+            "Nix Options" = {
+              urls = [
+                {
+                  template = "https://search.nixos.org/options";
+                  params = [
+                    {
+                      name = "channel";
+                      value = "unstable";
+                    }
+                    {
+                      name = "query";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              icon = nixSnowflakeIcon;
+              definedAliases = ["nop"];
+            };
+            "Home Manager Options" = {
+              urls = [
+                {
+                  template = "https://home-manager-options.extranix.com/";
+                  params = [
+                    {
+                      name = "query";
+                      value = "{searchTerms}";
+                    }
+                    {
+                      name = "release";
+                      value = "master"; # unstable
+                    }
+                  ];
+                }
+              ];
+              icon = nixSnowflakeIcon;
+              definedAliases = ["hmop"];
+            };
+            MakerWorld = {
+              urls = [
+                {
+                  template = "https://makerworld.com/en/search/models";
+                  params = [
+                    {
+                      name = "keyword";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              definedAliases = ["maker" "mw"];
+            };
+            Printables = {
+              urls = [
+                {
+                  template = "https://www.printables.com/search/models";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              definedAliases = ["pt" "print" "printables"];
+            };
+            "T3 Chat" = {
+              urls = [
+                {
+                  template = "https://www.t3.chat/new";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              icon = "https://t3.chat/favicon.ico";
+              definedAliases = ["@t3" "@t3chat"];
+            };
+          };
+        };
         mods = [
           "253a3a74-0cc4-47b7-8b82-996a64f030d5" # Floating History
           "4ab93b88-151c-451b-a1b7-a1e0e28fa7f8" # No Sidebar Scrollbar
