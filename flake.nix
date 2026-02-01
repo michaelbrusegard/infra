@@ -134,6 +134,7 @@
         system = "x86_64-linux";
         users = ["michaelbrusegard"];
         platform = "wsl";
+        hostConfig = "ristretto";
       })
 
       (lib.mkSystem {
