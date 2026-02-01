@@ -15,10 +15,6 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nur = {
-      url = "github:nix-community/NUR";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
@@ -77,6 +73,13 @@
     dsearch = {
       url = "github:AvengeMedia/danksearch";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs = {
+        nixpkgs.follows = "nixpkgs-unstable";
+        home-manager.follows = "home-manager";
+      };
     };
     wezterm = {
       url = "github:wez/wezterm?dir=nix";

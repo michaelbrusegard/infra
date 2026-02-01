@@ -1528,7 +1528,8 @@
         "quickshell": "quickshell_2",
         "sops-nix": "sops-nix",
         "wezterm": "wezterm",
-        "yazi": "yazi"
+        "yazi": "yazi",
+        "zen-browser": "zen-browser"
       }
     },
     "rust-analyzer-src": {
@@ -1797,6 +1798,29 @@
       "original": {
         "owner": "sxyazi",
         "repo": "yazi",
+        "type": "github"
+      }
+    },
+    "zen-browser": {
+      "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1769922110,
+        "narHash": "sha256-/0Cl75Yy4mQOWNfr2ZR5aYZlFc2geH7NUkwiwiKUNhg=",
+        "owner": "0xc000022070",
+        "repo": "zen-browser-flake",
+        "rev": "dc3cb779f0fae72b3ebffd60a2272095f8848eda",
+        "type": "github"
+      },
+      "original": {
+        "owner": "0xc000022070",
+        "repo": "zen-browser-flake",
         "type": "github"
       }
     },
