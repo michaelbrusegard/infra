@@ -1,11 +1,11 @@
-{pkgs, ...}: {
+_: {
   programs.opencode = {
     enable = true;
     enableMcpIntegration = true;
     settings = {
       autoupdate = false;
       theme = "catppuccin";
-      plugin = ["oh-my-opencode" "opencode-beads" "opencode-antigravity-auth@beta" "@tarquinen/opencode-dcp@latest"];
+      plugin = ["oh-my-opencode" "opencode-antigravity-auth@beta" "@tarquinen/opencode-dcp@latest"];
       model = "opencode/kimi-k2.5-free";
       small_model = "opencode/gpt-5-nano";
       provider = {
@@ -195,9 +195,6 @@
         };
       };
     };
-    packages = with pkgs; [
-      beads
-    ];
     sessionVariables = {
       OPENCODE_EXPERIMENTAL_OXFMT = "true";
       OPENCODE_EXPERIMENTAL_EXA = "true";
