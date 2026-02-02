@@ -13,6 +13,7 @@ in {
     ./editor.nix
     ./keymaps.nix
     ./util.nix
+    ./treesitter.nix
     ./autocmds.nix
     ./colorscheme.nix
   ];

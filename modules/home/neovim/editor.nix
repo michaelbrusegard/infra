@@ -27,6 +27,7 @@
         ];
       };
     };
+
     utility.motion.flash-nvim = {
       enable = true;
       mappings = {
@@ -37,23 +38,7 @@
         toggle = "<c-s>";
       };
     };
-    maps.normal = {
-      "<c-space>" = {
-        action = ''
-          function()
-            require("flash").treesitter({
-              actions = {
-                ["<c-space>"] = "next",
-                ["<BS>"] = "prev"
-              }
-            })
-          end
-        '';
-        lua = true;
-        desc = "Treesitter Incremental Selection";
-        mode = ["n" "o" "x"];
-      };
-    };
+
     lsp.trouble = {
       enable = true;
       setupOpts = {
@@ -72,7 +57,31 @@
         quickfix = "<leader>xQ";
       };
     };
+
+    notes.todo-comments = {
+      enable = true;
+      mappings = {
+        trouble = "<leader>xt";
+        telescope = "<leader>st";
+      };
+    };
+
     maps.normal = {
+      "<c-space>" = {
+        action = ''
+          function()
+            require("flash").treesitter({
+              actions = {
+                ["<c-space>"] = "next",
+                ["<BS>"] = "prev"
+              }
+            })
+          end
+        '';
+        lua = true;
+        desc = "Treesitter Incremental Selection";
+        mode = ["n" "o" "x"];
+      };
       "[q" = {
         action = ''
           function()
@@ -104,15 +113,6 @@
         lua = true;
         desc = "Next Trouble/Quickfix Item";
       };
-    };
-    notes.todo-comments = {
-      enable = true;
-      mappings = {
-        trouble = "<leader>xt";
-        telescope = "<leader>st";
-      };
-    };
-    maps.normal = {
       "]t" = {
         action = "function() require('todo-comments').jump_next() end";
         lua = true;
@@ -131,7 +131,18 @@
         action = "<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>";
         desc = "Todo/Fix/Fixme";
       };
+      "<leader>?" = {
+        action = "function() require('which-key').show({ global = false }) end";
+        lua = true;
+        desc = "Buffer Keymaps (which-key)";
+      };
+      "<c-w><space>" = {
+        action = "function() require('which-key').show({ keys = '<c-w>', loop = true }) end";
+        lua = true;
+        desc = "Window Hydra Mode (which-key)";
+      };
     };
+
     git.gitsigns = {
       enable = true;
       setupOpts = {
@@ -196,6 +207,7 @@
         '';
       };
     };
+
     binds.whichKey = {
       enable = true;
       setupOpts = {
@@ -300,18 +312,6 @@
             mode = ["n" "x"];
           }
         ];
-      };
-    };
-    maps.normal = {
-      "<leader>?" = {
-        action = "function() require('which-key').show({ global = false }) end";
-        lua = true;
-        desc = "Buffer Keymaps (which-key)";
-      };
-      "<c-w><space>" = {
-        action = "function() require('which-key').show({ keys = '<c-w>', loop = true }) end";
-        lua = true;
-        desc = "Window Hydra Mode (which-key)";
       };
     };
   };
