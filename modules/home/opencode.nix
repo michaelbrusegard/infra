@@ -30,7 +30,7 @@ _: {
           model = "opencode/glm-4.7-free";
         };
         quick = {
-          model = "opencode/gpt5-nano";
+          model = "opencode/gpt-5-nano";
         };
         unspecified-low = {
           model = "opencode/kimi-k2.5-free";
@@ -53,7 +53,7 @@ _: {
           model = "opencode/glm-4.7-free";
         };
         explore = {
-          model = "opencode/gpt5-nano";
+          model = "opencode/gpt-5-nano";
         };
         multimodal-looker = {
           model = "google/gemini-3-flash-preview";
