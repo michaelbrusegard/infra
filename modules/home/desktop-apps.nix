@@ -55,4 +55,9 @@
       brewCasks.wootility
       utm
     ]);
+
+  xdg.mimeApps.defaultApplications = {
+    "image/png" = ["imv.desktop"];
+    "image/jpeg" = ["imv.desktop"];
+  };
 }
