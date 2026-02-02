@@ -1,5 +1,7 @@
 {
   pkgs,
+  lib,
+  isWsl,
   inputs,
   ...
 }: let
@@ -28,7 +30,7 @@
       "text/html"
     ]);
 in {
-  xdg.mimeApps = {
+  xdg.mimeApps = lib.mkIf (!isWsl) {
     associations.added = associations;
     defaultApplications = associations;
   };

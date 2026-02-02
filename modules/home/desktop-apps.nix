@@ -56,7 +56,7 @@
       utm
     ]);
 
-  xdg.mimeApps.defaultApplications = {
+  xdg.mimeApps.defaultApplications = lib.mkIf (!isWsl) {
     "image/png" = ["imv.desktop"];
     "image/jpeg" = ["imv.desktop"];
   };

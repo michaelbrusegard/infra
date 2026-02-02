@@ -1,5 +1,4 @@
 {
-  pkgs,
   lib,
   isWsl,
   ...
@@ -11,7 +10,7 @@
     };
   };
 
-  xdg.mimeApps.defaultApplications = {
+  xdg.mimeApps.defaultApplications = lib.mkIf (!isWsl) {
     "application/pdf" = ["org.pwmt.zathura.desktop"];
   };
 }
