@@ -17,7 +17,7 @@ in {
       darwinDefaultsId = "app.zen-browser.zen";
       languagePacks = ["en-GB"];
       policies = {
-        AutofillAddressEnabled = true;
+        AutofillAddressEnabled = false;
         AutofillCreditCardEnabled = false;
         DisableAppUpdate = true;
         DisableFeedbackCommands = true;
@@ -27,6 +27,18 @@ in {
         DontCheckDefaultBrowser = true;
         NoDefaultBookmarks = true;
         OfferToSaveLogins = false;
+
+        SearchEngines = {
+          Default = "DuckDuckGo";
+          PreventInstalls = true;
+          Remove = [
+            "Google"
+            "Bing"
+            "eBay"
+            "Wikipedia"
+            "Perplexity"
+          ];
+        };
 
         EnableTrackingProtection = {
           Value = true;
@@ -179,6 +191,12 @@ in {
             installation_mode = "force_installed";
             default_area = "menupanel";
           };
+          # Vimium - keyboard navigation
+          "{d7742d87-e61d-4b78-b8a1-bb4848a7f12c}" = {
+            install_url = "https://addons.mozilla.org/firefox/downloads/latest/vimium-ff/latest.xpi";
+            installation_mode = "force_installed";
+            default_area = "menupanel";
+          };
         };
 
         Preferences = {
@@ -188,6 +206,14 @@ in {
             Status = "locked";
           };
           "browser.tabs.warnOnClose" = {
+            Value = false;
+            Status = "locked";
+          };
+          "browser.sessionstore.warnOnQuit" = {
+            Value = false;
+            Status = "locked";
+          };
+          "browser.warnOnQuit" = {
             Value = false;
             Status = "locked";
           };
@@ -257,6 +283,18 @@ in {
           # Firefox Behavior
           "browser.shell.checkDefaultBrowser" = {
             Value = false;
+            Status = "locked";
+          };
+          "extensions.allowPrivateBrowsingByDefault" = {
+            Value = true;
+            Status = "locked";
+          };
+          "toolkit.legacyUserProfileCustomizations.stylesheets" = {
+            Value = true;
+            Status = "locked";
+          };
+          "toolkit.tabbox.switchByScrolling" = {
+            Value = true;
             Status = "locked";
           };
           "browser.startup.homepage" = {
@@ -364,31 +402,6 @@ in {
             Status = "locked";
           };
         };
-
-        # Extension-specific settings
-        "3rdparty" = {
-          Extensions = {
-            "uBlock0@raymondhill.net" = {
-              settings = {
-                selectedFilterLists = [
-                  "ublock-filters"
-                  "ublock-badware"
-                  "ublock-privacy"
-                  "ublock-unbreak"
-                  "ublock-quick-fixes"
-                  "fanboy-cookiemonster"
-                  "easylist-cookie"
-                  "adguard-cookies"
-                  "adguard-popup"
-                  "adguard-mobile"
-                  "adguard-spyware"
-                  "block-annoyances"
-                  "adguard-social"
-                ];
-              };
-            };
-          };
-        };
       };
 
       profiles."default" = {
@@ -397,6 +410,7 @@ in {
           # Zen Browser UI/Workflow Settings
           "zen.workspaces.continue-where-left-off" = true;
           "zen.workspaces.natural-scroll" = true;
+          "zen.workspaces.show-workspace-indicator" = false;
           "zen.view.compact.hide-tabbar" = true;
           "zen.view.compact.hide-toolbar" = true;
           "zen.view.compact.animate-sidebar" = false;
@@ -426,21 +440,25 @@ in {
             --attention-dot-color: rgba(0, 0, 0, 0) !important;
           }
 
-          #zen-current-workspace-indicator-container {
-            display: none;
+          .zen-current-workspace-indicator {
+            display: none !important;
           }
         '';
         search = {
           force = true;
           default = "ddg";
           privateDefault = "ddg";
+          order = [
+            "ddg"
+            "T3 Chat"
+            "Nix Packages"
+            "Nix Options"
+            "Home Manager"
+            "Maps"
+            "MakerWorld"
+            "Printables"
+          ];
           engines = {
-            amazondotcom-us.metadata.hidden = "true";
-            bing.metaData.hidden = "true";
-            ebay.metadata.hidden = "true";
-            perplexity.metadata.hidden = "true";
-            google.metaData.hidden = "true";
-            wikipedia.metadata.hidden = "true";
             "ddg" = {
               urls = [
                 {
@@ -450,15 +468,20 @@ in {
                       name = "q";
                       value = "{searchTerms}";
                     }
+                    {
+                      name = "origin";
+                      value = "unknown";
+                    }
                   ];
                 }
               ];
-              definedAliases = ["@duck" "@ddg" "@dck" "@dckk"];
+              icon = "https://duckduckgo.com/favicon.ico";
+              definedAliases = ["@dd" "@ddg" "@duck"];
             };
-            "Maps" = {
+            "T3 Chat" = {
               urls = [
                 {
-                  template = "http://maps.apple.com";
+                  template = "https://www.t3.chat/new";
                   params = [
                     {
                       name = "q";
@@ -467,7 +490,8 @@ in {
                   ];
                 }
               ];
-              definedAliases = ["@maps"];
+              icon = "https://t3.chat/favicon.ico";
+              definedAliases = ["@t3" "@t3chat"];
             };
             "Nix Packages" = {
               urls = [
@@ -511,7 +535,7 @@ in {
               icon = nixSnowflakeIcon;
               definedAliases = ["@nop"];
             };
-            "Home Manager Options" = {
+            "Home Manager" = {
               urls = [
                 {
                   template = "https://home-manager-options.extranix.com/";
@@ -530,7 +554,22 @@ in {
               icon = nixSnowflakeIcon;
               definedAliases = ["@hmop"];
             };
-            MakerWorld = {
+            "Maps" = {
+              urls = [
+                {
+                  template = "http://maps.apple.com";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              icon = "https://maps.apple.com/favicon.ico";
+              definedAliases = ["@maps"];
+            };
+            "MakerWorld" = {
               urls = [
                 {
                   template = "https://makerworld.com/en/search/models";
@@ -542,9 +581,10 @@ in {
                   ];
                 }
               ];
-              definedAliases = ["@maker" "@mw"];
+              icon = "https://makerworld.com/favicon.ico";
+              definedAliases = ["@mw" "@maker"];
             };
-            Printables = {
+            "Printables" = {
               urls = [
                 {
                   template = "https://www.printables.com/search/models";
@@ -556,40 +596,33 @@ in {
                   ];
                 }
               ];
+              icon = "https://www.printables.com/favicon.ico";
               definedAliases = ["@pt" "@print" "@printables"];
             };
-            "T3 Chat" = {
-              urls = [
-                {
-                  template = "https://www.t3.chat/new";
-                  params = [
-                    {
-                      name = "q";
-                      value = "{searchTerms}";
-                    }
-                  ];
-                }
-              ];
-              icon = "https://t3.chat/favicon.ico";
-              definedAliases = ["@t3" "@t3chat"];
-            };
+            "bing".metaData.hidden = true;
+            "google".metaData.hidden = true;
+            "perplexity".metaData.hidden = true;
+            "wikipedia".metaData.hidden = true;
           };
         };
         mods = [
           "253a3a74-0cc4-47b7-8b82-996a64f030d5" # Floating History
+          "803c7895-b39b-458e-84f8-a521f4d7a064" # Hide Inactive Workspaces
           "4ab93b88-151c-451b-a1b7-a1e0e28fa7f8" # No Sidebar Scrollbar
           "7190e4e9-bead-4b40-8f57-95d852ddc941" # Tab title fixes
           "b51ff956-6aea-47ab-80c7-d6c047c0d510" # Disable Status Bar
           "a6335949-4465-4b71-926c-4a52d34bc9c0" # Better Find Bar
-          "c8d9e6e6-e702-4e15-8972-3596e57cf398" # Zen Back Forward
+          "4a222d82-2803-4ed2-a390-90abfce4f195" # Back Fwd Always Hidden
           "cb15abdb-0514-4e09-8ce5-722cf1f4a20f" # Hide Extension Name
           "d8b79d4a-6cba-4495-9ff6-d6d30b0e94fe" # Better Active Tab
           "e122b5d9-d385-4bf8-9971-e137809097d0" # No Top Sites
           "f7c71d9a-bce2-420f-ae44-a64bd92975ab" # Better Unloaded Tabs
           "fd24f832-a2e6-4ce9-8b19-7aa888eb7f8e" # Quietify
-          "22c9ec3b-7c62-46ae-991f-c8fff5046829" # Tab Numbers
           "4c2bec61-7f6c-4e5c-bdc6-c9ad1aba1827" # Vertical Split Tab Groups
           "599a1599-e6ab-4749-ab22-de533860de2c" # Pimp your PiP
+          "ae051a40-3e3a-429a-a6f4-199a28b18a75" # Only Reset on Hover
+          "4596d8f9-f0b7-4aeb-aa92-851222dc1888" # Only Close on Hover
+          "72f8f48d-86b9-4487-acea-eb4977b18f21" # Better CtrlTab Panel
         ];
         containersForce = true;
         containers = {
@@ -606,10 +639,10 @@ in {
         };
         spacesForce = true;
         spaces = {
-          "Personal" = {
+          "Default" = {
             id = "540f99e5-b487-46f8-9b1a-a91796f0908e";
             icon = "🫆";
-            position = 1000;
+            position = 0;
             theme = {
               type = "gradient";
               colors = [
@@ -635,7 +668,7 @@ in {
           "Work" = {
             id = "f85f6720-823b-47d2-b5a1-03c2fea59187";
             icon = "💼";
-            position = 2000;
+            position = 1;
             container = 1;
             theme = {
               type = "gradient";
@@ -662,7 +695,7 @@ in {
           "Manafish" = {
             id = "49f72204-7a80-4b4b-9c5c-99dfc81e0050";
             icon = "💰";
-            position = 3000;
+            position = 2;
             container = 2;
             theme = {
               type = "gradient";
@@ -691,19 +724,22 @@ in {
           "T3.chat" = {
             id = "fcfb236d-64d8-4d97-8871-3b720e03ce70";
             url = "https://t3.chat/";
-            position = 101;
+            workspace = "540f99e5-b487-46f8-9b1a-a91796f0908e";
+            position = 0;
             isEssential = true;
           };
           "GitHub" = {
             id = "02cdb6d4-bf59-446f-b8ef-3b7a083cb1fb";
             url = "https://github.com/";
-            position = 102;
+            workspace = "540f99e5-b487-46f8-9b1a-a91796f0908e";
+            position = 1;
             isEssential = true;
           };
           "YouTube" = {
             id = "67081b25-e880-468c-a14d-7fc037315051";
             url = "https://www.youtube.com/";
-            position = 103;
+            workspace = "540f99e5-b487-46f8-9b1a-a91796f0908e";
+            position = 2;
             isEssential = true;
           };
         };
@@ -1636,11 +1672,6 @@ in {
     in {
       associations.added = associations;
       defaultApplications = associations;
-    };
-
-    programs.chromium = {
-      enable = true;
-      package = pkgs.brave;
     };
   };
 }
