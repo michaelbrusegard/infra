@@ -18,7 +18,7 @@
     ./shortcuts.nix
     ./mimeapps.nix
   ];
-  programs.zen-browser = {
+  programs.zen-browser = lib.optionals (!isWsl) {
     enable = true;
     darwinDefaultsId = "app.zen-browser.zen";
     languagePacks = ["en-GB"];
