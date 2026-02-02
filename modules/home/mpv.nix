@@ -6,8 +6,14 @@
 }: {
   programs.mpv = lib.mkIf (!isWsl) {
     enable = true;
+  };
 
-    config = {
+  xdg.mimeApps.defaultApplications = {
+    "video/mp4" = ["mpv.desktop"];
+  };
+
+  xdg.configFile."mpv/mpv.conf" = lib.mkIf (!isWsl) {
+    text = ''
       profile = "gpu-hq";
       vo =
         if pkgs.stdenv.isDarwin
@@ -42,16 +48,18 @@
       cache = "yes";
       cache-secs = "60";
 
-      ytdl-format = "bestvideo[height<=?1080]+bestaudio/best";
-    };
+      ytdl-format = "bestvideo[height<=?1080]+bestaudio/best"
+    '';
+  };
 
-    bindings = {
-      WHEEL_UP = "add volume 5";
-      WHEEL_DOWN = "add volume -5";
-      l = "seek 5";
-      h = "seek -5";
-      j = "seek -60";
-      k = "seek 60";
-    };
+  xdg.configFile."mpv/input.conf" = lib.mkIf (!isWsl) {
+    text = ''
+      WHEEL_UP add volume 5
+      WHEEL_DOWN add volume -5
+      l seek 5
+      h seek -5
+      j seek -60
+      k seek 60
+    '';
   };
 }
