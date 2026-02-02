@@ -9,6 +9,7 @@
     };
     options = {
       autowrite = true;
+      autoread = true;
       completeopt = "menu,menuone,noselect";
       conceallevel = 2;
       confirm = true;
