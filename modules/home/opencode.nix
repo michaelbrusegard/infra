@@ -43,7 +43,7 @@ _: {
       };
       agents = {
         sisyphus = {
-          model = "google/gemini-3-flash-preview";
+          model = "google/gemini-3-pro-preview";
         };
         oracle = {
           model = "opencode/kimi-k2.5-free";
