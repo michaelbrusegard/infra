@@ -93,10 +93,6 @@ _: {
       Value = true;
       Status = "locked";
     };
-    "toolkit.tabbox.switchByScrolling" = {
-      Value = true;
-      Status = "locked";
-    };
     "browser.startup.homepage" = {
       Value = "chrome://browser/content/blanktab.html";
       Status = "locked";
@@ -147,14 +143,6 @@ _: {
     };
 
     # Privacy
-    "privacy.donottrackheader.enabled" = {
-      Value = true;
-      Status = "locked";
-    };
-    "privacy.clearOnShutdown_v2.formdata" = {
-      Value = true;
-      Status = "locked";
-    };
     "signon.rememberSignons" = {
       Value = false;
       Status = "locked";
@@ -177,12 +165,6 @@ _: {
     };
     "network.http.speculative-parallel-limit" = {
       Value = 0;
-      Status = "locked";
-    };
-
-    # Devtools
-    "devtools.cache.disabled" = {
-      Value = true;
       Status = "locked";
     };
 
