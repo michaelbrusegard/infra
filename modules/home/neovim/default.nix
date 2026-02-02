@@ -11,8 +11,11 @@ in {
     inputs.nvf.homeManagerModules.default
     ./options.nix
     ./keymaps.nix
+    ./autocmds.nix
   ];
 
+
+  # This is my old temporary Neovim configuration
   programs.neovim = {
     enable = true;
 
