@@ -9,8 +9,8 @@
 in {
   imports = [
     inputs.nvf.homeManagerModules.default
-    ./neovim/options.nix
-    ./neovim/keymaps.nix
+    ./options.nix
+    ./keymaps.nix
   ];
 
   programs.neovim = {
