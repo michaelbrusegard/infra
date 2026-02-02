@@ -10,6 +10,7 @@ in {
   imports = [
     inputs.nvf.homeManagerModules.default
     ./options.nix
+    ./editor.nix
     ./keymaps.nix
     ./autocmds.nix
     ./colorscheme.nix
