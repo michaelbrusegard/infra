@@ -14,6 +14,7 @@ in {
     ./keymaps.nix
     ./util.nix
     ./treesitter.nix
+    ./format.nix
     ./autocmds.nix
     ./colorscheme.nix
   ];
