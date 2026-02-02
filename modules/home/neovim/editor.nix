@@ -27,7 +27,6 @@
     };
     utility.motion.flash-nvim = {
       enable = true;
-      setupOpts = { };
       mappings = {
         jump = "s";
         treesitter = "S";
@@ -106,7 +105,6 @@
     };
     notes.todo-comments = {
       enable = true;
-      setupOpts = { };
       mappings = {
         trouble = "<leader>xt";
         telescope = "<leader>st";
