@@ -61,8 +61,6 @@
 
       smoothscroll = true;
 
-      spelllang = ["en"];
-
       splitbelow = true;
       splitkeep = "screen";
       splitright = true;
@@ -90,9 +88,7 @@
         eob = " ";
       };
     };
-  };
 
-  programs.nvf.settings.vim = {
     clipboard = {
       enable = true;
       providers = {
@@ -102,5 +98,10 @@
     extraConfigLua = ''
       vim.opt.clipboard = vim.env.SSH_CONNECTION and "" or "unnamedplus"
     '';
+
+    spellcheck = {
+      enable = true;
+      languages = [ "en" ];
+    };
   };
 }
