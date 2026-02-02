@@ -17,7 +17,6 @@ in {
     ./colorscheme.nix
   ];
 
-
   # This is my old temporary Neovim configuration
   programs.neovim = {
     enable = true;

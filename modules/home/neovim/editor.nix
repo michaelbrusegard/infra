@@ -1,28 +1,30 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   programs.nvf.settings.vim = {
     lazy.plugins = {
       "grug-far.nvim" = {
         package = pkgs.vimPlugins.grug-far-nvim;
-        cmd = [ "GrugFar" "GrugFarWithin" ];
-        setupOpts = { headerMaxWidth = 80; };
-        keys = [{
-          key = "<leader>sr";
-          mode = [ "n" "x" ];
-          action = ''
-            function()
-              local grug = require("grug-far")
-              local ext = vim.bo.buftype == "" and vim.fn.expand("%:e")
-              grug.open({
-                transient = true,
-                prefills = {
-                  filesFilter = ext and ext ~= "" and "*." .. ext or nil,
-                },
-              })
-            end
-          '';
-          lua = true;
-          desc = "Search and Replace";
-        }];
+        cmd = ["GrugFar" "GrugFarWithin"];
+        setupOpts = {headerMaxWidth = 80;};
+        keys = [
+          {
+            key = "<leader>sr";
+            mode = ["n" "x"];
+            action = ''
+              function()
+                local grug = require("grug-far")
+                local ext = vim.bo.buftype == "" and vim.fn.expand("%:e")
+                grug.open({
+                  transient = true,
+                  prefills = {
+                    filesFilter = ext and ext ~= "" and "*." .. ext or nil,
+                  },
+                })
+              end
+            '';
+            lua = true;
+            desc = "Search and Replace";
+          }
+        ];
       };
     };
     utility.motion.flash-nvim = {
@@ -44,12 +46,12 @@
                 ["<c-space>"] = "next",
                 ["<BS>"] = "prev"
               }
-            }) 
+            })
           end
         '';
         lua = true;
         desc = "Treesitter Incremental Selection";
-        mode = [ "n" "o" "x" ];
+        mode = ["n" "o" "x"];
       };
     };
     lsp.trouble = {
@@ -57,7 +59,7 @@
       setupOpts = {
         modes = {
           lsp = {
-            win = { position = "right"; };
+            win = {position = "right";};
           };
         };
       };
@@ -111,28 +113,42 @@
       };
     };
     maps.normal = {
-      "]t" = { action = "function() require('todo-comments').jump_next() end"; lua = true; desc = "Next Todo Comment"; };
-      "[t" = { action = "function() require('todo-comments').jump_prev() end"; lua = true; desc = "Previous Todo Comment"; };
-      "<leader>xT" = { action = "<cmd>Trouble todo toggle filter = {tag = {TODO,FIX,FIXME}}<cr>"; desc = "Todo/Fix/Fixme (Trouble)"; };
-      "<leader>sT" = { action = "<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>"; desc = "Todo/Fix/Fixme"; };
+      "]t" = {
+        action = "function() require('todo-comments').jump_next() end";
+        lua = true;
+        desc = "Next Todo Comment";
+      };
+      "[t" = {
+        action = "function() require('todo-comments').jump_prev() end";
+        lua = true;
+        desc = "Previous Todo Comment";
+      };
+      "<leader>xT" = {
+        action = "<cmd>Trouble todo toggle filter = {tag = {TODO,FIX,FIXME}}<cr>";
+        desc = "Todo/Fix/Fixme (Trouble)";
+      };
+      "<leader>sT" = {
+        action = "<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>";
+        desc = "Todo/Fix/Fixme";
+      };
     };
     git.gitsigns = {
       enable = true;
       setupOpts = {
         signs = {
-          add = { text = "▎"; };
-          change = { text = "▎"; };
-          delete = { text = ""; };
-          topdelete = { text = ""; };
-          changedelete = { text = "▎"; };
-          untracked = { text = "▎"; };
+          add = {text = "▎";};
+          change = {text = "▎";};
+          delete = {text = "";};
+          topdelete = {text = "";};
+          changedelete = {text = "▎";};
+          untracked = {text = "▎";};
         };
         signs_staged = {
-          add = { text = "▎"; };
-          change = { text = "▎"; };
-          delete = { text = ""; };
-          topdelete = { text = ""; };
-          changedelete = { text = "▎"; };
+          add = {text = "▎";};
+          change = {text = "▎";};
+          delete = {text = "";};
+          topdelete = {text = "";};
+          changedelete = {text = "▎";};
         };
         on_attach = ''
           function(buffer)
@@ -170,7 +186,7 @@
             map("n", "<leader>ghR", gs.reset_buffer, "Reset Buffer")
             map("n", "<leader>ghp", gs.preview_hunk_inline, "Preview Hunk Inline")
             map("n", "<leader>ghb", function() gs.blame_line({ full = true }) end, "Blame Line")
-            map("n", "<leader>ghB", function() gs.blame() end, "Blame Buffer") 
+            map("n", "<leader>ghB", function() gs.blame() end, "Blame Buffer")
             map("n", "<leader>ghd", gs.diffthis, "Diff This")
             map("n", "<leader>ghD", function() gs.diffthis("~") end, "Diff This ~")
 
@@ -185,35 +201,103 @@
       setupOpts = {
         preset = "helix";
         spec = [
-          { __unkeyed-1 = "<leader><tab>"; group = "tabs"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "<leader>c"; group = "code"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "<leader>d"; group = "debug"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "<leader>dp"; group = "profiler"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "<leader>f"; group = "file/find"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "<leader>g"; group = "git"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "<leader>gh"; group = "hunks"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "<leader>q"; group = "quit/session"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "<leader>s"; group = "search"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "<leader>u"; group = "ui"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "<leader>x"; group = "diagnostics/quickfix"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "["; group = "prev"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "]"; group = "next"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "g"; group = "goto"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "gs"; group = "surround"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "z"; group = "fold"; mode = [ "n" "x" ]; }
-          { __unkeyed-1 = "gx"; desc = "Open with system app"; mode = [ "n" "x" ]; }
+          {
+            __unkeyed-1 = "<leader><tab>";
+            group = "tabs";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "<leader>c";
+            group = "code";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "<leader>d";
+            group = "debug";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "<leader>dp";
+            group = "profiler";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "<leader>f";
+            group = "file/find";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "<leader>g";
+            group = "git";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "<leader>gh";
+            group = "hunks";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "<leader>q";
+            group = "quit/session";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "<leader>s";
+            group = "search";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "<leader>u";
+            group = "ui";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "<leader>x";
+            group = "diagnostics/quickfix";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "[";
+            group = "prev";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "]";
+            group = "next";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "g";
+            group = "goto";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "gs";
+            group = "surround";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "z";
+            group = "fold";
+            mode = ["n" "x"];
+          }
+          {
+            __unkeyed-1 = "gx";
+            desc = "Open with system app";
+            mode = ["n" "x"];
+          }
           {
             __unkeyed-1 = "<leader>b";
             group = "buffer";
             expand = "function() return require('which-key.extras').expand.buf() end";
-            mode = [ "n" "x" ];
+            mode = ["n" "x"];
           }
           {
             __unkeyed-1 = "<leader>w";
             group = "windows";
             proxy = "<c-w>";
             expand = "function() return require('which-key.extras').expand.win() end";
-            mode = [ "n" "x" ];
+            mode = ["n" "x"];
           }
         ];
       };

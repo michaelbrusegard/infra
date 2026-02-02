@@ -102,7 +102,7 @@
 
     spellcheck = {
       enable = true;
-      languages = [ "en" ];
+      languages = ["en"];
     };
   };
 }

@@ -1,21 +1,20 @@
-{ lib, ... }:
-{
+{lib, ...}: {
   programs.nvf.settings.vim.augroups = [
-    { name = "checktime"; }
-    { name = "highlight_yank"; }
-    { name = "resize_splits"; }
-    { name = "last_loc"; }
-    { name = "close_with_q"; }
-    { name = "man_unlisted"; }
-    { name = "wrap_spell"; }
-    { name = "json_conceal"; }
-    { name = "auto_create_dir"; }
+    {name = "checktime";}
+    {name = "highlight_yank";}
+    {name = "resize_splits";}
+    {name = "last_loc";}
+    {name = "close_with_q";}
+    {name = "man_unlisted";}
+    {name = "wrap_spell";}
+    {name = "json_conceal";}
+    {name = "auto_create_dir";}
   ];
 
   programs.nvf.settings.vim.autocmds = [
     # Check if we need to reload the file when it changed
     {
-      event = [ "FocusGained" "TermClose" "TermLeave" ];
+      event = ["FocusGained" "TermClose" "TermLeave"];
       group = "checktime";
       callback = lib.generators.mkLuaInline ''
         function()
@@ -28,7 +27,7 @@
 
     # Highlight on yank
     {
-      event = [ "TextYankPost" ];
+      event = ["TextYankPost"];
       group = "highlight_yank";
       callback = lib.generators.mkLuaInline ''
         function()
@@ -39,7 +38,7 @@
 
     # Resize splits if window got resized
     {
-      event = [ "VimResized" ];
+      event = ["VimResized"];
       group = "resize_splits";
       callback = lib.generators.mkLuaInline ''
         function()
@@ -52,7 +51,7 @@
 
     # Go to last loc when opening a buffer
     {
-      event = [ "BufReadPost" ];
+      event = ["BufReadPost"];
       group = "last_loc";
       callback = lib.generators.mkLuaInline ''
         function(event)
@@ -73,7 +72,7 @@
 
     # Close some filetypes with <q>
     {
-      event = [ "FileType" ];
+      event = ["FileType"];
       group = "close_with_q";
       pattern = [
         "PlenaryTestPopup"
@@ -110,9 +109,9 @@
 
     # Make it easier to close man-files when opened inline
     {
-      event = [ "FileType" ];
+      event = ["FileType"];
       group = "man_unlisted";
-      pattern = [ "man" ];
+      pattern = ["man"];
       callback = lib.generators.mkLuaInline ''
         function(event)
           vim.bo[event.buf].buflisted = false
@@ -122,9 +121,9 @@
 
     # Wrap and check for spell in text filetypes
     {
-      event = [ "FileType" ];
+      event = ["FileType"];
       group = "wrap_spell";
-      pattern = [ "text" "plaintex" "typst" "gitcommit" "markdown" ];
+      pattern = ["text" "plaintex" "typst" "gitcommit" "markdown"];
       callback = lib.generators.mkLuaInline ''
         function()
           vim.opt_local.wrap = true
@@ -135,9 +134,9 @@
 
     # Fix conceallevel for json files
     {
-      event = [ "FileType" ];
+      event = ["FileType"];
       group = "json_conceal";
-      pattern = [ "json" "jsonc" "json5" ];
+      pattern = ["json" "jsonc" "json5"];
       callback = lib.generators.mkLuaInline ''
         function()
           vim.opt_local.conceallevel = 0
@@ -147,7 +146,7 @@
 
     # Auto create dir when saving a file
     {
-      event = [ "BufWritePre" ];
+      event = ["BufWritePre"];
       group = "auto_create_dir";
       callback = lib.generators.mkLuaInline ''
         function(event)

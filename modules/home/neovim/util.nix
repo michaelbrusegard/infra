@@ -1,10 +1,10 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   programs.nvf.settings.vim = {
     utility.snacks-nvim = {
       enable = true;
       setupOpts = {
-        bigfile = { enabled = true; };
-        quickfile = { enabled = true; };
+        bigfile = {enabled = true;};
+        quickfile = {enabled = true;};
         terminal = {
           win = {
             keys = {
@@ -67,19 +67,51 @@
     };
 
     maps.normal = {
-      "<leader>." = { action = "function() Snacks.scratch() end"; lua = true; desc = "Toggle Scratch Buffer"; };
-      "<leader>S" = { action = "function() Snacks.scratch.select() end"; lua = true; desc = "Select Scratch Buffer"; };
-      "<leader>dps" = { action = "function() Snacks.profiler.scratch() end"; lua = true; desc = "Profiler Scratch Buffer"; };
+      "<leader>." = {
+        action = "function() Snacks.scratch() end";
+        lua = true;
+        desc = "Toggle Scratch Buffer";
+      };
+      "<leader>S" = {
+        action = "function() Snacks.scratch.select() end";
+        lua = true;
+        desc = "Select Scratch Buffer";
+      };
+      "<leader>dps" = {
+        action = "function() Snacks.profiler.scratch() end";
+        lua = true;
+        desc = "Profiler Scratch Buffer";
+      };
     };
     lazy.plugins = {
       "persistence.nvim" = {
         package = pkgs.vimPlugins.persistence-nvim;
-        event = [ "BufReadPre" ];
+        event = ["BufReadPre"];
         keys = [
-          { key = "<leader>qs"; action = "function() require('persistence').load() end"; lua = true; desc = "Restore Session"; }
-          { key = "<leader>qS"; action = "function() require('persistence').select() end"; lua = true; desc = "Select Session"; }
-          { key = "<leader>ql"; action = "function() require('persistence').load({ last = true }) end"; lua = true; desc = "Restore Last Session"; }
-          { key = "<leader>qd"; action = "function() require('persistence').stop() end"; lua = true; desc = "Don't Save Current Session"; }
+          {
+            key = "<leader>qs";
+            action = "function() require('persistence').load() end";
+            lua = true;
+            desc = "Restore Session";
+          }
+          {
+            key = "<leader>qS";
+            action = "function() require('persistence').select() end";
+            lua = true;
+            desc = "Select Session";
+          }
+          {
+            key = "<leader>ql";
+            action = "function() require('persistence').load({ last = true }) end";
+            lua = true;
+            desc = "Restore Last Session";
+          }
+          {
+            key = "<leader>qd";
+            action = "function() require('persistence').stop() end";
+            lua = true;
+            desc = "Don't Save Current Session";
+          }
         ];
       };
 
