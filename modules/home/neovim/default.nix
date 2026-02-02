@@ -12,6 +12,7 @@ in {
     ./options.nix
     ./editor.nix
     ./keymaps.nix
+    ./util.nix
     ./autocmds.nix
     ./colorscheme.nix
   ];
