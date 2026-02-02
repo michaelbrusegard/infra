@@ -15,6 +15,7 @@ in {
     ./util.nix
     ./treesitter.nix
     ./format.nix
+    ./lint.nix
     ./autocmds.nix
     ./colorscheme.nix
   ];
