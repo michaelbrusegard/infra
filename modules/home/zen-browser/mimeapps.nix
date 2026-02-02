@@ -4,7 +4,7 @@
   ...
 }: let
   value = let
-    zen-browser = inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform}.beta;
+    zen-browser = inputs.zen-browser.packages.${pkgs.system}.beta;
   in
     zen-browser.meta.desktopFileName;
 
