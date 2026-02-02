@@ -6,6 +6,7 @@
 }: {
   imports = lib.optionals (!isWsl) [
     inputs.zen-browser.homeModules.beta
+    ./base.nix
     ./policies.nix
     ./extensions.nix
     ./preferences.nix
@@ -18,9 +19,4 @@
     ./shortcuts.nix
     ./mimeapps.nix
   ];
-  config.programs.zen-browser = lib.mkIf (!isWsl) {
-    enable = true;
-    darwinDefaultsId = "app.zen-browser.zen";
-    languagePacks = ["en-GB"];
-  };
 }
