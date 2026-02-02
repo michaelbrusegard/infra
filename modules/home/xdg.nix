@@ -1,9 +1,9 @@
-_: {
+{pkgs, ...}: {
   xdg = {
-    enable = true;
+    enable = pkgs.stdenv.isLinux;
 
     userDirs = {
-      enable = true;
+      enable = pkgs.stdenv.isLinux;
       createDirectories = true;
 
       desktop = "$HOME/Desktop";
@@ -18,6 +18,6 @@ _: {
       };
     };
 
-    mimeApps.enable = true;
+    mimeApps.enable = pkgs.stdenv.isLinux;
   };
 }
