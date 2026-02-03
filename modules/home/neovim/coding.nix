@@ -1,4 +1,4 @@
-_: {pkgs, ...}: {
+{pkgs, ...}: {
   programs.nvf.settings.vim = {
     lazy.plugins = {
       "ts-comments.nvim" = {

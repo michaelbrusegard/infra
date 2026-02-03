@@ -15,6 +15,7 @@ in {
     ./keymaps.nix
     ./ui.nix
     ./util.nix
+    ./lsp.nix
     ./treesitter.nix
     ./format.nix
     ./lint.nix
