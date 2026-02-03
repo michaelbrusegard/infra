@@ -16,6 +16,7 @@ in {
     ./ui.nix
     ./util.nix
     ./lsp.nix
+    ./ai.nix
     ./treesitter.nix
     ./format.nix
     ./lint.nix

@@ -6,10 +6,24 @@
         bigfile = {enabled = true;};
         explorer = {enabled = true;};
         image = {enabled = true;};
-        indent = {enabled = true;};
+        indent = {
+          enabled = true;
+          indent = { char = "▏"; };
+          scope = { underline = true; char = "▏"; };
+        };
         input = {enabled = true;};
         notifier = {enabled = true;};
-        picker = {enabled = true;};
+        picker = {
+          enabled = true;
+          sources = {
+            files = { hidden = true; };
+            explorer = {
+              hidden = true;
+              ignored = true;
+              exclude = [ ".git" ".DS_Store" "node_modules" ".next" ".cache" "target" "dist" "build" ];
+            };
+          };
+        };
         quickfile = {enabled = true;};
         scope = {enabled = true;};
         scroll = {enabled = true;};
