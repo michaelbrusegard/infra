@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   programs.nvf.settings.vim = {
     lazy.plugins = {
       "opencode.nvim" = {
@@ -8,21 +8,21 @@
             key = "<leader>aa";
             action = ''function() require("opencode").ask("@this: ", { submit = true }) end'';
             lua = true;
-            mode = [ "n" "x" ];
+            mode = ["n" "x"];
             desc = "Ask about this";
           }
           {
             key = "<leader>as";
             action = ''function() require("opencode").select() end'';
             lua = true;
-            mode = [ "n" "x" ];
+            mode = ["n" "x"];
             desc = "Select prompt";
           }
           {
             key = "<leader>ac";
             action = ''function() require("opencode").prompt("@this") end'';
             lua = true;
-            mode = [ "n" "x" ];
+            mode = ["n" "x"];
             desc = "Add this";
           }
           {
@@ -66,7 +66,10 @@
     };
 
     binds.whichKey.setupOpts.spec = [
-      { __unkeyed-1 = "<leader>a"; group = "ai"; }
+      {
+        __unkeyed-1 = "<leader>a";
+        group = "ai";
+      }
     ];
   };
 }

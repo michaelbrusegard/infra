@@ -8,19 +8,22 @@
         image = {enabled = true;};
         indent = {
           enabled = true;
-          indent = { char = "▏"; };
-          scope = { underline = true; char = "▏"; };
+          indent = {char = "▏";};
+          scope = {
+            underline = true;
+            char = "▏";
+          };
         };
         input = {enabled = true;};
         notifier = {enabled = true;};
         picker = {
           enabled = true;
           sources = {
-            files = { hidden = true; };
+            files = {hidden = true;};
             explorer = {
               hidden = true;
               ignored = true;
-              exclude = [ ".git" ".DS_Store" "node_modules" ".next" ".cache" "target" "dist" "build" ];
+              exclude = [".git" ".DS_Store" "node_modules" ".next" ".cache" "target" "dist" "build"];
             };
           };
         };

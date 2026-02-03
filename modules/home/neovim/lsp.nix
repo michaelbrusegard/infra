@@ -1,4 +1,4 @@
-{ lib, ... }: {
+{lib, ...}: {
   programs.nvf.settings.vim = {
     lsp = {
       enable = true;
@@ -46,10 +46,10 @@
       "lua_ls" = {
         settings = {
           Lua = {
-            workspace = { checkThirdParty = false; };
-            codeLens = { enable = true; };
-            completion = { callSnippet = "Replace"; };
-            doc = { privateName = [ "^_" ]; };
+            workspace = {checkThirdParty = false;};
+            codeLens = {enable = true;};
+            completion = {callSnippet = "Replace";};
+            doc = {privateName = ["^_"];};
             hint = {
               enable = true;
               setType = false;
@@ -77,14 +77,39 @@
     '';
 
     maps.normal = {
-      "<leader>cc" = { action = "function() vim.lsp.codelens.run() end"; lua = true; desc = "Run Codelens"; mode = ["n" "x"]; };
-      "<leader>cC" = { action = "function() vim.lsp.codelens.refresh() end"; lua = true; desc = "Refresh & Display Codelens"; };
-      "<leader>cR" = { action = "function() require('snacks').rename.rename_file() end"; lua = true; desc = "Rename File"; };
-      "]]" = { action = "function() require('snacks').words.jump(vim.v.count1) end"; lua = true; desc = "Next Reference"; };
-      "[[" = { action = "function() require('snacks').words.jump(-vim.v.count1) end"; lua = true; desc = "Prev Reference"; };
+      "<leader>cc" = {
+        action = "function() vim.lsp.codelens.run() end";
+        lua = true;
+        desc = "Run Codelens";
+        mode = ["n" "x"];
+      };
+      "<leader>cC" = {
+        action = "function() vim.lsp.codelens.refresh() end";
+        lua = true;
+        desc = "Refresh & Display Codelens";
+      };
+      "<leader>cR" = {
+        action = "function() require('snacks').rename.rename_file() end";
+        lua = true;
+        desc = "Rename File";
+      };
+      "]]" = {
+        action = "function() require('snacks').words.jump(vim.v.count1) end";
+        lua = true;
+        desc = "Next Reference";
+      };
+      "[[" = {
+        action = "function() require('snacks').words.jump(-vim.v.count1) end";
+        lua = true;
+        desc = "Prev Reference";
+      };
     };
     maps.insert = {
-      "<c-k>" = { action = "function() vim.lsp.buf.signature_help() end"; lua = true; desc = "Signature Help"; };
+      "<c-k>" = {
+        action = "function() vim.lsp.buf.signature_help() end";
+        lua = true;
+        desc = "Signature Help";
+      };
     };
   };
 }
