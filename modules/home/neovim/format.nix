@@ -19,17 +19,18 @@ _: {
       };
     };
 
-    maps.normal = {
-      "<leader>cF" = {
+    keymaps = [
+      {
+        key = "<leader>cF";
+        mode = ["n" "x"];
+        lua = true;
         action = ''
           function()
             require("conform").format({ formatters = { "injected" }, timeout_ms = 3000 })
           end
         '';
-        lua = true;
-        desc = "Format Injected Langs";
-        mode = ["n" "x"];
-      };
-    };
+        options = {desc = "Format Injected Langs";};
+      }
+    ];
   };
 }

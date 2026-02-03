@@ -76,40 +76,49 @@
       })
     '';
 
-    maps.normal = {
-      "<leader>cc" = {
-        action = "function() vim.lsp.codelens.run() end";
-        lua = true;
-        desc = "Run Codelens";
+    keymaps = [
+      {
+        key = "<leader>cc";
         mode = ["n" "x"];
-      };
-      "<leader>cC" = {
+        lua = true;
+        action = "function() vim.lsp.codelens.run() end";
+        options = {desc = "Run Codelens";};
+      }
+      {
+        key = "<leader>cC";
+        mode = "n";
+        lua = true;
         action = "function() vim.lsp.codelens.refresh() end";
+        options = {desc = "Refresh & Display Codelens";};
+      }
+      {
+        key = "<leader>cR";
+        mode = "n";
         lua = true;
-        desc = "Refresh & Display Codelens";
-      };
-      "<leader>cR" = {
         action = "function() require('snacks').rename.rename_file() end";
+        options = {desc = "Rename File";};
+      }
+      {
+        key = "]]";
+        mode = "n";
         lua = true;
-        desc = "Rename File";
-      };
-      "]]" = {
         action = "function() require('snacks').words.jump(vim.v.count1) end";
+        options = {desc = "Next Reference";};
+      }
+      {
+        key = "[[";
+        mode = "n";
         lua = true;
-        desc = "Next Reference";
-      };
-      "[[" = {
         action = "function() require('snacks').words.jump(-vim.v.count1) end";
+        options = {desc = "Prev Reference";};
+      }
+      {
+        key = "<c-k>";
+        mode = "i";
         lua = true;
-        desc = "Prev Reference";
-      };
-    };
-    maps.insert = {
-      "<c-k>" = {
         action = "function() vim.lsp.buf.signature_help() end";
-        lua = true;
-        desc = "Signature Help";
-      };
-    };
+        options = {desc = "Signature Help";};
+      }
+    ];
   };
 }

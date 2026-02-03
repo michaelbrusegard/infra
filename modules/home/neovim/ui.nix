@@ -57,62 +57,18 @@
       };
     };
 
-    maps.normal = {
-      "<leader>snl" = {
-        action = "function() require('noice').cmd('last') end";
-        lua = true;
-        desc = "Noice Last Message";
-      };
-      "<leader>snh" = {
-        action = "function() require('noice').cmd('history') end";
-        lua = true;
-        desc = "Noice History";
-      };
-      "<leader>sna" = {
-        action = "function() require('noice').cmd('all') end";
-        lua = true;
-        desc = "Noice All";
-      };
-      "<leader>snd" = {
-        action = "function() require('noice').cmd('dismiss') end";
-        lua = true;
-        desc = "Dismiss All";
-      };
-      "<leader>snt" = {
-        action = "function() require('noice').cmd('pick') end";
-        lua = true;
-        desc = "Noice Picker (Telescope/FzfLua)";
-      };
-      "<c-f>" = {
-        action = "function() if not require('noice.lsp').scroll(4) then return '<c-f>' end end";
-        lua = true;
-        silent = true;
-        expr = true;
-        desc = "Scroll Forward";
-        mode = ["i" "n" "s"];
-      };
-      "<c-b>" = {
-        action = "function() if not require('noice.lsp').scroll(-4) then return '<c-b>' end end";
-        lua = true;
-        silent = true;
-        expr = true;
-        desc = "Scroll Backward";
-        mode = ["i" "n" "s"];
-      };
-    };
-
-    maps.command = {
-      "<S-Enter>" = {
-        action = "function() require('noice').redirect(vim.fn.getcmdline()) end";
-        lua = true;
-        desc = "Redirect Cmdline";
-      };
-    };
+    luaConfigRC.noice-hack = ''
+      if vim.o.filetype == "lazy" then
+        vim.cmd([[messages clear]])
+      end
+    '';
 
     statusline.lualine = {
       enable = true;
       theme = "auto";
       globalStatus = true;
+      disabledFiletypes = ["dashboard" "alpha" "ministarter" "snacks_dashboard"];
+
       sectionSeparator = {
         left = "";
         right = "";
@@ -121,6 +77,7 @@
         left = "";
         right = "";
       };
+
       activeSection = {
         a = [''{ "mode", fmt = string.lower }''];
         b = ["'branch'"];
@@ -136,12 +93,84 @@
           ''{ function() return package.loaded['noice'] and require('noice').api.status.command.get() or "" end, cond = function() return package.loaded['noice'] and require('noice').api.status.command.has() end, color = { fg = "#bb9af7" } }''
           ''{ function() return package.loaded['noice'] and require('noice').api.status.mode.get() or "" end, cond = function() return package.loaded['noice'] and require('noice').api.status.mode.has() end, color = { fg = "#ff9e64" } }''
           ''{ function() return "  " .. (package.loaded['dap'] and require("dap").status() or "") end, cond = function() return package.loaded['dap'] and require("dap").status() ~= "" end, color = { fg = "#db4b4b" } }''
+          ''{ function() return require("lazy.status").updates() end, cond = require("lazy.status").has_updates, color = { fg = "#ff9e64" } }''
           ''{ "diff", symbols = { added = " ", modified = " ", removed = " " }, source = function() local gitsigns = vim.b.gitsigns_status_dict if gitsigns then return { added = gitsigns.added, modified = gitsigns.changed, removed = gitsigns.removed } end end }''
         ];
         y = ["'progress'"];
         z = ["'location'"];
       };
+
+      setupOpts = {
+        extensions = ["neo-tree" "lazy" "fzf"];
+      };
     };
+
+    keymaps = [
+      {
+        key = "<leader>snl";
+        mode = "n";
+        lua = true;
+        action = "function() require('noice').cmd('last') end";
+        options = {desc = "Noice Last Message";};
+      }
+      {
+        key = "<leader>snh";
+        mode = "n";
+        lua = true;
+        action = "function() require('noice').cmd('history') end";
+        options = {desc = "Noice History";};
+      }
+      {
+        key = "<leader>sna";
+        mode = "n";
+        lua = true;
+        action = "function() require('noice').cmd('all') end";
+        options = {desc = "Noice All";};
+      }
+      {
+        key = "<leader>snd";
+        mode = "n";
+        lua = true;
+        action = "function() require('noice').cmd('dismiss') end";
+        options = {desc = "Dismiss All";};
+      }
+      {
+        key = "<leader>snt";
+        mode = "n";
+        lua = true;
+        action = "function() require('noice').cmd('pick') end";
+        options = {desc = "Noice Picker (Telescope/FzfLua)";};
+      }
+      {
+        key = "<c-f>";
+        mode = ["i" "n" "s"];
+        lua = true;
+        action = "function() if not require('noice.lsp').scroll(4) then return '<c-f>' end end";
+        options = {
+          silent = true;
+          expr = true;
+          desc = "Scroll Forward";
+        };
+      }
+      {
+        key = "<c-b>";
+        mode = ["i" "n" "s"];
+        lua = true;
+        action = "function() if not require('noice.lsp').scroll(-4) then return '<c-b>' end end";
+        options = {
+          silent = true;
+          expr = true;
+          desc = "Scroll Backward";
+        };
+      }
+      {
+        key = "<S-Enter>";
+        mode = "c";
+        lua = true;
+        action = "function() require('noice').redirect(vim.fn.getcmdline()) end";
+        options = {desc = "Redirect Cmdline";};
+      }
+    ];
 
     lazy.plugins = {
       "nui.nvim" = {

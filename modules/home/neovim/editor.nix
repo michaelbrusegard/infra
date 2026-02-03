@@ -55,8 +55,11 @@
       };
     };
 
-    maps.normal = {
-      "<c-space>" = {
+    keymaps = [
+      {
+        key = "<c-space>";
+        mode = ["n" "o" "x"];
+        lua = true;
         action = ''
           function()
             require("flash").treesitter({
@@ -67,11 +70,12 @@
             })
           end
         '';
+        options = {desc = "Treesitter Incremental Selection";};
+      }
+      {
+        key = "[q";
+        mode = "n";
         lua = true;
-        desc = "Treesitter Incremental Selection";
-        mode = ["n" "o" "x"];
-      };
-      "[q" = {
         action = ''
           function()
             if require("trouble").is_open() then
@@ -84,10 +88,12 @@
             end
           end
         '';
+        options = {desc = "Previous Trouble/Quickfix Item";};
+      }
+      {
+        key = "]q";
+        mode = "n";
         lua = true;
-        desc = "Previous Trouble/Quickfix Item";
-      };
-      "]q" = {
         action = ''
           function()
             if require("trouble").is_open() then
@@ -99,38 +105,49 @@
             end
           end
         '';
+        options = {desc = "Next Trouble/Quickfix Item";};
+      }
+      {
+        key = "]t";
+        mode = "n";
         lua = true;
-        desc = "Next Trouble/Quickfix Item";
-      };
-      "]t" = {
         action = "function() require('todo-comments').jump_next() end";
+        options = {desc = "Next Todo Comment";};
+      }
+      {
+        key = "[t";
+        mode = "n";
         lua = true;
-        desc = "Next Todo Comment";
-      };
-      "[t" = {
         action = "function() require('todo-comments').jump_prev() end";
-        lua = true;
-        desc = "Previous Todo Comment";
-      };
-      "<leader>xT" = {
+        options = {desc = "Previous Todo Comment";};
+      }
+      {
+        key = "<leader>xT";
+        mode = "n";
         action = "<cmd>Trouble todo toggle filter = {tag = {TODO,FIX,FIXME}}<cr>";
-        desc = "Todo/Fix/Fixme (Trouble)";
-      };
-      "<leader>sT" = {
+        options = {desc = "Todo/Fix/Fixme (Trouble)";};
+      }
+      {
+        key = "<leader>sT";
+        mode = "n";
         action = "<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>";
-        desc = "Todo/Fix/Fixme";
-      };
-      "<leader>?" = {
+        options = {desc = "Todo/Fix/Fixme";};
+      }
+      {
+        key = "<leader>?";
+        mode = "n";
+        lua = true;
         action = "function() require('which-key').show({ global = false }) end";
+        options = {desc = "Buffer Keymaps (which-key)";};
+      }
+      {
+        key = "<c-w><space>";
+        mode = "n";
         lua = true;
-        desc = "Buffer Keymaps (which-key)";
-      };
-      "<c-w><space>" = {
         action = "function() require('which-key').show({ keys = '<c-w>', loop = true }) end";
-        lua = true;
-        desc = "Window Hydra Mode (which-key)";
-      };
-    };
+        options = {desc = "Window Hydra Mode (which-key)";};
+      }
+    ];
 
     git.gitsigns = {
       enable = true;
