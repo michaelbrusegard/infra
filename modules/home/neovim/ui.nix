@@ -113,14 +113,23 @@
       enable = true;
       theme = "auto";
       globalStatus = true;
+      sectionSeparator = {
+        left = "";
+        right = "";
+      };
+      componentSeparator = {
+        left = "";
+        right = "";
+      };
       activeSection = {
-        a = ["'mode'"];
+        a = [''{ "mode", fmt = string.lower }''];
         b = ["'branch'"];
         c = [
           ''function() return vim.fn.fnamemodify(vim.fn.getcwd(), ':t') end''
           ''{ "diagnostics", symbols = { error = " ", warn = " ", info = " ", hint = " " } }''
           ''{ "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } }''
           ''function() return vim.fn.expand("%:p:~:.") end''
+          ''{ function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal}', hl_group = 'lualine_c_normal'}).get() or "" end, cond = function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal}', hl_group = 'lualine_c_normal'}).has() end }''
         ];
         x = [
           ''function() return package.loaded['snacks'] and require('snacks').profiler.status() or "" end''
@@ -129,13 +138,8 @@
           ''{ function() return "  " .. (package.loaded['dap'] and require("dap").status() or "") end, cond = function() return package.loaded['dap'] and require("dap").status() ~= "" end, color = { fg = "#db4b4b" } }''
           ''{ "diff", symbols = { added = " ", modified = " ", removed = " " }, source = function() local gitsigns = vim.b.gitsigns_status_dict if gitsigns then return { added = gitsigns.added, modified = gitsigns.changed, removed = gitsigns.removed } end end }''
         ];
-        y = [
-          ''{ "progress", separator = " ", padding = { left = 1, right = 0 } }''
-          ''{ "location", padding = { left = 0, right = 1 } }''
-        ];
-        z = [
-          ''function() return " " .. os.date("%R") end''
-        ];
+        y = ["'progress'"];
+        z = ["'location'"];
       };
     };
 
