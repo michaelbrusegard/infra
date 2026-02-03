@@ -93,36 +93,43 @@
       };
     };
 
-    # Ensure Snacks is available for keymaps
-    # Removed global initialization as per user request
-
-    maps.normal = {
-      "<leader>." = {
+    keymaps = [
+      {
+        key = "<leader>.";
+        mode = "n";
+        lua = true;
         action = "function() require('snacks').scratch() end";
+        options = {desc = "Toggle Scratch Buffer";};
+      }
+      {
+        key = "<leader>S";
+        mode = "n";
         lua = true;
-        desc = "Toggle Scratch Buffer";
-      };
-      "<leader>S" = {
         action = "function() require('snacks').scratch.select() end";
+        options = {desc = "Select Scratch Buffer";};
+      }
+      {
+        key = "<leader>dps";
+        mode = "n";
         lua = true;
-        desc = "Select Scratch Buffer";
-      };
-      "<leader>dps" = {
         action = "function() require('snacks').profiler.scratch() end";
+        options = {desc = "Profiler Scratch Buffer";};
+      }
+      {
+        key = "<leader>n";
+        mode = "n";
         lua = true;
-        desc = "Profiler Scratch Buffer";
-      };
-      "<leader>n" = {
         action = "function() require('snacks').picker.notifications() end";
+        options = {desc = "Notification History";};
+      }
+      {
+        key = "<leader>un";
+        mode = "n";
         lua = true;
-        desc = "Notification History";
-      };
-      "<leader>un" = {
         action = "function() require('snacks').notifier.hide() end";
-        lua = true;
-        desc = "Dismiss All Notifications";
-      };
-    };
+        options = {desc = "Dismiss All Notifications";};
+      }
+    ];
     lazy.plugins = {
       "persistence.nvim" = {
         package = pkgs.vimPlugins.persistence-nvim;

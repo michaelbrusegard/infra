@@ -788,7 +788,7 @@ _: {
       key = "-";
       action = "function() require('snacks').explorer() end";
       lua = true;
-      options = { desc = "Explorer Snacks (cwd)"; };
+      options = {desc = "Explorer Snacks (cwd)";};
     }
   ];
 }
