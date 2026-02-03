@@ -1,6 +1,6 @@
 _: {
   programs.nvf.settings.vim.keymaps = [
-    # better up/down
+    # Better up/down
     {
       mode = ["n" "x"];
       key = "j";
@@ -144,7 +144,7 @@ _: {
       options = {desc = "Move Up";};
     }
 
-    # buffers
+    # Buffers
     {
       mode = "n";
       key = "<S-h>";
@@ -183,20 +183,47 @@ _: {
     }
     {
       mode = "n";
+      key = "<leader>bd";
+      action = "function() require('snacks').bufdelete() end";
+      lua = true;
+      options = {desc = "Delete Buffer";};
+    }
+    {
+      mode = "n";
+      key = "<leader>bo";
+      action = "function() require('snacks').bufdelete.other() end";
+      lua = true;
+      options = {desc = "Delete Other Buffers";};
+    }
+    {
+      mode = "n";
       key = "<leader>bD";
       action = "<cmd>bd<cr>";
       options = {desc = "Delete Buffer and Window";};
     }
 
-    # Clear search, diff update and redraw
+    # Search and Navigation
+    {
+      mode = ["i" "n" "s"];
+      key = "<esc>";
+      action = ''
+        function()
+          vim.cmd("noh")
+          return "<esc>"
+        end
+      '';
+      lua = true;
+      options = {
+        expr = true;
+        desc = "Escape and Clear hlsearch";
+      };
+    }
     {
       mode = "n";
       key = "<leader>ur";
       action = "<Cmd>nohlsearch<Bar>diffupdate<Bar>normal! <C-L><CR>";
       options = {desc = "Redraw / Clear hlsearch / Diff Update";};
     }
-
-    # saner n/N
     {
       mode = "n";
       key = "n";
@@ -252,7 +279,275 @@ _: {
       };
     }
 
-    # Add undo break-points
+    # Better indenting
+    {
+      mode = "x";
+      key = "<";
+      action = "<gv";
+    }
+    {
+      mode = "x";
+      key = ">";
+      action = ">gv";
+    }
+
+    # Commenting
+    {
+      mode = "n";
+      key = "gco";
+      action = "o<esc>Vcx<esc><cmd>normal gcc<cr>fxa<bs>";
+      options = {desc = "Add Comment Below";};
+    }
+    {
+      mode = "n";
+      key = "gcO";
+      action = "O<esc>Vcx<esc><cmd>normal gcc<cr>fxa<bs>";
+      options = {desc = "Add Comment Above";};
+    }
+
+    # Toggles (using Snacks)
+    {
+      mode = "n";
+      key = "<leader>uf";
+      action = "function() vim.g.autoformat = not (vim.g.autoformat == nil or vim.g.autoformat); require('snacks').notify.info('Autoformat ' .. (vim.g.autoformat and 'Enabled' or 'Disabled')) end";
+      lua = true;
+      options = {desc = "Toggle Auto Format (Global)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>uF";
+      action = "function() vim.b.autoformat = not (vim.b.autoformat == nil or vim.b.autoformat); require('snacks').notify.info('Autoformat (buffer) ' .. (vim.b.autoformat and 'Enabled' or 'Disabled')) end";
+      lua = true;
+      options = {desc = "Toggle Auto Format (Buffer)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>us";
+      action = "function() require('snacks').toggle.option('spell', { name = 'Spelling' }):toggle() end";
+      lua = true;
+      options = {desc = "Toggle Spelling";};
+    }
+    {
+      mode = "n";
+      key = "<leader>uw";
+      action = "function() require('snacks').toggle.option('wrap', { name = 'Wrap' }):toggle() end";
+      lua = true;
+      options = {desc = "Toggle Wrap";};
+    }
+    {
+      mode = "n";
+      key = "<leader>uL";
+      action = "function() require('snacks').toggle.option('relativenumber', { name = 'Relative Number' }):toggle() end";
+      lua = true;
+      options = {desc = "Toggle Relative Number";};
+    }
+    {
+      mode = "n";
+      key = "<leader>ud";
+      action = "function() require('snacks').toggle.diagnostics():toggle() end";
+      lua = true;
+      options = {desc = "Toggle Diagnostics";};
+    }
+    {
+      mode = "n";
+      key = "<leader>ul";
+      action = "function() require('snacks').toggle.line_number():toggle() end";
+      lua = true;
+      options = {desc = "Toggle Line Number";};
+    }
+    {
+      mode = "n";
+      key = "<leader>uc";
+      action = "function() require('snacks').toggle.option('conceallevel', { off = 0, on = vim.o.conceallevel > 0 and vim.o.conceallevel or 2, name = 'Conceal Level' }):toggle() end";
+      lua = true;
+      options = {desc = "Toggle Conceal Level";};
+    }
+    {
+      mode = "n";
+      key = "<leader>uT";
+      action = "function() require('snacks').toggle.treesitter():toggle() end";
+      lua = true;
+      options = {desc = "Toggle Treesitter";};
+    }
+    {
+      mode = "n";
+      key = "<leader>ub";
+      action = "function() require('snacks').toggle.option('background', { off = 'light', on = 'dark' , name = 'Dark Background' }):toggle() end";
+      lua = true;
+      options = {desc = "Toggle Dark Background";};
+    }
+    {
+      mode = "n";
+      key = "<leader>uD";
+      action = "function() require('snacks').toggle.dim():toggle() end";
+      lua = true;
+      options = {desc = "Toggle Dim";};
+    }
+    {
+      mode = "n";
+      key = "<leader>ua";
+      action = "function() require('snacks').toggle.animate():toggle() end";
+      lua = true;
+      options = {desc = "Toggle Animate";};
+    }
+    {
+      mode = "n";
+      key = "<leader>ug";
+      action = "function() require('snacks').toggle.indent():toggle() end";
+      lua = true;
+      options = {desc = "Toggle Indent Guides";};
+    }
+    {
+      mode = "n";
+      key = "<leader>uS";
+      action = "function() require('snacks').toggle.scroll():toggle() end";
+      lua = true;
+      options = {desc = "Toggle Scroll";};
+    }
+    {
+      mode = "n";
+      key = "<leader>uh";
+      action = "function() if vim.lsp.inlay_hint then require('snacks').toggle.inlay_hints():toggle() end end";
+      lua = true;
+      options = {desc = "Toggle Inlay Hints";};
+    }
+
+    # Git (using Snacks)
+    {
+      mode = "n";
+      key = "<leader>gg";
+      action = "function() require('snacks').lazygit() end";
+      lua = true;
+      options = {desc = "Lazygit (cwd)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>gB";
+      action = "function() require('snacks').gitbrowse() end";
+      lua = true;
+      options = {desc = "Git Browse (open)";};
+    }
+    {
+      mode = ["n" "x"];
+      key = "<leader>gY";
+      action = "function() require('snacks').gitbrowse({ open = function(url) vim.fn.setreg('+', url) end, notify = false }) end";
+      lua = true;
+      options = {desc = "Git Browse (copy)";};
+    }
+
+    # UI / Windows
+    {
+      mode = "n";
+      key = "<leader>wm";
+      action = "function() require('snacks').toggle.zoom():toggle() end";
+      lua = true;
+      options = {desc = "Toggle Zoom";};
+    }
+    {
+      mode = "n";
+      key = "<leader>uz";
+      action = "function() require('snacks').toggle.zen():toggle() end";
+      lua = true;
+      options = {desc = "Toggle Zen Mode";};
+    }
+    {
+      mode = "n";
+      key = "<leader>-";
+      action = "<C-W>s";
+      options = {
+        desc = "Split Window Below";
+        remap = true;
+      };
+    }
+    {
+      mode = "n";
+      key = "<leader>|";
+      action = "<C-W>v";
+      options = {
+        desc = "Split Window Right";
+        remap = true;
+      };
+    }
+    {
+      mode = "n";
+      key = "<leader>wd";
+      action = "<C-W>c";
+      options = {
+        desc = "Delete Window";
+        remap = true;
+      };
+    }
+
+    # Tabs
+    {
+      mode = "n";
+      key = "<leader><tab>l";
+      action = "<cmd>tablast<cr>";
+      options = {desc = "Last Tab";};
+    }
+    {
+      mode = "n";
+      key = "<leader><tab>o";
+      action = "<cmd>tabonly<cr>";
+      options = {desc = "Close Other Tabs";};
+    }
+    {
+      mode = "n";
+      key = "<leader><tab>f";
+      action = "<cmd>tabfirst<cr>";
+      options = {desc = "First Tab";};
+    }
+    {
+      mode = "n";
+      key = "<leader><tab><tab>";
+      action = "<cmd>tabnew<cr>";
+      options = {desc = "New Tab";};
+    }
+    {
+      mode = "n";
+      key = "<leader><tab>]";
+      action = "<cmd>tabnext<cr>";
+      options = {desc = "Next Tab";};
+    }
+    {
+      mode = "n";
+      key = "<leader><tab>d";
+      action = "<cmd>tabclose<cr>";
+      options = {desc = "Close Tab";};
+    }
+    {
+      mode = "n";
+      key = "<leader><tab>[";
+      action = "<cmd>tabprevious<cr>";
+      options = {desc = "Previous Tab";};
+    }
+
+    # System / Misc
+    {
+      mode = "n";
+      key = "<leader>l";
+      action = "<cmd>Lazy<cr>";
+      options = {desc = "Lazy";};
+    }
+    {
+      mode = "n";
+      key = "<leader>qq";
+      action = "<cmd>qa<cr>";
+      options = {desc = "Quit All";};
+    }
+    {
+      mode = ["n" "x"];
+      key = "<localleader>r";
+      action = "function() require('snacks').debug.run() end";
+      lua = true;
+      options = {desc = "Run Lua";};
+    }
+    {
+      mode = "n";
+      key = "<leader>fn";
+      action = "<cmd>enew<cr>";
+      options = {desc = "New File";};
+    }
     {
       mode = "i";
       key = ",";
@@ -268,16 +563,12 @@ _: {
       key = ";";
       action = ";<c-g>u";
     }
-
-    # save file
     {
       mode = ["i" "x" "n" "s"];
       key = "<C-s>";
       action = "<cmd>w<cr><esc>";
       options = {desc = "Save File";};
     }
-
-    # keywordprg
     {
       mode = "n";
       key = "<leader>K";
@@ -285,76 +576,14 @@ _: {
       options = {desc = "Keywordprg";};
     }
 
-    # better indenting
+    # Formatting and Diagnostics
     {
-      mode = "x";
-      key = "<";
-      action = "<gv";
-    }
-    {
-      mode = "x";
-      key = ">";
-      action = ">gv";
-    }
-
-    # new file
-    {
-      mode = "n";
-      key = "<leader>fn";
-      action = "<cmd>enew<cr>";
-      options = {desc = "New File";};
-    }
-
-    # location list toggle (Lua callback)
-    {
-      mode = "n";
-      key = "<leader>xl";
-      options = {desc = "Location List";};
+      mode = ["n" "x"];
+      key = "<leader>cf";
+      action = "function() require('conform').format({ bufnr = 0 }) end";
       lua = true;
-      action = ''
-        local success, err = pcall(
-          vim.fn.getloclist(0, { winid = 0 }).winid ~= 0
-            and vim.cmd.lclose
-            or vim.cmd.lopen
-        )
-        if not success and err then
-          vim.notify(err, vim.log.levels.ERROR)
-        end
-      '';
+      options = {desc = "Format";};
     }
-
-    # quickfix list toggle
-    {
-      mode = "n";
-      key = "<leader>xq";
-      options = {desc = "Quickfix List";};
-      lua = true;
-      action = ''
-        local success, err = pcall(
-          vim.fn.getqflist({ winid = 0 }).winid ~= 0
-            and vim.cmd.cclose
-            or vim.cmd.copen
-        )
-        if not success and err then
-          vim.notify(err, vim.log.levels.ERROR)
-        end
-      '';
-    }
-
-    {
-      mode = "n";
-      key = "[q";
-      action = "<cmd>cprev<cr>";
-      options = {desc = "Previous Quickfix";};
-    }
-    {
-      mode = "n";
-      key = "]q";
-      action = "<cmd>cnext<cr>";
-      options = {desc = "Next Quickfix";};
-    }
-
-    # diagnostics
     {
       mode = "n";
       key = "<leader>cd";
@@ -397,78 +626,49 @@ _: {
       action = "<cmd>lua vim.diagnostic.jump({ count = -vim.v.count1, severity = vim.diagnostic.severity.WARN, float = true })<cr>";
       options = {desc = "Prev Warning";};
     }
-
-    # windows
     {
       mode = "n";
-      key = "<leader>-";
-      action = "<C-W>s";
-      options = {
-        desc = "Split Window Below";
-        remap = true;
-      };
+      key = "[q";
+      action = "<cmd>cprev<cr>";
+      options = {desc = "Previous Quickfix";};
     }
     {
       mode = "n";
-      key = "<leader>|";
-      action = "<C-W>v";
-      options = {
-        desc = "Split Window Right";
-        remap = true;
-      };
+      key = "]q";
+      action = "<cmd>cnext<cr>";
+      options = {desc = "Next Quickfix";};
     }
     {
       mode = "n";
-      key = "<leader>wd";
-      action = "<C-W>c";
-      options = {
-        desc = "Delete Window";
-        remap = true;
-      };
-    }
-
-    # tabs
-    {
-      mode = "n";
-      key = "<leader><tab>l";
-      action = "<cmd>tablast<cr>";
-      options = {desc = "Last Tab";};
-    }
-    {
-      mode = "n";
-      key = "<leader><tab>o";
-      action = "<cmd>tabonly<cr>";
-      options = {desc = "Close Other Tabs";};
+      key = "<leader>xl";
+      options = {desc = "Location List";};
+      lua = true;
+      action = ''
+        local success, err = pcall(
+          vim.fn.getloclist(0, { winid = 0 }).winid ~= 0
+            and vim.cmd.lclose
+            or vim.cmd.lopen
+        )
+        if not success and err then
+          vim.notify(err, vim.log.levels.ERROR)
+        end
+      '';
     }
     {
       mode = "n";
-      key = "<leader><tab>f";
-      action = "<cmd>tabfirst<cr>";
-      options = {desc = "First Tab";};
-    }
-    {
-      mode = "n";
-      key = "<leader><tab><tab>";
-      action = "<cmd>tabnew<cr>";
-      options = {desc = "New Tab";};
-    }
-    {
-      mode = "n";
-      key = "<leader><tab>]";
-      action = "<cmd>tabnext<cr>";
-      options = {desc = "Next Tab";};
-    }
-    {
-      mode = "n";
-      key = "<leader><tab>d";
-      action = "<cmd>tabclose<cr>";
-      options = {desc = "Close Tab";};
-    }
-    {
-      mode = "n";
-      key = "<leader><tab>[";
-      action = "<cmd>tabprevious<cr>";
-      options = {desc = "Previous Tab";};
+      key = "<leader>xq";
+      options = {desc = "Quickfix List";};
+      lua = true;
+      action = ''
+        local success, err = pcall(
+          vim.fn.getqflist({ winid = 0 }).winid ~= 0
+            and vim.cmd.cclose
+            or vim.cmd.copen
+        )
+        if not success and err then
+          vim.notify(err, vim.log.levels.ERROR)
+        end
+      '';
     }
   ];
 }

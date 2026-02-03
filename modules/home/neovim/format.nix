@@ -10,11 +10,11 @@ _: {
           lsp_format = "fallback";
         };
         formatters_by_ft = {
-          lua = [ "stylua" ];
-          sh = [ "shfmt" ];
+          lua = ["stylua"];
+          sh = ["shfmt"];
         };
         formatters = {
-          injected = { options = { ignore_errors = true; }; };
+          injected = {options = {ignore_errors = true;};};
         };
       };
     };
@@ -28,7 +28,7 @@ _: {
         '';
         lua = true;
         desc = "Format Injected Langs";
-        mode = [ "n" "x" ];
+        mode = ["n" "x"];
       };
     };
   };

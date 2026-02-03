@@ -1,14 +1,23 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   programs.nvf.settings.vim = {
     mini.icons = {
       enable = true;
       setupOpts = {
         file = {
-          ".keep" = { glyph = "󰊢"; hl = "MiniIconsGrey"; };
-          "devcontainer.json" = { glyph = ""; hl = "MiniIconsAzure"; };
+          ".keep" = {
+            glyph = "󰊢";
+            hl = "MiniIconsGrey";
+          };
+          "devcontainer.json" = {
+            glyph = "";
+            hl = "MiniIconsAzure";
+          };
         };
         filetype = {
-          dotenv = { glyph = ""; hl = "MiniIconsYellow"; };
+          dotenv = {
+            glyph = "";
+            hl = "MiniIconsYellow";
+          };
         };
       };
     };
@@ -32,9 +41,9 @@
             filter = {
               event = "msg_show";
               any = [
-                { find = "%d+L, %d+B"; }
-                { find = "; after #%d+"; }
-                { find = "; before #%d+"; }
+                {find = "%d+L, %d+B";}
+                {find = "; after #%d+";}
+                {find = "; before #%d+";}
               ];
             };
             view = "mini";
@@ -49,17 +58,55 @@
     };
 
     maps.normal = {
-      "<leader>snl" = { action = "function() require('noice').cmd('last') end"; lua = true; desc = "Noice Last Message"; };
-      "<leader>snh" = { action = "function() require('noice').cmd('history') end"; lua = true; desc = "Noice History"; };
-      "<leader>sna" = { action = "function() require('noice').cmd('all') end"; lua = true; desc = "Noice All"; };
-      "<leader>snd" = { action = "function() require('noice').cmd('dismiss') end"; lua = true; desc = "Dismiss All"; };
-      "<leader>snt" = { action = "function() require('noice').cmd('pick') end"; lua = true; desc = "Noice Picker (Telescope/FzfLua)"; };
-      "<c-f>" = { action = "function() if not require('noice.lsp').scroll(4) then return '<c-f>' end end"; lua = true; silent = true; expr = true; desc = "Scroll Forward"; mode = ["i" "n" "s"]; };
-      "<c-b>" = { action = "function() if not require('noice.lsp').scroll(-4) then return '<c-b>' end end"; lua = true; silent = true; expr = true; desc = "Scroll Backward"; mode = ["i" "n" "s"]; };
+      "<leader>snl" = {
+        action = "function() require('noice').cmd('last') end";
+        lua = true;
+        desc = "Noice Last Message";
+      };
+      "<leader>snh" = {
+        action = "function() require('noice').cmd('history') end";
+        lua = true;
+        desc = "Noice History";
+      };
+      "<leader>sna" = {
+        action = "function() require('noice').cmd('all') end";
+        lua = true;
+        desc = "Noice All";
+      };
+      "<leader>snd" = {
+        action = "function() require('noice').cmd('dismiss') end";
+        lua = true;
+        desc = "Dismiss All";
+      };
+      "<leader>snt" = {
+        action = "function() require('noice').cmd('pick') end";
+        lua = true;
+        desc = "Noice Picker (Telescope/FzfLua)";
+      };
+      "<c-f>" = {
+        action = "function() if not require('noice.lsp').scroll(4) then return '<c-f>' end end";
+        lua = true;
+        silent = true;
+        expr = true;
+        desc = "Scroll Forward";
+        mode = ["i" "n" "s"];
+      };
+      "<c-b>" = {
+        action = "function() if not require('noice.lsp').scroll(-4) then return '<c-b>' end end";
+        lua = true;
+        silent = true;
+        expr = true;
+        desc = "Scroll Backward";
+        mode = ["i" "n" "s"];
+      };
     };
 
     maps.command = {
-      "<S-Enter>" = { action = "function() require('noice').redirect(vim.fn.getcmdline()) end"; lua = true; desc = "Redirect Cmdline"; };
+      "<S-Enter>" = {
+        action = "function() require('noice').redirect(vim.fn.getcmdline()) end";
+        lua = true;
+        desc = "Redirect Cmdline";
+      };
     };
 
     statusline.lualine = {
@@ -67,8 +114,8 @@
       theme = "auto";
       globalStatus = true;
       activeSection = {
-        a = [ "'mode'" ];
-        b = [ "'branch'" ];
+        a = ["'mode'"];
+        b = ["'branch'"];
         c = [
           ''function() return vim.fn.fnamemodify(vim.fn.getcwd(), ':t') end''
           ''{ "diagnostics", symbols = { error = " ", warn = " ", info = " ", hint = " " } }''
