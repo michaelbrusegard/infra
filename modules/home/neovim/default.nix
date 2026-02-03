@@ -11,7 +11,9 @@ in {
     inputs.nvf.homeManagerModules.default
     ./options.nix
     ./editor.nix
+    ./coding.nix
     ./keymaps.nix
+    ./ui.nix
     ./util.nix
     ./treesitter.nix
     ./format.nix
