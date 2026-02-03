@@ -28,17 +28,6 @@
       };
     };
 
-    utility.motion.flash-nvim = {
-      enable = true;
-      mappings = {
-        jump = "s";
-        treesitter = "S";
-        remote = "r";
-        treesitter_search = "R";
-        toggle = "<c-s>";
-      };
-    };
-
     lsp.trouble = {
       enable = true;
       setupOpts = {
@@ -284,7 +273,7 @@
             mode = ["n" "x"];
           }
           {
-            __unkeyed-1 = "gs";
+            __unkeyed-1 = "s";
             group = "surround";
             mode = ["n" "x"];
           }
