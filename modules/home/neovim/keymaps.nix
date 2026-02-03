@@ -781,5 +781,14 @@ _: {
         end
       '';
     }
+
+    # File Explorer
+    {
+      mode = "n";
+      key = "-";
+      action = "function() require('snacks').explorer() end";
+      lua = true;
+      options = { desc = "Explorer Snacks (cwd)"; };
+    }
   ];
 }

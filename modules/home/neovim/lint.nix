@@ -33,7 +33,7 @@ _: {
                 -- Silent ignore if linter doesn't exist to avoid noise
                 return false
               end
-              -- LazyVim style condition check if you add custom linters with conditions later
+              -- Check for custom linter conditions
               return not (type(linter) == "table" and linter.condition and not linter.condition(ctx))
             end, names)
 
