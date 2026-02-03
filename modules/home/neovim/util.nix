@@ -4,7 +4,17 @@
       enable = true;
       setupOpts = {
         bigfile = {enabled = true;};
+        explorer = {enabled = true;};
+        image = {enabled = true;};
+        indent = {enabled = true;};
+        input = {enabled = true;};
+        notifier = {enabled = true;};
+        picker = {enabled = true;};
         quickfile = {enabled = true;};
+        scope = {enabled = true;};
+        scroll = {enabled = true;};
+        statuscolumn = {enabled = false;};
+        words = {enabled = true;};
         terminal = {
           win = {
             keys = {
@@ -66,21 +76,34 @@
       };
     };
 
+    # Ensure Snacks is available for keymaps
+    # Removed global initialization as per user request
+
     maps.normal = {
       "<leader>." = {
-        action = "function() Snacks.scratch() end";
+        action = "function() require('snacks').scratch() end";
         lua = true;
         desc = "Toggle Scratch Buffer";
       };
       "<leader>S" = {
-        action = "function() Snacks.scratch.select() end";
+        action = "function() require('snacks').scratch.select() end";
         lua = true;
         desc = "Select Scratch Buffer";
       };
       "<leader>dps" = {
-        action = "function() Snacks.profiler.scratch() end";
+        action = "function() require('snacks').profiler.scratch() end";
         lua = true;
         desc = "Profiler Scratch Buffer";
+      };
+      "<leader>n" = {
+        action = "function() require('snacks').picker.notifications() end";
+        lua = true;
+        desc = "Notification History";
+      };
+      "<leader>un" = {
+        action = "function() require('snacks').notifier.hide() end";
+        lua = true;
+        desc = "Dismiss All Notifications";
       };
     };
     lazy.plugins = {

@@ -4,7 +4,7 @@ _: {
       enable = true;
       lint_after_save = true;
       linters_by_ft = {
-        fish = [ "fish" ];
+        fish = ["fish"];
       };
       lint_function = {
         _type = "lua-inline";
