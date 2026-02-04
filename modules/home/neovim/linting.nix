@@ -12,28 +12,21 @@ _: {
           function(buf)
             local lint = require("lint")
             local names = lint._resolve_linter_by_ft(vim.bo.filetype)
-
-            -- Create a copy of the names table
             names = vim.list_extend({}, names)
 
-            -- Add fallback linters if none found for filetype
             if #names == 0 then
               vim.list_extend(names, lint.linters_by_ft["_"] or {})
             end
 
-            -- Add global linters (*)
             vim.list_extend(names, lint.linters_by_ft["*"] or {})
 
-            -- Filter out linters that don't exist
             local ctx = { filename = vim.api.nvim_buf_get_name(0) }
             ctx.dirname = vim.fn.fnamemodify(ctx.filename, ":h")
             names = vim.tbl_filter(function(name)
               local linter = lint.linters[name]
               if not linter then
-                -- Silent ignore if linter doesn't exist to avoid noise
                 return false
               end
-              -- Check for custom linter conditions
               return not (type(linter) == "table" and linter.condition and not linter.condition(ctx))
             end, names)
 
@@ -59,7 +52,6 @@ _: {
       end
 
       local do_lint = debounce(100, function()
-        -- nvf_lint is the name of the function defined in diagnostics.nvim-lint.lint_function
         if _G.nvf_lint then
           _G.nvf_lint(vim.api.nvim_get_current_buf())
         end
