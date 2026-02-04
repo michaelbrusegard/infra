@@ -30,6 +30,8 @@
         vimdoc
         xml
         yaml
+        http
+        graphql
       ];
       textobjects = {
         enable = true;
