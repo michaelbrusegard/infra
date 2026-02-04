@@ -1,6 +1,5 @@
 {pkgs, ...}: {
   programs.nvf.settings.vim = {
-    # Lazy Plugins
     lazy.plugins = {
       "grug-far.nvim" = {
         package = pkgs.vimPlugins.grug-far-nvim;
@@ -36,7 +35,6 @@
       };
     };
 
-    # Trouble.nvim
     lsp.trouble = {
       enable = true;
       setupOpts = {
@@ -56,7 +54,6 @@
       };
     };
 
-    # Todo-comments.nvim
     notes.todo-comments = {
       enable = true;
       mappings = {
@@ -65,14 +62,12 @@
       };
     };
 
-    # Navic (LSP Breadcrumbs)
     ui.breadcrumbs = {
       enable = true;
       lualine.winbar.enable = false;
       navbuddy.enable = true;
     };
 
-    # Mini Move
     mini.move = {
       enable = true;
       setupOpts = {
@@ -294,7 +289,6 @@
       };
     };
 
-    # Lua Config RC
     luaConfigRC.dial-setup = ''
       local augend = require("dial.augend")
 
@@ -389,7 +383,6 @@
       })
     '';
 
-    # WhichKey
     binds.whichKey = {
       enable = true;
       setupOpts = {
