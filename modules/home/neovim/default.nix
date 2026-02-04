@@ -23,6 +23,7 @@ in {
     ./autocmds.nix
     ./colorscheme.nix
     ./dap.nix
+    ./test.nix
   ];
 
   # This is my old temporary Neovim configuration
