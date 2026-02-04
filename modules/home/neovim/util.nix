@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   programs.nvf.settings.vim = {
     utility.snacks-nvim = {
       enable = true;
@@ -402,6 +406,34 @@
             desc = "Don't Save Current Session";
           }
         ];
+      };
+
+      "nvim-silicon" = {
+        package = pkgs.vimPlugins.nvim-silicon;
+        lazy = true;
+        cmd = ["Silicon"];
+        main = "nvim-silicon";
+        keys = [
+          {
+            key = "<leader>fs";
+            mode = ["n" "x"];
+            action = "function() require('nvim-silicon').clip() end";
+            lua = true;
+            desc = "Take Screenshot";
+          }
+        ];
+        setupOpts = {
+          disable_defaults = true;
+          to_clipboard = true;
+          gobble = true;
+          num_separator = " ";
+          language = lib.generators.mkLuaInline "function() return vim.bo.filetype end";
+          window_title = lib.generators.mkLuaInline ''
+            function()
+              return vim.fn.fnamemodify(vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf()), ":t")
+            end
+          '';
+        };
       };
 
       "plenary.nvim" = {
