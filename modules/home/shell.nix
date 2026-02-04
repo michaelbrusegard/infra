@@ -250,7 +250,6 @@ in {
         du = "dust";
         df = "duf";
         ps = "procs";
-        lzg = "lazygit";
       }
       // lib.optionalAttrs pkgs.stdenv.isLinux {
         toggle-kanata = ''
