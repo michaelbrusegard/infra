@@ -86,6 +86,7 @@
           ''{ "diagnostics", symbols = { error = " ", warn = " ", info = " ", hint = " " } }''
           ''{ "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } }''
           ''function() return vim.fn.expand("%:p:~:.") end''
+          ''{ "navic", color_correction = "dynamic" }''
           ''{ function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal}', hl_group = 'lualine_c_normal'}).get() or "" end, cond = function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal}', hl_group = 'lualine_c_normal'}).has() end }''
         ];
         x = [

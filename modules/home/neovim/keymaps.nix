@@ -48,8 +48,8 @@ _: {
       key = "<C-h>";
       action = "<C-w>h";
       options = {
-        desc = "Go to Left Window";
-        remap = true;
+        desc = "Move to left window";
+        silent = true;
       };
     }
     {
@@ -57,8 +57,8 @@ _: {
       key = "<C-j>";
       action = "<C-w>j";
       options = {
-        desc = "Go to Lower Window";
-        remap = true;
+        desc = "Move to bottom window";
+        silent = true;
       };
     }
     {
@@ -66,8 +66,8 @@ _: {
       key = "<C-k>";
       action = "<C-w>k";
       options = {
-        desc = "Go to Upper Window";
-        remap = true;
+        desc = "Move to top window";
+        silent = true;
       };
     }
     {
@@ -75,8 +75,8 @@ _: {
       key = "<C-l>";
       action = "<C-w>l";
       options = {
-        desc = "Go to Right Window";
-        remap = true;
+        desc = "Move to right window";
+        silent = true;
       };
     }
 
@@ -84,26 +84,38 @@ _: {
     {
       mode = "n";
       key = "<C-Up>";
-      action = "<cmd>resize +2<cr>";
-      options = {desc = "Increase Window Height";};
+      action = "<C-w>+";
+      options = {
+        desc = "Increase window height";
+        silent = true;
+      };
     }
     {
       mode = "n";
       key = "<C-Down>";
-      action = "<cmd>resize -2<cr>";
-      options = {desc = "Decrease Window Height";};
+      action = "<C-w>-";
+      options = {
+        desc = "Decrease window height";
+        silent = true;
+      };
     }
     {
       mode = "n";
       key = "<C-Left>";
-      action = "<cmd>vertical resize -2<cr>";
-      options = {desc = "Decrease Window Width";};
+      action = "<C-w><";
+      options = {
+        desc = "Decrease window width";
+        silent = true;
+      };
     }
     {
       mode = "n";
       key = "<C-Right>";
-      action = "<cmd>vertical resize +2<cr>";
-      options = {desc = "Increase Window Width";};
+      action = "<C-w>>";
+      options = {
+        desc = "Increase window width";
+        silent = true;
+      };
     }
 
     # Move Lines
@@ -416,6 +428,13 @@ _: {
       options = {desc = "Add Comment Above";};
     }
 
+    {
+      mode = "n";
+      key = "<leader>fn";
+      action = "<cmd>enew<cr>";
+      options = {desc = "New File";};
+    }
+
     # Toggles (using Snacks)
     {
       mode = "n";
@@ -635,56 +654,11 @@ _: {
 
     # System / Misc
     {
-      mode = "n";
-      key = "<leader>l";
-      action = "<cmd>Lazy<cr>";
-      options = {desc = "Lazy";};
-    }
-    {
-      mode = "n";
-      key = "<leader>qq";
-      action = "<cmd>qa<cr>";
-      options = {desc = "Quit All";};
-    }
-    {
       mode = ["n" "x"];
       key = "<localleader>r";
       action = "function() require('snacks').debug.run() end";
       lua = true;
       options = {desc = "Run Lua";};
-    }
-    {
-      mode = "n";
-      key = "<leader>fn";
-      action = "<cmd>enew<cr>";
-      options = {desc = "New File";};
-    }
-    {
-      mode = "i";
-      key = ",";
-      action = ",<c-g>u";
-    }
-    {
-      mode = "i";
-      key = ".";
-      action = ".<c-g>u";
-    }
-    {
-      mode = "i";
-      key = ";";
-      action = ";<c-g>u";
-    }
-    {
-      mode = ["i" "x" "n" "s"];
-      key = "<C-s>";
-      action = "<cmd>w<cr><esc>";
-      options = {desc = "Save File";};
-    }
-    {
-      mode = "n";
-      key = "<leader>K";
-      action = "<cmd>norm! K<cr>";
-      options = {desc = "Keywordprg";};
     }
 
     # Formatting and Diagnostics
@@ -789,6 +763,362 @@ _: {
       action = "function() require('snacks').explorer() end";
       lua = true;
       options = {desc = "Explorer Snacks (cwd)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>fe";
+      action = "function() require('snacks').explorer() end";
+      lua = true;
+      options = {desc = "Explorer Snacks (cwd)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>fE";
+      action = "function() require('snacks').explorer() end";
+      lua = true;
+      options = {desc = "Explorer Snacks (cwd)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>e";
+      action = "<leader>fe";
+      options = {
+        desc = "Explorer Snacks (cwd)";
+        remap = true;
+      };
+    }
+    {
+      mode = "n";
+      key = "<leader>E";
+      action = "<leader>fE";
+      options = {
+        desc = "Explorer Snacks (cwd)";
+        remap = true;
+      };
+    }
+
+    # Snacks Picker
+    {
+      mode = "n";
+      key = "<leader>,";
+      action = "function() require('snacks').picker.buffers() end";
+      lua = true;
+      options = {desc = "Buffers";};
+    }
+    {
+      mode = "n";
+      key = "<leader>/";
+      action = "function() require('snacks').picker.grep() end";
+      lua = true;
+      options = {desc = "Grep (Root Dir)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>:";
+      action = "function() require('snacks').picker.command_history() end";
+      lua = true;
+      options = {desc = "Command History";};
+    }
+    {
+      mode = "n";
+      key = "<leader><space>";
+      action = "function() require('snacks').picker.files() end";
+      lua = true;
+      options = {desc = "Find Files (Root Dir)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>fb";
+      action = "function() require('snacks').picker.buffers() end";
+      lua = true;
+      options = {desc = "Buffers";};
+    }
+    {
+      mode = "n";
+      key = "<leader>fB";
+      action = "function() require('snacks').picker.buffers({ hidden = true, nofile = true }) end";
+      lua = true;
+      options = {desc = "Buffers (all)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>ff";
+      action = "function() require('snacks').picker.files() end";
+      lua = true;
+      options = {desc = "Find Files (Root Dir)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>fF";
+      action = "function() require('snacks').picker.files({ root = false }) end";
+      lua = true;
+      options = {desc = "Find Files (cwd)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>fg";
+      action = "function() require('snacks').picker.git_files() end";
+      lua = true;
+      options = {desc = "Find Files (git-files)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>fr";
+      action = "function() require('snacks').picker.recent() end";
+      lua = true;
+      options = {desc = "Recent";};
+    }
+    {
+      mode = "n";
+      key = "<leader>fR";
+      action = "function() require('snacks').picker.recent({ filter = { cwd = true }}) end";
+      lua = true;
+      options = {desc = "Recent (cwd)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>fp";
+      action = "function() require('snacks').picker.projects() end";
+      lua = true;
+      options = {desc = "Projects";};
+    }
+    {
+      mode = "n";
+      key = "<leader>gd";
+      action = "function() require('snacks').picker.git_diff() end";
+      lua = true;
+      options = {desc = "Git Diff (hunks)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>gD";
+      action = "function() require('snacks').picker.git_diff({ base = 'origin', group = true }) end";
+      lua = true;
+      options = {desc = "Git Diff (origin)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>gs";
+      action = "function() require('snacks').picker.git_status() end";
+      lua = true;
+      options = {desc = "Git Status";};
+    }
+    {
+      mode = "n";
+      key = "<leader>gS";
+      action = "function() require('snacks').picker.git_stash() end";
+      lua = true;
+      options = {desc = "Git Stash";};
+    }
+    {
+      mode = "n";
+      key = "<leader>gi";
+      action = "function() require('snacks').picker.gh_issue() end";
+      lua = true;
+      options = {desc = "GitHub Issues (open)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>gI";
+      action = "function() require('snacks').picker.gh_issue({ state = 'all' }) end";
+      lua = true;
+      options = {desc = "GitHub Issues (all)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>gp";
+      action = "function() require('snacks').picker.gh_pr() end";
+      lua = true;
+      options = {desc = "GitHub Pull Requests (open)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>gP";
+      action = "function() require('snacks').picker.gh_pr({ state = 'all' }) end";
+      lua = true;
+      options = {desc = "GitHub Pull Requests (all)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sb";
+      action = "function() require('snacks').picker.lines() end";
+      lua = true;
+      options = {desc = "Buffer Lines";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sB";
+      action = "function() require('snacks').picker.grep_buffers() end";
+      lua = true;
+      options = {desc = "Grep Open Buffers";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sg";
+      action = "function() require('snacks').picker.grep() end";
+      lua = true;
+      options = {desc = "Grep (Root Dir)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sG";
+      action = "function() require('snacks').picker.grep({ root = false }) end";
+      lua = true;
+      options = {desc = "Grep (cwd)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sp";
+      action = "function() require('snacks').picker.lazy() end";
+      lua = true;
+      options = {desc = "Search for Plugin Spec";};
+    }
+    {
+      mode = ["n" "x"];
+      key = "<leader>sw";
+      action = "function() require('snacks').picker.grep_word() end";
+      lua = true;
+      options = {desc = "Visual selection or word (Root Dir)";};
+    }
+    {
+      mode = ["n" "x"];
+      key = "<leader>sW";
+      action = "function() require('snacks').picker.grep_word({ root = false }) end";
+      lua = true;
+      options = {desc = "Visual selection or word (cwd)";};
+    }
+    {
+      mode = "n";
+      key = "<leader>s\"";
+      action = "function() require('snacks').picker.registers() end";
+      lua = true;
+      options = {desc = "Registers";};
+    }
+    {
+      mode = "n";
+      key = "<leader>s/";
+      action = "function() require('snacks').picker.search_history() end";
+      lua = true;
+      options = {desc = "Search History";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sa";
+      action = "function() require('snacks').picker.autocmds() end";
+      lua = true;
+      options = {desc = "Autocmds";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sc";
+      action = "function() require('snacks').picker.command_history() end";
+      lua = true;
+      options = {desc = "Command History";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sC";
+      action = "function() require('snacks').picker.commands() end";
+      lua = true;
+      options = {desc = "Commands";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sd";
+      action = "function() require('snacks').picker.diagnostics() end";
+      lua = true;
+      options = {desc = "Diagnostics";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sD";
+      action = "function() require('snacks').picker.diagnostics_buffer() end";
+      lua = true;
+      options = {desc = "Buffer Diagnostics";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sh";
+      action = "function() require('snacks').picker.help() end";
+      lua = true;
+      options = {desc = "Help Pages";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sH";
+      action = "function() require('snacks').picker.highlights() end";
+      lua = true;
+      options = {desc = "Highlights";};
+    }
+    {
+      mode = "n";
+      key = "<leader>si";
+      action = "function() require('snacks').picker.icons() end";
+      lua = true;
+      options = {desc = "Icons";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sj";
+      action = "function() require('snacks').picker.jumps() end";
+      lua = true;
+      options = {desc = "Jumps";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sk";
+      action = "function() require('snacks').picker.keymaps() end";
+      lua = true;
+      options = {desc = "Keymaps";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sl";
+      action = "function() require('snacks').picker.loclist() end";
+      lua = true;
+      options = {desc = "Location List";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sM";
+      action = "function() require('snacks').picker.man() end";
+      lua = true;
+      options = {desc = "Man Pages";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sm";
+      action = "function() require('snacks').picker.marks() end";
+      lua = true;
+      options = {desc = "Marks";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sR";
+      action = "function() require('snacks').picker.resume() end";
+      lua = true;
+      options = {desc = "Resume";};
+    }
+    {
+      mode = "n";
+      key = "<leader>sq";
+      action = "function() require('snacks').picker.qflist() end";
+      lua = true;
+      options = {desc = "Quickfix List";};
+    }
+    {
+      mode = "n";
+      key = "<leader>su";
+      action = "function() require('snacks').picker.undo() end";
+      lua = true;
+      options = {desc = "Undotree";};
+    }
+    {
+      mode = "n";
+      key = "<leader>uC";
+      action = "function() require('snacks').picker.colorschemes() end";
+      lua = true;
+      options = {desc = "Colorschemes";};
     }
   ];
 }

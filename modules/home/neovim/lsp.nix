@@ -9,14 +9,8 @@
       mappings = {
         renameSymbol = "grn";
         codeAction = "gra";
-        listReferences = "grr";
-        listImplementations = "gri";
-        goToType = "grt";
-        listDocumentSymbols = "gO";
-        signatureHelp = "gK";
-        hover = "K";
-        goToDefinition = "gd";
         goToDeclaration = "gD";
+        hover = "K";
       };
     };
 
@@ -78,6 +72,76 @@
 
     keymaps = [
       {
+        key = "gd";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.lsp_definitions() end";
+        options = {desc = "Goto Definition";};
+      }
+      {
+        key = "grr";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.lsp_references() end";
+        options = {desc = "References";};
+      }
+      {
+        key = "gri";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.lsp_implementations() end";
+        options = {desc = "Goto Implementation";};
+      }
+      {
+        key = "grt";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.lsp_type_definitions() end";
+        options = {desc = "Goto Type Definition";};
+      }
+      {
+        key = "gO";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.lsp_symbols() end";
+        options = {desc = "Document Symbols";};
+      }
+      {
+        key = "gK";
+        mode = "n";
+        lua = true;
+        action = "function() vim.lsp.buf.signature_help() end";
+        options = {desc = "Signature Help";};
+      }
+      {
+        key = "<leader>ss";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.lsp_symbols() end";
+        options = {desc = "LSP Symbols";};
+      }
+      {
+        key = "<leader>sS";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.lsp_workspace_symbols() end";
+        options = {desc = "LSP Workspace Symbols";};
+      }
+      {
+        key = "gai";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.lsp_incoming_calls() end";
+        options = {desc = "Calls Incoming";};
+      }
+      {
+        key = "gao";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.lsp_outgoing_calls() end";
+        options = {desc = "Calls Outgoing";};
+      }
+      {
         key = "<leader>cc";
         mode = ["n" "x"];
         lua = true;
@@ -113,7 +177,7 @@
         options = {desc = "Prev Reference";};
       }
       {
-        key = "<c-k>";
+        key = "<c-s>";
         mode = "i";
         lua = true;
         action = "function() vim.lsp.buf.signature_help() end";
