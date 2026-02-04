@@ -1,5 +1,6 @@
 {pkgs, ...}: {
   programs.nvf.settings.vim = {
+    # Lazy Plugins
     lazy.plugins = {
       "grug-far.nvim" = {
         package = pkgs.vimPlugins.grug-far-nvim;
@@ -26,8 +27,16 @@
           }
         ];
       };
+      "dial.nvim" = {
+        package = pkgs.vimPlugins.dial-nvim;
+      };
+      "codediff.nvim" = {
+        package = pkgs.vimPlugins.codediff-nvim;
+        cmd = ["CodeDiff"];
+      };
     };
 
+    # Trouble.nvim
     lsp.trouble = {
       enable = true;
       setupOpts = {
@@ -47,6 +56,7 @@
       };
     };
 
+    # Todo-comments.nvim
     notes.todo-comments = {
       enable = true;
       mappings = {
@@ -55,23 +65,35 @@
       };
     };
 
+    # Navic (LSP Breadcrumbs)
+    ui.breadcrumbs = {
+      enable = true;
+      lualine.winbar.enable = false;
+      navbuddy.enable = true;
+    };
+
+    # Mini Move
+    mini.move = {
+      enable = true;
+      setupOpts = {
+        mappings = {
+          left = "<s-h>";
+          right = "<s-l>";
+          down = "<s-j>";
+          up = "<s-k>";
+          line_left = "";
+          line_right = "";
+          line_down = "";
+          line_up = "";
+        };
+        options = {
+          reindent_linewise = true;
+        };
+      };
+    };
+
+    # Keymaps
     keymaps = [
-      {
-        key = "<c-space>";
-        mode = ["n" "o" "x"];
-        lua = true;
-        action = ''
-          function()
-            require("flash").treesitter({
-              actions = {
-                ["<c-space>"] = "next",
-                ["<BS>"] = "prev"
-              }
-            })
-          end
-        '';
-        options = {desc = "Treesitter Incremental Selection";};
-      }
       {
         key = "[q";
         mode = "n";
@@ -122,15 +144,31 @@
         options = {desc = "Previous Todo Comment";};
       }
       {
+        key = "<leader>xt";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.todo_comments() end";
+        options = {desc = "Todo (Trouble)";};
+      }
+      {
         key = "<leader>xT";
         mode = "n";
-        action = "<cmd>Trouble todo toggle filter = {tag = {TODO,FIX,FIXME}}<cr>";
+        lua = true;
+        action = "function() require('snacks').picker.todo_comments({ keywords = { 'TODO', 'FIX', 'FIXME' } }) end";
         options = {desc = "Todo/Fix/Fixme (Trouble)";};
+      }
+      {
+        key = "<leader>st";
+        mode = "n";
+        lua = true;
+        action = "function() require('snacks').picker.todo_comments() end";
+        options = {desc = "Todo";};
       }
       {
         key = "<leader>sT";
         mode = "n";
-        action = "<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>";
+        lua = true;
+        action = "function() require('snacks').picker.todo_comments({ keywords = { 'TODO', 'FIX', 'FIXME' } }) end";
         options = {desc = "Todo/Fix/Fixme";};
       }
       {
@@ -147,8 +185,50 @@
         action = "function() require('which-key').show({ keys = '<c-w>', loop = true }) end";
         options = {desc = "Window Hydra Mode (which-key)";};
       }
+      # Dial keymaps
+      {
+        key = "<C-a>";
+        mode = ["n" "v"];
+        lua = true;
+        action = "function() return _G.dial(true) end";
+        options = {
+          expr = true;
+          desc = "Increment";
+        };
+      }
+      {
+        key = "<C-x>";
+        mode = ["n" "v"];
+        lua = true;
+        action = "function() return _G.dial(false) end";
+        options = {
+          expr = true;
+          desc = "Decrement";
+        };
+      }
+      {
+        key = "g<C-a>";
+        mode = ["n" "x"];
+        lua = true;
+        action = "function() return _G.dial(true, true) end";
+        options = {
+          expr = true;
+          desc = "Increment";
+        };
+      }
+      {
+        key = "g<C-x>";
+        mode = ["n" "x"];
+        lua = true;
+        action = "function() return _G.dial(false, true) end";
+        options = {
+          expr = true;
+          desc = "Decrement";
+        };
+      }
     ];
 
+    # Gitsigns
     git.gitsigns = {
       enable = true;
       setupOpts = {
@@ -214,6 +294,102 @@
       };
     };
 
+    # Lua Config RC
+    luaConfigRC.dial-setup = ''
+      local augend = require("dial.augend")
+
+      local dial_config = {
+        dials_by_ft = {
+          css = "css", vue = "vue", javascript = "typescript",
+          typescript = "typescript", typescriptreact = "typescript",
+          javascriptreact = "typescript", json = "json", lua = "lua",
+          markdown = "markdown", sass = "css", scss = "css", python = "python",
+        },
+        groups = {
+          default = {
+            augend.integer.alias.decimal,
+            augend.integer.alias.decimal_int,
+            augend.integer.alias.hex,
+            augend.date.alias["%Y/%m/%d"],
+            augend.constant.alias.bool,
+            augend.constant.new({ elements = { "&&", "||" }, word = false, cyclic = true }),
+            augend.constant.new({
+              elements = { "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth" },
+              word = false, cyclic = true
+            }),
+            augend.constant.new({
+              elements = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" },
+              word = true, cyclic = true
+            }),
+            augend.constant.new({
+              elements = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" },
+              word = true, cyclic = true
+            }),
+            augend.constant.new({ elements = { "True", "False" }, word = true, cyclic = true }),
+          },
+          vue = {
+            augend.constant.new({ elements = { "let", "const" } }),
+            augend.hexcolor.new({ case = "lower" }),
+            augend.hexcolor.new({ case = "upper" }),
+          },
+          typescript = {
+            augend.constant.new({ elements = { "let", "const" } }),
+          },
+          css = {
+            augend.hexcolor.new({ case = "lower" }),
+            augend.hexcolor.new({ case = "upper" }),
+          },
+          markdown = {
+            augend.constant.new({ elements = { "[ ]", "[x]" }, word = false, cyclic = true }),
+            augend.misc.alias.markdown_header,
+          },
+          json = { augend.semver.alias.semver },
+          lua = {
+            augend.constant.new({ elements = { "and", "or" }, word = true, cyclic = true }),
+          },
+          python = {
+            augend.constant.new({ elements = { "and", "or" } }),
+          },
+        },
+      }
+
+      for name, group in pairs(dial_config.groups) do
+        if name ~= "default" then
+          vim.list_extend(group, dial_config.groups.default)
+        end
+      end
+
+      require("dial.config").augends:register_group(dial_config.groups)
+      vim.g.dials_by_ft = dial_config.dials_by_ft
+
+      function _G.dial(increment, g)
+        local mode = vim.fn.mode(true)
+        local is_visual = mode == "v" or mode == "V" or mode == "\22"
+        local func = (increment and "inc" or "dec") .. (g and "_g" or "_") .. (is_visual and "visual" or "normal")
+        local group = vim.g.dials_by_ft[vim.bo.filetype] or "default"
+        return require("dial.map")[func](group)
+      end
+    '';
+
+    luaConfigRC.navic-attach = ''
+      require("nvim-navic").setup({
+        separator = " ",
+        highlight = true,
+        depth_limit = 5,
+        lazy_update_context = true,
+      })
+
+      vim.api.nvim_create_autocmd("LspAttach", {
+        callback = function(args)
+          local client = vim.lsp.get_client_by_id(args.data.client_id)
+          if client and client.supports_method("textDocument/documentSymbol") then
+            require("nvim-navic").attach(client, args.buf)
+          end
+        end,
+      })
+    '';
+
+    # WhichKey
     binds.whichKey = {
       enable = true;
       setupOpts = {
