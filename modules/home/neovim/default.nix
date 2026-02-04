@@ -24,6 +24,7 @@ in {
     ./colorscheme.nix
     ./dap.nix
     ./test.nix
+    ./lang/python.nix
   ];
 
   # This is my old temporary Neovim configuration
