@@ -112,7 +112,6 @@
           return o
         end
 
-        -- Check for treesitter skip
         local ok, captures = pcall(vim.treesitter.get_captures_at_pos, 0, cursor[1] - 1, math.max(cursor[2] - 1, 0))
         for _, capture in ipairs(ok and captures or {}) do
           if vim.tbl_contains({ "string" }, capture.capture) then
@@ -120,7 +119,6 @@
           end
         end
 
-        -- Check for unbalanced pairs
         if next == c and c ~= o then
           local _, count_open = line:gsub(vim.pesc(pair:sub(1, 1)), "")
           local _, count_close = line:gsub(vim.pesc(pair:sub(2, 2)), "")
