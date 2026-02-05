@@ -11,7 +11,6 @@ _: {
     "d8b79d4a-6cba-4495-9ff6-d6d30b0e94fe" # Better Active Tab
     "e122b5d9-d385-4bf8-9971-e137809097d0" # No Top Sites
     "f7c71d9a-bce2-420f-ae44-a64bd92975ab" # Better Unloaded Tabs
-    "fd24f832-a2e6-4ce9-8b19-7aa888eb7f8e" # Quietify
     "4c2bec61-7f6c-4e5c-bdc6-c9ad1aba1827" # Vertical Split Tab Groups
     "599a1599-e6ab-4749-ab22-de533860de2c" # Pimp your PiP
     "ae051a40-3e3a-429a-a6f4-199a28b18a75" # Only Reset on Hover
