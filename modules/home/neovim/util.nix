@@ -24,16 +24,10 @@
           enabled = true;
           win = {
             input = {
-              keys = {
-                "<a-c>" = {
-                  __unkeyed-1 = "toggle_cwd";
-                  mode = ["n" "i"];
-                };
-                "<a-t>" = {
-                  __unkeyed-1 = "trouble_open";
-                  mode = ["n" "i"];
-                };
-              };
+              keys = lib.generators.mkLuaInline ''                {
+                                ["<a-c>"] = { "toggle_cwd", mode = { "n", "i" } },
+                                ["<a-t>"] = { "trouble_open", mode = { "n", "i" } },
+                              }'';
             };
           };
           actions = {
@@ -64,7 +58,7 @@
         quickfile = {enabled = true;};
         scope = {enabled = true;};
         scroll = {enabled = true;};
-        statuscolumn = {enabled = false;};
+        statuscolumn = {enabled = true;};
         words = {enabled = true;};
         terminal = {
           win = {
@@ -126,6 +120,8 @@
         };
       };
     };
+
+    utility.direnv.enable = true;
 
     mini.hipatterns.enable = true;
 
@@ -202,245 +198,570 @@
       })
     '';
 
-    luaConfigRC.kulala-init = ''
-      vim.filetype.add({
-        extension = {
-          ["http"] = "http",
-        },
-      })
-    '';
-
     keymaps = [
       {
         key = "<leader>.";
         mode = "n";
-        lua = true;
+        desc = "Toggle Scratch Buffer";
         action = "function() require('snacks').scratch() end";
-        options = {desc = "Toggle Scratch Buffer";};
+        lua = true;
       }
       {
         key = "<leader>S";
         mode = "n";
-        lua = true;
+        desc = "Select Scratch Buffer";
         action = "function() require('snacks').scratch.select() end";
-        options = {desc = "Select Scratch Buffer";};
+        lua = true;
       }
       {
         key = "<leader>dps";
         mode = "n";
-        lua = true;
+        desc = "Profiler Scratch Buffer";
         action = "function() require('snacks').profiler.scratch() end";
-        options = {desc = "Profiler Scratch Buffer";};
+        lua = true;
       }
       {
         key = "<leader>n";
         mode = "n";
-        lua = true;
+        desc = "Notification History";
         action = "function() require('snacks').picker.notifications() end";
-        options = {desc = "Notification History";};
+        lua = true;
       }
       {
         key = "<leader>un";
         mode = "n";
-        lua = true;
+        desc = "Dismiss All Notifications";
         action = "function() require('snacks').notifier.hide() end";
-        options = {desc = "Dismiss All Notifications";};
+        lua = true;
       }
       # Octo mappings
-      {
-        mode = "n";
-        key = "<leader>gi";
-        action = "<cmd>Octo issue list<CR>";
-        options = {desc = "List Issues (Octo)";};
-      }
-      {
-        mode = "n";
-        key = "<leader>gI";
-        action = "<cmd>Octo issue search<CR>";
-        options = {desc = "Search Issues (Octo)";};
-      }
-      {
-        mode = "n";
-        key = "<leader>gp";
-        action = "<cmd>Octo pr list<CR>";
-        options = {desc = "List PRs (Octo)";};
-      }
-      {
-        mode = "n";
-        key = "<leader>gP";
-        action = "<cmd>Octo pr search<CR>";
-        options = {desc = "Search PRs (Octo)";};
-      }
-      {
-        mode = "n";
-        key = "<leader>gr";
-        action = "<cmd>Octo repo list<CR>";
-        options = {desc = "List Repos (Octo)";};
-      }
-      {
-        mode = "n";
-        key = "<leader>gS";
-        action = "<cmd>Octo search<CR>";
-        options = {desc = "Search (Octo)";};
-      }
-      # Kulala mappings
-      {
-        mode = "n";
-        key = "<leader>Rb";
-        action = "function() require('kulala').scratchpad() end";
-        lua = true;
-        options = {desc = "Open scratchpad";};
-      }
-      {
-        mode = "n";
-        key = "<leader>Rc";
-        action = "function() require('kulala').copy() end";
-        lua = true;
-        options = {desc = "Copy as cURL";};
-      }
-      {
-        mode = "n";
-        key = "<leader>RC";
-        action = "function() require('kulala').from_curl() end";
-        lua = true;
-        options = {desc = "Paste from curl";};
-      }
-      {
-        mode = "n";
-        key = "<leader>Re";
-        action = "function() require('kulala').set_selected_env() end";
-        lua = true;
-        options = {desc = "Set environment";};
-      }
-      {
-        mode = "n";
-        key = "<leader>Rg";
-        action = "function() require('kulala').download_graphql_schema() end";
-        lua = true;
-        options = {desc = "Download GraphQL schema";};
-      }
-      {
-        mode = "n";
-        key = "<leader>Ri";
-        action = "function() require('kulala').inspect() end";
-        lua = true;
-        options = {desc = "Inspect current request";};
-      }
-      {
-        mode = "n";
-        key = "<leader>Rn";
-        action = "function() require('kulala').jump_next() end";
-        lua = true;
-        options = {desc = "Jump to next request";};
-      }
-      {
-        mode = "n";
-        key = "<leader>Rp";
-        action = "function() require('kulala').jump_prev() end";
-        lua = true;
-        options = {desc = "Jump to previous request";};
-      }
-      {
-        mode = "n";
-        key = "<leader>Rq";
-        action = "function() require('kulala').close() end";
-        lua = true;
-        options = {desc = "Close window";};
-      }
-      {
-        mode = "n";
-        key = "<leader>Rr";
-        action = "function() require('kulala').replay() end";
-        lua = true;
-        options = {desc = "Replay the last request";};
-      }
-      {
-        mode = "n";
-        key = "<leader>Rs";
-        action = "function() require('kulala').run() end";
-        lua = true;
-        options = {desc = "Send the request";};
-      }
-      {
-        mode = "n";
-        key = "<leader>RS";
-        action = "function() require('kulala').show_stats() end";
-        lua = true;
-        options = {desc = "Show stats";};
-      }
-      {
-        mode = "n";
-        key = "<leader>Rt";
-        action = "function() require('kulala').toggle_view() end";
-        lua = true;
-        options = {desc = "Toggle headers/body";};
-      }
-    ];
+    {
+      key = "<leader>bd";
+      mode = "n";
+      desc = "Delete Buffer";
+      action = "function() require('snacks').bufdelete() end";
+      lua = true;
+      silent = true;
+    }
+    {
+      key = "<leader>bo";
+      mode = "n";
+      desc = "Delete Other Buffers";
+      action = "function() require('snacks').bufdelete.other() end";
+      lua = true;
+      silent = true;
+    }
+    {
+      key = "<leader>p";
+      mode = "n";
+      desc = "Open Yank History";
+      action = "function() require('snacks').picker.yanky() end";
+      lua = true;
+    }
+    {
+      key = "<leader>uf";
+      mode = "n";
+      desc = "Toggle Auto Format (Global)";
+      action = "function() vim.g.autoformat = not (vim.g.autoformat == nil or vim.g.autoformat); require('snacks').notify.info('Autoformat ' .. (vim.g.autoformat and 'Enabled' or 'Disabled')) end";
+      lua = true;
+    }
+    {
+      key = "<leader>uF";
+      mode = "n";
+      desc = "Toggle Auto Format (Buffer)";
+      action = "function() vim.b.autoformat = not (vim.b.autoformat == nil or vim.b.autoformat); require('snacks').notify.info('Autoformat (buffer) ' .. (vim.b.autoformat and 'Enabled' or 'Disabled')) end";
+      lua = true;
+    }
+    {
+      key = "<leader>us";
+      mode = "n";
+      desc = "Toggle Spelling";
+      action = "function() require('snacks').toggle.option('spell', { name = 'Spelling' }):toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>uw";
+      mode = "n";
+      desc = "Toggle Wrap";
+      action = "function() require('snacks').toggle.option('wrap', { name = 'Wrap' }):toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>uL";
+      mode = "n";
+      desc = "Toggle Relative Number";
+      action = "function() require('snacks').toggle.option('relativenumber', { name = 'Relative Number' }):toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>ud";
+      mode = "n";
+      desc = "Toggle Diagnostics";
+      action = "function() require('snacks').toggle.diagnostics():toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>ul";
+      mode = "n";
+      desc = "Toggle Line Number";
+      action = "function() require('snacks').toggle.line_number():toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>uc";
+      mode = "n";
+      desc = "Toggle Conceal Level";
+      action = "function() require('snacks').toggle.option('conceallevel', { off = 0, on = vim.o.conceallevel > 0 and vim.o.conceallevel or 2, name = 'Conceal Level' }):toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>uT";
+      mode = "n";
+      desc = "Toggle Treesitter";
+      action = "function() require('snacks').toggle.treesitter():toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>ub";
+      mode = "n";
+      desc = "Toggle Dark Background";
+      action = "function() require('snacks').toggle.option('background', { off = 'light', on = 'dark' , name = 'Dark Background' }):toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>uD";
+      mode = "n";
+      desc = "Toggle Dim";
+      action = "function() require('snacks').toggle.dim():toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>ua";
+      mode = "n";
+      desc = "Toggle Animate";
+      action = "function() require('snacks').toggle.animate():toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>ug";
+      mode = "n";
+      desc = "Toggle Indent Guides";
+      action = "function() require('snacks').toggle.indent():toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>uS";
+      mode = "n";
+      desc = "Toggle Scroll";
+      action = "function() require('snacks').toggle.scroll():toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>uh";
+      mode = "n";
+      desc = "Toggle Inlay Hints";
+      action = "function() if vim.lsp.inlay_hint then require('snacks').toggle.inlay_hints():toggle() end end";
+      lua = true;
+    }
+    {
+      key = "<leader>gg";
+      mode = "n";
+      desc = "Lazygit (cwd)";
+      action = "function() require('snacks').lazygit() end";
+      lua = true;
+    }
+    {
+      key = "<leader>gB";
+      mode = "n";
+      desc = "Git Browse (open)";
+      action = "function() require('snacks').gitbrowse() end";
+      lua = true;
+    }
+    {
+      key = "<leader>gY";
+      mode = ["n" "x"];
+      desc = "Git Browse (copy)";
+      action = "function() require('snacks').gitbrowse({ open = function(url) vim.fn.setreg('+', url) end, notify = false }) end";
+      lua = true;
+    }
+    {
+      key = "<leader>wm";
+      mode = "n";
+      desc = "Toggle Zoom";
+      action = "function() require('snacks').toggle.zoom():toggle() end";
+      lua = true;
+    }
+    {
+      key = "<leader>uz";
+      mode = "n";
+      desc = "Toggle Zen Mode";
+      action = "function() require('snacks').toggle.zen():toggle() end";
+      lua = true;
+    }
+    {
+      key = "<localleader>r";
+      mode = ["n" "x"];
+      desc = "Run Lua";
+      action = "function() require('snacks').debug.run() end";
+      lua = true;
+    }
+    {
+      key = "-";
+      mode = "n";
+      desc = "Explorer Snacks (cwd)";
+      action = "function() require('snacks').explorer() end";
+      lua = true;
+    }
+    {
+      key = "<leader>fe";
+      mode = "n";
+      desc = "Explorer Snacks (cwd)";
+      action = "function() require('snacks').explorer() end";
+      lua = true;
+    }
+    {
+      key = "<leader>fE";
+      mode = "n";
+      desc = "Explorer Snacks (cwd)";
+      action = "function() require('snacks').explorer() end";
+      lua = true;
+    }
+    {
+      key = "<leader>e";
+      mode = "n";
+      desc = "Explorer Snacks (cwd)";
+      action = "<leader>fe";
+    }
+    {
+      key = "<leader>E";
+      mode = "n";
+      desc = "Explorer Snacks (cwd)";
+      action = "<leader>fE";
+    }
+    {
+      key = "<leader>,";
+      mode = "n";
+      desc = "Buffers";
+      action = "function() require('snacks').picker.buffers() end";
+      lua = true;
+    }
+    {
+      key = "<leader>/";
+      mode = "n";
+      desc = "Grep (Root Dir)";
+      action = "function() require('snacks').picker.grep() end";
+      lua = true;
+    }
+    {
+      key = "<leader>:";
+      mode = "n";
+      desc = "Command History";
+      action = "function() require('snacks').picker.command_history() end";
+      lua = true;
+    }
+    {
+      key = "<leader><space>";
+      mode = "n";
+      desc = "Find Files (Root Dir)";
+      action = "function() require('snacks').picker.files() end";
+      lua = true;
+    }
+    {
+      key = "<leader>fb";
+      mode = "n";
+      desc = "Buffers";
+      action = "function() require('snacks').picker.buffers() end";
+      lua = true;
+    }
+    {
+      key = "<leader>fB";
+      mode = "n";
+      desc = "Buffers (all)";
+      action = "function() require('snacks').picker.buffers({ hidden = true, nofile = true }) end";
+      lua = true;
+    }
+    {
+      key = "<leader>ff";
+      mode = "n";
+      desc = "Find Files (Root Dir)";
+      action = "function() require('snacks').picker.files() end";
+      lua = true;
+    }
+    {
+      key = "<leader>fF";
+      mode = "n";
+      desc = "Find Files (cwd)";
+      action = "function() require('snacks').picker.files({ root = false }) end";
+      lua = true;
+    }
+    {
+      key = "<leader>fg";
+      mode = "n";
+      desc = "Find Files (git-files)";
+      action = "function() require('snacks').picker.git_files() end";
+      lua = true;
+    }
+    {
+      key = "<leader>fr";
+      mode = "n";
+      desc = "Recent";
+      action = "function() require('snacks').picker.recent() end";
+      lua = true;
+    }
+    {
+      key = "<leader>fR";
+      mode = "n";
+      desc = "Recent (cwd)";
+      action = "function() require('snacks').picker.recent({ filter = { cwd = true }}) end";
+      lua = true;
+    }
+    {
+      key = "<leader>fp";
+      mode = "n";
+      desc = "Projects";
+      action = "function() require('snacks').picker.projects() end";
+      lua = true;
+    }
+    {
+      key = "<leader>gd";
+      mode = "n";
+      desc = "Git Diff (hunks)";
+      action = "function() require('snacks').picker.git_diff() end";
+      lua = true;
+    }
+    {
+      key = "<leader>gD";
+      mode = "n";
+      desc = "Git Diff (origin)";
+      action = "function() require('snacks').picker.git_diff({ base = 'origin', group = true }) end";
+      lua = true;
+    }
+    {
+      key = "<leader>gs";
+      mode = "n";
+      desc = "Git Status";
+      action = "function() require('snacks').picker.git_status() end";
+      lua = true;
+    }
+    {
+      key = "<leader>gS";
+      mode = "n";
+      desc = "Git Stash";
+      action = "function() require('snacks').picker.git_stash() end";
+      lua = true;
+    }
+    {
+      key = "<leader>gi";
+      mode = "n";
+      desc = "GitHub Issues (open)";
+      action = "function() require('snacks').picker.gh_issue() end";
+      lua = true;
+    }
+    {
+      key = "<leader>gI";
+      mode = "n";
+      desc = "GitHub Issues (all)";
+      action = "function() require('snacks').picker.gh_issue({ state = 'all' }) end";
+      lua = true;
+    }
+    {
+      key = "<leader>gp";
+      mode = "n";
+      desc = "GitHub Pull Requests (open)";
+      action = "function() require('snacks').picker.gh_pr() end";
+      lua = true;
+    }
+    {
+      key = "<leader>gP";
+      mode = "n";
+      desc = "GitHub Pull Requests (all)";
+      action = "function() require('snacks').picker.gh_pr({ state = 'all' }) end";
+      lua = true;
+    }
+    {
+      key = "<leader>sb";
+      mode = "n";
+      desc = "Buffer Lines";
+      action = "function() require('snacks').picker.lines() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sB";
+      mode = "n";
+      desc = "Grep Open Buffers";
+      action = "function() require('snacks').picker.grep_buffers() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sg";
+      mode = "n";
+      desc = "Grep (Root Dir)";
+      action = "function() require('snacks').picker.grep() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sG";
+      mode = "n";
+      desc = "Grep (cwd)";
+      action = "function() require('snacks').picker.grep({ root = false }) end";
+      lua = true;
+    }
+    {
+      key = "<leader>sp";
+      mode = "n";
+      desc = "Search for Plugin Spec";
+      action = "function() require('snacks').picker.lazy() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sw";
+      mode = ["n" "x"];
+      desc = "Visual selection or word (Root Dir)";
+      action = "function() require('snacks').picker.grep_word() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sW";
+      mode = ["n" "x"];
+      desc = "Visual selection or word (cwd)";
+      action = "function() require('snacks').picker.grep_word({ root = false }) end";
+      lua = true;
+    }
+    {
+      key = "<leader>s\"";
+      mode = "n";
+      desc = "Registers";
+      action = "function() require('snacks').picker.registers() end";
+      lua = true;
+    }
+    {
+      key = "<leader>s/";
+      mode = "n";
+      desc = "Search History";
+      action = "function() require('snacks').picker.search_history() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sa";
+      mode = "n";
+      desc = "Autocmds";
+      action = "function() require('snacks').picker.autocmds() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sc";
+      mode = "n";
+      desc = "Command History";
+      action = "function() require('snacks').picker.command_history() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sC";
+      mode = "n";
+      desc = "Commands";
+      action = "function() require('snacks').picker.commands() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sd";
+      mode = "n";
+      desc = "Diagnostics";
+      action = "function() require('snacks').picker.diagnostics() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sD";
+      mode = "n";
+      desc = "Buffer Diagnostics";
+      action = "function() require('snacks').picker.diagnostics_buffer() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sh";
+      mode = "n";
+      desc = "Help Pages";
+      action = "function() require('snacks').picker.help() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sH";
+      mode = "n";
+      desc = "Highlights";
+      action = "function() require('snacks').picker.highlights() end";
+      lua = true;
+    }
+    {
+      key = "<leader>si";
+      mode = "n";
+      desc = "Icons";
+      action = "function() require('snacks').picker.icons() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sj";
+      mode = "n";
+      desc = "Jumps";
+      action = "function() require('snacks').picker.jumps() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sk";
+      mode = "n";
+      desc = "Keymaps";
+      action = "function() require('snacks').picker.keymaps() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sl";
+      mode = "n";
+      desc = "Location List";
+      action = "function() require('snacks').picker.loclist() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sM";
+      mode = "n";
+      desc = "Man Pages";
+      action = "function() require('snacks').picker.man() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sm";
+      mode = "n";
+      desc = "Marks";
+      action = "function() require('snacks').picker.marks() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sR";
+      mode = "n";
+      desc = "Resume";
+      action = "function() require('snacks').picker.resume() end";
+      lua = true;
+    }
+    {
+      key = "<leader>sq";
+      mode = "n";
+      desc = "Quickfix List";
+      action = "function() require('snacks').picker.qflist() end";
+      lua = true;
+    }
+    {
+      key = "<leader>su";
+      mode = "n";
+      desc = "Undotree";
+      action = "function() require('snacks').picker.undo() end";
+      lua = true;
+    }
+    {
+      key = "<leader>uC";
+      mode = "n";
+      desc = "Colorschemes";
+      action = "function() require('snacks').picker.colorschemes() end";
+      lua = true;
+    }
+  ];
     lazy.plugins = {
-      "persistence.nvim" = {
-        package = pkgs.vimPlugins.persistence-nvim;
-        event = ["BufReadPre"];
-        keys = [
-          {
-            key = "<leader>qs";
-            action = "function() require('persistence').load() end";
-            lua = true;
-            desc = "Restore Session";
-          }
-          {
-            key = "<leader>qS";
-            action = "function() require('persistence').select() end";
-            lua = true;
-            desc = "Select Session";
-          }
-          {
-            key = "<leader>ql";
-            action = "function() require('persistence').load({ last = true }) end";
-            lua = true;
-            desc = "Restore Last Session";
-          }
-          {
-            key = "<leader>qd";
-            action = "function() require('persistence').stop() end";
-            lua = true;
-            desc = "Don't Save Current Session";
-          }
-        ];
-      };
-
-      "nvim-silicon" = {
-        package = pkgs.vimPlugins.nvim-silicon;
-        lazy = true;
-        cmd = ["Silicon"];
-        main = "nvim-silicon";
-        keys = [
-          {
-            key = "<leader>fs";
-            mode = ["n" "x"];
-            action = "function() require('nvim-silicon').clip() end";
-            lua = true;
-            desc = "Take Screenshot";
-          }
-        ];
-        setupOpts = {
-          disable_defaults = true;
-          to_clipboard = true;
-          gobble = true;
-          num_separator = " ";
-          language = lib.generators.mkLuaInline "function() return vim.bo.filetype end";
-          window_title = lib.generators.mkLuaInline ''
-            function()
-              return vim.fn.fnamemodify(vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf()), ":t")
-            end
-          '';
-        };
-      };
-
-      "plenary.nvim" = {
-        package = pkgs.vimPlugins.plenary-nvim;
-        lazy = true;
-      };
-
       "octo.nvim" = {
         package = pkgs.vimPlugins.octo-nvim;
         cmd = ["Octo"];
@@ -475,15 +796,9 @@
 
       "kulala.nvim" = {
         package = pkgs.vimPlugins.kulala-nvim;
+        setupModule = "kulala";
+        setupOpts = {};
       };
     };
-
-    binds.whichKey.setupOpts.spec = [
-      {
-        __unkeyed-1 = "<leader>R";
-        group = "rest";
-        mode = "n";
-      }
-    ];
   };
 }

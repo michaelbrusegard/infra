@@ -4,8 +4,6 @@
       enable = true;
       formatOnSave = true;
       inlayHints.enable = true;
-      lspkind.enable = true;
-      lspkind.setupOpts.mode = "symbol_text";
       mappings = {
         renameSymbol = "grn";
         codeAction = "gra";
@@ -58,7 +56,6 @@
     };
 
     luaConfigRC.lsp-setup = ''
-      -- Enable folds if supported
       vim.api.nvim_create_autocmd("LspAttach", {
         callback = function(args)
           local client = vim.lsp.get_client_by_id(args.data.client_id)
@@ -74,114 +71,114 @@
       {
         key = "gd";
         mode = "n";
-        lua = true;
+        desc = "Goto Definition";
         action = "function() require('snacks').picker.lsp_definitions() end";
-        options = {desc = "Goto Definition";};
+        lua = true;
       }
       {
         key = "grr";
         mode = "n";
-        lua = true;
+        desc = "References";
         action = "function() require('snacks').picker.lsp_references() end";
-        options = {desc = "References";};
+        lua = true;
       }
       {
         key = "gri";
         mode = "n";
-        lua = true;
+        desc = "Goto Implementation";
         action = "function() require('snacks').picker.lsp_implementations() end";
-        options = {desc = "Goto Implementation";};
+        lua = true;
       }
       {
         key = "grt";
         mode = "n";
-        lua = true;
+        desc = "Goto Type Definition";
         action = "function() require('snacks').picker.lsp_type_definitions() end";
-        options = {desc = "Goto Type Definition";};
+        lua = true;
       }
       {
         key = "gO";
         mode = "n";
-        lua = true;
+        desc = "Document Symbols";
         action = "function() require('snacks').picker.lsp_symbols() end";
-        options = {desc = "Document Symbols";};
+        lua = true;
       }
       {
         key = "gK";
         mode = "n";
-        lua = true;
+        desc = "Signature Help";
         action = "function() vim.lsp.buf.signature_help() end";
-        options = {desc = "Signature Help";};
+        lua = true;
       }
       {
         key = "<leader>ss";
         mode = "n";
-        lua = true;
+        desc = "LSP Symbols";
         action = "function() require('snacks').picker.lsp_symbols() end";
-        options = {desc = "LSP Symbols";};
+        lua = true;
       }
       {
         key = "<leader>sS";
         mode = "n";
-        lua = true;
+        desc = "LSP Workspace Symbols";
         action = "function() require('snacks').picker.lsp_workspace_symbols() end";
-        options = {desc = "LSP Workspace Symbols";};
+        lua = true;
       }
       {
         key = "gai";
         mode = "n";
-        lua = true;
+        desc = "Calls Incoming";
         action = "function() require('snacks').picker.lsp_incoming_calls() end";
-        options = {desc = "Calls Incoming";};
+        lua = true;
       }
       {
         key = "gao";
         mode = "n";
-        lua = true;
+        desc = "Calls Outgoing";
         action = "function() require('snacks').picker.lsp_outgoing_calls() end";
-        options = {desc = "Calls Outgoing";};
+        lua = true;
       }
       {
         key = "<leader>cc";
         mode = ["n" "x"];
-        lua = true;
+        desc = "Run Codelens";
         action = "function() vim.lsp.codelens.run() end";
-        options = {desc = "Run Codelens";};
+        lua = true;
       }
       {
         key = "<leader>cC";
         mode = "n";
-        lua = true;
+        desc = "Refresh & Display Codelens";
         action = "function() vim.lsp.codelens.refresh() end";
-        options = {desc = "Refresh & Display Codelens";};
+        lua = true;
       }
       {
         key = "<leader>cR";
         mode = "n";
-        lua = true;
+        desc = "Rename File";
         action = "function() require('snacks').rename.rename_file() end";
-        options = {desc = "Rename File";};
+        lua = true;
       }
       {
         key = "]]";
         mode = "n";
-        lua = true;
+        desc = "Next Reference";
         action = "function() require('snacks').words.jump(vim.v.count1) end";
-        options = {desc = "Next Reference";};
+        lua = true;
       }
       {
         key = "[[";
         mode = "n";
-        lua = true;
+        desc = "Prev Reference";
         action = "function() require('snacks').words.jump(-vim.v.count1) end";
-        options = {desc = "Prev Reference";};
+        lua = true;
       }
       {
         key = "<c-s>";
         mode = "i";
-        lua = true;
+        desc = "Signature Help";
         action = "function() vim.lsp.buf.signature_help() end";
-        options = {desc = "Signature Help";};
+        lua = true;
       }
     ];
   };

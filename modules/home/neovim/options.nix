@@ -1,6 +1,6 @@
 {pkgs, ...}: {
   programs.nvf.settings.vim = {
-    viAlias = false;
+    viAlias = true;
     vimAlias = true;
     globals = {
       mapleader = " ";
@@ -39,20 +39,13 @@
       ruler = false;
       scrolloff = 4;
 
-      sessionoptions = [
-        "buffers"
-        "curdir"
-        "tabpages"
-        "winsize"
-        "help"
-        "globals"
-        "skiprtp"
-        "folds"
-      ];
+      sessionoptions = "buffers,curdir,tabpages,winsize,help,globals,skiprtp,folds";
 
       shiftround = true;
       shiftwidth = 2;
       showmode = false;
+
+      shortmess = "filnxtToOFWIc";
 
       sidescrolloff = 8;
       signcolumn = "yes";
@@ -80,14 +73,8 @@
       winminwidth = 5;
       wrap = false;
 
-      fillchars = {
-        foldopen = "";
-        foldclose = "";
-        fold = " ";
-        foldsep = " ";
-        diff = "╱";
-        eob = " ";
-      };
+      fillchars = "foldopen:,foldclose:,fold: ,foldsep: ,diff:╱,eob: ";
+      shada = "'100,<50,s10,h";
     };
 
     clipboard = {
@@ -96,14 +83,35 @@
         wl-copy.enable = pkgs.stdenv.isLinux;
       };
     };
-    extraConfigLua = ''
+
+    luaConfigRC.options = ''
       vim.opt.clipboard = vim.env.SSH_CONNECTION and "" or "unnamedplus"
 
       vim.filetype.add({
         extension = {
+          http = "http",
           gs = 'javascript',
         },
       })
+
+      vim.g.loaded_gzip = 1
+      vim.g.loaded_zip = 1
+      vim.g.loaded_zipPlugin = 1
+      vim.g.loaded_tar = 1
+      vim.g.loaded_tarPlugin = 1
+      vim.g.loaded_getscript = 1
+      vim.g.loaded_getscriptPlugin = 1
+      vim.g.loaded_vimball = 1
+      vim.g.loaded_vimballPlugin = 1
+      vim.g.loaded_2html_plugin = 1
+      vim.g.loaded_matchit = 1
+      vim.g.loaded_matchparen = 1
+      vim.g.loaded_logiPat = 1
+      vim.g.loaded_rrhelper = 1
+      vim.g.loaded_netrw = 1
+      vim.g.loaded_netrwPlugin = 1
+      vim.g.loaded_netrwSettings = 1
+      vim.g.loaded_netrwFileHandlers = 1
     '';
 
     spellcheck = {

@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+_: {
   programs.nvf.settings.vim = {
     mini.icons = {
       enable = true;
@@ -67,7 +67,6 @@
       enable = true;
       theme = "auto";
       globalStatus = true;
-      disabledFiletypes = ["dashboard" "alpha" "ministarter" "snacks_dashboard"];
 
       sectionSeparator = {
         left = "";
@@ -94,15 +93,10 @@
           ''{ function() return package.loaded['noice'] and require('noice').api.status.command.get() or "" end, cond = function() return package.loaded['noice'] and require('noice').api.status.command.has() end, color = { fg = "#bb9af7" } }''
           ''{ function() return package.loaded['noice'] and require('noice').api.status.mode.get() or "" end, cond = function() return package.loaded['noice'] and require('noice').api.status.mode.has() end, color = { fg = "#ff9e64" } }''
           ''{ function() return "  " .. (package.loaded['dap'] and require("dap").status() or "") end, cond = function() return package.loaded['dap'] and require("dap").status() ~= "" end, color = { fg = "#db4b4b" } }''
-          ''{ function() return require("lazy.status").updates() end, cond = require("lazy.status").has_updates, color = { fg = "#ff9e64" } }''
           ''{ "diff", symbols = { added = " ", modified = " ", removed = " " }, source = function() local gitsigns = vim.b.gitsigns_status_dict if gitsigns then return { added = gitsigns.added, modified = gitsigns.changed, removed = gitsigns.removed } end end }''
         ];
         y = ["'progress'"];
         z = ["'location'"];
-      };
-
-      setupOpts = {
-        extensions = ["neo-tree" "lazy" "fzf"];
       };
     };
 
@@ -110,74 +104,59 @@
       {
         key = "<leader>snl";
         mode = "n";
-        lua = true;
+        desc = "Noice Last Message";
         action = "function() require('noice').cmd('last') end";
-        options = {desc = "Noice Last Message";};
+        lua = true;
       }
       {
         key = "<leader>snh";
         mode = "n";
-        lua = true;
+        desc = "Noice History";
         action = "function() require('noice').cmd('history') end";
-        options = {desc = "Noice History";};
+        lua = true;
       }
       {
         key = "<leader>sna";
         mode = "n";
-        lua = true;
+        desc = "Noice All";
         action = "function() require('noice').cmd('all') end";
-        options = {desc = "Noice All";};
+        lua = true;
       }
       {
         key = "<leader>snd";
         mode = "n";
-        lua = true;
+        desc = "Dismiss All";
         action = "function() require('noice').cmd('dismiss') end";
-        options = {desc = "Dismiss All";};
+        lua = true;
       }
       {
         key = "<leader>snt";
         mode = "n";
-        lua = true;
+        desc = "Noice Picker (Telescope/FzfLua)";
         action = "function() require('noice').cmd('pick') end";
-        options = {desc = "Noice Picker (Telescope/FzfLua)";};
+        lua = true;
       }
       {
         key = "<c-f>";
         mode = ["i" "n" "s"];
-        lua = true;
+        desc = "Scroll Forward";
         action = "function() if not require('noice.lsp').scroll(4) then return '<c-f>' end end";
-        options = {
-          silent = true;
-          expr = true;
-          desc = "Scroll Forward";
-        };
+        lua = true;
       }
       {
         key = "<c-b>";
         mode = ["i" "n" "s"];
-        lua = true;
+        desc = "Scroll Backward";
         action = "function() if not require('noice.lsp').scroll(-4) then return '<c-b>' end end";
-        options = {
-          silent = true;
-          expr = true;
-          desc = "Scroll Backward";
-        };
+        lua = true;
       }
       {
         key = "<S-Enter>";
         mode = "c";
-        lua = true;
+        desc = "Redirect Cmdline";
         action = "function() require('noice').redirect(vim.fn.getcmdline()) end";
-        options = {desc = "Redirect Cmdline";};
+        lua = true;
       }
     ];
-
-    lazy.plugins = {
-      "nui.nvim" = {
-        package = pkgs.vimPlugins.nui-nvim;
-        lazy = true;
-      };
-    };
   };
 }
