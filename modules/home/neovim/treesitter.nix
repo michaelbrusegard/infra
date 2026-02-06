@@ -7,31 +7,20 @@
       fold = true;
       grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
         bash
-        c
         diff
         html
-        javascript
-        jsdoc
+        printf
         json
-        jsonc
-        lua
-        luadoc
-        luap
         markdown
         markdown-inline
-        printf
-        python
         query
         regex
         toml
-        tsx
-        typescript
         vim
         vimdoc
         xml
         yaml
         http
-        graphql
       ];
       textobjects = {
         enable = true;

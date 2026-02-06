@@ -33,15 +33,10 @@ in
           yabai
           jankyborders
           neovim
-          tree-sitter
-          lua5_1
+          vimPlugins
           texliveFull
           opencode
-          beads
           ;
-        lua51Packages = {
-          inherit (pkgs-unstable.lua51Packages) luarocks;
-        };
       }
     )
   ]

@@ -1,57 +1,23 @@
-{
-  pkgs,
-  lib,
-  config,
-  inputs,
-  ...
-}: let
-  neovimConfig = "${config.home.homeDirectory}/Projects/nix-config/config/neovim";
-in {
+{inputs, ...}: {
   imports = [
     inputs.nvf.homeManagerModules.default
     ./options.nix
-    ./editor.nix
-    ./coding.nix
+    ./autocmds.nix
     ./keymaps.nix
+    ./ai.nix
+    ./coding.nix
+    ./dap.nix
+    ./colorscheme.nix
+    ./editor.nix
+    ./formatting.nix
+    ./linting.nix
+    ./lsp.nix
+    ./test.nix
+    ./treesitter.nix
     ./ui.nix
     ./util.nix
-    ./lsp.nix
-    ./ai.nix
-    ./treesitter.nix
-    ./format.nix
-    ./lint.nix
-    ./autocmds.nix
-    ./colorscheme.nix
-    ./dap.nix
-    ./test.nix
-    ./lang/python.nix
+    # ./lang/python.nix
+    # ./lang/typescript.nix
   ];
-
-  # This is my old temporary Neovim configuration
-  programs.neovim = {
-    enable = true;
-
-    defaultEditor = true;
-    viAlias = true;
-    vimAlias = true;
-    vimdiffAlias = true;
-
-    withPython3 = true;
-    withNodeJs = true;
-    withRuby = true;
-
-    extraPackages = with pkgs; [
-      lua5_1
-      lua51Packages.luarocks
-      texliveFull
-    ];
-  };
-
-  xdg.configFile."nvim".source =
-    config.lib.file.mkOutOfStoreSymlink neovimConfig;
-  xdg.configFile."nvim/init.lua".enable = lib.mkForce false;
-
-  home.packages = with pkgs; [
-    tree-sitter
-  ];
+  programs.nvf.enable = true;
 }

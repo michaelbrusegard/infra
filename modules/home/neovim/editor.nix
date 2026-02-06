@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   programs.nvf.settings.vim = {
     lazy.plugins = {
       "grug-far.nvim" = {
@@ -9,6 +13,7 @@
           {
             key = "<leader>sr";
             mode = ["n" "x"];
+            desc = "Search and Replace";
             action = ''
               function()
                 local grug = require("grug-far")
@@ -22,15 +27,131 @@
               end
             '';
             lua = true;
-            desc = "Search and Replace";
           }
         ];
       };
       "dial.nvim" = {
         package = pkgs.vimPlugins.dial-nvim;
+        setupModule = "dial";
+        setupOpts = {};
+        keys = [
+          {
+            key = "<C-a>";
+            mode = ["n" "v"];
+            desc = "Increment";
+            action = "function() return _G.dial(true) end";
+            lua = true;
+            expr = true;
+            silent = true;
+          }
+          {
+            key = "<C-x>";
+            mode = ["n" "v"];
+            desc = "Decrement";
+            action = "function() return _G.dial(false) end";
+            lua = true;
+            expr = true;
+            silent = true;
+          }
+          {
+            key = "g<C-a>";
+            mode = ["n" "x"];
+            desc = "Increment";
+            action = "function() return _G.dial(true, true) end";
+            lua = true;
+            expr = true;
+            silent = true;
+          }
+          {
+            key = "g<C-x>";
+            mode = ["n" "x"];
+            desc = "Decrement";
+            action = "function() return _G.dial(false, true) end";
+            lua = true;
+            expr = true;
+            silent = true;
+          }
+        ];
+        after = ''
+          local augend = require("dial.augend")
+
+          local dial_config = {
+            dials_by_ft = {
+              css = "css", vue = "vue", javascript = "typescript",
+              typescript = "typescript", typescriptreact = "typescript",
+              javascriptreact = "typescript", json = "json", lua = "lua",
+              markdown = "markdown", sass = "css", scss = "css", python = "python",
+            },
+            groups = {
+              default = {
+                augend.integer.alias.decimal,
+                augend.integer.alias.decimal_int,
+                augend.integer.alias.hex,
+                augend.date.alias["%Y/%m/%d"],
+                augend.constant.alias.bool,
+                augend.constant.new({ elements = { "&&", "||" }, word = false, cyclic = true }),
+                augend.constant.new({
+                  elements = { "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth" },
+                  word = false, cyclic = true
+                }),
+                augend.constant.new({
+                  elements = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" },
+                  word = true, cyclic = true
+                }),
+                augend.constant.new({
+                  elements = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" },
+                  word = true, cyclic = true
+                }),
+                augend.constant.new({ elements = { "True", "False" }, word = true, cyclic = true }),
+              },
+              vue = {
+                augend.constant.new({ elements = { "let", "const" } }),
+                augend.hexcolor.new({ case = "lower" }),
+                augend.hexcolor.new({ case = "upper" }),
+              },
+              typescript = {
+                augend.constant.new({ elements = { "let", "const" } }),
+              },
+              css = {
+                augend.hexcolor.new({ case = "lower" }),
+                augend.hexcolor.new({ case = "upper" }),
+              },
+              markdown = {
+                augend.constant.new({ elements = { "[ ]", "[x]" }, word = false, cyclic = true }),
+                augend.misc.alias.markdown_header,
+              },
+              json = { augend.semver.alias.semver },
+              lua = {
+                augend.constant.new({ elements = { "and", "or" }, word = true, cyclic = true }),
+              },
+              python = {
+                augend.constant.new({ elements = { "and", "or" } }),
+              },
+            },
+          }
+
+          for name, group in pairs(dial_config.groups) do
+            if name ~= "default" then
+              vim.list_extend(group, dial_config.groups.default)
+            end
+          end
+
+          require("dial.config").augends:register_group(dial_config.groups)
+          vim.g.dials_by_ft = dial_config.dials_by_ft
+
+          function _G.dial(increment, g)
+            local mode = vim.fn.mode(true)
+            local is_visual = mode == "v" or mode == "V" or mode == "\22"
+            local func = (increment and "inc" or "dec") .. (g and "_g" or "_") .. (is_visual and "visual" or "normal")
+            local group = vim.g.dials_by_ft[vim.bo.filetype] or "default"
+            return require("dial.map")[func](group)
+          end
+        '';
       };
       "codediff.nvim" = {
         package = pkgs.vimPlugins.codediff-nvim;
+        setupModule = "codediff";
+        setupOpts = {};
         cmd = ["CodeDiff"];
       };
     };
@@ -92,7 +213,7 @@
       {
         key = "[q";
         mode = "n";
-        lua = true;
+        desc = "Previous Trouble/Quickfix Item";
         action = ''
           function()
             if require("trouble").is_open() then
@@ -105,12 +226,12 @@
             end
           end
         '';
-        options = {desc = "Previous Trouble/Quickfix Item";};
+        lua = true;
       }
       {
         key = "]q";
         mode = "n";
-        lua = true;
+        desc = "Next Trouble/Quickfix Item";
         action = ''
           function()
             if require("trouble").is_open() then
@@ -122,104 +243,63 @@
             end
           end
         '';
-        options = {desc = "Next Trouble/Quickfix Item";};
+        lua = true;
       }
       {
         key = "]t";
         mode = "n";
-        lua = true;
+        desc = "Next Todo Comment";
         action = "function() require('todo-comments').jump_next() end";
-        options = {desc = "Next Todo Comment";};
+        lua = true;
       }
       {
         key = "[t";
         mode = "n";
-        lua = true;
+        desc = "Previous Todo Comment";
         action = "function() require('todo-comments').jump_prev() end";
-        options = {desc = "Previous Todo Comment";};
+        lua = true;
       }
       {
         key = "<leader>xt";
         mode = "n";
-        lua = true;
+        desc = "Todo (Trouble)";
         action = "function() require('snacks').picker.todo_comments() end";
-        options = {desc = "Todo (Trouble)";};
+        lua = true;
       }
       {
         key = "<leader>xT";
         mode = "n";
-        lua = true;
+        desc = "Todo/Fix/Fixme (Trouble)";
         action = "function() require('snacks').picker.todo_comments({ keywords = { 'TODO', 'FIX', 'FIXME' } }) end";
-        options = {desc = "Todo/Fix/Fixme (Trouble)";};
+        lua = true;
       }
       {
         key = "<leader>st";
         mode = "n";
-        lua = true;
+        desc = "Todo";
         action = "function() require('snacks').picker.todo_comments() end";
-        options = {desc = "Todo";};
+        lua = true;
       }
       {
         key = "<leader>sT";
         mode = "n";
-        lua = true;
+        desc = "Todo/Fix/Fixme";
         action = "function() require('snacks').picker.todo_comments({ keywords = { 'TODO', 'FIX', 'FIXME' } }) end";
-        options = {desc = "Todo/Fix/Fixme";};
+        lua = true;
       }
       {
         key = "<leader>?";
         mode = "n";
-        lua = true;
+        desc = "Buffer Keymaps (which-key)";
         action = "function() require('which-key').show({ global = false }) end";
-        options = {desc = "Buffer Keymaps (which-key)";};
+        lua = true;
       }
       {
         key = "<c-w><space>";
         mode = "n";
-        lua = true;
+        desc = "Window Hydra Mode (which-key)";
         action = "function() require('which-key').show({ keys = '<c-w>', loop = true }) end";
-        options = {desc = "Window Hydra Mode (which-key)";};
-      }
-      # Dial keymaps
-      {
-        key = "<C-a>";
-        mode = ["n" "v"];
         lua = true;
-        action = "function() return _G.dial(true) end";
-        options = {
-          expr = true;
-          desc = "Increment";
-        };
-      }
-      {
-        key = "<C-x>";
-        mode = ["n" "v"];
-        lua = true;
-        action = "function() return _G.dial(false) end";
-        options = {
-          expr = true;
-          desc = "Decrement";
-        };
-      }
-      {
-        key = "g<C-a>";
-        mode = ["n" "x"];
-        lua = true;
-        action = "function() return _G.dial(true, true) end";
-        options = {
-          expr = true;
-          desc = "Increment";
-        };
-      }
-      {
-        key = "g<C-x>";
-        mode = ["n" "x"];
-        lua = true;
-        action = "function() return _G.dial(false, true) end";
-        options = {
-          expr = true;
-          desc = "Decrement";
-        };
       }
     ];
 
@@ -242,7 +322,7 @@
           topdelete = {text = "";};
           changedelete = {text = "▎";};
         };
-        on_attach = ''
+        on_attach = lib.generators.mkLuaInline ''
           function(buffer)
             local gs = package.loaded.gitsigns
 
@@ -250,7 +330,6 @@
               vim.keymap.set(mode, l, r, { buffer = buffer, desc = desc, silent = true })
             end
 
-            -- Navigation
             map("n", "]h", function()
               if vim.wo.diff then
                 vim.cmd.normal({ "]c", bang = true })
@@ -270,7 +349,6 @@
             map("n", "]H", function() gs.nav_hunk("last") end, "Last Hunk")
             map("n", "[H", function() gs.nav_hunk("first") end, "First Hunk")
 
-            -- Actions
             map({ "n", "x" }, "<leader>ghs", ":Gitsigns stage_hunk<CR>", "Stage Hunk")
             map({ "n", "x" }, "<leader>ghr", ":Gitsigns reset_hunk<CR>", "Reset Hunk")
             map("n", "<leader>ghS", gs.stage_buffer, "Stage Buffer")
@@ -281,89 +359,11 @@
             map("n", "<leader>ghB", function() gs.blame() end, "Blame Buffer")
             map("n", "<leader>ghd", gs.diffthis, "Diff This")
             map("n", "<leader>ghD", function() gs.diffthis("~") end, "Diff This ~")
-
-            -- Text Object
             map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "GitSigns Select Hunk")
           end
         '';
       };
     };
-
-    luaConfigRC.dial-setup = ''
-      local augend = require("dial.augend")
-
-      local dial_config = {
-        dials_by_ft = {
-          css = "css", vue = "vue", javascript = "typescript",
-          typescript = "typescript", typescriptreact = "typescript",
-          javascriptreact = "typescript", json = "json", lua = "lua",
-          markdown = "markdown", sass = "css", scss = "css", python = "python",
-        },
-        groups = {
-          default = {
-            augend.integer.alias.decimal,
-            augend.integer.alias.decimal_int,
-            augend.integer.alias.hex,
-            augend.date.alias["%Y/%m/%d"],
-            augend.constant.alias.bool,
-            augend.constant.new({ elements = { "&&", "||" }, word = false, cyclic = true }),
-            augend.constant.new({
-              elements = { "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth" },
-              word = false, cyclic = true
-            }),
-            augend.constant.new({
-              elements = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" },
-              word = true, cyclic = true
-            }),
-            augend.constant.new({
-              elements = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" },
-              word = true, cyclic = true
-            }),
-            augend.constant.new({ elements = { "True", "False" }, word = true, cyclic = true }),
-          },
-          vue = {
-            augend.constant.new({ elements = { "let", "const" } }),
-            augend.hexcolor.new({ case = "lower" }),
-            augend.hexcolor.new({ case = "upper" }),
-          },
-          typescript = {
-            augend.constant.new({ elements = { "let", "const" } }),
-          },
-          css = {
-            augend.hexcolor.new({ case = "lower" }),
-            augend.hexcolor.new({ case = "upper" }),
-          },
-          markdown = {
-            augend.constant.new({ elements = { "[ ]", "[x]" }, word = false, cyclic = true }),
-            augend.misc.alias.markdown_header,
-          },
-          json = { augend.semver.alias.semver },
-          lua = {
-            augend.constant.new({ elements = { "and", "or" }, word = true, cyclic = true }),
-          },
-          python = {
-            augend.constant.new({ elements = { "and", "or" } }),
-          },
-        },
-      }
-
-      for name, group in pairs(dial_config.groups) do
-        if name ~= "default" then
-          vim.list_extend(group, dial_config.groups.default)
-        end
-      end
-
-      require("dial.config").augends:register_group(dial_config.groups)
-      vim.g.dials_by_ft = dial_config.dials_by_ft
-
-      function _G.dial(increment, g)
-        local mode = vim.fn.mode(true)
-        local is_visual = mode == "v" or mode == "V" or mode == "\22"
-        local func = (increment and "inc" or "dec") .. (g and "_g" or "_") .. (is_visual and "visual" or "normal")
-        local group = vim.g.dials_by_ft[vim.bo.filetype] or "default"
-        return require("dial.map")[func](group)
-      end
-    '';
 
     luaConfigRC.navic-attach = ''
       require("nvim-navic").setup({
@@ -387,106 +387,47 @@
       enable = true;
       setupOpts = {
         preset = "helix";
-        spec = [
+        delay = 50;
+        spec = lib.generators.mkLuaInline ''
           {
-            __unkeyed-1 = "<leader><tab>";
-            group = "tabs";
-            mode = ["n" "x"];
+            mode = { "n", "x" },
+            { "<leader><tab>", group = "tabs" },
+            { "<leader>c", group = "code" },
+            { "<leader>d", group = "debug" },
+            { "<leader>dp", group = "profiler" },
+            { "<leader>f", group = "file/find" },
+            { "<leader>g", group = "git" },
+            { "<leader>gh", group = "hunks" },
+            { "<leader>q", group = "quit/session" },
+            { "<leader>s", group = "search" },
+            { "<leader>u", group = "ui" },
+            { "<leader>x", group = "diagnostics/quickfix" },
+            { "[", group = "prev" },
+            { "]", group = "next" },
+            { "g", group = "goto" },
+            { "s", group = "surround" },
+            { "z", group = "fold" },
+            { "gx", desc = "Open with system app" },
+            {
+              "<leader>b",
+              group = "buffer",
+              expand = function()
+                return require("which-key.extras").expand.buf()
+              end,
+            },
+            {
+              "<leader>w",
+              group = "windows",
+              proxy = "<c-w>",
+              expand = function()
+                return require("which-key.extras").expand.win()
+              end,
+            },
+            { "<leader>a", group = "ai", mode = "n" },
+            { "<leader>t", group = "test", mode = "n" },
+            { "<leader>R", group = "rest", mode = "n" },
           }
-          {
-            __unkeyed-1 = "<leader>c";
-            group = "code";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>d";
-            group = "debug";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>dp";
-            group = "profiler";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>f";
-            group = "file/find";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>g";
-            group = "git";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>gh";
-            group = "hunks";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>q";
-            group = "quit/session";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>s";
-            group = "search";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>u";
-            group = "ui";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>x";
-            group = "diagnostics/quickfix";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "[";
-            group = "prev";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "]";
-            group = "next";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "g";
-            group = "goto";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "s";
-            group = "surround";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "z";
-            group = "fold";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "gx";
-            desc = "Open with system app";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>b";
-            group = "buffer";
-            expand = "function() return require('which-key.extras').expand.buf() end";
-            mode = ["n" "x"];
-          }
-          {
-            __unkeyed-1 = "<leader>w";
-            group = "windows";
-            proxy = "<c-w>";
-            expand = "function() return require('which-key.extras').expand.win() end";
-            mode = ["n" "x"];
-          }
-        ];
+        '';
       };
     };
   };

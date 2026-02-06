@@ -3,73 +3,74 @@
     lazy.plugins = {
       "opencode.nvim" = {
         package = pkgs.vimPlugins.opencode-nvim;
+        setupModule = "opencode";
+        setupOpts = {};
         keys = [
           {
             key = "<leader>aa";
-            action = ''function() require("opencode").ask("@this: ", { submit = true }) end'';
-            lua = true;
             mode = ["n" "x"];
             desc = "Ask about this";
+            action = ''function() require("opencode").ask("@this: ", { submit = true }) end'';
+            lua = true;
           }
           {
             key = "<leader>as";
-            action = ''function() require("opencode").select() end'';
-            lua = true;
             mode = ["n" "x"];
             desc = "Select prompt";
+            action = ''function() require("opencode").select() end'';
+            lua = true;
           }
           {
             key = "<leader>ac";
-            action = ''function() require("opencode").prompt("@this") end'';
-            lua = true;
             mode = ["n" "x"];
             desc = "Add this";
+            action = ''function() require("opencode").prompt("@this") end'';
+            lua = true;
           }
           {
             key = "<leader>at";
+            mode = ["n" "x"];
+            desc = "Toggle embedded";
             action = ''function() require("opencode").toggle() end'';
             lua = true;
-            desc = "Toggle embedded";
           }
           {
             key = "<leader>an";
+            mode = ["n"];
+            desc = "New session";
             action = ''function() require("opencode").command("session.new") end'';
             lua = true;
-            desc = "New session";
           }
           {
             key = "<leader>ai";
+            mode = ["n"];
+            desc = "Interrupt session";
             action = ''function() require("opencode").command("session.interrupt") end'';
             lua = true;
-            desc = "Interrupt session";
           }
           {
             key = "<leader>aA";
+            mode = ["n"];
+            desc = "Cycle selected agent";
             action = ''function() require("opencode").command("agent.cycle") end'';
             lua = true;
-            desc = "Cycle selected agent";
           }
           {
             key = "<S-C-u>";
+            mode = ["n"];
+            desc = "Messages half page up";
             action = ''function() require("opencode").command("session.half.page.up") end'';
             lua = true;
-            desc = "Messages half page up";
           }
           {
             key = "<S-C-d>";
+            mode = ["n"];
+            desc = "Messages half page down";
             action = ''function() require("opencode").command("session.half.page.down") end'';
             lua = true;
-            desc = "Messages half page down";
           }
         ];
       };
     };
-
-    binds.whichKey.setupOpts.spec = [
-      {
-        __unkeyed-1 = "<leader>a";
-        group = "ai";
-      }
-    ];
   };
 }

@@ -24,20 +24,23 @@
     lazy.plugins = {
       "nvim-dap-virtual-text" = {
         package = pkgs.vimPlugins.nvim-dap-virtual-text;
+        setupModule = "nvim-dap-virtual-text";
+        setupOpts = {};
       };
     };
 
     keymaps = [
       {
-        mode = "n";
         key = "<leader>dB";
+        mode = "n";
+        desc = "Breakpoint Condition";
         action = "function() require('dap').set_breakpoint(vim.fn.input('Breakpoint condition: ')) end";
         lua = true;
-        options = {desc = "Breakpoint Condition";};
       }
       {
-        mode = "n";
         key = "<leader>da";
+        mode = "n";
+        desc = "Run with Args";
         action = ''
           function()
             local args = vim.fn.input("Run with args: ")
@@ -48,33 +51,31 @@
           end
         '';
         lua = true;
-        options = {desc = "Run with Args";};
       }
       {
-        mode = "n";
         key = "<leader>dg";
+        mode = "n";
+        desc = "Go to Line (No Execute)";
         action = "function() require('dap').goto_() end";
         lua = true;
-        options = {desc = "Go to Line (No Execute)";};
       }
       {
-        mode = "n";
         key = "<leader>ds";
+        mode = "n";
+        desc = "Session";
         action = "function() require('dap').session() end";
         lua = true;
-        options = {desc = "Session";};
       }
       {
-        mode = ["n" "x"];
         key = "<leader>de";
+        mode = ["n" "x"];
+        desc = "Eval";
         action = "function() require('dapui').eval() end";
         lua = true;
-        options = {desc = "Eval";};
       }
     ];
 
     luaConfigRC.dap-setup = ''
-      -- Icons for DAP
       local dap_icons = {
         Stopped             = { "󰁕 ", "DiagnosticWarn", "DapStoppedLine" },
         Breakpoint          = " ",

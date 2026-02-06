@@ -1,10 +1,15 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   programs.nvf.settings.vim = {
     lazy.plugins = {
       "ts-comments.nvim" = {
         package = pkgs.vimPlugins.ts-comments-nvim;
+        setupModule = "ts-comments";
+        setupOpts = {};
         event = ["BufRead" "BufNewFile"];
-        setup = "require('ts-comments').setup {}";
       };
     };
     mini = {
@@ -17,7 +22,7 @@
             terminal = false;
           };
           # skip autopair when next character is one of these
-          skip_next = ''[%w%%%'%[%"%.%`%$]'';
+          skip_next = ''[%w%%%'%[%%"%.%%`%%$]'';
           # skip autopair when the cursor is inside these treesitter nodes
           skip_ts = ["string"];
           # skip autopair when next character is closing pair
@@ -84,7 +89,7 @@
           };
           completion = {
             list.selection.preselect = false;
-            menu.auto_show = ''function(ctx) return vim.fn.getcmdtype() == ":" end'';
+            menu.auto_show = lib.generators.mkLuaInline "function(ctx) return vim.fn.getcmdtype() == ':' end";
             ghost_text.enabled = true;
           };
         };
@@ -95,10 +100,10 @@
       };
     };
 
-    extraConfigLua = ''
-      local pairs = require("mini.pairs")
-      local open = pairs.open
-      pairs.open = function(pair, neigh_pattern)
+    luaConfigRC.mini-custom-setup = ''
+      local mini_pairs = require("mini.pairs")
+      local open = mini_pairs.open
+      mini_pairs.open = function(pair, neigh_pattern)
         if vim.fn.getcmdline() ~= "" then
           return open(pair, neigh_pattern)
         end
@@ -110,7 +115,7 @@
         if vim.bo.filetype == "markdown" and o == "`" and before:match("^%s*``") then
           return "`\n```" .. vim.api.nvim_replace_termcodes("<up>", true, true, true)
         end
-        if next ~= "" and next:match("[%w%%%'%[%"%.%`%$]") then
+        if next ~= "" and next:match("[%w%%%'%[%%\"%.%%`%%$]") then
           return o
         end
 
@@ -131,6 +136,20 @@
         return open(pair, neigh_pattern)
       end
 
+      local function ai_buffer(ai_type)
+        local start_line, end_line = 1, vim.fn.line('$')
+        if ai_type == 'i' then
+          local first_nonblank = vim.fn.nextnonblank(start_line)
+          local last_nonblank = vim.fn.prevnonblank(end_line)
+          if first_nonblank == 0 or last_nonblank == 0 then
+            return nil
+          end
+          start_line, end_line = first_nonblank, last_nonblank
+        end
+        local to_col = math.max(vim.fn.getline(end_line):len(), 1)
+        return { from = { line = start_line, col = 1 }, to = { line = end_line, col = to_col } }
+      end
+
       require("mini.ai").setup({
         n_lines = 500,
         custom_textobjects = {
@@ -140,13 +159,13 @@
           }),
           f = require("mini.ai").gen_spec.treesitter({ a = "@function.outer", i = "@function.inner" }), -- function
           c = require("mini.ai").gen_spec.treesitter({ a = "@class.outer", i = "@class.inner" }), -- class
-          t = { "<([%p%w]-)%f[^<%w][^<>]->.-</%1>", "^<.->().*()</[^/]->$" }, -- tags
+          t = { "<([%p%w]-)%f[^<%w][^<>]->.-</%%1>", "^<.->().*()</[^/]->$" }, -- tags
           d = { "%f[%d]%d+" }, -- digits
           e = { -- Word with case
             { "%u[%l%d]+%f[^%l%d]", "%f[%S][%l%d]+%f[^%l%d]", "%f[%P][%l%d]+%f[^%l%d]", "^[%l%d]+%f[^%l%d]" },
             "^().*()$",
           },
-          g = require("mini.ai").gen_spec.buffer(), -- buffer
+          g = ai_buffer, -- buffer (LazyVim compatible)
           u = require("mini.ai").gen_spec.function_call(), -- u for "Usage"
           U = require("mini.ai").gen_spec.function_call({ name_pattern = "[%w_]" }), -- without dot in function name
         },
@@ -175,7 +194,7 @@
         { "g", desc = "entire file" },
         { "i", desc = "indent" },
         { "o", desc = "block, conditional, loop" },
-        { "q", desc = "quote `\"'" },
+        { "q", desc = "quote `" },
         { "t", desc = "tag" },
         { "u", desc = "use/call" },
         { "{", desc = "{} block" },
@@ -207,5 +226,110 @@
       end
       require("which-key").add(ret, { notify = false })
     '';
+
+    keymaps = [
+      {
+        key = "y";
+        mode = ["n" "x"];
+        desc = "Yank Text";
+        action = "<Plug>(YankyYank)";
+      }
+      {
+        key = "p";
+        mode = ["n" "x"];
+        desc = "Put Text After Cursor";
+        action = "<Plug>(YankyPutAfter)";
+      }
+      {
+        key = "P";
+        mode = ["n" "x"];
+        desc = "Put Text Before Cursor";
+        action = "<Plug>(YankyPutBefore)";
+      }
+      {
+        key = "gp";
+        mode = ["n" "x"];
+        desc = "Put Text After Selection";
+        action = "<Plug>(YankyGPutAfter)";
+      }
+      {
+        key = "gP";
+        mode = ["n" "x"];
+        desc = "Put Text Before Selection";
+        action = "<Plug>(YankyGPutBefore)";
+      }
+      {
+        key = "[y";
+        mode = "n";
+        desc = "Cycle Forward Through Yank History";
+        action = "<Plug>(YankyCycleForward)";
+      }
+      {
+        key = "]y";
+        mode = "n";
+        desc = "Cycle Backward Through Yank History";
+        action = "<Plug>(YankyCycleBackward)";
+      }
+      {
+        key = "]p";
+        mode = "n";
+        desc = "Put Indented After Cursor (Linewise)";
+        action = "<Plug>(YankyPutIndentAfterLinewise)";
+      }
+      {
+        key = "[p";
+        mode = "n";
+        desc = "Put Indented Before Cursor (Linewise)";
+        action = "<Plug>(YankyPutIndentBeforeLinewise)";
+      }
+      {
+        key = "]P";
+        mode = "n";
+        desc = "Put Indented After Cursor (Linewise)";
+        action = "<Plug>(YankyPutIndentAfterLinewise)";
+      }
+      {
+        key = "[P";
+        mode = "n";
+        desc = "Put Indented Before Cursor (Linewise)";
+        action = "<Plug>(YankyPutIndentBeforeLinewise)";
+      }
+      {
+        key = ">p";
+        mode = "n";
+        desc = "Put and Indent Right";
+        action = "<Plug>(YankyPutIndentAfterShiftRight)";
+      }
+      {
+        key = "<p";
+        mode = "n";
+        desc = "Put and Indent Left";
+        action = "<Plug>(YankyPutIndentAfterShiftLeft)";
+      }
+      {
+        key = ">P";
+        mode = "n";
+        desc = "Put Before and Indent Right";
+        action = "<Plug>(YankyPutIndentBeforeShiftRight)";
+      }
+      {
+        key = "<P";
+        mode = "n";
+        desc = "Put Before and Indent Left";
+        action = "<Plug>(YankyPutIndentBeforeShiftLeft)";
+      }
+      {
+        key = "=p";
+        mode = "n";
+        desc = "Put After Applying a Filter";
+        action = "<Plug>(YankyPutAfterFilter)";
+      }
+      {
+        key = "=P";
+        mode = "n";
+        desc = "Put Before Applying a Filter";
+        action = "<Plug>(YankyPutBeforeFilter)";
+      }
+    ];
   };
 }
