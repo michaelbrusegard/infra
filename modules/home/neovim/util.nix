@@ -8,6 +8,8 @@
     lazy.plugins = {
       "snacks.nvim" = {
         package = pkgs.vimPlugins.snacks-nvim;
+        lazy = false;
+        priority = 1000;
         setupModule = "snacks";
         setupOpts = {
           bigfile = {enabled = true;};

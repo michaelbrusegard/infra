@@ -276,7 +276,7 @@
       setupModule = "which-key";
       setupOpts = {
         preset = "helix";
-        delay = 200;
+        delay = 50;
         spec = lib.generators.mkLuaInline ''
           {
             mode = { "n", "x" },
@@ -387,7 +387,12 @@
 
     "gitsigns.nvim" = {
       package = pkgs.vimPlugins.gitsigns-nvim;
-      event = [{event = "User"; pattern = "LazyFile";}];
+      event = [
+        {
+          event = "User";
+          pattern = "LazyFile";
+        }
+      ];
       setupModule = "gitsigns";
       setupOpts = {
         signs = {
