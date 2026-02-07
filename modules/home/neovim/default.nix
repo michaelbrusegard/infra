@@ -7,11 +7,11 @@
     ./colorscheme.nix
     ./util.nix
     ./editor.nix
+    ./coding.nix
     ./ai.nix
     ./treesitter.nix
     ./test.nix
 
-    ./coding.nix
     ./ui.nix
     ./dap.nix
     ./lsp.nix
