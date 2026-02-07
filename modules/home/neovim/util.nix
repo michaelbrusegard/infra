@@ -191,32 +191,6 @@
             lua = true;
           }
           {
-            key = "<leader>fe";
-            mode = "n";
-            desc = "Explorer Snacks (cwd)";
-            action = "function() require('snacks').explorer() end";
-            lua = true;
-          }
-          {
-            key = "<leader>fE";
-            mode = "n";
-            desc = "Explorer Snacks (cwd)";
-            action = "function() require('snacks').explorer() end";
-            lua = true;
-          }
-          {
-            key = "<leader>e";
-            mode = "n";
-            desc = "Explorer Snacks (cwd)";
-            action = "<leader>fe";
-          }
-          {
-            key = "<leader>E";
-            mode = "n";
-            desc = "Explorer Snacks (cwd)";
-            action = "<leader>fE";
-          }
-          {
             key = "<leader>,";
             mode = "n";
             desc = "Buffers";

@@ -164,10 +164,7 @@
           end
         end
 
-        local wk_ok, wk = pcall(require, "which-key")
-        if wk_ok then
-          wk.add(ret, { notify = false })
-        end
+        require("which-key").add(ret, { notify = false })
       '';
     };
 
@@ -413,6 +410,19 @@
           menu = {
             draw = {
               treesitter = ["lsp"];
+              columns = [
+                {
+                  __unkeyed-1 = "label";
+                  __unkeyed-2 = "label_description";
+                  gap = 1;
+                }
+                {
+                  __unkeyed-1 = "kind_icon";
+                  __unkeyed-2 = "kind";
+                  gap = 1;
+                }
+                "source"
+              ];
             };
           };
           documentation = {

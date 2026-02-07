@@ -272,10 +272,11 @@
 
     "which-key.nvim" = {
       package = pkgs.vimPlugins.which-key-nvim;
+      event = ["VimEnter"];
       setupModule = "which-key";
       setupOpts = {
         preset = "helix";
-        delay = 50;
+        delay = 200;
         spec = lib.generators.mkLuaInline ''
           {
             mode = { "n", "x" },
@@ -317,22 +318,6 @@
           }
         '';
       };
-      keys = [
-        {
-          key = "<leader>?";
-          mode = "n";
-          desc = "Buffer Keymaps (which-key)";
-          action = "function() require('which-key').show({ global = false }) end";
-          lua = true;
-        }
-        {
-          key = "<c-w><space>";
-          mode = "n";
-          desc = "Window Hydra Mode (which-key)";
-          action = "function() require('which-key').show({ keys = '<c-w>', loop = true }) end";
-          lua = true;
-        }
-      ];
     };
 
     "nvim-navic" = {
