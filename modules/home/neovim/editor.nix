@@ -387,6 +387,7 @@
 
     "gitsigns.nvim" = {
       package = pkgs.vimPlugins.gitsigns-nvim;
+      event = [{event = "User"; pattern = "LazyFile";}];
       setupModule = "gitsigns";
       setupOpts = {
         signs = {
