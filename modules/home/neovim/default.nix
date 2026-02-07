@@ -6,14 +6,13 @@
     ./keymaps.nix
     ./colorscheme.nix
     ./util.nix
+    ./editor.nix
     ./ai.nix
     ./treesitter.nix
     ./test.nix
 
-
     ./coding.nix
     ./ui.nix
-    ./editor.nix
     ./dap.nix
     ./lsp.nix
     ./formatting.nix
