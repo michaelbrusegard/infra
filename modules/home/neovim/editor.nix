@@ -30,10 +30,10 @@
           }
         ];
       };
+
       "dial.nvim" = {
         package = pkgs.vimPlugins.dial-nvim;
         setupModule = "dial";
-        setupOpts = {};
         keys = [
           {
             key = "<C-a>";
@@ -148,286 +148,334 @@
           end
         '';
       };
+
       "codediff.nvim" = {
         package = pkgs.vimPlugins.codediff-nvim;
         setupModule = "codediff";
-        setupOpts = {};
         cmd = ["CodeDiff"];
       };
-    };
 
-    lsp.trouble = {
-      enable = true;
-      setupOpts = {
-        modes = {
-          lsp = {
-            win = {position = "right";};
+      "todo-comments.nvim" = {
+        package = pkgs.vimPlugins.todo-comments-nvim;
+        cmd = ["TodoTrouble" "TodoTelescope"];
+        event = ["BufRead" "BufNewFile"];
+        setupModule = "todo-comments";
+        keys = [
+          {
+            key = "]t";
+            mode = "n";
+            desc = "Next Todo Comment";
+            action = "function() require('todo-comments').jump_next() end";
+            lua = true;
+          }
+          {
+            key = "[t";
+            mode = "n";
+            desc = "Previous Todo Comment";
+            action = "function() require('todo-comments').jump_prev() end";
+            lua = true;
+          }
+          {
+            key = "<leader>xt";
+            mode = "n";
+            desc = "Todo (Trouble)";
+            action = "<cmd>Trouble todo toggle<cr>";
+          }
+          {
+            key = "<leader>xT";
+            mode = "n";
+            desc = "Todo/Fix/Fixme (Trouble)";
+            action = "<cmd>Trouble todo toggle filter = {tag = {TODO,FIX,FIXME}}<cr>";
+          }
+          {
+            key = "<leader>st";
+            mode = "n";
+            desc = "Todo";
+            action = "<cmd>TodoTelescope<cr>";
+          }
+          {
+            key = "<leader>sT";
+            mode = "n";
+            desc = "Todo/Fix/Fixme";
+            action = "<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>";
+          }
+        ];
+      };
+
+      "trouble.nvim" = {
+        package = pkgs.vimPlugins.trouble-nvim;
+        cmd = ["Trouble"];
+        setupOpts = {
+          modes = {
+            lsp = {
+              win = {position = "right";};
+            };
           };
         };
-      };
-      mappings = {
-        workspaceDiagnostics = "<leader>xx";
-        documentDiagnostics = "<leader>xX";
-        symbols = "<leader>cs";
-        lspReferences = "<leader>cS";
-        locList = "<leader>xL";
-        quickfix = "<leader>xQ";
-      };
-    };
-
-    notes.todo-comments = {
-      enable = true;
-      mappings = {
-        trouble = "<leader>xt";
-        telescope = "<leader>st";
-      };
-    };
-
-    ui.breadcrumbs = {
-      enable = true;
-      lualine.winbar.enable = false;
-      navbuddy.enable = true;
-    };
-
-    mini.move = {
-      enable = true;
-      setupOpts = {
-        mappings = {
-          left = "<s-h>";
-          right = "<s-l>";
-          down = "<s-j>";
-          up = "<s-k>";
-          line_left = "";
-          line_right = "";
-          line_down = "";
-          line_up = "";
-        };
-        options = {
-          reindent_linewise = true;
-        };
-      };
-    };
-
-    # Keymaps
-    keymaps = [
-      {
-        key = "[q";
-        mode = "n";
-        desc = "Previous Trouble/Quickfix Item";
-        action = ''
-          function()
-            if require("trouble").is_open() then
-              require("trouble").prev({ skip_groups = true, jump = true })
-            else
-              local ok, err = pcall(vim.cmd.cprev)
-              if not ok then
-                vim.notify(err, vim.log.levels.ERROR)
-              end
-            end
-          end
-        '';
-        lua = true;
-      }
-      {
-        key = "]q";
-        mode = "n";
-        desc = "Next Trouble/Quickfix Item";
-        action = ''
-          function()
-            if require("trouble").is_open() then
-              require("trouble").next({ skip_groups = true, jump = true })
-            else
-              local ok, err = pcall(vim.cmd.cnext)
-              if not ok then vim.notify(err, vim.log.levels.ERROR)
-              end
-            end
-          end
-        '';
-        lua = true;
-      }
-      {
-        key = "]t";
-        mode = "n";
-        desc = "Next Todo Comment";
-        action = "function() require('todo-comments').jump_next() end";
-        lua = true;
-      }
-      {
-        key = "[t";
-        mode = "n";
-        desc = "Previous Todo Comment";
-        action = "function() require('todo-comments').jump_prev() end";
-        lua = true;
-      }
-      {
-        key = "<leader>xt";
-        mode = "n";
-        desc = "Todo (Trouble)";
-        action = "function() require('snacks').picker.todo_comments() end";
-        lua = true;
-      }
-      {
-        key = "<leader>xT";
-        mode = "n";
-        desc = "Todo/Fix/Fixme (Trouble)";
-        action = "function() require('snacks').picker.todo_comments({ keywords = { 'TODO', 'FIX', 'FIXME' } }) end";
-        lua = true;
-      }
-      {
-        key = "<leader>st";
-        mode = "n";
-        desc = "Todo";
-        action = "function() require('snacks').picker.todo_comments() end";
-        lua = true;
-      }
-      {
-        key = "<leader>sT";
-        mode = "n";
-        desc = "Todo/Fix/Fixme";
-        action = "function() require('snacks').picker.todo_comments({ keywords = { 'TODO', 'FIX', 'FIXME' } }) end";
-        lua = true;
-      }
-      {
-        key = "<leader>?";
-        mode = "n";
-        desc = "Buffer Keymaps (which-key)";
-        action = "function() require('which-key').show({ global = false }) end";
-        lua = true;
-      }
-      {
-        key = "<c-w><space>";
-        mode = "n";
-        desc = "Window Hydra Mode (which-key)";
-        action = "function() require('which-key').show({ keys = '<c-w>', loop = true }) end";
-        lua = true;
-      }
-    ];
-
-    # Gitsigns
-    git.gitsigns = {
-      enable = true;
-      setupOpts = {
-        signs = {
-          add = {text = "▎";};
-          change = {text = "▎";};
-          delete = {text = "";};
-          topdelete = {text = "";};
-          changedelete = {text = "▎";};
-          untracked = {text = "▎";};
-        };
-        signs_staged = {
-          add = {text = "▎";};
-          change = {text = "▎";};
-          delete = {text = "";};
-          topdelete = {text = "";};
-          changedelete = {text = "▎";};
-        };
-        on_attach = lib.generators.mkLuaInline ''
-          function(buffer)
-            local gs = package.loaded.gitsigns
-
-            local function map(mode, l, r, desc)
-              vim.keymap.set(mode, l, r, { buffer = buffer, desc = desc, silent = true })
-            end
-
-            map("n", "]h", function()
-              if vim.wo.diff then
-                vim.cmd.normal({ "]c", bang = true })
-              else
-                gs.nav_hunk("next")
-              end
-            end, "Next Hunk")
-
-            map("n", "[h", function()
-              if vim.wo.diff then
-                vim.cmd.normal({ "[c", bang = true })
-              else
-                gs.nav_hunk("prev")
-              end
-            end, "Prev Hunk")
-
-            map("n", "]H", function() gs.nav_hunk("last") end, "Last Hunk")
-            map("n", "[H", function() gs.nav_hunk("first") end, "First Hunk")
-
-            map({ "n", "x" }, "<leader>ghs", ":Gitsigns stage_hunk<CR>", "Stage Hunk")
-            map({ "n", "x" }, "<leader>ghr", ":Gitsigns reset_hunk<CR>", "Reset Hunk")
-            map("n", "<leader>ghS", gs.stage_buffer, "Stage Buffer")
-            map("n", "<leader>ghu", gs.undo_stage_hunk, "Undo Stage Hunk")
-            map("n", "<leader>ghR", gs.reset_buffer, "Reset Buffer")
-            map("n", "<leader>ghp", gs.preview_hunk_inline, "Preview Hunk Inline")
-            map("n", "<leader>ghb", function() gs.blame_line({ full = true }) end, "Blame Line")
-            map("n", "<leader>ghB", function() gs.blame() end, "Blame Buffer")
-            map("n", "<leader>ghd", gs.diffthis, "Diff This")
-            map("n", "<leader>ghD", function() gs.diffthis("~") end, "Diff This ~")
-            map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "GitSigns Select Hunk")
-          end
-        '';
-      };
-    };
-
-    luaConfigRC.navic-attach = ''
-      require("nvim-navic").setup({
-        separator = " ",
-        highlight = true,
-        depth_limit = 5,
-        lazy_update_context = true,
-      })
-
-      vim.api.nvim_create_autocmd("LspAttach", {
-        callback = function(args)
-          local client = vim.lsp.get_client_by_id(args.data.client_id)
-          if client and client.supports_method("textDocument/documentSymbol") then
-            require("nvim-navic").attach(client, args.buf)
-          end
-        end,
-      })
-    '';
-
-    binds.whichKey = {
-      enable = true;
-      setupOpts = {
-        preset = "helix";
-        delay = 50;
-        spec = lib.generators.mkLuaInline ''
+        keys = [
           {
-            mode = { "n", "x" },
-            { "<leader><tab>", group = "tabs" },
-            { "<leader>c", group = "code" },
-            { "<leader>d", group = "debug" },
-            { "<leader>dp", group = "profiler" },
-            { "<leader>f", group = "file/find" },
-            { "<leader>g", group = "git" },
-            { "<leader>gh", group = "hunks" },
-            { "<leader>q", group = "quit/session" },
-            { "<leader>s", group = "search" },
-            { "<leader>u", group = "ui" },
-            { "<leader>x", group = "diagnostics/quickfix" },
-            { "[", group = "prev" },
-            { "]", group = "next" },
-            { "g", group = "goto" },
-            { "s", group = "surround" },
-            { "z", group = "fold" },
-            { "gx", desc = "Open with system app" },
-            {
-              "<leader>b",
-              group = "buffer",
-              expand = function()
-                return require("which-key.extras").expand.buf()
-              end,
-            },
-            {
-              "<leader>w",
-              group = "windows",
-              proxy = "<c-w>",
-              expand = function()
-                return require("which-key.extras").expand.win()
-              end,
-            },
-            { "<leader>a", group = "ai", mode = "n" },
-            { "<leader>t", group = "test", mode = "n" },
-            { "<leader>R", group = "rest", mode = "n" },
+            key = "<leader>xx";
+            mode = "n";
+            desc = "Workspace Diagnostics (Trouble)";
+            action = "<cmd>Trouble diagnostics toggle<cr>";
           }
+          {
+            key = "<leader>xX";
+            mode = "n";
+            desc = "Document Diagnostics (Trouble)";
+            action = "<cmd>Trouble diagnostics toggle filter.buf=0<cr>";
+          }
+          {
+            key = "<leader>cs";
+            mode = "n";
+            desc = "Symbols (Trouble)";
+            action = "<cmd>Trouble symbols toggle focus=false<cr>";
+          }
+          {
+            key = "<leader>cS";
+            mode = "n";
+            desc = "LSP References (Trouble)";
+            action = "<cmd>Trouble lsp toggle focus=false win.position=right<cr>";
+          }
+          {
+            key = "<leader>xL";
+            mode = "n";
+            desc = "Location List (Trouble)";
+            action = "<cmd>Trouble loclist toggle<cr>";
+          }
+          {
+            key = "<leader>xQ";
+            mode = "n";
+            desc = "Quickfix List (Trouble)";
+            action = "<cmd>Trouble quickfix toggle<cr>";
+          }
+          {
+            key = "[q";
+            mode = "n";
+            desc = "Previous Trouble Item";
+            action = "function() require('trouble').prev({ skip_groups = true, jump = true }) end";
+            lua = true;
+          }
+          {
+            key = "]q";
+            mode = "n";
+            desc = "Next Trouble Item";
+            action = "function() require('trouble').next({ skip_groups = true, jump = true }) end";
+            lua = true;
+          }
+        ];
+      };
+
+      "which-key.nvim" = {
+        package = pkgs.vimPlugins.which-key-nvim;
+        setupModule = "which-key";
+        setupOpts = {
+          preset = "helix";
+          delay = 50;
+          spec = lib.generators.mkLuaInline ''
+            {
+              mode = { "n", "x" },
+              { "<leader><tab>", group = "tabs" },
+              { "<leader>c", group = "code" },
+              { "<leader>d", group = "debug" },
+              { "<leader>dp", group = "profiler" },
+              { "<leader>f", group = "file/find" },
+              { "<leader>g", group = "git" },
+              { "<leader>gh", group = "hunks" },
+              { "<leader>q", group = "quit/session" },
+              { "<leader>s", group = "search" },
+              { "<leader>u", group = "ui" },
+              { "<leader>x", group = "diagnostics/quickfix" },
+              { "[", group = "prev" },
+              { "]", group = "next" },
+              { "g", group = "goto" },
+              { "s", group = "surround" },
+              { "z", group = "fold" },
+              { "gx", desc = "Open with system app" },
+              {
+                "<leader>b",
+                group = "buffer",
+                expand = function()
+                  return require("which-key.extras").expand.buf()
+                end,
+              },
+              {
+                "<leader>w",
+                group = "windows",
+                proxy = "<c-w>",
+                expand = function()
+                  return require("which-key.extras").expand.win()
+                end,
+              },
+              { "<leader>a", group = "ai", mode = "n" },
+              { "<leader>t", group = "test", mode = "n" },
+              { "<leader>R", group = "rest", mode = "n" },
+            }
+          '';
+        };
+        keys = [
+          {
+            key = "<leader>?";
+            mode = "n";
+            desc = "Buffer Keymaps (which-key)";
+            action = "function() require('which-key').show({ global = false }) end";
+            lua = true;
+          }
+          {
+            key = "<c-w><space>";
+            mode = "n";
+            desc = "Window Hydra Mode (which-key)";
+            action = "function() require('which-key').show({ keys = '<c-w>', loop = true }) end";
+            lua = true;
+          }
+        ];
+      };
+
+      "nvim-navic" = {
+        package = pkgs.vimPlugins.nvim-navic;
+        lazy = true;
+        setupModule = "nvim-navic";
+        setupOpts = {
+          separator = " ";
+          highlight = true;
+          depth_limit = 5;
+          lazy_update_context = true;
+          icons = {
+            Array = " ";
+            Boolean = "󰨙 ";
+            Class = " ";
+            Codeium = "󰘦 ";
+            Color = " ";
+            Control = " ";
+            Collapsed = " ";
+            Constant = "󰏿 ";
+            Constructor = " ";
+            Copilot = " ";
+            Enum = " ";
+            EnumMember = " ";
+            Event = " ";
+            Field = " ";
+            File = " ";
+            Folder = " ";
+            Function = "󰊕 ";
+            Interface = " ";
+            Key = " ";
+            Keyword = " ";
+            Method = "󰊕 ";
+            Module = " ";
+            Namespace = "󰦮 ";
+            Null = " ";
+            Number = "󰎠 ";
+            Object = " ";
+            Operator = " ";
+            Package = " ";
+            Property = " ";
+            Reference = " ";
+            Snippet = "󱄽 ";
+            String = " ";
+            Struct = "󰆼 ";
+            Supermaven = " ";
+            TabNine = "󰏚 ";
+            Text = " ";
+            TypeParameter = " ";
+            Unit = " ";
+            Value = " ";
+            Variable = "󰀫 ";
+          };
+        };
+        after = ''
+          vim.g.navic_silence = true
+          vim.api.nvim_create_autocmd("LspAttach", {
+            callback = function(args)
+              local client = vim.lsp.get_client_by_id(args.data.client_id)
+              if client and client.supports_method("textDocument/documentSymbol") then
+                require("nvim-navic").attach(client, args.buf)
+              end
+            end,
+          })
         '';
+      };
+
+      "gitsigns.nvim" = {
+        package = pkgs.vimPlugins.gitsigns-nvim;
+        setupModule = "gitsigns";
+        setupOpts = {
+          signs = {
+            add = {text = "▎";};
+            change = {text = "▎";};
+            delete = {text = "";};
+            topdelete = {text = "";};
+            changedelete = {text = "▎";};
+            untracked = {text = "▎";};
+          };
+          signs_staged = {
+            add = {text = "▎";};
+            change = {text = "▎";};
+            delete = {text = "";};
+            topdelete = {text = "";};
+            changedelete = {text = "▎";};
+          };
+          on_attach = lib.generators.mkLuaInline ''
+            function(buffer)
+              local gs = package.loaded.gitsigns
+
+              local function map(mode, l, r, desc)
+                vim.keymap.set(mode, l, r, { buffer = buffer, desc = desc, silent = true })
+              end
+
+              map("n", "]h", function()
+                if vim.wo.diff then
+                  vim.cmd.normal({ "]c", bang = true })
+                else
+                  gs.nav_hunk("next")
+                end
+              end, "Next Hunk")
+
+              map("n", "[h", function()
+                if vim.wo.diff then
+                  vim.cmd.normal({ "[c", bang = true })
+                else
+                  gs.nav_hunk("prev")
+                end
+              end, "Prev Hunk")
+
+              map("n", "]H", function() gs.nav_hunk("last") end, "Last Hunk")
+              map("n", "[H", function() gs.nav_hunk("first") end, "First Hunk")
+
+              map({ "n", "x" }, "<leader>ghs", ":Gitsigns stage_hunk<CR>", "Stage Hunk")
+              map({ "n", "x" }, "<leader>ghr", ":Gitsigns reset_hunk<CR>", "Reset Hunk")
+              map("n", "<leader>ghS", gs.stage_buffer, "Stage Buffer")
+              map("n", "<leader>ghu", gs.undo_stage_hunk, "Undo Stage Hunk")
+              map("n", "<leader>ghR", gs.reset_buffer, "Reset Buffer")
+              map("n", "<leader>ghp", gs.preview_hunk_inline, "Preview Hunk Inline")
+              map("n", "<leader>ghb", function() gs.blame_line({ full = true }) end, "Blame Line")
+              map("n", "<leader>ghB", function() gs.blame() end, "Blame Buffer")
+              map("n", "<leader>ghd", gs.diffthis, "Diff This")
+              map("n", "<leader>ghD", function() gs.diffthis("~") end, "Diff This ~")
+              map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "GitSigns Select Hunk")
+            end
+          '';
+        };
+      };
+
+      "mini.move" = {
+        package = pkgs.vimPlugins.mini-move;
+        setupModule = "mini.move";
+        setupOpts = {
+          mappings = {
+            left = "<S-h>";
+            right = "<S-l>";
+            down = "<S-j>";
+            up = "<S-k>";
+            line_left = "";
+            line_right = "";
+            line_down = "";
+            line_up = "";
+          };
+          options = {
+            reindent_linewise = true;
+          };
+        };
       };
     };
   };

@@ -5,11 +5,11 @@
     ./autocmds.nix
     ./keymaps.nix
     ./colorscheme.nix
+    ./util.nix
     ./ai.nix
     ./treesitter.nix
     ./test.nix
 
-    ./util.nix
 
     ./coding.nix
     ./ui.nix
