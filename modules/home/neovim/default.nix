@@ -5,6 +5,7 @@
     ./autocmds.nix
     ./keymaps.nix
     ./ai.nix
+
     ./coding.nix
     ./dap.nix
     ./colorscheme.nix
