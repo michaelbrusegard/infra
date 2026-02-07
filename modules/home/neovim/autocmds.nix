@@ -10,6 +10,7 @@
       {name = "wrap_spell";}
       {name = "json_conceal";}
       {name = "auto_create_dir";}
+      {name = "random_temp_file";}
     ];
 
     autocmds = [
@@ -156,6 +157,20 @@
             end
             local file = vim.uv.fs_realpath(event.match) or event.match
             vim.fn.mkdir(vim.fn.fnamemodify(file, ":p:h"), "p")
+          end
+        '';
+      }
+
+      # Open random temp file on startup if no file is specified
+      {
+        event = ["VimEnter"];
+        group = "random_temp_file";
+        callback = lib.generators.mkLuaInline ''
+          function()
+            if vim.fn.argc() == 0 and vim.api.nvim_buf_get_name(0) == "" and vim.bo.buftype == "" then
+              local fname = "/tmp/scratch-" .. os.date("%Y%m%d-%H%M%S") .. ".md"
+              vim.cmd("edit " .. fname)
+            end
           end
         '';
       }
