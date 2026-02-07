@@ -11,7 +11,10 @@
         setupModule = "snacks";
         setupOpts = {
           bigfile = {enabled = true;};
-          explorer = {enabled = true;};
+          explorer = {
+            enabled = true;
+            replace_netrw = true;
+          };
           image = {enabled = true;};
           indent = {
             enabled = true;

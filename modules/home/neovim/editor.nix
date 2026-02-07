@@ -157,7 +157,12 @@
     "todo-comments.nvim" = {
       package = pkgs.vimPlugins.todo-comments-nvim;
       cmd = ["TodoTrouble" "TodoTelescope"];
-      event = ["BufRead" "BufNewFile"];
+      event = [
+        {
+          event = "User";
+          pattern = "LazyFile";
+        }
+      ];
       setupModule = "todo-comments";
       keys = [
         {
@@ -475,6 +480,119 @@
           reindent_linewise = true;
         };
       };
+    };
+
+    "refactoring.nvim" = {
+      package = pkgs.vimPlugins.refactoring-nvim;
+      event = [
+        {
+          event = "User";
+          pattern = "LazyFile";
+        }
+      ];
+      setupModule = "refactoring";
+      setupOpts = {
+        prompt_func_return_type = {
+          go = false;
+          java = false;
+          cpp = false;
+          c = false;
+          h = false;
+          hpp = false;
+          cxx = false;
+        };
+        prompt_func_param_type = {
+          go = false;
+          java = false;
+          cpp = false;
+          c = false;
+          h = false;
+          hpp = false;
+          cxx = false;
+        };
+        printf_statements = {};
+        print_var_statements = {};
+        show_success_message = true;
+      };
+      keys = [
+        {
+          key = "<leader>r";
+          mode = ["n" "x"];
+          desc = "+refactor";
+          action = "function() end";
+          lua = true;
+        }
+        {
+          key = "<leader>rs";
+          mode = ["n" "x"];
+          desc = "Refactor";
+          action = "function() require('refactoring').select_refactor() end";
+          lua = true;
+        }
+        {
+          key = "<leader>ri";
+          mode = ["n" "x"];
+          desc = "Inline Variable";
+          action = "function() require('refactoring').refactor('Inline Variable') end";
+          lua = true;
+        }
+        {
+          key = "<leader>rb";
+          mode = ["n" "x"];
+          desc = "Extract Block";
+          action = "function() require('refactoring').refactor('Extract Block') end";
+          lua = true;
+        }
+        {
+          key = "<leader>rF";
+          mode = ["n" "x"];
+          desc = "Extract Block To File";
+          action = "function() require('refactoring').refactor('Extract Block To File') end";
+          lua = true;
+        }
+        {
+          key = "<leader>rP";
+          mode = "n";
+          desc = "Debug Print";
+          action = "function() require('refactoring').debug.printf({ below = false }) end";
+          lua = true;
+        }
+        {
+          key = "<leader>rp";
+          mode = ["n" "x"];
+          desc = "Debug Print Variable";
+          action = "function() require('refactoring').debug.print_var({ normal = true }) end";
+          lua = true;
+        }
+        {
+          key = "<leader>rc";
+          mode = "n";
+          desc = "Debug Cleanup";
+          action = "function() require('refactoring').debug.cleanup({}) end";
+          lua = true;
+        }
+        {
+          key = "<leader>rf";
+          mode = ["n" "x"];
+          desc = "Extract Function";
+          action = "function() require('refactoring').refactor('Extract Function') end";
+          lua = true;
+        }
+        {
+          key = "<leader>rF";
+          mode = ["n" "x"];
+          desc = "Extract Function To File";
+          action = "function() require('refactoring').refactor('Extract Function To File') end";
+          lua = true;
+        }
+        {
+          key = "<leader>rx";
+          mode = ["n" "x"];
+          desc = "Extract Variable";
+          action = "function() require('refactoring').refactor('Extract Variable') end";
+          lua = true;
+        }
+      ];
     };
   };
 }
