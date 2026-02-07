@@ -12,11 +12,13 @@
     ./treesitter.nix
     ./ai.nix
     ./test.nix
-
+    ./lsp-custom.nix
     ./lsp.nix
+
     ./formatting.nix
     ./linting.nix
     ./dap.nix
+    ./lang/nix.nix
     # ./lang/python.nix
     # ./lang/typescript.nix
   ];
