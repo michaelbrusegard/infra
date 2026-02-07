@@ -128,45 +128,10 @@
             lua = true;
           }
           {
-            key = "<leader>us";
-            mode = "n";
-            desc = "Toggle Spelling";
-            action = "function() require('snacks').toggle.option('spell', { name = 'Spelling' }):toggle() end";
-            lua = true;
-          }
-          {
-            key = "<leader>uw";
-            mode = "n";
-            desc = "Toggle Wrap";
-            action = "function() require('snacks').toggle.option('wrap', { name = 'Wrap' }):toggle() end";
-            lua = true;
-          }
-          {
-            key = "<leader>uL";
-            mode = "n";
-            desc = "Toggle Relative Number";
-            action = "function() require('snacks').toggle.option('relativenumber', { name = 'Relative Number' }):toggle() end";
-            lua = true;
-          }
-          {
             key = "<leader>ud";
             mode = "n";
             desc = "Toggle Diagnostics";
             action = "function() require('snacks').toggle.diagnostics():toggle() end";
-            lua = true;
-          }
-          {
-            key = "<leader>ul";
-            mode = "n";
-            desc = "Toggle Line Number";
-            action = "function() require('snacks').toggle.line_number():toggle() end";
-            lua = true;
-          }
-          {
-            key = "<leader>uc";
-            mode = "n";
-            desc = "Toggle Conceal Level";
-            action = "function() require('snacks').toggle.option('conceallevel', { off = 0, on = vim.o.conceallevel > 0 and vim.o.conceallevel or 2, name = 'Conceal Level' }):toggle() end";
             lua = true;
           }
           {
@@ -564,13 +529,6 @@
             mode = "n";
             desc = "Undotree";
             action = "function() require('snacks').picker.undo() end";
-            lua = true;
-          }
-          {
-            key = "<leader>uC";
-            mode = "n";
-            desc = "Colorschemes";
-            action = "function() require('snacks').picker.colorschemes() end";
             lua = true;
           }
         ];
