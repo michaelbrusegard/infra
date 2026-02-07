@@ -8,15 +8,15 @@
     ./util.nix
     ./editor.nix
     ./coding.nix
-    ./ai.nix
+    ./ui.nix
     ./treesitter.nix
+    ./ai.nix
     ./test.nix
 
-    ./ui.nix
-    ./dap.nix
     ./lsp.nix
     ./formatting.nix
     ./linting.nix
+    ./dap.nix
     # ./lang/python.nix
     # ./lang/typescript.nix
   ];
