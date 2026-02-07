@@ -4,19 +4,20 @@
     ./options.nix
     ./autocmds.nix
     ./keymaps.nix
+    ./colorscheme.nix
     ./ai.nix
+    ./treesitter.nix
+    ./test.nix
+
+    ./util.nix
 
     ./coding.nix
-    ./dap.nix
-    ./colorscheme.nix
+    ./ui.nix
     ./editor.nix
+    ./dap.nix
+    ./lsp.nix
     ./formatting.nix
     ./linting.nix
-    ./lsp.nix
-    ./test.nix
-    ./treesitter.nix
-    ./ui.nix
-    ./util.nix
     # ./lang/python.nix
     # ./lang/typescript.nix
   ];
