@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   programs.nvf.settings.vim = {
     viAlias = true;
     vimAlias = true;
