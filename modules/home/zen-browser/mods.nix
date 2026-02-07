@@ -16,6 +16,5 @@ _: {
     "ae051a40-3e3a-429a-a6f4-199a28b18a75" # Only Reset on Hover
     "4596d8f9-f0b7-4aeb-aa92-851222dc1888" # Only Close on Hover
     "72f8f48d-86b9-4487-acea-eb4977b18f21" # Better CtrlTab Panel
-    "4a222d82-2803-4ed2-a390-90abfce4f195" # Back Fwd Always Hidden
   ];
 }
