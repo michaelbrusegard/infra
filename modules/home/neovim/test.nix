@@ -12,13 +12,9 @@
           status = {virtual_text = true;};
           output = {open_on_run = true;};
           quickfix = {
-            open = ''
+            open = lib.generators.mkLuaInline ''
               function()
-                if require("trouble").is_open() then
-                  require("trouble").open({ mode = "quickfix", focus = false })
-                else
-                  vim.cmd("copen")
-                end
+                require("trouble").open({ mode = "quickfix", focus = false })
               end
             '';
           };

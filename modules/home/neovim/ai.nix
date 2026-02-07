@@ -4,7 +4,6 @@
       "opencode.nvim" = {
         package = pkgs.vimPlugins.opencode-nvim;
         setupModule = "opencode";
-        setupOpts = {};
         keys = [
           {
             key = "<leader>aa";

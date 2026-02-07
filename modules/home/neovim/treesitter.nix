@@ -5,6 +5,7 @@
       highlight.enable = true;
       indent.enable = true;
       fold = true;
+      autotagHtml = true;
       grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
         bash
         diff
@@ -22,6 +23,13 @@
         yaml
         http
       ];
+      context = {
+        enable = true;
+        setupOpts = {
+          mode = "cursor";
+          max_lines = 3;
+        };
+      };
       textobjects = {
         enable = true;
         setupOpts = {
@@ -50,15 +58,6 @@
             };
           };
         };
-      };
-    };
-    treesitter.autotagHtml = true;
-
-    treesitter.context = {
-      enable = true;
-      setupOpts = {
-        mode = "cursor";
-        max_lines = 3;
       };
     };
   };
