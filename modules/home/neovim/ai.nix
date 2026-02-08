@@ -1,6 +1,6 @@
 {pkgs, ...}: {
-  programs.neovim.pluginSpecs = [
-    {
+  programs.neovim.spec.plugins = {
+    "opencode" = {
       package = pkgs.vimPlugins.opencode-nvim;
       keymaps = [
         {
@@ -67,6 +67,6 @@
           lua = true;
         }
       ];
-    }
-  ];
+    };
+  };
 }

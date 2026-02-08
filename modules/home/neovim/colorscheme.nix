@@ -1,7 +1,8 @@
 {pkgs, ...}: {
-  programs.neovim.pluginSpecs = [
-    {
+  programs.neovim.spec.plugins = {
+    catppuccin = {
       package = pkgs.vimPlugins.catppuccin-nvim;
+      event = ["UIEnter"];
       setupModule = "catppuccin";
       setupOpts = {
         lsp_styles = {
@@ -20,14 +21,14 @@
           dashboard = false;
           flash = false;
           fzf = false;
-          indent_blankline.enabled = false;
+          indent_blankline = {enabled = false;};
           neotree = false;
           neogit = false;
           nvimtree = false;
           rainbow_delimiters = false;
           render_markdown = false;
-          telescope.enabled = false;
-          illuminate.enabled = false;
+          telescope = {enabled = false;};
+          illuminate = {enabled = false;};
           dap = true;
           dap_ui = true;
           grug_far = true;
@@ -45,6 +46,6 @@
           which_key = true;
         };
       };
-    }
-  ];
+    };
+  };
 }

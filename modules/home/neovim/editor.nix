@@ -3,9 +3,10 @@
   lib,
   ...
 }: {
-  programs.neovim.pluginSpecs = [
-    {
+  programs.neovim.spec.plugins = {
+    grug-far = {
       package = pkgs.vimPlugins.grug-far-nvim;
+      event = ["BufReadPost" "BufNewFile"];
       setupOpts = {headerMaxWidth = 80;};
       keymaps = [
         {
@@ -27,8 +28,9 @@
           lua = true;
         }
       ];
-    }
-    {
+    };
+    
+    dial = {
       package = pkgs.vimPlugins.dial-nvim;
       keymaps = [
         {
@@ -68,7 +70,7 @@
           silent = true;
         }
       ];
-      config = ''
+      extraLuaAfter = ''
         local augend = require("dial.augend")
 
         local dial_config = {
@@ -143,12 +145,15 @@
           return require("dial.map")[func](group)
         end
       '';
-    }
-    {
+    };
+    
+    codediff = {
       package = pkgs.vimPlugins.codediff-nvim;
+      event = ["BufReadPost" "BufNewFile"];
       setupModule = "codediff";
-    }
-    {
+    };
+    
+    todo-comments = {
       package = pkgs.vimPlugins.todo-comments-nvim;
       setupModule = "todo-comments";
       keymaps = [
@@ -191,8 +196,9 @@
           action = "<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>";
         }
       ];
-    }
-    {
+    };
+    
+    trouble = {
       package = pkgs.vimPlugins.trouble-nvim;
       setupOpts = {
         modes = {
@@ -253,9 +259,11 @@
           lua = true;
         }
       ];
-    }
-    {
+    };
+    
+    which-key = {
       package = pkgs.vimPlugins.which-key-nvim;
+      event = ["UIEnter"];
       setupModule = "which-key";
       setupOpts = {
         preset = "helix";
@@ -301,9 +309,11 @@
           }
         '';
       };
-    }
-    {
+    };
+    
+    nvim-navic = {
       package = pkgs.vimPlugins.nvim-navic;
+      event = ["LspAttach"];
       setupModule = "nvim-navic";
       setupOpts = {
         separator = " ";
@@ -353,7 +363,7 @@
           Variable = "󰀫 ";
         };
       };
-      config = ''
+      extraLuaAfter = ''
         vim.g.navic_silence = true
         vim.api.nvim_create_autocmd("LspAttach", {
           callback = function(args)
@@ -364,9 +374,11 @@
           end,
         })
       '';
-    }
-    {
+    };
+    
+    gitsigns = {
       package = pkgs.vimPlugins.gitsigns-nvim;
+      event = ["BufReadPost" "BufNewFile"];
       setupModule = "gitsigns";
       setupOpts = {
         signs = {
@@ -425,9 +437,11 @@
           end
         '';
       };
-    }
-    {
+    };
+    
+    mini-move = {
       package = pkgs.vimPlugins.mini-move;
+      event = ["BufReadPost"];
       setupModule = "mini.move";
       setupOpts = {
         mappings = {
@@ -444,8 +458,9 @@
           reindent_linewise = true;
         };
       };
-    }
-    {
+    };
+    
+    refactoring = {
       package = pkgs.vimPlugins.refactoring-nvim;
       setupModule = "refactoring";
       setupOpts = {
@@ -550,6 +565,6 @@
           lua = true;
         }
       ];
-    }
-  ];
+    };
+  };
 }

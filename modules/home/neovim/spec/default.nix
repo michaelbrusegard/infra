@@ -1,8 +1,10 @@
 _: {
   imports = [
     ./options.nix
+    ./augroups.nix
     ./autocmds.nix
-    ./plugin-specs.nix
+    ./plugins.nix
     ./keymaps.nix
+    ./treesitter.nix
   ];
 }
