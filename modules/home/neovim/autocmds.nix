@@ -1,5 +1,5 @@
-{lib, ...}: {
-  programs.nvf.settings.vim = {
+{...}: {
+  programs.neovim = {
     augroups = [
       {name = "checktime";}
       {name = "highlight_yank";}
@@ -18,7 +18,7 @@
       {
         event = ["FocusGained" "TermClose" "TermLeave"];
         group = "checktime";
-        callback = lib.generators.mkLuaInline ''
+        callback = ''
           function()
             if vim.o.buftype ~= "nofile" then
               vim.cmd("checktime")
@@ -31,7 +31,7 @@
       {
         event = ["TextYankPost"];
         group = "highlight_yank";
-        callback = lib.generators.mkLuaInline ''
+        callback = ''
           function()
             (vim.hl or vim.highlight).on_yank()
           end
@@ -42,7 +42,7 @@
       {
         event = ["VimResized"];
         group = "resize_splits";
-        callback = lib.generators.mkLuaInline ''
+        callback = ''
           function()
             local current_tab = vim.fn.tabpagenr()
             vim.cmd("tabdo wincmd =")
@@ -55,7 +55,7 @@
       {
         event = ["BufReadPost"];
         group = "last_loc";
-        callback = lib.generators.mkLuaInline ''
+        callback = ''
           function(event)
             local exclude = { "gitcommit" }
             local buf = event.buf
@@ -92,7 +92,7 @@
           "startuptime"
           "tsplayground"
         ];
-        callback = lib.generators.mkLuaInline ''
+        callback = ''
           function(event)
             vim.bo[event.buf].buflisted = false
             vim.schedule(function()
@@ -114,7 +114,7 @@
         event = ["FileType"];
         group = "man_unlisted";
         pattern = ["man"];
-        callback = lib.generators.mkLuaInline ''
+        callback = ''
           function(event)
             vim.bo[event.buf].buflisted = false
           end
@@ -126,7 +126,7 @@
         event = ["FileType"];
         group = "wrap_spell";
         pattern = ["text" "plaintex" "typst" "gitcommit" "markdown"];
-        callback = lib.generators.mkLuaInline ''
+        callback = ''
           function()
             vim.opt_local.wrap = true
             vim.opt_local.spell = true
@@ -139,7 +139,7 @@
         event = ["FileType"];
         group = "json_conceal";
         pattern = ["json" "jsonc" "json5"];
-        callback = lib.generators.mkLuaInline ''
+        callback = ''
           function()
             vim.opt_local.conceallevel = 0
           end
@@ -150,7 +150,7 @@
       {
         event = ["BufWritePre"];
         group = "auto_create_dir";
-        callback = lib.generators.mkLuaInline ''
+        callback = ''
           function(event)
             if event.match:match("^%w%w+:[\\/][\\/]") then
               return
@@ -165,7 +165,7 @@
       {
         event = ["VimEnter"];
         group = "random_temp_file";
-        callback = lib.generators.mkLuaInline ''
+        callback = ''
           function()
             if vim.fn.argc() == 0 and vim.api.nvim_buf_get_name(0) == "" and vim.bo.buftype == "" then
               local fname = "/tmp/scratch-" .. os.date("%Y%m%d-%H%M%S") .. ".md"

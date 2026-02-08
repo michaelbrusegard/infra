@@ -34,7 +34,6 @@ in
           jankyborders
           neovim
           vimPlugins
-          texliveFull
           opencode
           ;
       }

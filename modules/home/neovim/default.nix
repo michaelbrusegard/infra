@@ -1,26 +1,21 @@
-{inputs, ...}: {
+_: {
   imports = [
-    inputs.nvf.homeManagerModules.default
+    ./wrappers
     ./options.nix
     ./autocmds.nix
     ./keymaps.nix
     ./colorscheme.nix
-    ./util.nix
-    ./editor.nix
-    ./coding.nix
     ./ui.nix
-    ./treesitter.nix
+    ./util.nix
+    ./coding.nix
+    ./editor.nix
     ./ai.nix
-    ./test.nix
-    ./lsp-custom.nix
-    ./lsp.nix
-
-    ./formatting.nix
-    ./linting.nix
-    ./dap.nix
-    ./lang/nix.nix
-    # ./lang/python.nix
-    # ./lang/typescript.nix
   ];
-  programs.nvf.enable = true;
+  programs.neovim = {
+    enable = true;
+    defaultEditor = true;
+    viAlias = true;
+    vimAlias = true;
+    vimdiffAlias = true;
+  };
 }

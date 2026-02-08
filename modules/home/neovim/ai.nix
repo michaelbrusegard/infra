@@ -1,9 +1,8 @@
 {pkgs, ...}: {
-  programs.nvf.settings.vim.lazy.plugins = {
-    "opencode.nvim" = {
+  programs.neovim.pluginSpecs = [
+    {
       package = pkgs.vimPlugins.opencode-nvim;
-      setupModule = "opencode";
-      keys = [
+      keymaps = [
         {
           key = "<leader>aa";
           mode = ["n" "x"];
@@ -68,6 +67,6 @@
           lua = true;
         }
       ];
-    };
-  };
+    }
+  ];
 }
