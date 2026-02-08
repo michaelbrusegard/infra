@@ -6,5 +6,6 @@ _: {
     ./plugins.nix
     ./keymaps.nix
     ./treesitter.nix
+    ./lsp.nix
   ];
 }

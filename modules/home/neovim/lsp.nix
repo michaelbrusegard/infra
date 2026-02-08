@@ -1,7 +1,6 @@
 {lib, ...}: {
-  custom.vim.lsp = {
-    enable = true;
-    onAttach = ''
+  neovim.spec = {
+    lsp.onAttach = ''
       vim.keymap.set("n", "grr", function() Snacks.picker.lsp_references() end, { buffer = bufnr, desc = "References" })
       vim.keymap.set("n", "gri", function() Snacks.picker.lsp_implementations() end, { buffer = bufnr, desc = "Implementation" })
       vim.keymap.set("n", "grt", function() Snacks.picker.lsp_type_definitions() end, { buffer = bufnr, desc = "Type Definition" })
@@ -25,10 +24,7 @@
         vim.wo[bufnr].foldexpr = "v:lua.vim.lsp.foldexpr()"
       end
     '';
-  };
-  programs.nvf.settings.vim.diagnostics = {
-    enable = true;
-    config = {
+    diagnostics = {
       virtual_text = lib.generators.mkLuaInline ''
         {
           source = "if_many",
