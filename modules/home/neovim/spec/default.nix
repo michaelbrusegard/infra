@@ -7,5 +7,6 @@ _: {
     ./keymaps.nix
     ./treesitter.nix
     ./lsp.nix
+    ./diagnostics.nix
   ];
 }
