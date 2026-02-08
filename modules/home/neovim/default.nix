@@ -10,10 +10,9 @@ _: {
     ./coding.nix
     ./editor.nix
     ./treesitter.nix
-    ./ai.nix
+    ./opencode.nix
+    ./test.nix
 
-
-    # ./test.nix
     # ./lsp.nix
     # ./formatting.nix
     # ./linting.nix

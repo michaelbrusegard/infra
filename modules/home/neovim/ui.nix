@@ -4,7 +4,7 @@
   ...
 }: {
   programs.neovim.spec.plugins = {
-    mini-icons = {
+    "mini-icons" = {
       package = pkgs.vimPlugins.mini-icons;
       event = ["UIEnter"];
       setupModule = "mini.icons";
@@ -33,8 +33,8 @@
         end
       '';
     };
-    
-    noice = {
+
+    "noice" = {
       package = pkgs.vimPlugins.noice-nvim;
       event = ["UIEnter"];
       setupModule = "noice";
@@ -137,7 +137,7 @@
       ];
     };
 
-    lualine = {
+    "lualine" = {
       package = pkgs.vimPlugins.lualine-nvim;
       event = ["UIEnter"];
       setupModule = "lualine";

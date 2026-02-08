@@ -8,14 +8,29 @@
   cfg = config.programs.neovim.spec;
 in {
   options.programs.neovim.spec = {
-    globals = mkOption { type = types.attrs; default = {}; };
-    options = mkOption { type = types.attrs; default = {}; };
+    globals = mkOption {
+      type = types.attrs;
+      default = {};
+    };
+    options = mkOption {
+      type = types.attrs;
+      default = {};
+    };
     filetypes = mkOption {
       type = types.submodule {
         options = {
-          extensions = mkOption { type = types.attrsOf types.str; default = {}; };
-          patterns = mkOption { type = types.attrsOf types.str; default = {}; };
-          filenames = mkOption { type = types.attrsOf types.str; default = {}; };
+          extensions = mkOption {
+            type = types.attrsOf types.str;
+            default = {};
+          };
+          patterns = mkOption {
+            type = types.attrsOf types.str;
+            default = {};
+          };
+          filenames = mkOption {
+            type = types.attrsOf types.str;
+            default = {};
+          };
         };
       };
       default = {};
@@ -36,7 +51,10 @@ in {
           (optionalString (ft.patterns != {}) "pattern = ${genLua ft.patterns}")
           (optionalString (ft.filenames != {}) "filename = ${genLua ft.filenames}")
         ];
-      in if fields != [] then "vim.filetype.add({ ${concatStringsSep ", " fields} })" else ""}
+      in
+        if fields != []
+        then "vim.filetype.add({ ${concatStringsSep ", " fields} })"
+        else ""}
     '')
   ];
 }

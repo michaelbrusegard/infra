@@ -3,12 +3,10 @@
   lib,
   pkgs,
   ...
-}:
-let
+}: let
   inherit (lib) mkOption types mkIf;
   cfg = config.programs.neovim.spec.treesitter;
-in
-{
+in {
   options.programs.neovim.spec.treesitter = {
     enable = mkOption {
       type = types.bool;
@@ -29,13 +27,15 @@ in
       package = pkgs.vimPlugins.nvim-treesitter.withPlugins (_: cfg.grammars);
       setupModule = "nvim-treesitter";
       event = ["BufReadPost" "BufNewFile"];
-      setupOpts = {
-        ensure_installed = [];
-        auto_install = false;
-        sync_install = false;
-        highlight = { enable = true; };
-        indent = { enable = true; };
-      } // cfg.setupOpts;
+      setupOpts =
+        {
+          ensure_installed = [];
+          auto_install = false;
+          sync_install = false;
+          highlight = {enable = true;};
+          indent = {enable = true;};
+        }
+        // cfg.setupOpts;
     };
   };
 }
