@@ -1,5 +1,5 @@
 {lib, ...}: {
-  neovim.spec = {
+  programs.neovim.spec = {
     lsp.onAttach = ''
       vim.keymap.set("n", "grr", function() Snacks.picker.lsp_references() end, { buffer = bufnr, desc = "References" })
       vim.keymap.set("n", "gri", function() Snacks.picker.lsp_implementations() end, { buffer = bufnr, desc = "Implementation" })
