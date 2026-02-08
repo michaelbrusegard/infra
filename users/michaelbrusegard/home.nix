@@ -12,7 +12,6 @@
     inputs.self.homeManagerModules.dev
     inputs.self.homeManagerModules.dms
     inputs.self.homeManagerModules.freecad
-    inputs.self.homeManagerModules.ghostty
     inputs.self.homeManagerModules.git
     inputs.self.homeManagerModules.hyprland
     inputs.self.homeManagerModules.launchd
