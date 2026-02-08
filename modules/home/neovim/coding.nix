@@ -210,54 +210,63 @@
           mode = ["n" "x"];
           desc = "Yank Text";
           action = "<Plug>(YankyYank)";
+          noremap = false;
         }
         {
           key = "p";
           mode = ["n" "x"];
           desc = "Put Text After Cursor";
           action = "<Plug>(YankyPutAfter)";
+          noremap = false;
         }
         {
           key = "P";
           mode = ["n" "x"];
           desc = "Put Text Before Cursor";
           action = "<Plug>(YankyPutBefore)";
+          noremap = false;
         }
         {
           key = "gp";
           mode = ["n" "x"];
           desc = "Put Text After Selection";
           action = "<Plug>(YankyGPutAfter)";
+          noremap = false;
         }
         {
           key = "gP";
           mode = ["n" "x"];
           desc = "Put Text Before Selection";
           action = "<Plug>(YankyGPutBefore)";
+          noremap = false;
         }
         {
           key = "[y";
           mode = "n";
           desc = "Cycle Forward Through Yank History";
           action = "<Plug>(YankyCycleForward)";
+          noremap = false;
         }
         {
           key = "]y";
           mode = "n";
           desc = "Cycle Backward Through Yank History";
           action = "<Plug>(YankyCycleBackward)";
+          noremap = false;
         }
         {
           key = "]p";
           mode = "n";
           desc = "Put Indented After Cursor (Linewise)";
           action = "<Plug>(YankyPutIndentAfterLinewise)";
+          noremap = false;
         }
         {
           key = "[p";
           mode = "n";
           desc = "Put Indented Before Cursor (Linewise)";
           action = "<Plug>(YankyPutIndentBeforeLinewise)";
+          noremap = false;
         }
         {
           key = "]P";
