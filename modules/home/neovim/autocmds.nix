@@ -1,5 +1,5 @@
 {...}: {
-  programs.neovim = {
+  programs.neovim.spec = {
     augroups = [
       {name = "checktime";}
       {name = "highlight_yank";}

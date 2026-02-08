@@ -1,6 +1,6 @@
 _: {
   imports = [
-    ./wrappers
+    ./spec
     ./options.nix
     ./autocmds.nix
     ./keymaps.nix
@@ -9,8 +9,17 @@ _: {
     ./util.nix
     ./coding.nix
     ./editor.nix
+    ./treesitter.nix
     ./ai.nix
+
+
+    # ./test.nix
+    # ./lsp.nix
+    # ./formatting.nix
+    # ./linting.nix
+    # ./dap.nix
   ];
+
   programs.neovim = {
     enable = true;
     defaultEditor = true;

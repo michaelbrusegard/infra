@@ -1,5 +1,5 @@
 _: {
-  programs.neovim.keymaps = [
+  programs.neovim.spec.keymaps = [
     # Better up/down
     {
       key = "j";

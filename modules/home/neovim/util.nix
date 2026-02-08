@@ -3,10 +3,11 @@
   lib,
   ...
 }: {
-  programs.neovim.pluginSpecs = [
-    {
+  programs.neovim.spec.plugins = {
+    snacks = {
       package = pkgs.vimPlugins.snacks-nvim;
       setupModule = "snacks";
+      event = ["VimEnter"];
       setupOpts = {
         bigfile = {enabled = true;};
         explorer = {
@@ -504,10 +505,12 @@
           lua = true;
         }
       ];
-    }
-    {
+    };
+    
+    mini-hipatterns = {
       package = pkgs.vimPlugins.mini-hipatterns;
-      config = ''
+      event = ["BufReadPost" "BufNewFile"];
+      extraLuaAfter = ''
         local hi = require("mini.hipatterns")
         local colors = {
           slate = { [50] = "f8fafc", [100] = "f1f5f9", [200] = "e2e8f0", [300] = "cbd5e1", [400] = "94a3b8", [500] = "64748b", [600] = "475569", [700] = "334155", [800] = "1e293b", [900] = "0f172a", [950] = "020617" },
@@ -579,8 +582,9 @@
           },
         })
       '';
-    }
-    {
+    };
+    
+    octo = {
       package = pkgs.vimPlugins.octo-nvim;
       setupOpts = {
         enable_builtin = true;
@@ -626,7 +630,7 @@
           action = "<cmd>Octo search<cr>";
         }
       ];
-      config = ''
+      extraLuaAfter = ''
         vim.treesitter.language.register("markdown", "octo")
         vim.api.nvim_create_autocmd("ExitPre", {
           group = vim.api.nvim_create_augroup("octo_exit_pre", { clear = true }),
@@ -641,10 +645,12 @@
           end,
         })
       '';
-    }
-    {
+    };
+    
+    kulala = {
       package = pkgs.vimPlugins.kulala-nvim;
       setupModule = "kulala";
+      filetype = ["http" "rest"];
       keymaps = [
         {
           key = "<leader>Rb";
@@ -738,6 +744,6 @@
           lua = true;
         }
       ];
-    }
-  ];
+    };
+  };
 }

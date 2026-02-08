@@ -3,13 +3,16 @@
   lib,
   ...
 }: {
-  programs.neovim.pluginSpecs = [
-    {
+  programs.neovim.spec.plugins = {
+    "ts-comments" = {
       package = pkgs.vimPlugins.ts-comments-nvim;
       setupModule = "ts-comments";
-    }
-    {
+      event = ["BufReadPost" "BufNewFile"];
+    };
+    
+    "mini-pairs" = {
       package = pkgs.vimPlugins.mini-pairs;
+      event = ["InsertEnter"];
       setupModule = "mini.pairs";
       setupOpts = {
         modes = {
@@ -22,7 +25,7 @@
         skip_unbalanced = true;
         markdown = true;
       };
-      config = ''
+      extraLuaAfter = ''
         local mpairs = require("mini.pairs")
         local open = mpairs.open
         mpairs.open = function(pair, neigh_pattern)
@@ -56,9 +59,11 @@
           return open(pair, neigh_pattern)
         end
       '';
-    }
-    {
+    };
+    
+    "mini-ai" = {
       package = pkgs.vimPlugins.mini-ai;
+      event = ["BufReadPost" "BufNewFile"];
       setupModule = "mini.ai";
       setupOpts = {
         n_lines = 500;
@@ -94,7 +99,7 @@
           }
         '';
       };
-      config = ''
+      extraLuaAfter = ''
         local objects = {
           { " ", desc = "whitespace" },
           { '"', desc = "\" string" },
@@ -151,10 +156,12 @@
 
         require("which-key").add(ret, { notify = false })
       '';
-    }
-    {
+    };
+    
+    "mini-surround" = {
       package = pkgs.vimPlugins.mini-surround;
       setupModule = "mini.surround";
+      event = ["BufReadPost" "BufNewFile"];
       setupOpts = {
         mappings = {
           add = "gsa";
@@ -166,7 +173,7 @@
           update_n_lines = "gsn";
         };
       };
-      config = ''
+      extraLuaAfter = ''
         local wk = require("which-key")
         wk.add({
           { "gsa", desc = "Add Surrounding", mode = { "n", "x" } },
@@ -178,10 +185,12 @@
           { "gsn", desc = "Update MiniSurround n_lines" },
         })
       '';
-    }
-    {
+    };
+    
+    yanky = {
       package = pkgs.vimPlugins.yanky-nvim;
       setupModule = "yanky";
+      event = ["BufReadPost" "BufNewFile"];
       setupOpts = {
         system_clipboard = {
           sync_with_ring = true;
@@ -299,9 +308,11 @@
           action = "<Plug>(YankyPutBeforeFilter)";
         }
       ];
-    }
-    {
+    };
+
+    blink-cmp = {
       package = pkgs.vimPlugins.blink-cmp;
+      event = ["InsertEnter" "CmdlineEnter"];
       setupModule = "blink.cmp";
       setupOpts = {
         snippets = {
@@ -356,19 +367,9 @@
             draw = {
               treesitter = ["lsp"];
               columns = [
-                {
-                  __unkeyed-1 = "label";
-                  __unkeyed-2 = "label_description";
-                  gap = 1;
-                }
-                {
-                  __unkeyed-1 = "kind_icon";
-                  __unkeyed-2 = "kind";
-                  gap = 1;
-                }
-                {
-                  __unkeyed-1 = "source_name";
-                }
+                (lib.generators.mkLuaInline ''{ "label", "label_description", gap = 1 }'')
+                (lib.generators.mkLuaInline ''{ "kind_icon", "kind", gap = 1 }'')
+                (lib.generators.mkLuaInline ''{ "source_name" }'')
               ];
             };
           };
@@ -407,9 +408,11 @@
           "<C-y>" = ["select_and_accept"];
         };
       };
-    }
-    {
+    };
+    
+    friendly-snippets = {
       package = pkgs.vimPlugins.friendly-snippets;
-    }
-  ];
+      event = ["InsertEnter"];
+    };
+  };
 }

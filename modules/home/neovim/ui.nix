@@ -3,9 +3,10 @@
   lib,
   ...
 }: {
-  programs.neovim.pluginSpecs = [
-    {
+  programs.neovim.spec.plugins = {
+    mini-icons = {
       package = pkgs.vimPlugins.mini-icons;
+      event = ["UIEnter"];
       setupModule = "mini.icons";
       setupOpts = {
         file = {
@@ -25,15 +26,17 @@
           };
         };
       };
-      config = ''
+      extraLuaBefore = ''
         package.preload["nvim-web-devicons"] = function()
           require("mini.icons").mock_nvim_web_devicons()
           return package.loaded["nvim-web-devicons"]
         end
       '';
-    }
-    {
+    };
+    
+    noice = {
       package = pkgs.vimPlugins.noice-nvim;
+      event = ["UIEnter"];
       setupModule = "noice";
       setupOpts = {
         notify = {enabled = false;};
@@ -132,9 +135,11 @@
           silent = true;
         }
       ];
-    }
-    {
+    };
+
+    lualine = {
       package = pkgs.vimPlugins.lualine-nvim;
+      event = ["UIEnter"];
       setupModule = "lualine";
       setupOpts = {
         options = {
@@ -171,6 +176,6 @@
           lualine_z = ["location"];
         };
       };
-    }
-  ];
+    };
+  };
 }
