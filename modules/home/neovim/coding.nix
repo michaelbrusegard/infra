@@ -6,10 +6,10 @@
   programs.neovim.spec.plugins = {
     "ts-comments" = {
       package = pkgs.vimPlugins.ts-comments-nvim;
-      setupModule = "ts-comments";
       event = ["BufReadPost" "BufNewFile"];
+      setupModule = "ts-comments";
     };
-    
+
     "mini-pairs" = {
       package = pkgs.vimPlugins.mini-pairs;
       event = ["InsertEnter"];
@@ -60,7 +60,7 @@
         end
       '';
     };
-    
+
     "mini-ai" = {
       package = pkgs.vimPlugins.mini-ai;
       event = ["BufReadPost" "BufNewFile"];
@@ -157,11 +157,11 @@
         require("which-key").add(ret, { notify = false })
       '';
     };
-    
+
     "mini-surround" = {
       package = pkgs.vimPlugins.mini-surround;
-      setupModule = "mini.surround";
       event = ["BufReadPost" "BufNewFile"];
+      setupModule = "mini.surround";
       setupOpts = {
         mappings = {
           add = "gsa";
@@ -186,11 +186,11 @@
         })
       '';
     };
-    
-    yanky = {
+
+    "yanky" = {
       package = pkgs.vimPlugins.yanky-nvim;
-      setupModule = "yanky";
       event = ["BufReadPost" "BufNewFile"];
+      setupModule = "yanky";
       setupOpts = {
         system_clipboard = {
           sync_with_ring = true;
@@ -310,7 +310,7 @@
       ];
     };
 
-    blink-cmp = {
+    "blink-cmp" = {
       package = pkgs.vimPlugins.blink-cmp;
       event = ["InsertEnter" "CmdlineEnter"];
       setupModule = "blink.cmp";
@@ -409,8 +409,8 @@
         };
       };
     };
-    
-    friendly-snippets = {
+
+    "friendly-snippets" = {
       package = pkgs.vimPlugins.friendly-snippets;
       event = ["InsertEnter"];
     };

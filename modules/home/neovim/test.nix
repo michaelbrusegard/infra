@@ -3,7 +3,7 @@
   lib,
   ...
 }: {
-  programs.nvf.settings.vim.lazy.plugins = {
+  programs.neovim.spec.plugins = {
     "neotest" = {
       package = pkgs.vimPlugins.neotest;
       setupModule = "neotest";
@@ -18,7 +18,7 @@
           '';
         };
       };
-      keys = [
+      keymaps = [
         {
           key = "<leader>ta";
           mode = "n";
@@ -97,7 +97,7 @@
           lua = true;
         }
       ];
-      after = ''
+      extraLuaAfter = ''
         local neotest_ns = vim.api.nvim_create_namespace("neotest")
         vim.diagnostic.config({
           virtual_text = {

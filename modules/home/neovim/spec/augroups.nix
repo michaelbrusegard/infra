@@ -9,8 +9,11 @@
 
   augroupSubmodule = types.submodule {
     options = {
-      name = mkOption { type = types.str; };
-      clear = mkOption { type = types.bool; default = true; };
+      name = mkOption {type = types.str;};
+      clear = mkOption {
+        type = types.bool;
+        default = true;
+      };
     };
   };
 in {
@@ -20,8 +23,9 @@ in {
   };
 
   config.programs.neovim.extraLuaConfig = lib.mkOrder 250 ''
-    ${concatStringsSep "\n" (map (g: 
-      ''vim.api.nvim_create_augroup("${g.name}", { clear = ${genLua g.clear} })''
-    ) cfg.augroups)}
+    ${concatStringsSep "\n" (map (
+        g: ''vim.api.nvim_create_augroup("${g.name}", { clear = ${genLua g.clear} })''
+      )
+      cfg.augroups)}
   '';
 }

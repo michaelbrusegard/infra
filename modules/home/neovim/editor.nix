@@ -4,9 +4,10 @@
   ...
 }: {
   programs.neovim.spec.plugins = {
-    grug-far = {
+    "grug-far" = {
       package = pkgs.vimPlugins.grug-far-nvim;
-      event = ["BufReadPost" "BufNewFile"];
+      command = ["GrugFar" "GrugFarWithin"];
+      setupModule = "grug-far";
       setupOpts = {headerMaxWidth = 80;};
       keymaps = [
         {
@@ -29,9 +30,11 @@
         }
       ];
     };
-    
-    dial = {
+
+    "dial" = {
       package = pkgs.vimPlugins.dial-nvim;
+      event = ["BufReadPost" "BufNewFile"];
+      setupModule = "dial.map";
       keymaps = [
         {
           key = "<C-a>";
@@ -146,15 +149,16 @@
         end
       '';
     };
-    
-    codediff = {
+
+    "codediff" = {
       package = pkgs.vimPlugins.codediff-nvim;
-      event = ["BufReadPost" "BufNewFile"];
+      command = ["CodeDiff"];
       setupModule = "codediff";
     };
-    
-    todo-comments = {
+
+    "todo-comments" = {
       package = pkgs.vimPlugins.todo-comments-nvim;
+      event = ["BufReadPost" "BufNewFile"];
       setupModule = "todo-comments";
       keymaps = [
         {
@@ -197,9 +201,11 @@
         }
       ];
     };
-    
-    trouble = {
+
+    "trouble" = {
       package = pkgs.vimPlugins.trouble-nvim;
+      event = ["BufReadPost" "BufNewFile"];
+      setupModule = "trouble";
       setupOpts = {
         modes = {
           lsp = {
@@ -260,8 +266,8 @@
         }
       ];
     };
-    
-    which-key = {
+
+    "which-key" = {
       package = pkgs.vimPlugins.which-key-nvim;
       event = ["UIEnter"];
       setupModule = "which-key";
@@ -310,8 +316,8 @@
         '';
       };
     };
-    
-    nvim-navic = {
+
+    "nvim-navic" = {
       package = pkgs.vimPlugins.nvim-navic;
       event = ["LspAttach"];
       setupModule = "nvim-navic";
@@ -375,7 +381,7 @@
         })
       '';
     };
-    
+
     gitsigns = {
       package = pkgs.vimPlugins.gitsigns-nvim;
       event = ["BufReadPost" "BufNewFile"];
@@ -438,8 +444,8 @@
         '';
       };
     };
-    
-    mini-move = {
+
+    "mini-move" = {
       package = pkgs.vimPlugins.mini-move;
       event = ["BufReadPost"];
       setupModule = "mini.move";
@@ -459,9 +465,10 @@
         };
       };
     };
-    
-    refactoring = {
+
+    "refactoring" = {
       package = pkgs.vimPlugins.refactoring-nvim;
+      event = ["BufReadPost" "BufNewFile"];
       setupModule = "refactoring";
       setupOpts = {
         prompt_func_return_type = {

@@ -4,7 +4,7 @@
   ...
 }: {
   programs.neovim.spec.plugins = {
-    snacks = {
+    "snacks" = {
       package = pkgs.vimPlugins.snacks-nvim;
       setupModule = "snacks";
       event = ["VimEnter"];
@@ -506,8 +506,8 @@
         }
       ];
     };
-    
-    mini-hipatterns = {
+
+    "mini-hipatterns" = {
       package = pkgs.vimPlugins.mini-hipatterns;
       event = ["BufReadPost" "BufNewFile"];
       extraLuaAfter = ''
@@ -583,9 +583,11 @@
         })
       '';
     };
-    
-    octo = {
+
+    "octo" = {
       package = pkgs.vimPlugins.octo-nvim;
+      event = ["BufReadPost" "BufNewFile"];
+      setupModule = "octo";
       setupOpts = {
         enable_builtin = true;
         default_to_projects_v2 = true;
@@ -646,8 +648,8 @@
         })
       '';
     };
-    
-    kulala = {
+
+    "kulala" = {
       package = pkgs.vimPlugins.kulala-nvim;
       setupModule = "kulala";
       filetype = ["http" "rest"];
