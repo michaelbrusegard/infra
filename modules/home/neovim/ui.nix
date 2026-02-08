@@ -161,14 +161,15 @@
             (lib.generators.mkLuaInline ''{ function() return vim.fn.fnamemodify(vim.fn.getcwd(), ':t') end, color = { gui = "bold" } }'')
             (lib.generators.mkLuaInline ''{ "diagnostics", symbols = { error = " ", warn = " ", info = " ", hint = " " } }'')
             (lib.generators.mkLuaInline ''{ "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } }'')
-            (lib.generators.mkLuaInline ''function() return vim.fn.expand("%:p:~:.") end'')
+            (lib.generators.mkLuaInline ''function() local bufname = vim.fn.expand("%:p:~:.") if bufname:match("^term://") then return "Terminal" end return bufname end'')
             (lib.generators.mkLuaInline ''{ "navic", color_correction = "dynamic" }'')
             (lib.generators.mkLuaInline ''{ function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal}', hl_group = 'lualine_c_normal'}).get() or "" end, cond = function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal'}).has() or false end }'')
           ];
           lualine_x = [
-            (lib.generators.mkLuaInline ''function() return package.loaded['snacks'] and require('snacks').profiler.status() or "" end'')
+            (lib.generators.mkLuaInline ''package.loaded['snacks'] and require('snacks').profiler.status()'')
             (lib.generators.mkLuaInline ''{ function() return package.loaded['noice'] and require('noice').api.status.command.get() or "" end, cond = function() return package.loaded['noice'] and require('noice').api.status.command.has() or false end, color = { fg = "#bb9af7" } }'')
             (lib.generators.mkLuaInline ''{ function() return package.loaded['noice'] and require('noice').api.status.mode.get() or "" end, cond = function() return package.loaded['noice'] and require('noice').api.status.mode.has() or false end, color = { fg = "#ff9e64" } }'')
+            (lib.generators.mkLuaInline ''{ require("opencode").statusline }'')
             (lib.generators.mkLuaInline ''{ function() return "  " .. (package.loaded['dap'] and require("dap").status() or "") end, cond = function() return package.loaded['dap'] and require("dap").status() ~= "" or false end, color = { fg = "#db4b4b" } }'')
             (lib.generators.mkLuaInline ''{ "diff", symbols = { added = " ", modified = " ", removed = " " }, source = function() local gitsigns = vim.b.gitsigns_status_dict if gitsigns then return { added = gitsigns.added, modified = gitsigns.changed, removed = gitsigns.removed } end return nil end }'')
           ];
