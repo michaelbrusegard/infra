@@ -8,6 +8,15 @@
       package = pkgs.vimPlugins.snacks-nvim;
       setupModule = "snacks";
       event = ["VimEnter"];
+      extraLuaBefore = ''
+        local function term_nav(dir)
+          return function(self)
+            return self:is_floating() and "<c-" .. dir .. ">" or vim.schedule(function()
+              vim.cmd.wincmd(dir)
+            end)
+          end
+        end
+      '';
       setupOpts = {
         bigfile = {enabled = true;};
         explorer = {
@@ -63,6 +72,16 @@
           };
         };
         quickfile = {enabled = true;};
+        terminal = {
+          win = {
+            keys = {
+              nav_h = lib.generators.mkLuaInline ''{ "<C-h>", term_nav("h"), desc = "Go to Left Window", expr = true, mode = "t" }'';
+              nav_j = lib.generators.mkLuaInline ''{ "<C-j>", term_nav("j"), desc = "Go to Lower Window", expr = true, mode = "t" }'';
+              nav_k = lib.generators.mkLuaInline ''{ "<C-k>", term_nav("k"), desc = "Go to Upper Window", expr = true, mode = "t" }'';
+              nav_l = lib.generators.mkLuaInline ''{ "<C-l>", term_nav("l"), desc = "Go to Right Window", expr = true, mode = "t" }'';
+            };
+          };
+        };
         scope = {enabled = true;};
         statuscolumn = {enabled = true;};
         words = {enabled = true;};
