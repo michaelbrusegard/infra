@@ -141,6 +141,51 @@
       package = pkgs.vimPlugins.lualine-nvim;
       event = ["UIEnter"];
       setupModule = "lualine";
+      extraLuaBefore = ''
+        local function pretty_path(opts)
+          opts = vim.tbl_extend("force", {
+            relative = "cwd",
+            modified_hl = "MatchParen",
+            directory_hl = "Conceal",
+            filename_hl = "Bold",
+            modified_sign = "",
+            readonly_icon = " 󰌾 ",
+            length = 3,
+          }, opts or {})
+          return function(self)
+            local path = vim.fn.expand("%:p")
+            if path == "" then
+              return ""
+            end
+            local cwd = vim.fn.getcwd()
+            local root = vim.fn.fnamemodify(cwd, ":t")
+            local sep = package.config:sub(1, 1)
+            if opts.relative == "cwd" and path:find(cwd, 1, true) == 1 then
+              path = path:sub(#cwd + 2)
+            end
+            local parts = vim.split(path, "[\\/]")
+            if opts.length == 0 then
+              parts = parts
+            elseif #parts > opts.length then
+              parts = { parts[1], "…", unpack(parts, #parts - opts.length + 2, #parts) }
+            end
+            local filename = parts[#parts]
+            if opts.modified_hl and vim.bo.modified then
+              filename = filename .. opts.modified_sign
+            end
+            local dir = ""
+            if #parts > 1 then
+              dir = table.concat({ unpack(parts, 1, #parts - 1) }, sep)
+              dir = dir .. sep
+            end
+            local readonly = ""
+            if vim.bo.readonly then
+              readonly = opts.readonly_icon
+            end
+            return dir .. filename .. readonly
+          end
+        end
+      '';
       setupOpts = {
         options = {
           theme = "auto";
@@ -161,9 +206,9 @@
             (lib.generators.mkLuaInline ''{ function() return vim.fn.fnamemodify(vim.fn.getcwd(), ':t') end, color = { gui = "bold" } }'')
             (lib.generators.mkLuaInline ''{ "diagnostics", symbols = { error = " ", warn = " ", info = " ", hint = " " } }'')
             (lib.generators.mkLuaInline ''{ "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } }'')
-            (lib.generators.mkLuaInline ''function() local bufname = vim.fn.expand("%:p:~:.") if bufname:match("^term://") then return "Terminal" end return bufname end'')
+            (lib.generators.mkLuaInline ''{ pretty_path(), color = { gui = "bold" } }'')
             (lib.generators.mkLuaInline ''{ "navic", color_correction = "dynamic" }'')
-            (lib.generators.mkLuaInline ''{ function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal}', hl_group = 'lualine_c_normal'}).get() or "" end, cond = function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal'}).has() or false end }'')
+            (lib.generators.mkLuaInline ''{ function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal}', hl_group = 'lualine_c_normal'}).get() or "" end, cond = function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal}', hl_group = 'lualine_c_normal'}).has() or false end }'')
           ];
           lualine_x = [
             (lib.generators.mkLuaInline ''package.loaded['snacks'] and require('snacks').profiler.status()'')
