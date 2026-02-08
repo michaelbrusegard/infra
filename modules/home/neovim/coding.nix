@@ -3,22 +3,14 @@
   lib,
   ...
 }: {
-  programs.nvf.settings.vim.lazy.plugins = {
-    "ts-comments.nvim" = {
+  programs.neovim.pluginSpecs = [
+    {
       package = pkgs.vimPlugins.ts-comments-nvim;
       setupModule = "ts-comments";
-      event = [
-        {
-          event = "User";
-          pattern = "LazyFile";
-        }
-      ];
-    };
-
-    "mini.pairs" = {
+    }
+    {
       package = pkgs.vimPlugins.mini-pairs;
       setupModule = "mini.pairs";
-      event = ["InsertEnter"];
       setupOpts = {
         modes = {
           insert = true;
@@ -30,10 +22,10 @@
         skip_unbalanced = true;
         markdown = true;
       };
-      after = ''
-        local pairs = require("mini.pairs")
-        local open = pairs.open
-        pairs.open = function(pair, neigh_pattern)
+      config = ''
+        local mpairs = require("mini.pairs")
+        local open = mpairs.open
+        mpairs.open = function(pair, neigh_pattern)
           if vim.fn.getcmdline() ~= "" then
             return open(pair, neigh_pattern)
           end
@@ -64,17 +56,10 @@
           return open(pair, neigh_pattern)
         end
       '';
-    };
-
-    "mini.ai" = {
+    }
+    {
       package = pkgs.vimPlugins.mini-ai;
       setupModule = "mini.ai";
-      event = [
-        {
-          event = "User";
-          pattern = "LazyFile";
-        }
-      ];
       setupOpts = {
         n_lines = 500;
         custom_textobjects = lib.generators.mkLuaInline ''
@@ -109,7 +94,7 @@
           }
         '';
       };
-      after = ''
+      config = ''
         local objects = {
           { " ", desc = "whitespace" },
           { '"', desc = "\" string" },
@@ -166,54 +151,10 @@
 
         require("which-key").add(ret, { notify = false })
       '';
-    };
-
-    "mini.surround" = {
+    }
+    {
       package = pkgs.vimPlugins.mini-surround;
       setupModule = "mini.surround";
-      event = [
-        {
-          event = "User";
-          pattern = "LazyFile";
-        }
-      ];
-      keys = [
-        {
-          key = "gsa";
-          mode = ["n" "x"];
-          desc = "Add Surrounding";
-        }
-        {
-          key = "gsd";
-          mode = "n";
-          desc = "Delete Surrounding";
-        }
-        {
-          key = "gsf";
-          mode = "n";
-          desc = "Find Right Surrounding";
-        }
-        {
-          key = "gsF";
-          mode = "n";
-          desc = "Find Left Surrounding";
-        }
-        {
-          key = "gsh";
-          mode = "n";
-          desc = "Highlight Surrounding";
-        }
-        {
-          key = "gsr";
-          mode = "n";
-          desc = "Replace Surrounding";
-        }
-        {
-          key = "gsn";
-          mode = "n";
-          desc = "Update `MiniSurround.config.n_lines`";
-        }
-      ];
       setupOpts = {
         mappings = {
           add = "gsa";
@@ -225,18 +166,29 @@
           update_n_lines = "gsn";
         };
       };
-    };
-
-    "yanky.nvim" = {
+      config = ''
+        local wk = require("which-key")
+        wk.add({
+          { "gsa", desc = "Add Surrounding", mode = { "n", "x" } },
+          { "gsd", desc = "Delete Surrounding" },
+          { "gsf", desc = "Find Right Surrounding" },
+          { "gsF", desc = "Find Left Surrounding" },
+          { "gsh", desc = "Highlight Surrounding" },
+          { "gsr", desc = "Replace Surrounding" },
+          { "gsn", desc = "Update MiniSurround n_lines" },
+        })
+      '';
+    }
+    {
       package = pkgs.vimPlugins.yanky-nvim;
       setupModule = "yanky";
-      event = [
-        {
-          event = "User";
-          pattern = "LazyFile";
-        }
-      ];
-      keys = [
+      setupOpts = {
+        system_clipboard = {
+          sync_with_ring = true;
+        };
+        highlight = {timer = 150;};
+      };
+      keymaps = [
         {
           key = "<leader>p";
           mode = ["n" "x"];
@@ -347,17 +299,10 @@
           action = "<Plug>(YankyPutBeforeFilter)";
         }
       ];
-      setupOpts = {
-        system_clipboard = {
-          sync_with_ring = true;
-        };
-        highlight = {timer = 150;};
-      };
-    };
-
-    "blink.cmp" = {
+    }
+    {
       package = pkgs.vimPlugins.blink-cmp;
-      event = ["InsertEnter" "CmdlineEnter"];
+      setupModule = "blink.cmp";
       setupOpts = {
         snippets = {
           preset = "default";
@@ -421,7 +366,9 @@
                   __unkeyed-2 = "kind";
                   gap = 1;
                 }
-                "source"
+                {
+                  __unkeyed-1 = "source_name";
+                }
               ];
             };
           };
@@ -460,10 +407,9 @@
           "<C-y>" = ["select_and_accept"];
         };
       };
-    };
-
-    "friendly-snippets" = {
+    }
+    {
       package = pkgs.vimPlugins.friendly-snippets;
-    };
-  };
+    }
+  ];
 }

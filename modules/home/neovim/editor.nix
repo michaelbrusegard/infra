@@ -3,12 +3,11 @@
   lib,
   ...
 }: {
-  programs.nvf.settings.vim.lazy.plugins = {
-    "grug-far.nvim" = {
+  programs.neovim.pluginSpecs = [
+    {
       package = pkgs.vimPlugins.grug-far-nvim;
-      cmd = ["GrugFar" "GrugFarWithin"];
       setupOpts = {headerMaxWidth = 80;};
-      keys = [
+      keymaps = [
         {
           key = "<leader>sr";
           mode = ["n" "x"];
@@ -28,12 +27,10 @@
           lua = true;
         }
       ];
-    };
-
-    "dial.nvim" = {
+    }
+    {
       package = pkgs.vimPlugins.dial-nvim;
-      setupModule = "dial";
-      keys = [
+      keymaps = [
         {
           key = "<C-a>";
           mode = ["n" "v"];
@@ -71,7 +68,7 @@
           silent = true;
         }
       ];
-      after = ''
+      config = ''
         local augend = require("dial.augend")
 
         local dial_config = {
@@ -146,25 +143,15 @@
           return require("dial.map")[func](group)
         end
       '';
-    };
-
-    "codediff.nvim" = {
+    }
+    {
       package = pkgs.vimPlugins.codediff-nvim;
       setupModule = "codediff";
-      cmd = ["CodeDiff"];
-    };
-
-    "todo-comments.nvim" = {
+    }
+    {
       package = pkgs.vimPlugins.todo-comments-nvim;
-      cmd = ["TodoTrouble" "TodoTelescope"];
-      event = [
-        {
-          event = "User";
-          pattern = "LazyFile";
-        }
-      ];
       setupModule = "todo-comments";
-      keys = [
+      keymaps = [
         {
           key = "]t";
           mode = "n";
@@ -204,11 +191,9 @@
           action = "<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>";
         }
       ];
-    };
-
-    "trouble.nvim" = {
+    }
+    {
       package = pkgs.vimPlugins.trouble-nvim;
-      cmd = ["Trouble"];
       setupOpts = {
         modes = {
           lsp = {
@@ -216,7 +201,7 @@
           };
         };
       };
-      keys = [
+      keymaps = [
         {
           key = "<leader>xx";
           mode = "n";
@@ -268,11 +253,9 @@
           lua = true;
         }
       ];
-    };
-
-    "which-key.nvim" = {
+    }
+    {
       package = pkgs.vimPlugins.which-key-nvim;
-      event = ["VimEnter"];
       setupModule = "which-key";
       setupOpts = {
         preset = "helix";
@@ -318,11 +301,9 @@
           }
         '';
       };
-    };
-
-    "nvim-navic" = {
+    }
+    {
       package = pkgs.vimPlugins.nvim-navic;
-      lazy = true;
       setupModule = "nvim-navic";
       setupOpts = {
         separator = " ";
@@ -372,7 +353,7 @@
           Variable = "󰀫 ";
         };
       };
-      after = ''
+      config = ''
         vim.g.navic_silence = true
         vim.api.nvim_create_autocmd("LspAttach", {
           callback = function(args)
@@ -383,16 +364,9 @@
           end,
         })
       '';
-    };
-
-    "gitsigns.nvim" = {
+    }
+    {
       package = pkgs.vimPlugins.gitsigns-nvim;
-      event = [
-        {
-          event = "User";
-          pattern = "LazyFile";
-        }
-      ];
       setupModule = "gitsigns";
       setupOpts = {
         signs = {
@@ -451,9 +425,8 @@
           end
         '';
       };
-    };
-
-    "mini.move" = {
+    }
+    {
       package = pkgs.vimPlugins.mini-move;
       setupModule = "mini.move";
       setupOpts = {
@@ -471,16 +444,9 @@
           reindent_linewise = true;
         };
       };
-    };
-
-    "refactoring.nvim" = {
+    }
+    {
       package = pkgs.vimPlugins.refactoring-nvim;
-      event = [
-        {
-          event = "User";
-          pattern = "LazyFile";
-        }
-      ];
       setupModule = "refactoring";
       setupOpts = {
         prompt_func_return_type = {
@@ -505,7 +471,7 @@
         print_var_statements = {};
         show_success_message = true;
       };
-      keys = [
+      keymaps = [
         {
           key = "<leader>r";
           mode = ["n" "x"];
@@ -584,6 +550,6 @@
           lua = true;
         }
       ];
-    };
-  };
+    }
+  ];
 }

@@ -1,5 +1,5 @@
 _: {
-  programs.nvf.settings.vim.keymaps = [
+  programs.neovim.keymaps = [
     # Better up/down
     {
       key = "j";

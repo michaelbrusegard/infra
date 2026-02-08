@@ -1,15 +1,34 @@
-{pkgs, ...}: {
-  programs.nvf.settings.vim = {
-    viAlias = true;
-    vimAlias = true;
+{lib, ...}: {
+  programs.neovim = {
     globals = {
       mapleader = " ";
       maplocalleader = "\\";
       markdown_recommended_style = 0;
+
+      loaded_gzip = 1;
+      loaded_zip = 1;
+      loaded_zipPlugin = 1;
+      loaded_tar = 1;
+      loaded_tarPlugin = 1;
+      loaded_getscript = 1;
+      loaded_getscriptPlugin = 1;
+      loaded_vimball = 1;
+      loaded_vimballPlugin = 1;
+      loaded_2html_plugin = 1;
+      loaded_matchit = 1;
+      loaded_matchparen = 1;
+      loaded_logiPat = 1;
+      loaded_rrhelper = 1;
+      loaded_netrw = 1;
+      loaded_netrwPlugin = 1;
+      loaded_netrwSettings = 1;
+      loaded_netrwFileHandlers = 1;
     };
+
     options = {
       autowrite = true;
       autoread = true;
+
       completeopt = "menu,menuone,noselect";
       conceallevel = 2;
       confirm = true;
@@ -55,6 +74,9 @@
 
       smoothscroll = true;
 
+      spelllang = "en,nb";
+      spelloptions = "camel";
+
       splitbelow = true;
       splitkeep = "screen";
       splitright = true;
@@ -77,46 +99,17 @@
       shada = "'100,<50,s10,h";
     };
 
-    clipboard = {
-      enable = true;
-      providers = {
-        wl-copy.enable = pkgs.stdenv.isLinux;
-      };
+    filetypes.extensions = {
+      http = "http";
+      gs = "javascript";
     };
 
-    luaConfigRC.options = ''
-      vim.opt.clipboard = vim.env.SSH_CONNECTION and "" or "unnamedplus"
-
-      vim.filetype.add({
-        extension = {
-          http = "http",
-          gs = 'javascript',
-        },
-      })
-
-      vim.g.loaded_gzip = 1
-      vim.g.loaded_zip = 1
-      vim.g.loaded_zipPlugin = 1
-      vim.g.loaded_tar = 1
-      vim.g.loaded_tarPlugin = 1
-      vim.g.loaded_getscript = 1
-      vim.g.loaded_getscriptPlugin = 1
-      vim.g.loaded_vimball = 1
-      vim.g.loaded_vimballPlugin = 1
-      vim.g.loaded_2html_plugin = 1
-      vim.g.loaded_matchit = 1
-      vim.g.loaded_matchparen = 1
-      vim.g.loaded_logiPat = 1
-      vim.g.loaded_rrhelper = 1
-      vim.g.loaded_netrw = 1
-      vim.g.loaded_netrwPlugin = 1
-      vim.g.loaded_netrwSettings = 1
-      vim.g.loaded_netrwFileHandlers = 1
+    extraLuaConfig = lib.mkOrder 100 ''
+      if vim.env.SSH_CONNECTION then
+        vim.opt.clipboard = ""
+      else
+        vim.opt.clipboard = "unnamedplus"
+      end
     '';
-
-    spellcheck = {
-      enable = true;
-      languages = ["en"];
-    };
   };
 }
