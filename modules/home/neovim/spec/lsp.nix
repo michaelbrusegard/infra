@@ -1,8 +1,11 @@
-{ config, lib, pkgs, ... }:
-let
-  cfg = config.programs.neovim.spec.lsp;
-in
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
+  cfg = config.programs.neovim.spec.lsp;
+in {
   options.programs.neovim.spec.lsp = {
     onAttach = lib.mkOption {
       type = lib.types.lines;
@@ -41,7 +44,7 @@ in
   config = lib.mkIf (cfg.servers != {}) {
     programs.neovim.spec.plugins.nvim-lspconfig = {
       package = pkgs.vimPlugins.nvim-lspconfig;
-      event = [ "BufReadPre" "BufNewFile" ];
+      event = ["BufReadPre" "BufNewFile"];
     };
 
     programs.neovim.extraPackages = lib.pipe cfg.servers [
@@ -50,7 +53,7 @@ in
       lib.unique
     ];
 
-    programs.neovim.extraLuaConfig = lib.mkOrder 350 ''
+    programs.neovim.extraLuaConfig = lib.mkOrder 400 ''
       do
         local capabilities = require("blink.cmp").get_lsp_capabilities(vim.lsp.protocol.make_client_capabilities())
         local global_on_attach = function(client, bufnr)
@@ -61,12 +64,12 @@ in
           do
             local run = true
             ${lib.optionalString (server.condition != null) ''
-              run = (function() ${server.condition} end)()
-            ''}
+            run = (function() ${server.condition} end)()
+          ''}
             if run then
               local base = require("lspconfig.util").get_default_config("${name}") or {}
               local config = vim.tbl_deep_extend("force", base, ${lib.generators.toLua {} server.config})
-              
+
               if next(${lib.generators.toLua {} server.settings}) ~= nil then
                 config.settings = vim.tbl_deep_extend("force", config.settings or {}, ${lib.generators.toLua {} server.settings})
               end
@@ -81,7 +84,8 @@ in
               vim.lsp.enable("${name}")
             end
           end
-        '') cfg.servers)}
+        '')
+        cfg.servers)}
       end
     '';
   };
