@@ -34,7 +34,6 @@
     "dial" = {
       package = pkgs.vimPlugins.dial-nvim;
       event = ["BufReadPost" "BufNewFile"];
-      setupModule = "dial.map";
       keymaps = [
         {
           key = "<C-a>";
