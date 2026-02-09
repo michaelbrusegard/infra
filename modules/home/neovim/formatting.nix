@@ -1,35 +1,33 @@
-_: {
-  programs.nvf.settings.vim = {
-    formatter.conform-nvim = {
-      enable = true;
-      setupOpts = {
-        default_format_opts = {
-          timeout_ms = 3000;
-          async = false;
-          quiet = false;
-          lsp_format = "fallback";
-        };
-        formatters_by_ft = {
-          sh = ["shfmt"];
-        };
-        formatters = {
-          injected = {options = {ignore_errors = true;};};
-        };
-      };
+{pkgs, ...}: {
+  programs.neovim.spec.formatting = {
+    enable = true;
+    formatOnSave = true;
+
+    formattersByFt = {
+      nix = ["alejandra"];
+      lua = ["stylua"];
+      python = ["ruff_format"];
+      sh = ["shfmt"];
     };
 
-    keymaps = [
-      {
-        key = "<leader>cF";
-        mode = ["n" "x"];
-        desc = "Format Injected Langs";
-        action = ''
-          function()
-            require("conform").format({ formatters = { "injected" }, timeout_ms = 3000 })
-          end
-        '';
-        lua = true;
-      }
-    ];
+    formatters = {
+      alejandra = {
+        command = "${pkgs.alejandra}/bin/alejandra";
+        package = pkgs.alejandra;
+      };
+      stylua = {
+        command = "${pkgs.stylua}/bin/stylua";
+        package = pkgs.stylua;
+      };
+      shfmt = {
+        command = "${pkgs.shfmt}/bin/shfmt";
+        package = pkgs.shfmt;
+      };
+      ruff_format = {
+        command = "${pkgs.ruff}/bin/ruff";
+        args = ["format" "--stdin-filename" "$FILENAME" "-"];
+        package = pkgs.ruff;
+      };
+    };
   };
 }
