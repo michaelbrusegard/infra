@@ -1,23 +1,23 @@
 {...}: {
   programs.neovim.spec = {
     augroups = [
-      {name = "checktime";}
-      {name = "highlight_yank";}
-      {name = "resize_splits";}
-      {name = "last_loc";}
-      {name = "close_with_q";}
-      {name = "man_unlisted";}
-      {name = "wrap_spell";}
-      {name = "json_conceal";}
-      {name = "auto_create_dir";}
-      {name = "random_temp_file";}
+      {name = "Checktime";}
+      {name = "HighlightYank";}
+      {name = "ResizeSplits";}
+      {name = "LastLoc";}
+      {name = "CloseWithQ";}
+      {name = "ManUnlisted";}
+      {name = "WrapSpell";}
+      {name = "JsonConceal";}
+      {name = "AutoCreateDir";}
+      {name = "RandomTempFile";}
     ];
 
     autocmds = [
       # Check if we need to reload the file when it changed
       {
         event = ["FocusGained" "TermClose" "TermLeave"];
-        group = "checktime";
+        group = "Checktime";
         callback = ''
           function()
             if vim.o.buftype ~= "nofile" then
@@ -30,7 +30,7 @@
       # Highlight on yank
       {
         event = ["TextYankPost"];
-        group = "highlight_yank";
+        group = "HighlightYank";
         callback = ''
           function()
             (vim.hl or vim.highlight).on_yank()
@@ -41,7 +41,7 @@
       # Resize splits if window got resized
       {
         event = ["VimResized"];
-        group = "resize_splits";
+        group = "ResizeSplits";
         callback = ''
           function()
             local current_tab = vim.fn.tabpagenr()
@@ -54,7 +54,7 @@
       # Go to last loc when opening a buffer
       {
         event = ["BufReadPost"];
-        group = "last_loc";
+        group = "LastLoc";
         callback = ''
           function(event)
             local exclude = { "gitcommit" }
@@ -75,7 +75,7 @@
       # Close some filetypes with <q>
       {
         event = ["FileType"];
-        group = "close_with_q";
+        group = "CloseWithQ";
         pattern = [
           "PlenaryTestPopup"
           "checkhealth"
@@ -112,7 +112,7 @@
       # Make it easier to close man-files when opened inline
       {
         event = ["FileType"];
-        group = "man_unlisted";
+        group = "ManUnlisted";
         pattern = ["man"];
         callback = ''
           function(event)
@@ -124,7 +124,7 @@
       # Wrap and check for spell in text filetypes
       {
         event = ["FileType"];
-        group = "wrap_spell";
+        group = "WrapSpell";
         pattern = ["text" "plaintex" "typst" "gitcommit" "markdown"];
         callback = ''
           function()
@@ -137,7 +137,7 @@
       # Fix conceallevel for json files
       {
         event = ["FileType"];
-        group = "json_conceal";
+        group = "JsonConceal";
         pattern = ["json" "jsonc" "json5"];
         callback = ''
           function()
@@ -149,7 +149,7 @@
       # Auto create dir when saving a file
       {
         event = ["BufWritePre"];
-        group = "auto_create_dir";
+        group = "AutoCreateDir";
         callback = ''
           function(event)
             if event.match:match("^%w%w+:[\\/][\\/]") then
@@ -164,7 +164,7 @@
       # Open random temp file on startup if no file is specified
       {
         event = ["VimEnter"];
-        group = "random_temp_file";
+        group = "RandomTempFile";
         callback = ''
           function()
             if vim.fn.argc() == 0 and vim.api.nvim_buf_get_name(0) == "" and vim.bo.buftype == "" then

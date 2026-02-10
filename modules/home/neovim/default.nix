@@ -1,6 +1,7 @@
 _: {
   imports = [
     ./spec
+    ./dependencies.nix
     ./options.nix
     ./autocmds.nix
     ./keymaps.nix

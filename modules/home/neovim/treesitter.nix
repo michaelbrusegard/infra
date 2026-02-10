@@ -55,24 +55,6 @@
         };
       };
 
-      "treesitter-context" = {
-        package = pkgs.vimPlugins.nvim-treesitter-context;
-        event = ["BufReadPost" "BufNewFile"];
-        setupModule = "treesitter-context";
-        setupOpts = {
-          max_lines = 3;
-          min_window_height = 5;
-          mode = "cursor";
-          separator = null;
-          zindex = 20;
-          on_attach = lib.generators.mkLuaInline ''
-            function(bufnr)
-              return vim.bo[bufnr].filetype ~= "markdown"
-            end
-          '';
-        };
-      };
-
       "nvim-treesitter-textobjects" = {
         package = pkgs.vimPlugins.nvim-treesitter-textobjects;
         event = ["BufReadPost" "BufNewFile"];

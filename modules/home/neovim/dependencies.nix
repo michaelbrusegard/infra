@@ -1,7 +1,4 @@
-{
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   programs.neovim = {
     extraPackages = with pkgs; [
       ripgrep
