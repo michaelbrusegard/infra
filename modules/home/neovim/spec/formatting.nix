@@ -70,7 +70,8 @@ in {
         formatters = ${lib.generators.toLua {} (lib.mapAttrs (name: f: {
           command = f.command;
           args = f.args;
-        }) cfg.formatters)},
+        })
+        cfg.formatters)},
       })
     '';
   };

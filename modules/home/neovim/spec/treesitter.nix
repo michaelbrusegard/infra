@@ -4,14 +4,10 @@
   pkgs,
   ...
 }: let
-  inherit (lib) mkOption types mkIf;
+  inherit (lib) mkOption types;
   cfg = config.programs.neovim.spec.treesitter;
 in {
   options.programs.neovim.spec.treesitter = {
-    enable = mkOption {
-      type = types.bool;
-      default = true;
-    };
     grammars = mkOption {
       type = types.listOf types.package;
       default = [];
@@ -22,11 +18,28 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
+  config = {
+    programs.neovim.extraPackages = [pkgs.tree-sitter];
+
     programs.neovim.spec.plugins.nvim-treesitter = {
       package = pkgs.vimPlugins.nvim-treesitter.withPlugins (_: cfg.grammars);
       setupModule = "nvim-treesitter";
       event = ["BufReadPost" "BufNewFile"];
+      augroups = [
+        {name = "UserTreesitter";}
+      ];
+      autocmds = [
+        {
+          event = "FileType";
+          pattern = "*";
+          group = "UserTreesitter";
+          callback = ''
+            function(args)
+              pcall(vim.treesitter.start, args.buf)
+            end
+          '';
+        }
+      ];
       setupOpts =
         {
           ensure_installed = [];

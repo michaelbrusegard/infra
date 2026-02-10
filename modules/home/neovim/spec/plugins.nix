@@ -53,6 +53,49 @@
     };
   };
 
+  augroupSubmodule = types.submodule {
+    options = {
+      name = mkOption {type = types.str;};
+      clear = mkOption {
+        type = types.bool;
+        default = true;
+      };
+    };
+  };
+
+  autocmdSubmodule = types.submodule {
+    options = {
+      event = mkOption {
+        type = types.either types.str (types.listOf types.str);
+      };
+      group = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      pattern = mkOption {
+        type = types.either types.str (types.listOf types.str);
+        default = "*";
+      };
+      callback = mkOption {type = types.str;};
+      desc = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      once = mkOption {
+        type = types.bool;
+        default = false;
+      };
+      nested = mkOption {
+        type = types.bool;
+        default = false;
+      };
+      buffer = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+      };
+    };
+  };
+
   pluginSubmodule = types.submodule {
     options = {
       package = mkOption {type = types.package;};
@@ -76,6 +119,10 @@
         type = types.lines;
         default = "";
       };
+      extraLuaAfterAll = mkOption {
+        type = types.lines;
+        default = "";
+      };
       event = mkOption {
         type = types.listOf types.str;
         default = [];
@@ -96,6 +143,14 @@
         type = types.listOf keymapSubmodule;
         default = [];
       };
+      augroups = mkOption {
+        type = types.listOf augroupSubmodule;
+        default = [];
+      };
+      autocmds = mkOption {
+        type = types.listOf autocmdSubmodule;
+        default = [];
+      };
     };
   };
 
@@ -105,17 +160,50 @@
     actionVal =
       if k.lua
       then mkLuaInline k.action
-      else genLua k.action;
-  in "{ ${genLua k.key}, ${toLua {} actionVal}, mode = ${genLua k.mode}, silent = ${genLua k.silent}${optionalString (k.desc != null) ", desc = ${genLua k.desc}"} }";
+      else k.action;
+  in "{ ${genLua k.key}, ${toLua {} actionVal}, mode = ${genLua k.mode}, silent = ${genLua k.silent}${optionalString (k.desc != null) ", desc = ${genLua k.desc}"}${optionalString (!k.noremap) ", remap = true"}${optionalString k.expr ", expr = true"} }";
+
+  toVimKeymap = k: let
+    actionVal =
+      if k.lua
+      then mkLuaInline k.action
+      else k.action;
+    opts = {
+      inherit (k) silent nowait expr;
+      desc = k.desc;
+      remap = !k.noremap;
+      buffer = k.buffer;
+    };
+  in "vim.keymap.set(${genLua k.mode}, ${genLua k.key}, ${toLua {} actionVal}, ${toLua {} opts})";
+
+  toAutocmd = a: let
+    groupPart = optionalString (a.group != null) "group = ${genLua a.group}, ";
+    patternPart = optionalString (a.pattern != "*") "pattern = ${genLua a.pattern}, ";
+    descPart = optionalString (a.desc != null) "desc = ${genLua a.desc}, ";
+    oncePart = optionalString a.once "once = true, ";
+    nestedPart = optionalString a.nested "nested = true, ";
+    bufferPart = optionalString (a.buffer != null) "buffer = ${genLua a.buffer}, ";
+  in ''vim.api.nvim_create_autocmd(${genLua a.event}, { ${groupPart}${patternPart}${descPart}${oncePart}${nestedPart}${bufferPart}callback = ${a.callback} })'';
+
+  toAugroup = g: ''vim.api.nvim_create_augroup(${genLua g.name}, { clear = ${genLua g.clear} })'';
 
   toLzNSpec = name: p: let
     setupCode =
       optionalString (p.setupModule != null)
       ''require("${p.setupModule}").setup(${genLua p.setupOpts})'';
 
+    keymapsCode = concatStringsSep "\n      " (map toVimKeymap (filter (k: k.enable) p.keymaps));
+
+    augroupsCode = concatStringsSep "\n      " (map toAugroup p.augroups);
+
+    autocmdsCode = concatStringsSep "\n      " (map toAutocmd p.autocmds);
+
     afterBody = concatStringsSep "\n      " (filter (s: s != "") [
       p.extraLuaBefore
+      augroupsCode
       setupCode
+      keymapsCode
+      autocmdsCode
       p.extraLuaAfter
     ]);
 
@@ -123,7 +211,7 @@
       (optionalString (p.event != []) "event = ${genLua p.event}")
       (optionalString (p.command != []) "cmd = ${genLua p.command}")
       (optionalString (p.filetype != []) "ft = ${genLua p.filetype}")
-      (optionalString (p.condition != null) "cond = ${p.condition}")
+      (optionalString (p.condition != null) "cond = ${toLua {} (mkLuaInline p.condition)}")
       (let ks = filter (k: k.enable) p.keymaps; in optionalString (ks != []) "keys = { ${concatStringsSep ", " (map toLzNKeymap ks)} }")
     ];
 
@@ -138,6 +226,9 @@
 
   beforeAllList = filter (s: s != "") (map (p: p.extraLuaBeforeAll) enabledPluginsList);
   beforeAllCode = concatStringsSep "\n" beforeAllList;
+
+  afterAllList = filter (s: s != "") (map (p: p.extraLuaAfterAll) enabledPluginsList);
+  afterAllCode = concatStringsSep "\n" afterAllList;
 in {
   options.programs.neovim.spec.plugins = mkOption {
     type = types.attrsOf pluginSubmodule;
@@ -158,6 +249,7 @@ in {
       ${allSpecsLua}
       })
       require('lzn-auto-require').enable()
+      ${afterAllCode}
     '';
   };
 }
