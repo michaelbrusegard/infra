@@ -9,7 +9,6 @@ in {
   options.programs.neovim.spec.diagnostics = mkOption {
     type = types.attrs;
     default = {};
-    description = "Global diagnostic configuration passed to vim.diagnostic.config()";
   };
 
   config = mkIf (cfg != {}) {

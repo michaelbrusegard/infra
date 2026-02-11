@@ -11,10 +11,11 @@
       };
     };
 
-    formatting.filetypes.nix = {
-      alejandra = {
-        package = pkgs.alejandra;
-      };
+    formatting.filetypes.nix.alejandra.package = pkgs.alejandra;
+
+    linting.filetypes.nix = {
+      statix.package = pkgs.statix;
+      deadnix.package = pkgs.deadnix;
     };
   };
 }
