@@ -8,7 +8,9 @@
       vim.keymap.set("n", "gW", function() Snacks.picker.lsp_workspace_symbols() end, { buffer = bufnr, desc = "Workspace Symbols" })
 
       if client:supports_method("textDocument/inlayHint") then
-        vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+        if vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].buftype == "" then
+          vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+        end
       end
 
       if client:supports_method("textDocument/codeLens") then
@@ -17,6 +19,8 @@
           buffer = bufnr,
           callback = vim.lsp.codelens.refresh,
         })
+        vim.keymap.set({ "n", "v" }, "<leader>cc", vim.lsp.codelens.run, { buffer = bufnr, desc = "Run Codelens" })
+        vim.keymap.set("n", "<leader>cC", vim.lsp.codelens.refresh, { buffer = bufnr, desc = "Refresh & Display Codelens" })
       end
 
       if client:supports_method("textDocument/foldingRange") then
