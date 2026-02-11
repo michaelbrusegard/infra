@@ -22,31 +22,6 @@
           package = pkgs.shfmt;
         };
       };
-      typescript = {
-        prettier = {
-          package = pkgs.nodePackages.prettier;
-          requiredFiles = [".prettierrc" ".prettierrc.json" ".prettierrc.js"];
-        };
-        biome = {
-          args = ["check" "--apply" "--stdin-file-path" "$FILENAME"];
-          package = pkgs.biome;
-          requiredFiles = ["biome.json"];
-        };
-        oxfmt = {
-          package = pkgs.oxlint;
-        };
-      };
-      lua = {
-        stylua = {
-          package = pkgs.stylua;
-        };
-      };
-      python = {
-        ruff = {
-          args = ["format" "--stdin-filename" "$FILENAME" "-"];
-          package = pkgs.ruff;
-        };
-      };
     };
   };
 }
