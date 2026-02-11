@@ -13,6 +13,9 @@
             information = ["undercurl"];
           };
         };
+        custom_highlights = {
+          SnacksIndent = { link = "NonText"; };
+        };
         integrations = {
           alpha = false;
           blink_indent = false;
