@@ -17,7 +17,6 @@ _: {
     ./test.nix
     ./lang/nix.nix
 
-    # ./linting.nix
     # ./dap.nix
   ];
 

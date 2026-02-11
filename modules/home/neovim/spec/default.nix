@@ -9,5 +9,6 @@ _: {
     ./lsp.nix
     ./diagnostics.nix
     ./formatting.nix
+    ./linting.nix
   ];
 }
