@@ -24,7 +24,7 @@ in {
     programs.neovim.spec.plugins.nvim-treesitter = {
       package = pkgs.vimPlugins.nvim-treesitter.withPlugins (_: cfg.grammars);
       setupModule = "nvim-treesitter";
-      event = ["BufReadPost" "BufNewFile"];
+      event = ["BufReadPre" "BufNewFile"];
       augroups = [
         {name = "UserTreesitter";}
       ];
