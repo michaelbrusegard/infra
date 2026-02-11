@@ -272,7 +272,7 @@
       setupModule = "which-key";
       setupOpts = {
         preset = "helix";
-        delay = 50;
+        delay = 200;
         spec = lib.generators.mkLuaInline ''
           {
             mode = { "n", "x" },
