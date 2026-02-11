@@ -14,7 +14,32 @@
           enable = true;
         };
       };
-
+      augroups = [
+        {name = "UserTreesitter";}
+      ];
+      autocmds = [
+        {
+          event = "FileType";
+          pattern = "*";
+          group = "UserTreesitter";
+          callback = ''
+            function(args)
+              local lang = vim.treesitter.language.get_lang(args.match)
+              if not pcall(vim.treesitter.get_parser, args.buf, lang) then return end
+              pcall(vim.treesitter.start, args.buf)
+              local ok, query = pcall(vim.treesitter.query.get, lang, "indents")
+              if ok and query then
+                vim.bo[args.buf].indentexpr = "v:lua.vim.treesitter.indentexpr()"
+              end
+              ok, query = pcall(vim.treesitter.query.get, lang, "folds")
+              if ok and query then
+                vim.wo.foldmethod = "expr"
+                vim.wo.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+              end
+            end
+          '';
+        }
+      ];
       grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
         bash
         c
@@ -79,27 +104,6 @@
             set_jumps = true;
           };
         };
-        extraLuaBeforeAll = ''
-          _G.__treesitter_foldexpr = function()
-            local buf = vim.api.nvim_get_current_buf()
-            local ok, parser = pcall(vim.treesitter.get_parser, buf)
-            if not ok then return "0" end
-            local has_folds = pcall(function()
-              return vim.treesitter.query.get(parser:lang(), "folds") ~= nil
-            end)
-            return has_folds and vim.treesitter.foldexpr() or "0"
-          end
-
-          _G.__treesitter_indentexpr = function()
-            local buf = vim.api.nvim_get_current_buf()
-            local ok, parser = pcall(vim.treesitter.get_parser, buf)
-            if not ok then return -1 end
-            local has_indents = pcall(function()
-              return vim.treesitter.query.get(parser:lang(), "indents") ~= nil
-            end)
-            return has_indents and vim.treesitter.indentexpr() or -1
-          end
-        '';
         extraLuaAfter = ''
           local group = vim.api.nvim_create_augroup("UserTreesitterTextobjects", { clear = true })
 

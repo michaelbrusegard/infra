@@ -38,9 +38,7 @@
 
         foldlevel = 99;
         foldtext = "";
-        foldmethod = "expr";
-        foldexpr = "v:lua._G.__treesitter_foldexpr()";
-        indentexpr = "v:lua._G.__treesitter_indentexpr()";
+        foldmethod = "indent";
 
         grepformat = "%f:%l:%c:%m";
         grepprg = "rg --vimgrep";

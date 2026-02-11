@@ -16,6 +16,53 @@ in {
       type = types.attrs;
       default = {};
     };
+    augroups = mkOption {
+      type = types.listOf (types.submodule {
+        options = {
+          name = mkOption {type = types.str;};
+          clear = mkOption {
+            type = types.bool;
+            default = true;
+          };
+        };
+      });
+      default = [];
+    };
+    autocmds = mkOption {
+      type = types.listOf (types.submodule {
+        options = {
+          event = mkOption {
+            type = types.either types.str (types.listOf types.str);
+          };
+          group = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+          };
+          pattern = mkOption {
+            type = types.either types.str (types.listOf types.str);
+            default = "*";
+          };
+          callback = mkOption {type = types.str;};
+          desc = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+          };
+          once = mkOption {
+            type = types.bool;
+            default = false;
+          };
+          nested = mkOption {
+            type = types.bool;
+            default = false;
+          };
+          buffer = mkOption {
+            type = types.nullOr types.int;
+            default = null;
+          };
+        };
+      });
+      default = [];
+    };
   };
 
   config = {
@@ -25,21 +72,8 @@ in {
       package = pkgs.vimPlugins.nvim-treesitter.withPlugins (_: cfg.grammars);
       setupModule = "nvim-treesitter";
       event = ["BufReadPre" "BufNewFile"];
-      augroups = [
-        {name = "UserTreesitter";}
-      ];
-      autocmds = [
-        {
-          event = "FileType";
-          pattern = "*";
-          group = "UserTreesitter";
-          callback = ''
-            function(args)
-              pcall(vim.treesitter.start, args.buf)
-            end
-          '';
-        }
-      ];
+      augroups = cfg.augroups;
+      autocmds = cfg.autocmds;
       setupOpts =
         {
           ensure_installed = [];
