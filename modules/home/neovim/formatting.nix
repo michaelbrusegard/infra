@@ -19,36 +19,30 @@
     filetypes = {
       sh = {
         shfmt = {
-          command = "${pkgs.shfmt}/bin/shfmt";
           package = pkgs.shfmt;
         };
       };
       typescript = {
         prettier = {
-          command = "${pkgs.nodePackages.prettier}/bin/prettier";
           package = pkgs.nodePackages.prettier;
           requiredFiles = [".prettierrc" ".prettierrc.json" ".prettierrc.js"];
         };
         biome = {
-          command = "${pkgs.biome}/bin/biome";
           args = ["check" "--apply" "--stdin-file-path" "$FILENAME"];
           package = pkgs.biome;
           requiredFiles = ["biome.json"];
         };
         oxfmt = {
-          command = "${pkgs.oxlint}/bin/oxlint";
           package = pkgs.oxlint;
         };
       };
       lua = {
         stylua = {
-          command = "${pkgs.stylua}/bin/stylua";
           package = pkgs.stylua;
         };
       };
       python = {
         ruff = {
-          command = "${pkgs.ruff}/bin/ruff";
           args = ["format" "--stdin-filename" "$FILENAME" "-"];
           package = pkgs.ruff;
         };
