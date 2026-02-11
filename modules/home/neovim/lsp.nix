@@ -1,11 +1,16 @@
-{lib, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   programs.neovim.spec = {
     lsp.onAttach = ''
-      vim.keymap.set("n", "grr", function() Snacks.picker.lsp_references() end, { buffer = bufnr, desc = "References" })
-      vim.keymap.set("n", "gri", function() Snacks.picker.lsp_implementations() end, { buffer = bufnr, desc = "Implementation" })
-      vim.keymap.set("n", "grt", function() Snacks.picker.lsp_type_definitions() end, { buffer = bufnr, desc = "Type Definition" })
-      vim.keymap.set("n", "gO", function() Snacks.picker.lsp_symbols() end, { buffer = bufnr, desc = "Document Symbols" })
-      vim.keymap.set("n", "gW", function() Snacks.picker.lsp_workspace_symbols() end, { buffer = bufnr, desc = "Workspace Symbols" })
+      vim.keymap.set("n", "grn", require("live-rename").rename, { desc = "Rename" })
+      vim.keymap.set("n", "grr", function() require("snacks").picker.lsp_references() end, { buffer = bufnr, desc = "References" })
+      vim.keymap.set("n", "gri", function() require("snacks").picker.lsp_implementations() end, { buffer = bufnr, desc = "Implementation" })
+      vim.keymap.set("n", "grt", function() require("snacks").picker.lsp_type_definitions() end, { buffer = bufnr, desc = "Type Definition" })
+      vim.keymap.set("n", "gO",  function() require("snacks").picker.lsp_symbols() end, { buffer = bufnr, desc = "Document Symbols" })
+      vim.keymap.set("n", "gW",  function() require("snacks").picker.lsp_workspace_symbols() end, { buffer = bufnr, desc = "Workspace Symbols" })
 
       if client:supports_method("textDocument/inlayHint") then
         if vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].buftype == "" then
@@ -51,6 +56,13 @@
       underline = true;
       update_in_insert = false;
       severity_sort = true;
+    };
+    plugins = {
+      "live-rename" = {
+        package = pkgs.vimPlugins.live-rename-nvim;
+        event = ["LspAttach"];
+        setupModule = "live-rename";
+      };
     };
   };
 }
