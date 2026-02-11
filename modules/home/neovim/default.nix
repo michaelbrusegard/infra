@@ -17,6 +17,7 @@ _: {
     ./test.nix
     ./lang/nix.nix
     ./lang/python.nix
+    ./lang/typescript.nix
 
     # ./dap.nix
   ];

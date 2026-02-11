@@ -38,9 +38,22 @@ in
           ruff
           uv
           ty
-          oxfmt
           oxlint
+          vtsls
           ;
+        eslint = pkgs-unstable.eslint.overrideAttrs (old: {
+          meta = (old.meta or {}) // {mainProgram = "eslint";};
+        });
+        prettier = pkgs-unstable.prettier.overrideAttrs (old: {
+          meta = (old.meta or {}) // {mainProgram = "prettier";};
+        });
+        oxfmt = pkgs-unstable.oxfmt.overrideAttrs (old: {
+          meta = (old.meta or {}) // {mainProgram = "oxfmt";};
+        });
+        biome = pkgs-unstable.biome.overrideAttrs (old: {
+          meta = (old.meta or {}) // {mainProgram = "biome";};
+        });
       }
+
     )
   ]
