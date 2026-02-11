@@ -78,7 +78,8 @@
       };
       extraLuaAfter = ''
         local function set_indent_highlights()
-          vim.api.nvim_set_hl(0, "SnacksIndent", { fg = "#313244" })
+          local palette = require("catppuccin.palettes").get_palette()
+          vim.api.nvim_set_hl(0, "SnacksIndent", { fg = palette.surface0 })
         end
         set_indent_highlights()
         vim.api.nvim_create_autocmd("ColorScheme", {
