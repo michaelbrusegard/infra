@@ -29,7 +29,7 @@
               pcall(vim.treesitter.start, args.buf)
               local ok, query = pcall(vim.treesitter.query.get, lang, "indents")
               if ok and query then
-                vim.bo[args.buf].indentexpr = "v:lua.vim.treesitter.indentexpr()"
+                vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
               end
               ok, query = pcall(vim.treesitter.query.get, lang, "folds")
               if ok and query then
