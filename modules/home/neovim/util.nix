@@ -36,16 +36,6 @@
         notifier = {enabled = true;};
         picker = {
           enabled = true;
-          win = {
-            input = {
-              keys = lib.generators.mkLuaInline ''
-                {
-                  ["<a-c>"] = { "toggle_cwd", mode = { "n", "i" } },
-                  ["<a-t>"] = { "trouble_open", mode = { "n", "i" } },
-                }
-              '';
-            };
-          };
           actions = {
             toggle_cwd = lib.generators.mkLuaInline ''
               function(p)
@@ -86,6 +76,15 @@
         statuscolumn = {enabled = true;};
         words = {enabled = true;};
       };
+      extraLuaAfter = ''
+        local function set_indent_highlights()
+          vim.api.nvim_set_hl(0, "SnacksIndent", { fg = "#313244" })
+        end
+        set_indent_highlights()
+        vim.api.nvim_create_autocmd("ColorScheme", {
+          callback = set_indent_highlights,
+        })
+      '';
       keymaps = [
         {
           key = "<leader>.";
