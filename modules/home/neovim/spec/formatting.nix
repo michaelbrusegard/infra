@@ -9,9 +9,6 @@
   inherit (lib.generators) mkLuaInline;
   formatterSubmodule = types.submodule {
     options = {
-      command = mkOption {
-        type = types.str;
-      };
       args = mkOption {
         type = types.listOf types.str;
         default = [];
@@ -66,7 +63,7 @@ in {
             // (lib.mapAttrs' (name: f:
               lib.nameValuePair (getFormatterName ft name) (
                 {
-                  command = f.command;
+                  command = lib.getExe f.package;
                   args = f.args;
                 }
                 // (
@@ -114,10 +111,5 @@ in {
         formatters = formattersTable;
       };
     };
-    programs.neovim.extraPackages = lib.pipe cfg.filetypes [
-      (lib.mapAttrsToList (_: formatters: lib.mapAttrsToList (_: f: f.package) formatters))
-      lib.flatten
-      lib.unique
-    ];
   };
 }

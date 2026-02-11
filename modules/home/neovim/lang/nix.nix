@@ -13,7 +13,6 @@
 
     formatting.filetypes.nix = {
       alejandra = {
-        command = "${pkgs.alejandra}/bin/alejandra";
         package = pkgs.alejandra;
       };
     };
