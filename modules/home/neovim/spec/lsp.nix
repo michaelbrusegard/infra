@@ -47,7 +47,7 @@ in {
         package = pkgs.vimPlugins.nvim-lspconfig;
         event = ["BufReadPre" "BufNewFile"];
         extraLuaAfter = ''
-          do
+          vim.schedule(function()
             ${lib.concatStrings (lib.mapAttrsToList (name: server: ''
               do
                 local run = true
@@ -71,7 +71,7 @@ in {
               end
             '')
             cfg.servers)}
-          end
+          end)
         '';
       };
 
