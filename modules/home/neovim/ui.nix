@@ -151,6 +151,7 @@
             modified_sign = "",
             readonly_icon = " 󰌾 ",
             length = 3,
+            scope = "full",
           }, opts or {})
           return function(self)
             local path = vim.fn.expand("%:p")
@@ -181,6 +182,12 @@
             local readonly = ""
             if vim.bo.readonly then
               readonly = opts.readonly_icon
+            end
+            if opts.scope == "dir" then
+              return dir
+            end
+            if opts.scope == "filename" then
+              return filename .. readonly
             end
             return dir .. filename .. readonly
           end
@@ -222,7 +229,8 @@
             (lib.generators.mkLuaInline ''{ function() return vim.fn.fnamemodify(vim.fn.getcwd(), ':t') end, color = { gui = "bold" } }'')
             (lib.generators.mkLuaInline ''{ "diagnostics", symbols = { error = " ", warn = " ", info = " ", hint = " " } }'')
             (lib.generators.mkLuaInline ''{ "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } }'')
-            (lib.generators.mkLuaInline ''{ pretty_path(), color = { gui = "bold" } }'')
+            (lib.generators.mkLuaInline ''{ pretty_path({ scope = "dir" }), padding = { left = 1, right = 0 }, separator = "" }'')
+            (lib.generators.mkLuaInline ''{ pretty_path({ scope = "filename" }), color = { gui = "bold" }, padding = { left = 0, right = 1 } }'')
             (lib.generators.mkLuaInline ''{ "navic", color_correction = "dynamic" }'')
             (lib.generators.mkLuaInline ''{ function() local s = get_trouble_symbols() return s and s.get() or "" end, cond = function() local s = get_trouble_symbols() return s and s.has() or false end }'')
           ];
