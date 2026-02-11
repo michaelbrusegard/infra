@@ -13,10 +13,10 @@ _: {
     ./treesitter.nix
     ./lsp.nix
     ./opencode.nix
+    ./formatting.nix
     ./test.nix
     ./lang/nix.nix
 
-    # ./formatting.nix
     # ./linting.nix
     # ./dap.nix
   ];

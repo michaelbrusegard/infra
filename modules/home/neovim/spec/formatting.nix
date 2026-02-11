@@ -5,74 +5,119 @@
   ...
 }: let
   cfg = config.programs.neovim.spec.formatting;
+  inherit (lib) mkOption types mkIf;
+  inherit (lib.generators) mkLuaInline;
+  formatterSubmodule = types.submodule {
+    options = {
+      command = mkOption {
+        type = types.str;
+      };
+      args = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+      package = mkOption {
+        type = types.package;
+      };
+      requiredFiles = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+    };
+  };
 in {
   options.programs.neovim.spec.formatting = {
-    enable = lib.mkEnableOption "conform.nvim formatting";
-
-    formattersByFt = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+    filetypes = mkOption {
+      type = types.attrsOf (types.attrsOf formatterSubmodule);
       default = {};
-      description = "Mapping of filetypes to formatters";
     };
-
-    formatters = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.submodule {
+    keymaps = mkOption {
+      type = types.listOf (types.submodule {
         options = {
-          command = lib.mkOption {
-            type = lib.types.str;
+          key = mkOption {type = types.str;};
+          action = mkOption {type = types.str;};
+          mode = mkOption {
+            type = types.listOf types.str;
+            default = ["n"];
           };
-          args = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [];
-          };
-          package = lib.mkOption {
-            type = lib.types.nullOr lib.types.package;
-            default = null;
+          desc = mkOption {type = types.str;};
+          lua = mkOption {
+            type = types.bool;
+            default = false;
           };
         };
       });
-      default = {};
-      description = "Custom formatter definitions";
-    };
-
-    formatOnSave = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Whether to enable format on save";
+      default = [];
     };
   };
-
-  config = lib.mkIf cfg.enable {
+  config = mkIf (cfg.filetypes != {}) {
     programs.neovim.spec.plugins.conform-nvim = {
       package = pkgs.vimPlugins.conform-nvim;
       event = ["BufWritePre"];
-      cmd = ["ConformInfo"];
+      command = ["ConformInfo"];
+      keymaps = cfg.keymaps;
+      setupModule = "conform";
+      setupOpts = let
+        getFormatterName = ft: name: "${ft}_${name}";
+        formattersTable =
+          lib.foldlAttrs
+          (acc: ft: formatters:
+            acc
+            // (lib.mapAttrs' (name: f:
+              lib.nameValuePair (getFormatterName ft name) (
+                {
+                  command = f.command;
+                  args = f.args;
+                }
+                // (
+                  if f.requiredFiles != []
+                  then {
+                    cwd = mkLuaInline ''
+                      require("conform.util").root_file({ ${lib.concatMapStringsSep ", " (s: "'${s}'") f.requiredFiles} })
+                    '';
+                    require_cwd = true;
+                  }
+                  else {}
+                )
+              ))
+            formatters))
+          {
+            injected = {options = {ignore_errors = true;};};
+          }
+          cfg.filetypes;
+        formattersByFt = lib.mapAttrs (ft: formatters: let
+          sorted =
+            lib.sort (a: b:
+              (a.value.requiredFiles != []) && (b.value.requiredFiles == []))
+            (lib.mapAttrsToList (name: value: {
+                inherit name value;
+              })
+              formatters);
+          names = map (i: getFormatterName ft i.name) sorted;
+        in
+          if builtins.length names > 1
+          then mkLuaInline "{ ${lib.concatMapStringsSep ", " (n: "'${n}'") names}, stop_after_first = true }"
+          else names)
+        cfg.filetypes;
+      in {
+        formatters_by_ft = formattersByFt;
+        default_format_opts = {
+          timeout_ms = 3000;
+          async = false;
+          quiet = false;
+          lsp_format = "fallback";
+        };
+        format_on_save = {
+          timeout_ms = 500;
+          lsp_format = "fallback";
+        };
+        formatters = formattersTable;
+      };
     };
-
-    # Automatically add required formatter packages to Neovim
-    programs.neovim.extraPackages = lib.pipe cfg.formatters [
-      (lib.filterAttrs (_: f: f.package != null))
-      (lib.mapAttrsToList (_: f: f.package))
+    programs.neovim.extraPackages = lib.pipe cfg.filetypes [
+      (lib.mapAttrsToList (_: formatters: lib.mapAttrsToList (_: f: f.package) formatters))
+      lib.flatten
       lib.unique
     ];
-
-    programs.neovim.extraLuaConfig = lib.mkOrder 500 ''
-      require("conform").setup({
-        formatters_by_ft = ${lib.generators.toLua {} cfg.formattersByFt},
-        format_on_save = ${
-        if cfg.formatOnSave
-        then ''
-          function(bufnr)
-            return { timeout_ms = 500, lsp_fallback = true }
-          end''
-        else "nil"
-      },
-        formatters = ${lib.generators.toLua {} (lib.mapAttrs (name: f: {
-          command = f.command;
-          args = f.args;
-        })
-        cfg.formatters)},
-      })
-    '';
   };
 }

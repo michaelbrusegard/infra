@@ -8,5 +8,6 @@ _: {
     ./treesitter.nix
     ./lsp.nix
     ./diagnostics.nix
+    ./formatting.nix
   ];
 }
