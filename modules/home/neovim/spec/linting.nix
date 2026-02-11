@@ -43,7 +43,7 @@ in {
       lib.unique
     ];
 
-    programs.neovim.spec.plugins.nvim-lint = {
+    programs.neovim.spec.plugins."nvim-lint" = {
       package = pkgs.vimPlugins.nvim-lint;
       event = ["BufReadPost" "BufWritePost" "InsertLeave"];
 
@@ -60,12 +60,12 @@ in {
                 inherit ft name;
                 uniqueName = getLinterName ft name;
                 config = {
+                  inherit (linter) args;
                   base = name;
                   cmd =
                     if linter.package != null
                     then lib.getExe linter.package
                     else null;
-                  args = linter.args;
                   condition =
                     if linter.requiredFiles != []
                     then

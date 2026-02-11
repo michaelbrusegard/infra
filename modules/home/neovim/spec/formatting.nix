@@ -49,11 +49,11 @@ in {
   };
   config = mkIf (cfg.filetypes != {}) {
     programs.neovim = {
-      spec.plugins.conform-nvim = {
+      spec.plugins."conform-nvim" = {
+        inherit (cfg) keymaps;
         package = pkgs.vimPlugins.conform-nvim;
         event = ["BufWritePre"];
         command = ["ConformInfo"];
-        keymaps = cfg.keymaps;
         setupModule = "conform";
         setupOpts = let
           getFormatterName = ft: name: "${ft}_${name}";
@@ -115,7 +115,7 @@ in {
 
       extraPackages = lib.pipe cfg.filetypes [
         (lib.mapAttrsToList (_: formatters:
-          lib.mapAttrsToList (_: f: f.package) formatters))
+            lib.mapAttrsToList (_: f: f.package) formatters))
         lib.flatten
         lib.unique
       ];
@@ -123,14 +123,6 @@ in {
       extraLuaConfig = lib.mkOrder 500 ''
         vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
       '';
-    };
-  };
-        format_on_save = {
-          timeout_ms = 500;
-          lsp_format = "fallback";
-        };
-        formatters = formattersTable;
-      };
     };
   };
 }
