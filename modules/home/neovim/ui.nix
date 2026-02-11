@@ -185,6 +185,22 @@
             return dir .. filename .. readonly
           end
         end
+
+        local trouble_symbols = nil
+        local function get_trouble_symbols()
+          if trouble_symbols then return trouble_symbols end
+          if package.loaded["trouble"] then
+             trouble_symbols = require("trouble").statusline({
+               mode = "symbols",
+               groups = {},
+               title = false,
+               filter = { range = true },
+               format = "{kind_icon}{symbol.name:Normal}",
+               hl_group = "lualine_c_normal",
+             })
+          end
+          return trouble_symbols
+        end
       '';
       setupOpts = {
         options = {
@@ -208,7 +224,7 @@
             (lib.generators.mkLuaInline ''{ "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } }'')
             (lib.generators.mkLuaInline ''{ pretty_path(), color = { gui = "bold" } }'')
             (lib.generators.mkLuaInline ''{ "navic", color_correction = "dynamic" }'')
-            (lib.generators.mkLuaInline ''{ function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal}', hl_group = 'lualine_c_normal'}).get() or "" end, cond = function() return package.loaded['trouble'] and require('trouble').statusline({mode = 'symbols', groups = {}, title = false, filter = { range = true }, format = '{kind_icon}{symbol.name:Normal}', hl_group = 'lualine_c_normal'}).has() or false end }'')
+            (lib.generators.mkLuaInline ''{ function() local s = get_trouble_symbols() return s and s.get() or "" end, cond = function() local s = get_trouble_symbols() return s and s.has() or false end }'')
           ];
           lualine_x = [
             (lib.generators.mkLuaInline ''package.loaded['snacks'] and require('snacks').profiler.status()'')
