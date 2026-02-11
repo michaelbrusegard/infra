@@ -7,14 +7,11 @@
 
     lsp.servers.ty.package = pkgs.ty;
 
-    linting.filetypes.python.ruff = {
-      package = pkgs.ruff;
-      args = ["check" "--output-format=text" "--stdin-filename" "$FILENAME" "-"];
-    };
+    linting.filetypes.python.ruff.package = pkgs.ruff;
 
     formatting.filetypes.python.ruff = {
       package = pkgs.ruff;
-      args = ["format" "--stdin-filename" "$FILENAME" "-"];
+      args = ["format" "-"];
     };
   };
 }
