@@ -35,6 +35,9 @@ in
           neovim
           vimPlugins
           opencode
+          ruff
+          uv
+          ty
           oxfmt
           oxlint
           ;
