@@ -48,62 +48,83 @@ in {
     };
   };
   config = mkIf (cfg.filetypes != {}) {
-    programs.neovim.spec.plugins.conform-nvim = {
-      package = pkgs.vimPlugins.conform-nvim;
-      event = ["BufWritePre"];
-      command = ["ConformInfo"];
-      keymaps = cfg.keymaps;
-      setupModule = "conform";
-      setupOpts = let
-        getFormatterName = ft: name: "${ft}_${name}";
-        formattersTable =
-          lib.foldlAttrs
-          (acc: ft: formatters:
-            acc
-            // (lib.mapAttrs' (name: f:
-              lib.nameValuePair (getFormatterName ft name) (
-                {
-                  command = lib.getExe f.package;
-                  args = f.args;
-                }
-                // (
-                  if f.requiredFiles != []
-                  then {
-                    cwd = mkLuaInline ''
-                      require("conform.util").root_file({ ${lib.concatMapStringsSep ", " (s: "'${s}'") f.requiredFiles} })
-                    '';
-                    require_cwd = true;
+    programs.neovim = {
+      spec.plugins.conform-nvim = {
+        package = pkgs.vimPlugins.conform-nvim;
+        event = ["BufWritePre"];
+        command = ["ConformInfo"];
+        keymaps = cfg.keymaps;
+        setupModule = "conform";
+        setupOpts = let
+          getFormatterName = ft: name: "${ft}_${name}";
+          formattersTable =
+            lib.foldlAttrs
+            (acc: ft: formatters:
+              acc
+              // (lib.mapAttrs' (name: f:
+                lib.nameValuePair (getFormatterName ft name) (
+                  {
+                    inherit (f) args;
+                    command = lib.getExe f.package;
                   }
-                  else {}
-                )
-              ))
-            formatters))
-          {
-            injected = {options = {ignore_errors = true;};};
-          }
+                  // (
+                    if f.requiredFiles != []
+                    then {
+                      cwd = mkLuaInline ''
+                        require("conform.util").root_file({ ${lib.concatMapStringsSep ", " (s: "'${s}'") f.requiredFiles} })
+                      '';
+                      require_cwd = true;
+                    }
+                    else {}
+                  )
+                ))
+              formatters))
+            {
+              injected = {options = {ignore_errors = true;};};
+            }
+            cfg.filetypes;
+          formattersByFt = lib.mapAttrs (ft: formatters: let
+            sorted =
+              lib.sort (a: b:
+                (a.value.requiredFiles != []) && (b.value.requiredFiles == []))
+              (lib.mapAttrsToList (name: value: {
+                  inherit name value;
+                })
+                formatters);
+            names = map (i: getFormatterName ft i.name) sorted;
+          in
+            if builtins.length names > 1
+            then mkLuaInline "{ ${lib.concatMapStringsSep ", " (n: "'${n}'") names}, stop_after_first = true }"
+            else names)
           cfg.filetypes;
-        formattersByFt = lib.mapAttrs (ft: formatters: let
-          sorted =
-            lib.sort (a: b:
-              (a.value.requiredFiles != []) && (b.value.requiredFiles == []))
-            (lib.mapAttrsToList (name: value: {
-                inherit name value;
-              })
-              formatters);
-          names = map (i: getFormatterName ft i.name) sorted;
-        in
-          if builtins.length names > 1
-          then mkLuaInline "{ ${lib.concatMapStringsSep ", " (n: "'${n}'") names}, stop_after_first = true }"
-          else names)
-        cfg.filetypes;
-      in {
-        formatters_by_ft = formattersByFt;
-        default_format_opts = {
-          timeout_ms = 3000;
-          async = false;
-          quiet = false;
-          lsp_format = "fallback";
+        in {
+          formatters_by_ft = formattersByFt;
+          default_format_opts = {
+            timeout_ms = 3000;
+            async = false;
+            quiet = false;
+            lsp_format = "fallback";
+          };
+          format_on_save = {
+            timeout_ms = 500;
+            lsp_format = "fallback";
+          };
+          formatters = formattersTable;
         };
+      };
+
+      extraPackages = lib.pipe cfg.filetypes [
+        (lib.mapAttrsToList (_: formatters:
+          lib.mapAttrsToList (_: f: f.package) formatters))
+        lib.flatten
+        lib.unique
+      ];
+
+      extraLuaConfig = lib.mkOrder 500 ''
+        vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
+      '';
+    };
+  };
         format_on_save = {
           timeout_ms = 500;
           lsp_format = "fallback";

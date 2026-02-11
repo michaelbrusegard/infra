@@ -14,7 +14,7 @@
           };
         };
         custom_highlights = {
-          SnacksIndent = {link = "NonText";};
+          SnacksIndent = { link = "NonText"; };
         };
         integrations = {
           alpha = false;

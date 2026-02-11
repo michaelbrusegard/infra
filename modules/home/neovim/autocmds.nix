@@ -1,4 +1,4 @@
-{...}: {
+_: {
   programs.neovim.spec = {
     augroups = [
       {name = "Checktime";}

@@ -72,8 +72,7 @@ in {
       package = pkgs.vimPlugins.nvim-treesitter.withPlugins (_: cfg.grammars);
       setupModule = "nvim-treesitter";
       event = ["BufReadPre" "BufNewFile"];
-      augroups = cfg.augroups;
-      autocmds = cfg.autocmds;
+      inherit (cfg) augroups autocmds;
       setupOpts =
         {
           ensure_installed = [];

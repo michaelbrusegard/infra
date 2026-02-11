@@ -169,10 +169,8 @@
       then mkLuaInline k.action
       else k.action;
     opts = {
-      inherit (k) silent nowait expr;
-      desc = k.desc;
+      inherit (k) silent nowait expr desc buffer;
       remap = !k.noremap;
-      buffer = k.buffer;
     };
   in "vim.keymap.set(${genLua k.mode}, ${genLua k.key}, ${toLua {} actionVal}, ${toLua {} opts})";
 
