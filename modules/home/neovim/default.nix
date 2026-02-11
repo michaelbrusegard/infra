@@ -16,6 +16,7 @@ _: {
     ./formatting.nix
     ./test.nix
     ./lang/nix.nix
+    ./lang/python.nix
 
     # ./dap.nix
   ];
