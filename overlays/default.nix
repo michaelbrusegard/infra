@@ -35,6 +35,8 @@ in
           neovim
           vimPlugins
           opencode
+          oxfmt
+          oxlint
           ;
       }
     )
