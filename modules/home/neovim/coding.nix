@@ -193,7 +193,7 @@
       setupModule = "yanky";
       setupOpts = {
         system_clipboard = {
-          sync_with_ring = true;
+          sync_with_ring = lib.generators.mkLuaInline "not vim.env.SSH_CONNECTION";
         };
         highlight = {timer = 150;};
       };
