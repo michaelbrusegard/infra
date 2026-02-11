@@ -68,7 +68,7 @@ in {
   config = {
     programs.neovim.extraPackages = [pkgs.tree-sitter];
 
-    programs.neovim.spec.plugins.nvim-treesitter = {
+    programs.neovim.spec.plugins."nvim-treesitter" = {
       package = pkgs.vimPlugins.nvim-treesitter.withPlugins (_: cfg.grammars);
       setupModule = "nvim-treesitter";
       event = ["BufReadPre" "BufNewFile"];
