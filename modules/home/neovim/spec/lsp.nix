@@ -83,6 +83,17 @@ in {
     programs.neovim.extraLuaConfig = lib.mkOrder 400 ''
       do
         local capabilities = vim.lsp.protocol.make_client_capabilities()
+        capabilities.workspace = {
+            fileOperations = {
+                didRename = true,
+                willRename = true,
+            },
+        }
+        capabilities.textDocument.foldingRange = {
+            dynamicRegistration = false,
+            lineFoldingOnly = true,
+        }
+
         local has_blink, blink = pcall(require, "blink.cmp")
         if has_blink then
           capabilities = blink.get_lsp_capabilities(capabilities)
