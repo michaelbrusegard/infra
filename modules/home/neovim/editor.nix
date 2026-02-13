@@ -149,7 +149,7 @@
       '';
     };
 
-    "codediff" = {
+    "codediff.nvim" = {
       package = pkgs.vimPlugins.codediff-nvim;
       command = ["CodeDiff"];
       setupModule = "codediff";

@@ -44,11 +44,11 @@
 
         merge = {
           conflictstyle = "diff3";
-          tool = "nvimdiff";
+          tool = "codediff";
         };
 
-        "mergetool \"nvimdiff\"" = {
-          cmd = "nvim -c 'DiffviewOpen -uno'";
+        "mergetool \"codediff\"" = {
+          cmd = "nvim \"$MERGED\" -c \"CodeDiff merge \\\"$MERGED\\\"\"";
         };
 
         mergetool.prompt = false;

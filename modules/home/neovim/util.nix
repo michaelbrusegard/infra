@@ -4,6 +4,14 @@
   ...
 }: {
   programs.neovim.spec.plugins = {
+    "plenary.nvim" = {
+      package = pkgs.vimPlugins.plenary-nvim;
+    };
+
+    "nui.nvim" = {
+      package = pkgs.vimPlugins.nui-nvim;
+    };
+
     "snacks.nvim" = {
       package = pkgs.vimPlugins.snacks-nvim;
       setupModule = "snacks";
