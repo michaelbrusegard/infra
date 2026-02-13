@@ -26,6 +26,8 @@ _: {
     ./lang/markdown.nix
     ./lang/web.nix
     ./lang/git.nix
+    ./lang/docker.nix
+    ./lang/tailwind.nix
 
     # ./test.nix
     # ./dap.nix
