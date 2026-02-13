@@ -52,13 +52,6 @@
         regex
         vim
         vimdoc
-        json
-        toml
-        xml
-        yaml
-        html
-        markdown
-        markdown-inline
       ];
     };
 

@@ -381,7 +381,7 @@
       '';
     };
 
-    gitsigns = {
+    "gitsigns.nvim" = {
       package = pkgs.vimPlugins.gitsigns-nvim;
       event = ["BufReadPost" "BufNewFile"];
       setupModule = "gitsigns";

@@ -188,7 +188,12 @@
   toLzNSpec = name: p: let
     setupCode =
       optionalString (p.setupModule != null)
-      ''require("${p.setupModule}").setup(${genLua p.setupOpts})'';
+      ''
+        local status, plugin = pcall(require, "${p.setupModule}")
+        if status and plugin.setup then
+          plugin.setup(${genLua p.setupOpts})
+        end
+      '';
 
     keymapsCode = concatStringsSep "\n      " (map toVimKeymap (filter (k: k.enable) p.keymaps));
 
