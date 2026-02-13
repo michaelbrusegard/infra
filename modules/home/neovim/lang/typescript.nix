@@ -25,7 +25,13 @@
   };
 
   jsTsLinters = {
-    oxlint.package = pkgs.oxlint;
+    oxlint = {
+      package = pkgs.oxlint;
+      requiredFiles = [
+        ".oxlintrc.json"
+        "oxlintrc.json"
+      ];
+    };
     biome = {
       package = pkgs.biome;
       requiredFiles = ["biome.json" "biome.jsonc"];
