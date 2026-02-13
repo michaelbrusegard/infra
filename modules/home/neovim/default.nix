@@ -14,6 +14,7 @@ _: {
     ./lsp.nix
     ./opencode.nix
     ./formatting.nix
+    ./linting.nix
     ./test.nix
     ./lang/nix.nix
     ./lang/python.nix
