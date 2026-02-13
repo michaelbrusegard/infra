@@ -229,9 +229,8 @@
         ${afterBody}
       end'';
 
-    specParts = filter (s: s != "") ([ (genLua name) ] ++ triggers ++ [ beforePart afterPart ]);
-  in
-    "{ ${concatStringsSep ", " specParts} }";
+    specParts = filter (s: s != "") ([(genLua name)] ++ triggers ++ [beforePart afterPart]);
+  in "{ ${concatStringsSep ", " specParts} }";
 
   allSpecsLua = concatStringsSep ",\n" (mapAttrsToList toLzNSpec cfg.plugins);
 

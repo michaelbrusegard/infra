@@ -74,7 +74,7 @@ in {
                   {
                     inherit (f) args;
                     command = lib.getExe f.package;
-                    }
+                  }
                   // (
                     if f.condition != null
                     then {
@@ -84,7 +84,6 @@ in {
                   )
                   // (
                     if f.requiredFiles != []
-
                     then {
                       cwd = mkLuaInline ''
                         require("conform.util").root_file({ ${lib.concatMapStringsSep ", " (s: "'${s}'") f.requiredFiles} })
