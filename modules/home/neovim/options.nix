@@ -103,6 +103,7 @@
       filetypes.extensions = {
         http = "http";
         gs = "javascript";
+        FCMacro = "python";
       };
     };
     extraLuaConfig = lib.mkOrder 100 ''
