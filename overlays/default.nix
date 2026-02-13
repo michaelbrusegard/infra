@@ -54,6 +54,5 @@ in
           meta = (old.meta or {}) // {mainProgram = "biome";};
         });
       }
-
     )
   ]
