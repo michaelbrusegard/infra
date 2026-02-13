@@ -12,14 +12,14 @@ _: {
     ./editor.nix
     ./treesitter.nix
     ./lsp.nix
-    ./opencode.nix
-    ./formatting.nix
     ./linting.nix
-    ./test.nix
+    ./formatting.nix
+    ./ai.nix
     ./lang/nix.nix
     ./lang/python.nix
     ./lang/typescript.nix
 
+    # ./test.nix
     # ./dap.nix
   ];
 
