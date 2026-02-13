@@ -24,7 +24,7 @@
       };
     };
   };
-  in {
+in {
   options.programs.neovim.spec.linting = {
     filetypes = mkOption {
       type = types.attrsOf (types.attrsOf linterSubmodule);
