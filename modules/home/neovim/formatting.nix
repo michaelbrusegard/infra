@@ -15,6 +15,11 @@
         desc = "Format Buffer";
         lua = true;
       }
+      {
+        key = "<leader>cfi";
+        action = "<cmd>ConformInfo<cr>";
+        desc = "Conform Info";
+      }
     ];
     filetypes = {
       sh = {
