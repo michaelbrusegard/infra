@@ -100,7 +100,6 @@ in {
                         end
                       ''
                     else null;
-
                 };
               })
               linters
