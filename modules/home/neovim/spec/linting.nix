@@ -215,18 +215,6 @@
           add_line("Linters for this buffer:", "LintInfoTitle")
           add_line("")
 
-          local active = {}
-          for _, name in ipairs(names) do
-            local linter = lint.linters[name]
-            local condition_passed = true
-            if linter and type(linter) == "table" and linter.condition then
-              condition_passed = linter.condition(ctx)
-            end
-            if condition_passed then
-              table.insert(active, name)
-            end
-          end
-
           local function get_linter_path(name)
             local linter = lint.linters[name]
             if linter and type(linter) == "table" and linter.cmd then
@@ -240,15 +228,29 @@
             return nil
           end
 
-          if #active > 0 then
-            for _, name in ipairs(active) do
-              local path = get_linter_path(name)
-              if path then
-                add_line(string.format("%s ready (%s) %s", name, vim.bo.filetype, path))
-              else
-                add_line(string.format("%s ready (%s)", name, vim.bo.filetype))
+          if #names > 0 then
+            for _, name in ipairs(names) do
+              local linter = lint.linters[name]
+              local condition_passed = true
+              if linter and type(linter) == "table" and linter.condition then
+                condition_passed = linter.condition(ctx)
               end
-                table.insert(highlights, { line = #lines - 1, col = #name + 1, end_col = #name + 6, hl = "LintInfoReady" })
+
+              local path = get_linter_path(name)
+              if condition_passed then
+                if path then
+                  local line_text = string.format("%s ready (%s) %s", name, vim.bo.filetype, path)
+                  add_line(line_text)
+                  table.insert(highlights, { line = #lines - 1, col = #name + 1, end_col = #name + 6, hl = "LintInfoReady" })
+                  table.insert(highlights, { line = #lines - 1, col = #line_text - #path, end_col = #line_text, hl = "LintInfoPath" })
+                else
+                  add_line(string.format("%s ready (%s)", name, vim.bo.filetype))
+                  table.insert(highlights, { line = #lines - 1, col = #name + 1, end_col = #name + 6, hl = "LintInfoReady" })
+                end
+              else
+                add_line(string.format("%s unavailable: Root directory not found", name))
+                table.insert(highlights, { line = #lines - 1, col = #name + 1, end_col = #name + 12, hl = "LintInfoUnavailable" })
+              end
             end
           else
             add_line("No linters configured for this buffer")
@@ -261,13 +263,27 @@
           for ft, ft_linters in pairs(lint.linters_by_ft) do
             if ft ~= vim.bo.filetype and ft ~= "_" and ft ~= "*" then
               for _, name in ipairs(ft_linters) do
-                local path = get_linter_path(name)
-                if path then
-                  add_line(string.format("%s ready (%s) %s", name, ft, path))
-                else
-                  add_line(string.format("%s ready (%s)", name, ft))
+                local linter = lint.linters[name]
+                local condition_passed = true
+                if linter and type(linter) == "table" and linter.condition then
+                  condition_passed = linter.condition(ctx)
                 end
-              table.insert(highlights, { line = #lines - 1, col = #name + 1, end_col = #name + 6, hl = "LintInfoReady" })
+
+                local path = get_linter_path(name)
+                if condition_passed then
+                  if path then
+                    local line_text = string.format("%s ready (%s) %s", name, ft, path)
+                    add_line(line_text)
+                    table.insert(highlights, { line = #lines - 1, col = #name + 1, end_col = #name + 6, hl = "LintInfoReady" })
+                    table.insert(highlights, { line = #lines - 1, col = #line_text - #path, end_col = #line_text, hl = "LintInfoPath" })
+                  else
+                    add_line(string.format("%s ready (%s)", name, ft))
+                    table.insert(highlights, { line = #lines - 1, col = #name + 1, end_col = #name + 6, hl = "LintInfoReady" })
+                  end
+                else
+                  add_line(string.format("%s unavailable: Root directory not found (%s)", name, ft))
+                  table.insert(highlights, { line = #lines - 1, col = #name + 1, end_col = #name + 12, hl = "LintInfoUnavailable" })
+                end
               end
             end
           end
@@ -278,16 +294,16 @@
           vim.bo[buf].buftype = "nofile"
           vim.bo[buf].filetype = "lintinfo"
 
-          -- Use colorscheme highlight groups
           local title_hl = vim.api.nvim_get_hl(0, { name = "Function", link = false })
           local ready_hl = vim.api.nvim_get_hl(0, { name = "String", link = false })
           local unavailable_hl = vim.api.nvim_get_hl(0, { name = "WarningMsg", link = false })
+          local path_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticInfo", link = false })
 
           vim.api.nvim_set_hl(0, "LintInfoTitle", { fg = title_hl.fg, bold = true })
           vim.api.nvim_set_hl(0, "LintInfoReady", { fg = ready_hl.fg, italic = true })
           vim.api.nvim_set_hl(0, "LintInfoUnavailable", { fg = unavailable_hl.fg, italic = true })
+          vim.api.nvim_set_hl(0, "LintInfoPath", { fg = path_hl.fg })
 
-          -- Apply highlights
           for _, h in ipairs(highlights) do
             if h.col then
               vim.api.nvim_buf_add_highlight(buf, ns, h.hl, h.line, h.col, h.end_col)
@@ -296,8 +312,8 @@
             end
           end
 
-          local width = math.max(100, vim.o.columns - 8)
-          local height = math.min(#lines + 4, vim.o.lines - 6)
+          local width = math.max(120, vim.o.columns - 8)
+          local height = math.min(vim.o.lines - 4, math.max(45, #lines + 4))
           for _, line in ipairs(lines) do
             width = math.max(width, #line + 8)
           end
