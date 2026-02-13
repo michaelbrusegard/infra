@@ -197,13 +197,14 @@
     autocmdsCode = concatStringsSep "\n      " (map toAutocmd p.autocmds);
 
     afterBody = concatStringsSep "\n      " (filter (s: s != "") [
-      p.extraLuaBefore
       augroupsCode
       setupCode
       keymapsCode
       autocmdsCode
       p.extraLuaAfter
     ]);
+
+    beforeBody = p.extraLuaBefore;
 
     triggers = filter (s: s != "") [
       (optionalString (p.event != []) "event = ${genLua p.event}")
@@ -213,12 +214,19 @@
       (let ks = filter (k: k.enable) p.keymaps; in optionalString (ks != []) "keys = { ${concatStringsSep ", " (map toLzNKeymap ks)} }")
     ];
 
+    beforePart = optionalString (beforeBody != "") ''
+      before = function()
+        ${beforeBody}
+      end'';
+
     afterPart = optionalString (afterBody != "") ''
       after = function()
         ${afterBody}
-      end,'';
-  in ''
-    { "${name}", ${concatStringsSep ", " triggers}${optionalString (triggers != [] && afterBody != "") ", "}${afterPart} }'';
+      end'';
+
+    specParts = filter (s: s != "") ([ (genLua name) ] ++ triggers ++ [ beforePart afterPart ]);
+  in
+    "{ ${concatStringsSep ", " specParts} }";
 
   allSpecsLua = concatStringsSep ",\n" (mapAttrsToList toLzNSpec cfg.plugins);
 

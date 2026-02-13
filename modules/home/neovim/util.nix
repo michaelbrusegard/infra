@@ -9,7 +9,7 @@
       setupModule = "snacks";
       event = ["VimEnter"];
       extraLuaBefore = ''
-        local function term_nav(dir)
+        function term_nav(dir)
           return function(self)
             return self:is_floating() and "<c-" .. dir .. ">" or vim.schedule(function()
               vim.cmd.wincmd(dir)
