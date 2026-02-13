@@ -4,13 +4,13 @@
   ...
 }: {
   programs.neovim.spec.plugins = {
-    "ts-comments" = {
+    "ts-comments.nvim" = {
       package = pkgs.vimPlugins.ts-comments-nvim;
       event = ["BufReadPost" "BufNewFile"];
       setupModule = "ts-comments";
     };
 
-    "mini-pairs" = {
+    "mini.pairs" = {
       package = pkgs.vimPlugins.mini-pairs;
       event = ["InsertEnter"];
       setupModule = "mini.pairs";
@@ -61,7 +61,7 @@
       '';
     };
 
-    "mini-ai" = {
+    "mini.ai" = {
       package = pkgs.vimPlugins.mini-ai;
       event = ["BufReadPost" "BufNewFile"];
       setupModule = "mini.ai";
@@ -158,7 +158,7 @@
       '';
     };
 
-    "mini-surround" = {
+    "mini.surround" = {
       package = pkgs.vimPlugins.mini-surround;
       event = ["BufReadPost" "BufNewFile"];
       setupModule = "mini.surround";
@@ -187,7 +187,7 @@
       '';
     };
 
-    "yanky" = {
+    "yanky.nvim" = {
       package = pkgs.vimPlugins.yanky-nvim;
       event = ["BufReadPost" "BufNewFile"];
       setupModule = "yanky";

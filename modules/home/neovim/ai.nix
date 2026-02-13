@@ -5,7 +5,7 @@
       cmd = "${pkgs.opencode}/bin/opencode --port";
     };
     plugins = {
-      "opencode" = {
+      "opencode.nvim" = {
         package = pkgs.vimPlugins.opencode-nvim;
         keymaps = [
           {

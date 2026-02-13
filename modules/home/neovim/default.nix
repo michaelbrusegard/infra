@@ -19,6 +19,12 @@ _: {
     ./lang/python.nix
     ./lang/typescript.nix
     ./lang/rust.nix
+    ./lang/json.nix
+    ./lang/toml.nix
+    ./lang/yaml.nix
+    ./lang/markdown.nix
+    ./lang/web.nix
+    ./lang/git.nix
 
     # ./test.nix
     # ./dap.nix

@@ -22,6 +22,10 @@
         type = types.listOf types.str;
         default = [];
       };
+      condition = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
     };
   };
 in {
@@ -86,7 +90,9 @@ in {
                     then lib.getExe linter.package
                     else null;
                   condition =
-                    if linter.requiredFiles != []
+                    if linter.condition != null
+                    then mkLuaInline linter.condition
+                    else if linter.requiredFiles != []
                     then
                       mkLuaInline ''
                         function(ctx)
@@ -94,6 +100,7 @@ in {
                         end
                       ''
                     else null;
+
                 };
               })
               linters

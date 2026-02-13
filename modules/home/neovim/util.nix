@@ -4,7 +4,7 @@
   ...
 }: {
   programs.neovim.spec.plugins = {
-    "snacks" = {
+    "snacks.nvim" = {
       package = pkgs.vimPlugins.snacks-nvim;
       setupModule = "snacks";
       event = ["VimEnter"];
@@ -526,7 +526,7 @@
       ];
     };
 
-    "mini-hipatterns" = {
+    "mini.hipatterns" = {
       package = pkgs.vimPlugins.mini-hipatterns;
       event = ["BufReadPost" "BufNewFile"];
       extraLuaAfter = ''

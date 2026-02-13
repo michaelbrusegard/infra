@@ -1,6 +1,9 @@
 {pkgs, ...}: let
   jsTsFormatters = {
-    oxfmt.package = pkgs.oxfmt;
+    oxfmt = {
+      package = pkgs.oxfmt;
+      args = ["--stdin-filepath" "$FILENAME"];
+    };
     biome = {
       package = pkgs.biome;
       requiredFiles = ["biome.json" "biome.jsonc"];

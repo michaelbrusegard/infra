@@ -66,10 +66,15 @@
       severity_sort = true;
     };
     plugins = {
-      "live-rename" = {
+      "live-rename.nvim" = {
         package = pkgs.vimPlugins.live-rename-nvim;
         event = ["LspAttach"];
         setupModule = "live-rename";
+      };
+      "SchemaStore.nvim" = {
+        package = pkgs.vimPlugins.SchemaStore-nvim;
+        setupModule = "schemastore";
+        setupOpts = {};
       };
     };
   };

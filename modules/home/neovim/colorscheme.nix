@@ -1,6 +1,6 @@
 {pkgs, ...}: {
   programs.neovim.spec.plugins = {
-    "catppuccin" = {
+    "catppuccin.nvim" = {
       package = pkgs.vimPlugins.catppuccin-nvim;
       event = ["UIEnter"];
       setupModule = "catppuccin";

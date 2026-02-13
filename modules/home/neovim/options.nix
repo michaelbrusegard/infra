@@ -104,6 +104,7 @@
         http = "http";
         gs = "javascript";
         FCMacro = "python";
+        markdown = "markdown.mdx";
       };
     };
     extraLuaConfig = lib.mkOrder 100 ''
