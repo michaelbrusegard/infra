@@ -18,6 +18,7 @@ _: {
     ./lang/nix.nix
     ./lang/python.nix
     ./lang/typescript.nix
+    ./lang/rust.nix
 
     # ./test.nix
     # ./dap.nix

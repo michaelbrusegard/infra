@@ -142,7 +142,7 @@
       event = ["UIEnter"];
       setupModule = "lualine";
       extraLuaBefore = ''
-        local function pretty_path(opts)
+        function pretty_path(opts)
           opts = vim.tbl_extend("force", {
             relative = "cwd",
             modified_hl = "MatchParen",
@@ -194,7 +194,7 @@
         end
 
         local trouble_symbols = nil
-        local function get_trouble_symbols()
+        function get_trouble_symbols()
           if trouble_symbols then return trouble_symbols end
           if package.loaded["trouble"] then
              trouble_symbols = require("trouble").statusline({
