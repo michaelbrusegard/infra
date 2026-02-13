@@ -49,12 +49,16 @@ in {
   };
   config = mkIf (cfg.filetypes != {}) {
     programs.neovim = {
-      spec.plugins."conform-nvim" = {
+      spec.plugins."conform" = {
         inherit (cfg) keymaps;
         package = pkgs.vimPlugins.conform-nvim;
-        event = ["BufWritePre"];
+        event = ["BufReadPre" "BufNewFile"];
         command = ["ConformInfo"];
         setupModule = "conform";
+        extraLuaAfter = ''
+          vim.api.nvim_create_user_command("ConformInfo", function()
+            require("conform.health").show_window()
+          end, { desc = "Show conform.nvim info" })'';
         setupOpts = let
           getFormatterName = ft: name: "${ft}_${name}";
           formattersTable =
