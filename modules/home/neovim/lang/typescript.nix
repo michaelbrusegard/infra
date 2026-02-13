@@ -72,6 +72,7 @@ in {
       typescript
       tsx
       javascript
+      jsdoc
     ];
 
     lsp.servers.vtsls = {
