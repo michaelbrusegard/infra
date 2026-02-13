@@ -57,10 +57,6 @@
         xml
         yaml
         html
-        javascript
-        jsdoc
-        typescript
-        tsx
         markdown
         markdown-inline
       ];
