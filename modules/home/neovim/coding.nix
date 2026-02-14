@@ -63,7 +63,7 @@
 
     "mini.ai" = {
       package = pkgs.vimPlugins.mini-ai;
-      event = ["BufReadPost" "BufNewFile"];
+      after = "nvim-treesitter";
       setupModule = "mini.ai";
       setupOpts = {
         n_lines = 500;
@@ -160,7 +160,7 @@
 
     "mini.surround" = {
       package = pkgs.vimPlugins.mini-surround;
-      event = ["BufReadPost" "BufNewFile"];
+      after = "nvim-treesitter";
       setupModule = "mini.surround";
       setupOpts = {
         mappings = {
@@ -421,7 +421,7 @@
 
     "friendly-snippets" = {
       package = pkgs.vimPlugins.friendly-snippets;
-      event = ["InsertEnter"];
+      after = "blink-cmp";
     };
   };
 }

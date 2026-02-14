@@ -58,7 +58,7 @@
     plugins = {
       "nvim-ts-autotag" = {
         package = pkgs.vimPlugins.nvim-ts-autotag;
-        event = ["InsertEnter"];
+        after = "nvim-treesitter";
         setupModule = "nvim-ts-autotag";
         setupOpts = {
           opts = {
@@ -71,7 +71,7 @@
 
       "nvim-treesitter-textobjects" = {
         package = pkgs.vimPlugins.nvim-treesitter-textobjects;
-        event = ["BufReadPost" "BufNewFile"];
+        after = "nvim-treesitter";
         setupModule = "nvim-treesitter-textobjects";
         setupOpts = {
           select = {

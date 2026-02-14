@@ -21,6 +21,7 @@
         package = pkgs.vimPlugins.nvim-dap-python;
         setupModule = "dap-python";
         setupOpts = "${pkgs.python3Packages.debugpy}/bin/debugpy-adapter";
+        after = "nvim-dap";
         filetype = ["python"];
         keymaps = [
           {
@@ -42,6 +43,7 @@
 
       "neotest-python" = {
         package = pkgs.vimPlugins.neotest-python;
+        after = "neotest";
       };
     };
   };
