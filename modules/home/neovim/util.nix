@@ -12,6 +12,10 @@
       package = pkgs.vimPlugins.nui-nvim;
     };
 
+    "nvim-nio" = {
+      package = pkgs.vimPlugins.nvim-nio;
+    };
+
     "snacks.nvim" = {
       package = pkgs.vimPlugins.snacks-nvim;
       setupModule = "snacks";

@@ -10,5 +10,7 @@ _: {
     ./diagnostics.nix
     ./formatting.nix
     ./linting.nix
+    ./dap.nix
+    ./test.nix
   ];
 }
