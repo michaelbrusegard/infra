@@ -104,7 +104,7 @@
         default = null;
       };
       setupOpts = mkOption {
-        type = types.attrs;
+        type = types.either types.attrs types.str;
         default = {};
       };
       extraLuaBefore = mkOption {
@@ -133,6 +133,10 @@
       };
       filetype = mkOption {
         type = types.listOf types.str;
+        default = [];
+      };
+      after = mkOption {
+        type = types.either types.str (types.listOf types.str);
         default = [];
       };
       condition = mkOption {
@@ -215,6 +219,7 @@
       (optionalString (p.event != []) "event = ${genLua p.event}")
       (optionalString (p.command != []) "cmd = ${genLua p.command}")
       (optionalString (p.filetype != []) "ft = ${genLua p.filetype}")
+      (optionalString (p.after != [] || (p.after != "")) "after = ${genLua p.after}")
       (optionalString (p.condition != null) "cond = ${toLua {} (mkLuaInline p.condition)}")
       (let ks = filter (k: k.enable) p.keymaps; in optionalString (ks != []) "keys = { ${concatStringsSep ", " (map toLzNKeymap ks)} }")
     ];

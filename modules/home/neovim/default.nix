@@ -15,6 +15,8 @@ _: {
     ./lsp.nix
     ./linting.nix
     ./formatting.nix
+    ./dap.nix
+    ./test.nix
     ./ai.nix
     ./lang/nix.nix
     ./lang/python.nix
@@ -28,9 +30,6 @@ _: {
     ./lang/git.nix
     ./lang/docker.nix
     ./lang/tailwind.nix
-
-    # ./test.nix
-    # ./dap.nix
   ];
 
   programs.neovim = {

@@ -88,9 +88,7 @@ _: {
           "neotest-output-panel"
           "neotest-summary"
           "notify"
-          "qf"
           "startuptime"
-          "tsplayground"
         ];
         callback = ''
           function(event)

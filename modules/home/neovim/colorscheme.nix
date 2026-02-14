@@ -18,6 +18,7 @@
           blink_indent = false;
           blink_pairs = false;
           cmp = false;
+          dap_ui = false;
           dashboard = false;
           flash = false;
           fzf = false;
@@ -30,7 +31,6 @@
           telescope = {enabled = false;};
           illuminate = {enabled = false;};
           dap = true;
-          dap_ui = true;
           grug_far = true;
           gitsigns = true;
           lsp_trouble = true;
