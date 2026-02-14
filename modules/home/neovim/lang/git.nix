@@ -17,14 +17,12 @@
         package = pkgs.vimPlugins.blink-cmp-git;
       };
 
-      "blink-cmp" = {
-        setupOpts.sources = {
-          default = lib.mkAfter ["git"];
-          providers.git = {
-            module = "blink-cmp-git";
-            name = "Git";
-            opts = {};
-          };
+      "blink-cmp".setupOpts.sources = {
+        default = lib.mkAfter ["git"];
+        providers.git = {
+          module = "blink-cmp-git";
+          name = "Git";
+          opts = {};
         };
       };
     };
