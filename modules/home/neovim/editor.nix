@@ -4,7 +4,7 @@
   ...
 }: {
   programs.neovim.spec.plugins = {
-    "grug-far" = {
+    "grug-far.nvim" = {
       package = pkgs.vimPlugins.grug-far-nvim;
       command = ["GrugFar" "GrugFarWithin"];
       setupModule = "grug-far";
@@ -31,7 +31,7 @@
       ];
     };
 
-    "dial" = {
+    "dial.nvim" = {
       package = pkgs.vimPlugins.dial-nvim;
       event = ["BufReadPost" "BufNewFile"];
       keymaps = [
@@ -155,7 +155,7 @@
       setupModule = "codediff";
     };
 
-    "todo-comments" = {
+    "todo-comments.nvim" = {
       package = pkgs.vimPlugins.todo-comments-nvim;
       event = ["BufReadPost" "BufNewFile"];
       setupModule = "todo-comments";
@@ -201,7 +201,7 @@
       ];
     };
 
-    "trouble" = {
+    "trouble.nvim" = {
       package = pkgs.vimPlugins.trouble-nvim;
       event = ["BufReadPost" "BufNewFile"];
       setupModule = "trouble";
@@ -266,7 +266,7 @@
       ];
     };
 
-    "which-key" = {
+    "which-key.nvim" = {
       package = pkgs.vimPlugins.which-key-nvim;
       event = ["UIEnter"];
       setupModule = "which-key";
@@ -319,6 +319,7 @@
     "nvim-navic" = {
       package = pkgs.vimPlugins.nvim-navic;
       event = ["LspAttach"];
+      after = "nvim-lspconfig";
       setupModule = "nvim-navic";
       setupOpts = {
         separator = " ";
@@ -465,9 +466,9 @@
       };
     };
 
-    "refactoring" = {
+    "refactoring.nvim" = {
       package = pkgs.vimPlugins.refactoring-nvim;
-      event = ["BufReadPost" "BufNewFile"];
+      after = "nvim-treesitter";
       setupModule = "refactoring";
       setupOpts = {
         prompt_func_return_type = {

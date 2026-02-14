@@ -15,6 +15,7 @@
     plugins = {
       "blink-cmp-git" = {
         package = pkgs.vimPlugins.blink-cmp-git;
+        after = "blink-cmp";
       };
 
       "blink-cmp".setupOpts.sources = {
