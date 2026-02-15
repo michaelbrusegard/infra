@@ -30,6 +30,10 @@
         package = pkgs.oxfmt;
         args = ["--stdin-filepath" "$FILENAME"];
       };
+      jsonc.oxfmt = {
+        package = pkgs.oxfmt;
+        args = ["--stdin-filepath" "$FILENAME"];
+      };
       json5.oxfmt = {
         package = pkgs.oxfmt;
         args = ["--stdin-filepath" "$FILENAME"];
