@@ -31,6 +31,7 @@ _: {
     ./lang/docker.nix
     ./lang/tailwind.nix
     ./lang/lua.nix
+    ./lang/c.nix
   ];
 
   programs.neovim = {
