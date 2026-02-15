@@ -6,15 +6,16 @@
   inherit (lib) mkOption types concatStringsSep mapAttrsToList optionalString filter;
   genLua = lib.generators.toLua {};
   cfg = config.programs.neovim.spec;
-  
+
   ft = cfg.filetypes;
   ftFields = filter (x: x != "") [
     (optionalString (ft.extensions != {}) "extension = ${genLua ft.extensions}")
     (optionalString (ft.patterns != {}) "pattern = ${genLua ft.patterns}")
     (optionalString (ft.filenames != {}) "filename = ${genLua ft.filenames}")
   ];
-  ftAdd = if ftFields != [] 
-    then "vim.filetype.add({ ${concatStringsSep ", " ftFields} })" 
+  ftAdd =
+    if ftFields != []
+    then "vim.filetype.add({ ${concatStringsSep ", " ftFields} })"
     else "";
 in {
   options.programs.neovim.spec = {
