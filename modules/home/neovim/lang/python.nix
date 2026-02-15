@@ -9,7 +9,10 @@
 
     linting.filetypes.python.ruff.package = pkgs.ruff;
 
-    formatting.filetypes.python.ruff.package = pkgs.ruff;
+    formatting.filetypes.python.ruff = {
+      package = pkgs.ruff;
+      args = ["format" "-"];
+    };
 
     test.adapters = ["neotest-python"];
 
