@@ -235,7 +235,7 @@
           key = "<leader>cS";
           mode = "n";
           desc = "LSP References (Trouble)";
-         action = "<cmd>Trouble lsp toggle focus=false win.position=right<cr>";
+          action = "<cmd>Trouble lsp toggle focus=false win.position=right<cr>";
         }
         {
           key = "<leader>xl";
