@@ -236,10 +236,10 @@
           ];
           lualine_x = [
             (lib.generators.mkLuaInline ''package.loaded['snacks'] and require('snacks').profiler.status()'')
-            (lib.generators.mkLuaInline ''{ function() return package.loaded['noice'] and require('noice').api.status.command.get() or "" end, cond = function() return package.loaded['noice'] and require('noice').api.status.command.has() or false end, color = { fg = "#bb9af7" } }'')
-            (lib.generators.mkLuaInline ''{ function() return package.loaded['noice'] and require('noice').api.status.mode.get() or "" end, cond = function() return package.loaded['noice'] and require('noice').api.status.mode.has() or false end, color = { fg = "#ff9e64" } }'')
+            (lib.generators.mkLuaInline ''{ function() return package.loaded['noice'] and require('noice').api.status.command.get() or "" end, cond = function() return package.loaded['noice'] and require('noice').api.status.command.has() or false end, color = function() return { fg = require("snacks").util.color("Statement") } end }'')
+            (lib.generators.mkLuaInline ''{ function() return package.loaded['noice'] and require('noice').api.status.mode.get() or "" end, cond = function() return package.loaded['noice'] and require('noice').api.status.mode.has() or false end, color = function() return { fg = require("snacks").util.color("Constant") } end }'')
             (lib.generators.mkLuaInline ''{ require("opencode").statusline }'')
-            (lib.generators.mkLuaInline ''{ function() return "  " .. (package.loaded['dap'] and require("dap").status() or "") end, cond = function() return package.loaded['dap'] and require("dap").status() ~= "" or false end, color = { fg = "#db4b4b" } }'')
+            (lib.generators.mkLuaInline ''{ function() return "  " .. (package.loaded['dap'] and require("dap").status() or "") end, cond = function() return package.loaded['dap'] and require("dap").status() ~= "" or false end, color = function() return { fg = require("snacks").util.color("Debug") } end } '')
             (lib.generators.mkLuaInline ''{ "diff", symbols = { added = " ", modified = " ", removed = " " }, source = function() local gitsigns = vim.b.gitsigns_status_dict if gitsigns then return { added = gitsigns.added, modified = gitsigns.changed, removed = gitsigns.removed } end return nil end }'')
           ];
           lualine_y = ["progress"];

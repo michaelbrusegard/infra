@@ -86,9 +86,7 @@ in {
                   programValue =
                     if c.program == null
                     then null
-                    else if c.program ? __raw
-                    then c.program.__raw
-                    else toLua {} c.program;
+                    else c.program.__raw or (toLua {} c.program);
                 in ''
                   {
                     name = ${toLua {} c.name},
