@@ -164,25 +164,25 @@
       setupModule = "mini.surround";
       setupOpts = {
         mappings = {
-          add = "gsa";
-          delete = "gsd";
-          find = "gsf";
-          find_left = "gsF";
-          highlight = "gsh";
-          replace = "gsr";
-          update_n_lines = "gsn";
+          add = "sa";
+          delete = "sd";
+          find = "sf";
+          find_left = "sF";
+          highlight = "sh";
+          replace = "sr";
+          update_n_lines = "sn";
         };
       };
       extraLuaAfter = ''
         local wk = require("which-key")
         wk.add({
-          { "gsa", desc = "Add Surrounding", mode = { "n", "x" } },
-          { "gsd", desc = "Delete Surrounding" },
-          { "gsf", desc = "Find Right Surrounding" },
-          { "gsF", desc = "Find Left Surrounding" },
-          { "gsh", desc = "Highlight Surrounding" },
-          { "gsr", desc = "Replace Surrounding" },
-          { "gsn", desc = "Update MiniSurround n_lines" },
+          { "sa", desc = "Add Surrounding", mode = { "n", "x" } },
+          { "sd", desc = "Delete Surrounding" },
+          { "sf", desc = "Find Right Surrounding" },
+          { "sF", desc = "Find Left Surrounding" },
+          { "sh", desc = "Highlight Surrounding" },
+          { "sr", desc = "Replace Surrounding" },
+          { "sn", desc = "Update MiniSurround n_lines" },
         })
       '';
     };
