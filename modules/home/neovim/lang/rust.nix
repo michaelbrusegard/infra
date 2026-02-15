@@ -48,7 +48,6 @@
                         ".git",
                         ".jj",
                         ".github",
-                        ".gitlab",
                         "bin",
                         "node_modules",
                         "target",
