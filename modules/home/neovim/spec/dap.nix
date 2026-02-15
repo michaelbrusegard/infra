@@ -82,13 +82,14 @@ in {
           lib.mapAttrsToList (
             ft: configs: let
               configsStr =
-                lib.concatMapStrings (c: 
-                  let
-                    programValue = 
-                      if c.program == null then null
-                      else if c.program ? __raw then c.program.__raw
-                      else toLua {} c.program;
-                  in ''
+                lib.concatMapStrings (c: let
+                  programValue =
+                    if c.program == null
+                    then null
+                    else if c.program ? __raw
+                    then c.program.__raw
+                    else toLua {} c.program;
+                in ''
                   {
                     name = ${toLua {} c.name},
                     type = ${toLua {} c.type},
