@@ -73,10 +73,10 @@ in {
                 lib.nameValuePair (getFormatterName ft name) (
                   {
                     inherit (f) args;
-                    command = 
-                    if f.package ? meta.mainProgram 
-                    then lib.getExe f.package 
-                    else "${f.package}/bin/${f.package.pname or f.package.name}";
+                    command =
+                      if f.package ? meta.mainProgram
+                      then lib.getExe f.package
+                      else "${f.package}/bin/${f.package.pname or f.package.name}";
                   }
                   // (
                     if f.condition != null
