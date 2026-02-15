@@ -1,4 +1,4 @@
-{...}: {
+_: {
   programs.neovim.spec.test = {
     keymaps = [
       {
