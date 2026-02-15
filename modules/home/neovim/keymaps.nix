@@ -275,36 +275,6 @@ _: {
       lua = true;
     }
 
-    # Quickfix
-    {
-      key = "<leader>xl";
-      mode = "n";
-      desc = "Location List";
-      action = "function() local success, err = pcall(function() return vim.fn.getloclist(0, { winid = 0 }).winid ~= 0 and vim.cmd.lclose() or vim.cmd.lopen() end) if not success and err then vim.notify(err, vim.log.levels.ERROR) end end";
-      lua = true;
-    }
-    {
-      key = "<leader>xq";
-      mode = "n";
-      desc = "Quickfix List";
-      action = "function() local success, err = pcall(function() return vim.fn.getqflist({ winid = 0 }).winid ~= 0 and vim.cmd.cclose() or vim.cmd.copen() end) if not success and err then vim.notify(err, vim.log.levels.ERROR) end end";
-      lua = true;
-    }
-    {
-      key = "[q";
-      mode = "n";
-      desc = "Previous Quickfix";
-      action = "function() vim.cmd('cprev') end";
-      silent = true;
-      lua = true;
-    }
-    {
-      key = "]q";
-      mode = "n";
-      desc = "Next Quickfix";
-      action = "function() vim.cmd('cnext') end";
-      silent = true;
-      lua = true;
-    }
+
   ];
 }

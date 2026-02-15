@@ -235,16 +235,16 @@
           key = "<leader>cS";
           mode = "n";
           desc = "LSP References (Trouble)";
-          action = "<cmd>Trouble lsp toggle focus=false win.position=right<cr>";
+         action = "<cmd>Trouble lsp toggle focus=false win.position=right<cr>";
         }
         {
-          key = "<leader>xL";
+          key = "<leader>xl";
           mode = "n";
           desc = "Location List (Trouble)";
           action = "<cmd>Trouble loclist toggle<cr>";
         }
         {
-          key = "<leader>xQ";
+          key = "<leader>xq";
           mode = "n";
           desc = "Quickfix List (Trouble)";
           action = "<cmd>Trouble quickfix toggle<cr>";
