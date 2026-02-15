@@ -1,7 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "docker:pinDigests",
+    "helpers:pinGitHubActionDigests",
+    ":configMigration",
+    ":pinDevDependencies",
+    "abandonments:recommended",
+    "security:minimumReleaseAgeNpm",
+    ":maintainLockFilesWeekly"
   ],
   "dependencyDashboard": true,
   "labels": [
@@ -21,15 +28,12 @@
   },
   "packageRules": [
     {
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "all non-major dependencies",
-      "groupSlug": "all-minor-patch",
-      "matchPackageNames": [
-        "*"
-      ]
+      "matchUpdateTypes": ["patch"],
+      "groupName": "all patch dependencies"
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "groupName": "all minor dependencies"
     },
     {
       "matchManagers": [
@@ -43,10 +47,5 @@
         "/nix-secrets/"
       ]
     }
-  ],
-  "separateMajorMinor": true,
-  "timezone": "UTC",
-  "schedule": [
-    "before 5am on monday"
   ]
 }
