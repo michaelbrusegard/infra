@@ -14,7 +14,14 @@
       type = mkOption {type = types.str;};
       request = mkOption {type = types.enum ["launch" "attach"];};
       program = mkOption {
-        type = types.nullOr types.str;
+        type = types.nullOr (types.either types.str (types.submodule {
+          options = {
+            __raw = mkOption {
+              type = types.str;
+              description = "Raw Lua function for dynamic program path";
+            };
+          };
+        }));
         default = null;
       };
       args = mkOption {
@@ -75,12 +82,18 @@ in {
           lib.mapAttrsToList (
             ft: configs: let
               configsStr =
-                lib.concatMapStrings (c: ''
+                lib.concatMapStrings (c: 
+                  let
+                    programValue = 
+                      if c.program == null then null
+                      else if c.program ? __raw then c.program.__raw
+                      else toLua {} c.program;
+                  in ''
                   {
                     name = ${toLua {} c.name},
                     type = ${toLua {} c.type},
                     request = ${toLua {} c.request},
-                    ${lib.optionalString (c.program != null) "program = ${toLua {} c.program},"}
+                    ${lib.optionalString (c.program != null) "program = ${programValue},"}
                     ${lib.optionalString (c.args != []) "args = ${toLua {} c.args},"}
                     ${lib.concatStringsSep ",\n                " (lib.mapAttrsToList (k: v: "${k} = ${toLua {} v}") c.extraConfig)}
                   },

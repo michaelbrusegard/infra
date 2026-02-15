@@ -272,7 +272,7 @@
       setupModule = "which-key";
       setupOpts = {
         preset = "helix";
-        delay = 200;
+        delay = 100;
         spec = lib.generators.mkLuaInline ''
           {
             mode = { "n", "x" },
@@ -292,7 +292,6 @@
             { "g", group = "goto" },
             { "s", group = "surround" },
             { "z", group = "fold" },
-            { "gx", desc = "Open with system app" },
             {
               "<leader>b",
               group = "buffer",
