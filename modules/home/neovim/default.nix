@@ -32,6 +32,7 @@ _: {
     ./lang/tailwind.nix
     ./lang/lua.nix
     ./lang/c.nix
+    ./lang/shell.nix
   ];
 
   programs.neovim = {
