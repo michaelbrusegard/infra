@@ -274,7 +274,5 @@ _: {
       action = "function() vim.diagnostic.jump({ count = -vim.v.count1, severity = vim.diagnostic.severity.WARN, float = true }) end";
       lua = true;
     }
-
-
   ];
 }
