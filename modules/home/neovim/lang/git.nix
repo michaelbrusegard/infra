@@ -5,6 +5,7 @@
 }: {
   programs.neovim.spec = {
     treesitter.grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
+      diff
       git_config
       gitcommit
       git_rebase
