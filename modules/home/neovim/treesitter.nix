@@ -41,12 +41,9 @@
         }
       ];
       grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
-        diff
-        printf
         query
+        printf
         regex
-        vim
-        vimdoc
       ];
     };
 
