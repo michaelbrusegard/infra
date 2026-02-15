@@ -9,9 +9,15 @@
 
     linting.filetypes.python.ruff.package = pkgs.ruff;
 
-    formatting.filetypes.python.ruff = {
-      package = pkgs.ruff;
-      args = ["format" "-"];
+    formatting.filetypes.python = {
+      ruff_organize = {
+        package = pkgs.ruff;
+        args = ["check" "--select" "I" "--fix" "--stdin-filename" "-" "-"];
+      };
+      ruff_format = {
+        package = pkgs.ruff;
+        args = ["format" "-"];
+      };
     };
 
     test.adapters = ["neotest-python"];

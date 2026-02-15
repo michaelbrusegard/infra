@@ -112,7 +112,7 @@ in {
             names = map (i: getFormatterName ft i.name) sorted;
           in
             if builtins.length names > 1
-            then mkLuaInline "{ ${lib.concatMapStringsSep ", " (n: "'${n}'") names}, stop_after_first = true }"
+            then mkLuaInline "{ ${lib.concatMapStringsSep ", " (n: "'${n}'") names} }"
             else names)
           cfg.filetypes;
         in {
