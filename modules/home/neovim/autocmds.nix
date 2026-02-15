@@ -11,6 +11,7 @@ _: {
       {name = "JsonConceal";}
       {name = "AutoCreateDir";}
       {name = "RandomTempFile";}
+      {name = "AutoSave";}
     ];
 
     autocmds = [
@@ -155,6 +156,19 @@ _: {
             end
             local file = vim.uv.fs_realpath(event.match) or event.match
             vim.fn.mkdir(vim.fn.fnamemodify(file, ":p:h"), "p")
+          end
+        '';
+      }
+
+      # Auto save when leaving buffer or losing focus
+      {
+        event = ["BufLeave" "FocusLost"];
+        group = "AutoSave";
+        callback = ''
+          function()
+            if vim.bo.modified and not vim.bo.readonly and vim.fn.expand("%") ~= "" and vim.bo.buftype == "" then
+              vim.api.nvim_command("silent! write")
+            end
           end
         '';
       }
