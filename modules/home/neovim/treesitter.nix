@@ -41,8 +41,6 @@
         }
       ];
       grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
-        bash
-        c
         diff
         printf
         query
