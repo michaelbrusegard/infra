@@ -329,13 +329,11 @@
           Array = " ";
           Boolean = "󰨙 ";
           Class = " ";
-          Codeium = "󰘦 ";
           Color = " ";
           Control = " ";
           Collapsed = " ";
           Constant = "󰏿 ";
           Constructor = " ";
-          Copilot = " ";
           Enum = " ";
           EnumMember = " ";
           Event = " ";
@@ -359,8 +357,6 @@
           Snippet = "󱄽 ";
           String = " ";
           Struct = "󰆼 ";
-          Supermaven = " ";
-          TabNine = "󰏚 ";
           Text = " ";
           TypeParameter = " ";
           Unit = " ";
