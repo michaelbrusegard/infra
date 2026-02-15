@@ -44,9 +44,6 @@
         bash
         c
         diff
-        lua
-        luadoc
-        luap
         printf
         query
         regex
