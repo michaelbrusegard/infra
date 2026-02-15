@@ -6,6 +6,16 @@
   inherit (lib) mkOption types concatStringsSep mapAttrsToList optionalString filter;
   genLua = lib.generators.toLua {};
   cfg = config.programs.neovim.spec;
+  
+  ft = cfg.filetypes;
+  ftFields = filter (x: x != "") [
+    (optionalString (ft.extensions != {}) "extension = ${genLua ft.extensions}")
+    (optionalString (ft.patterns != {}) "pattern = ${genLua ft.patterns}")
+    (optionalString (ft.filenames != {}) "filename = ${genLua ft.filenames}")
+  ];
+  ftAdd = if ftFields != [] 
+    then "vim.filetype.add({ ${concatStringsSep ", " ftFields} })" 
+    else "";
 in {
   options.programs.neovim.spec = {
     globals = mkOption {
@@ -39,22 +49,12 @@ in {
 
   config.programs.neovim.extraLuaConfig = lib.mkMerge [
     (lib.mkOrder 50 ''
+      ${optionalString (ftAdd != "") ftAdd}
       ${concatStringsSep "\n" (mapAttrsToList (k: v: "vim.g.${k} = ${genLua v}") cfg.globals)}
     '')
 
     (lib.mkOrder 200 ''
       ${concatStringsSep "\n" (mapAttrsToList (k: v: "vim.o.${k} = ${genLua v}") cfg.options)}
-      ${let
-        ft = cfg.filetypes;
-        fields = filter (x: x != "") [
-          (optionalString (ft.extensions != {}) "extension = ${genLua ft.extensions}")
-          (optionalString (ft.patterns != {}) "pattern = ${genLua ft.patterns}")
-          (optionalString (ft.filenames != {}) "filename = ${genLua ft.filenames}")
-        ];
-      in
-        if fields != []
-        then "vim.filetype.add({ ${concatStringsSep ", " fields} })"
-        else ""}
     '')
   ];
 }
