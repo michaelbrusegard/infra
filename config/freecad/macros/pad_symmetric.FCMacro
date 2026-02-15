@@ -1,44 +1,56 @@
 import FreeCAD as App
 import FreeCADGui as Gui
-import PartDesign
-from PySide2 import QtWidgets
 
-def create_symmetric_extrusion():
-    doc = App.ActiveDocument
-    if not doc:
-        QtWidgets.QMessageBox.warning(None, "Erreur", "Aucun document actif.")
-        return
-    
-    # Vérifier si une esquisse est sélectionnée
-    selection = Gui.Selection.getSelection()
-    if not selection or not isinstance(selection[0], App.DocumentObject) or selection[0].TypeId != "Sketcher::SketchObject":
-        QtWidgets.QMessageBox.warning(None, "Erreur", "Veuillez sélectionner une esquisse valide.")
-        return
-    
-    sketch = selection[0]
-    body = sketch.getParentGeoFeatureGroup()
-    if not body or body.TypeId != "PartDesign::Body":
-        QtWidgets.QMessageBox.warning(None, "Erreur", "L'esquisse doit être dans un Body.")
-        return
-    
-    # Activer le body
-    Gui.ActiveDocument.ActiveView.setActiveObject("pdbody", body)
-    doc.recompute()
-    
-    # Fenêtre de dialogue pour demander l'épaisseur
-    thickness, ok = QtWidgets.QInputDialog.getDouble(None, "Extrusion Symétrique", "Épaisseur totale:", 10.0, 0.1, 1000.0, 2)
-    if not ok:
-        return
-    
-    # Création de la fonction de pad symétrique dans le body actif
-    pad = body.newObject("PartDesign::Pad", "Pad")
-    pad.Profile = sketch
-    pad.Length = thickness  # Épaisseur totale au lieu de la moitié
-    pad.Midplane = True
-    
-    doc.recompute()
-    
-    # Masquer l'esquisse après l'extrusion
-    sketch.Visibility = False
-
-create_symmetric_extrusion()
+# Get the active document
+doc = App.activeDocument()
+if doc is None:
+    App.Console.PrintError("Error: No active document.\n")
+else:
+    # Get the GUI document
+gui_doc = Gui.activeDocument()
+    if gui_doc is None:
+        App.Console.PrintError("Error: No active document.\n")
+    else:
+        # Get the active object
+        obj = Gui.Selection.getSelection()
+        if len(obj) == 0:
+            App.Console.PrintError("Please select a valid sketch.\n")
+        else:
+            # Get the selected object
+            selected_obj = obj[0]
+            
+            # Check if the object is a sketch or can be padded
+            if selected_obj.TypeId == 'Sketcher::SketchObject':
+                # Check if the sketch is in a Body
+                if hasattr(selected_obj, 'InList') and len(selected_obj.InList) > 0:
+                    parent = selected_obj.InList[0]
+                    if parent.TypeId == 'PartDesign::Body':
+                        body = parent
+                        
+                        # Create the Pad (Symmetric extrusion)
+                        pad = body.newObject('PartDesign::Pad', 'Pad')
+                        pad.Profile = selected_obj
+                        pad.Midplane = 1  # Symmetric extrusion
+                        pad.Length = 5.00  # Total thickness
+                        
+                        # Recompute
+                        doc.recompute()
+                        
+                        # Set visibility: show pad, hide sketch
+                        if hasattr(gui_doc, 'getObject'):
+                            sketch_view = gui_doc.getObject(selected_obj.Name)
+                            if sketch_view:
+                                sketch_view.Visibility = False
+                            
+                            pad_view = gui_doc.getObject(pad.Name)
+                            if pad_view:
+                                pad_view.Visibility = True
+                        
+                        print("Symmetric Extrusion")
+                        print("Total thickness: " + str(pad.Length) + " mm")
+                    else:
+                        App.Console.PrintError("The sketch must be in a Body.\n")
+                else:
+                    App.Console.PrintError("The sketch must be in a Body.\n")
+            else:
+                App.Console.PrintError("Please select a valid sketch.\n")
