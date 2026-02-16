@@ -3,6 +3,10 @@
     oxfmt = {
       package = pkgs.oxfmt;
       args = ["--stdin-filepath" "$FILENAME"];
+      requiredFiles = [
+        "oxfmtrc.json"
+        ".oxfmtrc.json"
+      ];
     };
     biome = {
       package = pkgs.biome;
@@ -31,8 +35,8 @@
     oxlint = {
       package = pkgs.oxlint;
       requiredFiles = [
-        ".oxlintrc.json"
         "oxlintrc.json"
+        ".oxlintrc.json"
       ];
     };
     biome = {
@@ -229,6 +233,59 @@ in {
       javascriptreact = jsTsLinters;
       typescript = jsTsLinters;
       typescriptreact = jsTsLinters;
+    };
+
+    test.adapters = ["neotest-vitest" "neotest-jest"];
+
+    plugins = {
+      "neotest-vitest" = {
+        package = pkgs.vimPlugins.neotest-vitest;
+        after = "neotest";
+      };
+
+      "neotest-jest" = {
+        package = pkgs.vimPlugins.neotest-jest;
+        after = "neotest";
+      };
+
+      "nvim-dap-vscode-js" = {
+        package = pkgs.vimPlugins.nvim-dap-vscode-js;
+        setupModule = "dap-vscode-js";
+        setupOpts = {
+          debugger_path = "${pkgs.vscode-js-debug}";
+          adapters = ["pwa-node" "pwa-chrome" "pwa-msedge" "node-terminal" "pwa-extensionHost"];
+        };
+        after = "nvim-dap";
+        extraLuaAfter = ''
+          local dap = require("dap")
+
+          for _, language in ipairs({ "typescript", "javascript", "typescriptreact", "javascriptreact" }) do
+            dap.configurations[language] = {
+              {
+                type = "pwa-node",
+                request = "launch",
+                name = "Launch file",
+                program = "''${file}",
+                cwd = "''${workspaceFolder}",
+              },
+              {
+                type = "pwa-node",
+                request = "attach",
+                name = "Attach",
+                processId = require("dap.utils").pick_process,
+                cwd = "''${workspaceFolder}",
+              },
+              {
+                type = "pwa-chrome",
+                request = "launch",
+                name = "Launch Chrome",
+                url = "http://localhost:3000",
+                webRoot = "''${workspaceFolder}",
+              },
+            }
+          end
+        '';
+      };
     };
   };
 }
