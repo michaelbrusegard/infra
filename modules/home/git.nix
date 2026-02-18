@@ -43,12 +43,12 @@
         core.editor = "nvim";
 
         merge = {
-          conflictstyle = "diff3";
-          tool = "codediff";
+          conflictstyle = "merge";
+          tool = "nvimdiff";
         };
 
-        "mergetool \"codediff\"" = {
-          cmd = "nvim \"$MERGED\" -c \"CodeDiff merge \\\"$MERGED\\\"\"";
+        "mergetool \"nvimdiff\"" = {
+          cmd = "nvim -c 'DiffviewOpen -uno'";
         };
 
         mergetool.prompt = false;

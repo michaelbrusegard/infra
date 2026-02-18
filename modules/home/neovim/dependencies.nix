@@ -1,6 +1,7 @@
 {pkgs, ...}: {
   programs.neovim = {
     extraPackages = with pkgs; [
+      git
       ripgrep
       ast-grep
       fd

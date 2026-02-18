@@ -160,10 +160,13 @@ in {
       '';
     };
 
-    "codediff.nvim" = {
-      package = pkgs.vimPlugins.codediff-nvim;
-      command = ["CodeDiff"];
-      setupModule = "codediff";
+    "diffview.nvim" = {
+      package = pkgs.vimPlugins.diffview-nvim;
+      command = ["DiffviewOpen" "DiffviewFileHistory"];
+      setupModule = "diffview";
+      setupOpts = {
+        view.merge_tool.layout = "diff3_mixed";
+      };
     };
 
     "todo-comments.nvim" = {
