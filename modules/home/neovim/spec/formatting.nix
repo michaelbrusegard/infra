@@ -71,8 +71,12 @@ in {
               acc
               // (lib.mapAttrs' (name: f:
                 lib.nameValuePair (getFormatterName ft name) (
-                  {
-                    inherit (f) args;
+                  (
+                    if f.args != []
+                    then {inherit (f) args;}
+                    else {}
+                  )
+                  // {
                     command =
                       if f.package ? meta.mainProgram
                       then lib.getExe f.package

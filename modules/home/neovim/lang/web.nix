@@ -21,10 +21,6 @@
         package = pkgs.oxfmt;
         args = ["--stdin-filepath" "$FILENAME"];
       };
-      xml.oxfmt = {
-        package = pkgs.oxfmt;
-        args = ["--stdin-filepath" "$FILENAME"];
-      };
     };
   };
 }
