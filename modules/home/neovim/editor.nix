@@ -165,7 +165,21 @@ in {
       command = ["DiffviewOpen" "DiffviewFileHistory"];
       setupModule = "diffview";
       setupOpts = {
-        view.merge_tool.layout = "diff3_mixed";
+        view = {
+          merge_tool = {
+            layout = "diff3_mixed";
+          };
+        };
+        hooks = {
+          view_opened = lib.generators.mkLuaInline ''
+            function(view)
+              local layout_name = view.layout and view.layout.name or ""
+              if layout_name:find("diff3") then
+                require("diffview.actions").toggle_files()
+              end
+            end
+          '';
+        };
       };
     };
 
