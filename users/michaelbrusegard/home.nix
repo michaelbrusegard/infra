@@ -22,7 +22,6 @@
     inputs.self.homeManagerModules.opencode
     inputs.self.homeManagerModules.pentest
     inputs.self.homeManagerModules.shell
-    inputs.self.homeManagerModules.silicon
     inputs.self.homeManagerModules.ssh
     inputs.self.homeManagerModules.wezterm
     inputs.self.homeManagerModules.xdg
