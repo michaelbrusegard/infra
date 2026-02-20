@@ -6,9 +6,9 @@
   home.packages = with pkgs;
     [
       yq
-      sd
       screen
       lsof
+      carbon-now-cli
     ]
     ++ lib.optionals pkgs.stdenv.isLinux [
       psmisc
