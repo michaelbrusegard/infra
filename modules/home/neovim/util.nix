@@ -64,7 +64,7 @@
               explorer = {
                 hidden = true;
                 ignored = true;
-                exclude = [".git" ".DS_Store" "node_modules" ".next" ".cache" "target" "dist" "build"];
+                exclude = [".git" ".DS_Store"];
               };
             };
           };
