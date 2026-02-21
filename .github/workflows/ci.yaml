@@ -27,7 +27,6 @@ jobs:
               - '.github/workflows/check.yaml'
             yaml:
               - '**/*.yaml'
-              - '**/*.yml'
               - '.github/workflows/check.yaml'
             gitops:
               - 'gitops/**'
