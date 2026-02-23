@@ -87,7 +87,16 @@ in {
                   base = name;
                   cmd =
                     if linter.package != null
-                    then lib.getExe linter.package
+                    then let
+                      binName = linter.package.meta.mainProgram or (linter.package.pname or linter.package.name);
+                    in
+                      if linter.package ? meta.mainProgram
+                      then lib.getExe linter.package
+                      else "''${linter.package}/bin/''${binName}"
+                    else null;
+                  bin_name =
+                    if linter.package != null
+                    then linter.package.meta.mainProgram or (linter.package.pname or linter.package.name)
                     else null;
                   condition =
                     if linter.condition != null
@@ -185,6 +194,24 @@ in {
               end
 
               if condition_passed then
+                local config = custom_linters[name]
+                if config and config.bin_name then
+                  local local_paths = {
+                    "node_modules/.bin/" .. config.bin_name,
+                    ".venv/bin/" .. config.bin_name,
+                    "venv/bin/" .. config.bin_name,
+                    "bin/" .. config.bin_name,
+                  }
+                  local local_bin = vim.fs.find(local_paths, { path = ctx.dirname, upward = true, stop = vim.uv.cwd() })[1]
+
+                  if local_bin then
+                    linter.cmd = local_bin
+                  elseif vim.fn.executable(config.bin_name) == 1 then
+                    linter.cmd = vim.fn.exepath(config.bin_name)
+                  elseif config.cmd then
+                    linter.cmd = config.cmd
+                  end
+                end
                 table.insert(filtered, name)
               end
             end
@@ -223,6 +250,22 @@ in {
 
           local function get_linter_path(name)
             local linter = lint.linters[name]
+            local config = custom_linters[name]
+            if config and config.bin_name then
+              local ctx = { filename = vim.api.nvim_buf_get_name(0) }
+              ctx.dirname = vim.fn.fnamemodify(ctx.filename, ":h")
+              local local_paths = {
+                "node_modules/.bin/" .. config.bin_name, -- Node.js
+                ".venv/bin/" .. config.bin_name,         -- Python
+                "venv/bin/" .. config.bin_name,          -- Python
+                "vendor/bin/" .. config.bin_name,        -- PHP
+                "bin/" .. config.bin_name,               -- General
+              }
+              local local_bin = vim.fs.find(local_paths, { path = ctx.dirname, upward = true, stop = vim.uv.cwd() })[1]
+              if local_bin then return local_bin end
+              if vim.fn.executable(config.bin_name) == 1 then return vim.fn.exepath(config.bin_name) end
+              if config.cmd then return config.cmd end
+            end
             if linter and type(linter) == "table" and linter.cmd then
               local cmd = linter.cmd
               if type(cmd) == "string" then
