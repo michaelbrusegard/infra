@@ -77,10 +77,32 @@ in {
                     else {}
                   )
                   // {
-                    command =
-                      if f.package ? meta.mainProgram
-                      then lib.getExe f.package
-                      else "${f.package}/bin/${f.package.pname or f.package.name}";
+                    command = let
+                      binName = f.package.meta.mainProgram or (f.package.pname or f.package.name);
+                      absPath =
+                        if f.package ? meta.mainProgram
+                        then lib.getExe f.package
+                        else "''${f.package}/bin/''${binName}";
+                    in
+                      mkLuaInline ''
+                        function(self, ctx)
+                          local util = require("conform.util")
+                          local local_paths = {
+                            "node_modules/.bin/${binName}",
+                            ".venv/bin/${binName}",
+                            "venv/bin/${binName}",
+                            "bin/${binName}",
+                          }
+                          local found = util.find_executable(local_paths, "")(self, ctx)
+                          if found ~= "" then
+                            return found
+                          end
+                          if vim.fn.executable("${binName}") == 1 then
+                            return vim.fn.exepath("${binName}")
+                          end
+                          return "${absPath}"
+                        end
+                      '';
                   }
                   // (
                     if f.condition != null
