@@ -13,7 +13,7 @@ _: {
       "$schema" = "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json";
       categories = {
         visual-engineering = {
-          model = "google/gemini-3-pro-preview";
+          model = "google/gemini-3.1-pro-preview";
         };
         ultrabrain = {
           model = "opencode/kimi-k2.5-free";
@@ -24,10 +24,10 @@ _: {
           temperature = 1.0;
         };
         artistry = {
-          model = "opencode/glm-4.7-free";
+          model = "opencode/glm-5-free";
         };
         writing = {
-          model = "opencode/glm-4.7-free";
+          model = "opencode/glm-5-free";
         };
         quick = {
           model = "opencode/gpt-5-nano";
@@ -50,7 +50,7 @@ _: {
           temperature = 1.0;
         };
         librarian = {
-          model = "opencode/glm-4.7-free";
+          model = "opencode/glm-5-free";
         };
         explore = {
           model = "opencode/gpt-5-nano";
@@ -59,7 +59,7 @@ _: {
           model = "google/gemini-3-flash-preview";
         };
         document-writer = {
-          model = "opencode/glm-4.7-free";
+          model = "opencode/glm-5-free";
         };
       };
     };
