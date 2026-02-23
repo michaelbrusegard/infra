@@ -5,7 +5,7 @@ _: {
     settings = {
       autoupdate = false;
       theme = "catppuccin";
-      plugin = ["oh-my-opencode" "@tarquinen/opencode-dcp"];
+      plugin = ["oh-my-opencode"];
     };
   };
   home = {
