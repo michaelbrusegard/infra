@@ -2,18 +2,7 @@
   pkgs,
   lib,
   ...
-}: let
-  first-nvim = pkgs.vimUtils.buildVimPlugin {
-    pname = "first.nvim";
-    version = "2024-04-17";
-    src = pkgs.fetchFromGitHub {
-      owner = "Laellekoenig";
-      repo = "first.nvim";
-      rev = "996023191adba3c0abcc2c2939c47e9733529437";
-      hash = "sha256-fyGopwXb7C7PXLLjtbqP/cLexUpW2rimyvJ4NFHpRPo=";
-    };
-  };
-in {
+}: {
   programs.neovim.spec.plugins = {
     "grug-far.nvim" = {
       package = pkgs.vimPlugins.grug-far-nvim;
@@ -595,18 +584,6 @@ in {
           lua = true;
         }
       ];
-    };
-
-    "first-nvim" = {
-      package = first-nvim;
-      event = ["DeferredUIEnter"];
-      setupModule = "first";
-      setupOpts = {
-        use_default_keymap = true;
-        use_delete_and_change = false;
-        inclusive_forward_delete = true;
-        inclusive_backward_delete = true;
-      };
     };
   };
 }
