@@ -1,4 +1,4 @@
-_: {
+{config, ...}: {
   programs = {
     direnv = {
       enable = true;
@@ -15,13 +15,7 @@ _: {
     lazysql = {
       enable = true;
       settings = {
-        database = [
-          {
-            Name = "Postgres";
-            Provider = "postgres";
-            URL = "postgres://\${env:DB_USER}:\${env:DB_PASSWORD}@localhost:5432/\${env:DB_NAME}";
-          }
-        ];
+        inherit (config.secrets.lazysql.settings) database;
         application = {
           DefaultPageSize = 300;
           DisableSidebar = false;
@@ -30,4 +24,5 @@ _: {
       };
     };
   };
+  home.file.".pgpass".source = config.lib.file.mkOutOfStoreSymlink config.secrets.home.pgpassFile;
 }
