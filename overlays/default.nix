@@ -40,6 +40,8 @@ in
           ty
           oxlint
           vtsls
+          postgresql
+          lazysql
           ;
         eslint = pkgs-unstable.eslint.overrideAttrs (old: {
           meta = (old.meta or {}) // {mainProgram = "eslint";};
