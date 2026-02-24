@@ -251,6 +251,7 @@ in {
         du = "dust";
         df = "duf";
         ps = "procs";
+        lsql = "lazysql -config $HOME/.config/lazysql/config.toml";
       }
       // lib.optionalAttrs pkgs.stdenv.isLinux {
         toggle-kanata = ''
