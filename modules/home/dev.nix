@@ -1,4 +1,8 @@
-{config, ...}: {
+{
+  pkgs,
+  config,
+  ...
+}: {
   programs = {
     direnv = {
       enable = true;
@@ -24,5 +28,10 @@
       };
     };
   };
-  home.file.".pgpass".source = config.lib.file.mkOutOfStoreSymlink config.secrets.home.pgpassFile;
+  home = {
+    file.".pgpass".source = config.lib.file.mkOutOfStoreSymlink config.secrets.home.pgpassFile;
+    packages = with pkgs; [
+      postgresql
+    ];
+  };
 }
