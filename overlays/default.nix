@@ -35,6 +35,7 @@ in
           neovim
           vimPlugins
           opencode
+          opencode-desktop
           ruff
           uv
           ty
