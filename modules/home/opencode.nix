@@ -1,4 +1,4 @@
-_: {
+{pkgs, ...}: {
   programs.opencode = {
     enable = true;
     enableMcpIntegration = true;
@@ -70,5 +70,8 @@ _: {
       OPENCODE_EXPERIMENTAL_MARKDOWN = "true";
       OPENCODE_EXPERIMENTAL_PLAN_MODE = "true";
     };
+    packages = with pkgs; [
+      opencode-desktop
+    ];
   };
 }
