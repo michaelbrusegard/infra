@@ -6,7 +6,6 @@ _: {
     "7190e4e9-bead-4b40-8f57-95d852ddc941" # Tab title fixes
     "b51ff956-6aea-47ab-80c7-d6c047c0d510" # Disable Status Bar
     "a6335949-4465-4b71-926c-4a52d34bc9c0" # Better Find Bar
-    "4a222d82-2803-4ed2-a390-90abfce4f195" # Back Fwd Always Hidden
     "cb15abdb-0514-4e09-8ce5-722cf1f4a20f" # Hide Extension Name
     "d8b79d4a-6cba-4495-9ff6-d6d30b0e94fe" # Better Active Tab
     "e122b5d9-d385-4bf8-9971-e137809097d0" # No Top Sites
