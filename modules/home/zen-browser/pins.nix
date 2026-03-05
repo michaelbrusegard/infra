@@ -1,8 +1,8 @@
 _: {
   programs.zen-browser.profiles."default".pins = {
-    "T3.chat" = {
+    "ChatGPT" = {
       id = "fcfb236d-64d8-4d97-8871-3b720e03ce70";
-      url = "https://t3.chat/";
+      url = "https://chatgpt.com/";
       workspace = "540f99e5-b487-46f8-9b1a-a91796f0908e";
       position = 0;
       isEssential = true;
