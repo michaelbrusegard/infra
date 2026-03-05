@@ -1,6 +1,6 @@
 _: {
   programs.zen-browser.profiles."default" = {
-    keyboardShortcutsVersion = 14;
+    keyboardShortcutsVersion = 16;
     keyboardShortcuts = [
       {
         id = "key_hideOtherAppsCmdMac";
