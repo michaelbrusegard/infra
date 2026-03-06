@@ -5,7 +5,7 @@
     settings = {
       autoupdate = false;
       theme = "catppuccin";
-      plugin = ["oh-my-opencode"];
+      plugin = ["oh-my-opencode" "@simonwjackson/opencode-direnv"];
     };
   };
   home = {
