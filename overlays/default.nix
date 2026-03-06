@@ -12,6 +12,7 @@ in
         inherit (inputs.hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
         inherit (inputs.nixpkgs-otbr.legacyPackages.${system}) openthread-border-router;
 
+        quickshell = inputs.quickshell.packages.${system}.default;
         dms-shell = inputs.dms.packages.${system}.default;
         dms-greeter = inputs.dms.packages.${system}.default;
         dsearch = inputs.dsearch.packages.${system}.default;
@@ -29,7 +30,6 @@ in
         inherit
           (pkgs-unstable)
           dgop
-          quickshell
           yabai
           jankyborders
           neovim
