@@ -26,9 +26,9 @@ _: {
       "zen.theme.accent-color" = "#89b4fa";
 
       # Font settings
-      "font.name.serif.x-western" = "Roboto";
-      "font.name.sans-serif.x-western" = "Roboto";
-      "font.name.monospace.x-western" = "Roboto Mono";
+      "font.name.serif.x-western" = "Roboto Serif";
+      "font.name.sans-serif.x-western" = "Google Sans Flex";
+      "font.name.monospace.x-western" = "GoogleSansCode Nerd Font";
     };
     userChrome = ''
       :root {

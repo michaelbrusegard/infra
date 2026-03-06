@@ -1,17 +1,17 @@
 {pkgs, ...}: {
   fonts = {
     packages = with pkgs; [
-      roboto
-      roboto-serif
-      nerd-fonts.roboto-mono
       noto-fonts-color-emoji
       corefonts
       inter
+      roboto-serif
+      google-sans-flex
+      google-sans-code
     ];
     fontconfig.defaultFonts = {
-      sansSerif = ["Roboto"];
+      sansSerif = ["Google Sans Flex"];
       serif = ["Roboto Serif"];
-      monospace = ["RobotoMono Nerd Font"];
+      monospace = ["GoogleSansCode Nerd Font"];
       emoji = ["Noto Color Emoji"];
     };
   };

@@ -34,8 +34,8 @@ in {
       };
 
       Fonts = {
-        general = "Roboto,11";
-        fixed = "RobotoMono Nerd Font,11";
+        general = "Google Sans Flex,11";
+        fixed = "GoogleSansCode Nerd Font,11";
       };
     })));
 
@@ -56,9 +56,9 @@ in {
     };
 
     font = {
-      name = "Roboto";
+      name = "Google Sans Flex";
       size = 11;
-      package = pkgs.roboto;
+      package = pkgs.google-sans-flex;
     };
   };
 
