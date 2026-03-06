@@ -1338,6 +1338,26 @@
         "url": "https://git.outfoxxed.me/quickshell/quickshell"
       }
     },
+    "quickshell_2": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1770693276,
+        "narHash": "sha256-ngXnN5YXu+f45+QGYNN/VEBMQmcBCYGRCqwaK8cxY1s=",
+        "ref": "refs/heads/master",
+        "rev": "dacfa9de829ac7cb173825f593236bf2c21f637e",
+        "revCount": 735,
+        "type": "git",
+        "url": "https://git.outfoxxed.me/outfoxxed/quickshell"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.outfoxxed.me/outfoxxed/quickshell"
+      }
+    },
     "root": {
       "inputs": {
         "affinity": "affinity",
@@ -1362,6 +1382,7 @@
         "nixpkgs": "nixpkgs_5",
         "nixpkgs-otbr": "nixpkgs-otbr",
         "nixpkgs-unstable": "nixpkgs-unstable",
+        "quickshell": "quickshell_2",
         "sops-nix": "sops-nix",
         "wezterm": "wezterm",
         "yazi": "yazi",

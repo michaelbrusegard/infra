@@ -62,6 +62,10 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     hyprland.url = "github:hyprwm/Hyprland";
+    quickshell = {
+      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
     dms = {
       url = "github:AvengeMedia/DankMaterialShell/stable";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
