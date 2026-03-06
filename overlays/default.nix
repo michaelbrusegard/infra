@@ -43,6 +43,7 @@ in
           vtsls
           postgresql
           lazysql
+          freecad-wayland
           ;
         eslint = pkgs-unstable.eslint.overrideAttrs (old: {
           meta = (old.meta or {}) // {mainProgram = "eslint";};
