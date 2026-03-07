@@ -10,10 +10,6 @@ _: {
         command = "bunx";
         args = ["shadcn@latest" "mcp"];
       };
-      tanstack = {
-        command = "bunx";
-        args = ["-y" "@tanstack/cli" "mcp"];
-      };
     };
   };
 }
