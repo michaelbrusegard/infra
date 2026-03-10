@@ -25,6 +25,12 @@ in
         pkgs-unstable = import inputs.nixpkgs-unstable {
           inherit system;
           config.allowUnfree = true;
+          # TODO: Remove after nixpkgs merges ast-grep 0.41.1 (NixOS/nixpkgs#498607)
+          overlays = [
+            (_: uprev: {
+              ast-grep = uprev.ast-grep.overrideAttrs {doCheck = false;};
+            })
+          ];
         };
       in {
         inherit
