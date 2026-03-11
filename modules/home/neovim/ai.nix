@@ -1,9 +1,5 @@
 {pkgs, ...}: {
   programs.neovim.spec = {
-    globals.opencode_opts.provider = {
-      enabled = "snacks";
-      cmd = "${pkgs.opencode}/bin/opencode --port";
-    };
     plugins = {
       "opencode.nvim" = {
         package = pkgs.vimPlugins.opencode-nvim;
