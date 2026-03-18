@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       nix: ${{ steps.filter.outputs.nix }}
-      yaml: ${{ steps.filter.outputs.yaml }}
       gitops: ${{ steps.filter.outputs.gitops }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -24,13 +23,10 @@ jobs:
               - '**/*.nix'
               - 'flake.nix'
               - 'flake.lock'
-              - '.github/workflows/check.yaml'
-            yaml:
-              - '**/*.yaml'
-              - '.github/workflows/check.yaml'
+              - '.github/workflows/ci.yaml'
             gitops:
               - 'gitops/**'
-              - '.github/workflows/check.yaml'
+              - '.github/workflows/ci.yaml'
   code-quality:
     needs: filter
     if: needs.filter.outputs.nix == 'true' || needs.filter.outputs.yaml == 'true'
@@ -44,8 +40,6 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
       - name: Check formatting (Nix)
         run: nix fmt -- --check .
-      - name: Check formatting (YAML)
-        run: nix run nixpkgs#yamlfmt -- -lint .
       - name: Check linting (Nix)
         run: nix run nixpkgs#statix -- check .
       - name: Check for dead code (Nix)
