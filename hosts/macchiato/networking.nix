@@ -1,4 +1,4 @@
-{...}: let
+_: let
   wanInterface = "enp1s0";
   clientInterfaces = ["enp2s0" "sfp0"];
   serverInterfaces = ["enp3s0"];
