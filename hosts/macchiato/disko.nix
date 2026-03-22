@@ -2,7 +2,7 @@ _: {
   disko.devices = {
     disk.main = {
       type = "disk";
-      device = "/dev/sda";
+      device = "/dev/disk/by-id/ata-INTEL_SSDSCKKW120H6_CVLY630102UX120H";
       content = {
         type = "gpt";
         partitions = {
@@ -27,7 +27,11 @@ _: {
               mountpoint = "/persistent";
               mountOptions = ["noatime"];
               postMountHook = ''
-                mkdir -p "$(findmnt -n -o TARGET --source "$device")/nix"
+                persistent="$(findmnt -n -o TARGET --source "$device")"
+                mkdir -p "$persistent/nix"
+                rootMnt="$(dirname "$persistent")"
+                mkdir -p "$rootMnt/nix"
+                mount --bind "$persistent/nix" "$rootMnt/nix"
               '';
             };
           };
@@ -40,12 +44,6 @@ _: {
         fsType = "tmpfs";
         mountOptions = ["defaults" "mode=755"];
       };
-
-      "/nix" = {
-        fsType = "none";
-        device = "/persistent/nix";
-        mountOptions = ["bind"];
-      };
     };
   };
 
@@ -55,6 +53,9 @@ _: {
     "/nix" = {
       neededForBoot = true;
       depends = ["/persistent"];
+      device = "/persistent/nix";
+      fsType = "none";
+      options = ["bind"];
     };
   };
 }
