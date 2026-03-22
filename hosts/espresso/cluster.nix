@@ -5,9 +5,9 @@
   ...
 }: let
   nodeIPs = {
-    "espresso-0" = "10.0.186.18";
-    "espresso-1" = "10.0.186.19";
-    "espresso-2" = "10.0.186.20";
+    "espresso-0" = "10.0.187.2";
+    "espresso-1" = "10.0.187.3";
+    "espresso-2" = "10.0.187.4";
   };
   nodeIP = nodeIPs.${config.networking.hostName};
 in {
@@ -19,6 +19,7 @@ in {
       lib.mkIf
       (config.networking.hostName != "espresso-0")
       "https://${nodeIPs."espresso-0"}:6443";
+    extraFlags = "--cluster-cidr=10.42.0.0/16,fd42::/56 --service-cidr=10.43.0.0/16,fd43::/112 --flannel-ipv6-masq";
   };
 
   systemd.services.flux-bootstrap =
