@@ -1,7 +1,7 @@
 _: let
-  wanInterface = "enp1s0";
-  clientInterfaces = ["enp2s0" "sfp0"];
-  serverInterfaces = ["enp3s0"];
+  wanInterface = "enp2s0";
+  clientInterfaces = ["enp3s0" "enp4s0"];
+  serverInterfaces = ["enp5s0" "enp1s0f0" "enp1s0f1"];
 in {
   boot.kernel.sysctl = {
     "net.ipv6.conf.all.forwarding" = 1;
