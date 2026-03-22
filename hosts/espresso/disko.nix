@@ -56,8 +56,11 @@ in {
                   content = {
                     type = "filesystem";
                     format = "ext4";
-                    mountpoint = "/";
+                    mountpoint = "/persistent";
                     mountOptions = ["noatime"];
+                    postMountHook = ''
+                      mkdir -p "$(findmnt -n -o TARGET --source "$device")/nix"
+                    '';
                   };
                 };
               };
@@ -121,5 +124,27 @@ in {
           };
         };
       };
+
+    nodev = {
+      "/" = {
+        fsType = "tmpfs";
+        mountOptions = ["defaults" "mode=755"];
+      };
+
+      "/nix" = {
+        fsType = "none";
+        device = "/persistent/nix";
+        mountOptions = ["bind"];
+      };
+    };
+  };
+
+  fileSystems = {
+    "/persistent".neededForBoot = true;
+
+    "/nix" = {
+      neededForBoot = true;
+      depends = ["/persistent"];
+    };
   };
 }
