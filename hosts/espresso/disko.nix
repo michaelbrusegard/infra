@@ -59,7 +59,11 @@ in {
                     mountpoint = "/persistent";
                     mountOptions = ["noatime"];
                     postMountHook = ''
-                      mkdir -p "$(findmnt -n -o TARGET --source "$device")/nix"
+                      persistent="$(findmnt -n -o TARGET --source "$device")"
+                      mkdir -p "$persistent/nix"
+                      rootMnt="$(dirname "$persistent")"
+                      mkdir -p "$rootMnt/nix"
+                      mount --bind "$persistent/nix" "$rootMnt/nix"
                     '';
                   };
                 };
@@ -130,12 +134,6 @@ in {
         fsType = "tmpfs";
         mountOptions = ["defaults" "mode=755"];
       };
-
-      "/nix" = {
-        fsType = "none";
-        device = "/persistent/nix";
-        mountOptions = ["bind"];
-      };
     };
   };
 
@@ -145,6 +143,9 @@ in {
     "/nix" = {
       neededForBoot = true;
       depends = ["/persistent"];
+      device = "/persistent/nix";
+      fsType = "none";
+      options = ["bind"];
     };
   };
 }
