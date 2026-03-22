@@ -42,7 +42,6 @@ in
           vimPlugins
           opencode
           opencode-desktop
-          ruff
           uv
           ty
           oxlint
@@ -50,6 +49,7 @@ in
           postgresql
           lazysql
           ;
+        ruff-unstable = pkgs-unstable.ruff;
         eslint = pkgs-unstable.eslint.overrideAttrs (old: {
           meta = (old.meta or {}) // {mainProgram = "eslint";};
         });
