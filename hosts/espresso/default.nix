@@ -5,6 +5,7 @@
     inputs.self.nixosModules.console
     inputs.self.nixosModules.disable-documentation
     inputs.self.nixosModules.disko
+    inputs.self.nixosModules.impermanence
     inputs.self.nixosModules.k3s
     inputs.self.nixosModules.home-manager
     inputs.self.nixosModules.lanzaboote
