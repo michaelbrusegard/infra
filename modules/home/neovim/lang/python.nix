@@ -7,15 +7,15 @@
 
     lsp.servers.ty.package = pkgs.ty;
 
-    linting.filetypes.python.ruff.package = pkgs.ruff;
+    linting.filetypes.python.ruff.package = pkgs.ruff-unstable;
 
     formatting.filetypes.python = {
       ruff_organize = {
-        package = pkgs.ruff;
+        package = pkgs.ruff-unstable;
         args = ["check" "--select" "I" "--fix" "--stdin-filename" "-" "-"];
       };
       ruff_format = {
-        package = pkgs.ruff;
+        package = pkgs.ruff-unstable;
         args = ["format" "-"];
       };
     };
