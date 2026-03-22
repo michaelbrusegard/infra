@@ -19,7 +19,11 @@ in {
       lib.mkIf
       (config.networking.hostName != "espresso-0")
       "https://${nodeIPs."espresso-0"}:6443";
-    extraFlags = "--cluster-cidr=10.42.0.0/16,fd42::/56 --service-cidr=10.43.0.0/16,fd43::/112 --flannel-ipv6-masq";
+    extraFlags = [
+      "--cluster-cidr=10.42.0.0/16,fd42::/56"
+      "--service-cidr=10.43.0.0/16,fd43::/112"
+      "--flannel-ipv6-masq"
+    ];
   };
 
   systemd.services.flux-bootstrap =
