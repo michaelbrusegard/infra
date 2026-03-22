@@ -57,4 +57,6 @@ in {
     directories = persistedDirectories;
     files = persistedFiles;
   };
+
+  sops.age.sshKeyPaths = [ "${persistPath}/etc/ssh/ssh_host_ed25519_key" ];
 }
