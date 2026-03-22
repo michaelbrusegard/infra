@@ -11,7 +11,6 @@
     inputs.self.nixosModules.locale
     inputs.self.nixosModules.networking
     inputs.self.nixosModules.nix
-    inputs.self.nixosModules.openiscsi
     inputs.self.nixosModules.openssh
     inputs.self.nixosModules.security
     ./cluster.nix

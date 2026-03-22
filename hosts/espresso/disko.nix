@@ -44,7 +44,7 @@ in {
                 };
               };
               root = {
-                size = "100%";
+                size = "50G";
                 content = {
                   type = "luks";
                   name = "crypted";
@@ -54,23 +54,23 @@ in {
                   };
                   passwordFile = "/tmp/secret.key";
                   content = {
-                    type = "btrfs";
-                    extraArgs = ["-f"];
-                    subvolumes = {
-                      "/root" = {
-                        mountpoint = "/";
-                        mountOptions = ["compress=zstd" "noatime"];
-                      };
-                      "/home" = {
-                        mountpoint = "/home";
-                        mountOptions = ["compress=zstd" "noatime"];
-                      };
-                      "/nix" = {
-                        mountpoint = "/nix";
-                        mountOptions = ["compress=zstd" "noatime"];
-                      };
-                    };
+                    type = "filesystem";
+                    format = "ext4";
+                    mountpoint = "/";
+                    mountOptions = ["noatime"];
                   };
+                };
+              };
+              data = {
+                size = "100%";
+                content = {
+                  type = "luks";
+                  name = "crypted-main-data";
+                  settings = {
+                    allowDiscards = true;
+                    bypassWorkqueues = true;
+                  };
+                  passwordFile = "/tmp/secret.key";
                 };
               };
             };
@@ -94,12 +94,6 @@ in {
                     bypassWorkqueues = true;
                   };
                   passwordFile = "/tmp/secret.key";
-                  content = {
-                    type = "filesystem";
-                    format = "ext4";
-                    mountpoint = "/data/disk1";
-                    mountOptions = ["noatime"];
-                  };
                 };
               };
             };
@@ -121,12 +115,6 @@ in {
                     bypassWorkqueues = true;
                   };
                   passwordFile = "/tmp/secret.key";
-                  content = {
-                    type = "filesystem";
-                    format = "ext4";
-                    mountpoint = "/data/disk2";
-                    mountOptions = ["noatime"];
-                  };
                 };
               };
             };
