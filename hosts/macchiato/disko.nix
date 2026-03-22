@@ -22,17 +22,26 @@ _: {
           root = {
             size = "100%";
             content = {
-              type = "filesystem";
-              format = "ext4";
-              mountpoint = "/persistent";
-              mountOptions = ["noatime"];
-              postMountHook = ''
-                persistent="$(findmnt -n -o TARGET --source "$device")"
-                mkdir -p "$persistent/nix"
-                rootMnt="$(dirname "$persistent")"
-                mkdir -p "$rootMnt/nix"
-                mount --bind "$persistent/nix" "$rootMnt/nix"
-              '';
+              type = "luks";
+              name = "crypted";
+              settings = {
+                allowDiscards = true;
+                bypassWorkqueues = true;
+              };
+              passwordFile = "/tmp/secret.key";
+              content = {
+                type = "filesystem";
+                format = "ext4";
+                mountpoint = "/persistent";
+                mountOptions = ["noatime"];
+                postMountHook = ''
+                  persistent="$(findmnt -n -o TARGET --source "$device")"
+                  mkdir -p "$persistent/nix"
+                  rootMnt="$(dirname "$persistent")"
+                  mkdir -p "$rootMnt/nix"
+                  mount --bind "$persistent/nix" "$rootMnt/nix"
+                '';
+              };
             };
           };
         };
