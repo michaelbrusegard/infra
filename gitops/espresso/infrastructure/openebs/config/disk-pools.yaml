@@ -1,0 +1,83 @@
+apiVersion: openebs.io/v1beta2
+kind: DiskPool
+metadata:
+  name: pool-espresso-0-main
+  namespace: openebs
+  labels:
+    openebs.io/disk-type: nvme
+spec:
+  node: espresso-0
+  disks:
+    - /dev/mapper/crypted-main-data
+---
+apiVersion: openebs.io/v1beta2
+kind: DiskPool
+metadata:
+  name: pool-espresso-1-main
+  namespace: openebs
+  labels:
+    openebs.io/disk-type: nvme
+spec:
+  node: espresso-1
+  disks:
+    - /dev/mapper/crypted-main-data
+---
+apiVersion: openebs.io/v1beta2
+kind: DiskPool
+metadata:
+  name: pool-espresso-1-data1
+  namespace: openebs
+  labels:
+    openebs.io/disk-type: sata
+spec:
+  node: espresso-1
+  disks:
+    - /dev/mapper/crypted-data1
+---
+apiVersion: openebs.io/v1beta2
+kind: DiskPool
+metadata:
+  name: pool-espresso-1-data2
+  namespace: openebs
+  labels:
+    openebs.io/disk-type: sata
+spec:
+  node: espresso-1
+  disks:
+    - /dev/mapper/crypted-data2
+---
+apiVersion: openebs.io/v1beta2
+kind: DiskPool
+metadata:
+  name: pool-espresso-2-main
+  namespace: openebs
+  labels:
+    openebs.io/disk-type: nvme
+spec:
+  node: espresso-2
+  disks:
+    - /dev/mapper/crypted-main-data
+---
+apiVersion: openebs.io/v1beta2
+kind: DiskPool
+metadata:
+  name: pool-espresso-2-data1
+  namespace: openebs
+  labels:
+    openebs.io/disk-type: sata
+spec:
+  node: espresso-2
+  disks:
+    - /dev/mapper/crypted-data1
+---
+apiVersion: openebs.io/v1beta2
+kind: DiskPool
+metadata:
+  name: pool-espresso-2-data2
+  namespace: openebs
+  labels:
+    openebs.io/disk-type: sata
+spec:
+  node: espresso-2
+  disks:
+    - /dev/mapper/crypted-data2

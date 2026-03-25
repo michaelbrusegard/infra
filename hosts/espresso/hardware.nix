@@ -8,7 +8,8 @@
 in {
   boot = {
     initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
-    kernelModules = ["kvm-amd"];
+    kernelModules = ["kvm-amd" "nvme-tcp"];
+    kernelParams = ["hugepagesz=2M" "hugepages=1024"];
 
     initrd.luks.devices =
       {
