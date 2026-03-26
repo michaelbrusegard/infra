@@ -10,6 +10,7 @@ in {
 
   networking = {
     useDHCP = false;
+    nftables.enable = true;
     bridges.br_clients.interfaces = clientInterfaces;
     bridges.br_servers.interfaces = serverInterfaces;
 
@@ -124,9 +125,15 @@ in {
       enable = true;
       settings = {
         port = 0;
+        bind-interfaces = true;
+        interface = [
+          "br_clients"
+          "br_servers"
+        ];
+        dhcp-authoritative = true;
         dhcp-range = [
-          "interface:br_clients,10.0.186.2,10.0.186.254,24h"
-          "interface:br_servers,10.0.187.2,10.0.187.254,24h"
+          "set:br_clients,10.0.186.2,10.0.186.254,24h"
+          "set:br_servers,10.0.187.2,10.0.187.254,24h"
         ];
         dhcp-option = [
           "tag:br_clients,option:router,10.0.186.1"

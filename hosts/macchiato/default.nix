@@ -25,4 +25,18 @@
   ];
 
   system.stateVersion = "25.11";
+
+  services.prometheus.exporters.node = {
+    enable = true;
+    enabledCollectors = ["systemd"];
+  };
+
+  services.prometheus.scrapeConfigs = [
+    {
+      job_name = "node";
+      static_configs = [
+        {targets = ["127.0.0.1:9100"];}
+      ];
+    }
+  ];
 }
