@@ -8,7 +8,6 @@
   persistPath = "/persistent";
 
   baseDirectories = [
-    "/etc/ssh"
     "/root"
     "/var/lib/nixos"
     "/var/lib/systemd"
@@ -54,6 +53,8 @@
 
   persistedFiles = [
     "/etc/machine-id"
+    "/etc/ssh/ssh_host_ed25519_key"
+    "/etc/ssh/ssh_host_ed25519_key.pub"
   ];
 in {
   imports = [
@@ -65,6 +66,11 @@ in {
     directories = persistedDirectories;
     files = persistedFiles;
   };
+
+  systemd.tmpfiles.rules = [
+    "z /etc/ssh/ssh_host_ed25519_key 0600 root root -"
+    "z /etc/ssh/ssh_host_ed25519_key.pub 0644 root root -"
+  ];
 
   sops.age.sshKeyPaths = ["${persistPath}/etc/ssh/ssh_host_ed25519_key"];
 }
