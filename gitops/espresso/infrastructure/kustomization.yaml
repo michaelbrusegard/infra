@@ -4,3 +4,6 @@ resources:
   - openebs
   - metrics-server/metrics-server-install.yaml
   - coredns/coredns-config.yaml
+  - gateway-api
+  - cilium
+  - gateway
