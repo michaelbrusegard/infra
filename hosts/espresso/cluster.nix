@@ -9,7 +9,12 @@
     "espresso-1" = "10.0.187.3";
     "espresso-2" = "10.0.187.4";
   };
-  nodeIP = nodeIPs.${config.networking.hostName};
+  nodeIPv6s = {
+    "espresso-0" = "fd7a:115c:a1e0:187::2";
+    "espresso-1" = "fd7a:115c:a1e0:187::3";
+    "espresso-2" = "fd7a:115c:a1e0:187::4";
+  };
+  nodeIP = "${nodeIPs.${config.networking.hostName}},${nodeIPv6s.${config.networking.hostName}}";
 in {
   services.k3s = {
     inherit nodeIP;
@@ -22,7 +27,6 @@ in {
     extraFlags = [
       "--cluster-cidr=10.42.0.0/16,fd42::/56"
       "--service-cidr=10.43.0.0/16,fd43::/112"
-      "--flannel-ipv6-masq"
     ];
   };
 

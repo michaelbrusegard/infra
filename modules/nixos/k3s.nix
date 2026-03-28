@@ -5,6 +5,9 @@
     nodeName = config.networking.hostName;
     extraFlags = [
       "--write-kubeconfig-mode=0644"
+      "--disable-kube-proxy"
+      "--disable-network-policy"
+      "--flannel-backend=none"
     ];
     disable = [
       "traefik"
