@@ -24,6 +24,12 @@ in {
             prefixLength = 24;
           }
         ];
+        ipv6.addresses = [
+          {
+            address = "fd7a:115c:a1e0:186::1";
+            prefixLength = 64;
+          }
+        ];
       };
       br_servers = {
         useDHCP = false;
@@ -31,6 +37,12 @@ in {
           {
             address = "10.0.187.1";
             prefixLength = 24;
+          }
+        ];
+        ipv6.addresses = [
+          {
+            address = "fd7a:115c:a1e0:187::1";
+            prefixLength = 64;
           }
         ];
       };
@@ -79,7 +91,7 @@ in {
 
         "${wanInterface}" = {
           allowedTCPPorts = [80 443];
-          # allowedUDPPorts = [51820];
+          #   allowedUDPPorts = [51820];
         };
       };
     };
@@ -133,7 +145,7 @@ in {
         dhcp-authoritative = true;
         dhcp-range = [
           "set:br_clients,10.0.186.2,10.0.186.254,24h"
-          "set:br_servers,10.0.187.2,10.0.187.254,24h"
+          "set:br_servers,10.0.187.2,10.0.187.127,24h"
         ];
         dhcp-option = [
           "tag:br_clients,option:router,10.0.186.1"
@@ -158,44 +170,31 @@ in {
       };
     };
 
-    haproxy = {
-      enable = true;
+    frr = {
+      bgpd.enable = true;
       config = ''
-        global
-          maxconn 4096
+        router bgp 65000
+          bgp router-id 10.0.187.1
+          neighbor 10.0.187.2 remote-as 65001
+          neighbor 10.0.187.3 remote-as 65001
+          neighbor 10.0.187.4 remote-as 65001
+          neighbor fd7a:115c:a1e0:187::2 remote-as 65001
+          neighbor fd7a:115c:a1e0:187::3 remote-as 65001
+          neighbor fd7a:115c:a1e0:187::4 remote-as 65001
 
-        defaults
-          mode tcp
-          timeout client 30s
-          timeout server 30s
-          timeout connect 5s
+          address-family ipv4 unicast
+            maximum-paths 3
+            neighbor 10.0.187.2 activate
+            neighbor 10.0.187.3 activate
+            neighbor 10.0.187.4 activate
+          exit-address-family
 
-        frontend k3s_api
-          bind *:6443
-          default_backend k3s_servers
-        backend k3s_servers
-          balance roundrobin
-          server espresso-0 10.0.187.2:6443 check
-          server espresso-1 10.0.187.3:6443 check
-          server espresso-2 10.0.187.4:6443 check
-
-        frontend http_ing
-          bind *:80
-          default_backend http_servers
-        backend http_servers
-          balance roundrobin
-          server espresso-0 10.0.187.2:80 check
-          server espresso-1 10.0.187.3:80 check
-          server espresso-2 10.0.187.4:80 check
-
-        frontend https_ing
-          bind *:443
-          default_backend https_servers
-        backend https_servers
-          balance roundrobin
-          server espresso-0 10.0.187.2:443 check
-          server espresso-1 10.0.187.3:443 check
-          server espresso-2 10.0.187.4:443 check
+          address-family ipv6 unicast
+            maximum-paths 3
+            neighbor fd7a:115c:a1e0:187::2 activate
+            neighbor fd7a:115c:a1e0:187::3 activate
+            neighbor fd7a:115c:a1e0:187::4 activate
+          exit-address-family
       '';
     };
   };
