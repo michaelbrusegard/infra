@@ -153,6 +153,8 @@ in {
       enable = true;
       reflector = true;
       allowInterfaces = ["br_clients" "br_servers"];
+      publish.enable = true;
+      publish.userServices = true;
       openFirewall = true;
     };
 
