@@ -10,18 +10,26 @@
   baseDirectories = [
     "/etc/ssh"
     "/root"
-    "/var/lib/fail2ban"
     "/var/lib/nixos"
     "/var/lib/systemd"
     "/var/log"
   ];
 
-  userDirectories = map (user: "/home/${user}") users;
+  userDirectories =
+    map (user: {
+      directory = "/home/${user}";
+      inherit user;
+      inherit (config.users.users.${user}) group;
+      mode = "u=rwx,g=,o=";
+    })
+    users;
 
   serviceDirectories =
     lib.optionals config.services.k3s.enable [
-      "/var/lib/longhorn"
       "/var/lib/rancher/k3s"
+    ]
+    ++ lib.optionals config.services.fail2ban.enable [
+      "/var/lib/fail2ban"
     ]
     ++ lib.optionals config.services.mosquitto.enable [
       config.services.mosquitto.dataDir

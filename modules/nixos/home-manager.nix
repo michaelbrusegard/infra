@@ -28,15 +28,6 @@ in {
     inherit inputs isWsl;
   };
 
-  system.activationScripts.homeManagerProfileDirs = {
-    deps = ["users"];
-    text = lib.concatLines (map (user: ''
-        install -d -m 0700 -o ${user.user} -g ${user.group} "${user.home}/.local/state/nix/profiles"
-        install -d -m 0700 -o ${user.user} -g ${user.group} "${user.home}/.local/state/home-manager/gcroots"
-      '')
-      homeManagerUsers);
-  };
-
   home-manager.users = builtins.listToAttrs (
     map (user: {
       name = user;
