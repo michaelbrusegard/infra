@@ -158,6 +158,9 @@ in {
       openFirewall = true;
     };
 
+    # Bind Homebridge to the client VLAN so HomeKit devices can discover it
+    homebridge.settings.bridge.bind = ["10.0.186.1"];
+
     # DHCP-only server (port = 0 disables DNS; blocky handles DNS instead)
     dnsmasq = {
       enable = true;
