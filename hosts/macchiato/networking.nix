@@ -4,7 +4,10 @@ _: let
   serverInterfaces = ["enp5s0" "enp1s0f0" "enp1s0f1"];
 in {
   boot.kernel.sysctl = {
+    # Required for routing traffic between bridges and to the internet
     "net.ipv6.conf.all.forwarding" = 1;
+    # Accept router advertisements on WAN even with forwarding enabled
+    # (normally forwarding disables RA acceptance; value 2 overrides that)
     "net.ipv6.conf.${wanInterface}.accept_ra" = 2;
   };
 
@@ -15,7 +18,10 @@ in {
     bridges.br_servers.interfaces = serverInterfaces;
 
     interfaces = {
+      # WAN gets its address from the ISP via DHCP
       "${wanInterface}".useDHCP = true;
+
+      # Client VLAN: personal devices, APs, TVs (10.0.186.0/24)
       br_clients = {
         useDHCP = false;
         ipv4.addresses = [
@@ -24,6 +30,7 @@ in {
             prefixLength = 24;
           }
         ];
+        # Stable ULA gateway for internal IPv6 (not affected by ISP prefix changes)
         ipv6.addresses = [
           {
             address = "fd7a:115c:a1e0:186::1";
@@ -31,6 +38,9 @@ in {
           }
         ];
       };
+
+      # Server VLAN: k3s cluster nodes (10.0.187.0/24)
+      # DHCP range ends at .127; .128-.255 is reserved for Cilium LoadBalancer IPs
       br_servers = {
         useDHCP = false;
         ipv4.addresses = [
@@ -48,6 +58,8 @@ in {
       };
     };
 
+    # WAN DHCP client: requests an IPv4 address (ia_na) and an IPv6 prefix
+    # delegation (ia_pd) from the ISP, splitting the delegated /64s across bridges
     dhcpcd = {
       enable = true;
       denyInterfaces = ["br_clients" "br_servers"];
@@ -58,24 +70,30 @@ in {
       '';
     };
 
+    # IPv4 NAT (masquerade) for outbound internet access from both VLANs
+    # IPv6 does not need NAT — devices use public GUA addresses from prefix delegation
     nat = {
       enable = true;
       externalInterface = wanInterface;
       internalInterfaces = [
         "br_clients"
         "br_servers"
-        /*
-        "wg0"
-        */
+        # "wg0"
       ];
     };
 
     firewall = {
       enable = true;
+      # All traffic from LAN bridges is trusted (no per-port filtering)
       trustedInterfaces = ["br_clients" "br_servers"];
 
-      # Control traffic between internal subnets
       extraForwardRules = ''
+        # IPv6 forwarding protection: devices on the LAN get public IPv6 addresses
+        # via prefix delegation, so without these rules they would be directly
+        # reachable from the internet. Allow return traffic, block everything else.
+        iifname "${wanInterface}" ct state established,related accept
+        iifname "${wanInterface}" drop
+
         # Allow servers to reach out to clients (e.g., Home Assistant polling smart plugs)
         iifname "br_servers" oifname "br_clients" accept
 
@@ -83,15 +101,17 @@ in {
         iifname "br_clients" oifname "br_servers" tcp dport { 22, 80, 443 } accept
       '';
 
+      # Ports open to the internet on the WAN interface
+      # SSH (port 2286) is opened separately by openssh module's openFirewall = true
       interfaces = {
-        # wg0 = {
+        # "wg0" = {
         #   allowedTCPPorts = [53 9090 3000 1883 8080 8581 6443];
         #   allowedUDPPorts = [53];
         # };
 
         "${wanInterface}" = {
           allowedTCPPorts = [80 443];
-          #   allowedUDPPorts = [51820];
+          # allowedUDPPorts = [51820];
         };
       };
     };
@@ -105,6 +125,8 @@ in {
   };
 
   services = {
+    # Advertise IPv6 prefixes on both bridges so LAN devices get public
+    # GUA addresses (from ISP prefix delegation) via SLAAC
     radvd = {
       enable = true;
       config = ''
@@ -126,6 +148,7 @@ in {
       '';
     };
 
+    # mDNS reflector so devices on different bridges can discover each other
     avahi = {
       enable = true;
       reflector = true;
@@ -133,6 +156,7 @@ in {
       openFirewall = true;
     };
 
+    # DHCP-only server (port = 0 disables DNS; blocky handles DNS instead)
     dnsmasq = {
       enable = true;
       settings = {
@@ -145,6 +169,7 @@ in {
         dhcp-authoritative = true;
         dhcp-range = [
           "set:br_clients,10.0.186.2,10.0.186.254,24h"
+          # Stops at .127 — the .128/25 block is reserved for Cilium LB IPs via BGP
           "set:br_servers,10.0.187.2,10.0.187.127,24h"
         ];
         dhcp-option = [
@@ -170,11 +195,16 @@ in {
       };
     };
 
+    # BGP peering with the k3s cluster (Cilium) for LoadBalancer IP advertisement
+    # -l restricts bgpd to listen only on the server VLAN, not on WAN
     frr = {
       bgpd.enable = true;
+      bgpd.extraOptions = ["-l" "10.0.187.1"];
       config = ''
         router bgp 65000
           bgp router-id 10.0.187.1
+
+          # Peer with each k3s node over both IPv4 and IPv6
           neighbor 10.0.187.2 remote-as 65001
           neighbor 10.0.187.3 remote-as 65001
           neighbor 10.0.187.4 remote-as 65001
@@ -183,6 +213,7 @@ in {
           neighbor fd7a:115c:a1e0:187::4 remote-as 65001
 
           address-family ipv4 unicast
+            # ECMP: distribute traffic across all 3 nodes
             maximum-paths 3
             neighbor 10.0.187.2 activate
             neighbor 10.0.187.3 activate
