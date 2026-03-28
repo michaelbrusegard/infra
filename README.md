@@ -318,42 +318,37 @@ zstd -dc result/sd-image/*.zst | sudo dd of=/dev/XXX bs=4M status=progress oflag
 
 ## Macchiato (NixOS Raspberry Pi Family Home Server)
 
-Build the SD image on a machine with `nix` using the following command:
+Create a minimal installer USB by downloading from [here](https://nixos.org/download/#nixos-iso)
+and flashing it to the drive using the following command:
 
 ```sh
-nix build .#Macchiato
+sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
 ```
 
-The resulting image can be found in `result/sd-image/`. It is a compressed
-Zstandard archive that can be flashed to an SD card.
+Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
+with the path to your USB drive.
 
-### Flashing the SD Card (Macchiato)
+### Prepare the machine
 
-We need to plug in the SD card and find out what the device path is for
-the SD card.
+Plug in the USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
+Set a temporary password using the `passwd` command for SSH access.
+Run `ip a` to find the IP address on the machine.
+Alternatively connect it directy to a Mac with "Internet Sharing" enabled.
 
-On Linux:
+### Install with NixOS Anywhere
+
+Copy the LUKS passphrase into this relative file: `./secret.key`.
+Do the same with the host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
+Run the following installation command, if prompted for a password, it is the temporary password created when preparing the machine.
 
 ```sh
-lsblk
+nixos-anywhere --extra-files ./keys --flake .#macchiato --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
 ```
 
-On Darwin:
+### Post install
 
-```sh
-diskutil list
-```
-
-On Linux it is usually `/dev/sdX` where `X` is a letter, for example
-`/dev/sdb`. On Darwin it is usually `/dev/diskX` where `X` is a number for
-example `/dev/disk6`.
-
-To flash the image to the SD card you can use the following command, make
-sure to replace `/dev/XXX` with the correct device path for your SD card:
-
-```sh
-zstd -dc result/sd-image/*.zst | sudo dd of=/dev/XXX bs=4M status=progress oflag=sync
-```
+Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt user secrets.
+**Important:** Setup TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto /dev/sda2`.
 
 ## Espresso (NixOS K3s Cluster)
 
