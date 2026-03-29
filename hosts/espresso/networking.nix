@@ -32,6 +32,7 @@ in {
 
     firewall = {
       allowedTCPPorts = [6443 6444 2379 2380 10250];
+      trustedInterfaces = ["cilium_host" "cilium_net"];
     };
   };
 
