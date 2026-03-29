@@ -166,7 +166,7 @@ You can run `ip a` to find the IP address.
 3. **Post-Install**:
    - Add user Age key to `~/.config/sops/age/keys.txt`).
    - Move over the GitHub SSH private key and clone the nix configuration: `git clone git@github.com:michaelbrusegard/nix-config.git ~/Projects/nix-config`.
-   - For TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+2+7 /dev/sda2`.
+   - For TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+11 /dev/sda2`.
 
 ### Create Windows installer
 
