@@ -401,6 +401,18 @@ Replace `Espresso1` with `Espresso2`/`Espresso3` and the correct IP.
 
 - Copy sops keys to each node (e.g., via SSH or USB)
 
+```sh
+sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/nvme0n1p2
+sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/nvme0n1p3
+sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/sda1
+sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/sdb1
+
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p2
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p3
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/sda1
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/sdb1
+```
+
 ### Cluster Management
 
 - Access via `kubectl` after connecting to any node
