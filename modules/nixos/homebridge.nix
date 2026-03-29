@@ -8,6 +8,7 @@
           inherit (config.secrets.homebridge.settings.bridge) username;
           inherit (config.secrets.homebridge.settings.bridge) pin;
           port = 51826;
+          advertiser = "avahi";
         };
         platforms = [
           {
