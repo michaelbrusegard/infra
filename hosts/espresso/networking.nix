@@ -2,7 +2,7 @@
   nodeMACs = {
     "espresso-0" = "c8:98:db:19:12:30";
     "espresso-1" = "b4:96:91:26:31:fa";
-    "espresso-2" = "24:4b:fe:ca:8d:9b";
+    "espresso-2" = "b4:96:91:ff:ff:ff";
   };
   nodeIPv6s = {
     "espresso-0" = "fd7a:115c:a1e0:187::2";
