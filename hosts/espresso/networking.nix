@@ -1,7 +1,4 @@
-{
-  config,
-  ...
-}: let
+{config, ...}: let
   nodeMACs = {
     "espresso-0" = "c8:98:db:19:12:30";
     "espresso-1" = "24:4b:fe:cc:18:0e";
