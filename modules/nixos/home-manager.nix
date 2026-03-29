@@ -1,19 +1,9 @@
 {
-  config,
   inputs,
-  lib,
   users,
   isWsl,
   ...
-}: let
-  homeManagerUsers =
-    map (user: {
-      inherit user;
-      inherit (config.users.users.${user}) home;
-      inherit (config.users.users.${user}) group;
-    })
-    users;
-in {
+}: {
   imports = [
     inputs.home-manager.nixosModules.home-manager
   ];
