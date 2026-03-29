@@ -38,12 +38,8 @@ jobs:
           ssh-private-key: ${{ secrets.NIX_SECRETS_DEPLOY_KEY }}
       - uses: DeterminateSystems/nix-installer-action@c5a866b6ab867e88becbed4467b93592bce69f8a # v21
       - uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
-      - name: Check formatting (Nix)
-        run: nix fmt -- --check .
-      - name: Check linting (Nix)
-        run: nix run nixpkgs#statix -- check .
-      - name: Check for dead code (Nix)
-        run: nix run nixpkgs#deadnix -- --fail .
+      - name: Check code quality (Nix)
+        run: nix fmt -- --fail-on-change --no-cache
       - name: Validate flake (Nix)
         run: nix flake check --show-trace
   validate-nix:
