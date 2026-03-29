@@ -348,7 +348,7 @@ nixos-anywhere --extra-files ./keys --flake .#macchiato --disk-encryption-keys /
 ### Post install
 
 Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt user secrets.
-**Important:** Setup TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto /dev/sda2`.
+**Important:** Setup TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/sda2`.
 
 ## Espresso (NixOS K3s Cluster)
 
