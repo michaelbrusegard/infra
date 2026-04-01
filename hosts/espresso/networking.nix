@@ -32,7 +32,18 @@ in {
 
     firewall = {
       allowedTCPPorts = [6443 6444 2379 2380 10250];
-      trustedInterfaces = ["cilium_host" "cilium_net" "cilium_vxlan" "lxc+"];
+      extraCommands = ''
+        iptables -I nixos-fw 1 -s 10.42.0.0/16 -j nixos-fw-accept
+        iptables -I nixos-fw 2 -s 10.43.0.0/16 -j nixos-fw-accept
+        ip6tables -I nixos-fw 1 -s fd42::/56 -j nixos-fw-accept
+        ip6tables -I nixos-fw 2 -s fd43::/112 -j nixos-fw-accept
+      '';
+      extraStopCommands = ''
+        iptables -D nixos-fw -s 10.42.0.0/16 -j nixos-fw-accept || true
+        iptables -D nixos-fw -s 10.43.0.0/16 -j nixos-fw-accept || true
+        ip6tables -D nixos-fw -s fd42::/56 -j nixos-fw-accept || true
+        ip6tables -D nixos-fw -s fd43::/112 -j nixos-fw-accept || true
+      '';
     };
   };
 
