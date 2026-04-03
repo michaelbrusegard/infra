@@ -23,6 +23,7 @@
     packages = with pkgs; [
       kubectl
       fluxcd
+      kubernetes-helm
     ];
     sessionVariables.KUBECONFIG = config.secrets.home.kubeConfigFile;
   };
