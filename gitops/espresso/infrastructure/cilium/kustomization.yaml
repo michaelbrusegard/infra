@@ -4,3 +4,4 @@ resources:
   - helm-repository.yaml
   - helm-release.yaml
   - ip-pool.yaml
+  - host-firewall.yaml
