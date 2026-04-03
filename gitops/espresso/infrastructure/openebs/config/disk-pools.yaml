@@ -1,4 +1,4 @@
-apiVersion: openebs.io/v1beta2
+apiVersion: openebs.io/v1beta3
 kind: DiskPool
 metadata:
   name: pool-espresso-0-main
@@ -10,7 +10,7 @@ spec:
   disks:
     - /dev/mapper/crypted-main-data
 ---
-apiVersion: openebs.io/v1beta2
+apiVersion: openebs.io/v1beta3
 kind: DiskPool
 metadata:
   name: pool-espresso-1-main
@@ -22,7 +22,7 @@ spec:
   disks:
     - /dev/mapper/crypted-main-data
 ---
-apiVersion: openebs.io/v1beta2
+apiVersion: openebs.io/v1beta3
 kind: DiskPool
 metadata:
   name: pool-espresso-1-data1
@@ -34,7 +34,7 @@ spec:
   disks:
     - /dev/mapper/crypted-data1
 ---
-apiVersion: openebs.io/v1beta2
+apiVersion: openebs.io/v1beta3
 kind: DiskPool
 metadata:
   name: pool-espresso-1-data2
@@ -46,7 +46,7 @@ spec:
   disks:
     - /dev/mapper/crypted-data2
 ---
-apiVersion: openebs.io/v1beta2
+apiVersion: openebs.io/v1beta3
 kind: DiskPool
 metadata:
   name: pool-espresso-2-main
@@ -58,7 +58,7 @@ spec:
   disks:
     - /dev/mapper/crypted-main-data
 ---
-apiVersion: openebs.io/v1beta2
+apiVersion: openebs.io/v1beta3
 kind: DiskPool
 metadata:
   name: pool-espresso-2-data1
@@ -70,7 +70,7 @@ spec:
   disks:
     - /dev/mapper/crypted-data1
 ---
-apiVersion: openebs.io/v1beta2
+apiVersion: openebs.io/v1beta3
 kind: DiskPool
 metadata:
   name: pool-espresso-2-data2
