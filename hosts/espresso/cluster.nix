@@ -38,6 +38,7 @@
       masquerade = true;
       hostRouting = true;
     };
+    envoyConfig.enabled = true;
     hostFirewall.enabled = true;
     bgpControlPlane.enabled = true;
     externalIPs.enabled = true;
