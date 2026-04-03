@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{pkgs, lib, ...}: {
   programs.neovim.spec = {
     treesitter.grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
       ninja
@@ -26,7 +26,7 @@
       "nvim-dap-python" = {
         package = pkgs.vimPlugins.nvim-dap-python;
         setupModule = "dap-python";
-        setupOpts = "${pkgs.python3Packages.debugpy}/bin/debugpy-adapter";
+        setupOpts = "${lib.getExe' pkgs.python3Packages.debugpy "debugpy-adapter"}";
         after = "nvim-dap";
         filetype = ["python"];
         keymaps = [

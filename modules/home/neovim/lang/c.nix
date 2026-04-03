@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{pkgs, lib, ...}: {
   programs.neovim.spec = {
     treesitter.grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
       c
@@ -15,7 +15,7 @@
           offsetEncoding = ["utf-16"];
         };
         cmd = [
-          "${pkgs.clang-tools}/bin/clangd"
+          "${lib.getExe' pkgs.clang-tools "clangd"}"
           "--background-index"
           "--clang-tidy"
           "--header-insertion=iwyu"

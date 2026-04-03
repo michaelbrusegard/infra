@@ -115,12 +115,12 @@
         "mod5, 0, togglefloating,"
 
         # System
-        "mod5, return, exec, ${pkgs.wezterm}/bin/wezterm start --always-new-process"
-        "mod5 shift, return, exec, ${pkgs.wezterm}/bin/wezterm start --always-new-process -e ${pkgs.bash}/bin/sh -c '${pkgs.yazi}/bin/yazi'"
+        "mod5, return, exec, ${lib.getExe pkgs.wezterm} start --always-new-process"
+        "mod5 shift, return, exec, ${lib.getExe pkgs.wezterm} start --always-new-process -e ${lib.getExe' pkgs.bash "sh"} -c '${lib.getExe pkgs.yazi}'"
         "super, space, exec, dms ipc call spotlight toggle"
         "super shift, v, exec, dms ipc call clipboard toggle"
-        "super, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive"
-        "super shift, q, exec, ${pkgs.hyprland}/bin/hyprctl dispatch killactive; WID=$(${pkgs.jq}/bin/jq -r .class <<< $(${pkgs.hyprland}/bin/hyprctl activewindow -j)); ${pkgs.uutils-coreutils}/bin/uutils-pkill -KILL -f \"$WID\""
+        "super, q, exec, ${lib.getExe' pkgs.hyprland "hyprctl"} dispatch killactive"
+        "super shift, q, exec, ${lib.getExe' pkgs.hyprland "hyprctl"} dispatch killactive; WID=$(${lib.getExe pkgs.jq} -r .class <<< $(${lib.getExe' pkgs.hyprland "hyprctl"} activewindow -j)); ${lib.getExe' pkgs.uutils-coreutils "uutils-pkill"} -KILL -f \"$WID\""
         "super ctrl, q, exec, dms ipc call lock lock"
         "super ctrl, f, fullscreen, 0"
         "super shift, 3, exec, dms screenshot full -d ~/Pictures/screenshots"

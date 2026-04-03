@@ -82,7 +82,7 @@ in {
                       absPath =
                         if f.package ? meta.mainProgram
                         then lib.getExe f.package
-                        else "''${f.package}/bin/''${binName}";
+                        else lib.getExe' f.package binName;
                     in
                       mkLuaInline ''
                         function(self, ctx)

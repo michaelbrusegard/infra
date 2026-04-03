@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{pkgs, lib, ...}: {
   programs.wezterm.spec.plugins = {
     "smart_workspace_switcher" = {
       url = "https://github.com/MLFlexer/smart_workspace_switcher.wezterm";
@@ -10,7 +10,7 @@
         }
       ];
       extraLuaAfter = ''
-        smart_workspace_switcher.zoxide_path = '${pkgs.zoxide}/bin/zoxide'
+        smart_workspace_switcher.zoxide_path = '${lib.getExe pkgs.zoxide}'
 
         smart_workspace_switcher.workspace_formatter = function(name)
           return wezterm.format({
