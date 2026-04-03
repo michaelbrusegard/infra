@@ -92,7 +92,7 @@ in {
                     in
                       if linter.package ? meta.mainProgram
                       then lib.getExe linter.package
-                      else "''${linter.package}/bin/''${binName}"
+                      else lib.getExe' linter.package binName
                     else null;
                   bin_name =
                     if linter.package != null

@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   config,
   ...
 }: {
@@ -12,7 +13,7 @@
   launchd = {
     user.agents = {
       colima = {
-        command = "${pkgs.colima}/bin/colima start --cpu 4 --memory 8 --disk 100";
+        command = "${lib.getExe pkgs.colima} start --cpu 4 --memory 8 --disk 100";
         serviceConfig = {
           EnvironmentVariables = {
             PATH = "${pkgs.docker}/bin:${pkgs.colima}/bin:/usr/local/bin:/usr/bin:/bin";
@@ -24,7 +25,7 @@
         };
       };
       docker-auto-prune = {
-        command = "${pkgs.docker}/bin/docker system prune -af";
+        command = "${lib.getExe pkgs.docker} system prune -af";
         serviceConfig = {
           UserName = config.system.primaryUser;
           StartCalendarInterval = {

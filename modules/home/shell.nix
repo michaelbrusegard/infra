@@ -6,19 +6,19 @@
   ...
 }: let
   safeRm = pkgs.writeScriptBin "rm" ''
-    #!${pkgs.zsh}/bin/zsh
+    #!${lib.getExe pkgs.zsh}
     if [ $# -eq 1 ] && [[ "$1" != -* ]]; then
-      exec ${pkgs.trash-cli}/bin/trash "$1"
+      exec ${lib.getExe' pkgs.trash-cli "trash"} "$1"
     fi
-    exec ${pkgs.uutils-coreutils}/bin/uutils-rm "$@"
+    exec ${lib.getExe' pkgs.uutils-coreutils "uutils-rm"} "$@"
   '';
 
   toDnxhr = pkgs.writeScriptBin "to-dnxhr" ''
-    #!${pkgs.zsh}/bin/zsh
+    #!${lib.getExe pkgs.zsh}
     convert_file() {
       local input_file="''$1"
-      local dir="''$(${pkgs.uutils-coreutils}/bin/uutils-dirname "''$input_file")"
-      local base="''$(${pkgs.uutils-coreutils}/bin/uutils-basename "''${input_file%.*}")"
+      local dir="''$(${lib.getExe' pkgs.uutils-coreutils "uutils-dirname"} "''$input_file")"
+      local base="''$(${lib.getExe' pkgs.uutils-coreutils "uutils-basename"} "''${input_file%.*}")"
       local output_file="''$dir/''$base"_dnxhr.mov
       if [ -f "''$output_file" ]; then
         echo "Skipping: '''$input_file' (output already exists)"
@@ -27,7 +27,7 @@
 
       echo "Converting: '''$input_file'"
       echo "Output:     '''$output_file'"
-      if ${pkgs.ffmpeg}/bin/ffmpeg -hide_banner -loglevel error -stats -nostdin -i "''$input_file" -c:v dnxhd -profile:v dnxhr_hq -c:a pcm_s16le -pix_fmt yuv422p "''$output_file"; then
+      if ${lib.getExe pkgs.ffmpeg} -hide_banner -loglevel error -stats -nostdin -i "''$input_file" -c:v dnxhd -profile:v dnxhr_hq -c:a pcm_s16le -pix_fmt yuv422p "''$output_file"; then
         echo "✓ Conversion successful: ''$input_file"
       else
         echo "✗ Conversion failed: ''$input_file"
@@ -38,7 +38,7 @@
     process_path() {
       local path="''$1"
       if [ -f "''$path" ]; then
-      if ${pkgs.file}/bin/file -b --mime-type "''$path" | ${pkgs.ripgrep}/bin/rg -q "^video/"; then
+      if ${lib.getExe pkgs.file} -b --mime-type "''$path" | ${lib.getExe pkgs.ripgrep} -q "^video/"; then
         if [[ "''$path" == *"_dnxhr"* ]]; then
           echo "Skipping: '''$path' (already in DNxHR format)"
         else
@@ -52,11 +52,11 @@
         local count=0
         local failed=0
         while IFS= read -r -d ''$'\0' file; do
-          if ${pkgs.file}/bin/file -b --mime-type "''$file" | ${pkgs.ripgrep}/bin/rg -q "^video/"; then
+          if ${lib.getExe pkgs.file} -b --mime-type "''$file" | ${lib.getExe pkgs.ripgrep} -q "^video/"; then
             count=''$((count + 1))
             convert_file "''$file" || failed=''$((failed + 1))
           fi
-        done < <(${pkgs.findutils}/bin/find "''$path" -type f -print0)
+        done < <(${lib.getExe' pkgs.findutils "find"} "''$path" -type f -print0)
         echo "Directory processing complete:"
         echo "- Total videos processed: ''$count"
         echo "- Successful: ''$((count - failed))"
@@ -280,19 +280,19 @@ in {
         SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
       }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? googleGenerativeAiApiKeyFile) {
-        GOOGLE_GENERATIVE_AI_API_KEY = "$( [ -f ${config.secrets.keys.googleGenerativeAiApiKeyFile} ] && ${pkgs.uutils-coreutils}/bin/uutils-cat ${config.secrets.keys.googleGenerativeAiApiKeyFile} )";
+        GOOGLE_GENERATIVE_AI_API_KEY = "$( [ -f ${config.secrets.keys.googleGenerativeAiApiKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.googleGenerativeAiApiKeyFile} )";
       }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? zaiApiKeyFile) {
-        ZAI_API_KEY = "$( [ -f ${config.secrets.keys.zaiApiKeyFile} ] && ${pkgs.uutils-coreutils}/bin/uutils-cat ${config.secrets.keys.zaiApiKeyFile} )";
+        ZAI_API_KEY = "$( [ -f ${config.secrets.keys.zaiApiKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.zaiApiKeyFile} )";
       }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? anthropicApiKeyFile) {
-        ANTHROPIC_API_KEY = "$( [ -f ${config.secrets.keys.anthropicApiKeyFile} ] && ${pkgs.uutils-coreutils}/bin/uutils-cat ${config.secrets.keys.anthropicApiKeyFile} )";
+        ANTHROPIC_API_KEY = "$( [ -f ${config.secrets.keys.anthropicApiKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.anthropicApiKeyFile} )";
       }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? openaiApiKeyFile) {
-        OPENAI_API_KEY = "$( [ -f ${config.secrets.keys.openaiApiKeyFile} ] && ${pkgs.uutils-coreutils}/bin/uutils-cat ${config.secrets.keys.openaiApiKeyFile} )";
+        OPENAI_API_KEY = "$( [ -f ${config.secrets.keys.openaiApiKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.openaiApiKeyFile} )";
       }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? tauriSigningPrivateKeyFile) {
-        TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.keys.tauriSigningPrivateKeyFile} ] && ${pkgs.uutils-coreutils}/bin/uutils-cat ${config.secrets.keys.tauriSigningPrivateKeyFile} )";
+        TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.keys.tauriSigningPrivateKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.tauriSigningPrivateKeyFile} )";
       };
 
     sessionPath =

@@ -80,26 +80,26 @@ in {
       script = ''
         set -euo pipefail
         export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-        until ${pkgs.kubectl}/bin/kubectl get nodes >/dev/null 2>&1; do
+        until ${lib.getExe pkgs.kubectl} get nodes >/dev/null 2>&1; do
           sleep 2
         done
-        if ${pkgs.kubectl}/bin/kubectl get daemonset cilium -n kube-system >/dev/null 2>&1; then
+        if ${lib.getExe pkgs.kubectl} get daemonset cilium -n kube-system >/dev/null 2>&1; then
           echo "Cilium already installed, skipping bootstrap"
           exit 0
         fi
         echo "Installing Cilium CNI..."
-        ${pkgs.kubernetes-helm}/bin/helm install cilium cilium \
+        ${lib.getExe pkgs.kubernetes-helm} install cilium cilium \
           --repo https://helm.cilium.io/ \
           --namespace kube-system \
           -f ${ciliumBootstrapValues}
         echo "Applying Cilium CRDs..."
-        ${pkgs.kubernetes-helm}/bin/helm pull cilium \
+        ${lib.getExe pkgs.kubernetes-helm} pull cilium \
           --repo https://helm.cilium.io/ \
           --untar -d /tmp/cilium-chart
-        ${pkgs.kubectl}/bin/kubectl apply --server-side -f /tmp/cilium-chart/cilium/crds/
+        ${lib.getExe pkgs.kubectl} apply --server-side -f /tmp/cilium-chart/cilium/crds/
         rm -rf /tmp/cilium-chart
         echo "Waiting for Cilium to be ready..."
-        ${pkgs.kubectl}/bin/kubectl -n kube-system rollout status daemonset/cilium --timeout=300s
+        ${lib.getExe pkgs.kubectl} -n kube-system rollout status daemonset/cilium --timeout=300s
       '';
     };
 
@@ -119,15 +119,15 @@ in {
         set -euo pipefail
         export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
         echo "Waiting for Kubernetes API..."
-        until ${pkgs.kubectl}/bin/kubectl get nodes >/dev/null 2>&1; do
+        until ${lib.getExe pkgs.kubectl} get nodes >/dev/null 2>&1; do
           sleep 2
         done
-        if ${pkgs.kubectl}/bin/kubectl get ns flux-system >/dev/null 2>&1; then
+        if ${lib.getExe pkgs.kubectl} get ns flux-system >/dev/null 2>&1; then
           echo "Flux already bootstrapped"
           exit 0
         fi
         echo "Bootstrapping Flux..."
-        ${pkgs.fluxcd}/bin/flux bootstrap github \
+        ${lib.getExe pkgs.fluxcd} bootstrap github \
           --owner=michaelbrusegard \
           --repository=nix-config \
           --branch=main \
