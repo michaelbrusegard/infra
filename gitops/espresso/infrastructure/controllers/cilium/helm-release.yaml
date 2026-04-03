@@ -37,6 +37,8 @@ spec:
     bpf:
       masquerade: true
       hostRouting: true
+    envoyConfig:
+      enabled: true
     hostFirewall:
       enabled: true
     bgpControlPlane:
