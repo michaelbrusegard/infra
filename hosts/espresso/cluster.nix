@@ -92,6 +92,12 @@ in {
           --repo https://helm.cilium.io/ \
           --namespace kube-system \
           -f ${ciliumBootstrapValues}
+        echo "Applying Cilium CRDs..."
+        ${pkgs.kubernetes-helm}/bin/helm pull cilium \
+          --repo https://helm.cilium.io/ \
+          --untar -d /tmp/cilium-chart
+        ${pkgs.kubectl}/bin/kubectl apply --server-side -f /tmp/cilium-chart/cilium/crds/
+        rm -rf /tmp/cilium-chart
         echo "Waiting for Cilium to be ready..."
         ${pkgs.kubectl}/bin/kubectl -n kube-system rollout status daemonset/cilium --timeout=300s
       '';
