@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: infrastructure-config
+    - name: infrastructure-configs
   interval: 10m
   path: ./gitops/espresso/apps
   prune: true
