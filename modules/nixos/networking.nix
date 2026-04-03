@@ -1,6 +1,3 @@
 {name, ...}: {
-  networking = {
-    hostName = name;
-    firewall.enable = true;
-  };
+  networking.hostName = name;
 }
