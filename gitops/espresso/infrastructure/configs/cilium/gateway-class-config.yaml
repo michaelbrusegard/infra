@@ -1,0 +1,8 @@
+apiVersion: cilium.io/v2alpha1
+kind: CiliumGatewayClassConfig
+metadata:
+  name: bgp-gateway-config
+spec:
+  service:
+    labels:
+      advertise-via-bgp: "true"
