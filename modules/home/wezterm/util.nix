@@ -1,4 +1,8 @@
-{pkgs, lib, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   programs.wezterm.spec.plugins = {
     "smart_workspace_switcher" = {
       url = "https://github.com/MLFlexer/smart_workspace_switcher.wezterm";

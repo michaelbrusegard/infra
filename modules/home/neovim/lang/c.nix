@@ -1,4 +1,8 @@
-{pkgs, lib, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   programs.neovim.spec = {
     treesitter.grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
       c
