@@ -3,9 +3,12 @@ kind: Gateway
 metadata:
   name: hubble-ui
   namespace: kube-system
-  annotations:
-    io.cilium/lb-ipam-ips: "10.0.187.128,fd7a:115c:a1e0:188::1"
 spec:
+  addresses:
+    - type: IPAddress
+      value: 10.0.187.129
+    - type: IPAddress
+      value: fd7a:115c:a1e0:188::1
   gatewayClassName: cilium
   listeners:
     - name: http
