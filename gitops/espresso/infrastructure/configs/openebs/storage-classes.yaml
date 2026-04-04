@@ -1,7 +1,7 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: services
+  name: nvme-ha
 provisioner: io.openebs.csi-mayastor
 parameters:
   protocol: nvmf
@@ -20,7 +20,7 @@ reclaimPolicy: Delete
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: bulk
+  name: ssd-ha
 provisioner: io.openebs.csi-mayastor
 parameters:
   protocol: nvmf
@@ -39,7 +39,7 @@ reclaimPolicy: Delete
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: local
+  name: nvme-single
 provisioner: io.openebs.csi-mayastor
 parameters:
   protocol: nvmf
