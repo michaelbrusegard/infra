@@ -3,9 +3,12 @@ kind: Gateway
 metadata:
   name: echo-server
   namespace: echo-server
-  annotations:
-    io.cilium/lb-ipam-ips: "10.0.187.156,fd7a:115c:a1e0:188::156"
 spec:
+  addresses:
+    - type: IPAddress
+      value: 10.0.187.156
+    - type: IPAddress
+      value: fd7a:115c:a1e0:188::156
   gatewayClassName: cilium
   listeners:
     - name: http
