@@ -1,4 +1,8 @@
-{config, pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   environment.systemPackages = [pkgs.kubernetes-helm];
 
   services.k3s = {
