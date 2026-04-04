@@ -4,8 +4,8 @@ metadata:
   name: primary-pool
 spec:
   blocks:
-    - cidr: "10.0.187.128/25"
-    - cidr: "fd7a:115c:a1e0:188::/112"
+    - cidr: "10.0.188.0/24"
+    - cidr: "fd7a:115c:a1e0:188::/64"
 ---
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPPeerConfig
@@ -66,8 +66,5 @@ spec:
         addresses:
           - LoadBalancerIP
       selector:
-        matchExpressions:
-          - key: somekey
-            operator: NotIn
-            values:
-              - never-used-value
+        matchLabels:
+          advertise-via-bgp: "true"
