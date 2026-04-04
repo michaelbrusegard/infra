@@ -14,6 +14,7 @@
       "--disable-kube-proxy"
       "--disable-network-policy"
       "--flannel-backend=none"
+      "--node-label=openebs.io/engine=mayastor"
     ];
     disable = [
       "traefik"
