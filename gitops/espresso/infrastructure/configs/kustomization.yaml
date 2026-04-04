@@ -3,4 +3,4 @@ kind: Kustomization
 resources:
   - cilium
   - openebs
-  - gateway
+  - hubble-ui
