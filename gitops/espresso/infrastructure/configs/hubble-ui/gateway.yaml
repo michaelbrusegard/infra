@@ -6,10 +6,10 @@ metadata:
 spec:
   addresses:
     - type: IPAddress
-      value: 10.0.187.129
+      value: 10.0.188.129
     - type: IPAddress
-      value: fd7a:115c:a1e0:188::1
-  gatewayClassName: cilium
+      value: fd7a:115c:a1e0:188::129
+  gatewayClassName: cilium-bgp
   listeners:
     - name: http
       protocol: HTTP
