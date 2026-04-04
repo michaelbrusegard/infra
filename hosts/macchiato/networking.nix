@@ -39,8 +39,7 @@ in {
         ];
       };
 
-      # Server VLAN: k3s cluster nodes (10.0.187.0/24)
-      # DHCP range ends at .127; .128-.255 is reserved for Cilium LoadBalancer IPs
+      # Server VLAN: k3s cluster nodes and other servers (10.0.187.0/24)
       br_servers = {
         useDHCP = false;
         ipv4.addresses = [
@@ -174,8 +173,7 @@ in {
         dhcp-authoritative = true;
         dhcp-range = [
           "set:br_clients,10.0.186.2,10.0.186.254,24h"
-          # Stops at .127 — the .128/25 block is reserved for Cilium LB IPs via BGP
-          "set:br_servers,10.0.187.2,10.0.187.127,24h"
+          "set:br_servers,10.0.187.2,10.0.187.254,24h"
         ];
         dhcp-option = [
           "tag:br_clients,option:router,10.0.186.1"
