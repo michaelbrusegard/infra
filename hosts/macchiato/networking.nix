@@ -151,12 +151,8 @@ in {
       '';
     };
 
-    # mDNS reflector so devices on different bridges can discover each other
     avahi = {
-      enable = true;
-      reflector = true;
-      allowInterfaces = ["br_clients" "br_servers"];
-      publish.enable = true;
+      enable = false;
       publish.userServices = true;
       openFirewall = true;
     };
@@ -220,6 +216,7 @@ in {
 
         router bgp 65000
           bgp router-id 10.0.187.1
+          no bgp default ipv4-unicast
 
           # Peer with each k3s node over both IPv4 and IPv6.
           neighbor 10.0.187.2 remote-as 65001
