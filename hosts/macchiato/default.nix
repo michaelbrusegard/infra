@@ -3,7 +3,6 @@
     inputs.self.nixosModules.boot
     inputs.self.nixosModules.blocky
     inputs.self.nixosModules.blocky-prometheus
-    inputs.self.nixosModules.bluetooth
     inputs.self.nixosModules.catppuccin
     inputs.self.nixosModules.console
     inputs.self.nixosModules.cloudflare-dyndns
