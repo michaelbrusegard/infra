@@ -23,6 +23,7 @@
   hardware = {
     enableRedistributableFirmware = true;
     cpu.amd.updateMicrocode = true;
+    bluetooth.enable = true;
     graphics = {
       enable = true;
       extraPackages = [pkgs.mesa.opencl];

@@ -18,4 +18,8 @@
       inherit (config.secrets.wireguard) peers;
     };
   };
+  services.caddy = {
+    enable = true;
+    inherit (config.secrets.caddy) virtualHosts;
+  };
 }

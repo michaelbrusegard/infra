@@ -7,6 +7,7 @@ _: {
   hardware = {
     enableRedistributableFirmware = true;
     cpu.amd.updateMicrocode = true;
+    bluetooth.enable = true;
   };
 
   services.zigbee2mqtt.settings.serial = {
