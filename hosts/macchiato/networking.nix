@@ -142,11 +142,11 @@ in {
     caddy = {
       enable = true;
       virtualHosts."http://homebridge.home.arpa" = {
-        listenAddresses = ["10.0.186.1"];
+        listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
         extraConfig = "reverse_proxy 127.0.0.1:8581";
       };
       virtualHosts."http://zigbee.home.arpa" = {
-        listenAddresses = ["10.0.186.1"];
+        listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
         extraConfig = "reverse_proxy 127.0.0.1:8080";
       };
     };
