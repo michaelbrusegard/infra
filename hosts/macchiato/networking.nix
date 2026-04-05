@@ -155,11 +155,11 @@ in {
     # their .home.arpa DNS names. Only listens on the client VLAN.
     caddy = {
       enable = true;
-      virtualHosts."homebridge.home.arpa" = {
+      virtualHosts."http://homebridge.home.arpa" = {
         listenAddresses = ["10.0.186.1"];
         extraConfig = "reverse_proxy 127.0.0.1:8581";
       };
-      virtualHosts."zigbee.home.arpa" = {
+      virtualHosts."http://zigbee.home.arpa" = {
         listenAddresses = ["10.0.186.1"];
         extraConfig = "reverse_proxy 127.0.0.1:8080";
       };
