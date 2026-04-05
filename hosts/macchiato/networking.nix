@@ -151,12 +151,6 @@ in {
       '';
     };
 
-    avahi = {
-      enable = false;
-      publish.userServices = true;
-      openFirewall = true;
-    };
-
     # Bind Homebridge to the client VLAN so HomeKit devices can discover it
     homebridge.settings.bridge.bind = ["10.0.186.1"];
 
