@@ -77,7 +77,6 @@ in {
       internalInterfaces = [
         "br_clients"
         "br_servers"
-        # "wg0"
       ];
     };
 
@@ -107,24 +106,11 @@ in {
       # Ports open to the internet on the WAN interface
       # SSH (port 2286) is opened separately by openssh module's openFirewall = true
       interfaces = {
-        # "wg0" = {
-        #   allowedTCPPorts = [53 9090 3000 1883 8080 8581 6443];
-        #   allowedUDPPorts = [53];
-        # };
-
         "${wanInterface}" = {
           allowedTCPPorts = [80 443];
-          # allowedUDPPorts = [51820];
         };
       };
     };
-
-    # wireguard.interfaces.wg0 = {
-    #   ips = ["10.0.187.1/24"];
-    #   listenPort = 51820;
-    #   inherit (config.secrets.wireguard) privateKeyFile;
-    #   inherit (config.secrets.wireguard) peers;
-    # };
   };
 
   services = {

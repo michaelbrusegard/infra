@@ -7,8 +7,6 @@
     inputs.self.nixosModules.console
     inputs.self.nixosModules.cloudflare-dyndns
     inputs.self.nixosModules.disable-documentation
-    inputs.self.nixosModules.grafana
-    inputs.self.nixosModules.grafana-blocky
     inputs.self.nixosModules.home-manager
     inputs.self.nixosModules.home-assistant
     inputs.self.nixosModules.locale
