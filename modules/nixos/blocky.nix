@@ -35,6 +35,8 @@ _: {
       customDNS = {
         mapping = {
           "hubble.home.arpa" = "10.0.188.2,fd7a:115c:a1e0:188::2";
+          "homebridge.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+          "zigbee.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         };
       };
 
