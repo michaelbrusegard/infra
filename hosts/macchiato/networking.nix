@@ -93,11 +93,13 @@ in {
         iifname "${wanInterface}" ct state established,related accept
         iifname "${wanInterface}" drop
 
-        # Allow servers to reach out to clients (e.g., Home Assistant polling smart plugs)
-        iifname "br_servers" oifname "br_clients" accept
+        # Internal service VIP subnet: published cluster services live on 188,
+        # so clients and servers are both allowed to reach those routed VIPs.
+        iifname { "br_clients", "br_servers" } ip daddr 10.0.188.0/24 accept
+        iifname { "br_clients", "br_servers" } ip6 daddr fd7a:115c:a1e0:188::/64 accept
 
-        # Restrict clients to only SSH, HTTP, and HTTPS on the servers directly
-        iifname "br_clients" oifname "br_servers" tcp dport { 22, 80, 443 } accept
+        # Allow servers to initiate connections to client devices when needed.
+        iifname "br_servers" oifname "br_clients" accept
       '';
 
       # Ports open to the internet on the WAN interface
