@@ -151,6 +151,20 @@ in {
       '';
     };
 
+    # Reverse proxy for local services so they are reachable on port 80 via
+    # their .home.arpa DNS names. Only listens on the client VLAN.
+    caddy = {
+      enable = true;
+      virtualHosts."homebridge.home.arpa" = {
+        listenAddresses = ["10.0.186.1"];
+        extraConfig = "reverse_proxy 127.0.0.1:8581";
+      };
+      virtualHosts."zigbee.home.arpa" = {
+        listenAddresses = ["10.0.186.1"];
+        extraConfig = "reverse_proxy 127.0.0.1:8080";
+      };
+    };
+
     # Bind Homebridge to the client VLAN so HomeKit devices can discover it
     homebridge.settings.bridge.bind = ["10.0.186.1"];
 
