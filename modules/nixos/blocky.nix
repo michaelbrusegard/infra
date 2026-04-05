@@ -32,6 +32,12 @@ _: {
         ];
       };
 
+      customDNS = {
+        mapping = {
+          "hubble.home.arpa" = "10.0.188.2,fd7a:115c:a1e0:188::2";
+        };
+      };
+
       caching = {
         minTime = "5m";
         maxTime = "30m";
