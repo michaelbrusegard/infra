@@ -201,8 +201,7 @@ in {
     };
 
     # BGP peering with the k3s cluster (Cilium) for internal service VIPs.
-    # The host firewall already blocks WAN access to TCP/179, so bgpd can use
-    # its normal dual-stack listener and still stay LAN-only in practice.
+    # Both IPv4 and IPv6 VIPs are learned dynamically over BGP with ECMP.
     frr = {
       bgpd.enable = true;
       config = ''
