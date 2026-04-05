@@ -200,16 +200,27 @@ in {
       };
     };
 
-    # BGP peering with the k3s cluster (Cilium) for LoadBalancer IP advertisement
-    # -l restricts bgpd to listen only on the server VLAN, not on WAN
+    # BGP peering with the k3s cluster (Cilium) for internal service VIPs.
+    # The host firewall already blocks WAN access to TCP/179, so bgpd can use
+    # its normal dual-stack listener and still stay LAN-only in practice.
     frr = {
       bgpd.enable = true;
-      bgpd.extraOptions = ["-l" "10.0.187.1"];
       config = ''
+        ip prefix-list PL-CILIUM-VIPS-V4 seq 10 permit 10.0.188.0/24 le 32
+        ipv6 prefix-list PL-CILIUM-VIPS-V6 seq 10 permit fd7a:115c:a1e0:188::/64 le 128
+
+        route-map RM-CILIUM-IN-V4 permit 10
+          match ip address prefix-list PL-CILIUM-VIPS-V4
+
+        route-map RM-CILIUM-IN-V6 permit 10
+          match ipv6 address prefix-list PL-CILIUM-VIPS-V6
+
+        route-map RM-CILIUM-OUT deny 10
+
         router bgp 65000
           bgp router-id 10.0.187.1
 
-          # Peer with each k3s node over both IPv4 and IPv6
+          # Peer with each k3s node over both IPv4 and IPv6.
           neighbor 10.0.187.2 remote-as 65001
           neighbor 10.0.187.3 remote-as 65001
           neighbor 10.0.187.4 remote-as 65001
@@ -223,6 +234,12 @@ in {
             neighbor 10.0.187.2 activate
             neighbor 10.0.187.3 activate
             neighbor 10.0.187.4 activate
+            neighbor 10.0.187.2 route-map RM-CILIUM-IN-V4 in
+            neighbor 10.0.187.3 route-map RM-CILIUM-IN-V4 in
+            neighbor 10.0.187.4 route-map RM-CILIUM-IN-V4 in
+            neighbor 10.0.187.2 route-map RM-CILIUM-OUT out
+            neighbor 10.0.187.3 route-map RM-CILIUM-OUT out
+            neighbor 10.0.187.4 route-map RM-CILIUM-OUT out
           exit-address-family
 
           address-family ipv6 unicast
@@ -230,6 +247,12 @@ in {
             neighbor fd7a:115c:a1e0:187::2 activate
             neighbor fd7a:115c:a1e0:187::3 activate
             neighbor fd7a:115c:a1e0:187::4 activate
+            neighbor fd7a:115c:a1e0:187::2 route-map RM-CILIUM-IN-V6 in
+            neighbor fd7a:115c:a1e0:187::3 route-map RM-CILIUM-IN-V6 in
+            neighbor fd7a:115c:a1e0:187::4 route-map RM-CILIUM-IN-V6 in
+            neighbor fd7a:115c:a1e0:187::2 route-map RM-CILIUM-OUT out
+            neighbor fd7a:115c:a1e0:187::3 route-map RM-CILIUM-OUT out
+            neighbor fd7a:115c:a1e0:187::4 route-map RM-CILIUM-OUT out
           exit-address-family
       '';
     };
