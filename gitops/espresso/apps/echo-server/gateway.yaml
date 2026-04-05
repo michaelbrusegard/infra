@@ -9,7 +9,10 @@ spec:
       value: 10.0.188.156
     - type: IPAddress
       value: fd7a:115c:a1e0:188::156
-  gatewayClassName: cilium-bgp
+  gatewayClassName: cilium
+  infrastructure:
+    labels:
+      advertise-via-bgp: "true"
   listeners:
     - name: http
       protocol: HTTP
