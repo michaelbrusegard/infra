@@ -7,7 +7,6 @@
 }: {
   home.packages = lib.mkIf (!isWsl) (with pkgs;
     [
-      google-chrome
       element-desktop
       slack
       protonmail-desktop
@@ -33,6 +32,7 @@
       qgis
       notion-app-enhanced
       wootility
+      ungoogled-chromium
     ]
     ++ lib.optionals pkgs.stdenv.isDarwin [
       ice-bar
@@ -55,6 +55,7 @@
       notion-app
       brewCasks.wootility
       utm
+      brewCasks.ungoogled-chromium
     ]);
 
   xdg.mimeApps.defaultApplications = lib.mkIf (!isWsl) {
