@@ -8,7 +8,6 @@
       yq
       screen
       lsof
-      carbon-now-cli
     ]
     ++ lib.optionals pkgs.stdenv.isLinux [
       psmisc
