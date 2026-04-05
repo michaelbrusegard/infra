@@ -19,6 +19,10 @@ in {
     useDHCP = false;
     tempAddresses = "disabled";
     firewall.enable = false;
+    defaultGateway6 = {
+      address = "fd7a:115c:a1e0:187::1";
+      interface = "lan0";
+    };
 
     interfaces.lan0 = {
       useDHCP = true;
