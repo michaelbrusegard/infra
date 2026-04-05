@@ -6,9 +6,9 @@ metadata:
 spec:
   addresses:
     - type: IPAddress
-      value: 10.0.188.129
+      value: 10.0.188.2
     - type: IPAddress
-      value: fd7a:115c:a1e0:188::129
+      value: fd7a:115c:a1e0:188::2
   gatewayClassName: cilium-bgp
   listeners:
     - name: http
