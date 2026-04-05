@@ -27,7 +27,7 @@ Note to self: Make sure to follow the guide for each system step by step.
 - [nix-darwin](https://mynixos.com/nix-darwin/options)
 - [home-manager](https://mynixos.com/home-manager/options)
 
-## Lungo (Nix-darwin MacBook)
+## Lungo (Nix-darwin Laptop)
 
 First install macOS normally by following the default installation on
 the mac. To access the installer hold the power button during boot to access
@@ -285,38 +285,7 @@ SRC=\\wsl$\\NixOS\\home\\michaelbrusegard\\Developer\\dotfiles\\windows\\keyboar
 cp $SRC C:\Users\michaelbrusegard\Downloads
 ```
 
-The resulting image can be found in `result/sd-image/`. It is a compressed
-Zstandard archive that can be flashed to an SD card.
-
-## Flashing the SD Card (Leggero)
-
-We need to plug in the SD card and find out what the device path is for
-the SD card.
-
-On linux:
-
-```sh
-lsblk
-```
-
-On Darwin:
-
-```sh
-diskutil list
-```
-
-On Linux it is usually `/dev/sdX` where `X` is a letter, for example
-`/dev/sdb`. On Darwin it is usually `/dev/diskX` where `X` is a number for
-example `/dev/disk6`.
-
-To flash the image to the SD card you can use the following command, make
-sure to replace `/dev/XXX` with the correct device path for your SD card:
-
-```sh
-zstd -dc result/sd-image/*.zst | sudo dd of=/dev/XXX bs=4M status=progress oflag=sync
-```
-
-## Macchiato (NixOS Raspberry Pi Family Home Server)
+## Macchiato (NixOS Router)
 
 Create a minimal installer USB by downloading from [here](https://nixos.org/download/#nixos-iso)
 and flashing it to the drive using the following command:
