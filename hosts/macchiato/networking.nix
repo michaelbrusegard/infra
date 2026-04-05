@@ -85,12 +85,14 @@ in {
       enable = true;
       # All traffic from LAN bridges is trusted (no per-port filtering)
       trustedInterfaces = ["br_clients" "br_servers"];
+      # Create a forward chain with default-drop policy so extraForwardRules
+      # are actually enforced. Established/related and NAT-forwarded traffic
+      # are handled automatically by the NixOS firewall module.
+      filterForward = true;
 
       extraForwardRules = ''
-        # IPv6 forwarding protection: devices on the LAN get public IPv6 addresses
-        # via prefix delegation, so without these rules they would be directly
-        # reachable from the internet. Allow return traffic, block everything else.
-        iifname "${wanInterface}" ct state established,related accept
+        # Block unsolicited new connections from the internet. LAN devices get
+        # public IPv6 addresses via prefix delegation, so this is essential.
         iifname "${wanInterface}" drop
 
         # Internal service VIP subnet: published cluster services live on 188,
