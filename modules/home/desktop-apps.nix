@@ -7,7 +7,7 @@
 }: {
   home.packages = lib.mkIf (!isWsl) (with pkgs;
     [
-      chromium
+      google-chrome
       element-desktop
       slack
       protonmail-desktop
