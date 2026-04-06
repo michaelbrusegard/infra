@@ -1,4 +1,4 @@
-_: let
+{config, ...}: let
   wanInterface = "enp2s0";
   clientInterfaces = ["enp3s0" "enp4s0"];
   serverInterfaces = ["enp5s0" "enp1s0f0" "enp1s0f1"];
@@ -78,12 +78,19 @@ in {
         "br_clients"
         "br_servers"
       ];
+      forwardPorts = [
+        {
+          destination = "10.0.188.30:3478";
+          proto = "udp";
+          sourcePort = 3478;
+        }
+      ];
     };
 
     firewall = {
       enable = true;
       # All traffic from LAN bridges is trusted (no per-port filtering)
-      trustedInterfaces = ["br_clients" "br_servers"];
+      trustedInterfaces = ["br_clients" "br_servers" "vpn_clients"];
       # Create a forward chain with default-drop policy so extraForwardRules
       # are actually enforced. Established/related and NAT-forwarded traffic
       # are handled automatically by the NixOS firewall module.
@@ -99,6 +106,11 @@ in {
         iifname { "br_clients", "br_servers" } ip daddr 10.0.188.0/24 accept
         iifname { "br_clients", "br_servers" } ip6 daddr fd7a:115c:a1e0:188::/64 accept
 
+        # NetBird peers may reach the internal client, server, and cluster VIP
+        # subnets through macchiato.
+        iifname "vpn_clients" ip daddr { 10.0.186.0/24, 10.0.187.0/24, 10.0.188.0/24 } accept
+        iifname "vpn_clients" ip6 daddr { fd7a:115c:a1e0:186::/64, fd7a:115c:a1e0:187::/64, fd7a:115c:a1e0:188::/64 } accept
+
         # Allow servers to initiate connections to client devices when needed.
         iifname "br_servers" oifname "br_clients" accept
       '';
@@ -108,6 +120,7 @@ in {
       interfaces = {
         "${wanInterface}" = {
           allowedTCPPorts = [80 443];
+          allowedUDPPorts = [3478];
         };
       };
     };
@@ -141,14 +154,43 @@ in {
     # their .home.arpa DNS names. Only listens on the client VLAN.
     caddy = {
       enable = true;
-      virtualHosts."http://homebridge.home.arpa" = {
-        listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
-        extraConfig = "reverse_proxy 127.0.0.1:8581";
-      };
-      virtualHosts."http://zigbee.home.arpa" = {
-        listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
-        extraConfig = "reverse_proxy 127.0.0.1:8080";
-      };
+      virtualHosts =
+        {
+          "http://homebridge.home.arpa" = {
+            listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
+            extraConfig = "reverse_proxy 127.0.0.1:8581";
+          };
+          "http://netbird.home.arpa" = {
+            listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
+            extraConfig = "reverse_proxy 10.0.188.31:80";
+          };
+          "http://zigbee.home.arpa" = {
+            listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
+            extraConfig = "reverse_proxy 127.0.0.1:8080";
+          };
+        }
+        // {
+          "https://${config.secrets.netbird.publicDomain}" = {
+            extraConfig = ''
+              @grpc path /signalexchange.SignalExchange/* /management.ManagementService/* /management.ProxyService/*
+              reverse_proxy @grpc h2c://10.0.188.30:80
+
+              @backend path /relay* /ws-proxy/* /oauth2*
+              reverse_proxy @backend http://10.0.188.30:80
+
+              @local_api {
+                path /api*
+                remote_ip 10.0.186.0/24 10.0.187.0/24 10.0.188.0/24 100.64.0.0/10 fd7a:115c:a1e0:186::/64 fd7a:115c:a1e0:187::/64 fd7a:115c:a1e0:188::/64
+              }
+              reverse_proxy @local_api http://10.0.188.30:80
+
+              @blocked_api path /api*
+              respond @blocked_api 404
+
+              respond 404
+            '';
+          };
+        };
     };
 
     # Bind Homebridge to the client VLAN so HomeKit devices can discover it
@@ -250,10 +292,32 @@ in {
     };
 
     blocky.settings.customDNS = {
-      mapping = {
-        "hubble.home.arpa" = "10.0.188.2,fd7a:115c:a1e0:188::2";
-        "homebridge.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-        "zigbee.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+      mapping =
+        {
+          "hubble.home.arpa" = "10.0.188.2,fd7a:115c:a1e0:188::2";
+          "homebridge.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+          "netbird.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+          "zigbee.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+        }
+        // {
+          "${config.secrets.netbird.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+        };
+    };
+
+    netbird = {
+      useRoutingFeatures = "both";
+
+      clients.default = {
+        interface = "vpn_clients";
+        port = 51820;
+        environment = {
+          NB_MANAGEMENT_URL = "https://${config.secrets.netbird.publicDomain}";
+        };
+
+        login = {
+          enable = true;
+          inherit (config.secrets.netbird) setupKeyFile;
+        };
       };
     };
   };

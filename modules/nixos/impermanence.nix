@@ -42,6 +42,9 @@
     ++ lib.optionals config.services.prometheus.enable [
       "/var/lib/${config.services.prometheus.stateDir}"
     ]
+    ++ lib.optionals (config.services.netbird.clients != {}) [
+      config.services.netbird.clients.default.dir.state
+    ]
     ++ lib.optionals config.networking.networkmanager.enable [
       "/etc/NetworkManager/system-connections"
     ]
