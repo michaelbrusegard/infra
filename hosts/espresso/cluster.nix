@@ -65,70 +65,100 @@ in {
   # One-time Cilium bootstrap to break the chicken-and-egg: nodes need CNI to
   # be Ready, Flux needs Ready nodes to schedule, Cilium is deployed by Flux.
   # After this runs once, Flux adopts the Helm release and manages it.
-  systemd.services.cilium-bootstrap =
-    lib.mkIf
-    (config.networking.hostName == "espresso-0")
-    {
-      description = "Bootstrap Cilium CNI for k3s";
-      after = ["k3s.service"];
-      before = ["flux-bootstrap.service"];
-      wantedBy = ["multi-user.target"];
+  systemd.services = {
+    cilium-bootstrap =
+      lib.mkIf
+      (config.networking.hostName == "espresso-0")
+      {
+        description = "Bootstrap Cilium CNI for k3s";
+        after = ["k3s.service"];
+        before = ["flux-bootstrap.service"];
+        requires = ["k3s.service"];
+        wantedBy = ["multi-user.target"];
 
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          set -euo pipefail
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          until ${lib.getExe pkgs.kubectl} get nodes >/dev/null 2>&1; do
+            sleep 2
+          done
+          if ${lib.getExe pkgs.kubectl} get daemonset cilium -n kube-system >/dev/null 2>&1; then
+            echo "Cilium already installed, skipping bootstrap"
+            exit 0
+          fi
+          echo "Installing Cilium CNI..."
+          ${lib.getExe pkgs.kubernetes-helm} install cilium cilium \
+            --repo https://helm.cilium.io/ \
+            --namespace kube-system \
+            -f ${ciliumBootstrapValues}
+          echo "Waiting for Cilium to be ready..."
+          ${lib.getExe pkgs.kubectl} -n kube-system rollout status daemonset/cilium --timeout=300s
+        '';
       };
-      script = ''
-        set -euo pipefail
-        export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-        until ${lib.getExe pkgs.kubectl} get nodes >/dev/null 2>&1; do
-          sleep 2
-        done
-        if ${lib.getExe pkgs.kubectl} get daemonset cilium -n kube-system >/dev/null 2>&1; then
-          echo "Cilium already installed, skipping bootstrap"
-          exit 0
-        fi
-        echo "Installing Cilium CNI..."
-        ${lib.getExe pkgs.kubernetes-helm} install cilium cilium \
-          --repo https://helm.cilium.io/ \
-          --namespace kube-system \
-          -f ${ciliumBootstrapValues}
-        echo "Waiting for Cilium to be ready..."
-        ${lib.getExe pkgs.kubectl} -n kube-system rollout status daemonset/cilium --timeout=300s
-      '';
-    };
 
-  systemd.services.flux-bootstrap =
-    lib.mkIf
-    (config.networking.hostName == "espresso-0")
-    {
-      after = ["k3s.service" "cilium-bootstrap.service"];
-      wantedBy = ["multi-user.target"];
+    flux-bootstrap =
+      lib.mkIf
+      (config.networking.hostName == "espresso-0")
+      {
+        before = ["flux-sops-age-key.service"];
+        after = ["k3s.service" "cilium-bootstrap.service"];
+        requires = ["k3s.service" "cilium-bootstrap.service"];
+        wantedBy = ["multi-user.target"];
 
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        EnvironmentFile = config.secrets.k3s.flux.envFile;
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          EnvironmentFile = config.secrets.k3s.flux.envFile;
+        };
+        script = ''
+          set -euo pipefail
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          echo "Waiting for Kubernetes API..."
+          until ${lib.getExe pkgs.kubectl} get nodes >/dev/null 2>&1; do
+            sleep 2
+          done
+          if ${lib.getExe pkgs.kubectl} get ns flux-system >/dev/null 2>&1; then
+            echo "Flux already bootstrapped"
+            exit 0
+          fi
+          echo "Bootstrapping Flux..."
+          ${lib.getExe pkgs.fluxcd} bootstrap github \
+            --owner=michaelbrusegard \
+            --repository=nix-config \
+            --branch=main \
+            --path=gitops/espresso \
+            --author-name="Flux (espresso)" \
+            --personal
+        '';
       };
-      script = ''
-        set -euo pipefail
-        export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-        echo "Waiting for Kubernetes API..."
-        until ${lib.getExe pkgs.kubectl} get nodes >/dev/null 2>&1; do
-          sleep 2
-        done
-        if ${lib.getExe pkgs.kubectl} get ns flux-system >/dev/null 2>&1; then
-          echo "Flux already bootstrapped"
-          exit 0
-        fi
-        echo "Bootstrapping Flux..."
-        ${lib.getExe pkgs.fluxcd} bootstrap github \
-          --owner=michaelbrusegard \
-          --repository=nix-config \
-          --branch=main \
-          --path=gitops/espresso \
-          --author-name="Flux (espresso)" \
-          --personal
-      '';
-    };
+
+    flux-sops-age-key =
+      lib.mkIf
+      (config.networking.hostName == "espresso-0")
+      {
+        after = ["k3s.service" "flux-bootstrap.service"];
+        requires = ["k3s.service" "flux-bootstrap.service"];
+        wantedBy = ["multi-user.target"];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          set -euo pipefail
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          test -f ${config.secrets.k3s.flux.sopsAgeKeyFile}
+          until ${lib.getExe pkgs.kubectl} get ns flux-system >/dev/null 2>&1; do
+            sleep 2
+          done
+          ${lib.getExe pkgs.kubectl} -n flux-system create secret generic sops-age \
+            --from-file=age.agekey=${config.secrets.k3s.flux.sopsAgeKeyFile} \
+            --dry-run=client -o yaml | ${lib.getExe pkgs.kubectl} apply -f -
+        '';
+      };
+  };
 }
