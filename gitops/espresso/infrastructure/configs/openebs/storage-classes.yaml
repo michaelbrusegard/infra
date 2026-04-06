@@ -7,7 +7,8 @@ parameters:
   protocol: nvmf
   repl: "3"
   ioTimeout: "60"
-  poolAffinityTopologyLabel: openebs.io/disk-type
+  poolAffinityTopologyLabel: |
+    openebs.io/disk-type: nvme
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 reclaimPolicy: Delete
@@ -21,7 +22,8 @@ parameters:
   protocol: nvmf
   repl: "2"
   ioTimeout: "60"
-  poolAffinityTopologyLabel: openebs.io/disk-type
+  poolAffinityTopologyLabel: |
+    openebs.io/disk-type: sata
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 reclaimPolicy: Delete
@@ -35,7 +37,8 @@ parameters:
   protocol: nvmf
   repl: "1"
   ioTimeout: "60"
-  poolAffinityTopologyLabel: openebs.io/disk-type
+  poolAffinityTopologyLabel: |
+    openebs.io/disk-type: nvme
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 reclaimPolicy: Delete
