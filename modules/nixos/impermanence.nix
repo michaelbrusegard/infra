@@ -26,6 +26,7 @@
   serviceDirectories =
     lib.optionals config.services.k3s.enable [
       "/var/lib/rancher/k3s"
+      "/var/local/openebs"
     ]
     ++ lib.optionals config.services.fail2ban.enable [
       "/var/lib/fail2ban"
