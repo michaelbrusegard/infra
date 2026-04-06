@@ -1,10 +1,4 @@
-{
-  config,
-  pkgs,
-  ...
-}: {
-  environment.systemPackages = [pkgs.kubernetes-helm];
-
+{config, ...}: {
   services.k3s = {
     enable = true;
     gracefulNodeShutdown.enable = true;
