@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netbird-dashboard
+  namespace: netbird
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: netbird-dashboard
+  template:
+    metadata:
+      labels:
+        app: netbird-dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: netbirdio/dashboard:latest
+          envFrom:
+            - secretRef:
+                name: netbird-dashboard-env
+          ports:
+            - containerPort: 80
+              name: http
