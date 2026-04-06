@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: netbird-server
+  namespace: netbird
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: netbird-server
+  serviceName: netbird-server-internal
+  template:
+    metadata:
+      labels:
+        app: netbird-server
+    spec:
+      containers:
+        - name: netbird-server
+          image: netbirdio/netbird-server:v0.67.3
+          args:
+            - --config
+            - /etc/netbird/config.yaml
+          ports:
+            - containerPort: 80
+              name: http
+            - containerPort: 3478
+              name: stun
+              protocol: UDP
+            - containerPort: 9000
+              name: health
+            - containerPort: 9090
+              name: metrics
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: health
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: health
+          volumeMounts:
+            - mountPath: /etc/netbird/config.yaml
+              name: config
+              subPath: config.yaml
+            - mountPath: /var/lib/netbird
+              name: data
+      volumes:
+        - name: config
+          secret:
+            secretName: netbird-server-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+        storageClassName: nvme-ha
