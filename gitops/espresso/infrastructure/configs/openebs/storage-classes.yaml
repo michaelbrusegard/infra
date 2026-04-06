@@ -9,11 +9,6 @@ parameters:
   ioTimeout: "60"
   poolAffinityTopologyLabel: openebs.io/disk-type
 volumeBindingMode: WaitForFirstConsumer
-allowedTopologies:
-  - matchLabelExpressions:
-      - key: openebs.io/disk-type
-        values:
-          - nvme
 allowVolumeExpansion: true
 reclaimPolicy: Delete
 ---
@@ -28,11 +23,6 @@ parameters:
   ioTimeout: "60"
   poolAffinityTopologyLabel: openebs.io/disk-type
 volumeBindingMode: WaitForFirstConsumer
-allowedTopologies:
-  - matchLabelExpressions:
-      - key: openebs.io/disk-type
-        values:
-          - sata
 allowVolumeExpansion: true
 reclaimPolicy: Delete
 ---
@@ -47,10 +37,5 @@ parameters:
   ioTimeout: "60"
   poolAffinityTopologyLabel: openebs.io/disk-type
 volumeBindingMode: WaitForFirstConsumer
-allowedTopologies:
-  - matchLabelExpressions:
-      - key: openebs.io/disk-type
-        values:
-          - nvme
 allowVolumeExpansion: true
 reclaimPolicy: Delete
