@@ -9,6 +9,9 @@ spec:
   node: espresso-0
   disks:
     - /dev/mapper/crypted-main-data
+  topology:
+    labelled:
+      openebs.io/disk-type: nvme
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -21,6 +24,9 @@ spec:
   node: espresso-1
   disks:
     - /dev/mapper/crypted-main-data
+  topology:
+    labelled:
+      openebs.io/disk-type: nvme
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -33,6 +39,9 @@ spec:
   node: espresso-1
   disks:
     - /dev/mapper/crypted-data1
+  topology:
+    labelled:
+      openebs.io/disk-type: sata
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -45,6 +54,9 @@ spec:
   node: espresso-1
   disks:
     - /dev/mapper/crypted-data2
+  topology:
+    labelled:
+      openebs.io/disk-type: sata
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -57,6 +69,9 @@ spec:
   node: espresso-2
   disks:
     - /dev/mapper/crypted-main-data
+  topology:
+    labelled:
+      openebs.io/disk-type: nvme
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -69,6 +84,9 @@ spec:
   node: espresso-2
   disks:
     - /dev/mapper/crypted-data1
+  topology:
+    labelled:
+      openebs.io/disk-type: sata
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -81,3 +99,6 @@ spec:
   node: espresso-2
   disks:
     - /dev/mapper/crypted-data2
+  topology:
+    labelled:
+      openebs.io/disk-type: sata
