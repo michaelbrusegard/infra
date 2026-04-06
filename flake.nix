@@ -113,9 +113,7 @@
   outputs = {nixpkgs, ...} @ inputs: let
     lib = import ./lib inputs;
     deployerSystem = "aarch64-darwin";
-  in {
-    inherit lib;
-    formatter = lib.forAllSystems (
+    formatters = lib.forAllSystems (
       system:
         (inputs.treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} {
           projectRootFile = "flake.nix";
@@ -129,11 +127,67 @@
         .build
         .wrapper
     );
+    nixSecretsTools = lib.forAllSystems (
+      system: let
+        pkgs = nixpkgs.legacyPackages.${system};
+        treefmt = "${formatters.${system}}/bin/treefmt";
+      in {
+        fmt-nix-secrets = pkgs.writeShellApplication {
+          name = "fmt-nix-secrets";
+          text = ''
+            set -euo pipefail
+
+            target="''${1:-../nix-secrets}"
+
+            if [ ! -d "$target" ]; then
+              printf 'Target repo not found: %s\n' "$target" >&2
+              exit 1
+            fi
+
+            cd "$target"
+            ${treefmt}
+          '';
+        };
+
+        lint-nix-secrets = pkgs.writeShellApplication {
+          name = "lint-nix-secrets";
+          text = ''
+            set -euo pipefail
+
+            target="''${1:-../nix-secrets}"
+
+            if [ ! -d "$target" ]; then
+              printf 'Target repo not found: %s\n' "$target" >&2
+              exit 1
+            fi
+
+            cd "$target"
+            ${treefmt} --fail-on-change
+            ${pkgs.statix}/bin/statix check .
+            ${pkgs.deadnix}/bin/deadnix .
+          '';
+        };
+      }
+    );
+  in {
+    inherit lib;
+    formatter = formatters;
+    apps = lib.forAllSystems (system: {
+      fmt-nix-secrets = {
+        type = "app";
+        program = "${nixSecretsTools.${system}.fmt-nix-secrets}/bin/fmt-nix-secrets";
+      };
+      lint-nix-secrets = {
+        type = "app";
+        program = "${nixSecretsTools.${system}.lint-nix-secrets}/bin/lint-nix-secrets";
+      };
+    });
     packages = lib.forAllSystems (
       system:
-        import ./packages {
+        (import ./packages {
           pkgs = nixpkgs.legacyPackages.${system};
-        }
+        })
+        // nixSecretsTools.${system}
     );
     overlays = {
       default = import ./overlays {inherit inputs;};
