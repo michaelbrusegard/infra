@@ -15,19 +15,19 @@ spec:
         app: netbird-server
     spec:
       containers:
-        - name: netbird-server
-          image: netbirdio/netbird-server:0.67.4@sha256:101b5d83cda2b22c7915c350ab259bcb9f7b64612d1927c1efe5f4b9616f08be
+        - name: management
+          image: netbirdio/management:0.67.4@sha256:11170a461f19770284d5b2e7111007f41c35ed4b3c6ecd3cf312840e1a2b0286
           args:
-            - --config
-            - /etc/netbird/config.yaml
+            - --port
+            - "80"
+            - --log-file
+            - console
+            - --log-level
+            - info
+            - --disable-anonymous-metrics=true
           ports:
             - containerPort: 80
               name: http
-            - containerPort: 3478
-              name: stun
-              protocol: UDP
-            - containerPort: 9000
-              name: health
             - containerPort: 9090
               name: metrics
           startupProbe:
@@ -45,15 +45,56 @@ spec:
               path: /api/instance
               port: http
           volumeMounts:
-            - mountPath: /etc/netbird/config.yaml
+            - mountPath: /etc/netbird/management.json
               name: config
-              subPath: config.yaml
+              subPath: management.json
             - mountPath: /var/lib/netbird
               name: data
+        - name: signal
+          image: netbirdio/signal:0.67.4@sha256:50aa9cd91984f539a9fdff23ae66fcae652d1e0e89f076110b6d3f5a3a07f610
+          args:
+            - --port
+            - "10000"
+            - --log-file
+            - console
+            - --log-level
+            - info
+          ports:
+            - containerPort: 10000
+              name: signal
+        - name: relay
+          image: netbirdio/relay:0.67.4@sha256:805bae6085a9aae2fbe1f151e92d5fbb0128d3430d4e003cce69d30897dff200
+          env:
+            - name: NB_LOG_LEVEL
+              value: info
+            - name: NB_LISTEN_ADDRESS
+              value: ":33080"
+          envFrom:
+            - secretRef:
+                name: netbird-relay-env
+          ports:
+            - containerPort: 33080
+              name: relay
+        - name: coturn
+          image: coturn/coturn:4@sha256:254a7e19f23366bc638af8e092c18ea52e0eefc9e44041f376e58b61b3b6d646
+          args:
+            - -c
+            - /etc/coturn/turnserver.conf
+          ports:
+            - containerPort: 3478
+              name: stun
+              protocol: UDP
+          volumeMounts:
+            - mountPath: /etc/coturn/turnserver.conf
+              name: coturn-config
+              subPath: turnserver.conf
       volumes:
         - name: config
           secret:
             secretName: netbird-server-config
+        - name: coturn-config
+          secret:
+            secretName: netbird-coturn-config
   volumeClaimTemplates:
     - metadata:
         name: data
