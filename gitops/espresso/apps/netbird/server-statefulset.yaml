@@ -32,18 +32,18 @@ spec:
               name: metrics
           startupProbe:
             httpGet:
-              path: /health
-              port: health
+              path: /api/instance
+              port: http
             periodSeconds: 10
             failureThreshold: 18
           livenessProbe:
             httpGet:
-              path: /health
-              port: health
+              path: /api/instance
+              port: http
           readinessProbe:
             httpGet:
-              path: /health
-              port: health
+              path: /api/instance
+              port: http
           volumeMounts:
             - mountPath: /etc/netbird/config.yaml
               name: config
