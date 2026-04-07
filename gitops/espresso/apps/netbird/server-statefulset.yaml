@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: netbird-server
-          image: netbirdio/netbird-server:v0.67.3
+          image: netbirdio/netbird-server:v0.67.2
           args:
             - --config
             - /etc/netbird/config.yaml
