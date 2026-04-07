@@ -12,13 +12,16 @@ spec:
     - name: http
       port: 80
       targetPort: http
+    - name: signal
+      port: 10000
+      targetPort: signal
+    - name: relay
+      port: 33080
+      targetPort: relay
     - name: stun
       port: 3478
       protocol: UDP
       targetPort: stun
-    - name: health
-      port: 9000
-      targetPort: health
     - name: metrics
       port: 9090
       targetPort: metrics
@@ -43,6 +46,12 @@ spec:
     - name: http
       port: 80
       targetPort: http
+    - name: signal
+      port: 10000
+      targetPort: signal
+    - name: relay
+      port: 33080
+      targetPort: relay
     - name: stun
       port: 3478
       protocol: UDP
