@@ -160,10 +160,6 @@ in {
             listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
             extraConfig = "reverse_proxy 127.0.0.1:8581";
           };
-          "http://netbird.home.arpa" = {
-            listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
-            extraConfig = "reverse_proxy 10.0.188.31:80";
-          };
           "http://zigbee.home.arpa" = {
             listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
             extraConfig = "reverse_proxy 127.0.0.1:8080";
@@ -193,6 +189,11 @@ in {
               @blocked_api path /api /api/*
               handle @blocked_api {
                 respond 404
+              }
+
+              @local_dashboard remote_ip 10.0.186.0/24 10.0.187.0/24 10.0.188.0/24 100.64.0.0/10 fd7a:115c:a1e0:186::/64 fd7a:115c:a1e0:187::/64 fd7a:115c:a1e0:188::/64
+              handle @local_dashboard {
+                reverse_proxy http://10.0.188.31:80
               }
 
               handle {
@@ -306,7 +307,6 @@ in {
         {
           "hubble.home.arpa" = "10.0.188.2,fd7a:115c:a1e0:188::2";
           "homebridge.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-          "netbird.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "zigbee.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         }
         // {
