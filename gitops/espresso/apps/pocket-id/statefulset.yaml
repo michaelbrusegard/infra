@@ -21,7 +21,7 @@ spec:
             - secretRef:
                 name: pocket-id-env
           ports:
-            - containerPort: 80
+            - containerPort: 1411
               name: http
           livenessProbe:
             httpGet:
