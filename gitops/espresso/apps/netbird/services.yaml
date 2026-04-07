@@ -5,6 +5,7 @@ metadata:
   namespace: netbird
 spec:
   clusterIP: None
+  publishNotReadyAddresses: true
   selector:
     app: netbird-server
   ports:
@@ -31,6 +32,7 @@ metadata:
     lbipam.cilium.io/ips: 10.0.188.30,fd7a:115c:a1e0:188::30
 spec:
   type: LoadBalancer
+  publishNotReadyAddresses: true
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
