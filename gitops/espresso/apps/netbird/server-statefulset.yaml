@@ -50,55 +50,10 @@ spec:
               subPath: management.json
             - mountPath: /var/lib/netbird
               name: data
-        - name: signal
-          image: netbirdio/signal:0.67.4@sha256:50aa9cd91984f539a9fdff23ae66fcae652d1e0e89f076110b6d3f5a3a07f610
-          args:
-            - --port
-            - "10000"
-            - --log-file
-            - console
-            - --log-level
-            - info
-            - --metrics-port
-            - "9091"
-          ports:
-            - containerPort: 10000
-              name: signal
-        - name: relay
-          image: netbirdio/relay:0.67.4@sha256:805bae6085a9aae2fbe1f151e92d5fbb0128d3430d4e003cce69d30897dff200
-          env:
-            - name: NB_LOG_LEVEL
-              value: info
-            - name: NB_LISTEN_ADDRESS
-              value: ":33080"
-            - name: NB_METRICS_PORT
-              value: "9092"
-          envFrom:
-            - secretRef:
-                name: netbird-relay-env
-          ports:
-            - containerPort: 33080
-              name: relay
-        - name: coturn
-          image: coturn/coturn:4@sha256:254a7e19f23366bc638af8e092c18ea52e0eefc9e44041f376e58b61b3b6d646
-          args:
-            - -c
-            - /etc/coturn/turnserver.conf
-          ports:
-            - containerPort: 3478
-              name: stun
-              protocol: UDP
-          volumeMounts:
-            - mountPath: /etc/coturn/turnserver.conf
-              name: coturn-config
-              subPath: turnserver.conf
       volumes:
         - name: config
           secret:
             secretName: netbird-server-config
-        - name: coturn-config
-          secret:
-            secretName: netbird-coturn-config
   volumeClaimTemplates:
     - metadata:
         name: data
