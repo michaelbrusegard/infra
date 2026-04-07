@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netbird-relay
+  namespace: netbird
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: netbird-relay
+  template:
+    metadata:
+      labels:
+        app: netbird-relay
+    spec:
+      containers:
+        - name: relay
+          image: netbirdio/relay:0.67.4@sha256:805bae6085a9aae2fbe1f151e92d5fbb0128d3430d4e003cce69d30897dff200
+          env:
+            - name: NB_LOG_LEVEL
+              value: info
+            - name: NB_LISTEN_ADDRESS
+              value: ":33080"
+          envFrom:
+            - secretRef:
+                name: netbird-relay-env
+          ports:
+            - containerPort: 33080
+              name: relay

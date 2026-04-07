@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netbird-coturn
+  namespace: netbird
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: netbird-coturn
+  template:
+    metadata:
+      labels:
+        app: netbird-coturn
+    spec:
+      containers:
+        - name: coturn
+          image: coturn/coturn:4@sha256:254a7e19f23366bc638af8e092c18ea52e0eefc9e44041f376e58b61b3b6d646
+          args:
+            - -c
+            - /etc/coturn/turnserver.conf
+          ports:
+            - containerPort: 3478
+              name: stun
+              protocol: UDP
+          volumeMounts:
+            - mountPath: /etc/coturn/turnserver.conf
+              name: config
+              subPath: turnserver.conf
+      volumes:
+        - name: config
+          secret:
+            secretName: netbird-coturn-config

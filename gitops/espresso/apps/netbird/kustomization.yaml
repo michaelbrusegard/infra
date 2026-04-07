@@ -3,5 +3,8 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - server-statefulset.yaml
+  - signal-deployment.yaml
+  - relay-deployment.yaml
+  - coturn-deployment.yaml
   - dashboard-deployment.yaml
   - services.yaml

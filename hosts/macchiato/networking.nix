@@ -80,7 +80,7 @@ in {
       ];
       forwardPorts = [
         {
-          destination = "10.0.188.30:3478";
+          destination = "10.0.188.35:3478";
           proto = "udp";
           sourcePort = 3478;
         }
@@ -175,7 +175,7 @@ in {
             extraConfig = ''
               @signal_grpc path /signalexchange.SignalExchange/*
               handle @signal_grpc {
-                reverse_proxy h2c://10.0.188.30:10000
+                reverse_proxy h2c://10.0.188.33:10000
               }
 
               @mgmt_grpc path /management.ManagementService/* /management.ProxyService/*
@@ -185,7 +185,7 @@ in {
 
               @relay path /relay /relay/* /ws-proxy /ws-proxy/*
               handle @relay {
-                reverse_proxy http://10.0.188.30:33080
+                reverse_proxy http://10.0.188.34:33080
               }
 
               @api path /api /api/*

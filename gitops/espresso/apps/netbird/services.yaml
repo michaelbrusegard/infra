@@ -12,16 +12,6 @@ spec:
     - name: http
       port: 80
       targetPort: http
-    - name: signal
-      port: 10000
-      targetPort: signal
-    - name: relay
-      port: 33080
-      targetPort: relay
-    - name: stun
-      port: 3478
-      protocol: UDP
-      targetPort: stun
     - name: metrics
       port: 9090
       targetPort: metrics
@@ -46,12 +36,63 @@ spec:
     - name: http
       port: 80
       targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbird-signal
+  namespace: netbird
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.33,fd7a:115c:a1e0:188::33
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: netbird-signal
+  ports:
     - name: signal
       port: 10000
       targetPort: signal
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbird-relay
+  namespace: netbird
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.34,fd7a:115c:a1e0:188::34
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: netbird-relay
+  ports:
     - name: relay
       port: 33080
       targetPort: relay
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbird-coturn
+  namespace: netbird
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.35,fd7a:115c:a1e0:188::35
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: netbird-coturn
+  ports:
     - name: stun
       port: 3478
       protocol: UDP

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netbird-signal
+  namespace: netbird
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: netbird-signal
+  template:
+    metadata:
+      labels:
+        app: netbird-signal
+    spec:
+      containers:
+        - name: signal
+          image: netbirdio/signal:0.67.4@sha256:50aa9cd91984f539a9fdff23ae66fcae652d1e0e89f076110b6d3f5a3a07f610
+          args:
+            - --port
+            - "10000"
+            - --log-file
+            - console
+            - --log-level
+            - info
+          ports:
+            - containerPort: 10000
+              name: signal
