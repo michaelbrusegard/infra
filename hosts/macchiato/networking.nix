@@ -166,6 +166,11 @@ in {
           };
         }
         // {
+          "https://${config.secrets.pocket-id.publicDomain}" = {
+            extraConfig = "reverse_proxy http://10.0.188.32:80";
+          };
+        }
+        // {
           "https://${config.secrets.netbird.publicDomain}" = {
             extraConfig = ''
               @grpc path /signalexchange.SignalExchange/* /management.ManagementService/* /management.ProxyService/*
@@ -310,6 +315,7 @@ in {
           "zigbee.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         }
         // {
+          "${config.secrets.pocket-id.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "${config.secrets.netbird.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         };
     };
