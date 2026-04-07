@@ -30,6 +30,12 @@ spec:
               name: health
             - containerPort: 9090
               name: metrics
+          startupProbe:
+            httpGet:
+              path: /health
+              port: health
+            periodSeconds: 10
+            failureThreshold: 18
           livenessProbe:
             httpGet:
               path: /health
