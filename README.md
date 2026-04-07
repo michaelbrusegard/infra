@@ -388,6 +388,79 @@ sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/sdb1
 - Drain nodes for maintenance: `kubectl drain espresso1`
 - Uncordon after: `kubectl uncordon espresso1`
 
+### NetBird VPN Bootstrap
+
+NetBird runs as a split deployment: the control plane on the espresso cluster
+and the subnet-routing peer on macchiato. The NetBird combined server uses an
+embedded identity provider (IdP) for initial bootstrap. An external OIDC
+provider (Pocket ID) must be added through the dashboard UI after the first
+boot because the combined server does not support declarative external IdP
+configuration.
+
+1. **Verify the server is running:**
+
+   ```sh
+   kubectl get pod -n netbird
+   curl https://netbird.gullhaugveien.michaelbrusegard.com/api/instance
+   ```
+
+   You want `{"setup_required":true}` and both pods `Running`.
+
+2. **Create the first admin account:**
+
+   Open `https://netbird.gullhaugveien.michaelbrusegard.com` from the local
+   network. Use the embedded IdP to create an admin account. Use the same
+   email address as your Pocket ID account.
+
+3. **Add Pocket ID as an external OIDC provider:**
+
+   In the NetBird dashboard, go to **Settings > Identity Providers > Add
+   Identity Provider**. Select **Generic OIDC** and fill in:
+
+   - **Name:** Pocket ID
+   - **Client ID:** from Pocket ID OIDC client
+   - **Client Secret:** from Pocket ID OIDC client
+   - **Issuer:** `https://id.gullhaugveien.michaelbrusegard.com`
+
+   Save, then copy the redirect URL NetBird provides back to the Pocket ID
+   OIDC client callback URLs.
+
+4. **Promote the Pocket ID user to owner:**
+
+   Log out and log in via Pocket ID. The new user will need approval. Log
+   back in as the local admin, approve the Pocket ID user under **Team >
+   Users**, set the role to **Owner**, and confirm the ownership transfer.
+
+5. **Update the dashboard env to Pocket ID (final state):**
+
+   After verifying Pocket ID login works, update the encrypted NetBird
+   dashboard secrets in `nix-secrets` to point at Pocket ID:
+
+   ```sh
+   sops nix-secrets/gitops/espresso/apps/netbird/secrets.yaml
+   ```
+
+   Change:
+   - `AUTH_AUTHORITY` to `https://id.gullhaugveien.michaelbrusegard.com`
+   - `AUTH_CLIENT_ID` to the Pocket ID client ID
+   - `AUTH_CLIENT_SECRET` to the Pocket ID client secret
+
+   Then set `localAuthDisabled: true` in the server `config.yaml` section of
+   the same file. Commit, push, reconcile, and restart both NetBird pods.
+
+6. **Create the macchiato setup key:**
+
+   In the NetBird dashboard, create a reusable, auto-approve setup key for
+   the router peer. Put the key into `nix-secrets/hosts/macchiato/secrets.yaml`,
+   commit, push, and rebuild macchiato.
+
+7. **Configure routes:**
+
+   In NetBird, add network routes through macchiato for:
+   - `10.0.186.0/24` (client VLAN)
+   - `10.0.187.0/24` (server VLAN)
+   - `10.0.188.0/24` (cluster VIPs)
+
 ## Inspiration…
 
 - LGUG2Z'z [nix-wsl-starter](https://github.com/LGUG2Z/nixos-wsl-starter)
