@@ -175,16 +175,16 @@ in {
               @grpc path /signalexchange.SignalExchange/* /management.ManagementService/* /management.ProxyService/*
               reverse_proxy @grpc h2c://10.0.188.30:80
 
-              @backend path /relay* /ws-proxy/* /oauth2*
+              @backend path /relay /relay/* /ws-proxy /ws-proxy/* /oauth2 /oauth2/*
               reverse_proxy @backend http://10.0.188.30:80
 
               @local_api {
-                path /api*
+                path /api /api/*
                 remote_ip 10.0.186.0/24 10.0.187.0/24 10.0.188.0/24 100.64.0.0/10 fd7a:115c:a1e0:186::/64 fd7a:115c:a1e0:187::/64 fd7a:115c:a1e0:188::/64
               }
               reverse_proxy @local_api http://10.0.188.30:80
 
-              @blocked_api path /api*
+              @blocked_api path /api /api/*
               respond @blocked_api 404
 
               respond 404
