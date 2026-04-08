@@ -32,6 +32,7 @@
       inputs.self.nixosModules.lanzaboote
       inputs.self.nixosModules.libvirt
       inputs.self.nixosModules.location
+      inputs.self.nixosModules.netbird
       inputs.self.nixosModules.pipewire
       inputs.self.nixosModules.plymouth
       inputs.self.nixosModules.udisks2
