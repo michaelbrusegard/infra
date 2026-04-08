@@ -16,7 +16,6 @@
     inputs.self.homeManagerModules.hyprland
     inputs.self.homeManagerModules.launchd
     inputs.self.homeManagerModules.k8s
-    inputs.self.homeManagerModules.mcp
     inputs.self.homeManagerModules.mpv
     inputs.self.homeManagerModules.neovim
     inputs.self.homeManagerModules.opencode
