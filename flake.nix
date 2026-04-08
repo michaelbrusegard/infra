@@ -104,7 +104,6 @@
     nix-secrets = {
       url = "git+ssh://git@github.com/michaelbrusegard/nix-secrets.git";
       inputs = {
-        nixpkgs.follows = "nixpkgs";
         sops-nix.follows = "sops-nix";
       };
     };
