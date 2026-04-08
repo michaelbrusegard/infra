@@ -314,14 +314,15 @@ in {
 
     netbird = {
       useRoutingFeatures = "both";
-
       clients.default = {
         interface = "vpn_clients";
         port = 51820;
         config = {
-          ManagementURL = "https://${config.secrets.netbird.publicDomain}";
+          ManagementURL = {
+            Scheme = "https";
+            Host = "${config.secrets.netbird.publicDomain}:443";
+          };
         };
-
         login = {
           enable = true;
           inherit (config.secrets.netbird) setupKeyFile;
