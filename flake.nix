@@ -111,7 +111,6 @@
 
   outputs = {nixpkgs, ...} @ inputs: let
     lib = import ./lib inputs;
-    deployerSystem = "aarch64-darwin";
     formatters = lib.forAllSystems (
       system:
         (inputs.treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} {
@@ -240,7 +239,7 @@
     ];
 
     colmena = lib.merge [
-      (lib.mkColmenaMeta deployerSystem)
+      lib.mkColmenaMeta
       (lib.mkNode {
         name = "espresso-0";
         hostConfig = "espresso";

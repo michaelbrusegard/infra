@@ -16,8 +16,8 @@ inputs: let
   mkNode =
     import ./mk-node.nix inputs;
 
-  mkColmenaMeta = system:
-    import ./mk-colmena-meta.nix inputs system;
+  mkColmenaMeta =
+    import ./mk-colmena-meta.nix inputs;
 
   mkCluster = {
     names,
