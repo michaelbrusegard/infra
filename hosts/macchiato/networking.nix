@@ -167,7 +167,19 @@ in {
         }
         // {
           "https://${config.secrets.pocket-id.publicDomain}" = {
-            extraConfig = "reverse_proxy http://10.0.188.32:80";
+            extraConfig = ''
+              header Access-Control-Allow-Origin "https://${config.secrets.netbird.publicDomain}"
+              header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+              header Access-Control-Allow-Headers "Authorization, Content-Type"
+              header Access-Control-Max-Age "86400"
+
+              @options method OPTIONS
+              handle @options {
+                respond 204
+              }
+
+              reverse_proxy http://10.0.188.32:80
+            '';
           };
         }
         // {
