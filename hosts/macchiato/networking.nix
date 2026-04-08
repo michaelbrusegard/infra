@@ -318,8 +318,8 @@ in {
       clients.default = {
         interface = "vpn_clients";
         port = 51820;
-        environment = {
-          NB_MANAGEMENT_URL = "https://${config.secrets.netbird.publicDomain}";
+        config = {
+          ManagementURL = "https://${config.secrets.netbird.publicDomain}";
         };
 
         login = {
