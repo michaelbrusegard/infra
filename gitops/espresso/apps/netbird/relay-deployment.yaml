@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: relay
-          image: netbirdio/relay:0.68.0@sha256:c9a546943d63aad9992ff9060356c441fee30a7bc935f983bc30a1c30493da34
+          image: netbirdio/relay:0.68.1@sha256:8a4dd18918e9cca79fffdff2eda0eff5ca5b119416caecbc0cc3bc4260d863c9
           env:
             - name: NB_LOG_LEVEL
               value: info
