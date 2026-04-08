@@ -1,8 +1,8 @@
-inputs: system: {
+inputs: {
   meta = {
     allowApplyAll = false;
     nixpkgs = import inputs.nixpkgs {
-      inherit system;
+      system = "x86_64-linux";
       config.allowUnfree = true;
       overlays = [inputs.self.overlays.default];
     };
