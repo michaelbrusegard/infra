@@ -8,4 +8,5 @@ _: {
     dhcpcd.enable = false;
     wireguard.enable = true;
   };
+  services.netbird.useRoutingFeatures = "client";
 }

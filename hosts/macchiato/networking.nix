@@ -313,7 +313,7 @@ in {
     };
 
     netbird = {
-      useRoutingFeatures = "both";
+      useRoutingFeatures = "server";
       clients.default.interface = "vpn_clients";
     };
   };
