@@ -176,10 +176,10 @@ in {
               let
                 oidcDiscovery = builtins.toJSON {
                   issuer = "https://${config.secrets.pocket-id.publicDomain}";
-                  authorization_endpoint = "https://${config.secrets.netbird.publicDomain}/oidc/authorize";
+                  authorization_endpoint = "https://${config.secrets.pocket-id.publicDomain}/authorize";
                   token_endpoint = "https://${config.secrets.netbird.publicDomain}/oidc/api/oidc/token";
                   userinfo_endpoint = "https://${config.secrets.netbird.publicDomain}/oidc/api/oidc/userinfo";
-                  end_session_endpoint = "https://${config.secrets.netbird.publicDomain}/oidc/api/oidc/end-session";
+                  end_session_endpoint = "https://${config.secrets.pocket-id.publicDomain}/api/oidc/end-session";
                   jwks_uri = "https://${config.secrets.netbird.publicDomain}/oidc/.well-known/jwks.json";
                   device_authorization_endpoint = "https://${config.secrets.netbird.publicDomain}/oidc/api/oidc/device/authorize";
                   introspection_endpoint = "https://${config.secrets.netbird.publicDomain}/oidc/api/oidc/introspect";
