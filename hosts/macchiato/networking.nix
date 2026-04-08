@@ -172,97 +172,31 @@ in {
         }
         // {
           "https://${config.secrets.netbird.publicDomain}" = {
-            extraConfig =
-              let
-                oidcDiscovery = builtins.toJSON {
-                  issuer = "https://${config.secrets.pocket-id.publicDomain}";
-                  authorization_endpoint = "https://${config.secrets.pocket-id.publicDomain}/authorize";
-                  token_endpoint = "https://${config.secrets.netbird.publicDomain}/oidc/api/oidc/token";
-                  userinfo_endpoint = "https://${config.secrets.netbird.publicDomain}/oidc/api/oidc/userinfo";
-                  end_session_endpoint = "https://${config.secrets.pocket-id.publicDomain}/api/oidc/end-session";
-                  jwks_uri = "https://${config.secrets.netbird.publicDomain}/oidc/.well-known/jwks.json";
-                  device_authorization_endpoint = "https://${config.secrets.netbird.publicDomain}/oidc/api/oidc/device/authorize";
-                  introspection_endpoint = "https://${config.secrets.netbird.publicDomain}/oidc/api/oidc/introspect";
-                  authorization_response_iss_parameter_supported = true;
-                  claims_supported = [
-                    "sub"
-                    "given_name"
-                    "family_name"
-                    "name"
-                    "email"
-                    "email_verified"
-                    "preferred_username"
-                    "picture"
-                    "groups"
-                  ];
-                  code_challenge_methods_supported = [
-                    "plain"
-                    "S256"
-                  ];
-                  grant_types_supported = [
-                    "authorization_code"
-                    "refresh_token"
-                    "urn:ietf:params:oauth:grant-type:device_code"
-                    "client_credentials"
-                  ];
-                  id_token_signing_alg_values_supported = [ "RS256" ];
-                  response_types_supported = [
-                    "code"
-                    "id_token"
-                  ];
-                  scopes_supported = [
-                    "openid"
-                    "profile"
-                    "email"
-                    "groups"
-                  ];
-                  subject_types_supported = [ "public" ];
-                  token_endpoint_auth_methods_supported = [
-                    "client_secret_basic"
-                    "client_secret_post"
-                    "none"
-                  ];
-                };
-              in
-              ''
-                @signal_grpc path /signalexchange.SignalExchange/*
-                handle @signal_grpc {
-                  reverse_proxy h2c://10.0.188.33:10000
-                }
+            extraConfig = ''
+              @signal_grpc path /signalexchange.SignalExchange/*
+              handle @signal_grpc {
+                reverse_proxy h2c://10.0.188.33:10000
+              }
 
-                @mgmt_grpc path /management.ManagementService/* /management.ProxyService/*
-                handle @mgmt_grpc {
-                  reverse_proxy h2c://10.0.188.30:80
-                }
+              @mgmt_grpc path /management.ManagementService/* /management.ProxyService/*
+              handle @mgmt_grpc {
+                reverse_proxy h2c://10.0.188.30:80
+              }
 
-                @relay path /relay /relay/* /ws-proxy /ws-proxy/*
-                handle @relay {
-                  reverse_proxy http://10.0.188.34:33080
-                }
+              @relay path /relay /relay/* /ws-proxy /ws-proxy/*
+              handle @relay {
+                reverse_proxy http://10.0.188.34:33080
+              }
 
-                @api path /api /api/*
-                handle @api {
-                  reverse_proxy http://10.0.188.30:80
-                }
+              @api path /api /api/*
+              handle @api {
+                reverse_proxy http://10.0.188.30:80
+              }
 
-                @oidc_discovery path /.well-known/openid-configuration
-                handle @oidc_discovery {
-                  header Content-Type "application/json"
-                  respond `${oidcDiscovery}` 200
-                }
-
-                @oidc path /oidc/*
-                handle @oidc {
-                  uri strip_prefix /oidc
-                  reverse_proxy http://10.0.188.32:80 {
-                    header_up Host "${config.secrets.pocket-id.publicDomain}"
-                  }
-                }
-
-                handle {
-                  reverse_proxy http://10.0.188.31:80
-                }
-              '';
+              handle {
+                reverse_proxy http://10.0.188.31:80
+              }
+            '';
           };
         };
     };
