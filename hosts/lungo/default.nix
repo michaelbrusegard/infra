@@ -4,6 +4,7 @@
     inputs.self.darwinModules.home-manager
     inputs.self.darwinModules.homebrew
     inputs.self.darwinModules.kanata
+    inputs.self.darwinModules.netbird
     inputs.self.darwinModules.networking
     inputs.self.darwinModules.nix
     inputs.self.darwinModules.openssh
