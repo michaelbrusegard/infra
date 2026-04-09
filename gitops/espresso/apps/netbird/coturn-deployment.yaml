@@ -16,9 +16,11 @@ spec:
       containers:
         - name: coturn
           image: coturn/coturn:4@sha256:254a7e19f23366bc638af8e092c18ea52e0eefc9e44041f376e58b61b3b6d646
+          command: ["/bin/bash", "-c"]
           args:
-            - -c
-            - /etc/coturn/turnserver.conf
+            - |
+              EXTERNAL_IP=$(/usr/local/bin/detect-external-ip.sh --ipv4 2>/dev/null) || true
+              exec turnserver -c /etc/coturn/turnserver.conf ${EXTERNAL_IP:+-X "$EXTERNAL_IP"}
           ports:
             - containerPort: 3478
               name: stun
