@@ -227,8 +227,9 @@ in {
         ];
         dhcp-host = [
           "1c:0b:8b:ba:87:6c,10.0.186.2,small-living-room-ap"
-          "d0:d2:b0:9d:70:18,10.0.186.6,small-living-room-tv"
-          "d0:d2:b0:96:23:88,10.0.186.8,basement-tv"
+
+          "d0:d2:b0:9d:70:18,10.0.186.8,small-living-room-tv"
+          "d0:d2:b0:96:23:88,10.0.186.9,basement-tv"
 
           "c8:98:db:19:12:30,10.0.187.2,espresso-0"
           "b4:96:91:26:31:fa,10.0.187.3,espresso-1"
