@@ -19,6 +19,7 @@
     inputs.self.nixosModules.openssh
     inputs.self.nixosModules.prometheus
     inputs.self.nixosModules.security
+    inputs.self.nixosModules.unifi
     ./disko.nix
     ./hardware.nix
     ./networking.nix

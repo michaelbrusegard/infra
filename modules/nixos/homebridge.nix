@@ -2,7 +2,6 @@
   services = {
     homebridge = {
       enable = true;
-      openFirewall = true;
       settings = {
         bridge = {
           inherit (config.secrets.homebridge.settings.bridge) username;
@@ -28,7 +27,10 @@
       enable = true;
       settings = {
         mqtt.server = "mqtt://127.0.0.1:1883";
-        frontend.enabled = true;
+        frontend = {
+          enabled = true;
+          port = 8082;
+        };
         availability.enabled = true;
       };
     };
