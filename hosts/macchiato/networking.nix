@@ -164,17 +164,6 @@ in {
             listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
             extraConfig = "reverse_proxy 127.0.0.1:8082";
           };
-          "http://unifi.home.arpa" = {
-            listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
-            extraConfig = ''
-              reverse_proxy https://127.0.0.1:8443 {
-                transport http {
-                  tls
-                  tls_insecure_skip_verify
-                }
-              }
-            '';
-          };
         }
         // {
           "https://${config.secrets.pocket-id.publicDomain}" = {
@@ -313,7 +302,6 @@ in {
     blocky.settings.customDNS = {
       mapping =
         {
-          "unifi.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "homebridge.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "zigbee.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "hubble.home.arpa" = "10.0.188.2,fd7a:115c:a1e0:188::2";
