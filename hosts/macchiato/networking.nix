@@ -226,10 +226,7 @@ in {
           "tag:br_servers,option:dns-server,10.0.187.1"
         ];
         dhcp-host = [
-          "90:72:40:04:E7:73,10.0.186.2,entrance-ap"
-          "6c:70:9f:ec:10:23,10.0.186.3,basement-ap"
-          "6c:70:9f:ec:04:3f,10.0.186.4,office-ap"
-          "24:a0:74:73:05:48,10.0.186.5,workshop-ap"
+          "1c:0b:8b:ba:87:6c,10.0.186.2,small-living-room-ap"
           "d0:d2:b0:9d:70:18,10.0.186.6,small-living-room-tv"
           "d0:d2:b0:96:23:88,10.0.186.8,basement-tv"
 
