@@ -43,6 +43,9 @@
     ++ lib.optionals config.services.prometheus.enable [
       "/var/lib/${config.services.prometheus.stateDir}"
     ]
+    ++ lib.optionals config.services.unifi.enable [
+      "/var/lib/unifi"
+    ]
     ++ lib.optionals (config.services.netbird.clients != {}) [
       config.services.netbird.clients.default.dir.state
     ]
