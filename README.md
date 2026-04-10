@@ -71,12 +71,6 @@ Install Xcode command line tools:
 xcode-select --install
 ```
 
-Accept the license agreement:
-
-```sh
-sudo xcodebuild -license accept
-```
-
 ### Install Rosetta
 
 ```sh
@@ -88,17 +82,24 @@ softwareupdate --install-rosetta --agree-to-license
 Run the following command to install Nix:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -sSf -L \
-  https://install.determinate.systems/nix | \
-  sh -s -- install
+curl -sSf -L https://install.lix.systems/lix | sh -s -- install
 ```
 
-When prompted to install `Determinate Nix`, explicitly say `no`.
+Then run these commmands to move away conflicting nix configuration left by the installer:
+
+```sh
+sudo mv /etc/nix/nix.custom.conf{,.before-nix-darwin}
+sudo mv /etc/nix/nix.conf /etc/nix/nix.conf.before-nix-darwin
+```
 
 ### Clone nix configuration (Lungo)
 
-Move over the GitHub SSH private key and make sure SSH works.
-Move the user secrets Age key to `~/.config/sops/age/keys.txt`.
+Add the GitHub SSH private key:
+
+```sh
+ssh-add ./private-key
+```
+
 Then clone the nix configuration:
 
 ```sh
@@ -107,10 +108,11 @@ git clone git@github.com:michaelbrusegard/nix-config.git ~/Projects/nix-config
 
 ### Initial Build (Lungo)
 
+Put the user secrets Age key to `~/.config/sops/age/keys.txt`.
 Build the system the first time using the following command:
 
 ```sh
-nix run nix-darwin -- switch --flake $HOME/Projects/nix-config#lungo
+sudo nix --extra-experimental-features "nix-command flakes" run nix-darwin -- switch --flake $HOME/Projects/nix-config#lungo
 ```
 
 Later rebuilds can use the `nrs` alias.
@@ -148,7 +150,7 @@ with the path to your USB drive.
 
 ![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
-### Install NicOS with nixos-anywhere (Using Minimal NixOS Installer)
+### Install NixOS with nixos-anywhere (Using Minimal NixOS Installer)
 
 Plug in the installer USB and set a temporary password using the `passwd` command for SSH access.
 You can run `ip a` to find the IP address.
