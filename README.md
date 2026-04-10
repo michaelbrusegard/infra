@@ -321,74 +321,53 @@ nixos-anywhere --extra-files ./keys --flake .#macchiato --disk-encryption-keys /
 Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt user secrets.
 **Important:** Setup TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/sda2`.
 
-## Espresso (NixOS K3s Cluster)
+## Espresso (NixOS K3S Cluster)
 
-The Espresso setup consists of HA k3s nodes (espresso1, espresso2, espresso3)
-for running containerized homelab and business services like websites, media
-hosting and automation.
+The Espresso setup consists of the nodes espresso-1, espresso-2 and espresso-3
+in a k3s cluster. So the following bootstrap has to be done for each of the nodes.
+It is important to do espresso-0 first so the cluster is bootstrapped.
 
-sudo systemctl stop k3s
-sudo rm -rf /var/lib/rancher/k3s
-
-### Prerequisites
-
-Start with obtaining MAC addresses for each node by enabling PXE (Preboot
-Execution Environment) and writing down the MAC address. Then disable PXE
-again and assign a static IP to each node from the router.
-
-### Bootstrap with NixOS Anywhere
+First create a minimal installer USB by downloading from [here](https://nixos.org/download/#nixos-iso)
+and flashing it to the drive using the following command:
 
 ```sh
-nixos-anywhere --extra-files ./keys --flake .#espresso-1 --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@10.0.186.19
-
+sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
 ```
 
-First, build the appropriate bootstrap ISO:
+Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
+with the path to your USB drive.
+
+### Prepare the node
+
+Plug in the USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
+Set a temporary password using the `passwd` command for SSH access.
+Run `ip a` to find the IP address on the machine.
+Alternatively connect it directy to a Mac with "Internet Sharing" enabled.
+
+### Install with NixOS Anywhere
+
+Copy the LUKS passphrase into this relative file: `./secret.key`.
+Do the same with the host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
+Run the following installation command, if prompted for a password, it is the temporary password created when preparing the machine.
 
 ```sh
-nix build .#bootstrapIsoX86
+nixos-anywhere --extra-files ./keys --flake .#espresso-NODE --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
 ```
 
-Flash the resulting ISO (`result/iso/*.iso`) to a USB drive:
+### Post install
+
+Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt user secrets. Then
+rebuild the configuration using colmena.
+
+Setup TPM auto unlock for all the applicable disks (run `lsblk` to see the disks):
 
 ```sh
-sudo dd if=result/iso/*.iso of=/dev/sdX bs=4M status=progress oflag=sync
-```
-
-Boot each node from the USB drive. Once booted, the node will have SSH
-enabled with your key.
-
-Then, for each node, run:
-
-```sh
-nixos-anywhere --flake ~/Developer/dotfiles#Espresso1 \
-  -i ~/.config/sops-nix/secrets/ssh/bootstrap/private-key \
-  root@node-ip
-```
-
-Replace `Espresso1` with `Espresso2`/`Espresso3` and the correct IP.
-
-### Post-Bootstrap
-
-- Copy sops keys to each node (e.g., via SSH or USB)
-
-```sh
-sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/nvme0n1p2
-sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/nvme0n1p3
-sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/sda1
-sudo systemd-cryptenroll --wipe-slot=tpm2 /dev/sdb1
-
 sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p2
 sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p3
+# These will only be applicable for espresso-1 and espresso-2:
 sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/sda1
 sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/sdb1
 ```
-
-### Cluster Management
-
-- Access via `kubectl` after connecting to any node
-- Drain nodes for maintenance: `kubectl drain espresso1`
-- Uncordon after: `kubectl uncordon espresso1`
 
 ## Inspiration…
 
