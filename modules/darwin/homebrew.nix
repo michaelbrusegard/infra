@@ -14,6 +14,7 @@
       "homebrew/homebrew-core" = inputs.homebrew-core;
       "homebrew/homebrew-cask" = inputs.homebrew-cask;
       "michaelbrusegard/homebrew-extras" = inputs.homebrew-extras;
+      "netbirdio/homebrew-tap" = inputs.homebrew-netbird;
     };
     mutableTaps = false;
     autoMigrate = true;
@@ -29,8 +30,10 @@
     };
     taps = [
       "michaelbrusegard/homebrew-extras"
+      "netbirdio/homebrew-tap"
     ];
     casks = [
+      "netbird-ui"
       "yabai-indicator"
       "scribus"
       "proton-drive"
@@ -38,7 +41,6 @@
     masApps = {
       "Proton Pass for Safari" = 6502835663;
       "Wipr" = 1662217862;
-      "WireGuard" = 1451685025;
       "Developer" = 640199958;
       "Xcode" = 497799835;
       "DaVinci Resolve" = 571213070;

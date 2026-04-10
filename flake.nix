@@ -65,6 +65,10 @@
       url = "github:michaelbrusegard/homebrew-extras";
       flake = false;
     };
+    homebrew-netbird = {
+      url = "github:netbirdio/homebrew-tap";
+      flake = false;
+    };
     catppuccin = {
       url = "github:catppuccin/nix";
       inputs.nixpkgs.follows = "nixpkgs";

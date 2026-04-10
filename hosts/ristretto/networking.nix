@@ -6,7 +6,6 @@ _: {
       wifi.backend = "iwd";
     };
     dhcpcd.enable = false;
-    wireguard.enable = true;
   };
   services.netbird.useRoutingFeatures = "client";
 }
