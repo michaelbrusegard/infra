@@ -17,6 +17,11 @@ in {
     bridges.br_clients.interfaces = clientInterfaces;
     bridges.br_servers.interfaces = serverInterfaces;
 
+    vlans.guest = {
+      id = 190;
+      interface = "br_clients";
+    };
+
     interfaces = {
       # WAN gets its address from the ISP via DHCP
       "${wanInterface}".useDHCP = true;
@@ -34,6 +39,23 @@ in {
         ipv6.addresses = [
           {
             address = "fd7a:115c:a1e0:186::1";
+            prefixLength = 64;
+          }
+        ];
+      };
+
+      # Guest VLAN: isolated internet-only access for visitors (10.0.190.0/24)
+      guest = {
+        useDHCP = false;
+        ipv4.addresses = [
+          {
+            address = "10.0.190.1";
+            prefixLength = 24;
+          }
+        ];
+        ipv6.addresses = [
+          {
+            address = "fd7a:115c:a1e0:190::1";
             prefixLength = 64;
           }
         ];
@@ -61,11 +83,11 @@ in {
     # delegation (ia_pd) from the ISP, splitting the delegated /64s across bridges
     dhcpcd = {
       enable = true;
-      denyInterfaces = ["br_clients" "br_servers"];
+      denyInterfaces = ["br_clients" "br_servers" "guest"];
       extraConfig = ''
         interface ${wanInterface}
           ia_na 1
-          ia_pd 1 br_clients/0/64 br_servers/1/64
+          ia_pd 1 br_clients/0/64 br_servers/1/64 guest/2/64
       '';
     };
 
@@ -77,6 +99,7 @@ in {
       internalInterfaces = [
         "br_clients"
         "br_servers"
+        "guest"
       ];
       forwardPorts = [
         {
@@ -113,6 +136,10 @@ in {
 
         # Allow servers to initiate connections to client devices when needed.
         iifname "br_servers" oifname "br_clients" accept
+
+        # Guest network: internet only, no access to internal subnets.
+        # Internal traffic is blocked by the default-drop policy.
+        iifname "guest" oifname "${wanInterface}" accept
       '';
 
       # Ports open to the internet on the WAN interface
@@ -121,6 +148,11 @@ in {
         "${wanInterface}" = {
           allowedTCPPorts = [80 443];
           allowedUDPPorts = [3478];
+        };
+        # Guest devices need DHCP and DNS from the router, nothing else
+        "guest" = {
+          allowedTCPPorts = [53];
+          allowedUDPPorts = [53 67];
         };
       };
     };
@@ -141,6 +173,14 @@ in {
         };
 
         interface br_servers {
+          AdvSendAdvert on;
+          prefix ::/64 {
+            AdvOnLink on;
+            AdvAutonomous on;
+          };
+        };
+
+        interface guest {
           AdvSendAdvert on;
           prefix ::/64 {
             AdvOnLink on;
@@ -213,17 +253,21 @@ in {
         interface = [
           "br_clients"
           "br_servers"
+          "guest"
         ];
         dhcp-authoritative = true;
         dhcp-range = [
           "set:br_clients,10.0.186.2,10.0.186.254,24h"
           "set:br_servers,10.0.187.2,10.0.187.254,24h"
+          "set:guest,10.0.190.2,10.0.190.254,1h"
         ];
         dhcp-option = [
           "tag:br_clients,option:router,10.0.186.1"
           "tag:br_clients,option:dns-server,10.0.186.1"
           "tag:br_servers,option:router,10.0.187.1"
           "tag:br_servers,option:dns-server,10.0.187.1"
+          "tag:guest,option:router,10.0.190.1"
+          "tag:guest,option:dns-server,10.0.190.1"
         ];
         dhcp-host = [
           "1c:0b:8b:ba:87:6c,10.0.186.2,small-living-room-ap"
