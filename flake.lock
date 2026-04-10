@@ -650,6 +650,22 @@
         "type": "github"
       }
     },
+    "homebrew-netbird": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1775730761,
+        "narHash": "sha256-1K8ApYQ3AR6NvCNPLAjDkkprfXACeuZK8FtBDDqfOHw=",
+        "owner": "netbirdio",
+        "repo": "homebrew-tap",
+        "rev": "ded0f743c3e5e79bc7b5ec7a07964c7b0b52dabb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "netbirdio",
+        "repo": "homebrew-tap",
+        "type": "github"
+      }
+    },
     "hyprcursor": {
       "inputs": {
         "hyprlang": [
@@ -1207,11 +1223,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1772963539,
-        "narHash": "sha256-9jVDGZnvCckTGdYT53d/EfznygLskyLQXYwJLKMPsZs=",
+        "lastModified": 1775710090,
+        "narHash": "sha256-ar3rofg+awPB8QXDaFJhJ2jJhu+KqN/PRCXeyuXR76E=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "9dcb002ca1690658be4a04645215baea8b95f31d",
+        "rev": "4c1018dae018162ec878d42fec712642d214fdfa",
         "type": "github"
       },
       "original": {
@@ -1432,6 +1448,7 @@
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",
         "homebrew-extras": "homebrew-extras",
+        "homebrew-netbird": "homebrew-netbird",
         "hyprland": "hyprland",
         "impermanence": "impermanence",
         "lanzaboote": "lanzaboote",
