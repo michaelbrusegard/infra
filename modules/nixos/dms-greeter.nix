@@ -6,7 +6,18 @@
 }: {
   # TODO: Remove when updating to nixpkgs 26.05
   imports = [
-    "${inputs.nixpkgs-unstable}/nixos/modules/services/display-managers/dms-greeter.nix"
+    (
+      {
+        config,
+        lib,
+        pkgs,
+        options,
+        ...
+      } @ args:
+        builtins.removeAttrs
+        (import "${inputs.nixpkgs-unstable}/nixos/modules/services/display-managers/dms-greeter.nix" args)
+        ["meta"]
+    )
   ];
   environment.systemPackages = [pkgs.bibata-cursors];
 

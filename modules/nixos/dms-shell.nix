@@ -1,7 +1,18 @@
 {inputs, ...}: {
   # TODO: Remove when updating to nixpkgs 26.05
   imports = [
-    "${inputs.nixpkgs-unstable}/nixos/modules/programs/wayland/dms-shell.nix"
+    (
+      {
+        config,
+        lib,
+        pkgs,
+        options,
+        ...
+      } @ args:
+        builtins.removeAttrs
+        (import "${inputs.nixpkgs-unstable}/nixos/modules/programs/wayland/dms-shell.nix" args)
+        ["meta"]
+    )
   ];
 
   programs.dms-shell = {
