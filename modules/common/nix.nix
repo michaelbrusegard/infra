@@ -12,13 +12,13 @@
       extra-experimental-features = ["nix-command" "flakes"];
 
       substituters = [
-        "https://cache.nixos.org"
-        "https://nix-community.cachix.org"
-        "https://nixos-raspberrypi.cachix.org"
-        "https://hyprland.cachix.org"
-        "https://wezterm.cachix.org"
-        "https://yazi.cachix.org"
-        "https://cache.garnix.io"
+        "https://cache.nixos.org?priority=10"
+        "https://nix-community.cachix.org?priority=20"
+        "https://nixos-raspberrypi.cachix.org?priority=30"
+        "https://hyprland.cachix.org?priority=40"
+        "https://wezterm.cachix.org?priority=50"
+        "https://yazi.cachix.org?priority=60"
+        "https://cache.garnix.io?priority=70"
       ];
 
       trusted-public-keys = [
