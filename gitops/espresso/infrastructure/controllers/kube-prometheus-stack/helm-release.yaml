@@ -79,38 +79,12 @@ spec:
         enabled: true
         storageClassName: nvme-single
         size: 5Gi
-      dashboardProviders:
-        dashboardproviders.yaml:
-          apiVersion: 1
-          providers:
-            - name: default
-              orgId: 1
-              folder: ""
-              type: file
-              disableDeletion: false
-              editable: true
-              options:
-                path: /var/lib/grafana/dashboards/default
       sidecar:
         dashboards:
           enabled: true
           label: grafana_dashboard
           labelValue: "1"
           searchNamespace: ALL
-      dashboards:
-        default:
-          blocky:
-            gnetId: 13768
-            revision: 4
-            datasource: Prometheus
-          flux-cluster:
-            gnetId: 16714
-            revision: 1
-            datasource: Prometheus
-          flux-control-plane:
-            gnetId: 16715
-            revision: 1
-            datasource: Prometheus
       additionalDataSources:
         - name: Loki
           type: loki
