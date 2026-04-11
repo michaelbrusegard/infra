@@ -50,6 +50,10 @@ spec:
               value: "/monitors"
             - name: AUTOKUMA__DOCKER__ENABLED
               value: "false"
+            - name: AUTOKUMA__FILES__ENABLED
+              value: "true"
+            - name: RUST_LOG
+              value: "autokuma=debug"
           envFrom:
             - secretRef:
                 name: uptime-kuma-env
