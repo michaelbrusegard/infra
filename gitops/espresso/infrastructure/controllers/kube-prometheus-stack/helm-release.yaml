@@ -29,6 +29,10 @@ spec:
         etcd: false
         kubeProxy: false
 
+    prometheus-node-exporter:
+      extraArgs:
+        - --no-collector.kernel_hung
+
     prometheus:
       prometheusSpec:
         retention: 30d
