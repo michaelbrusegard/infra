@@ -17,6 +17,8 @@ spec:
   values:
     controller:
       type: daemonset
+    alloy-hello:
+      enabled: false
     alloy:
       configMap:
         content: |
