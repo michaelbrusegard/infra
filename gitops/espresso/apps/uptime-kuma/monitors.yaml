@@ -4,16 +4,16 @@ metadata:
   name: uptime-kuma-monitors
   namespace: uptime-kuma
 data:
-  cluster.json: |
+  espresso.json: |
     [
       {
-        "name": "Cluster",
+        "name": "Espresso",
         "type": "group"
       },
       {
         "name": "Pocket ID",
         "type": "http",
-        "parent_name": "cluster[0]",
+        "parent_name": "espresso[0]",
         "url": "http://10.0.188.10:80",
         "interval": 60,
         "max_retries": 3,
@@ -23,7 +23,7 @@ data:
       {
         "name": "NetBird Management",
         "type": "http",
-        "parent_name": "cluster[0]",
+        "parent_name": "espresso[0]",
         "url": "http://10.0.188.30:80/api/instance",
         "interval": 60,
         "max_retries": 3,
@@ -33,7 +33,7 @@ data:
       {
         "name": "NetBird Dashboard",
         "type": "http",
-        "parent_name": "cluster[0]",
+        "parent_name": "espresso[0]",
         "url": "http://10.0.188.31:80",
         "interval": 60,
         "max_retries": 3,
@@ -43,7 +43,7 @@ data:
       {
         "name": "NetBird Signal",
         "type": "port",
-        "parent_name": "cluster[0]",
+        "parent_name": "espresso[0]",
         "hostname": "10.0.188.32",
         "port": 10000,
         "interval": 60,
@@ -54,7 +54,7 @@ data:
       {
         "name": "NetBird Relay",
         "type": "port",
-        "parent_name": "cluster[0]",
+        "parent_name": "espresso[0]",
         "hostname": "10.0.188.33",
         "port": 33080,
         "interval": 60,
@@ -65,7 +65,7 @@ data:
       {
         "name": "Hubble UI",
         "type": "http",
-        "parent_name": "cluster[0]",
+        "parent_name": "espresso[0]",
         "url": "http://10.0.188.2:80",
         "interval": 60,
         "max_retries": 3,
@@ -75,7 +75,7 @@ data:
       {
         "name": "Grafana",
         "type": "http",
-        "parent_name": "cluster[0]",
+        "parent_name": "espresso[0]",
         "url": "http://10.0.188.3:80",
         "interval": 60,
         "max_retries": 3,
@@ -85,7 +85,7 @@ data:
       {
         "name": "Loki",
         "type": "http",
-        "parent_name": "cluster[0]",
+        "parent_name": "espresso[0]",
         "url": "http://10.0.188.4:3100/ready",
         "interval": 60,
         "max_retries": 3,
