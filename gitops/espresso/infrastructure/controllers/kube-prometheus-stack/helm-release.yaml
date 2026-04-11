@@ -75,6 +75,18 @@ spec:
         enabled: true
         storageClassName: nvme-single
         size: 5Gi
+      dashboardProviders:
+        dashboardproviders.yaml:
+          apiVersion: 1
+          providers:
+            - name: default
+              orgId: 1
+              folder: ""
+              type: file
+              disableDeletion: false
+              editable: true
+              options:
+                path: /var/lib/grafana/dashboards/default
       sidecar:
         dashboards:
           enabled: true
