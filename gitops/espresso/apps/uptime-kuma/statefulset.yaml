@@ -14,12 +14,19 @@ spec:
       labels:
         app: uptime-kuma
     spec:
-      containers:
+      initContainers:
         - name: uptime-kuma
+          restartPolicy: Always
           image: louislam/uptime-kuma:2@sha256:7337368a77873f159435de9ef09567f68c31285ed5f951dec36256c4b267ee44
           ports:
             - containerPort: 3001
               name: http
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            failureThreshold: 18
           livenessProbe:
             httpGet:
               path: /
@@ -30,15 +37,10 @@ spec:
               path: /
               port: http
             periodSeconds: 10
-          startupProbe:
-            httpGet:
-              path: /
-              port: http
-            periodSeconds: 10
-            failureThreshold: 18
           volumeMounts:
             - mountPath: /app/data
               name: data
+      containers:
         - name: autokuma
           image: ghcr.io/bigboot/autokuma:2@sha256:8acbd3ad3ec8cb6c066aa0ee541154921283ec78159015937128541921c47974
           env:
@@ -48,8 +50,6 @@ spec:
               value: "/monitors"
             - name: AUTOKUMA__DOCKER__ENABLED
               value: "false"
-            - name: AUTOKUMA__KUMA__CONNECT_TIMEOUT
-              value: "60"
           envFrom:
             - secretRef:
                 name: uptime-kuma-env
