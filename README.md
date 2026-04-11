@@ -13,20 +13,6 @@ Note to self: Make sure to follow the guide for each system step by step.
 > Age keys to further encrypt the most critical secrets. To include them in
 > the build, add the age keys to `~/.config/sops/age/keys.txt`
 
-## Reference links
-
-### Package Repositories
-
-- [Nixpkgs](https://search.nixos.org/packages)
-- [Homebrew](https://brew.sh/)
-- [WinGet](https://winget.ragerworks.com/)
-
-### Nix Options
-
-- [nixos](https://mynixos.com/nixpkgs/options)
-- [nix-darwin](https://mynixos.com/nix-darwin/options)
-- [home-manager](https://mynixos.com/home-manager/options)
-
 ## Lungo (Nix-darwin Laptop)
 
 First install macOS normally by following the default installation on
