@@ -40,7 +40,7 @@ spec:
             - mountPath: /app/data
               name: data
         - name: autokuma
-          image: ghcr.io/bigboot/autokuma:1
+          image: ghcr.io/bigboot/autokuma:2@sha256:8acbd3ad3ec8cb6c066aa0ee541154921283ec78159015937128541921c47974
           env:
             - name: AUTOKUMA__KUMA__URL
               value: "http://localhost:3001"
