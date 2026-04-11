@@ -207,7 +207,7 @@ in {
         }
         // {
           "https://${config.secrets.pocket-id.publicDomain}" = {
-            extraConfig = "reverse_proxy http://10.0.188.3:80";
+            extraConfig = "reverse_proxy http://10.0.188.10:80";
           };
         }
         // {
@@ -220,27 +220,27 @@ in {
               @icon path /icon.svg /favicon.ico
 
               handle @status {
-                reverse_proxy http://10.0.188.4:80 {
+                reverse_proxy http://10.0.188.11:80 {
                   header_up Host uptime.home.arpa
                 }
               }
               handle @status-api {
-                reverse_proxy http://10.0.188.4:80 {
+                reverse_proxy http://10.0.188.11:80 {
                   header_up Host uptime.home.arpa
                 }
               }
               handle @assets {
-                reverse_proxy http://10.0.188.4:80 {
+                reverse_proxy http://10.0.188.11:80 {
                   header_up Host uptime.home.arpa
                 }
               }
               handle @upload {
-                reverse_proxy http://10.0.188.4:80 {
+                reverse_proxy http://10.0.188.11:80 {
                   header_up Host uptime.home.arpa
                 }
               }
               handle @icon {
-                reverse_proxy http://10.0.188.4:80 {
+                reverse_proxy http://10.0.188.11:80 {
                   header_up Host uptime.home.arpa
                 }
               }
@@ -389,7 +389,8 @@ in {
           "homebridge.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "zigbee.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "hubble.home.arpa" = "10.0.188.2,fd7a:115c:a1e0:188::2";
-          "uptime.home.arpa" = "10.0.188.4,fd7a:115c:a1e0:188::4";
+          "grafana.home.arpa" = "10.0.188.3,fd7a:115c:a1e0:188::3";
+          "uptime.home.arpa" = "10.0.188.11,fd7a:115c:a1e0:188::11";
         }
         // {
           "${config.secrets.pocket-id.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";

@@ -1,0 +1,102 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: monitoring
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: "82.x.x"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+      interval: 1h
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    # k3s uses embedded etcd and Cilium replaces kube-proxy
+    kubeEtcd:
+      enabled: false
+    kubeProxy:
+      enabled: false
+    defaultRules:
+      rules:
+        etcd: false
+        kubeProxy: false
+
+    prometheus:
+      prometheusSpec:
+        retention: 30d
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: nvme-single
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 50Gi
+        # Discover ServiceMonitors and PodMonitors across all namespaces
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        additionalScrapeConfigs:
+          - job_name: macchiato-node
+            static_configs:
+              - targets: ["10.0.187.1:9100"]
+                labels:
+                  instance: macchiato
+          - job_name: macchiato-blocky
+            static_configs:
+              - targets: ["10.0.187.1:4000"]
+                labels:
+                  instance: macchiato
+
+    alertmanager:
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: nvme-single
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 5Gi
+
+    grafana:
+      admin:
+        existingSecret: grafana-credentials
+        userKey: admin-user
+        passwordKey: admin-password
+      persistence:
+        enabled: true
+        storageClassName: nvme-single
+        size: 5Gi
+      sidecar:
+        dashboards:
+          enabled: true
+          label: grafana_dashboard
+          labelValue: "1"
+          searchNamespace: ALL
+      dashboards:
+        default:
+          blocky:
+            gnetId: 13768
+            revision: 4
+            datasource: Prometheus
+          flux-cluster:
+            gnetId: 16714
+            revision: 1
+            datasource: Prometheus
+          flux-control-plane:
+            gnetId: 16715
+            revision: 1
+            datasource: Prometheus
+      additionalDataSources:
+        - name: Loki
+          type: loki
+          url: http://loki.monitoring.svc.cluster.local:3100
+          access: proxy

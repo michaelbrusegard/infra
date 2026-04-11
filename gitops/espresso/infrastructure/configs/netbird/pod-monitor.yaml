@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: netbird
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - netbird
+  selector:
+    matchLabels:
+      app: netbird-server
+  podMetricsEndpoints:
+    - port: metrics

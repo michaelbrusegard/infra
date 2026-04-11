@@ -19,7 +19,7 @@ metadata:
   name: pocket-id
   namespace: pocket-id
   annotations:
-    lbipam.cilium.io/ips: 10.0.188.3,fd7a:115c:a1e0:188::3
+    lbipam.cilium.io/ips: 10.0.188.10,fd7a:115c:a1e0:188::10
 spec:
   type: LoadBalancer
   ipFamilyPolicy: PreferDualStack

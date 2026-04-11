@@ -14,7 +14,7 @@ data:
         "name": "Pocket ID",
         "type": "http",
         "parent_name": "cluster[0]",
-        "url": "http://10.0.188.3:80",
+        "url": "http://10.0.188.10:80",
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
@@ -71,6 +71,26 @@ data:
         "max_retries": 3,
         "retry_interval": 30,
         "active": true
+      },
+      {
+        "name": "Grafana",
+        "type": "http",
+        "parent_name": "cluster[0]",
+        "url": "http://10.0.188.3:80",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Loki",
+        "type": "http",
+        "parent_name": "cluster[0]",
+        "url": "http://10.0.188.4:3100/ready",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
       }
     ]
   macchiato.json: |
@@ -84,16 +104,6 @@ data:
         "type": "http",
         "parent_name": "macchiato[0]",
         "url": "http://10.0.187.1:4000",
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      },
-      {
-        "name": "Prometheus",
-        "type": "http",
-        "parent_name": "macchiato[0]",
-        "url": "http://10.0.187.1:9090/-/healthy",
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
