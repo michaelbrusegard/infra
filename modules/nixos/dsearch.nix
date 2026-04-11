@@ -2,13 +2,7 @@
   # TODO: Remove when updating to nixpkgs 26.05
   imports = [
     (
-      {
-        config,
-        lib,
-        pkgs,
-        options,
-        ...
-      } @ args:
+      args:
         builtins.removeAttrs
         (import "${inputs.nixpkgs-unstable}/nixos/modules/programs/dsearch.nix" args)
         ["meta"]
