@@ -6,4 +6,9 @@
     ipv4 = true;
     ipv6 = true;
   };
+
+  systemd.services.cloudflare-dyndns.serviceConfig = {
+    Restart = "on-failure";
+    RestartSec = "30s";
+  };
 }
