@@ -53,7 +53,7 @@ spec:
             - name: AUTOKUMA__FILES__ENABLED
               value: "true"
             - name: RUST_LOG
-              value: "autokuma=debug"
+              value: "debug"
           envFrom:
             - secretRef:
                 name: uptime-kuma-env
