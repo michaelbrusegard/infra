@@ -149,5 +149,16 @@ data:
         "retry_interval": 30,
         "ignore_tls": true,
         "active": true
+      },
+      {
+        "name": "Caddy",
+        "type": "port",
+        "parent_name": "macchiato[0]",
+        "hostname": "10.0.187.1",
+        "port": 443,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
       }
     ]
