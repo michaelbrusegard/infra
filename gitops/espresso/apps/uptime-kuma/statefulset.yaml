@@ -54,7 +54,6 @@ spec:
               value: "true"
             - name: AUTOKUMA__FILES__FOLLOW_SYMLINKS
               value: "true"
-
           envFrom:
             - secretRef:
                 name: uptime-kuma-env

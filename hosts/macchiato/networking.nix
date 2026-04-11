@@ -211,6 +211,36 @@ in {
           };
         }
         // {
+          "https://${config.secrets.uptime-kuma.publicDomain}" = {
+            extraConfig = ''
+              @status path /status /status/*
+              @status-api path /api/status-page/*
+              @assets path /assets/*
+              @upload path /upload/*
+              @icon path /icon.svg /favicon.ico
+
+              handle @status {
+                reverse_proxy http://10.0.188.4:80
+              }
+              handle @status-api {
+                reverse_proxy http://10.0.188.4:80
+              }
+              handle @assets {
+                reverse_proxy http://10.0.188.4:80
+              }
+              handle @upload {
+                reverse_proxy http://10.0.188.4:80
+              }
+              handle @icon {
+                reverse_proxy http://10.0.188.4:80
+              }
+              handle {
+                respond 404
+              }
+            '';
+          };
+        }
+        // {
           "https://${config.secrets.netbird.publicDomain}" = {
             extraConfig = ''
               @signal_grpc path /signalexchange.SignalExchange/*
@@ -354,6 +384,7 @@ in {
         // {
           "${config.secrets.pocket-id.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "${config.secrets.netbird.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+          "${config.secrets.uptime-kuma.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         };
     };
 
