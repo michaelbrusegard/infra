@@ -43,7 +43,7 @@ metadata:
   name: netbird-signal
   namespace: netbird
   annotations:
-    lbipam.cilium.io/ips: 10.0.188.33,fd7a:115c:a1e0:188::33
+    lbipam.cilium.io/ips: 10.0.188.32,fd7a:115c:a1e0:188::32
 spec:
   type: LoadBalancer
   ipFamilyPolicy: PreferDualStack
@@ -63,7 +63,7 @@ metadata:
   name: netbird-relay
   namespace: netbird
   annotations:
-    lbipam.cilium.io/ips: 10.0.188.34,fd7a:115c:a1e0:188::34
+    lbipam.cilium.io/ips: 10.0.188.33,fd7a:115c:a1e0:188::33
 spec:
   type: LoadBalancer
   ipFamilyPolicy: PreferDualStack
@@ -83,7 +83,7 @@ metadata:
   name: netbird-coturn
   namespace: netbird
   annotations:
-    lbipam.cilium.io/ips: 10.0.188.35,fd7a:115c:a1e0:188::35
+    lbipam.cilium.io/ips: 10.0.188.34,fd7a:115c:a1e0:188::34
 spec:
   type: LoadBalancer
   ipFamilyPolicy: PreferDualStack
