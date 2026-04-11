@@ -109,6 +109,14 @@
       url = "github:mrshmllow/affinity-nix";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+    claude-code-skills = {
+      url = "github:anthropics/claude-code";
+      flake = false;
+    };
+    caveman-skills = {
+      url = "github:JuliusBrussee/caveman";
+      flake = false;
+    };
     nix-secrets = {
       url = "git+ssh://git@github.com/michaelbrusegard/nix-secrets.git";
       inputs = {
