@@ -44,12 +44,12 @@ spec:
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
         additionalScrapeConfigs:
-          - job_name: macchiato-node
+          - job_name: node-exporter
             static_configs:
               - targets: ["10.0.187.1:9100"]
                 labels:
                   instance: macchiato
-          - job_name: macchiato-blocky
+          - job_name: blocky
             static_configs:
               - targets: ["10.0.187.1:4000"]
                 labels:
