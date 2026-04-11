@@ -309,7 +309,7 @@ Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt us
 
 ## Espresso (NixOS K3S Cluster)
 
-The Espresso setup consists of the nodes espresso-1, espresso-2 and espresso-3
+The Espresso setup consists of the nodes espresso-0, espresso-1 and espresso-2
 in a k3s cluster. So the following bootstrap has to be done for each of the nodes.
 It is important to do espresso-0 first so the cluster is bootstrapped.
 
