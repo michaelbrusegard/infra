@@ -46,6 +46,8 @@ spec:
               value: "http://localhost:3001"
             - name: AUTOKUMA__STATIC_MONITORS
               value: "/monitors"
+            - name: AUTOKUMA__DOCKER__ENABLED
+              value: "false"
           envFrom:
             - secretRef:
                 name: uptime-kuma-env
