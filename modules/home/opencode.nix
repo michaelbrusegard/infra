@@ -15,6 +15,13 @@
       plugin = ["oh-my-opencode" "@simonwjackson/opencode-direnv"];
     };
     tui.theme = "catppuccin";
+    rules = ''
+      Always use caveman lite mode for responses.
+    '';
+    skills = {
+      frontend-design = "${inputs.claude-code-skills}/plugins/frontend-design/skills/frontend-design";
+      caveman = "${inputs.caveman-skills}/skills/caveman";
+    };
   };
   home.packages = with pkgs; [
     opencode-desktop

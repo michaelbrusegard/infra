@@ -156,6 +156,38 @@
         "type": "github"
       }
     },
+    "caveman-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1775762734,
+        "narHash": "sha256-EAlKoqJuTMib+gcLscMtpS8Zzq/D/LmIRoG3g/XKThc=",
+        "owner": "JuliusBrussee",
+        "repo": "caveman",
+        "rev": "92f892f2b99744a4501f35bce9a2e384878e4877",
+        "type": "github"
+      },
+      "original": {
+        "owner": "JuliusBrussee",
+        "repo": "caveman",
+        "type": "github"
+      }
+    },
+    "claude-code-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1775847815,
+        "narHash": "sha256-Ir8bikRS0YSwEE2IGtpHE7G1pe94V38h74ubatyM1GM=",
+        "owner": "anthropics",
+        "repo": "claude-code",
+        "rev": "9772e13f820002c9730af67a2409702799c7ddc6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anthropics",
+        "repo": "claude-code",
+        "type": "github"
+      }
+    },
     "crane": {
       "locked": {
         "lastModified": 1769287525,
@@ -1439,6 +1471,8 @@
         "brew-api": "brew-api",
         "brew-nix": "brew-nix",
         "catppuccin": "catppuccin",
+        "caveman-skills": "caveman-skills",
+        "claude-code-skills": "claude-code-skills",
         "disko": "disko",
         "dms": "dms",
         "dsearch": "dsearch",
