@@ -38,6 +38,7 @@ _: {
       };
 
       ports.http = 4000;
+      prometheus.enable = true;
     };
   };
 }

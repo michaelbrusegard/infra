@@ -4,3 +4,8 @@ resources:
   - cilium
   - openebs
   - hubble-ui
+  - grafana
+  - loki
+  - flux
+  - netbird
+  - openebs-monitoring

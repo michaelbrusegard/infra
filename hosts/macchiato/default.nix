@@ -1,8 +1,8 @@
 {inputs, ...}: {
   imports = [
+    inputs.self.nixosModules.alloy
     inputs.self.nixosModules.boot
     inputs.self.nixosModules.blocky
-    inputs.self.nixosModules.blocky-prometheus
     inputs.self.nixosModules.catppuccin
     inputs.self.nixosModules.console
     inputs.self.nixosModules.cloudflare-dyndns
@@ -17,7 +17,6 @@
     inputs.self.nixosModules.networking
     inputs.self.nixosModules.nix
     inputs.self.nixosModules.openssh
-    inputs.self.nixosModules.prometheus
     inputs.self.nixosModules.security
     inputs.self.nixosModules.unifi
     ./disko.nix
@@ -32,12 +31,23 @@
     enabledCollectors = ["systemd"];
   };
 
-  services.prometheus.scrapeConfigs = [
-    {
-      job_name = "node";
-      static_configs = [
-        {targets = ["127.0.0.1:9100"];}
-      ];
+  environment.etc."alloy/config.alloy".text = ''
+    loki.source.journal "macchiato" {
+      forward_to = [loki.process.journal.receiver]
+      labels = {
+        host = "macchiato",
+        job  = "systemd-journal",
+      }
     }
-  ];
+
+    loki.process "journal" {
+      forward_to = [loki.write.default.receiver]
+    }
+
+    loki.write "default" {
+      endpoint {
+        url = "http://10.0.188.4:3100/loki/api/v1/push"
+      }
+    }
+  '';
 }

@@ -49,6 +49,9 @@
     ++ lib.optionals (config.services.netbird.clients != {}) [
       config.services.netbird.clients.default.dir.state
     ]
+    ++ lib.optionals config.services.alloy.enable [
+      "/var/lib/alloy"
+    ]
     ++ lib.optionals config.networking.networkmanager.enable [
       "/etc/NetworkManager/system-connections"
     ]

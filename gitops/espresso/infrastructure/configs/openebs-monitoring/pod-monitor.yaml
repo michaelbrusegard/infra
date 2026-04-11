@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: openebs-mayastor
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - openebs
+  selector:
+    matchLabels:
+      app: metrics-exporter-io-engine
+  podMetricsEndpoints:
+    - port: metrics
