@@ -16,7 +16,7 @@
     };
     tui.theme = "catppuccin";
     rules = ''
-      Always use caveman lite mode for responses.
+      Always use caveman mode for responses.
     '';
     skills = {
       frontend-design = "${inputs.claude-code-skills}/plugins/frontend-design/skills/frontend-design";
