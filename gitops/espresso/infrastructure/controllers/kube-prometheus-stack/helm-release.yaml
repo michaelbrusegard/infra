@@ -24,6 +24,10 @@ spec:
       enabled: false
     kubeProxy:
       enabled: false
+    kubeControllerManager:
+      enabled: false
+    kubeScheduler:
+      enabled: false
     defaultRules:
       rules:
         etcd: false
