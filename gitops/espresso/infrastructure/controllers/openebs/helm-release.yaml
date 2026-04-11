@@ -32,7 +32,14 @@ spec:
           enabled: false
         rawfile:
           enabled: false
+    loki:
+      enabled: false
+    alloy:
+      enabled: false
     mayastor:
       base:
         metrics:
           enabled: true
+      obs:
+        callhome:
+          enabled: false
