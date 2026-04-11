@@ -201,7 +201,6 @@ in {
   home = {
     packages = with pkgs; [
       sd
-      nix-search-cli
       trash-cli
       libqalculate
       moor
