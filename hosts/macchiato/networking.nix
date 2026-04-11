@@ -220,19 +220,29 @@ in {
               @icon path /icon.svg /favicon.ico
 
               handle @status {
-                reverse_proxy http://10.0.188.4:80
+                reverse_proxy http://10.0.188.4:80 {
+                  header_up Host uptime.home.arpa
+                }
               }
               handle @status-api {
-                reverse_proxy http://10.0.188.4:80
+                reverse_proxy http://10.0.188.4:80 {
+                  header_up Host uptime.home.arpa
+                }
               }
               handle @assets {
-                reverse_proxy http://10.0.188.4:80
+                reverse_proxy http://10.0.188.4:80 {
+                  header_up Host uptime.home.arpa
+                }
               }
               handle @upload {
-                reverse_proxy http://10.0.188.4:80
+                reverse_proxy http://10.0.188.4:80 {
+                  header_up Host uptime.home.arpa
+                }
               }
               handle @icon {
-                reverse_proxy http://10.0.188.4:80
+                reverse_proxy http://10.0.188.4:80 {
+                  header_up Host uptime.home.arpa
+                }
               }
               handle {
                 respond 404
