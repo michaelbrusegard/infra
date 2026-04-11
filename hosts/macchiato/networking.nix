@@ -103,7 +103,7 @@ in {
       ];
       forwardPorts = [
         {
-          destination = "10.0.188.35:3478";
+          destination = "10.0.188.34:3478";
           proto = "udp";
           sourcePort = 3478;
         }
@@ -207,7 +207,7 @@ in {
         }
         // {
           "https://${config.secrets.pocket-id.publicDomain}" = {
-            extraConfig = "reverse_proxy http://10.0.188.32:80";
+            extraConfig = "reverse_proxy http://10.0.188.3:80";
           };
         }
         // {
@@ -215,7 +215,7 @@ in {
             extraConfig = ''
               @signal_grpc path /signalexchange.SignalExchange/*
               handle @signal_grpc {
-                reverse_proxy h2c://10.0.188.33:10000
+                reverse_proxy h2c://10.0.188.32:10000
               }
 
               @mgmt_grpc path /management.ManagementService/* /management.ProxyService/*
@@ -225,7 +225,7 @@ in {
 
               @relay path /relay /relay/* /ws-proxy /ws-proxy/*
               handle @relay {
-                reverse_proxy http://10.0.188.34:33080
+                reverse_proxy http://10.0.188.33:33080
               }
 
               @api path /api /api/*
@@ -349,6 +349,7 @@ in {
           "homebridge.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "zigbee.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "hubble.home.arpa" = "10.0.188.2,fd7a:115c:a1e0:188::2";
+          "uptime.home.arpa" = "10.0.188.4,fd7a:115c:a1e0:188::4";
         }
         // {
           "${config.secrets.pocket-id.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
