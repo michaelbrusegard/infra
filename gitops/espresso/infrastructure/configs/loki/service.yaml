@@ -13,7 +13,8 @@ spec:
     - IPv6
   selector:
     app.kubernetes.io/name: loki
+    app.kubernetes.io/component: single-binary
   ports:
     - name: http
       port: 3100
-      targetPort: http-metrics
+      targetPort: 3100
