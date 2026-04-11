@@ -48,6 +48,8 @@ spec:
               value: "/monitors"
             - name: AUTOKUMA__DOCKER__ENABLED
               value: "false"
+            - name: AUTOKUMA__KUMA__CONNECT_TIMEOUT
+              value: "60"
           envFrom:
             - secretRef:
                 name: uptime-kuma-env
