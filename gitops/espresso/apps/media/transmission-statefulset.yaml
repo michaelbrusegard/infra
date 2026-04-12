@@ -96,7 +96,7 @@ spec:
               command:
                 - sh
                 - -c
-                - wget -qO- http://127.0.0.1:9091/transmission/web/ >/dev/null 2>&1
+                - nc -z 127.0.0.1 9091
             periodSeconds: 10
             failureThreshold: 18
           livenessProbe:
@@ -104,14 +104,14 @@ spec:
               command:
                 - sh
                 - -c
-                - wget -qO- http://127.0.0.1:9091/transmission/web/ >/dev/null 2>&1
+                - nc -z 127.0.0.1 9091
             periodSeconds: 30
           readinessProbe:
             exec:
               command:
                 - sh
                 - -c
-                - wget -qO- http://127.0.0.1:9091/transmission/web/ >/dev/null 2>&1
+                - nc -z 127.0.0.1 9091
               port: http
             periodSeconds: 10
           volumeMounts:
