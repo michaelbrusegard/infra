@@ -92,19 +92,26 @@ spec:
             - name: TZ
               value: "Europe/Oslo"
           startupProbe:
-            httpGet:
-              path: /transmission/web/
-              port: http
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -qO- http://127.0.0.1:9091/transmission/web/ >/dev/null 2>&1
             periodSeconds: 10
             failureThreshold: 18
           livenessProbe:
-            httpGet:
-              path: /transmission/web/
-              port: http
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -qO- http://127.0.0.1:9091/transmission/web/ >/dev/null 2>&1
             periodSeconds: 30
           readinessProbe:
-            httpGet:
-              path: /transmission/web/
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -qO- http://127.0.0.1:9091/transmission/web/ >/dev/null 2>&1
               port: http
             periodSeconds: 10
           volumeMounts:
