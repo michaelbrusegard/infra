@@ -45,9 +45,6 @@ in {
   services.k3s.containerdConfigTemplate = lib.mkIf hasNvidia ''
     {{ template "base" . }}
 
-    [plugins."io.containerd.grpc.v1.cri".containerd]
-      default_runtime_name = "nvidia"
-
     [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia]
       runtime_type = "io.containerd.runc.v2"
 
