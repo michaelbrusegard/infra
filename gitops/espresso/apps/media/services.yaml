@@ -1,0 +1,305 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: transmission-internal
+  namespace: media
+spec:
+  clusterIP: None
+  selector:
+    app: transmission
+  ports:
+    - name: http
+      port: 9091
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transmission
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.45,fd7a:115c:a1e0:188::45
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: transmission
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin-internal
+  namespace: media
+spec:
+  clusterIP: None
+  selector:
+    app: jellyfin
+  ports:
+    - name: http
+      port: 8096
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.40,fd7a:115c:a1e0:188::40
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: jellyfin
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyseerr-internal
+  namespace: media
+spec:
+  clusterIP: None
+  selector:
+    app: jellyseerr
+  ports:
+    - name: http
+      port: 5055
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyseerr
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.41,fd7a:115c:a1e0:188::41
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: jellyseerr
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowlarr-internal
+  namespace: media
+spec:
+  clusterIP: None
+  selector:
+    app: prowlarr
+  ports:
+    - name: http
+      port: 9696
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowlarr
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.44,fd7a:115c:a1e0:188::44
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: prowlarr
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: radarr-internal
+  namespace: media
+spec:
+  clusterIP: None
+  selector:
+    app: radarr
+  ports:
+    - name: http
+      port: 7878
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: radarr
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.43,fd7a:115c:a1e0:188::43
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: radarr
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarr-internal
+  namespace: media
+spec:
+  clusterIP: None
+  selector:
+    app: sonarr
+  ports:
+    - name: http
+      port: 8989
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarr
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.42,fd7a:115c:a1e0:188::42
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: sonarr
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bazarr-internal
+  namespace: media
+spec:
+  clusterIP: None
+  selector:
+    app: bazarr
+  ports:
+    - name: http
+      port: 6767
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bazarr
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.46,fd7a:115c:a1e0:188::46
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: bazarr
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lidarr-internal
+  namespace: media
+spec:
+  clusterIP: None
+  selector:
+    app: lidarr
+  ports:
+    - name: http
+      port: 8686
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lidarr
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.47,fd7a:115c:a1e0:188::47
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: lidarr
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: navidrome-internal
+  namespace: media
+spec:
+  clusterIP: None
+  selector:
+    app: navidrome
+  ports:
+    - name: http
+      port: 4533
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: navidrome
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.48,fd7a:115c:a1e0:188::48
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: navidrome
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: navidrome
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: navidrome
+  serviceName: navidrome-internal
+  template:
+    metadata:
+      labels:
+        app: navidrome
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: espresso-1
+      containers:
+        - name: navidrome
+          image: ghcr.io/navidrome/navidrome:0.61.1@sha256:1e1660054a856cc09f227d6929252e45a519fdb16004b464dd637f7294ca3ec1
+          ports:
+            - containerPort: 4533
+              name: http
+          env:
+            - name: ND_MUSICFOLDER
+              value: "/music"
+            - name: ND_DATAFOLDER
+              value: "/data"
+            - name: ND_LOGLEVEL
+              value: "info"
+            - name: TZ
+              value: "Europe/Oslo"
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 10
+          volumeMounts:
+            - mountPath: /data
+              name: data
+            - mountPath: /music
+              name: media-data
+              subPath: media/music
+      volumes:
+        - name: media-data
+          persistentVolumeClaim:
+            claimName: media-data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+        storageClassName: nvme-ha

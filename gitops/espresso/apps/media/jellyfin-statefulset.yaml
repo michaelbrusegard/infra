@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: jellyfin
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jellyfin
+  serviceName: jellyfin-internal
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: espresso-1
+      containers:
+        - name: jellyfin
+          image: jellyfin/jellyfin:10.11.8@sha256:1694ff069f0c9dafb283c36765175606866769f5d72f2ed56b6a0f1be922fc37
+          ports:
+            - containerPort: 8096
+              name: http
+          env:
+            - name: JELLYFIN_PublishedServerUrl
+              value: "http://10.0.188.40"
+            - name: TZ
+              value: "Europe/Oslo"
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "all"
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          volumeMounts:
+            - mountPath: /config
+              name: config
+            - mountPath: /cache
+              name: cache
+            - mountPath: /data
+              name: media-data
+      volumes:
+        - name: media-data
+          persistentVolumeClaim:
+            claimName: media-data
+  volumeClaimTemplates:
+    - metadata:
+        name: config
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: nvme-ha
+    - metadata:
+        name: cache
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+        storageClassName: nvme-single

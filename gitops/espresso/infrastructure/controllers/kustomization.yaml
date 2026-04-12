@@ -4,6 +4,7 @@ resources:
   - cilium
   - openebs
   - metrics-server
+  - nvidia-device-plugin
   - gateway-api
   - coredns
   - kube-prometheus-stack

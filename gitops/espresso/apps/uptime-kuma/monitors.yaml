@@ -91,6 +91,96 @@ data:
         "max_retries": 3,
         "retry_interval": 30,
         "active": true
+      },
+      {
+        "name": "Jellyfin",
+        "type": "http",
+        "parent_name": "espresso[0]",
+        "url": "http://10.0.188.40:8096/health",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Jellyseerr",
+        "type": "http",
+        "parent_name": "espresso[0]",
+        "url": "http://10.0.188.41/api/v1/status",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Sonarr",
+        "type": "http",
+        "parent_name": "espresso[0]",
+        "url": "http://10.0.188.42",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Radarr",
+        "type": "http",
+        "parent_name": "espresso[0]",
+        "url": "http://10.0.188.43",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Prowlarr",
+        "type": "http",
+        "parent_name": "espresso[0]",
+        "url": "http://10.0.188.44",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Transmission",
+        "type": "http",
+        "parent_name": "espresso[0]",
+        "url": "http://10.0.188.45/transmission/web/",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Bazarr",
+        "type": "http",
+        "parent_name": "espresso[0]",
+        "url": "http://10.0.188.46",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Lidarr",
+        "type": "http",
+        "parent_name": "espresso[0]",
+        "url": "http://10.0.188.47",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Navidrome",
+        "type": "http",
+        "parent_name": "espresso[0]",
+        "url": "http://10.0.188.48",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
       }
     ]
   macchiato.json: |

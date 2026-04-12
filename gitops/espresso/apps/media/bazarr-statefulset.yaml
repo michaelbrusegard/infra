@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bazarr
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bazarr
+  serviceName: bazarr-internal
+  template:
+    metadata:
+      labels:
+        app: bazarr
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: espresso-1
+      containers:
+        - name: bazarr
+          image: lscr.io/linuxserver/bazarr:v1.5.6-ls343@sha256:21a4813c5ba120d72ac5f54869b790792bda0784205268eccbc204adb6dbe485
+          ports:
+            - containerPort: 6767
+              name: http
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Oslo"
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          volumeMounts:
+            - mountPath: /config
+              name: config
+            - mountPath: /data
+              name: media-data
+      volumes:
+        - name: media-data
+          persistentVolumeClaim:
+            claimName: media-data
+  volumeClaimTemplates:
+    - metadata:
+        name: config
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: nvme-ha
