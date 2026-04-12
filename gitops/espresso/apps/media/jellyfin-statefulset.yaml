@@ -65,7 +65,7 @@ spec:
             - mountPath: /dev/nvidia-uvm-tools
               name: nvidia-uvm-tools
             - mountPath: /dev/dri/renderD128
-              name: renderD128
+              name: render-d128
             - mountPath: /usr/lib/nvidia
               name: nvidia-driver
               readOnly: true
@@ -85,7 +85,7 @@ spec:
         - name: nvidia-uvm-tools
           hostPath:
             path: /dev/nvidia-uvm-tools
-        - name: renderD128
+        - name: render-d128
           hostPath:
             path: /dev/dri/renderD128
         - name: nvidia-driver
