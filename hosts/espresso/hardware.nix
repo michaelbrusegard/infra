@@ -34,22 +34,7 @@ in {
       powerManagement.enable = false;
       open = false;
     };
-    nvidia-container-toolkit.enable = lib.mkIf hasNvidia true;
   };
 
   services.xserver.videoDrivers = lib.mkIf hasNvidia ["nvidia"];
-
-  # Configure k3s's bundled containerd to use the nvidia runtime on GPU nodes.
-  # hardware.nvidia-container-toolkit generates CDI specs but does NOT configure
-  # k3s's internal containerd — this template does.
-  services.k3s.containerdConfigTemplate = lib.mkIf hasNvidia ''
-    {{ template "base" . }}
-
-    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia]
-      runtime_type = "io.containerd.runc.v2"
-
-    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia.options]
-      BinaryName = "${lib.getOutput "tools" config.hardware.nvidia-container-toolkit.package}/bin/nvidia-container-runtime"
-      SystemdCgroup = true
-  '';
 }

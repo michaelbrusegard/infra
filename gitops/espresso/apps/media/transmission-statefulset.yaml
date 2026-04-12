@@ -61,15 +61,19 @@ spec:
             - name: HEALTH_SUCCESS_WAIT_DURATION
               value: "10s"
           startupProbe:
-            httpGet:
-              path: /v1/vpn/status
-              port: gluetun-ctrl
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -qO- http://127.0.0.1:8000/v1/vpn/status 2>/dev/null | grep -q running
             periodSeconds: 5
             failureThreshold: 60
           livenessProbe:
-            httpGet:
-              path: /v1/vpn/status
-              port: gluetun-ctrl
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -qO- http://127.0.0.1:8000/v1/vpn/status 2>/dev/null | grep -q running
             periodSeconds: 30
         - name: transmission
           restartPolicy: Always
