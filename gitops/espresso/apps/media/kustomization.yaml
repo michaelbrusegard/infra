@@ -12,5 +12,6 @@ resources:
   - navidrome-statefulset.yaml
   - jellyfin-statefulset.yaml
   - jellyseerr-statefulset.yaml
+  - flaresolverr-deployment.yaml
   - services.yaml
   - network-policies.yaml
