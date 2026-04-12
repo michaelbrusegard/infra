@@ -27,13 +27,14 @@ spec:
               value: "http://10.0.188.40"
             - name: TZ
               value: "Europe/Oslo"
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "all"
-          resources:
-            limits:
-              nvidia.com/gpu: "1"
+            # TODO: Re-enable GPU when nvidia-container-runtime + k3s integration is resolved
+            # - name: NVIDIA_VISIBLE_DEVICES
+            #   value: "all"
+            # - name: NVIDIA_DRIVER_CAPABILITIES
+            #   value: "all"
+            # resources:
+            #   limits:
+            #     nvidia.com/gpu: "1"
           startupProbe:
             httpGet:
               path: /health
