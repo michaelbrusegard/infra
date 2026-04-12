@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: transmission
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transmission
+  serviceName: transmission-internal
+  template:
+    metadata:
+      labels:
+        app: transmission
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: espresso-1
+      initContainers:
+        - name: init-dirs
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - mkdir -p /data/torrents/movies /data/torrents/tv /data/torrents/music /data/media/movies /data/media/tv /data/media/music
+          volumeMounts:
+            - mountPath: /data
+              name: media-data
+        - name: gluetun
+          restartPolicy: Always
+          image: qmcgaw/gluetun:v3.41.1@sha256:1a5bf4b4820a879cdf8d93d7ef0d2d963af56670c9ebff8981860b6804ebc8ab
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          ports:
+            - containerPort: 8000
+              name: gluetun-ctrl
+          envFrom:
+            - secretRef:
+                name: media-vpn-env
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: "protonvpn"
+            - name: VPN_TYPE
+              value: "wireguard"
+            - name: SERVER_COUNTRIES
+              value: "Netherlands"
+            - name: VPN_PORT_FORWARDING
+              value: "on"
+            - name: VPN_PORT_FORWARDING_PROVIDER
+              value: "protonvpn"
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: "10.42.0.0/16,10.43.0.0/16"
+            - name: DOT
+              value: "on"
+            - name: DOT_PROVIDERS
+              value: "cloudflare,quad9"
+            - name: HEALTH_VPN_DURATION_INITIAL
+              value: "30s"
+            - name: HEALTH_SUCCESS_WAIT_DURATION
+              value: "10s"
+          startupProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "ip addr show tun0 2>/dev/null | grep -q inet"
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /v1/vpn/status
+              port: gluetun-ctrl
+            periodSeconds: 30
+        - name: transmission
+          restartPolicy: Always
+          image: lscr.io/linuxserver/transmission:4.1.1-r1-ls338@sha256:653e7394633786ef76b3ad7987299dabf730b68646c7fc27826dbb86d20986d4
+          ports:
+            - containerPort: 9091
+              name: http
+          envFrom:
+            - secretRef:
+                name: media-transmission-env
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Oslo"
+          startupProbe:
+            httpGet:
+              path: /transmission/web/
+              port: http
+            periodSeconds: 10
+            failureThreshold: 18
+          livenessProbe:
+            httpGet:
+              path: /transmission/web/
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /transmission/web/
+              port: http
+            periodSeconds: 10
+          volumeMounts:
+            - mountPath: /config
+              name: config
+            - mountPath: /data
+              name: media-data
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.10@sha256:ee6521f290b2168b6e0935a181d4cff9be1ac3f505666ef0e3c98fae8199917a
+      volumes:
+        - name: media-data
+          persistentVolumeClaim:
+            claimName: media-data
+  volumeClaimTemplates:
+    - metadata:
+        name: config
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: nvme-ha

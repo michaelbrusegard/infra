@@ -34,6 +34,7 @@ in {
       powerManagement.enable = false;
       open = false;
     };
+    nvidia-container-toolkit.enable = lib.mkIf hasNvidia true;
   };
 
   services.xserver.videoDrivers = lib.mkIf hasNvidia ["nvidia"];

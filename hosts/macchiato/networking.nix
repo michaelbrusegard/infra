@@ -391,6 +391,15 @@ in {
           "hubble.home.arpa" = "10.0.188.2,fd7a:115c:a1e0:188::2";
           "grafana.home.arpa" = "10.0.188.3,fd7a:115c:a1e0:188::3";
           "uptime.home.arpa" = "10.0.188.11,fd7a:115c:a1e0:188::11";
+          "jellyfin.home.arpa" = "10.0.188.40,fd7a:115c:a1e0:188::40";
+          "jellyseerr.home.arpa" = "10.0.188.41,fd7a:115c:a1e0:188::41";
+          "sonarr.home.arpa" = "10.0.188.42,fd7a:115c:a1e0:188::42";
+          "radarr.home.arpa" = "10.0.188.43,fd7a:115c:a1e0:188::43";
+          "prowlarr.home.arpa" = "10.0.188.44,fd7a:115c:a1e0:188::44";
+          "transmission.home.arpa" = "10.0.188.45,fd7a:115c:a1e0:188::45";
+          "bazarr.home.arpa" = "10.0.188.46,fd7a:115c:a1e0:188::46";
+          "lidarr.home.arpa" = "10.0.188.47,fd7a:115c:a1e0:188::47";
+          "navidrome.home.arpa" = "10.0.188.48,fd7a:115c:a1e0:188::48";
         }
         // {
           "${config.secrets.pocket-id.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
