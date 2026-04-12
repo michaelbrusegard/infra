@@ -61,11 +61,9 @@ spec:
             - name: HEALTH_SUCCESS_WAIT_DURATION
               value: "10s"
           startupProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - "ip addr show tun0 2>/dev/null | grep -q inet"
+            httpGet:
+              path: /v1/vpn/status
+              port: gluetun-ctrl
             periodSeconds: 5
             failureThreshold: 60
           livenessProbe:
