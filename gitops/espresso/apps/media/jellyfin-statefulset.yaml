@@ -27,14 +27,12 @@ spec:
               value: "http://10.0.188.40"
             - name: TZ
               value: "Europe/Oslo"
-            # TODO: Re-enable GPU when nvidia-container-runtime + k3s integration is resolved
-            # - name: NVIDIA_VISIBLE_DEVICES
-            #   value: "all"
-            # - name: NVIDIA_DRIVER_CAPABILITIES
-            #   value: "all"
-            # resources:
-            #   limits:
-            #     nvidia.com/gpu: "1"
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "all"
+            - name: LD_LIBRARY_PATH
+              value: "/usr/lib/nvidia"
           startupProbe:
             httpGet:
               path: /health
@@ -58,10 +56,42 @@ spec:
               name: cache
             - mountPath: /data
               name: media-data
+            - mountPath: /dev/nvidia0
+              name: nvidia0
+            - mountPath: /dev/nvidiactl
+              name: nvidiactl
+            - mountPath: /dev/nvidia-uvm
+              name: nvidia-uvm
+            - mountPath: /dev/nvidia-uvm-tools
+              name: nvidia-uvm-tools
+            - mountPath: /dev/dri/renderD128
+              name: renderD128
+            - mountPath: /usr/lib/nvidia
+              name: nvidia-driver
+              readOnly: true
       volumes:
         - name: media-data
           persistentVolumeClaim:
             claimName: media-data
+        - name: nvidia0
+          hostPath:
+            path: /dev/nvidia0
+        - name: nvidiactl
+          hostPath:
+            path: /dev/nvidiactl
+        - name: nvidia-uvm
+          hostPath:
+            path: /dev/nvidia-uvm
+        - name: nvidia-uvm-tools
+          hostPath:
+            path: /dev/nvidia-uvm-tools
+        - name: renderD128
+          hostPath:
+            path: /dev/dri/renderD128
+        - name: nvidia-driver
+          hostPath:
+            path: /run/opengl-driver/lib
+            type: Directory
   volumeClaimTemplates:
     - metadata:
         name: config
