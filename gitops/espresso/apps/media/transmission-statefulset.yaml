@@ -37,6 +37,10 @@ spec:
                 sed -i 's|"incomplete-dir":.*|"incomplete-dir": "/data/torrents/incomplete",|' /config/settings.json
                 sed -i 's|"incomplete-dir-enabled":.*|"incomplete-dir-enabled": true,|' /config/settings.json
                 sed -i 's|"rpc-whitelist-enabled":.*|"rpc-whitelist-enabled": false,|' /config/settings.json
+                sed -i 's|"ratio-limit":.*|"ratio-limit": 1,|' /config/settings.json
+                sed -i 's|"ratio-limit-enabled":.*|"ratio-limit-enabled": true,|' /config/settings.json
+                sed -i 's|"idle-seeding-limit":.*|"idle-seeding-limit": 1440,|' /config/settings.json
+                sed -i 's|"idle-seeding-limit-enabled":.*|"idle-seeding-limit-enabled": true,|' /config/settings.json
               fi
           volumeMounts:
             - mountPath: /config
