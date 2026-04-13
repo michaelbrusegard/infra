@@ -51,7 +51,7 @@ spec:
             - name: VPN_PORT_FORWARDING_PROVIDER
               value: "protonvpn"
             - name: FIREWALL_OUTBOUND_SUBNETS
-              value: "10.42.0.0/16,10.43.0.0/16"
+              value: "10.42.0.0/16,10.43.0.0/16,10.0.186.0/24,10.0.187.0/24,10.0.188.0/24"
             - name: FIREWALL_INPUT_PORTS
               value: "9091"
             - name: DOT
