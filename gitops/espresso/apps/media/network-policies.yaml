@@ -29,6 +29,8 @@ spec:
     - fromEndpoints:
         - matchLabels:
             io.kubernetes.pod.namespace: media
+        - matchLabels:
+            io.kubernetes.pod.namespace: uptime-kuma
       toPorts:
         - ports:
             - port: "9091"
