@@ -33,6 +33,13 @@ spec:
               value: "all"
             - name: LD_LIBRARY_PATH
               value: "/usr/lib/nvidia"
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - echo /usr/lib/nvidia > /etc/ld.so.conf.d/nvidia.conf && ldconfig
           startupProbe:
             httpGet:
               path: /health
