@@ -29,7 +29,7 @@ spec:
     app: transmission
   ports:
     - name: http
-      port: 80
+      port: 9091
       targetPort: http
 ---
 apiVersion: v1
