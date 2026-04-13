@@ -22,10 +22,25 @@ spec:
           command:
             - sh
             - -c
-            - mkdir -p /data/torrents/movies /data/torrents/tv /data/torrents/music /data/media/movies /data/media/tv /data/media/music && chown -R 1000:1000 /data
+            - mkdir -p /data/torrents/movies /data/torrents/tv /data/torrents/music /data/torrents/incomplete /data/media/movies /data/media/tv /data/media/music && chown -R 1000:1000 /data
           volumeMounts:
             - mountPath: /data
               name: media-data
+        - name: init-transmission-config
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              if [ -f /config/settings.json ]; then
+                sed -i 's|"download-dir":.*|"download-dir": "/data/torrents",|' /config/settings.json
+                sed -i 's|"incomplete-dir":.*|"incomplete-dir": "/data/torrents/incomplete",|' /config/settings.json
+                sed -i 's|"incomplete-dir-enabled":.*|"incomplete-dir-enabled": true,|' /config/settings.json
+                sed -i 's|"rpc-whitelist-enabled":.*|"rpc-whitelist-enabled": false,|' /config/settings.json
+              fi
+          volumeMounts:
+            - mountPath: /config
+              name: config
         - name: gluetun
           restartPolicy: Always
           image: qmcgaw/gluetun:v3.41.1@sha256:1a5bf4b4820a879cdf8d93d7ef0d2d963af56670c9ebff8981860b6804ebc8ab
@@ -95,14 +110,6 @@ spec:
               value: "Europe/Oslo"
             - name: TRANSMISSION_WEB_HOME
               value: "/usr/share/transmission/public_html"
-            - name: TRANSMISSION_RPC_WHITELIST_ENABLED
-              value: "false"
-            - name: TRANSMISSION_DOWNLOAD_DIR
-              value: "/data/torrents"
-            - name: TRANSMISSION_INCOMPLETE_DIR
-              value: "/data/torrents/incomplete"
-            - name: TRANSMISSION_INCOMPLETE_DIR_ENABLED
-              value: "true"
           startupProbe:
             exec:
               command:
