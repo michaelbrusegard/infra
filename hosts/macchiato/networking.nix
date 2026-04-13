@@ -392,7 +392,7 @@ in {
           "grafana.home.arpa" = "10.0.188.3,fd7a:115c:a1e0:188::3";
           "uptime.home.arpa" = "10.0.188.11,fd7a:115c:a1e0:188::11";
           "jellyfin.home.arpa" = "10.0.188.40,fd7a:115c:a1e0:188::40";
-          "jellyseerr.home.arpa" = "10.0.188.41,fd7a:115c:a1e0:188::41";
+          "seerr.home.arpa" = "10.0.188.41,fd7a:115c:a1e0:188::41";
           "sonarr.home.arpa" = "10.0.188.42,fd7a:115c:a1e0:188::42";
           "radarr.home.arpa" = "10.0.188.43,fd7a:115c:a1e0:188::43";
           "prowlarr.home.arpa" = "10.0.188.44,fd7a:115c:a1e0:188::44";

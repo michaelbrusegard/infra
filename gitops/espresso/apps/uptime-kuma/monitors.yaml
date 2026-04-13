@@ -103,7 +103,7 @@ data:
         "active": true
       },
       {
-        "name": "Jellyseerr",
+        "name": "Seerr",
         "type": "http",
         "parent_name": "espresso[0]",
         "url": "http://10.0.188.41/api/v1/status",
