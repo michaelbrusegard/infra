@@ -76,6 +76,9 @@ spec:
             - mountPath: /usr/lib/nvidia
               name: nvidia-driver
               readOnly: true
+            - mountPath: /nix/store
+              name: nix-store
+              readOnly: true
       volumes:
         - name: media-data
           persistentVolumeClaim:
@@ -98,6 +101,10 @@ spec:
         - name: nvidia-driver
           hostPath:
             path: /run/opengl-driver/lib
+            type: Directory
+        - name: nix-store
+          hostPath:
+            path: /nix/store
             type: Directory
   volumeClaimTemplates:
     - metadata:
