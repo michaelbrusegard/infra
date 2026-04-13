@@ -61,6 +61,8 @@ spec:
             - mountPath: /monitors
               name: monitors
               readOnly: true
+            - mountPath: /data
+              name: autokuma-data
       volumes:
         - name: monitors
           configMap:
@@ -74,4 +76,13 @@ spec:
         resources:
           requests:
             storage: 1Gi
+        storageClassName: nvme-ha
+    - metadata:
+        name: autokuma-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi
         storageClassName: nvme-ha
