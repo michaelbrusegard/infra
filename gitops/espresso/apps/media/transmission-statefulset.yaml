@@ -22,7 +22,7 @@ spec:
           command:
             - sh
             - -c
-            - mkdir -p /data/torrents/movies /data/torrents/tv /data/torrents/music /data/media/movies /data/media/tv /data/media/music
+            - mkdir -p /data/torrents/movies /data/torrents/tv /data/torrents/music /data/media/movies /data/media/tv /data/media/music && chown -R 1000:1000 /data
           volumeMounts:
             - mountPath: /data
               name: media-data
@@ -52,6 +52,8 @@ spec:
               value: "protonvpn"
             - name: FIREWALL_OUTBOUND_SUBNETS
               value: "10.42.0.0/16,10.43.0.0/16"
+            - name: FIREWALL_INPUT_PORTS
+              value: "9091"
             - name: DOT
               value: "on"
             - name: DOT_PROVIDERS
