@@ -14,4 +14,3 @@ resources:
   - jellyseerr-statefulset.yaml
   - flaresolverr-deployment.yaml
   - services.yaml
-  - network-policies.yaml
