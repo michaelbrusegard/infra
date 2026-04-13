@@ -31,12 +31,10 @@ spec:
             io.kubernetes.pod.namespace: media
         - matchLabels:
             io.kubernetes.pod.namespace: uptime-kuma
-      toPorts:
-        - ports:
-            - port: "9091"
-              protocol: TCP
-    - fromCIDR:
-        - 10.0.186.0/24
-        - fd7a:115c:a1e0:186::/64
-        - 10.0.187.0/24
-        - fd7a:115c:a1e0:187::/64
+    - fromCIDRSet:
+        - cidr: 10.0.186.0/24
+        - cidr: 10.0.187.0/24
+        - cidr: 10.0.188.0/24
+        - cidr: fd7a:115c:a1e0:186::/64
+        - cidr: fd7a:115c:a1e0:187::/64
+        - cidr: fd7a:115c:a1e0:188::/64
