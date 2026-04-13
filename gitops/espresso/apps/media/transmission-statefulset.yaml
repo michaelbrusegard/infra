@@ -69,6 +69,12 @@ spec:
               value: "on"
             - name: VPN_PORT_FORWARDING_PROVIDER
               value: "protonvpn"
+            - name: VPN_PORT_FORWARDING_UP_COMMAND
+              value: >-
+                /bin/sh -c '
+                SID=$(wget -qS --spider http://127.0.0.1:9091/transmission/rpc 2>&1 | grep -i x-transmission-session-id | tr -d "[:space:]");
+                wget -qO- --header="Content-Type: application/json" --header="$SID" --post-data="{\"method\":\"session-set\",\"arguments\":{\"peer-port\":{{PORT}}}}" http://127.0.0.1:9091/transmission/rpc 2>/dev/null || true
+                '
             - name: FIREWALL_OUTBOUND_SUBNETS
               value: "10.42.0.0/16,10.43.0.0/16,10.0.186.0/24,10.0.187.0/24,10.0.188.0/24"
             - name: FIREWALL_INPUT_PORTS
