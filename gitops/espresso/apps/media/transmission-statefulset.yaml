@@ -93,6 +93,10 @@ spec:
               value: "1000"
             - name: TZ
               value: "Europe/Oslo"
+            - name: TRANSMISSION_WEB_HOME
+              value: "/usr/share/transmission/public_html"
+            - name: TRANSMISSION_RPC_WHITELIST_ENABLED
+              value: "false"
           startupProbe:
             exec:
               command:
