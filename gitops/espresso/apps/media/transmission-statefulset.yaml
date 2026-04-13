@@ -97,6 +97,12 @@ spec:
               value: "/usr/share/transmission/public_html"
             - name: TRANSMISSION_RPC_WHITELIST_ENABLED
               value: "false"
+            - name: TRANSMISSION_DOWNLOAD_DIR
+              value: "/data/torrents"
+            - name: TRANSMISSION_INCOMPLETE_DIR
+              value: "/data/torrents/incomplete"
+            - name: TRANSMISSION_INCOMPLETE_DIR_ENABLED
+              value: "true"
           startupProbe:
             exec:
               command:
