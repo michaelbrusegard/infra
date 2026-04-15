@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: coturn
-          image: coturn/coturn:4@sha256:254a7e19f23366bc638af8e092c18ea52e0eefc9e44041f376e58b61b3b6d646
+          image: coturn/coturn:4@sha256:3981d9f669a208794916896816e696eb11c285a8b3ebd486d05aa43c4f5ba81d
           command: ["/bin/bash", "-c"]
           args:
             - |
