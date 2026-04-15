@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: management
-          image: netbirdio/management:0.68.2@sha256:8556da6cf87fff8d0b54cffd6c7f398e5bb33d184b2d9e88b140af12ccfbeccf
+          image: netbirdio/management:0.68.3@sha256:8d3ac9d38c9589520d9d1563c8ae3646b9a038596aae16b9ed089602060a8001
           args:
             - --port
             - "80"
