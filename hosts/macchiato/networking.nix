@@ -164,6 +164,10 @@ in {
         # Allow client devices to reach IoT devices.
         iifname "br_clients" oifname "iot" accept
 
+        # Allow the 3D printer (cubeman) to reach client devices for
+        # print commands and AMS control that require bidirectional communication.
+        iifname "iot" ip saddr 10.0.189.21 oifname "br_clients" accept
+
         # IoT network: internet only, no access to internal subnets.
         iifname "iot" oifname "${wanInterface}" accept
 
