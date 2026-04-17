@@ -1124,11 +1124,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1776461640,
-        "narHash": "sha256-m7ejWi5ctYCP4KP1uqAmUr53rSkpNRvsyJMdpmcu7Sg=",
+        "lastModified": 1776468527,
+        "narHash": "sha256-LzOTv9xQSmnJWJKBGRVn87J2tI+x0H7kb86VzjNavn8=",
         "ref": "refs/heads/main",
-        "rev": "57ef0b739b81e0bf3de3d0244338d41b579a7d8d",
-        "revCount": 253,
+        "rev": "e4e65cf0c7562d988b87603d5f7252efea18ad25",
+        "revCount": 256,
         "type": "git",
         "url": "ssh://git@github.com/michaelbrusegard/nix-secrets.git"
       },
