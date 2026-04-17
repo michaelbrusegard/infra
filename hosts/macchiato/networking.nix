@@ -17,9 +17,15 @@ in {
     bridges.br_clients.interfaces = clientInterfaces;
     bridges.br_servers.interfaces = serverInterfaces;
 
-    vlans.guest = {
-      id = 190;
-      interface = "br_clients";
+    vlans = {
+      iot = {
+        id = 189;
+        interface = "br_clients";
+      };
+      guest = {
+        id = 190;
+        interface = "br_clients";
+      };
     };
 
     interfaces = {
@@ -61,6 +67,23 @@ in {
         ];
       };
 
+      # IoT VLAN: isolated smart-home devices with internet access (10.0.189.0/24)
+      iot = {
+        useDHCP = false;
+        ipv4.addresses = [
+          {
+            address = "10.0.189.1";
+            prefixLength = 24;
+          }
+        ];
+        ipv6.addresses = [
+          {
+            address = "fd7a:115c:a1e0:189::1";
+            prefixLength = 64;
+          }
+        ];
+      };
+
       # Server VLAN: k3s cluster nodes and other servers (10.0.187.0/24)
       br_servers = {
         useDHCP = false;
@@ -83,11 +106,11 @@ in {
     # delegation (ia_pd) from the ISP, splitting the delegated /64s across bridges
     dhcpcd = {
       enable = true;
-      denyInterfaces = ["br_clients" "br_servers" "guest"];
+      denyInterfaces = ["br_clients" "br_servers" "iot" "guest"];
       extraConfig = ''
         interface ${wanInterface}
           ia_na 1
-          ia_pd 1 br_clients/0/64 br_servers/1/64 guest/2/64
+          ia_pd 1 br_clients/0/64 br_servers/1/64 iot/2/64 guest/3/64
       '';
     };
 
@@ -99,6 +122,7 @@ in {
       internalInterfaces = [
         "br_clients"
         "br_servers"
+        "iot"
         "guest"
       ];
       forwardPorts = [
@@ -131,11 +155,17 @@ in {
 
         # NetBird peers may reach the internal client, server, and cluster VIP
         # subnets through macchiato.
-        iifname "vpn_clients" ip daddr { 10.0.186.0/24, 10.0.187.0/24, 10.0.188.0/24 } accept
-        iifname "vpn_clients" ip6 daddr { fd7a:115c:a1e0:186::/64, fd7a:115c:a1e0:187::/64, fd7a:115c:a1e0:188::/64 } accept
+        iifname "vpn_clients" ip daddr { 10.0.186.0/24, 10.0.187.0/24, 10.0.188.0/24, 10.0.189.0/24 } accept
+        iifname "vpn_clients" ip6 daddr { fd7a:115c:a1e0:186::/64, fd7a:115c:a1e0:187::/64, fd7a:115c:a1e0:188::/64, fd7a:115c:a1e0:189::/64 } accept
 
         # Allow servers to initiate connections to client devices when needed.
         iifname "br_servers" oifname "br_clients" accept
+
+        # Allow client devices to reach IoT devices.
+        iifname "br_clients" oifname "iot" accept
+
+        # IoT network: internet only, no access to internal subnets.
+        iifname "iot" oifname "${wanInterface}" accept
 
         # Guest network: internet only, no access to internal subnets.
         # Internal traffic is blocked by the default-drop policy.
@@ -148,6 +178,11 @@ in {
         "${wanInterface}" = {
           allowedTCPPorts = [80 443];
           allowedUDPPorts = [3478];
+        };
+        # IoT devices need DHCP and DNS from the router, nothing else
+        "iot" = {
+          allowedTCPPorts = [53];
+          allowedUDPPorts = [53 67];
         };
         # Guest devices need DHCP and DNS from the router, nothing else
         "guest" = {
@@ -173,6 +208,14 @@ in {
         };
 
         interface br_servers {
+          AdvSendAdvert on;
+          prefix ::/64 {
+            AdvOnLink on;
+            AdvAutonomous on;
+          };
+        };
+
+        interface iot {
           AdvSendAdvert on;
           prefix ::/64 {
             AdvOnLink on;
@@ -293,12 +336,14 @@ in {
         interface = [
           "br_clients"
           "br_servers"
+          "iot"
           "guest"
         ];
         dhcp-authoritative = true;
         dhcp-range = [
           "set:br_clients,10.0.186.2,10.0.186.254,24h"
           "set:br_servers,10.0.187.2,10.0.187.254,24h"
+          "set:iot,10.0.189.2,10.0.189.254,24h"
           "set:guest,10.0.190.2,10.0.190.254,1h"
         ];
         dhcp-option = [
@@ -306,6 +351,8 @@ in {
           "tag:br_clients,option:dns-server,10.0.186.1"
           "tag:br_servers,option:router,10.0.187.1"
           "tag:br_servers,option:dns-server,10.0.187.1"
+          "tag:iot,option:router,10.0.189.1"
+          "tag:iot,option:dns-server,10.0.189.1"
           "tag:guest,option:router,10.0.190.1"
           "tag:guest,option:dns-server,10.0.190.1"
         ];
@@ -321,7 +368,7 @@ in {
           "b4:96:91:26:31:fa,10.0.187.3,espresso-1"
           "b4:96:91:ff:ff:ff,10.0.187.4,espresso-2"
 
-          "e8:06:90:aa:3f:5c,10.0.186.21,cubeman"
+          "e8:06:90:aa:3f:5c,10.0.189.21,cubeman"
         ];
       };
     };
