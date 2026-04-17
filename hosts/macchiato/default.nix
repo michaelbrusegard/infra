@@ -13,7 +13,6 @@
     inputs.self.nixosModules.impermanence
     inputs.self.nixosModules.lanzaboote
     inputs.self.nixosModules.locale
-    inputs.self.nixosModules.netbird
     inputs.self.nixosModules.networking
     inputs.self.nixosModules.nix
     inputs.self.nixosModules.openssh

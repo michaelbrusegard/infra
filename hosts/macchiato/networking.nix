@@ -457,7 +457,17 @@ in {
 
     netbird = {
       useRoutingFeatures = "server";
-      clients.default.interface = "vpn_clients";
+      clients.default = {
+        interface = "vpn_clients";
+        config.ManagementURL = {
+          Scheme = "https";
+          Host = "${config.secrets.netbird.publicDomain}:443";
+        };
+        login = {
+          enable = true;
+          inherit (config.secrets.netbird) setupKeyFile;
+        };
+      };
     };
   };
 }
