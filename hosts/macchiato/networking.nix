@@ -459,6 +459,7 @@ in {
       useRoutingFeatures = "server";
       clients.default = {
         interface = "vpn_clients";
+        port = 51820;
         config.ManagementURL = {
           Scheme = "https";
           Host = "${config.secrets.netbird.publicDomain}:443";
