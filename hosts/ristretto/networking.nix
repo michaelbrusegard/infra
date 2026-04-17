@@ -7,5 +7,8 @@ _: {
     };
     dhcpcd.enable = false;
   };
-  services.netbird.useRoutingFeatures = "client";
+  services.netbird = {
+    useRoutingFeatures = "client";
+    clients.default.autoStart = false;
+  };
 }
