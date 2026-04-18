@@ -124,6 +124,7 @@ in {
         "br_servers"
         "iot"
         "guest"
+        "vpn_clients"
       ];
       forwardPorts = [
         {
@@ -157,6 +158,10 @@ in {
         # subnets through macchiato.
         iifname "vpn_clients" ip daddr { 10.0.186.0/24, 10.0.187.0/24, 10.0.188.0/24, 10.0.189.0/24 } accept
         iifname "vpn_clients" ip6 daddr { fd7a:115c:a1e0:186::/64, fd7a:115c:a1e0:187::/64, fd7a:115c:a1e0:188::/64, fd7a:115c:a1e0:189::/64 } accept
+
+        # NetBird exit-node: VPN clients that activate the 0.0.0.0/0 route
+        # have their internet traffic forwarded out via WAN (NAT masquerade).
+        iifname "vpn_clients" oifname "${wanInterface}" accept
 
         # Allow servers to initiate connections to client devices when needed.
         iifname "br_servers" oifname "br_clients" accept
