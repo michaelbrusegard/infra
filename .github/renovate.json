@@ -46,6 +46,12 @@
       "matchPackageNames": [
         "/nix-secrets/"
       ]
+    },
+    {
+      "enabled": false,
+      "matchPackageNames": [
+        "registry.k8s.io/pause"
+      ]
     }
   ]
 }
