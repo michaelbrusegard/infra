@@ -259,6 +259,21 @@ in {
           };
         }
         // {
+          "https://${config.secrets.openclaw.publicDomain}" = {
+            extraConfig = ''
+              @internal remote_ip 10.0.186.0/24 10.0.187.0/24 fd7a:115c:a1e0:186::/64 fd7a:115c:a1e0:187::/64
+
+              handle @internal {
+                reverse_proxy http://10.0.188.50:80
+              }
+
+              handle {
+                respond 403
+              }
+            '';
+          };
+        }
+        // {
           "https://${config.secrets.uptime-kuma.publicDomain}" = {
             extraConfig = ''
               @status path /status /status/*
@@ -457,6 +472,7 @@ in {
         // {
           "${config.secrets.pocket-id.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "${config.secrets.netbird.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+          "${config.secrets.openclaw.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "${config.secrets.uptime-kuma.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         };
     };
