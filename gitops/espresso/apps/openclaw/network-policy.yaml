@@ -1,0 +1,55 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openclaw
+  namespace: openclaw
+spec:
+  endpointSelector:
+    matchLabels:
+      app: openclaw
+  ingress:
+    - fromCIDR:
+        - 10.0.186.0/24
+        - fd7a:115c:a1e0:186::/64
+        - 10.0.187.0/24
+        - fd7a:115c:a1e0:187::/64
+      toPorts:
+        - ports:
+            - port: "18789"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "18789"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toEntities:
+        - kube-apiserver
+    - toCIDRSet:
+        - cidr: 10.42.0.0/16
+        - cidr: 10.43.0.0/16
+        - cidr: 10.0.188.0/24
+        - cidr: fd42::/56
+        - cidr: fd7a:115c:a1e0:188::/64
+    - toFQDNs:
+        - matchName: api.z.ai
+        - matchName: open.bigmodel.cn
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

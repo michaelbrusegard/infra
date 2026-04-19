@@ -1,0 +1,99 @@
+name: OpenClaw Image
+
+'on':
+  push:
+    branches:
+      - main
+    paths:
+      - gitops/espresso/apps/openclaw/Dockerfile
+      - .github/workflows/openclaw-image.yaml
+  pull_request:
+    paths:
+      - gitops/espresso/apps/openclaw/Dockerfile
+      - .github/workflows/openclaw-image.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: michaelbrusegard/openclaw-tools
+  IMAGE_REF: ghcr.io/michaelbrusegard/openclaw-tools
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        if: github.event_name == 'push'
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: gitops/espresso/apps/openclaw
+          file: gitops/espresso/apps/openclaw/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ${{ env.IMAGE_REF }}:main
+            ${{ env.IMAGE_REF }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Update OpenClaw image reference
+        if: github.event_name == 'push'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          GIT_SHA: ${{ github.sha }}
+          IMAGE_REF: ${{ env.IMAGE_REF }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path = Path("gitops/espresso/apps/openclaw/statefulset.yaml")
+          image = f"{os.environ['IMAGE_REF']}:sha-{os.environ['GIT_SHA']}@{os.environ['DIGEST']}"
+          content = path.read_text()
+          updated = re.sub(
+              r"(?m)^\s*image:\s*ghcr\.io/michaelbrusegard/openclaw-tools:.*$",
+              f"          image: {image}",
+              content,
+              count=1,
+          )
+          if updated == content:
+              raise SystemExit("Failed to update OpenClaw image reference")
+          path.write_text(updated)
+          PY
+
+      - name: Commit image digest update
+        if: github.event_name == 'push'
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          if git diff --quiet -- gitops/espresso/apps/openclaw/statefulset.yaml; then
+            exit 0
+          fi
+
+          git add gitops/espresso/apps/openclaw/statefulset.yaml
+          git commit -m "chore(openclaw): update image digest [skip ci]"
+          git push

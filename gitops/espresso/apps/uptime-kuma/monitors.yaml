@@ -182,6 +182,16 @@ data:
         "max_retries": 3,
         "retry_interval": 30,
         "active": true
+      },
+      {
+        "name": "OpenClaw",
+        "type": "http",
+        "parent_name": "espresso[0]",
+        "url": "http://openclaw.openclaw.svc.cluster.local:80/readyz",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
       }
     ]
   macchiato.json: |
