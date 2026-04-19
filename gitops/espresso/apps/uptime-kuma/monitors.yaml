@@ -84,9 +84,10 @@ data:
       },
       {
         "name": "Loki",
-        "type": "http",
+        "type": "port",
         "parent_name": "espresso[0]",
-        "url": "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/status/buildinfo",
+        "hostname": "loki.monitoring.svc.cluster.local",
+        "port": 3100,
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
