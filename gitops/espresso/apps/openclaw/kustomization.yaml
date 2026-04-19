@@ -5,5 +5,4 @@ resources:
   - rbac.yaml
   - statefulset.yaml
   - services.yaml
-  - configmap.yaml
   - network-policy.yaml
