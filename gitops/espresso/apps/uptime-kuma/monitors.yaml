@@ -86,7 +86,7 @@ data:
         "name": "Loki",
         "type": "http",
         "parent_name": "espresso[0]",
-        "url": "http://10.0.188.4:3100/ready",
+        "url": "http://10.0.188.4:3100/loki/api/v1/status/buildinfo",
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
