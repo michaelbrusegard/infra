@@ -467,7 +467,6 @@ in {
           "bazarr.home.arpa" = "10.0.188.46,fd7a:115c:a1e0:188::46";
           "lidarr.home.arpa" = "10.0.188.47,fd7a:115c:a1e0:188::47";
           "navidrome.home.arpa" = "10.0.188.48,fd7a:115c:a1e0:188::48";
-          "openclaw.home.arpa" = "10.0.188.50,fd7a:115c:a1e0:188::50";
         }
         // {
           "${config.secrets.pocket-id.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
