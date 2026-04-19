@@ -14,7 +14,13 @@ data:
           "mode": "token"
         },
         "controlUi": {
-          "enabled": true
+          "enabled": true,
+          "allowedOrigins": [
+            "http://openclaw.home.arpa",
+            "http://10.0.188.50",
+            "ws://10.0.188.50",
+            "ws://openclaw.home.arpa"
+          ]
         }
       },
       "agents": {
