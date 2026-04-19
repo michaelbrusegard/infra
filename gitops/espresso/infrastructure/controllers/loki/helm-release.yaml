@@ -38,6 +38,9 @@ spec:
         retention_period: 2160h
     singleBinary:
       replicas: 1
+      readinessProbe:
+        timeoutSeconds: 5
+        failureThreshold: 10
       persistence:
         enabled: true
         storageClass: nvme-single
