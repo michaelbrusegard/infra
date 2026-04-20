@@ -83,17 +83,6 @@ data:
         "active": true
       },
       {
-        "name": "Loki",
-        "type": "port",
-        "parent_name": "espresso[0]",
-        "hostname": "loki.monitoring.svc.cluster.local",
-        "port": 3100,
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      },
-      {
         "name": "Jellyfin",
         "type": "http",
         "parent_name": "espresso[0]",

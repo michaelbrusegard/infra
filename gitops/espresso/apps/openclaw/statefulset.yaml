@@ -29,10 +29,8 @@ spec:
             - -c
             - |
               cp /config/openclaw.json /home/node/.openclaw/openclaw.json
-              mkdir -p /home/node/.openclaw/workspace
-              if [ ! -f /home/node/.openclaw/workspace/AGENTS.md ]; then
-                cp /config/AGENTS.md /home/node/.openclaw/workspace/AGENTS.md
-              fi
+              mkdir -p /home/node/.openclaw/workspace/skills/espresso-cluster
+              cp /config/SKILL.md /home/node/.openclaw/workspace/skills/espresso-cluster/SKILL.md
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
@@ -96,9 +94,7 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /home/node/.openclaw
-            - name: cluster-skill
-              mountPath: /home/node/.openclaw/workspace/skills/espresso-cluster
-              readOnly: true
+
             - name: tmp-volume
               mountPath: /tmp
           securityContext:
@@ -106,7 +102,6 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -114,12 +109,7 @@ spec:
         - name: config
           configMap:
             name: openclaw-config
-        - name: cluster-skill
-          configMap:
-            name: openclaw-config
-            items:
-              - key: SKILL.md
-                path: SKILL.md
+
         - name: tmp-volume
           emptyDir:
             sizeLimit: 1Gi

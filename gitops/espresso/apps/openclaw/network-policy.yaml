@@ -46,6 +46,14 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ollama
+            k8s:app: ollama
+      toPorts:
+        - ports:
+            - port: "11434"
+              protocol: TCP
     - toEntities:
         - kube-apiserver
     - toCIDRSet:
@@ -54,10 +62,11 @@ spec:
         - cidr: 10.0.188.0/24
         - cidr: fd42::/56
         - cidr: fd7a:115c:a1e0:188::/64
-    - toFQDNs:
-        - matchName: api.z.ai
-        - matchName: open.bigmodel.cn
+    - toEntities:
+        - world
       toPorts:
         - ports:
             - port: "443"
+              protocol: TCP
+            - port: "80"
               protocol: TCP
