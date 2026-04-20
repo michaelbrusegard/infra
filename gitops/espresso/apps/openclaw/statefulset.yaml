@@ -28,12 +28,12 @@ spec:
             - sh
             - -c
             - |
-              chown -R 1000:1000 /home/node/.openclaw
               cp /config/openclaw.json /home/node/.openclaw/openclaw.json
               mkdir -p /home/node/.openclaw/workspace/skills/espresso-cluster
               cp /config/SKILL.md /home/node/.openclaw/workspace/skills/espresso-cluster/SKILL.md
           securityContext:
-            runAsUser: 0
+            runAsUser: 1000
+            runAsGroup: 1000
           resources:
             requests:
               memory: 32Mi
