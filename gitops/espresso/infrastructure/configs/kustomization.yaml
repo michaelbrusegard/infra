@@ -9,3 +9,5 @@ resources:
   - flux
   - netbird
   - openebs-monitoring
+  - rustfs
+  - manafishrov
