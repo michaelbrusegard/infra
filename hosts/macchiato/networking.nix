@@ -261,7 +261,7 @@ in {
         // {
           "https://${config.secrets.openclaw.publicDomain}" = {
             extraConfig = ''
-              @internal remote_ip 10.0.186.0/24 10.0.187.0/24 fd7a:115c:a1e0:186::/64 fd7a:115c:a1e0:187::/64
+              @internal remote_ip 10.0.186.0/24 10.0.187.0/24 100.102.0.0/16 fd7a:115c:a1e0:186::/64 fd7a:115c:a1e0:187::/64
 
               handle @internal {
                 reverse_proxy http://10.0.188.50:80
