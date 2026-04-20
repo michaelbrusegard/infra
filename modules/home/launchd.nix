@@ -60,5 +60,18 @@
         LimitLoadToSessionType = "Aqua";
       };
     };
+
+    netbird-ui = {
+      enable = true;
+      config = {
+        ProgramArguments = [
+          "/usr/bin/open"
+          "-a"
+          "Netbird UI"
+        ];
+        RunAtLoad = true;
+        LimitLoadToSessionType = "Aqua";
+      };
+    };
   };
 }
