@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - netbird
   - openclaw
+  - ollama
   - pocket-id
   - uptime-kuma
   - media
