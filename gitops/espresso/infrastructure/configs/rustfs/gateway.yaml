@@ -1,0 +1,25 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: rustfs
+  namespace: rustfs
+spec:
+  addresses:
+    - type: IPAddress
+      value: 10.0.188.4
+    - type: IPAddress
+      value: fd7a:115c:a1e0:188::4
+  gatewayClassName: cilium
+  listeners:
+    - name: console
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: api
+      protocol: HTTP
+      port: 9000
+      allowedRoutes:
+        namespaces:
+          from: Same

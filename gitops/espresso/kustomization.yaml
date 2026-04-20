@@ -3,8 +3,10 @@ kind: Kustomization
 resources:
   - flux-system
   - secrets-source.yaml
+  - manafishrov-source.yaml
   - infrastructure-controllers.yaml
   - infrastructure-configs.yaml
   - infrastructure-secrets.yaml
   - apps.yaml
   - apps-secrets.yaml
+  - manafishrov.yaml

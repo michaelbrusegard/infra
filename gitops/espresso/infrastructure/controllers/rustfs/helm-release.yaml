@@ -1,0 +1,37 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: rustfs
+  namespace: rustfs
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: rustfs
+      version: ">=1.0.0-0"
+      sourceRef:
+        kind: HelmRepository
+        name: rustfs
+        namespace: flux-system
+      interval: 1h
+  values:
+    mode:
+      standalone:
+        enabled: true
+      distributed:
+        enabled: false
+    secret:
+      existingSecret: rustfs-secret
+    ingress:
+      enabled: false
+    storageclass:
+      name: ssd-ha
+      dataStorageSize: 1Ti
+      logStorageSize: 1Gi
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi

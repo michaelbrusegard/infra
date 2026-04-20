@@ -314,6 +314,11 @@ in {
           };
         }
         // {
+          "https://${config.secrets.rustfs.publicDomain}" = {
+            extraConfig = "reverse_proxy http://10.0.188.4:9000";
+          };
+        }
+        // {
           "https://${config.secrets.netbird.publicDomain}" = {
             extraConfig = ''
               @signal_grpc path /signalexchange.SignalExchange/*
@@ -467,12 +472,14 @@ in {
           "bazarr.home.arpa" = "10.0.188.46,fd7a:115c:a1e0:188::46";
           "lidarr.home.arpa" = "10.0.188.47,fd7a:115c:a1e0:188::47";
           "navidrome.home.arpa" = "10.0.188.48,fd7a:115c:a1e0:188::48";
+          "rustfs.home.arpa" = "10.0.188.4,fd7a:115c:a1e0:188::4";
         }
         // {
           "${config.secrets.pocket-id.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "${config.secrets.netbird.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "${config.secrets.openclaw.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
           "${config.secrets.uptime-kuma.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+          "${config.secrets.rustfs.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         };
     };
 
