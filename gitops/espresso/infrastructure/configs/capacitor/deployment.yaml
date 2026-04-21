@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capacitor-next
+  namespace: flux-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: capacitor-next
+  template:
+    metadata:
+      labels:
+        app: capacitor-next
+    spec:
+      serviceAccountName: capacitor-next
+      containers:
+        - name: capacitor-next
+          image: ghcr.io/gimlet-io/capacitor-next:0.14.0
+          envFrom:
+            - configMapRef:
+                name: capacitor-next
+          ports:
+            - containerPort: 8080
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            failureThreshold: 18
