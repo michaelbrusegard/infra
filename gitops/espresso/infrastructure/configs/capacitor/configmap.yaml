@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: capacitor-next
-  namespace: flux-system
-data:
-  AUTH: noauth
-  IMPERSONATE_SA_RULES: "noauth=flux-system:capacitor-next-preset-clusteradmin"
