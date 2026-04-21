@@ -1,27 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: capacitor-next
+  name: capacitor
   namespace: flux-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: capacitor-next
+      app: capacitor
   template:
     metadata:
       labels:
-        app: capacitor-next
+        app: capacitor
     spec:
-      serviceAccountName: capacitor-next
+      serviceAccountName: capacitor
       containers:
-        - name: capacitor-next
-          image: ghcr.io/gimlet-io/capacitor-next:0.14.0@sha256:95368be3e6b473108a3ccdfc15c22ed1a99475e4b92d6b11c983887dbee1860a
-          envFrom:
-            - configMapRef:
-                name: capacitor-next
+        - name: capacitor
+          image: ghcr.io/gimlet-io/capacitor:v0.4.8
           ports:
-            - containerPort: 8080
+            - containerPort: 9000
               name: http
           livenessProbe:
             httpGet:
