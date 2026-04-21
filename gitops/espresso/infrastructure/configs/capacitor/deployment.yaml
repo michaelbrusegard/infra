@@ -16,7 +16,7 @@ spec:
       serviceAccountName: capacitor-next
       containers:
         - name: capacitor-next
-          image: ghcr.io/gimlet-io/capacitor-next:0.14.0
+          image: ghcr.io/gimlet-io/capacitor-next:0.14.0@sha256:95368be3e6b473108a3ccdfc15c22ed1a99475e4b92d6b11c983887dbee1860a
           envFrom:
             - configMapRef:
                 name: capacitor-next
