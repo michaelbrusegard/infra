@@ -16,6 +16,11 @@ ARG OPENCODE_VERSION=0.0.55
 ARG OPENCODE_SHA256=7f1f41203e7920aec48f3e2216d334e9ce8c6d0a7b107ceb758fefa4d4c98025
 ARG HIMALAYA_VERSION=1.2.0
 ARG HIMALAYA_SHA256=e04e6382e3e664ef34b01afa1a2216113194a2975d2859727647b22d9b36d4e4
+ARG RIPGREP_VERSION=15.1.0
+ARG RIPGREP_SHA256=1c9297be4a084eea7ecaedf93eb03d058d6faae29bbc57ecdaf5063921491599
+ARG CLAWHUB_VERSION=0.9.0
+ARG MCPORTER_VERSION=0.9.0
+ARG SUMMARIZE_VERSION=0.13.0
 
 RUN set -eux; \
     apt-get update; \
@@ -53,6 +58,13 @@ RUN set -eux; \
     echo "${HIMALAYA_SHA256}  /tmp/himalaya.tgz" | sha256sum -c -; \
     tar -xzf /tmp/himalaya.tgz -C /usr/local/bin himalaya; \
     chmod +x /usr/local/bin/himalaya; \
-    rm -f /tmp/himalaya.tgz
+    rm -f /tmp/himalaya.tgz; \
+    curl -fsSL -o /tmp/ripgrep.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION}-x86_64-unknown-linux-musl.tar.gz"; \
+    echo "${RIPGREP_SHA256}  /tmp/ripgrep.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/ripgrep.tar.gz -C /tmp; \
+    mv /tmp/ripgrep-${RIPGREP_VERSION}-x86_64-unknown-linux-musl/rg /usr/local/bin/rg; \
+    chmod +x /usr/local/bin/rg; \
+    rm -rf /tmp/ripgrep.tar.gz /tmp/ripgrep-${RIPGREP_VERSION}-x86_64-unknown-linux-musl; \
+    npm install -g clawhub@${CLAWHUB_VERSION} mcporter@${MCPORTER_VERSION} @steipete/summarize@${SUMMARIZE_VERSION}
 
 USER 1000
