@@ -48,7 +48,7 @@ spec:
               mountPath: /config
       containers:
         - name: gateway
-          image: ghcr.io/michaelbrusegard/openclaw-tools:sha-f6a8ef307852d3abc9598344362f9653936a600b@sha256:28bad0e52c68a480a7149228e0d73fcf1a37beddddbaa36bce8f5dfcabc6f017
+          image: ghcr.io/michaelbrusegard/openclaw-tools:sha-45283d8b1e02e6528ef6be517eac86e357ca2ceb@sha256:ab06eac82e4b2ad7fc4f4129b2f53a774192dea0a723a82f0817089ebd36e8bf
           command:
             - node
             - /app/dist/index.js
