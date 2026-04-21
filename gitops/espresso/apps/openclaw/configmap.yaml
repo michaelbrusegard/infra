@@ -1,0 +1,217 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-config
+  namespace: openclaw
+data:
+  openclaw.json: |
+    {
+      "gateway": {
+        "mode": "local",
+        "bind": "lan",
+        "port": 18789,
+        "auth": {
+          "mode": "token"
+        },
+        "trustedProxies": ["10.0.186.0/24", "10.0.187.0/24", "10.0.188.0/24", "10.42.0.0/16"],
+        "controlUi": {
+          "enabled": true,
+          "allowedOrigins": [
+            "http://10.0.188.50",
+            "https://openclaw.gullhaugveien.michaelbrusegard.com"
+          ]
+        }
+      },
+      "agents": {
+        "defaults": {
+          "workspace": "~/.openclaw/workspace",
+          "model": {
+            "primary": "zai/glm-5.1",
+            "fallbacks": ["zai/glm-5", "zai/glm-4.5"]
+          },
+          "imageModel": "zai/glm-4.5v",
+          "pdfModel": "zai/glm-4.5v",
+          "imageGenerationModel": "zai/cogview-4-250304",
+          "memorySearch": {
+            "provider": "ollama",
+            "model": "nomic-embed-text"
+          },
+          "compaction": {
+            "mode": "safeguard",
+            "model": "zai/glm-4.5",
+            "memoryFlush": {
+              "enabled": true,
+              "softThresholdTokens": 6000
+            }
+          }
+        },
+        "list": [
+          {
+            "id": "default",
+            "name": "OpenClaw Assistant",
+            "workspace": "~/.openclaw/workspace"
+          }
+        ]
+      },
+      "models": {
+        "providers": {
+          "ollama": {
+            "api": "ollama",
+            "baseUrl": "http://ollama.ollama.svc.cluster.local:11434",
+            "apiKey": "ollama",
+            "models": [
+              {
+                "id": "nomic-embed-text",
+                "name": "Nomic Embed Text"
+              }
+            ]
+          }
+        }
+      },
+      "plugins": {
+        "entries": {
+          "memory-core": {
+            "config": {
+              "dreaming": {
+                "enabled": true,
+                "frequency": "0 3 * * *"
+              }
+            }
+          },
+          "active-memory": {
+            "enabled": true,
+            "config": {
+              "enabled": true,
+              "agents": ["default"],
+              "allowedChatTypes": ["direct"],
+              "queryMode": "recent",
+              "promptStyle": "balanced",
+              "timeoutMs": 15000,
+              "model": "zai/glm-4.5"
+            }
+          },
+          "llm-task": {
+            "enabled": true,
+            "config": {
+              "defaultModel": "zai/glm-5"
+            }
+          }
+        }
+      },
+      "skills": {
+        "allowBundled": [
+          "clawhub",
+          "coding-agent",
+          "github",
+          "gh-issues",
+          "healthcheck",
+          "himalaya",
+          "mcporter",
+          "session-logs",
+          "skill-creator",
+          "summarize",
+          "taskflow",
+          "weather"
+        ]
+      },
+      "cron": { "enabled": true }
+    }
+  SKILL.md: |
+    ---
+    name: espresso-cluster
+    description: Read-only diagnostics and status tools for the Espresso K3S cluster
+    ---
+
+    # Espresso Cluster Tools
+
+    ## Available CLI Tools
+
+    ### kubectl (read-only)
+
+    Read-only access to the Kubernetes API.
+
+    Allowed:
+    - `kubectl get` — list resources (pods, deployments, services, nodes, events, etc.)
+    - `kubectl describe` — inspect resource details
+    - `kubectl logs` — read container logs
+    - `kubectl top` — check resource usage (CPU/memory)
+    - `kubectl get events --sort-by='.lastTimestamp'` — recent cluster events
+
+    Forbidden:
+    - Never run `kubectl apply`, `kubectl delete`, `kubectl edit`, `kubectl patch`, or `kubectl exec`
+    - Never modify any cluster resource
+    - Never expose secrets, tokens, or credentials in responses
+
+    ### flux
+
+    FluxCD CLI for GitOps status and debugging.
+
+    - `flux get kustomizations` — reconciliation status for all kustomizations
+    - `flux get helmreleases -A` — Helm release status across namespaces
+    - `flux get sources git` — Git repository sync status
+    - `flux logs` — FluxCD controller logs
+    - `flux events` — recent FluxCD events
+    - Never run `flux reconcile`, `flux suspend`, `flux resume`, or any write operation
+
+    ### helm
+
+    Helm CLI for inspecting chart releases.
+
+    - `helm list -A` — list installed releases
+    - `helm get values <release> -n <namespace>` — inspect release values
+    - `helm history <release> -n <namespace>` — release history
+    - `helm status <release> -n <namespace>` — release status
+    - Never run `helm install`, `helm upgrade`, `helm uninstall`, or `helm rollback`
+
+    ### curl
+
+    Static curl binary for testing connectivity and service health.
+
+    - `curl -sf http://<service-ip>/health` — check service health endpoints
+    - `curl -sf http://<service>.<namespace>.svc.cluster.local:<port>/` — test cluster DNS + connectivity
+
+    ### jq
+
+    JSON processor for parsing kubectl/curl output.
+
+    - `kubectl get pods -o json | jq '.items[] | {name: .metadata.name, status: .status.phase}'`
+    - `curl -sf <url> | jq .`
+
+    ## Cluster Overview
+
+    - Nodes: espresso-0, espresso-1, espresso-2 (NixOS, x86_64)
+    - Networking: Cilium with dual-stack IPv4/IPv6 (pod CIDR: 10.42.0.0/16), Gateway API
+    - Storage: OpenEBS Mayastor (nvme-ha storage class)
+    - Observability: Prometheus, Grafana (10.0.188.3), Loki (10.0.188.4:3100), Hubble (10.0.188.2)
+    - DNS: CoreDNS
+    - GitOps: FluxCD with SOPS/Age encrypted secrets
+
+    ### Applications and IPs
+
+    | App | IP |
+    |-----|-----|
+    | Pocket ID | 10.0.188.10 |
+    | Uptime Kuma | 10.0.188.11 |
+    | Netbird | 10.0.188.30-34 |
+    | Jellyfin | 10.0.188.40 |
+    | Jellyseerr | 10.0.188.41 |
+    | Sonarr | 10.0.188.42 |
+    | Radarr | 10.0.188.43 |
+    | Prowlarr | 10.0.188.44 |
+    | FlareSolverr | 10.0.188.45 |
+    | Bazarr | 10.0.188.46 |
+    | Lidarr | 10.0.188.47 |
+    | Navidrome | 10.0.188.48 |
+    | OpenClaw | 10.0.188.50 |
+
+    ## Diagnostic Playbook
+
+    When asked to diagnose an issue:
+    1. Check node health: `kubectl get nodes -o wide`
+    2. Check recent events: `kubectl get events -A --sort-by='.lastTimestamp' | tail -20`
+    3. Check FluxCD: `flux get kustomizations` and `flux get helmreleases -A`
+    4. Check pods in affected namespace: `kubectl get pods -n <ns> -o wide`
+    5. Describe failing resources: `kubectl describe pod/<name> -n <ns>`
+    6. Read logs: `kubectl logs <pod> -n <ns> --tail=50`
+    7. Test connectivity: `curl -sf http://<ip>:<port>/health`
+    8. Check resource usage: `kubectl top nodes` and `kubectl top pods -A`
