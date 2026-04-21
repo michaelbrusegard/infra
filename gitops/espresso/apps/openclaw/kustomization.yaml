@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - rbac.yaml
+  - configmap.yaml
   - statefulset.yaml
   - services.yaml
   - network-policy.yaml
