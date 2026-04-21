@@ -4,4 +4,3 @@ resources:
   - namespace.yaml
   - statefulset.yaml
   - service.yaml
-  - model-pull-job.yaml
