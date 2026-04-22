@@ -1,0 +1,40 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tofu-controller
+  namespace: flux-system
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: tofu-controller
+      version: "0.16.x"
+      sourceRef:
+        kind: HelmRepository
+        name: tofu-controller
+        namespace: flux-system
+      interval: 1h
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    replicaCount: 1
+    concurrency: 10
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    runner:
+      image:
+        repository: ghcr.io/flux-iac/tf-runner
+        tag: v0.16.2
+      serviceAccount:
+        create: true
+        allowedNamespaces:
+          - flux-system
+          - manafishrov
+    allowCrossNamespaceRefs: true

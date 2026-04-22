@@ -11,3 +11,4 @@ resources:
   - alloy
   - rustfs
   - postgres
+  - tofu-controller
