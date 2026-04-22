@@ -11,7 +11,7 @@ parameters:
     openebs.io/disk-type: nvme
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
-reclaimPolicy: Retain
+reclaimPolicy: Delete
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -26,7 +26,7 @@ parameters:
     openebs.io/disk-type: sata
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
-reclaimPolicy: Retain
+reclaimPolicy: Delete
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -41,4 +41,4 @@ parameters:
     openebs.io/disk-type: nvme
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
-reclaimPolicy: Retain
+reclaimPolicy: Delete
