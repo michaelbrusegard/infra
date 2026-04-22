@@ -36,5 +36,4 @@ spec:
         create: true
         allowedNamespaces:
           - flux-system
-          - manafishrov
     allowCrossNamespaceRefs: true
