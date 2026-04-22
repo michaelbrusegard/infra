@@ -40,7 +40,7 @@ spec:
             periodSeconds: 10
             failureThreshold: 18
           volumeMounts:
-            - mountPath: /data
+            - mountPath: /app/data
               name: data
   volumeClaimTemplates:
     - metadata:
