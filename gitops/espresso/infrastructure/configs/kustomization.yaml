@@ -10,5 +10,4 @@ resources:
   - netbird
   - openebs-monitoring
   - rustfs
-  - resource-reconciler
   - manafishrov
