@@ -1,0 +1,105 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: database-reconciler
+  namespace: postgres
+spec:
+  schedule: "*/10 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 600
+      template:
+        spec:
+          serviceAccountName: resource-reconciler
+          restartPolicy: OnFailure
+          containers:
+            - name: reconcile
+              image: postgres:18-alpine@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7
+              env:
+                - name: PGHOST
+                  value: postgres.postgres.svc.cluster.local
+                - name: PGPORT
+                  value: "5432"
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-admin
+                      key: POSTGRES_USER
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-admin
+                      key: POSTGRES_PASSWORD
+              command:
+                - sh
+                - -c
+                - |
+                  set -e
+                  until pg_isready -h "$PGHOST" -U "$PGUSER"; do sleep 2; done
+
+                  KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+                  KUBE_CA=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                  API="https://kubernetes.default.svc"
+                  AUTH="Authorization: Bearer $KUBE_TOKEN"
+
+                  kube_get()  { curl -sf --cacert "$KUBE_CA" -H "$AUTH" "$API$1" 2>/dev/null || echo ""; }
+                  kube_put()  { curl -sf --cacert "$KUBE_CA" -H "$AUTH" -H "Content-Type: application/json" -X PUT  "$API$1" -d "$2" >/dev/null 2>&1; }
+                  kube_post() { curl -sf --cacert "$KUBE_CA" -H "$AUTH" -H "Content-Type: application/json" -X POST "$API$1" -d "$2" >/dev/null; }
+                  to_b64()    { printf '%s' "$1" | base64; }
+
+                  kube_get "/api/v1/configmaps?labelSelector=resource-reconciler/type%3Ddatabases" | \
+                  jq -c '.items[]' | while read -r cm; do
+                    NS=$(echo "$cm" | jq -r '.metadata.namespace')
+                    PREFIX=$(echo "$cm" | jq -r '.metadata.labels["resource-reconciler/prefix"]')
+
+                    echo "$cm" | jq -r '.data["databases.json"]' | jq -c '.[]' | while read -r db; do
+                      DBNAME=$(echo "$db" | jq -r '.name')
+                      SECRET_NAME=$(echo "$db" | jq -r '.secretName')
+
+                      case "$DBNAME" in "${PREFIX}_"*) ;; *)
+                        echo "REJECTED $DBNAME (prefix: ${PREFIX}_)" >&2; continue ;;
+                      esac
+
+                      EXISTING=$(kube_get "/api/v1/namespaces/$NS/secrets/$SECRET_NAME")
+                      if echo "$EXISTING" | jq -e '.data.PGPASSWORD' >/dev/null 2>&1; then
+                        PASSWORD=$(echo "$EXISTING" | jq -r '.data.PGPASSWORD' | base64 -d)
+                      else
+                        PASSWORD=$(head -c 32 /dev/urandom | base64 | tr -d '/+=')
+                        PASSWORD=$(echo "$PASSWORD" | head -c 32)
+                      fi
+
+                      psql -v ON_ERROR_STOP=0 <<-SQL
+                        DO \$\$
+                        BEGIN
+                          IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${DBNAME}') THEN
+                            CREATE ROLE "${DBNAME}" LOGIN PASSWORD '${PASSWORD}';
+                          ELSE
+                            ALTER ROLE "${DBNAME}" PASSWORD '${PASSWORD}';
+                          END IF;
+                        END\$\$;
+                        SELECT 'CREATE DATABASE "${DBNAME}" OWNER "${DBNAME}"'
+                          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${DBNAME}')\gexec
+                        GRANT ALL PRIVILEGES ON DATABASE "${DBNAME}" TO "${DBNAME}";
+                  SQL
+
+                      SECRET_JSON='{
+                        "apiVersion":"v1","kind":"Secret",
+                        "metadata":{"name":"'"$SECRET_NAME"'","namespace":"'"$NS"'"},
+                        "type":"Opaque",
+                        "data":{
+                          "PGHOST":"'"$(to_b64 "$PGHOST")"'","PGPORT":"'"$(to_b64 5432)"'",
+                          "PGDATABASE":"'"$(to_b64 "$DBNAME")"'","PGUSER":"'"$(to_b64 "$DBNAME")"'",
+                          "PGPASSWORD":"'"$(to_b64 "$PASSWORD")"'",
+                          "DATABASE_URL":"'"$(to_b64 "postgres://${DBNAME}:${PASSWORD}@${PGHOST}:5432/${DBNAME}")"'"
+                        }
+                      }'
+
+                      kube_put "/api/v1/namespaces/$NS/secrets/$SECRET_NAME" "$SECRET_JSON" || \
+                      kube_post "/api/v1/namespaces/$NS/secrets" "$SECRET_JSON"
+
+                      echo "OK $DBNAME -> $NS/$SECRET_NAME"
+                    done
+                  done

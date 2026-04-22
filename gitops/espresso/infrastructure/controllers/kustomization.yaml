@@ -10,3 +10,4 @@ resources:
   - loki
   - alloy
   - rustfs
+  - postgres
