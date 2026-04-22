@@ -9,4 +9,4 @@ spec:
     branch: main
   secretRef:
     name: manafishrov-auth
-  url: ssh://git@github.com/manafishrov/infrastructure
+  url: ssh://git@github.com/manafishrov/infra
