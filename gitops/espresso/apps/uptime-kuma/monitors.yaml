@@ -4,6 +4,162 @@ metadata:
   name: uptime-kuma-monitors
   namespace: uptime-kuma
 data:
+  infrastructure.json: |
+    [
+      {
+        "name": "Infrastructure",
+        "type": "group"
+      },
+      {
+        "name": "PostgreSQL",
+        "type": "port",
+        "parent_name": "infrastructure[0]",
+        "hostname": "postgres.postgres.svc.cluster.local",
+        "port": 5432,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "RustFS",
+        "type": "http",
+        "parent_name": "infrastructure[0]",
+        "url": "http://rustfs.rustfs.svc.cluster.local:9000/minio/health/live",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Ollama",
+        "type": "http",
+        "parent_name": "infrastructure[0]",
+        "url": "http://ollama.ollama.svc.cluster.local:11434",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      }
+    ]
+  networking.json: |
+    [
+      {
+        "name": "Networking",
+        "type": "group"
+      },
+      {
+        "name": "NetBird Management",
+        "type": "http",
+        "parent_name": "networking[0]",
+        "url": "http://10.0.188.30/api/instance",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "NetBird Dashboard",
+        "type": "http",
+        "parent_name": "networking[0]",
+        "url": "http://10.0.188.31",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "NetBird Signal",
+        "type": "port",
+        "parent_name": "networking[0]",
+        "hostname": "10.0.188.32",
+        "port": 10000,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "NetBird Relay",
+        "type": "port",
+        "parent_name": "networking[0]",
+        "hostname": "10.0.188.33",
+        "port": 33080,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Hubble UI",
+        "type": "http",
+        "parent_name": "networking[0]",
+        "url": "http://10.0.188.2",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Blocky DNS",
+        "type": "http",
+        "parent_name": "networking[0]",
+        "url": "http://10.0.187.1:4000",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "UniFi Controller",
+        "type": "http",
+        "parent_name": "networking[0]",
+        "url": "https://10.0.187.1:8443",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "ignore_tls": true,
+        "active": true
+      },
+      {
+        "name": "Caddy",
+        "type": "port",
+        "parent_name": "networking[0]",
+        "hostname": "10.0.187.1",
+        "port": 443,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      }
+    ]
+  monitoring.json: |
+    [
+      {
+        "name": "Monitoring",
+        "type": "group"
+      },
+      {
+        "name": "Grafana",
+        "type": "http",
+        "parent_name": "monitoring[0]",
+        "url": "http://10.0.188.3",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Node Exporter",
+        "type": "http",
+        "parent_name": "monitoring[0]",
+        "url": "http://10.0.187.1:9100",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      }
+    ]
   media.json: |
     [
       {
@@ -102,124 +258,6 @@ data:
         "active": true
       }
     ]
-  networking.json: |
-    [
-      {
-        "name": "Networking",
-        "type": "group"
-      },
-      {
-        "name": "NetBird Management",
-        "type": "http",
-        "parent_name": "networking[0]",
-        "url": "http://10.0.188.30:80/api/instance",
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      },
-      {
-        "name": "NetBird Dashboard",
-        "type": "http",
-        "parent_name": "networking[0]",
-        "url": "http://10.0.188.31:80",
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      },
-      {
-        "name": "NetBird Signal",
-        "type": "port",
-        "parent_name": "networking[0]",
-        "hostname": "10.0.188.32",
-        "port": 10000,
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      },
-      {
-        "name": "NetBird Relay",
-        "type": "port",
-        "parent_name": "networking[0]",
-        "hostname": "10.0.188.33",
-        "port": 33080,
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      },
-      {
-        "name": "Blocky DNS",
-        "type": "http",
-        "parent_name": "networking[0]",
-        "url": "http://10.0.187.1:4000",
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      },
-      {
-        "name": "UniFi Controller",
-        "type": "http",
-        "parent_name": "networking[0]",
-        "url": "https://10.0.187.1:8443",
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "ignore_tls": true,
-        "active": true
-      },
-      {
-        "name": "Caddy",
-        "type": "port",
-        "parent_name": "networking[0]",
-        "hostname": "10.0.187.1",
-        "port": 443,
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      }
-    ]
-  monitoring.json: |
-    [
-      {
-        "name": "Monitoring",
-        "type": "group"
-      },
-      {
-        "name": "Hubble UI",
-        "type": "http",
-        "parent_name": "monitoring[0]",
-        "url": "http://10.0.188.2:80",
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      },
-      {
-        "name": "Grafana",
-        "type": "http",
-        "parent_name": "monitoring[0]",
-        "url": "http://10.0.188.3:80",
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      },
-      {
-        "name": "Node Exporter",
-        "type": "http",
-        "parent_name": "monitoring[0]",
-        "url": "http://10.0.187.1:9100",
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      }
-    ]
   smart-home.json: |
     [
       {
@@ -257,7 +295,7 @@ data:
         "name": "Pocket ID",
         "type": "http",
         "parent_name": "apps[0]",
-        "url": "http://10.0.188.10:80",
+        "url": "http://10.0.188.10",
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
@@ -267,7 +305,7 @@ data:
         "name": "OpenClaw",
         "type": "http",
         "parent_name": "apps[0]",
-        "url": "http://openclaw.openclaw.svc.cluster.local:80/readyz",
+        "url": "http://openclaw.openclaw.svc.cluster.local/readyz",
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
