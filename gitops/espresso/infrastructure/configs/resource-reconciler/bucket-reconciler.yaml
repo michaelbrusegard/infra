@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bucket-reconciler
+  namespace: postgres
+spec:
+  schedule: "*/10 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 600
+      template:
+        spec:
+          serviceAccountName: resource-reconciler
+          restartPolicy: OnFailure
+          containers:
+            - name: reconcile
+              image: minio/mc:RELEASE.2025-04-08T15-18-55Z
+              envFrom:
+                - secretRef:
+                    name: rustfs-admin
+              command:
+                - sh
+                - -c
+                - |
+                  set -e
+                  KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+                  KUBE_CA=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                  API="https://kubernetes.default.svc"
+                  AUTH="Authorization: Bearer $KUBE_TOKEN"
+
+                  mc alias set rustfs "$RUSTFS_ENDPOINT" "$RUSTFS_ACCESS_KEY" "$RUSTFS_SECRET_KEY"
+
+                  curl -sf --cacert "$KUBE_CA" -H "$AUTH" \
+                    "$API/api/v1/configmaps?labelSelector=resource-reconciler/type%3Dbuckets" | \
+                  jq -c '.items[]' | while read -r cm; do
+                    PREFIX=$(echo "$cm" | jq -r '.metadata.labels["resource-reconciler/prefix"]')
+                    echo "$cm" | jq -r '.data["buckets.json"]' | jq -c '.[]' | while read -r bucket; do
+                      NAME=$(echo "$bucket" | jq -r '.name')
+                      POLICY=$(echo "$bucket" | jq -r '.policy // "none"')
+
+                      case "$NAME" in "${PREFIX}-"*) ;; *)
+                        echo "REJECTED $NAME (prefix: ${PREFIX}-)" >&2; continue ;;
+                      esac
+
+                      mc mb --ignore-existing rustfs/"$NAME"
+                      if [ "$POLICY" = "download" ]; then
+                        mc anonymous set download rustfs/"$NAME"
+                      fi
+                      echo "OK $NAME [$POLICY]"
+                    done
+                  done
