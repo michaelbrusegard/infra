@@ -5,7 +5,6 @@
     inputs.self.nixosModules.boot
     inputs.self.nixosModules.catppuccin
     inputs.self.nixosModules.console
-    inputs.self.nixosModules.cloudflare-dyndns
     inputs.self.nixosModules.disable-documentation
     inputs.self.nixosModules.home-manager
     inputs.self.nixosModules.home-assistant
