@@ -8,3 +8,4 @@ resources:
   - coturn-deployment.yaml
   - dashboard-deployment.yaml
   - services.yaml
+  - httproute.yaml

@@ -34,6 +34,7 @@ spec:
     app: netbird-server
   ports:
     - name: http
+      appProtocol: kubernetes.io/h2c
       port: 80
       targetPort: http
 ---
@@ -54,6 +55,7 @@ spec:
     app: netbird-signal
   ports:
     - name: signal
+      appProtocol: kubernetes.io/h2c
       port: 10000
       targetPort: signal
 ---

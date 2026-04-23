@@ -5,3 +5,4 @@ resources:
   - statefulset.yaml
   - services.yaml
   - monitors.yaml
+  - httproute.yaml

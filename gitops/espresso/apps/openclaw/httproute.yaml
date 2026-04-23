@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: openclaw
+  namespace: openclaw
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - openclaw.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: openclaw
+          port: 80

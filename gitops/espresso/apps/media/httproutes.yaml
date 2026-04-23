@@ -1,0 +1,152 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: jellyfin
+  namespace: media
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - jellyfin.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: jellyfin
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: seerr
+  namespace: media
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - seerr.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: jellyseerr
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: sonarr
+  namespace: media
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - sonarr.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: sonarr
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: radarr
+  namespace: media
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - radarr.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: radarr
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: prowlarr
+  namespace: media
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - prowlarr.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: prowlarr
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: transmission
+  namespace: media
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - transmission.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: transmission
+          port: 9091
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bazarr
+  namespace: media
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - bazarr.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: bazarr
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: lidarr
+  namespace: media
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - lidarr.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: lidarr
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: navidrome
+  namespace: media
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - navidrome.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: navidrome
+          port: 80
