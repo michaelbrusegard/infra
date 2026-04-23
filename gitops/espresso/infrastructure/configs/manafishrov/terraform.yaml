@@ -12,8 +12,9 @@ spec:
   interval: 10m
   approvePlan: auto
   destroyResourcesOnDeletion: false
+  storeReadablePlan: human
   backendConfig:
-    inClusterConfig: true
+    secretSuffix: manafishrov-infra
   varsFrom:
     - kind: Secret
       name: tofu-credentials
