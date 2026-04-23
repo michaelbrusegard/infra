@@ -415,7 +415,10 @@ in {
     };
   };
 
-  sops.templates."caddy-env".content = "CF_API_TOKEN=${config.sops.placeholder."cloudflare/api-token"}";
+  sops.templates."caddy-env" = {
+    content = "CF_API_TOKEN=${config.sops.placeholder."cloudflare/api-token"}";
+    owner = "caddy";
+  };
 
   systemd.services.caddy.serviceConfig.EnvironmentFile = config.sops.templates."caddy-env".path;
 }
