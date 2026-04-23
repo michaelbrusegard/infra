@@ -14,3 +14,4 @@ resources:
   - jellyseerr-statefulset.yaml
   - flaresolverr-deployment.yaml
   - services.yaml
+  - httproutes.yaml
