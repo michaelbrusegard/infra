@@ -12,3 +12,6 @@ resources:
   - rustfs
   - postgres
   - tofu-controller
+  - k8s-gateway
+  - external-dns
+  - cert-manager
