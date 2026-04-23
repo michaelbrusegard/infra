@@ -393,6 +393,7 @@ in {
         "${baseDomain}" = "10.0.188.5,fd7a:115c:a1e0:188::5";
       };
       customDNS.mapping = {
+        "${baseDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         "${homebridgeDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         "${zigbeeDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
       };
