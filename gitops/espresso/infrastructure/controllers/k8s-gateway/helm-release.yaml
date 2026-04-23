@@ -16,6 +16,7 @@ spec:
       interval: 1h
   values:
     domain: gullhaugveien.michaelbrusegard.com
+    apex: macchiato.gateway
     watchedResources:
       - HTTPRoute
       - Service
