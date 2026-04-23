@@ -5,8 +5,11 @@ metadata:
   namespace: monitoring
 spec:
   parentRefs:
-    - name: grafana
-      namespace: monitoring
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - grafana.gullhaugveien.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: kube-prometheus-stack-grafana

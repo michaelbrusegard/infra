@@ -5,8 +5,11 @@ metadata:
   namespace: kube-system
 spec:
   parentRefs:
-    - name: hubble-ui
-      namespace: kube-system
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - hubble.gullhaugveien.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: hubble-ui
