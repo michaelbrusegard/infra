@@ -6,9 +6,9 @@ metadata:
 spec:
   addresses:
     - type: IPAddress
-      value: 10.0.188.4
+      value: 10.0.188.5
     - type: IPAddress
-      value: fd7a:115c:a1e0:188::4
+      value: fd7a:115c:a1e0:188::5
   gatewayClassName: cilium
   listeners:
     - name: console
