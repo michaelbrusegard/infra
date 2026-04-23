@@ -1,7 +1,15 @@
-{config, ...}: let
+{
+  config,
+  pkgs,
+  ...
+}: let
   wanInterface = "enp2s0";
   clientInterfaces = ["enp3s0" "enp4s0"];
   serverInterfaces = ["enp5s0" "enp1s0f0" "enp1s0f1"];
+  baseDomain = "gullhaugveien.michaelbrusegard.com";
+  homebridgeDomain = "homebridge.${baseDomain}";
+  zigbeeDomain = "zigbee.${baseDomain}";
+  netbirdPublicDomain = "netbird.${baseDomain}";
 in {
   boot.kernel.sysctl = {
     # Required for routing traffic between bridges and to the internet
@@ -128,6 +136,16 @@ in {
       ];
       forwardPorts = [
         {
+          destination = "10.0.188.2:80";
+          proto = "tcp";
+          sourcePort = 80;
+        }
+        {
+          destination = "10.0.188.2:443";
+          proto = "tcp";
+          sourcePort = 443;
+        }
+        {
           destination = "10.0.188.34:3478";
           proto = "udp";
           sourcePort = 3478;
@@ -178,12 +196,8 @@ in {
       '';
 
       # Ports open to the internet on the WAN interface
-      # SSH (port 2286) is opened separately by openssh module's openFirewall = true
+      # SSH is opened separately by openssh module's openFirewall = true
       interfaces = {
-        "${wanInterface}" = {
-          allowedTCPPorts = [80 443];
-          allowedUDPPorts = [3478];
-        };
         # IoT devices need DHCP and DNS from the router, nothing else
         "iot" = {
           allowedTCPPorts = [53];
@@ -199,6 +213,8 @@ in {
   };
 
   services = {
+    cloudflare-dyndns.domains = [baseDomain];
+
     # Advertise IPv6 prefixes on both bridges so LAN devices get public
     # GUA addresses (from ISP prefix delegation) via SLAAC
     radvd = {
@@ -238,115 +254,32 @@ in {
       '';
     };
 
-    # Reverse proxy for local services so they are reachable on port 80 via
-    # their .home.arpa DNS names. Only listens on the client VLAN.
     caddy = {
       enable = true;
-      virtualHosts =
-        {
-          "http://homebridge.home.arpa" = {
-            listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
-            extraConfig = "reverse_proxy 127.0.0.1:8581";
-          };
-          "http://zigbee.home.arpa" = {
-            listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
-            extraConfig = "reverse_proxy 127.0.0.1:8082";
-          };
-        }
-        // {
-          "https://${config.secrets.pocket-id.publicDomain}" = {
-            extraConfig = "reverse_proxy http://10.0.188.10:80";
-          };
-        }
-        // {
-          "https://${config.secrets.openclaw.publicDomain}" = {
-            extraConfig = ''
-              @internal remote_ip 10.0.186.0/24 10.0.187.0/24 100.102.0.0/16 fd7a:115c:a1e0:186::/64 fd7a:115c:a1e0:187::/64
-
-              handle @internal {
-                reverse_proxy http://10.0.188.50:80
-              }
-
-              handle {
-                respond 403
-              }
-            '';
-          };
-        }
-        // {
-          "https://${config.secrets.uptime-kuma.publicDomain}" = {
-            extraConfig = ''
-              @status path /status /status/*
-              @status-api path /api/status-page/*
-              @assets path /assets/*
-              @upload path /upload/*
-              @icon path /icon.svg /favicon.ico
-
-              handle @status {
-                reverse_proxy http://10.0.188.11:80 {
-                  header_up Host uptime.home.arpa
-                }
-              }
-              handle @status-api {
-                reverse_proxy http://10.0.188.11:80 {
-                  header_up Host uptime.home.arpa
-                }
-              }
-              handle @assets {
-                reverse_proxy http://10.0.188.11:80 {
-                  header_up Host uptime.home.arpa
-                }
-              }
-              handle @upload {
-                reverse_proxy http://10.0.188.11:80 {
-                  header_up Host uptime.home.arpa
-                }
-              }
-              handle @icon {
-                reverse_proxy http://10.0.188.11:80 {
-                  header_up Host uptime.home.arpa
-                }
-              }
-              handle {
-                respond 404
-              }
-            '';
-          };
-        }
-        // {
-          "https://${config.secrets.rustfs.publicDomain}" = {
-            extraConfig = "reverse_proxy http://10.0.188.5:9000";
-          };
-        }
-        // {
-          "https://${config.secrets.netbird.publicDomain}" = {
-            extraConfig = ''
-              @signal_grpc path /signalexchange.SignalExchange/*
-              handle @signal_grpc {
-                reverse_proxy h2c://10.0.188.32:10000
-              }
-
-              @mgmt_grpc path /management.ManagementService/* /management.ProxyService/*
-              handle @mgmt_grpc {
-                reverse_proxy h2c://10.0.188.30:80
-              }
-
-              @relay path /relay /relay/* /ws-proxy /ws-proxy/*
-              handle @relay {
-                reverse_proxy http://10.0.188.33:33080
-              }
-
-              @api path /api /api/*
-              handle @api {
-                reverse_proxy http://10.0.188.30:80
-              }
-
-              handle {
-                reverse_proxy http://10.0.188.31:80
-              }
-            '';
-          };
+      package = pkgs.caddy.withPlugins {
+        plugins = ["github.com/caddy-dns/cloudflare@1fb64108d4debf196b19d7398e763cb78c8a0f41"];
+        hash = "sha256-ajIJ01dhqn9/PWmAv3ArbLpIKR9XWC6Uqcdm1EfDNgU=";
+      };
+      virtualHosts = {
+        "https://${homebridgeDomain}" = {
+          listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
+          extraConfig = ''
+            tls {
+              dns cloudflare {env.CF_API_TOKEN}
+            }
+            reverse_proxy 127.0.0.1:8581
+          '';
         };
+        "https://${zigbeeDomain}" = {
+          listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
+          extraConfig = ''
+            tls {
+              dns cloudflare {env.CF_API_TOKEN}
+            }
+            reverse_proxy 127.0.0.1:8082
+          '';
+        };
+      };
     };
 
     # Bind Homebridge to the client VLAN so HomeKit devices can discover it
@@ -455,32 +388,14 @@ in {
       '';
     };
 
-    blocky.settings.customDNS = {
-      mapping =
-        {
-          "homebridge.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-          "zigbee.home.arpa" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-          "hubble.home.arpa" = "10.0.188.2,fd7a:115c:a1e0:188::2";
-          "grafana.home.arpa" = "10.0.188.3,fd7a:115c:a1e0:188::3";
-          "uptime.home.arpa" = "10.0.188.11,fd7a:115c:a1e0:188::11";
-          "jellyfin.home.arpa" = "10.0.188.40,fd7a:115c:a1e0:188::40";
-          "seerr.home.arpa" = "10.0.188.41,fd7a:115c:a1e0:188::41";
-          "sonarr.home.arpa" = "10.0.188.42,fd7a:115c:a1e0:188::42";
-          "radarr.home.arpa" = "10.0.188.43,fd7a:115c:a1e0:188::43";
-          "prowlarr.home.arpa" = "10.0.188.44,fd7a:115c:a1e0:188::44";
-          "transmission.home.arpa" = "10.0.188.45,fd7a:115c:a1e0:188::45";
-          "bazarr.home.arpa" = "10.0.188.46,fd7a:115c:a1e0:188::46";
-          "lidarr.home.arpa" = "10.0.188.47,fd7a:115c:a1e0:188::47";
-          "navidrome.home.arpa" = "10.0.188.48,fd7a:115c:a1e0:188::48";
-          "rustfs.home.arpa" = "10.0.188.5,fd7a:115c:a1e0:188::5";
-        }
-        // {
-          "${config.secrets.pocket-id.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-          "${config.secrets.netbird.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-          "${config.secrets.openclaw.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-          "${config.secrets.uptime-kuma.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-          "${config.secrets.rustfs.publicDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-        };
+    blocky.settings = {
+      conditional.mapping = {
+        "${baseDomain}" = "10.0.188.5,fd7a:115c:a1e0:188::5";
+      };
+      customDNS.mapping = {
+        "${homebridgeDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+        "${zigbeeDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
+      };
     };
 
     netbird = {
@@ -490,7 +405,7 @@ in {
         port = 51820;
         config.ManagementURL = {
           Scheme = "https";
-          Host = "${config.secrets.netbird.publicDomain}:443";
+          Host = "${netbirdPublicDomain}:443";
         };
         login = {
           enable = true;
@@ -499,4 +414,8 @@ in {
       };
     };
   };
+
+  sops.templates."caddy-env".content = "CF_API_TOKEN=${config.sops.placeholder."cloudflare/api-token"}";
+
+  systemd.services.caddy.serviceConfig.EnvironmentFile = config.sops.templates."caddy-env".path;
 }
