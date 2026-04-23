@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 ghcr.io/openclaw/openclaw:latest@sha256:01325e7d5c0e273d9f3495fd39b8b811c28b120be4dbe5acee0e12a433e3d2a2
+FROM --platform=linux/amd64 ghcr.io/openclaw/openclaw:latest@sha256:639fc648f1e2cb9137cd2d4513038e3b5efdebc94a6bd7fbef42c908005945f4
 
 USER root
 
