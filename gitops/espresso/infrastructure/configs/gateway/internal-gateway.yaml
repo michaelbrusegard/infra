@@ -1,0 +1,24 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: internal
+  namespace: gateway
+spec:
+  addresses:
+    - type: IPAddress
+      value: 10.0.188.3
+    - type: IPAddress
+      value: fd7a:115c:a1e0:188::3
+  gatewayClassName: cilium
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-tls
+            namespace: gateway
+      allowedRoutes:
+        namespaces:
+          from: All

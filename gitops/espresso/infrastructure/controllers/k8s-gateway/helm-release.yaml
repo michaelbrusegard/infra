@@ -1,0 +1,40 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: k8s-gateway
+  namespace: k8s-gateway
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: k8s-gateway
+      version: "2.4.x"
+      sourceRef:
+        kind: HelmRepository
+        name: k8s-gateway
+        namespace: flux-system
+      interval: 1h
+  values:
+    domain: gullhaugveien.michaelbrusegard.com
+    watchedResources:
+      - HTTPRoute
+      - Service
+    ttl: 300
+    service:
+      type: LoadBalancer
+      port: 53
+      useTcp: true
+      ipFamilyPolicy: PreferDualStack
+      ipFamilies:
+        - IPv4
+        - IPv6
+      annotations:
+        lbipam.cilium.io/ips: "10.0.188.5,fd7a:115c:a1e0:188::5"
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 128Mi

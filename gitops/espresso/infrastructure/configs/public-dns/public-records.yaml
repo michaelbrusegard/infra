@@ -1,0 +1,22 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: public-records
+  namespace: gateway
+spec:
+  endpoints:
+    - dnsName: id.gullhaugveien.michaelbrusegard.com
+      recordTTL: 300
+      recordType: CNAME
+      targets:
+        - gullhaugveien.michaelbrusegard.com
+    - dnsName: status.gullhaugveien.michaelbrusegard.com
+      recordTTL: 300
+      recordType: CNAME
+      targets:
+        - gullhaugveien.michaelbrusegard.com
+    - dnsName: netbird.gullhaugveien.michaelbrusegard.com
+      recordTTL: 300
+      recordType: CNAME
+      targets:
+        - gullhaugveien.michaelbrusegard.com
