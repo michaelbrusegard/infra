@@ -5,7 +5,7 @@ metadata:
   namespace: netbird
 spec:
   parentRefs:
-    - name: internal
+    - name: public
       namespace: gateway
       sectionName: https
   hostnames:
@@ -103,7 +103,7 @@ metadata:
   namespace: netbird
 spec:
   parentRefs:
-    - name: public
+    - name: internal
       namespace: gateway
       sectionName: https
   hostnames:
