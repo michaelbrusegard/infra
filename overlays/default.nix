@@ -50,6 +50,7 @@ in
           postgresql
           lazysql
           colima
+          element-desktop
           ;
         ruff-unstable = pkgs-unstable.ruff;
         eslint = pkgs-unstable.eslint.overrideAttrs (old: {
