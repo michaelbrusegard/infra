@@ -6,17 +6,14 @@ metadata:
 spec:
   endpoints:
     - dnsName: id.gullhaugveien.michaelbrusegard.com
-      recordTTL: 300
       recordType: CNAME
       targets:
         - router.gullhaugveien.michaelbrusegard.com
     - dnsName: status.gullhaugveien.michaelbrusegard.com
-      recordTTL: 300
       recordType: CNAME
       targets:
         - router.gullhaugveien.michaelbrusegard.com
     - dnsName: netbird.gullhaugveien.michaelbrusegard.com
-      recordTTL: 300
       recordType: CNAME
       targets:
         - router.gullhaugveien.michaelbrusegard.com
