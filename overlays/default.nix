@@ -51,7 +51,6 @@ in
           lazysql
           colima
           element-desktop
-          unifi-controller
           ;
         ruff-unstable = pkgs-unstable.ruff;
         eslint = pkgs-unstable.eslint.overrideAttrs (old: {
