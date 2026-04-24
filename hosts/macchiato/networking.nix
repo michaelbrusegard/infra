@@ -259,7 +259,7 @@ in {
       enable = true;
       package = pkgs.caddy.withPlugins {
         plugins = ["github.com/caddy-dns/cloudflare@v0.1.1-0.20250417221932-72e1178d357a"];
-        hash = "sha256-mMzsy+dA1bYFFfAxgMHeDttt6Vn063zPJ8/9jByB70s=";
+        hash = "sha256-hwlE1lHc9Nt0pZ075SRHHnDSmfwbBHw/eEhJjr8t3HY=";
       };
       virtualHosts = {
         "https://${homebridgeDomain}" = {
