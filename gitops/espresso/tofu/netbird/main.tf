@@ -167,18 +167,27 @@ resource "netbird_policy" "media_admin_access" {
 
 resource "netbird_policy" "media_access" {
   name        = "Media Access"
-  description = "Allow users and admins to access media resources"
+  description = "Allow users to access media resources"
   enabled     = true
 
   rule {
-    name          = "Users and admins to media"
+    name          = "Users to media"
     action        = "accept"
     bidirectional = false
     enabled       = true
     protocol      = "all"
-    sources       = [netbird_group.users.id, netbird_group.admins.id]
+    sources       = [netbird_group.users.id]
     destinations  = [netbird_group.media.id]
   }
+}
+
+resource "netbird_account_settings" "main" {
+  user_approval_required       = false
+  groups_propagation_enabled   = true
+  jwt_groups_enabled           = true
+  jwt_groups_claim_name        = "groups"
+  jwt_allow_groups             = ["Users"]
+  routing_peer_dns_resolution_enabled = true
 }
 
 resource "netbird_policy" "infra_access" {
