@@ -49,6 +49,7 @@ in
           vtsls
           postgresql
           lazysql
+          colima
           ;
         ruff-unstable = pkgs-unstable.ruff;
         eslint = pkgs-unstable.eslint.overrideAttrs (old: {
