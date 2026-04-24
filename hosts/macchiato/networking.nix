@@ -1,8 +1,4 @@
-{
-  config,
-  pkgs,
-  ...
-}: let
+{config, ...}: let
   wanInterface = "enp2s0";
   clientInterfaces = ["enp3s0" "enp4s0"];
   serverInterfaces = ["enp5s0" "enp1s0f0" "enp1s0f1"];
@@ -255,34 +251,6 @@ in {
       '';
     };
 
-    caddy = {
-      enable = true;
-      package = pkgs.caddy.withPlugins {
-        plugins = ["github.com/caddy-dns/cloudflare@v0.1.1-0.20250417221932-72e1178d357a"];
-        hash = "sha256-hwlE1lHc9Nt0pZ075SRHHnDSmfwbBHw/eEhJjr8t3HY=";
-      };
-      virtualHosts = {
-        "https://${homebridgeDomain}" = {
-          listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
-          extraConfig = ''
-            tls {
-              dns cloudflare {env.CF_API_TOKEN}
-            }
-            reverse_proxy 127.0.0.1:8581
-          '';
-        };
-        "https://${zigbeeDomain}" = {
-          listenAddresses = ["10.0.186.1" "fd7a:115c:a1e0:186::1"];
-          extraConfig = ''
-            tls {
-              dns cloudflare {env.CF_API_TOKEN}
-            }
-            reverse_proxy 127.0.0.1:8082
-          '';
-        };
-      };
-    };
-
     # Bind Homebridge to the client VLAN so HomeKit devices can discover it
     homebridge.settings.bridge.bind = ["10.0.186.1"];
 
@@ -395,8 +363,6 @@ in {
       };
       customDNS.mapping = {
         "${routerDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-        "${homebridgeDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-        "${zigbeeDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
       };
     };
 
@@ -417,10 +383,4 @@ in {
     };
   };
 
-  sops.templates."caddy-env" = {
-    content = "CF_API_TOKEN=${config.sops.placeholder."cloudflare/api-token"}";
-    owner = "caddy";
-  };
-
-  systemd.services.caddy.serviceConfig.EnvironmentFile = config.sops.templates."caddy-env".path;
 }
