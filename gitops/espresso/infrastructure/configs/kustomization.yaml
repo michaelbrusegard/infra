@@ -15,3 +15,4 @@ resources:
   - public-dns
   - homebridge
   - zigbee2mqtt
+  - netbird-tofu
