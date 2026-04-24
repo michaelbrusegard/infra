@@ -17,3 +17,7 @@ spec:
       recordType: CNAME
       targets:
         - router.gullhaugveien.michaelbrusegard.com
+    - dnsName: netbird-admin.gullhaugveien.michaelbrusegard.com
+      recordType: CNAME
+      targets:
+        - router.gullhaugveien.michaelbrusegard.com
