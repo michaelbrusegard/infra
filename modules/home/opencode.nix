@@ -12,7 +12,7 @@
     enable = true;
     settings = {
       autoupdate = false;
-      plugin = ["oh-my-opencode" "@simonwjackson/opencode-direnv"];
+      plugin = ["oh-my-openagent" "@simonwjackson/opencode-direnv"];
     };
     tui.theme = "catppuccin";
     rules = ''
