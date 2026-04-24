@@ -7,6 +7,7 @@
   clientInterfaces = ["enp3s0" "enp4s0"];
   serverInterfaces = ["enp5s0" "enp1s0f0" "enp1s0f1"];
   baseDomain = "gullhaugveien.michaelbrusegard.com";
+  routerDomain = "router.${baseDomain}";
   homebridgeDomain = "homebridge.${baseDomain}";
   zigbeeDomain = "zigbee.${baseDomain}";
   netbirdPublicDomain = "netbird.${baseDomain}";
@@ -213,7 +214,7 @@ in {
   };
 
   services = {
-    cloudflare-dyndns.domains = [baseDomain];
+    cloudflare-dyndns.domains = [routerDomain];
 
     # Advertise IPv6 prefixes on both bridges so LAN devices get public
     # GUA addresses (from ISP prefix delegation) via SLAAC
@@ -393,6 +394,7 @@ in {
         "${baseDomain}" = "10.0.188.5,fd7a:115c:a1e0:188::5";
       };
       customDNS.mapping = {
+        "${routerDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         "${homebridgeDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         "${zigbeeDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
       };
