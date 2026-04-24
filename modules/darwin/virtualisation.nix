@@ -13,7 +13,7 @@
   launchd = {
     user.agents = {
       colima = {
-        command = "${lib.getExe pkgs.colima} start --cpu 4 --memory 8 --disk 100";
+        command = "${lib.getExe pkgs.colima} start --cpu 4 --memory 8 --disk 60 --vm-type vz --vz-rosetta --mount-type virtiofs";
         serviceConfig = {
           EnvironmentVariables = {
             PATH = "${pkgs.docker}/bin:${pkgs.colima}/bin:/usr/local/bin:/usr/bin:/bin";
