@@ -47,6 +47,7 @@ spec:
       enabled: true
     gatewayAPI:
       enabled: true
+      enableAlpn: true
     prometheus:
       enabled: true
       serviceMonitor:
