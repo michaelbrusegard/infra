@@ -12,6 +12,7 @@
       protonmail-desktop
       inkscape-with-extensions
       audacity
+      t3code
     ]
     ++ lib.optionals pkgs.stdenv.isLinux [
       imv

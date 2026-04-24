@@ -17,6 +17,7 @@ in
         dms-greeter = inputs.dms.packages.${system}.default;
         dsearch = inputs.dsearch.packages.${system}.default;
         wezterm = inputs.wezterm.packages.${system}.default;
+        t3code = inputs.t3code.packages.${system}.t3-code;
       }
     )
     (
