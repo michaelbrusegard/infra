@@ -1,0 +1,233 @@
+locals {
+  domain = "gullhaugveien.michaelbrusegard.com"
+
+  resources = {
+    bazarr = {
+      name    = "Bazarr"
+      address = "bazarr.${local.domain}"
+      group   = "media_admin"
+    }
+    cubeman = {
+      name    = "Cubeman"
+      address = "10.0.189.21"
+      group   = "home"
+    }
+    grafana = {
+      name    = "Grafana"
+      address = "grafana.${local.domain}"
+      group   = "infra"
+    }
+    homebridge = {
+      name    = "Homebridge"
+      address = "homebridge.${local.domain}"
+      group   = "home"
+    }
+    hubble = {
+      name    = "Hubble UI"
+      address = "hubble.${local.domain}"
+      group   = "infra"
+    }
+    jellyfin = {
+      name    = "Jellyfin"
+      address = "jellyfin.${local.domain}"
+      group   = "media"
+    }
+    lidarr = {
+      name    = "Lidarr"
+      address = "lidarr.${local.domain}"
+      group   = "media_admin"
+    }
+    navidrome = {
+      name    = "Navidrome"
+      address = "navidrome.${local.domain}"
+      group   = "media"
+    }
+    prowlarr = {
+      name    = "Prowlarr"
+      address = "prowlarr.${local.domain}"
+      group   = "media_admin"
+    }
+    radarr = {
+      name    = "Radarr"
+      address = "radarr.${local.domain}"
+      group   = "media_admin"
+    }
+    seerr = {
+      name    = "Seerr"
+      address = "seerr.${local.domain}"
+      group   = "media"
+    }
+    sonarr = {
+      name    = "Sonarr"
+      address = "sonarr.${local.domain}"
+      group   = "media_admin"
+    }
+    transmission = {
+      name    = "Transmission"
+      address = "transmission.${local.domain}"
+      group   = "media_admin"
+    }
+    unifi = {
+      name    = "Unifi"
+      address = "unifi.${local.domain}"
+      group   = "infra"
+    }
+    uptime = {
+      name    = "Uptime Kuma"
+      address = "uptime.${local.domain}"
+      group   = "infra"
+    }
+    zigbee2mqtt = {
+      name    = "zigbee2mqtt"
+      address = "zigbee.${local.domain}"
+      group   = "home"
+    }
+  }
+}
+
+resource "netbird_group" "admins" {
+  name = "Admins"
+}
+
+resource "netbird_group" "users" {
+  name = "Users"
+}
+
+resource "netbird_group" "routing_peers" {
+  name = "Routing Peers"
+}
+
+resource "netbird_group" "home" {
+  name = "Home"
+}
+
+resource "netbird_group" "infra" {
+  name = "Infra"
+}
+
+resource "netbird_group" "media" {
+  name = "Media"
+}
+
+resource "netbird_group" "media_admin" {
+  name = "Media Admin"
+}
+
+resource "netbird_setup_key" "macchiato" {
+  name                   = "macchiato"
+  type                   = "reusable"
+  usage_limit            = 0
+  allow_extra_dns_labels = true
+  auto_groups            = [netbird_group.routing_peers.id]
+  ephemeral              = false
+  revoked                = false
+}
+
+resource "netbird_network" "gullhaugveien" {
+  name        = "Gullhaugveien"
+  description = "Routed internal services at Gullhaugveien"
+}
+
+resource "netbird_network_router" "macchiato" {
+  network_id  = netbird_network.gullhaugveien.id
+  peer_groups = [netbird_group.routing_peers.id]
+  enabled     = true
+  masquerade  = true
+  metric      = 100
+}
+
+resource "netbird_network_resource" "resources" {
+  for_each = local.resources
+
+  network_id  = netbird_network.gullhaugveien.id
+  name        = each.value.name
+  description = "${each.value.name} at Gullhaugveien"
+  address     = each.value.address
+  groups = [
+    each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "media" ? netbird_group.media.id : netbird_group.media_admin.id,
+  ]
+  enabled = true
+}
+
+resource "netbird_policy" "media_admin_access" {
+  name        = "Media Admin Access"
+  description = "Allow admins to access media admin resources"
+  enabled     = true
+
+  rule {
+    name          = "Admins to media admin"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.admins.id]
+    destinations  = [netbird_group.media_admin.id]
+  }
+}
+
+resource "netbird_policy" "media_access" {
+  name        = "Media Access"
+  description = "Allow users and admins to access media resources"
+  enabled     = true
+
+  rule {
+    name          = "Users and admins to media"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.users.id, netbird_group.admins.id]
+    destinations  = [netbird_group.media.id]
+  }
+}
+
+resource "netbird_policy" "infra_access" {
+  name        = "Infra Access"
+  description = "Allow admins to access infra resources"
+  enabled     = true
+
+  rule {
+    name          = "Admins to infra"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.admins.id]
+    destinations  = [netbird_group.infra.id]
+  }
+}
+
+resource "netbird_policy" "home_access" {
+  name        = "Home Access"
+  description = "Allow admins to access home resources"
+  enabled     = true
+
+  rule {
+    name          = "Admins to home"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.admins.id]
+    destinations  = [netbird_group.home.id]
+  }
+}
+
+resource "netbird_nameserver_group" "macchiato_blocky_dns" {
+  name        = "Macchiato Blocky DNS"
+  description = "Blocky DNS on macchiato for Gullhaugveien domain"
+  enabled     = true
+  primary     = false
+  domains     = [local.domain]
+  groups      = [netbird_group.admins.id, netbird_group.users.id]
+
+  nameservers = [
+    {
+      ip      = var.macchiato_blocky_dns_ip
+      ns_type = "udp"
+      port    = 53
+    }
+  ]
+
+  search_domains_enabled = true
+}
