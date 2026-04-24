@@ -9,14 +9,14 @@ spec:
       recordTTL: 300
       recordType: CNAME
       targets:
-        - gullhaugveien.michaelbrusegard.com
+        - router.gullhaugveien.michaelbrusegard.com
     - dnsName: status.gullhaugveien.michaelbrusegard.com
       recordTTL: 300
       recordType: CNAME
       targets:
-        - gullhaugveien.michaelbrusegard.com
+        - router.gullhaugveien.michaelbrusegard.com
     - dnsName: netbird.gullhaugveien.michaelbrusegard.com
       recordTTL: 300
       recordType: CNAME
       targets:
-        - gullhaugveien.michaelbrusegard.com
+        - router.gullhaugveien.michaelbrusegard.com
