@@ -13,3 +13,5 @@ resources:
   - cert-manager
   - gateway
   - public-dns
+  - homebridge
+  - zigbee2mqtt
