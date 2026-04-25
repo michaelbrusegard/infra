@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 nousresearch/hermes-agent:v2026.4.23
+FROM nousresearch/hermes-agent:v2026.4.23
 
 ARG KUBECTL_VERSION=v1.31.4
 ARG KUBECTL_SHA256=298e19e9c6c17199011404278f0ff8168a7eca4217edad9097af577023a5620f
@@ -18,6 +18,8 @@ ARG RIPGREP_VERSION=15.1.0
 ARG RIPGREP_SHA256=1c9297be4a084eea7ecaedf93eb03d058d6faae29bbc57ecdaf5063921491599
 ARG MCPORTER_VERSION=0.9.0
 ARG SUMMARIZE_VERSION=0.13.0
+
+USER root
 
 RUN set -eux; \
     apt-get update; \
