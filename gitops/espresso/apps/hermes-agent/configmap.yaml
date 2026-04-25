@@ -1,121 +1,17 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: openclaw-config
-  namespace: openclaw
+  name: hermes-agent-bootstrap
+  namespace: hermes-agent
 data:
-  openclaw.json: |
-    {
-      "gateway": {
-        "mode": "local",
-        "bind": "lan",
-        "port": 18789,
-        "auth": {
-          "mode": "token"
-        },
-        "trustedProxies": ["10.0.186.0/24", "10.0.187.0/24", "10.0.188.0/24", "10.42.0.0/16"],
-        "controlUi": {
-          "enabled": true,
-          "allowedOrigins": [
-            "http://10.0.188.50",
-            "https://openclaw.gullhaugveien.michaelbrusegard.com"
-          ]
-        }
-      },
-      "agents": {
-        "defaults": {
-          "workspace": "~/.openclaw/workspace",
-          "model": {
-            "primary": "zai/glm-5.1",
-            "fallbacks": ["zai/glm-5", "zai/glm-4.5"]
-          },
-          "imageModel": "zai/glm-4.5v",
-          "pdfModel": "zai/glm-4.5v",
-          "imageGenerationModel": "zai/cogview-4-250304",
-          "memorySearch": {
-            "provider": "ollama",
-            "model": "nomic-embed-text"
-          },
-          "compaction": {
-            "mode": "safeguard",
-            "model": "zai/glm-4.5",
-            "memoryFlush": {
-              "enabled": true,
-              "softThresholdTokens": 6000
-            }
-          }
-        },
-        "list": [
-          {
-            "id": "default",
-            "name": "OpenClaw Assistant",
-            "workspace": "~/.openclaw/workspace"
-          }
-        ]
-      },
-      "models": {
-        "providers": {
-          "ollama": {
-            "api": "ollama",
-            "baseUrl": "http://ollama.ollama.svc.cluster.local:11434",
-            "apiKey": "ollama",
-            "models": [
-              {
-                "id": "nomic-embed-text",
-                "name": "Nomic Embed Text"
-              }
-            ]
-          }
-        }
-      },
-      "plugins": {
-        "entries": {
-          "memory-core": {
-            "config": {
-              "dreaming": {
-                "enabled": true,
-                "frequency": "0 3 * * *"
-              }
-            }
-          },
-          "active-memory": {
-            "enabled": true,
-            "config": {
-              "enabled": true,
-              "agents": ["default"],
-              "allowedChatTypes": ["direct"],
-              "queryMode": "recent",
-              "promptStyle": "balanced",
-              "timeoutMs": 15000,
-              "model": "zai/glm-4.5"
-            }
-          },
-          "llm-task": {
-            "enabled": true,
-            "config": {
-              "defaultModel": "zai/glm-5"
-            }
-          }
-        }
-      },
-      "skills": {
-        "allowBundled": [
-          "clawhub",
-          "coding-agent",
-          "github",
-          "gh-issues",
-          "healthcheck",
-          "himalaya",
-          "mcporter",
-          "session-logs",
-          "skill-creator",
-          "summarize",
-          "taskflow",
-          "weather"
-        ]
-      },
-      "cron": { "enabled": true }
-    }
+  config.yaml: |
+    model:
+      provider: zai
+      default: glm-5
+
+    terminal:
+      backend: local
+      cwd: /opt/data/workspace
   SKILL.md: |
     ---
     name: espresso-cluster
@@ -202,7 +98,7 @@ data:
     | Bazarr | 10.0.188.46 |
     | Lidarr | 10.0.188.47 |
     | Navidrome | 10.0.188.48 |
-    | OpenClaw | 10.0.188.50 |
+    | Hermes Agent | hermes.gullhaugveien.michaelbrusegard.com |
 
     ## Diagnostic Playbook
 

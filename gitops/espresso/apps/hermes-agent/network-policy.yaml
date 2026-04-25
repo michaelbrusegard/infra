@@ -1,12 +1,12 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: openclaw
-  namespace: openclaw
+  name: hermes-agent
+  namespace: hermes-agent
 spec:
   endpointSelector:
     matchLabels:
-      app: openclaw
+      app: hermes-agent
   ingress:
     - fromEntities:
         - host
@@ -14,7 +14,7 @@ spec:
         - kube-apiserver
       toPorts:
         - ports:
-            - port: "18789"
+            - port: "9119"
               protocol: TCP
     - fromCIDR:
         - 10.0.186.0/24
@@ -24,7 +24,7 @@ spec:
         - 100.102.0.0/16
       toPorts:
         - ports:
-            - port: "18789"
+            - port: "9119"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
@@ -32,7 +32,21 @@ spec:
             k8s:app: uptime-kuma
       toPorts:
         - ports:
-            - port: "18789"
+            - port: "8642"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: hermes-agent
+      toPorts:
+        - ports:
+            - port: "8642"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: gateway
+      toPorts:
+        - ports:
+            - port: "9119"
               protocol: TCP
   egress:
     - toEndpoints:
@@ -47,16 +61,6 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: ollama
-            k8s:app: ollama
-      toPorts:
-        - ports:
-            - port: "11434"
-              protocol: TCP
-    - toEntities:
-        - kube-apiserver
     - toCIDRSet:
         - cidr: 10.42.0.0/16
         - cidr: 10.43.0.0/16

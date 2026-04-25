@@ -1,16 +1,16 @@
-name: OpenClaw Image
+name: Hermes Agent Image
 
 'on':
   push:
     branches:
       - main
     paths:
-      - gitops/espresso/apps/openclaw/Dockerfile
-      - .github/workflows/openclaw-image.yaml
+      - gitops/espresso/apps/hermes-agent/Dockerfile
+      - .github/workflows/hermes-agent-image.yaml
   pull_request:
     paths:
-      - gitops/espresso/apps/openclaw/Dockerfile
-      - .github/workflows/openclaw-image.yaml
+      - gitops/espresso/apps/hermes-agent/Dockerfile
+      - .github/workflows/hermes-agent-image.yaml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,8 +18,8 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: michaelbrusegard/openclaw-tools
-  IMAGE_REF: ghcr.io/michaelbrusegard/openclaw-tools
+  IMAGE_NAME: michaelbrusegard/hermes-agent-tools
+  IMAGE_REF: ghcr.io/michaelbrusegard/hermes-agent-tools
 
 jobs:
   build-and-publish:
@@ -45,8 +45,8 @@ jobs:
         id: build
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
         with:
-          context: gitops/espresso/apps/openclaw
-          file: gitops/espresso/apps/openclaw/Dockerfile
+          context: gitops/espresso/apps/hermes-agent
+          file: gitops/espresso/apps/hermes-agent/Dockerfile
           platforms: linux/amd64
           push: ${{ github.event_name == 'push' }}
           tags: |
@@ -56,7 +56,7 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
 
-      - name: Update OpenClaw image reference
+      - name: Update Hermes Agent image reference
         if: github.event_name == 'push'
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
@@ -68,17 +68,16 @@ jobs:
           import os
           import re
 
-          path = Path("gitops/espresso/apps/openclaw/statefulset.yaml")
+          path = Path("gitops/espresso/apps/hermes-agent/statefulset.yaml")
           image = f"{os.environ['IMAGE_REF']}:sha-{os.environ['GIT_SHA']}@{os.environ['DIGEST']}"
           content = path.read_text()
-          updated = re.sub(
-              r"(?m)^\s*image:\s*ghcr\.io/michaelbrusegard/openclaw-tools:.*$",
+          updated, replacements = re.subn(
+              r"(?m)^\s*image:\s*ghcr\.io/michaelbrusegard/hermes-agent-tools:.*$",
               f"          image: {image}",
               content,
-              count=1,
           )
-          if updated == content:
-              raise SystemExit("Failed to update OpenClaw image reference")
+          if replacements != 2:
+              raise SystemExit("Failed to update Hermes Agent image reference")
           path.write_text(updated)
           PY
 
@@ -90,10 +89,10 @@ jobs:
           GIT_COMMITTER_NAME: github-actions[bot]
           GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: |
-          if git diff --quiet -- gitops/espresso/apps/openclaw/statefulset.yaml; then
+          if git diff --quiet -- gitops/espresso/apps/hermes-agent/statefulset.yaml; then
             exit 0
           fi
 
-          git add gitops/espresso/apps/openclaw/statefulset.yaml
-          git commit -m "chore(openclaw): update image digest [skip ci]"
+          git add gitops/espresso/apps/hermes-agent/statefulset.yaml
+          git commit -m "chore(hermes-agent): update image digest [skip ci]"
           git push
