@@ -4,8 +4,6 @@
   serverInterfaces = ["enp5s0" "enp1s0f0" "enp1s0f1"];
   baseDomain = "gullhaugveien.michaelbrusegard.com";
   routerDomain = "router.${baseDomain}";
-  homebridgeDomain = "homebridge.${baseDomain}";
-  zigbeeDomain = "zigbee.${baseDomain}";
   netbirdPublicDomain = "netbird.${baseDomain}";
 in {
   boot.kernel.sysctl = {
@@ -382,5 +380,4 @@ in {
       };
     };
   };
-
 }
