@@ -1,0 +1,150 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hermes-agent
+  namespace: hermes-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hermes-agent
+  serviceName: hermes-agent-internal
+  template:
+    metadata:
+      labels:
+        app: hermes-agent
+    spec:
+      serviceAccountName: hermes-agent
+      automountServiceAccountToken: true
+      securityContext:
+        fsGroup: 10000
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: bootstrap-config
+          image: busybox:1.37@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e
+          command:
+            - sh
+            - -c
+            - |
+              install -m 0644 /bootstrap-config/config.yaml /opt/data/config.yaml
+              install -m 0640 /bootstrap-secret/.env /opt/data/.env
+              mkdir -p /opt/data/workspace /opt/data/skills/espresso-cluster
+              install -m 0644 /bootstrap-config/SKILL.md /opt/data/skills/espresso-cluster/SKILL.md
+              chown -R 10000:10000 /opt/data
+          resources:
+            requests:
+              memory: 16Mi
+              cpu: 25m
+            limits:
+              memory: 32Mi
+              cpu: 50m
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+            - name: bootstrap-config
+              mountPath: /bootstrap-config
+            - name: bootstrap-secret
+              mountPath: /bootstrap-secret
+      containers:
+        - name: gateway
+          image: ghcr.io/michaelbrusegard/hermes-agent-tools:main
+          args:
+            - gateway
+            - run
+          ports:
+            - containerPort: 8642
+              name: gateway
+          env:
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: MESSAGING_CWD
+              value: /opt/data/workspace
+            - name: API_SERVER_ENABLED
+              value: "true"
+            - name: API_SERVER_HOST
+              value: 0.0.0.0
+            - name: API_SERVER_PORT
+              value: "8642"
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 250m
+            limits:
+              memory: 2Gi
+              cpu: "1"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: gateway
+            periodSeconds: 10
+            failureThreshold: 18
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: gateway
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: gateway
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+        - name: dashboard
+          image: ghcr.io/michaelbrusegard/hermes-agent-tools:main
+          args:
+            - dashboard
+            - --host
+            - 0.0.0.0
+          ports:
+            - containerPort: 9119
+              name: dashboard
+          env:
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: GATEWAY_HEALTH_URL
+              value: http://127.0.0.1:8642
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 1Gi
+              cpu: 500m
+          startupProbe:
+            tcpSocket:
+              port: dashboard
+            periodSeconds: 10
+            failureThreshold: 18
+          livenessProbe:
+            tcpSocket:
+              port: dashboard
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: dashboard
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+      volumes:
+        - name: bootstrap-config
+          configMap:
+            name: hermes-agent-bootstrap
+        - name: bootstrap-secret
+          secret:
+            secretName: hermes-agent-env
+            items:
+              - key: .env
+                path: .env
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: nvme-ha

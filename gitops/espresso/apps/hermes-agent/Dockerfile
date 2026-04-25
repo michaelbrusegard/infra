@@ -1,6 +1,4 @@
-FROM --platform=linux/amd64 ghcr.io/openclaw/openclaw:latest@sha256:639fc648f1e2cb9137cd2d4513038e3b5efdebc94a6bd7fbef42c908005945f4
-
-USER root
+FROM --platform=linux/amd64 nousresearch/hermes-agent:v2026.4.23
 
 ARG KUBECTL_VERSION=v1.31.4
 ARG KUBECTL_SHA256=298e19e9c6c17199011404278f0ff8168a7eca4217edad9097af577023a5620f
@@ -18,7 +16,6 @@ ARG HIMALAYA_VERSION=1.2.0
 ARG HIMALAYA_SHA256=e04e6382e3e664ef34b01afa1a2216113194a2975d2859727647b22d9b36d4e4
 ARG RIPGREP_VERSION=15.1.0
 ARG RIPGREP_SHA256=1c9297be4a084eea7ecaedf93eb03d058d6faae29bbc57ecdaf5063921491599
-ARG CLAWHUB_VERSION=0.9.0
 ARG MCPORTER_VERSION=0.9.0
 ARG SUMMARIZE_VERSION=0.13.0
 
@@ -65,6 +62,4 @@ RUN set -eux; \
     mv /tmp/ripgrep-${RIPGREP_VERSION}-x86_64-unknown-linux-musl/rg /usr/local/bin/rg; \
     chmod +x /usr/local/bin/rg; \
     rm -rf /tmp/ripgrep.tar.gz /tmp/ripgrep-${RIPGREP_VERSION}-x86_64-unknown-linux-musl; \
-    npm install -g clawhub@${CLAWHUB_VERSION} mcporter@${MCPORTER_VERSION} @steipete/summarize@${SUMMARIZE_VERSION}
-
-USER 1000
+    npm install -g mcporter@${MCPORTER_VERSION} @steipete/summarize@${SUMMARIZE_VERSION}

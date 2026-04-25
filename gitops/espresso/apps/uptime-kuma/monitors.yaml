@@ -292,10 +292,10 @@ data:
         "active": true
       },
       {
-        "name": "OpenClaw",
+        "name": "Hermes Agent Gateway",
         "type": "http",
         "parent_name": "apps[0]",
-        "url": "http://openclaw.openclaw.svc.cluster.local/readyz",
+        "url": "http://hermes-agent-gateway.hermes-agent.svc.cluster.local:8642/health",
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,

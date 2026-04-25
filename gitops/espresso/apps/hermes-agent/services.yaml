@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-agent-internal
+  namespace: hermes-agent
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: hermes-agent
+  ports:
+    - name: gateway
+      port: 8642
+      targetPort: gateway
+    - name: dashboard
+      port: 9119
+      targetPort: dashboard
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-agent-gateway
+  namespace: hermes-agent
+spec:
+  selector:
+    app: hermes-agent
+  ports:
+    - name: http
+      port: 8642
+      targetPort: gateway
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-agent
+  namespace: hermes-agent
+spec:
+  selector:
+    app: hermes-agent
+  ports:
+    - name: http
+      port: 80
+      targetPort: dashboard
