@@ -1,7 +1,7 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-otbr.url = "github:mrene/nixpkgs/openthread-border-router";
     nix-darwin = {
       url = "github:lnl7/nix-darwin/nix-darwin-25.11";
