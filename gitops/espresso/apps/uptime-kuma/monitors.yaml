@@ -33,9 +33,10 @@ data:
       },
       {
         "name": "RustFS",
-        "type": "http",
+        "type": "port",
         "parent_name": "infrastructure[0]",
-        "url": "http://rustfs.rustfs.svc.cluster.local:9000/health",
+        "hostname": "rustfs-svc.rustfs.svc.cluster.local",
+        "port": 9000,
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
