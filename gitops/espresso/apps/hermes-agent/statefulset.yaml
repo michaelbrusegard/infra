@@ -28,8 +28,7 @@ spec:
             - |
               install -m 0644 /bootstrap-config/config.yaml /opt/data/config.yaml
               install -m 0640 /bootstrap-secret/.env /opt/data/.env
-              mkdir -p /opt/data/workspace /opt/data/skills/espresso-cluster
-              install -m 0644 /bootstrap-config/SKILL.md /opt/data/skills/espresso-cluster/SKILL.md
+              mkdir -p /opt/data/workspace
               chown -R 10000:10000 /opt/data
           resources:
             requests:
