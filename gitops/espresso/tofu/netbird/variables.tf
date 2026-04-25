@@ -12,5 +12,5 @@ variable "netbird_management_url" {
 variable "macchiato_blocky_dns_ip" {
   description = "IP of Blocky on macchiato reachable from NetBird peers"
   type        = string
-  default     = "10.0.187.1"
+  default     = "100.105.105.87"
 }
