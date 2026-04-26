@@ -18,12 +18,12 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: michaelbrusegard/hermes-agent-tools
-  IMAGE_REF: ghcr.io/michaelbrusegard/hermes-agent-tools
+  IMAGE_NAME: michaelbrusegard/hermes-agent
+  IMAGE_REF: ghcr.io/michaelbrusegard/hermes-agent
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       packages: write
@@ -72,7 +72,7 @@ jobs:
           image = f"{os.environ['IMAGE_REF']}:sha-{os.environ['GIT_SHA']}@{os.environ['DIGEST']}"
           content = path.read_text()
           updated, replacements = re.subn(
-              r"(?m)^\s*image:\s*ghcr\.io/michaelbrusegard/hermes-agent-tools:.*$",
+              r"(?m)^\s*image:\s*ghcr\.io/michaelbrusegard/hermes-agent:.*$",
               f"          image: {image}",
               content,
           )
