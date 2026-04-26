@@ -21,7 +21,7 @@ resource "postgresql_grant" "honcho_connect" {
   database    = postgresql_database.honcho.name
   role        = postgresql_role.honcho.name
   object_type = "database"
-  privileges  = ["CONNECT"]
+  privileges  = ["CONNECT", "CREATE", "TEMPORARY"]
 }
 
 resource "postgresql_extension" "vector" {
