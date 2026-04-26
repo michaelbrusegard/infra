@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   filter:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       nix: ${{ steps.filter.outputs.nix }}
       gitops: ${{ steps.filter.outputs.gitops }}
@@ -29,8 +29,8 @@ jobs:
               - '.github/workflows/ci.yaml'
   code-quality:
     needs: filter
-    if: needs.filter.outputs.nix == 'true' || needs.filter.outputs.yaml == 'true'
-    runs-on: ubuntu-latest
+    if: needs.filter.outputs.nix == 'true'
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
@@ -53,13 +53,13 @@ jobs:
           - host: lungo
             os: macos-latest
           - host: ristretto
-            os: ubuntu-latest
+            os: ubuntu-24.04
           - host: macchiato
-            os: ubuntu-latest
+            os: ubuntu-24.04
           - host: espresso-0
-            os: ubuntu-latest
+            os: ubuntu-24.04
           - host: leggero
-            os: ubuntu-latest
+            os: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
@@ -76,7 +76,7 @@ jobs:
   validate-kubernetes:
     needs: filter
     if: needs.filter.outputs.gitops == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
