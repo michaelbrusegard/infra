@@ -56,8 +56,6 @@ spec:
           env:
             - name: HERMES_HOME
               value: /opt/data
-            - name: MESSAGING_CWD
-              value: /opt/data/workspace
             - name: API_SERVER_ENABLED
               value: "true"
             - name: API_SERVER_HOST
