@@ -196,11 +196,11 @@ resource "netbird_policy" "media_access" {
 }
 
 resource "netbird_account_settings" "main" {
-  user_approval_required       = false
-  groups_propagation_enabled   = true
-  jwt_groups_enabled           = true
-  jwt_groups_claim_name        = "groups"
-  jwt_allow_groups             = ["Users"]
+  user_approval_required              = false
+  groups_propagation_enabled          = true
+  jwt_groups_enabled                  = true
+  jwt_groups_claim_name               = "groups"
+  jwt_allow_groups                    = ["Users"]
   routing_peer_dns_resolution_enabled = true
 }
 
