@@ -51,6 +51,9 @@ in
           lazysql
           colima
           element-desktop
+          flux
+          kubectl
+          kubernetes-helm
           ;
         ruff-unstable = pkgs-unstable.ruff;
         eslint = pkgs-unstable.eslint.overrideAttrs (old: {
