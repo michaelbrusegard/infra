@@ -14,5 +14,6 @@ resources:
   - gateway
   - public-dns
   - homebridge
+  - unifi
   - zigbee2mqtt
   - netbird-tofu
