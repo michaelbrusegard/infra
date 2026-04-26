@@ -5,6 +5,10 @@ resources:
   - rbac.yaml
   - configmap.yaml
   - statefulset.yaml
+  - honcho-deployments.yaml
+  - signal-cli-statefulset.yaml
   - services.yaml
   - network-policy.yaml
+  - honcho-network-policy.yaml
+  - signal-cli-network-policy.yaml
   - httproute.yaml

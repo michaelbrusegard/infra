@@ -19,6 +19,48 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: honcho
+  namespace: hermes-agent
+spec:
+  selector:
+    app: honcho
+    component: api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signal-cli-internal
+  namespace: hermes-agent
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: signal-cli
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signal-cli
+  namespace: hermes-agent
+spec:
+  selector:
+    app: signal-cli
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: hermes-agent-gateway
   namespace: hermes-agent
 spec:
