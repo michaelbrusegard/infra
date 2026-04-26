@@ -82,6 +82,16 @@ locals {
       address = "zigbee.${local.domain}"
       group   = "home"
     }
+    pocket_id = {
+      name    = "Pocket ID"
+      address = "id.${local.domain}"
+      group   = "public"
+    }
+    status = {
+      name    = "Status"
+      address = "status.${local.domain}"
+      group   = "public"
+    }
   }
 }
 
@@ -111,6 +121,10 @@ resource "netbird_group" "media" {
 
 resource "netbird_group" "media_admin" {
   name = "Media Admin"
+}
+
+resource "netbird_group" "public" {
+  name = "Public"
 }
 
 resource "netbird_setup_key" "macchiato" {
@@ -144,7 +158,7 @@ resource "netbird_network_resource" "resources" {
   description = "${each.value.name} at Gullhaugveien"
   address     = each.value.address
   groups = [
-    each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "media" ? netbird_group.media.id : netbird_group.media_admin.id,
+    each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "media" ? netbird_group.media.id : each.value.group == "public" ? netbird_group.public.id : netbird_group.media_admin.id,
   ]
   enabled = true
 }
@@ -203,6 +217,22 @@ resource "netbird_policy" "infra_access" {
     protocol      = "all"
     sources       = [netbird_group.admins.id]
     destinations  = [netbird_group.infra.id]
+  }
+}
+
+resource "netbird_policy" "public_access" {
+  name        = "Public Access"
+  description = "Allow users to access public resources"
+  enabled     = true
+
+  rule {
+    name          = "Users to public"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.users.id]
+    destinations  = [netbird_group.public.id]
   }
 }
 
