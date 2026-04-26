@@ -1,4 +1,8 @@
-{lib, pkgs, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   nixpkgs.config.permittedInsecurePackages = [
     "unifi-controller-9.5.21"
   ];
