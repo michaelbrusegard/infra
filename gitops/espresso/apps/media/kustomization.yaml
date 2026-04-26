@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - shared-pvc.yaml
+  - transmission-configmap.yaml
   - transmission-statefulset.yaml
   - prowlarr-statefulset.yaml
   - radarr-statefulset.yaml
