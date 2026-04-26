@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: ghcr.io/michaelbrusegard/postgres:main
+          image: ghcr.io/michaelbrusegard/postgres:sha-ba100a49fbdb637eaf8fb59be207d9263525cd61@sha256:9cb3bef2e9a413a76e98a0a8f1074b42e978097bec6e5626be80dadbae4e5944
           args:
             - -c
             - shared_preload_libraries=pg_cron,pgaudit,pg_stat_statements,pg_stat_kcache,pg_wait_sampling,pglogical,timescaledb
