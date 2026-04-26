@@ -22,6 +22,16 @@ data:
         "active": true
       },
       {
+        "name": "Ollama",
+        "type": "http",
+        "parent_name": "infrastructure[0]",
+        "url": "http://ollama.ollama.svc.cluster.local:11434",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
         "name": "RustFS",
         "type": "port",
         "parent_name": "infrastructure[0]",
