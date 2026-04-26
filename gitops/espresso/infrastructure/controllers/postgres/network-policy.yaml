@@ -24,6 +24,21 @@ spec:
         - ports:
             - port: "5432"
               protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: hermes-agent
+            k8s:app: honcho
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: flux-system
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
