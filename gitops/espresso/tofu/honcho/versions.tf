@@ -1,6 +1,6 @@
 terraform {
   # renovate: datasource=github-releases depName=opentofu/opentofu
-  required_version = "= 1.11.5"
+  required_version = "= 1.11.6"
 
   required_providers {
     postgresql = {
