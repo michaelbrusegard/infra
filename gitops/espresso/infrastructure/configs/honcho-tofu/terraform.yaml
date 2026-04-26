@@ -1,0 +1,28 @@
+apiVersion: infra.contrib.fluxcd.io/v1alpha2
+kind: Terraform
+metadata:
+  name: honcho-infra
+  namespace: flux-system
+spec:
+  path: ./gitops/espresso/tofu/honcho
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 10m
+  approvePlan: auto
+  destroyResourcesOnDeletion: false
+  storeReadablePlan: human
+  backendConfig:
+    secretSuffix: honcho-infra
+  varsFrom:
+    - kind: Secret
+      name: postgres-admin
+      varsKeys:
+        - POSTGRES_USER:pg_admin_user
+        - POSTGRES_PASSWORD:pg_admin_password
+    - kind: Secret
+      name: honcho-db
+      varsKeys:
+        - HONCHO_DB_PASSWORD:honcho_db_password
+  alwaysCleanupRunnerPod: true
