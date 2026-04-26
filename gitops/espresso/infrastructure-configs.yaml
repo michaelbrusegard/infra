@@ -6,6 +6,7 @@ metadata:
 spec:
   dependsOn:
     - name: infrastructure-controllers
+    - name: infrastructure-secrets
   interval: 10m
   path: ./gitops/espresso/infrastructure/configs
   prune: true
