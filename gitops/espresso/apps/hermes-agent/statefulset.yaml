@@ -26,9 +26,12 @@ spec:
             - sh
             - -c
             - |
-              install -m 0644 /bootstrap-config/config.yaml /opt/data/config.yaml
-              install -m 0640 /bootstrap-secret/.env /opt/data/.env
               mkdir -p /opt/data/workspace
+              for file in /bootstrap-config/*; do
+                [ -f "$file" ] || continue
+                install -m 0644 "$file" "/opt/data/$(basename "$file")"
+              done
+              install -m 0640 /bootstrap-secret/.env /opt/data/.env
               chown -R 10000:10000 /opt/data
           resources:
             requests:
@@ -46,7 +49,7 @@ spec:
               mountPath: /bootstrap-secret
       containers:
         - name: gateway
-          image: ghcr.io/michaelbrusegard/hermes-agent-tools:sha-3f7b782b9d6729ec290e340b0bbd080aa69a512f@sha256:9c3a15c225a1ad53672377010c71d184b604a1423f83e618589b86ffa667ec18
+          image: ghcr.io/michaelbrusegard/hermes-agent:main
           args:
             - gateway
             - run
@@ -89,7 +92,7 @@ spec:
             - name: data
               mountPath: /opt/data
         - name: dashboard
-          image: ghcr.io/michaelbrusegard/hermes-agent-tools:sha-3f7b782b9d6729ec290e340b0bbd080aa69a512f@sha256:9c3a15c225a1ad53672377010c71d184b604a1423f83e618589b86ffa667ec18
+          image: ghcr.io/michaelbrusegard/hermes-agent:main
           args:
             - dashboard
             - --host

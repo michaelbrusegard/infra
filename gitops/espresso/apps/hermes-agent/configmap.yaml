@@ -7,8 +7,27 @@ data:
   config.yaml: |
     model:
       provider: zai
-      default: glm-5
+      default: glm-5.1
+
+    compression:
+      enabled: true
+      threshold: 0.50
+      target_ratio: 0.20
+      protect_last_n: 20
+
+    auxiliary:
+      compression:
+        provider: zai
+        model: glm-4.7
+
+    memory:
+      provider: honcho
 
     terminal:
       backend: local
       cwd: /opt/data/workspace
+  honcho.json: |
+    {
+      "workspace": "hermes-agent",
+      "baseUrl": "http://honcho.hermes-agent.svc.cluster.local:8000"
+    }
