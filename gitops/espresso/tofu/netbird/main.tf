@@ -82,11 +82,6 @@ locals {
       address = "zigbee.${local.domain}"
       group   = "home"
     }
-    router = {
-      name    = "Router"
-      address = "router.${local.domain}"
-      group   = "infra"
-    }
     pocket_id = {
       name    = "Pocket ID"
       address = "id.${local.domain}"
@@ -255,6 +250,25 @@ resource "netbird_policy" "home_access" {
     sources       = [netbird_group.admins.id]
     destinations  = [netbird_group.home.id]
   }
+}
+
+resource "netbird_nameserver_group" "router_public_dns" {
+  name        = "Router Public DNS"
+  description = "Public DNS for router domain to bypass hairpin routing through NetBird tunnel"
+  enabled     = true
+  primary     = false
+  domains     = ["router.${local.domain}"]
+  groups      = [netbird_group.admins.id, netbird_group.users.id]
+
+  nameservers = [
+    {
+      ip      = "1.1.1.1"
+      ns_type = "udp"
+      port    = 53
+    }
+  ]
+
+  search_domains_enabled = false
 }
 
 resource "netbird_nameserver_group" "macchiato_blocky_dns" {
