@@ -15,9 +15,13 @@ spec:
         - path:
             type: PathPrefix
             value: /status
-      backendRefs:
-        - name: uptime-kuma
-          port: 80
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+            statusCode: 301
     - matches:
         - path:
             type: PathPrefix
@@ -84,9 +88,13 @@ spec:
         - path:
             type: PathPrefix
             value: /status
-      backendRefs:
-        - name: uptime-kuma
-          port: 80
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+            statusCode: 301
     - matches:
         - path:
             type: PathPrefix

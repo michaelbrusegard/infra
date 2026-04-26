@@ -82,6 +82,11 @@ locals {
       address = "zigbee.${local.domain}"
       group   = "home"
     }
+    router = {
+      name    = "Router"
+      address = "router.${local.domain}"
+      group   = "infra"
+    }
     pocket_id = {
       name    = "Pocket ID"
       address = "id.${local.domain}"
