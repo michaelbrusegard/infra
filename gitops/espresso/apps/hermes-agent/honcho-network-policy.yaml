@@ -1,19 +1,20 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: ollama
-  namespace: ollama
+  name: honcho
+  namespace: hermes-agent
 spec:
   endpointSelector:
     matchLabels:
-      app: ollama
+      app: honcho
   ingress:
     - fromEntities:
         - host
         - remote-node
+        - kube-apiserver
       toPorts:
         - ports:
-            - port: "11434"
+            - port: "8000"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
@@ -21,7 +22,7 @@ spec:
             k8s:app: hermes-agent
       toPorts:
         - ports:
-            - port: "11434"
+            - port: "8000"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
@@ -29,15 +30,7 @@ spec:
             k8s:app: honcho
       toPorts:
         - ports:
-            - port: "11434"
-              protocol: TCP
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: uptime-kuma
-            k8s:app: uptime-kuma
-      toPorts:
-        - ports:
-            - port: "11434"
+            - port: "8000"
               protocol: TCP
   egress:
     - toEndpoints:
@@ -52,3 +45,27 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: postgres
+            k8s:app: postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ollama
+            k8s:app: ollama
+      toPorts:
+        - ports:
+            - port: "11434"
+              protocol: TCP
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP
