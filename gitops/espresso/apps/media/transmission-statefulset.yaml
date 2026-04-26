@@ -27,7 +27,7 @@ spec:
             - mountPath: /data
               name: media-data
         - name: init-transmission-config
-          image: ghcr.io/jqlang/jq:1.7.1@sha256:b7d18fa3eba75a38e2d941a5735988d4399a03e4e49b846fa4eb24cd9691f9de
+          image: ghcr.io/jqlang/jq:1.7.1@sha256:096b83865ad59b5b02841f103f83f45c51318394331bf1995e187ea3be937432
           command:
             - sh
             - -c
