@@ -13,8 +13,19 @@ spec:
   rules:
     - matches:
         - path:
-            type: PathPrefix
+            type: Exact
             value: /status
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /
+            statusCode: 301
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /status/
       filters:
         - type: RequestRedirect
           requestRedirect:
@@ -66,7 +77,7 @@ spec:
           urlRewrite:
             path:
               type: ReplacePrefixMatch
-              replacePrefixMatch: /status
+              replacePrefixMatch: /status/
       backendRefs:
         - name: uptime-kuma
           port: 80
@@ -86,8 +97,19 @@ spec:
   rules:
     - matches:
         - path:
-            type: PathPrefix
+            type: Exact
             value: /status
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /
+            statusCode: 301
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /status/
       filters:
         - type: RequestRedirect
           requestRedirect:
@@ -139,7 +161,7 @@ spec:
           urlRewrite:
             path:
               type: ReplacePrefixMatch
-              replacePrefixMatch: /status
+              replacePrefixMatch: /status/
       backendRefs:
         - name: uptime-kuma
           port: 80
