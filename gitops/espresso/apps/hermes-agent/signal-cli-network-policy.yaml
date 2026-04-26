@@ -1,19 +1,20 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: ollama
-  namespace: ollama
+  name: signal-cli
+  namespace: hermes-agent
 spec:
   endpointSelector:
     matchLabels:
-      app: ollama
+      app: signal-cli
   ingress:
     - fromEntities:
         - host
         - remote-node
+        - kube-apiserver
       toPorts:
         - ports:
-            - port: "11434"
+            - port: "3000"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
@@ -21,23 +22,7 @@ spec:
             k8s:app: hermes-agent
       toPorts:
         - ports:
-            - port: "11434"
-              protocol: TCP
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: hermes-agent
-            k8s:app: honcho
-      toPorts:
-        - ports:
-            - port: "11434"
-              protocol: TCP
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: uptime-kuma
-            k8s:app: uptime-kuma
-      toPorts:
-        - ports:
-            - port: "11434"
+            - port: "3000"
               protocol: TCP
   egress:
     - toEndpoints:
@@ -52,3 +37,11 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP
