@@ -1,21 +1,29 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: hermes-agent
-  namespace: hermes-agent
+  name: pocket-id
+  namespace: pocket-id
 spec:
   endpointSelector:
     matchLabels:
-      app: hermes-agent
+      app: pocket-id
   ingress:
+    # Kubelet HTTP probes and node-forwarded LB traffic
     - fromEntities:
         - host
         - remote-node
-        - kube-apiserver
       toPorts:
         - ports:
-            - port: "9119"
+            - port: "1411"
               protocol: TCP
+    # Gateway API traffic (public + internal gateway)
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "1411"
+              protocol: TCP
+    # LAN and VPN direct access to LB VIP
     - fromCIDR:
         - 10.0.186.0/24
         - fd7a:115c:a1e0:186::/64
@@ -24,28 +32,25 @@ spec:
         - 100.102.0.0/16
       toPorts:
         - ports:
-            - port: "9119"
+            - port: "1411"
               protocol: TCP
+    # NetBird server OIDC validation
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: netbird
+            k8s:app: netbird-server
+      toPorts:
+        - ports:
+            - port: "1411"
+              protocol: TCP
+    # Uptime-kuma monitoring
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: uptime-kuma
             k8s:app: uptime-kuma
       toPorts:
         - ports:
-            - port: "8642"
-              protocol: TCP
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: hermes-agent
-      toPorts:
-        - ports:
-            - port: "8642"
-              protocol: TCP
-    - fromEntities:
-        - ingress
-      toPorts:
-        - ports:
-            - port: "9119"
+            - port: "1411"
               protocol: TCP
   egress:
     - toEndpoints:
@@ -60,17 +65,3 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-    - toCIDRSet:
-        - cidr: 10.42.0.0/16
-        - cidr: 10.43.0.0/16
-        - cidr: 10.0.188.0/24
-        - cidr: fd42::/56
-        - cidr: fd7a:115c:a1e0:188::/64
-    - toEntities:
-        - world
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-            - port: "80"
-              protocol: TCP

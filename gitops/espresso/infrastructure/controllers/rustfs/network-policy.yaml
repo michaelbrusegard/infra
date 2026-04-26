@@ -1,0 +1,32 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: rustfs
+  namespace: rustfs
+spec:
+  endpointSelector: {}
+  ingress:
+    # Kubelet probes and node access
+    - fromEntities:
+        - host
+        - remote-node
+    # Cluster-internal consumers (backup jobs, apps)
+    - fromEntities:
+        - cluster
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
