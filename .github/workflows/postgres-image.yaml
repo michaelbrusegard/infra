@@ -1,0 +1,98 @@
+name: Postgres Image
+
+'on':
+  push:
+    branches:
+      - main
+    paths:
+      - gitops/espresso/infrastructure/controllers/postgres/Dockerfile
+      - .github/workflows/postgres-image.yaml
+  pull_request:
+    paths:
+      - gitops/espresso/infrastructure/controllers/postgres/Dockerfile
+      - .github/workflows/postgres-image.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: michaelbrusegard/postgres
+  IMAGE_REF: ghcr.io/michaelbrusegard/postgres
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        if: github.event_name == 'push'
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        id: build
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: gitops/espresso/infrastructure/controllers/postgres
+          file: gitops/espresso/infrastructure/controllers/postgres/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ${{ env.IMAGE_REF }}:main
+            ${{ env.IMAGE_REF }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Update Postgres image reference
+        if: github.event_name == 'push'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          GIT_SHA: ${{ github.sha }}
+          IMAGE_REF: ${{ env.IMAGE_REF }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path = Path("gitops/espresso/infrastructure/controllers/postgres/statefulset.yaml")
+          image = f"{os.environ['IMAGE_REF']}:sha-{os.environ['GIT_SHA']}@{os.environ['DIGEST']}"
+          content = path.read_text()
+          updated, replacements = re.subn(
+              r"(?m)^\s*image:\s*ghcr\.io/michaelbrusegard/postgres:.*$",
+              f"          image: {image}",
+              content,
+          )
+          if replacements != 1:
+              raise SystemExit("Failed to update Postgres image reference")
+          path.write_text(updated)
+          PY
+
+      - name: Commit image digest update
+        if: github.event_name == 'push'
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          if git diff --quiet -- gitops/espresso/infrastructure/controllers/postgres/statefulset.yaml; then
+            exit 0
+          fi
+
+          git add gitops/espresso/infrastructure/controllers/postgres/statefulset.yaml
+          git commit -m "chore(postgres): update image digest [skip ci]"
+          git push
