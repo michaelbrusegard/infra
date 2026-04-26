@@ -61,6 +61,14 @@ spec:
         - ports:
             - port: "11434"
               protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: hermes-agent
+            k8s:app: honcho
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
     - toEntities:
         - world
       toPorts:
