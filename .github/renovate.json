@@ -37,16 +37,6 @@
       ],
       "registryUrlTemplate": "https://apt.postgresql.org/pub/repos/apt?suite={{suite}}&components=main&binaryArch=amd64",
       "datasourceTemplate": "deb"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^gitops/espresso/tofu/.*/versions\\.tf$/"
-      ],
-      "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*required_version\\s*=\\s*\"=\\s*(?<currentValue>[^\"]+)\""
-      ],
-      "versioningTemplate": "semver"
     }
   ],
   "packageRules": [
