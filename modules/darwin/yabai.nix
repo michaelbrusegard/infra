@@ -34,8 +34,8 @@
         ${lib.getExe pkgs.yabai} -m rule --add app="^(Calculator|System Settings|Archive Utility)$" manage=off
         ${lib.getExe pkgs.yabai} -m rule --add app="^(Zen)$" space=2
         ${lib.getExe pkgs.yabai} -m rule --add app="^(Proton Mail|Proton Pass)$" space=3
-        ${lib.getExe pkgs.yabai} -m rule --add app="^(Notes|Obsidian|LibreOffice|Notion)$" space=4
-        ${lib.getExe pkgs.yabai} -m rule --add app="^(Messages|FaceTime|Element|Legcord|Slack)$" space=5
+        ${lib.getExe pkgs.yabai} -m rule --add app="^(Notes|LibreOffice|Notion)$" space=4
+        ${lib.getExe pkgs.yabai} -m rule --add app="^(Messages|FaceTime|Element|Legcord|Slack|Signal)$" space=5
         ${lib.getExe pkgs.yabai} -m rule --add app="^(Affinity|Inkscape|Gimp|Scribus|DaVinci Resolve|FreeCAD|OrcaSlicer)$" space=6
         ${lib.getExe pkgs.yabai} -m rule --add app="^(Music|Photos)$" space=7
 
