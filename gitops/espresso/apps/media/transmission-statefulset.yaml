@@ -27,29 +27,21 @@ spec:
             - mountPath: /data
               name: media-data
         - name: init-transmission-config
-          image: busybox:1.37@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e
+          image: ghcr.io/jqlang/jq:1.7.1@sha256:b7d18fa3eba75a38e2d941a5735988d4399a03e4e49b846fa4eb24cd9691f9de
           command:
             - sh
             - -c
             - |
               if [ -f /config/settings.json ]; then
-                sed -i 's|"download-dir":.*|"download-dir": "/data/torrents",|' /config/settings.json
-                sed -i 's|"incomplete-dir":.*|"incomplete-dir": "/data/torrents/incomplete",|' /config/settings.json
-                sed -i 's|"incomplete-dir-enabled":.*|"incomplete-dir-enabled": true,|' /config/settings.json
-                sed -i 's|"rpc-whitelist-enabled":.*|"rpc-whitelist-enabled": false,|' /config/settings.json
-                if grep -q '"rpc-bind-address":' /config/settings.json; then
-                  sed -i 's|"rpc-bind-address":.*|"rpc-bind-address": "::",|' /config/settings.json
-                else
-                  sed -i '2i\  "rpc-bind-address": "::",' /config/settings.json
-                fi
-                sed -i 's|"ratio-limit":.*|"ratio-limit": 1,|' /config/settings.json
-                sed -i 's|"ratio-limit-enabled":.*|"ratio-limit-enabled": true,|' /config/settings.json
-                sed -i 's|"idle-seeding-limit":.*|"idle-seeding-limit": 1440,|' /config/settings.json
-                sed -i 's|"idle-seeding-limit-enabled":.*|"idle-seeding-limit-enabled": true,|' /config/settings.json
+                jq -s '.[0] * .[1]' /config/settings.json /overrides/settings-overrides.json \
+                  > /config/settings.json.tmp && mv /config/settings.json.tmp /config/settings.json
               fi
           volumeMounts:
             - mountPath: /config
               name: config
+            - mountPath: /overrides
+              name: settings-overrides
+              readOnly: true
         - name: gluetun
           restartPolicy: Always
           image: qmcgaw/gluetun:v3.41.1@sha256:1a5bf4b4820a879cdf8d93d7ef0d2d963af56670c9ebff8981860b6804ebc8ab
@@ -160,6 +152,9 @@ spec:
         - name: media-data
           persistentVolumeClaim:
             claimName: media-data
+        - name: settings-overrides
+          configMap:
+            name: transmission-settings
   volumeClaimTemplates:
     - metadata:
         name: config
