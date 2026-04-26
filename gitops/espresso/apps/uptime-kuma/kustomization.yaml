@@ -6,3 +6,4 @@ resources:
   - services.yaml
   - monitors.yaml
   - httproute.yaml
+  - network-policy.yaml

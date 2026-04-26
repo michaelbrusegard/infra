@@ -5,3 +5,4 @@ resources:
   - statefulset.yaml
   - services.yaml
   - httproute.yaml
+  - network-policy.yaml

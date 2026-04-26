@@ -9,3 +9,4 @@ resources:
   - dashboard-deployment.yaml
   - services.yaml
   - httproute.yaml
+  - network-policy.yaml

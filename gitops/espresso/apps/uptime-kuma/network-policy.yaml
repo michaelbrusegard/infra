@@ -1,0 +1,61 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+spec:
+  endpointSelector:
+    matchLabels:
+      app: uptime-kuma
+  ingress:
+    # Kubelet HTTP probes and node-forwarded LB traffic
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "3001"
+              protocol: TCP
+    # Gateway API traffic (public status page + internal dashboard)
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "3001"
+              protocol: TCP
+    # LAN and VPN direct access to LB VIP
+    - fromCIDR:
+        - 10.0.186.0/24
+        - fd7a:115c:a1e0:186::/64
+        - 10.0.187.0/24
+        - fd7a:115c:a1e0:187::/64
+        - 100.102.0.0/16
+      toPorts:
+        - ports:
+            - port: "3001"
+              protocol: TCP
+  egress:
+    # DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # Broad egress: monitors everything (cluster services, LAN, gateway URLs)
+    - toEntities:
+        - cluster
+        - world
+    - toCIDRSet:
+        - cidr: 10.0.186.0/24
+        - cidr: fd7a:115c:a1e0:186::/64
+        - cidr: 10.0.187.0/24
+        - cidr: fd7a:115c:a1e0:187::/64
+        - cidr: 10.0.188.0/24
+        - cidr: fd7a:115c:a1e0:188::/64
