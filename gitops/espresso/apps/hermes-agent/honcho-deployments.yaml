@@ -1,0 +1,258 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: honcho-api
+  namespace: hermes-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: honcho
+      component: api
+  template:
+    metadata:
+      labels:
+        app: honcho
+        component: api
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: api
+          image: ghcr.io/plastic-labs/honcho@sha256:dbe84bd5a37bc8af9002d31862f33d7582929cc12eb11f08f57f538c73bff015
+          command:
+            - sh
+            - docker/entrypoint.sh
+          envFrom:
+            - secretRef:
+                name: honcho-env
+          env:
+            - name: AUTH_USE_AUTH
+              value: "false"
+            - name: CACHE_ENABLED
+              value: "false"
+            - name: LLM_OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: honcho-env
+                  key: LLM_OPENAI_API_KEY
+            - name: HONCHO_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: honcho-db
+                  key: HONCHO_DB_PASSWORD
+            - name: DB_CONNECTION_URI
+              value: postgresql+psycopg://honcho_app:$(HONCHO_DB_PASSWORD)@postgres.postgres.svc.cluster.local:5432/honcho
+            - name: HONCHO_OLLAMA_API_KEY
+              value: ollama
+            - name: DERIVER_MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DERIVER_MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DERIVER_MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: SUMMARY_MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: SUMMARY_MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: SUMMARY_MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DIALECTIC_LEVELS__minimal__MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DIALECTIC_LEVELS__minimal__MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DIALECTIC_LEVELS__minimal__MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DIALECTIC_LEVELS__low__MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DIALECTIC_LEVELS__low__MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DIALECTIC_LEVELS__low__MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DIALECTIC_LEVELS__medium__MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DIALECTIC_LEVELS__medium__MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DIALECTIC_LEVELS__medium__MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DIALECTIC_LEVELS__high__MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DIALECTIC_LEVELS__high__MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DIALECTIC_LEVELS__high__MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DIALECTIC_LEVELS__max__MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DIALECTIC_LEVELS__max__MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DIALECTIC_LEVELS__max__MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DREAM_DEDUCTION_MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DREAM_DEDUCTION_MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DREAM_DEDUCTION_MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DREAM_INDUCTION_MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DREAM_INDUCTION_MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DREAM_INDUCTION_MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: EMBEDDING_MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: EMBEDDING_MODEL_CONFIG__MODEL
+              value: nomic-embed-text
+            - name: EMBEDDING_MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: http://ollama.ollama.svc.cluster.local:11434/v1
+            - name: EMBEDDING_MODEL_CONFIG__OVERRIDES__API_KEY_ENV
+              value: HONCHO_OLLAMA_API_KEY
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 250m
+            limits:
+              memory: 2Gi
+              cpu: "1"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: honcho-deriver
+  namespace: hermes-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: honcho
+      component: deriver
+  template:
+    metadata:
+      labels:
+        app: honcho
+        component: deriver
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: wait-for-honcho-api
+          image: busybox:1.37@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e
+          command:
+            - sh
+            - -c
+            - until wget -qO- http://honcho:8000/health >/dev/null 2>&1; do sleep 2; done
+      containers:
+        - name: deriver
+          image: ghcr.io/plastic-labs/honcho@sha256:dbe84bd5a37bc8af9002d31862f33d7582929cc12eb11f08f57f538c73bff015
+          command:
+            - /app/.venv/bin/python
+            - -m
+            - src.deriver
+          envFrom:
+            - secretRef:
+                name: honcho-env
+          env:
+            - name: AUTH_USE_AUTH
+              value: "false"
+            - name: CACHE_ENABLED
+              value: "false"
+            - name: LLM_OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: honcho-env
+                  key: LLM_OPENAI_API_KEY
+            - name: HONCHO_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: honcho-db
+                  key: HONCHO_DB_PASSWORD
+            - name: DB_CONNECTION_URI
+              value: postgresql+psycopg://honcho_app:$(HONCHO_DB_PASSWORD)@postgres.postgres.svc.cluster.local:5432/honcho
+            - name: HONCHO_OLLAMA_API_KEY
+              value: ollama
+            - name: DERIVER_MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DERIVER_MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DERIVER_MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: SUMMARY_MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: SUMMARY_MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: SUMMARY_MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DIALECTIC_LEVELS__minimal__MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DIALECTIC_LEVELS__minimal__MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DIALECTIC_LEVELS__minimal__MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DIALECTIC_LEVELS__low__MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DIALECTIC_LEVELS__low__MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DIALECTIC_LEVELS__low__MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DIALECTIC_LEVELS__medium__MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DIALECTIC_LEVELS__medium__MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DIALECTIC_LEVELS__medium__MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DIALECTIC_LEVELS__high__MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DIALECTIC_LEVELS__high__MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DIALECTIC_LEVELS__high__MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DIALECTIC_LEVELS__max__MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DIALECTIC_LEVELS__max__MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DIALECTIC_LEVELS__max__MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DREAM_DEDUCTION_MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DREAM_DEDUCTION_MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DREAM_DEDUCTION_MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: DREAM_INDUCTION_MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: DREAM_INDUCTION_MODEL_CONFIG__MODEL
+              value: glm-5-turbo
+            - name: DREAM_INDUCTION_MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: https://api.z.ai/api/paas/v4/
+            - name: EMBEDDING_MODEL_CONFIG__TRANSPORT
+              value: openai
+            - name: EMBEDDING_MODEL_CONFIG__MODEL
+              value: nomic-embed-text
+            - name: EMBEDDING_MODEL_CONFIG__OVERRIDES__BASE_URL
+              value: http://ollama.ollama.svc.cluster.local:11434/v1
+            - name: EMBEDDING_MODEL_CONFIG__OVERRIDES__API_KEY_ENV
+              value: HONCHO_OLLAMA_API_KEY
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 250m
+            limits:
+              memory: 2Gi
+              cpu: "1"
