@@ -13,8 +13,8 @@ name: Postgres Image
       - .github/workflows/postgres-image.yaml
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: image-digests-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
@@ -56,6 +56,10 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
 
+      - name: Sync main before digest update
+        if: github.event_name == 'push'
+        run: git pull --rebase origin main
+
       - name: Update Postgres image reference
         if: github.event_name == 'push'
         env:
@@ -95,4 +99,5 @@ jobs:
 
           git add gitops/espresso/infrastructure/controllers/postgres/statefulset.yaml
           git commit -m "chore(postgres): update image digest [skip ci]"
+          git pull --rebase origin main
           git push
