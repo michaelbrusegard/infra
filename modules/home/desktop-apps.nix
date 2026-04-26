@@ -8,6 +8,7 @@
   home.packages = lib.mkIf (!isWsl) (with pkgs;
     [
       element-desktop
+      signal-desktop
       slack
       protonmail-desktop
       inkscape-with-extensions
@@ -18,7 +19,7 @@
       imv
       breaktimer
       legcord
-      obsidian
+
       transmission_4
       proton-pass
       libreoffice-fresh
@@ -38,10 +39,11 @@
     ++ lib.optionals pkgs.stdenv.isDarwin [
       ice-bar
       brewCasks.raycast
+
       brewCasks.linearmouse
       brewCasks.breaktimer
       brewCasks.legcord
-      brewCasks.obsidian
+
       brewCasks.transmission
       brewCasks.proton-pass
       brewCasks.protonvpn
