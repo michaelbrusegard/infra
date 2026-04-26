@@ -26,6 +26,29 @@
   "helmv3": {
     "enabled": true
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^gitops/espresso/infrastructure/controllers/postgres/Dockerfile$/"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*suite=(?<suite>\\S+)\\s+depName=(?<depName>\\S+)\\s+ARG\\s+\\S+_VERSION=(?<currentValue>\\S+)"
+      ],
+      "registryUrlTemplate": "https://apt.postgresql.org/pub/repos/apt?suite={{suite}}&components=main&binaryArch=amd64",
+      "datasourceTemplate": "deb"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^gitops/espresso/tofu/.*/versions\\.tf$/"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*required_version\\s*=\\s*\"=\\s*(?<currentValue>[^\"]+)\""
+      ],
+      "versioningTemplate": "semver"
+    }
+  ],
   "packageRules": [
     {
       "matchUpdateTypes": ["patch"],
@@ -40,6 +63,18 @@
         "nix"
       ],
       "groupName": "nix flake updates"
+    },
+    {
+      "enabled": false,
+      "matchManagers": [
+        "terraform"
+      ],
+      "matchDepTypes": [
+        "required_version"
+      ],
+      "matchPackageNames": [
+        "hashicorp/terraform"
+      ]
     },
     {
       "enabled": false,
