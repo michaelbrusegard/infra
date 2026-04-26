@@ -10,6 +10,8 @@ _: {
     virtualHosts."http://0.0.0.0:8444" = {
       extraConfig = ''
         reverse_proxy https://127.0.0.1:8443 {
+          header_up Host {host}
+          header_up X-Forwarded-Proto https
           transport http {
             tls_insecure_skip_verify
           }
