@@ -133,7 +133,7 @@ data:
         "name": "Grafana",
         "type": "http",
         "parent_name": "monitoring[0]",
-        "url": "https://grafana.gullhaugveien.michaelbrusegard.com",
+        "url": "http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local/api/health",
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
