@@ -60,6 +60,9 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: hermes-agent
     - toCIDRSet:
         - cidr: 10.42.0.0/16
         - cidr: 10.43.0.0/16
