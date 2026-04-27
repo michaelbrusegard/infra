@@ -179,6 +179,9 @@ in {
         # Allow servers to initiate connections to client devices when needed.
         iifname "br_servers" oifname "br_clients" accept
 
+        # Allow client devices to reach servers (e.g. SSH to cluster nodes).
+        iifname "br_clients" oifname "br_servers" accept
+
         # Allow client devices to reach IoT devices.
         iifname "br_clients" oifname "iot" accept
 
