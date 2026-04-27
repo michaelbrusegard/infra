@@ -39,7 +39,7 @@ data:
       reasoning_effort: high
 
     approvals:
-      mode: smart
+      mode: never
 
     web:
       backend: exa
