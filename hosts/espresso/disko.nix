@@ -44,7 +44,7 @@ in {
                 };
               };
               root = {
-                size = "50G";
+                size = "80G";
                 content = {
                   type = "luks";
                   name = "crypted";
