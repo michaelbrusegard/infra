@@ -11,7 +11,7 @@ data:
 
     delegation:
       provider: zai
-      model: glm-5
+      model: glm-4.5
 
     compression:
       enabled: true
@@ -58,10 +58,10 @@ data:
         - excalidraw
         - fine-tuning-with-trl
         - godmode
+        - google-workspace
         - heartmula
         - himalaya
         - ideation
-        - jupyter-live-kernel
         - linear
         - llama-cpp
         - llm-wiki
@@ -70,7 +70,6 @@ data:
         - notion
         - obliteratus
         - obsidian
-        - opencode
         - openhue
         - p5js
         - pixel-art
@@ -82,12 +81,8 @@ data:
         - serving-llms-vllm
         - songwriting-and-ai-music
         - songsee
-        - subagent-driven-development
-        - systematic-debugging
-        - test-driven-development
         - unsloth
         - weights-and-biases
-        - writing-plans
         - xurl
 
     terminal:
