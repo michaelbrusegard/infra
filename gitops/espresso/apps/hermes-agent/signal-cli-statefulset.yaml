@@ -15,9 +15,15 @@ spec:
         app: signal-cli
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: signal-cli
           image: registry.gitlab.com/packaging/signal-cli/signal-cli-jre@sha256:b5685682a092428abe9926a8bdb1a97ea945c05fda096148374e7ed2900db121
+          securityContext:
+            runAsUser: 101
+            runAsGroup: 101
           command:
             - sh
             - -c
