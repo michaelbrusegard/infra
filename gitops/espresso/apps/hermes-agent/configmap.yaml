@@ -9,6 +9,10 @@ data:
       provider: zai
       default: glm-5.1
 
+    delegation:
+      provider: zai
+      model: glm-5
+
     compression:
       enabled: true
       threshold: 0.50
@@ -18,10 +22,24 @@ data:
     auxiliary:
       compression:
         provider: zai
-        model: glm-4.7
+        model: glm-4.5
+      web_extract:
+        provider: zai
+        model: glm-4.5
+      vision:
+        provider: zai
+        model: glm-4.5v
 
     memory:
       provider: honcho
+      memory_enabled: true
+      user_profile_enabled: true
+
+    agent:
+      reasoning_effort: high
+
+    approvals:
+      mode: smart
 
     web:
       backend: exa

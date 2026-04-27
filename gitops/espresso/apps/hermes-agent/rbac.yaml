@@ -9,6 +9,7 @@ kind: ClusterRole
 metadata:
   name: hermes-agent-readonly
 rules:
+  # --- Read access (all cluster resources) ---
   - apiGroups: [""]
     resources:
       - pods
@@ -67,6 +68,38 @@ rules:
       - pods
       - nodes
     verbs: ["get", "list"]
+  # --- Safe write access (recoverable actions only) ---
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs: ["delete"]
+  - apiGroups: [""]
+    resources:
+      - pods/exec
+    verbs: ["create"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - statefulsets
+    verbs: ["patch"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments/scale
+      - statefulsets/scale
+    verbs: ["patch", "update"]
+  - apiGroups: ["kustomize.toolkit.fluxcd.io"]
+    resources:
+      - kustomizations
+    verbs: ["patch"]
+  - apiGroups: ["helm.toolkit.fluxcd.io"]
+    resources:
+      - helmreleases
+    verbs: ["patch"]
+  - apiGroups: ["source.toolkit.fluxcd.io"]
+    resources:
+      - gitrepositories
+      - helmrepositories
+    verbs: ["patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

@@ -70,6 +70,8 @@ spec:
         - cidr: fd42::/56
         - cidr: fd7a:115c:a1e0:188::/64
     - toEntities:
+        - kube-apiserver
+    - toEntities:
         - world
       toPorts:
         - ports:
