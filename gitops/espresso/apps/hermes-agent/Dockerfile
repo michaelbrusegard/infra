@@ -16,6 +16,10 @@ ARG HIMALAYA_VERSION=1.2.0
 ARG HIMALAYA_SHA256=e04e6382e3e664ef34b01afa1a2216113194a2975d2859727647b22d9b36d4e4
 ARG RIPGREP_VERSION=15.1.0
 ARG RIPGREP_SHA256=1c9297be4a084eea7ecaedf93eb03d058d6faae29bbc57ecdaf5063921491599
+ARG YQ_VERSION=v4.45.4
+ARG YQ_SHA256=b96de04645707e14a12f52c37e6266832e03c29e95b9b139cddcae7314466e69
+ARG STERN_VERSION=1.32.0
+ARG STERN_SHA256=4733268b0e7fea48426c594d186be8cbcdb863858e08910451ebe3b1c8286f44
 ARG MCPORTER_VERSION=0.9.0
 ARG SUMMARIZE_VERSION=0.13.0
 
@@ -23,7 +27,14 @@ USER root
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends ca-certificates curl git; \
+    apt-get install -y --no-install-recommends \
+      ca-certificates curl git \
+      python3-pip \
+      netcat-openbsd socat \
+      dnsutils \
+      unzip \
+      iproute2 \
+      file; \
     rm -rf /var/lib/apt/lists/*; \
     curl -fsSL -o /usr/local/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"; \
     echo "${KUBECTL_SHA256}  /usr/local/bin/kubectl" | sha256sum -c -; \
@@ -64,4 +75,12 @@ RUN set -eux; \
     mv /tmp/ripgrep-${RIPGREP_VERSION}-x86_64-unknown-linux-musl/rg /usr/local/bin/rg; \
     chmod +x /usr/local/bin/rg; \
     rm -rf /tmp/ripgrep.tar.gz /tmp/ripgrep-${RIPGREP_VERSION}-x86_64-unknown-linux-musl; \
+    curl -fsSL -o /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"; \
+    echo "${YQ_SHA256}  /usr/local/bin/yq" | sha256sum -c -; \
+    chmod +x /usr/local/bin/yq; \
+    curl -fsSL -o /tmp/stern.tar.gz "https://github.com/stern/stern/releases/download/v${STERN_VERSION}/stern_${STERN_VERSION}_linux_amd64.tar.gz"; \
+    echo "${STERN_SHA256}  /tmp/stern.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/stern.tar.gz -C /usr/local/bin stern; \
+    chmod +x /usr/local/bin/stern; \
+    rm -f /tmp/stern.tar.gz; \
     npm install -g mcporter@${MCPORTER_VERSION} @steipete/summarize@${SUMMARIZE_VERSION}
