@@ -23,6 +23,55 @@ data:
     memory:
       provider: honcho
 
+    web:
+      backend: exa
+
+    skills:
+      disabled:
+        - ascii-video
+        - audiocraft-audio-generation
+        - axolotl
+        - baoyu-comic
+        - baoyu-infographic
+        - claude-code
+        - codex
+        - dspy
+        - evaluating-llms-harness
+        - excalidraw
+        - fine-tuning-with-trl
+        - godmode
+        - heartmula
+        - himalaya
+        - ideation
+        - jupyter-live-kernel
+        - linear
+        - llama-cpp
+        - llm-wiki
+        - manim-video
+        - minecraft-modpack-server
+        - notion
+        - obliteratus
+        - obsidian
+        - opencode
+        - openhue
+        - p5js
+        - pixel-art
+        - pokemon-player
+        - polymarket
+        - popular-web-designs
+        - research-paper-writing
+        - segment-anything-model
+        - serving-llms-vllm
+        - songwriting-and-ai-music
+        - songsee
+        - subagent-driven-development
+        - systematic-debugging
+        - test-driven-development
+        - unsloth
+        - weights-and-biases
+        - writing-plans
+        - xurl
+
     terminal:
       backend: local
       cwd: /opt/data/workspace
