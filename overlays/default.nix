@@ -48,6 +48,7 @@ in
           flux
           kubectl
           kubernetes-helm
+          etcd
           ;
         ruff-unstable = pkgs-unstable.ruff;
         eslint = pkgs-unstable.eslint.overrideAttrs (old: {
