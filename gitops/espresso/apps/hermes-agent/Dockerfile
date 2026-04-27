@@ -83,4 +83,5 @@ RUN set -eux; \
     tar -xzf /tmp/stern.tar.gz -C /usr/local/bin stern; \
     chmod +x /usr/local/bin/stern; \
     rm -f /tmp/stern.tar.gz; \
+    pip install --no-cache-dir --break-system-packages jupyter ipykernel hamelnb; \
     npm install -g mcporter@${MCPORTER_VERSION} @steipete/summarize@${SUMMARIZE_VERSION}
