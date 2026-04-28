@@ -3,7 +3,10 @@ kind: CiliumClusterwideNetworkPolicy
 metadata:
   name: allow-to-ingress
 spec:
-  endpointSelector: {}
+  endpointSelector:
+    matchExpressions:
+      - key: k8s:io.kubernetes.pod.namespace
+        operator: Exists
   egress:
     - toEntities:
         - ingress
