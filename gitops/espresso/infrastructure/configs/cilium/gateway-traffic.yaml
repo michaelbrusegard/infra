@@ -16,16 +16,5 @@ spec:
   egress:
     - toEntities:
         - cluster
----
-apiVersion: cilium.io/v2
-kind: CiliumClusterwideNetworkPolicy
-metadata:
-  name: allow-to-ingress
-spec:
-  endpointSelector:
-    matchExpressions:
-      - key: k8s:io.kubernetes.pod.namespace
-        operator: Exists
-  egress:
-    - toEntities:
-        - ingress
+    - toCIDRSet:
+        - cidr: 10.0.187.1/32
