@@ -1,4 +1,4 @@
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: primary-pool
@@ -7,7 +7,7 @@ spec:
     - cidr: "10.0.188.0/24"
     - cidr: "fd7a:115c:a1e0:188::/64"
 ---
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumBGPPeerConfig
 metadata:
   name: macchiato-peer
@@ -31,7 +31,7 @@ spec:
         matchLabels:
           advertise: bgp
 ---
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumBGPClusterConfig
 metadata:
   name: cilium-bgp
@@ -53,7 +53,7 @@ spec:
           peerConfigRef:
             name: macchiato-peer
 ---
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
 metadata:
   name: bgp-advertisements
@@ -71,3 +71,4 @@ spec:
             operator: NotIn
             values:
               - never-used-value
+    - advertisementType: PodCIDR
