@@ -81,7 +81,7 @@ spec:
         passwordKey: admin-password
       persistence:
         enabled: true
-        storageClassName: nvme-single
+        storageClassName: nvme-ha
         size: 5Gi
       sidecar:
         dashboards:
