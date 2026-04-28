@@ -11,6 +11,7 @@ spec:
     - fromEntities:
         - cluster
         - host
+        - remote-node
         - world
   egress:
     - toEntities:
@@ -19,7 +20,7 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:
-  name: gateway-client-egress
+  name: allow-to-ingress
 spec:
   endpointSelector:
     matchExpressions:
