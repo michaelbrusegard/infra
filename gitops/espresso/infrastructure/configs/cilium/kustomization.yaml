@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - ip-pool.yaml
   - host-firewall.yaml
+  - allow-ingress-from-cluster.yaml
