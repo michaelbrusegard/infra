@@ -302,13 +302,16 @@ in {
       };
     };
 
-    # BGP peering with the k3s cluster (Cilium) for internal service VIPs.
-    # Both IPv4 and IPv6 VIPs are learned dynamically over BGP with ECMP.
+    # BGP peering with the k3s cluster (Cilium) for internal service VIPs and
+    # pod CIDRs. The router needs pod return routes because cluster DNS and
+    # some LAN-facing services see native pod source addresses.
     frr = {
       bgpd.enable = true;
       config = ''
         ip prefix-list PL-CILIUM-VIPS-V4 seq 10 permit 10.0.188.0/24 le 32
+        ip prefix-list PL-CILIUM-VIPS-V4 seq 20 permit 10.42.0.0/16 le 24
         ipv6 prefix-list PL-CILIUM-VIPS-V6 seq 10 permit fd7a:115c:a1e0:188::/64 le 128
+        ipv6 prefix-list PL-CILIUM-VIPS-V6 seq 20 permit fd42::/56 le 64
 
         route-map RM-CILIUM-IN-V4 permit 10
           match ip address prefix-list PL-CILIUM-VIPS-V4
