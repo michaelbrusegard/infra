@@ -24,7 +24,7 @@ spec:
       enabled: true
     ipam:
       mode: kubernetes
-    k8sServiceHost: "10.0.187.3"
+    k8sServiceHost: "10.0.187.2"
     k8sServicePort: 6443
     kubeProxyReplacement: true
     routingMode: native
