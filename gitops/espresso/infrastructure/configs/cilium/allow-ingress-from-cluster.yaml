@@ -10,3 +10,5 @@ spec:
   ingress:
     - fromEntities:
         - cluster
+        - host
+        - world
