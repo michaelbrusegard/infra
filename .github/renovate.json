@@ -26,7 +26,27 @@
   "helmv3": {
     "enabled": true
   },
+  "flux": {
+    "managerFilePatterns": [
+      "/^gitops/espresso/.+\\.ya?ml$/"
+    ]
+  },
+  "terraform": {
+    "managerFilePatterns": [
+      "/^gitops/espresso/tofu/.+\\.tf$/"
+    ]
+  },
   "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^gitops/espresso/infrastructure/controllers/gateway-api/kustomization\\.yaml$/"
+      ],
+      "matchStrings": [
+        "https://raw\\.githubusercontent\\.com/(?<depName>kubernetes-sigs/gateway-api)/(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)/config/crd/(?:standard|experimental)/gateway\\.networking\\.k8s\\.io_[^\\s]+\\.yaml"
+      ],
+      "datasourceTemplate": "github-releases"
+    },
     {
       "customType": "regex",
       "managerFilePatterns": [
