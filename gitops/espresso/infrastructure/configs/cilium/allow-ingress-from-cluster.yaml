@@ -1,7 +1,7 @@
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:
-  name: allow-ingress-from-cluster
+  name: allow-gateway-ingress-traffic
 spec:
   endpointSelector:
     matchExpressions:
@@ -12,3 +12,6 @@ spec:
         - cluster
         - host
         - world
+  egress:
+    - toEntities:
+        - cluster
