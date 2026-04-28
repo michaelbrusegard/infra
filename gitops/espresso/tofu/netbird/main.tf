@@ -9,7 +9,7 @@ locals {
     }
     cubeman = {
       name    = "Cubeman"
-      address = "10.0.189.21"
+      address = "10.0.189.21/32"
       group   = "home"
     }
     grafana = {
@@ -41,6 +41,11 @@ locals {
       name    = "Navidrome"
       address = "navidrome.${local.domain}"
       group   = "media"
+    }
+    netbird_admin = {
+      name    = "NetBird Admin"
+      address = "netbird-admin.${local.domain}"
+      group   = "infra"
     }
     prowlarr = {
       name    = "Prowlarr"
