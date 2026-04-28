@@ -23,7 +23,7 @@
     ipv4.enabled = true;
     ipv6.enabled = true;
     ipam.mode = "kubernetes";
-    k8sServiceHost = nodeIPs."espresso-1";
+    k8sServiceHost = nodeIPs."espresso-0";
     k8sServicePort = 6443;
     kubeProxyReplacement = true;
     routingMode = "native";
@@ -51,12 +51,11 @@ in {
   services.k3s = {
     inherit nodeIP;
     inherit (config.secrets.k3s) tokenFile;
-    # clusterInit = config.networking.hostName == "espresso-0";
-    serverAddr = "https://10.0.187.3:6443";
-    # serverAddr =
-    #   lib.mkIf
-    #   (config.networking.hostName != "espresso-0")
-    #   "https://${nodeIPs."espresso-0"}:6443";
+    clusterInit = config.networking.hostName == "espresso-0";
+    serverAddr =
+      lib.mkIf
+      (config.networking.hostName != "espresso-0")
+      "https://${nodeIPs."espresso-0"}:6443";
     extraFlags = [
       "--cluster-cidr=10.42.0.0/16,fd42::/56"
       "--service-cidr=10.43.0.0/16,fd43::/112"
