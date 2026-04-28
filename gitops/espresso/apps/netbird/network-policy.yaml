@@ -118,6 +118,14 @@ spec:
         - ports:
             - port: "10000"
               protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "10000"
+              protocol: TCP
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -148,6 +156,14 @@ spec:
         - 10.0.187.0/24
         - fd7a:115c:a1e0:187::/64
         - 100.102.0.0/16
+      toPorts:
+        - ports:
+            - port: "33080"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
       toPorts:
         - ports:
             - port: "33080"
