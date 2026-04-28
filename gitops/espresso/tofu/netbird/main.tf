@@ -17,6 +17,11 @@ locals {
       address = "grafana.${local.domain}"
       group   = "infra"
     }
+    hermes_agent = {
+      name    = "Hermes Agent"
+      address = "hermes.${local.domain}"
+      group   = "infra"
+    }
     homebridge = {
       name    = "Homebridge"
       address = "homebridge.${local.domain}"
