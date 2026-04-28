@@ -146,7 +146,6 @@ spec:
                 - sh
                 - -c
                 - nc -z 127.0.0.1 9091
-              port: http
             periodSeconds: 10
           volumeMounts:
             - mountPath: /config
