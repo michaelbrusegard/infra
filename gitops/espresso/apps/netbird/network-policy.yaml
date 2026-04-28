@@ -1,34 +1,36 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: netbird
+  name: netbird-server
   namespace: netbird
 spec:
-  endpointSelector: {}
+  endpointSelector:
+    matchLabels:
+      app: netbird-server
   ingress:
-    # Kubelet HTTP probes and node-forwarded LB traffic
     - fromEntities:
         - host
         - remote-node
-    # Gateway API traffic (public + internal gateway)
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
     - fromEntities:
         - ingress
-    # LAN and VPN direct access to LB VIPs
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
     - fromCIDR:
         - 10.0.186.0/24
         - fd7a:115c:a1e0:186::/64
         - 10.0.187.0/24
         - fd7a:115c:a1e0:187::/64
         - 100.102.0.0/16
-    # Internet access for coturn STUN/TURN (port-forwarded from router)
-    - fromCIDR:
-        - 0.0.0.0/0
-        - ::/0
       toPorts:
         - ports:
-            - port: "3478"
-              protocol: UDP
-    # Prometheus metrics scraping
+            - port: "80"
+              protocol: TCP
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
@@ -36,11 +38,6 @@ spec:
         - ports:
             - port: "9090"
               protocol: TCP
-    # Uptime-kuma monitoring
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: uptime-kuma
-            k8s:app: uptime-kuma
   egress:
     - toEndpoints:
         - matchLabels:
@@ -54,7 +51,6 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-    # Server needs PostgreSQL
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: postgres
@@ -63,8 +59,158 @@ spec:
         - ports:
             - port: "5432"
               protocol: TCP
-    # Server needs Pocket ID (OIDC) and internet (OIDC validation)
-    # Coturn needs world for UDP relay
-    # Relay needs world for WebSocket
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: pocket-id
+            k8s:app: pocket-id
+      toPorts:
+        - ports:
+            - port: "1411"
+              protocol: TCP
+    - toCIDRSet:
+        - cidr: 10.0.188.0/24
+        - cidr: fd7a:115c:a1e0:188::/64
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP
     - toEntities:
         - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: netbird-signal
+  namespace: netbird
+spec:
+  endpointSelector:
+    matchLabels:
+      app: netbird-signal
+  ingress:
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "10000"
+              protocol: TCP
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "10000"
+              protocol: TCP
+    - fromCIDR:
+        - 10.0.186.0/24
+        - fd7a:115c:a1e0:186::/64
+        - 10.0.187.0/24
+        - fd7a:115c:a1e0:187::/64
+        - 100.102.0.0/16
+      toPorts:
+        - ports:
+            - port: "10000"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: netbird-relay
+  namespace: netbird
+spec:
+  endpointSelector:
+    matchLabels:
+      app: netbird-relay
+  ingress:
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "33080"
+              protocol: TCP
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "33080"
+              protocol: TCP
+    - fromCIDR:
+        - 10.0.186.0/24
+        - fd7a:115c:a1e0:186::/64
+        - 10.0.187.0/24
+        - fd7a:115c:a1e0:187::/64
+        - 100.102.0.0/16
+      toPorts:
+        - ports:
+            - port: "33080"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: netbird-coturn
+  namespace: netbird
+spec:
+  endpointSelector:
+    matchLabels:
+      app: netbird-coturn
+  ingress:
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "3478"
+              protocol: UDP
+    - fromCIDR:
+        - 0.0.0.0/0
+        - ::/0
+      toPorts:
+        - ports:
+            - port: "3478"
+              protocol: UDP
+  egress:
+    - toEntities:
+        - world
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: netbird-dashboard
+  namespace: netbird
+spec:
+  endpointSelector:
+    matchLabels:
+      app: netbird-dashboard
+  ingress:
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+    - fromCIDR:
+        - 10.0.186.0/24
+        - fd7a:115c:a1e0:186::/64
+        - 10.0.187.0/24
+        - fd7a:115c:a1e0:187::/64
+        - 100.102.0.0/16
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
