@@ -45,3 +45,11 @@ spec:
               protocol: TCP
             - port: "80"
               protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: hermes-agent
+            k8s:app: hermes-agent
+      toPorts:
+        - ports:
+            - port: "8642"
+              protocol: TCP
