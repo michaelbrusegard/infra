@@ -32,11 +32,40 @@ data:
         "active": true
       },
       {
-        "name": "RustFS",
+        "name": "RustFS S3 API (cluster)",
         "type": "port",
         "parent_name": "infrastructure[0]",
         "hostname": "rustfs-svc.rustfs.svc.cluster.local",
         "port": 9000,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "RustFS Dashboard (cluster)",
+        "type": "port",
+        "parent_name": "infrastructure[0]",
+        "hostname": "rustfs-svc.rustfs.svc.cluster.local",
+        "port": 9001,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      }
+    ]
+  manafish.json: |
+    [
+      {
+        "name": "Manafish",
+        "type": "group"
+      },
+      {
+        "name": "Manafish S3 API",
+        "type": "port",
+        "parent_name": "manafish[0]",
+        "hostname": "s3.manafishrov.com",
+        "port": 443,
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
