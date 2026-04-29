@@ -18,6 +18,4 @@ spec:
   varsFrom:
     - kind: Secret
       name: tofu-credentials
-    - kind: Secret
-      name: rustfs-secret
   alwaysCleanupRunnerPod: true
