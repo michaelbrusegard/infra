@@ -200,6 +200,26 @@
         program = "${nixSecretsTools.${system}.lint-nix-secrets}/bin/lint-nix-secrets";
       };
     });
+    devShells = lib.forAllSystems (system: let
+      pkgs = inputs.nixpkgs-unstable.legacyPackages.${system};
+    in {
+      default = pkgs.mkShell {
+        packages = with pkgs; [
+          age
+          bind
+          fluxcd
+          gh
+          git
+          jq
+          kubectl
+          kubernetes-helm
+          kustomize
+          opentofu
+          sops
+          yq-go
+        ];
+      };
+    });
     packages = lib.forAllSystems (
       system:
         (import ./packages {

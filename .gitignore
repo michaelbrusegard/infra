@@ -1,5 +1,7 @@
 # misc
 .DS_Store
+.direnv/
+.terraform/
 
 # build images
 result
