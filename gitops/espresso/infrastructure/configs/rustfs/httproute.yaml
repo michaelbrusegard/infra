@@ -15,6 +15,7 @@ spec:
         - path:
             type: Exact
             value: /
+          method: GET
       filters:
         - type: RequestRedirect
           requestRedirect:
@@ -22,9 +23,16 @@ spec:
               type: ReplaceFullPath
               replaceFullPath: /rustfs/console/
             statusCode: 302
-    - backendRefs:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /rustfs/console
+      backendRefs:
         - name: rustfs-svc
           port: 9001
+    - backendRefs:
+        - name: rustfs-svc
+          port: 9000
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
