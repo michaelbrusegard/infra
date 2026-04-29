@@ -17,7 +17,11 @@ spec:
     secretSuffix: manafishrov-infra
   varsFrom:
     - kind: Secret
-      name: tofu-credentials
+      name: rustfs-secret
+      varsKeys:
+        - RUSTFS_ACCESS_KEY:rustfs_access_key
+        - RUSTFS_SECRET_KEY:rustfs_secret_key
+        - firmware_ci_secret_key
   runnerPodTemplate:
     spec:
       env:
