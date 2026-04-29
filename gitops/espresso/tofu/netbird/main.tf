@@ -67,6 +67,11 @@ locals {
       address = "rustfs.${local.domain}"
       group   = "infra"
     }
+    rustfs_s3 = {
+      name    = "Manafish S3"
+      address = "s3.manafishrov.com"
+      group   = "manafish"
+    }
     seerr = {
       name    = "Seerr"
       address = "seerr.${local.domain}"
@@ -142,6 +147,10 @@ resource "netbird_group" "public" {
   name = "Public"
 }
 
+resource "netbird_group" "manafish" {
+  name = "Manafish"
+}
+
 resource "netbird_setup_key" "macchiato" {
   name                   = "macchiato"
   type                   = "reusable"
@@ -173,7 +182,7 @@ resource "netbird_network_resource" "resources" {
   description = "${each.value.name} at Gullhaugveien"
   address     = each.value.address
   groups = [
-    each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "media" ? netbird_group.media.id : each.value.group == "public" ? netbird_group.public.id : netbird_group.media_admin.id,
+    each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "media" ? netbird_group.media.id : each.value.group == "public" ? netbird_group.public.id : each.value.group == "manafish" ? netbird_group.manafish.id : netbird_group.media_admin.id,
   ]
   enabled = true
 }
@@ -248,6 +257,22 @@ resource "netbird_policy" "public_access" {
     protocol      = "all"
     sources       = [netbird_group.users.id]
     destinations  = [netbird_group.public.id]
+  }
+}
+
+resource "netbird_policy" "manafish_access" {
+  name        = "Manafish Access"
+  description = "Allow admins to access Manafish resources"
+  enabled     = true
+
+  rule {
+    name          = "Admins to Manafish"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.admins.id]
+    destinations  = [netbird_group.manafish.id]
   }
 }
 
