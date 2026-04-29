@@ -64,7 +64,7 @@ data:
         "name": "Manafish Public S3 API",
         "type": "port",
         "parent_name": "manafish[0]",
-        "hostname": "s3.manafishrov.com",
+        "hostname": "10.0.188.2",
         "port": 443,
         "interval": 60,
         "max_retries": 3,
