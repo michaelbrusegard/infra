@@ -12,6 +12,7 @@ spec:
     - id.gullhaugveien.michaelbrusegard.com
     - status.gullhaugveien.michaelbrusegard.com
     - netbird.gullhaugveien.michaelbrusegard.com
+    - s3.manafishrov.com
   rules:
     - filters:
         - type: RequestRedirect
