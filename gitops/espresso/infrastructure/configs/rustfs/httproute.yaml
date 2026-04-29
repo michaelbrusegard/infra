@@ -11,6 +11,17 @@ spec:
   hostnames:
     - rustfs.gullhaugveien.michaelbrusegard.com
   rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /rustfs/console/
+            statusCode: 302
     - backendRefs:
         - name: rustfs-svc
-          port: 9000
+          port: 9001

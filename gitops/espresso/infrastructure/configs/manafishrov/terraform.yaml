@@ -18,4 +18,12 @@ spec:
   varsFrom:
     - kind: Secret
       name: tofu-credentials
+  runnerPodTemplate:
+    spec:
+      env:
+        - name: CLOUDFLARE_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: cloudflare-api-token
+              key: api-token
   alwaysCleanupRunnerPod: true
