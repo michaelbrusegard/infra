@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: rustfs-internal
+  namespace: rustfs
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - rustfs.gullhaugveien.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: rustfs-svc
+          port: 9000

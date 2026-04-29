@@ -62,6 +62,11 @@ locals {
       address = "radarr.${local.domain}"
       group   = "media_admin"
     }
+    rustfs = {
+      name    = "RustFS"
+      address = "rustfs.${local.domain}"
+      group   = "infra"
+    }
     seerr = {
       name    = "Seerr"
       address = "seerr.${local.domain}"
