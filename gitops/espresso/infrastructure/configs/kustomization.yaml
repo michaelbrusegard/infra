@@ -16,5 +16,6 @@ resources:
   - homebridge
   - unifi
   - zigbee2mqtt
+  - rustfs
   - honcho-tofu
   - netbird-tofu
