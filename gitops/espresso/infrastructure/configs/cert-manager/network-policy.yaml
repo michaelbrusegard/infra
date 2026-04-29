@@ -36,3 +36,8 @@ spec:
               protocol: TCP
             - port: "80"
               protocol: TCP
+            # DNS-01 propagation self-checks query authoritative nameservers.
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
