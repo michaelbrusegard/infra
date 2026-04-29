@@ -1,12 +1,12 @@
 resource "postgresql_role" "honcho" {
-  name                = var.honcho_db_user
+  name                = "honcho_app"
   login               = true
   password_wo         = var.honcho_db_password
-  password_wo_version = var.honcho_db_password_version
+  password_wo_version = "1"
 }
 
 resource "postgresql_database" "honcho" {
-  name  = var.honcho_db_name
+  name  = "honcho"
   owner = postgresql_role.honcho.name
 }
 

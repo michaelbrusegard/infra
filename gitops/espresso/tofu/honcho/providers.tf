@@ -1,9 +1,9 @@
 provider "postgresql" {
-  host      = var.pg_host
-  port      = var.pg_port
-  database  = var.pg_database
+  host      = "postgres.postgres.svc.cluster.local"
+  port      = 5432
+  database  = "postgres"
   username  = var.pg_admin_user
   password  = var.pg_admin_password
-  sslmode   = var.pg_sslmode
-  superuser = var.pg_superuser
+  sslmode   = "disable"
+  superuser = true
 }
