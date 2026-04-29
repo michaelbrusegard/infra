@@ -111,7 +111,7 @@ jobs:
       OPENTOFU_VERSION: 1.11.5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - uses: opentofu/setup-opentofu@9745e0c822f844dbd421dbf4d2c9cbb21ed56ab7 # v2.0.1
+      - uses: opentofu/setup-opentofu@fc711fa910b93cba0f3fbecaafc9f42fd0c411cb # v2.0.0
         with:
           tofu_version: ${{ env.OPENTOFU_VERSION }}
           tofu_wrapper: false
