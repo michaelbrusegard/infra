@@ -13,6 +13,7 @@ jobs:
     outputs:
       nix: ${{ steps.filter.outputs.nix }}
       gitops: ${{ steps.filter.outputs.gitops }}
+      tofu: ${{ steps.filter.outputs.tofu }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
@@ -26,6 +27,10 @@ jobs:
               - '.github/workflows/ci.yaml'
             gitops:
               - 'gitops/**'
+              - '.github/workflows/ci.yaml'
+            tofu:
+              - '**/*.tf'
+              - '**/.terraform.lock.hcl'
               - '.github/workflows/ci.yaml'
   code-quality:
     needs: filter
@@ -92,3 +97,27 @@ jobs:
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             -verbose
+  validate-tofu:
+    needs: filter
+    if: needs.filter.outputs.tofu == 'true'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        tofu-dir:
+          - gitops/espresso/tofu/honcho
+          - gitops/espresso/tofu/netbird
+    env:
+      OPENTOFU_VERSION: 1.11.5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: opentofu/setup-opentofu@9745e0c822f844dbd421dbf4d2c9cbb21ed56ab7 # v2.0.1
+        with:
+          tofu_version: ${{ env.OPENTOFU_VERSION }}
+          tofu_wrapper: false
+      - name: Check OpenTofu formatting
+        run: tofu -chdir=${{ matrix.tofu-dir }} fmt -check
+      - name: Initialize OpenTofu
+        run: tofu -chdir=${{ matrix.tofu-dir }} init -backend=false
+      - name: Validate OpenTofu
+        run: tofu -chdir=${{ matrix.tofu-dir }} validate
