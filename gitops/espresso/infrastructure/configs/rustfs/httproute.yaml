@@ -31,6 +31,12 @@ spec:
             - type: RegularExpression
               name: Authorization
               value: .+
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
       backendRefs:
         - name: rustfs-svc
           port: 9000
