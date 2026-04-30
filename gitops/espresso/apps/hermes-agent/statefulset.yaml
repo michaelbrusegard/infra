@@ -77,17 +77,20 @@ spec:
               path: /health
               port: gateway
             periodSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 18
           livenessProbe:
             httpGet:
               path: /health
               port: gateway
             periodSeconds: 30
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /health
               port: gateway
             periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
             - name: data
               mountPath: /opt/data
