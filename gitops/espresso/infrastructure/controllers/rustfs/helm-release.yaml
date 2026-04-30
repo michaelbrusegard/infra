@@ -18,6 +18,11 @@ spec:
     mode:
       standalone:
         enabled: true
+        # PVCs are RWO; rolling updates would multi-attach to the new pod while
+        # the old still holds the volumes. Recreate forces full pod termination
+        # before the replacement starts.
+        strategy:
+          type: Recreate
       distributed:
         enabled: false
     secret:
