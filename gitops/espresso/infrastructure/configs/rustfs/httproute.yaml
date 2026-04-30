@@ -27,23 +27,6 @@ spec:
         - path:
             type: PathPrefix
             value: /rustfs/console
-          headers:
-            - type: RegularExpression
-              name: Authorization
-              value: .+
-      filters:
-        - type: URLRewrite
-          urlRewrite:
-            path:
-              type: ReplacePrefixMatch
-              replacePrefixMatch: /
-      backendRefs:
-        - name: rustfs-svc
-          port: 9000
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /rustfs/console
       backendRefs:
         - name: rustfs-svc
           port: 9001
