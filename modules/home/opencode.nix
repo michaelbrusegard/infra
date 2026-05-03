@@ -23,6 +23,12 @@
       caveman = "${inputs.caveman-skills}/skills/caveman";
     };
   };
+  xdg.configFile."opencode/oh-my-opencode.json".text = builtins.toJSON {
+    git_master = {
+      commit_footer = false;
+      include_co_authored_by = false;
+    };
+  };
   home.packages = with pkgs; [
     opencode-desktop
   ];
