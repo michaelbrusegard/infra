@@ -226,6 +226,10 @@ resource "netbird_account_settings" "main" {
   jwt_groups_claim_name               = "groups"
   jwt_allow_groups                    = ["Users"]
   routing_peer_dns_resolution_enabled = true
+  peer_login_expiration_enabled       = true
+  peer_login_expiration               = 604800
+  peer_inactivity_expiration_enabled  = true
+  peer_inactivity_expiration          = 604800
 }
 
 resource "netbird_policy" "infra_access" {
