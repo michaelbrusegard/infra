@@ -19,7 +19,9 @@
             PATH = "${pkgs.docker}/bin:${pkgs.colima}/bin:/usr/local/bin:/usr/bin:/bin";
           };
           RunAtLoad = true;
-          KeepAlive = true;
+          KeepAlive = {
+            SuccessfulExit = false;
+          };
           StandardErrorPath = "${config.users.users.${config.system.primaryUser}.home}/Library/Logs/Colima/colima.err.log";
           StandardOutPath = "${config.users.users.${config.system.primaryUser}.home}/Library/Logs/Colima/colima.out.log";
         };

@@ -7,9 +7,11 @@
       url = "github:lnl7/nix-darwin/nix-darwin-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-darwin-unstable = {
-      url = "github:lnl7/nix-darwin";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    # TODO: Remove once programs.nh module is merged into nix-darwin
+    # https://github.com/nix-darwin/nix-darwin/pull/1744
+    nix-darwin-nh = {
+      url = "github:rajanmaghera/nix-darwin/module-nh";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
