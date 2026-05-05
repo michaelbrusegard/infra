@@ -143,10 +143,6 @@
         TrackpadRightClick = true;
         TrackpadThreeFingerTapGesture = 0;
       };
-      universalaccess = {
-        reduceMotion = false;
-        reduceTransparency = false;
-      };
       WindowManager = {
         AppWindowGroupingBehavior = false;
         EnableStandardClickToShowDesktop = false;
@@ -239,30 +235,6 @@
           showAppExposeGestureEnabled = false;
           showDesktopGestureEnabled = false;
           showLaunchpadGestureEnabled = false;
-        };
-        "com.apple.Safari" = {
-          AlwaysRestoreSessionAtLaunch = false;
-          AutoOpenSafeDownloads = false;
-          ShowStandaloneTabBar = false;
-          TabCreationPolicy = 1;
-          SearchProviderShortName = "DuckDuckGo";
-          PrivateSearchProviderShortName = "DuckDuckGo";
-          WBSLastPrivateSearchEngineStringExplicitlyChosenByUserKey = "com.duckduckgo";
-          UniversalSearchEnabled = true;
-          WarnAboutFraudulentWebsites = true;
-          BlockStoragePolicy = 2;
-          WBSPrivacyProxyAvailabilityTraffic = 33422572;
-          ShowFullURLInSmartSearchField = true;
-          NeverUseBackgroundColorInToolbar = false;
-          EnableEnhancedPrivacyInPrivateBrowsing = true;
-          EnableEnhancedPrivacyInRegularBrowsing = true;
-          ShowFavoritesBar-v2 = false;
-          DebugSnapshotsUpdatePolicy = 2;
-          FindOnPageMatchesWordStartsOnly = false;
-          SuppressSearchSuggestions = true;
-          WebContinuousSpellCheckingEnabled = true;
-          WebAutomaticSpellingCorrectionEnabled = false;
-          InstallExtensionUpdatesAutomatically = true;
         };
         "com.apple.messageshelper.MessageController" = {
           SOInputLineSettings = {
