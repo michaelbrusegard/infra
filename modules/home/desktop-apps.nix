@@ -17,7 +17,6 @@
     ]
     ++ lib.optionals pkgs.stdenv.isLinux [
       imv
-      breaktimer
       legcord
 
       transmission_4
@@ -41,7 +40,6 @@
       brewCasks.raycast
 
       brewCasks.linearmouse
-      brewCasks.breaktimer
       brewCasks.legcord
 
       brewCasks.transmission
