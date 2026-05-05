@@ -190,12 +190,12 @@ in {
     pay-respects = {
       enable = true;
       enableZshIntegration = true;
-      options = [
-        "--alias"
-        "f"
-      ];
+      options = ["--alias" "f" "--nocnf"];
     };
-    nix-index.enable = true;
+    nix-index = {
+      enable = true;
+      enableZshIntegration = true;
+    };
     nix-index-database.comma.enable = true;
     ripgrep.enable = true;
     jq.enable = true;
@@ -218,18 +218,6 @@ in {
 
     shellAliases =
       {
-        nrs =
-          if pkgs.stdenv.isDarwin
-          then "sudo darwin-rebuild switch --flake $HOME/Projects/nix-config#$(hostname)"
-          else "sudo nixos-rebuild switch --flake $HOME/Projects/nix-config#$(hostname)";
-        nrt =
-          if pkgs.stdenv.isDarwin
-          then "sudo darwin-rebuild test --flake $HOME/Projects/nix-config#$(hostname)"
-          else "sudo nixos-rebuild test --flake $HOME/Projects/nix-config#$(hostname)";
-        ngc = "nix-collect-garbage -d && sudo nix-collect-garbage -d && nix store optimise";
-        nfc = "nix flake check $HOME/Projects/nix-config";
-        nfu = "nix flake update $HOME/Projects/nix-config";
-
         dl = "cd $HOME/Downloads";
         dt = "cd $HOME/Desktop";
         dc = "cd $HOME/Documents";
