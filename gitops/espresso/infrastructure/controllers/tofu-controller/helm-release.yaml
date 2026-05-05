@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: tofu-controller
-      version: "0.16.2"
+      version: "0.16.3"
       sourceRef:
         kind: HelmRepository
         name: tofu-controller
@@ -31,7 +31,7 @@ spec:
     runner:
       image:
         repository: ghcr.io/flux-iac/tf-runner
-        tag: v0.16.2@sha256:0c1edb866c74f489bd6f66b5703b0b84f6d6d8d2d3029db105a32f3833ff5b0b
+        tag: v0.16.3@sha256:b8632592cd6674517e36cb412c856cdc77c3a6f6b16e42af030f683f16178d99
       serviceAccount:
         create: true
         allowedNamespaces:
