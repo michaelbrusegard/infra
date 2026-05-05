@@ -7,6 +7,11 @@
       options = "--delete-older-than 7d";
     };
 
+    registry = {
+      nixpkgs.flake = inputs.nixpkgs;
+      nixpkgs-unstable.flake = inputs.nixpkgs-unstable;
+    };
+
     settings = {
       builders-use-substitutes = true;
       extra-experimental-features = ["nix-command" "flakes"];
