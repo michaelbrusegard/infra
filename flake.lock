@@ -1099,22 +1099,23 @@
         "type": "github"
       }
     },
-    "nix-darwin-unstable": {
+    "nix-darwin-nh": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs-unstable"
+          "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1777780666,
-        "narHash": "sha256-8wURyQMdDkGUarSTKOGdCuFfYiwa3HbzwscUfn3STDE=",
-        "owner": "lnl7",
+        "lastModified": 1776202078,
+        "narHash": "sha256-vGBMOrbfxOZdHVBimRw2sn9Iee8BgTy1DCLJKtrTW7k=",
+        "owner": "rajanmaghera",
         "repo": "nix-darwin",
-        "rev": "8c62fba0854ba15c8917aed18894dbccb48a3777",
+        "rev": "6bd5190096d6d64fb354cac3ba688fb1ad69a197",
         "type": "github"
       },
       "original": {
-        "owner": "lnl7",
+        "owner": "rajanmaghera",
+        "ref": "module-nh",
         "repo": "nix-darwin",
         "type": "github"
       }
@@ -1527,7 +1528,7 @@
         "impermanence": "impermanence",
         "lanzaboote": "lanzaboote",
         "nix-darwin": "nix-darwin",
-        "nix-darwin-unstable": "nix-darwin-unstable",
+        "nix-darwin-nh": "nix-darwin-nh",
         "nix-homebrew": "nix-homebrew",
         "nix-index-database": "nix-index-database",
         "nix-secrets": "nix-secrets",

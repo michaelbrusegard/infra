@@ -1,7 +1,12 @@
-{inputs, ...}: {
-  # TODO: Remove when updating to nix-darwin 26.05
+{
+  inputs,
+  lib,
+  ...
+}: {
+  # TODO: Remove once programs.nh is merged into nix-darwin natively.
+  # https://github.com/nix-darwin/nix-darwin/pull/1744
   imports = [
-    (inputs.nix-darwin-unstable + "/modules/programs/nh.nix")
+    (inputs.nix-darwin-nh + "/modules/programs/nh.nix")
   ];
 
   programs.nh = {
