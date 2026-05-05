@@ -80,6 +80,9 @@
     process_path "''$1"
   '';
 in {
+  imports = [
+    inputs.nix-index-database.homeModules.default
+  ];
   programs = {
     zsh = {
       enable = true;
@@ -192,6 +195,8 @@ in {
         "f"
       ];
     };
+    nix-index.enable = true;
+    nix-index-database.comma.enable = true;
     ripgrep.enable = true;
     jq.enable = true;
     fastfetch.enable = true;
