@@ -1,6 +1,6 @@
 _: {
   security = {
-    sudo = {
+    sudo-rs = {
       enable = true;
       wheelNeedsPassword = true;
       execWheelOnly = true;
