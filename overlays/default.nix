@@ -30,6 +30,7 @@ in
       in {
         inherit
           (pkgs-unstable)
+          aerospace
           dgop
           yabai
           jankyborders
