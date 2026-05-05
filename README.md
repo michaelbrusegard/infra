@@ -23,32 +23,6 @@ recovery options. Then go through all the sections below for the initial setup.
 
 ![Screenshot 2025-05-02 at 15 03 38](https://github.com/user-attachments/assets/381c8dce-f0d0-4a91-b38f-544c30a3209a)
 
-### Disabling SIP
-
-System Integrity Protection (SIP) needs to be partially disabled for the
-[yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection)
-tiling window manager to work correctly.
-
-1. Turn off the mac, then press and hold the power button until "Loading
-   startup options" appears.
-   Click Options, then click Continue.
-
-2. In the menu bar, choose `Utilities`, then `Terminal`
-
-3. Run this:
-
-```sh
-csrutil enable --without fs --without debug --without nvram
-```
-
-After rebooting run this:
-
-```sh
-sudo nvram boot-args=-arm64e_preview_abi
-```
-
-Then reboot again.
-
 ### Command line tools
 
 Install Xcode command line tools:

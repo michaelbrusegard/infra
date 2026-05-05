@@ -34,7 +34,6 @@
     ];
     casks = [
       "netbird-ui"
-      "yabai-indicator"
       "scribus"
       "proton-drive"
     ];

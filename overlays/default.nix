@@ -32,7 +32,6 @@ in
           (pkgs-unstable)
           aerospace
           dgop
-          yabai
           jankyborders
           neovim
           vimPlugins

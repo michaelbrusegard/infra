@@ -22,7 +22,7 @@ _: {
         on-focused-monitor-changed = ["move-mouse monitor-lazy-center"];
         on-window-detected = [
           {
-            "if".app-name-regex-substring = "^(Calculator|System Settings|Archive Utility)$";
+            "if".app-name-regex-substring = "^(Calculator|Archive Utility)$";
             run = "layout floating";
           }
           {
@@ -58,19 +58,19 @@ _: {
           alt-k = "focus up";
           alt-l = "focus right";
 
-          # Move (swap) window
+          # Move window
           alt-shift-h = "move left";
           alt-shift-j = "move down";
           alt-shift-k = "move up";
           alt-shift-l = "move right";
 
-          # Resize window (20px to match yabai)
+          # Resize window
           alt-left = "resize width -20";
           alt-right = "resize width +20";
           alt-up = "resize height -20";
           alt-down = "resize height +20";
 
-          # Switch to workspace (--auto-back-and-forth = yabai's `|| --focus recent`)
+          # Switch to workspace
           alt-1 = "workspace --auto-back-and-forth 1";
           alt-2 = "workspace --auto-back-and-forth 2";
           alt-3 = "workspace --auto-back-and-forth 3";
@@ -81,7 +81,7 @@ _: {
           alt-8 = "workspace --auto-back-and-forth 8";
           alt-9 = "workspace --auto-back-and-forth 9";
 
-          # Move window to workspace and follow focus (yabai's `&& --focus N`)
+          # Move window to workspace
           alt-shift-1 = "move-node-to-workspace --focus-follows-window 1";
           alt-shift-2 = "move-node-to-workspace --focus-follows-window 2";
           alt-shift-3 = "move-node-to-workspace --focus-follows-window 3";
