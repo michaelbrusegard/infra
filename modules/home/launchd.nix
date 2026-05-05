@@ -24,19 +24,6 @@
       };
     };
 
-    yabaiindicator = {
-      enable = true;
-      config = {
-        ProgramArguments = [
-          "/usr/bin/open"
-          "-a"
-          "YabaiIndicator"
-        ];
-        RunAtLoad = true;
-        LimitLoadToSessionType = "Aqua";
-      };
-    };
-
     linearmouse = {
       enable = true;
       config = {

@@ -122,14 +122,18 @@
         alt + shift - return : open -na "WezTerm" --args start --always-new-process -e sh -c 'yazi'
       '';
     };
+  };
 
-    jankyborders = {
-      enable = true;
-      hidpi = true;
-      style = "round";
-      active_color = "0xff89b4fa";
-      inactive_color = "0xff45475a";
-      width = 4.0;
+  launchd.agents.yabaiindicator = {
+    enable = true;
+    config = {
+      ProgramArguments = [
+        "/usr/bin/open"
+        "-a"
+        "YabaiIndicator"
+      ];
+      RunAtLoad = true;
+      LimitLoadToSessionType = "Aqua";
     };
   };
 

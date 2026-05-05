@@ -252,24 +252,7 @@ in {
         ps = "procs";
         lsql = "lazysql -config $HOME/.config/lazysql/config.toml";
       }
-      // lib.optionalAttrs pkgs.stdenv.isLinux {
-        toggle-kanata = ''
-          if systemctl is-active --quiet kanata-default.service; then
-            sudo systemctl stop kanata-default.service
-          else
-            sudo systemctl start kanata-default.service
-          fi
-        '';
-      }
       // lib.optionalAttrs pkgs.stdenv.isDarwin {
-        toggle-kanata = ''
-          if launchctl list | grep -q org.nixos.kanata; then
-            sudo launchctl bootout system /Library/LaunchDaemons/org.nixos.kanata.plist
-          else
-            sudo launchctl bootstrap system /Library/LaunchDaemons/org.nixos.kanata.plist
-          fi
-        '';
-        restart-yabai = "launchctl kickstart -k gui/$(id -u)/org.nixos.yabai";
         groundctl = "cd $HOME/Projects/Telescope/tooling/groundctl && uv run groundctl";
       };
 
