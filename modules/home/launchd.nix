@@ -36,18 +36,6 @@
       };
     };
 
-    breaktimer = {
-      enable = true;
-      config = {
-        ProgramArguments = [
-          "/usr/bin/open"
-          "${pkgs.brewCasks.breaktimer}/Applications/BreakTimer.app"
-        ];
-        RunAtLoad = true;
-        LimitLoadToSessionType = "Aqua";
-      };
-    };
-
     netbird-ui = {
       enable = true;
       config = {
