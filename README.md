@@ -45,11 +45,13 @@ Run the following command to install Nix:
 curl -sSf -L https://install.lix.systems/lix | sh -s -- install
 ```
 
-Then run these commmands to move away conflicting nix configuration left by the installer:
+Then run these commmands to move away conflicting nix configuration left by the installer, and clean up the standalone lix launch daemon to prevent boot conflicts:
 
 ```sh
 sudo mv /etc/nix/nix.custom.conf{,.before-nix-darwin}
 sudo mv /etc/nix/nix.conf /etc/nix/nix.conf.before-nix-darwin
+sudo launchctl bootout system /Library/LaunchDaemons/systems.lix.nix-installer.nix-hook.plist || true
+sudo rm -f /Library/LaunchDaemons/systems.lix.nix-installer.nix-hook.plist
 ```
 
 ### Clone nix configuration (Lungo)
