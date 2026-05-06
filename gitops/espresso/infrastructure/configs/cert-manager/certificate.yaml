@@ -10,4 +10,4 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - "*.gullhaugveien.michaelbrusegard.com"
-    - s3.manafishrov.com
+    - "*.manafishrov.com"
