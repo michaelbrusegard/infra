@@ -1,9 +1,19 @@
-{inputs, ...}: {
+{
+  inputs,
+  lib,
+  ...
+}: {
   nix = {
     optimise.automatic = true;
 
     registry = {
-      nixpkgs.flake = inputs.nixpkgs;
+      # mkForce wins over nixos/modules/misc/nixpkgs-flake.nix which
+      # auto-sets `to.path` from the active pkgs (different store path on
+      # leggero because nixos-raspberrypi pins its own nixpkgs).
+      nixpkgs.to = lib.mkForce {
+        type = "path";
+        path = inputs.nixpkgs.outPath;
+      };
       nixpkgs-unstable.flake = inputs.nixpkgs-unstable;
     };
 
