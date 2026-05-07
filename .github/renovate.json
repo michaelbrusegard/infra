@@ -1,20 +1,29 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    "docker:pinDigests",
-    "helpers:pinGitHubActionDigests",
-    ":configMigration",
-    ":pinDevDependencies",
+    "config:best-practices",
+    ":separateMultipleMajorReleases",
     "abandonments:recommended",
     "security:minimumReleaseAgeNpm",
     ":maintainLockFilesWeekly"
   ],
-  "dependencyDashboard": true,
+  "timezone": "Europe/Oslo",
+  "schedule": [
+    "before 09:00 on monday"
+  ],
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 5,
   "labels": [
     "dependencies"
   ],
   "commitMessagePrefix": "chore(deps): ",
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": [
+      "dependencies",
+      "security"
+    ]
+  },
   "nix": {
     "enabled": true
   },
@@ -61,18 +70,66 @@
   ],
   "packageRules": [
     {
-      "matchUpdateTypes": ["patch"],
-      "groupName": "all patch dependencies"
+      "matchUpdateTypes": [
+        "digest",
+        "pinDigest"
+      ],
+      "groupName": "container & action digests",
+      "automerge": true,
+      "platformAutomerge": true
     },
     {
-      "matchUpdateTypes": ["minor"],
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "groupName": "all patch dependencies",
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "matchUpdateTypes": [
+        "minor"
+      ],
       "groupName": "all minor dependencies"
+    },
+    {
+      "matchUpdateTypes": [
+        "lockFileMaintenance"
+      ],
+      "groupName": "lock file maintenance",
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "github actions",
+      "automerge": true,
+      "platformAutomerge": true
     },
     {
       "matchManagers": [
         "nix"
       ],
       "groupName": "nix flake updates"
+    },
+    {
+      "matchManagers": [
+        "helmv3",
+        "flux"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "major"
+      ],
+      "automerge": false
+    },
+    {
+      "matchManagers": [
+        "terraform"
+      ],
+      "automerge": false
     },
     {
       "enabled": false,
