@@ -1,8 +1,4 @@
-{
-  inputs,
-  lib,
-  ...
-}: {
+{inputs, ...}: {
   # TODO: Remove once programs.nh is merged into nix-darwin natively.
   # https://github.com/nix-darwin/nix-darwin/pull/1744
   imports = [

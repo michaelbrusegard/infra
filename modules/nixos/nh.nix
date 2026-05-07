@@ -1,4 +1,4 @@
-{lib, ...}: {
+_: {
   programs.nh = {
     enable = true;
     flake = "$HOME/Projects/nix-config";
