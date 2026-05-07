@@ -12,7 +12,7 @@
     "before 09:00 on monday"
   ],
   "prConcurrentLimit": 10,
-  "prHourlyLimit": 5,
+  "prHourlyLimit": 10,
   "labels": [
     "dependencies"
   ],
