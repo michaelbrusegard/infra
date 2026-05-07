@@ -101,6 +101,10 @@ Commit the resulting `flake.lock` change as `chore(flake): bump nix-secrets`
 - Commit freely; **never push without being asked**. Pushes to `main` trigger
   CI for the whole flake and roll out `gitops/espresso/` to the cluster via
   FluxCD.
+- **Never create public GitHub artifacts without being asked.** This covers
+  issues, pull requests, comments, releases, gists, and discussions on any
+  repo — mine or third-party. Read operations (`gh api …`, `gh issue list`,
+  `gh pr view`, fetching docs) are fine.
 
 ## Commits
 
