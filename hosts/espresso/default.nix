@@ -15,6 +15,7 @@
     inputs.self.nixosModules.nix
     inputs.self.nixosModules.openssh
     inputs.self.nixosModules.security
+    inputs.self.nixosModules.watchdog
     ./cluster.nix
     ./networking.nix
     ./hardware.nix
