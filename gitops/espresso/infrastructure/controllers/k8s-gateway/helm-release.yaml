@@ -15,11 +15,19 @@ spec:
         namespace: flux-system
       interval: 1h
   values:
-    domain: gullhaugveien.michaelbrusegard.com
+    # Multi-zone Corefile: serves both zones. Fallthrough below sends names
+    # without a matching HTTPRoute (e.g. files.manafishrov.com) to upstream
+    # DNS so non-cluster subdomains still resolve on LAN.
+    domain: "gullhaugveien.michaelbrusegard.com manafishrov.com"
     apex: macchiato.gateway
     watchedResources:
       - HTTPRoute
       - Service
+    fallthrough:
+      enabled: true
+      zones:
+        - gullhaugveien.michaelbrusegard.com
+        - manafishrov.com
     ttl: 300
     service:
       type: LoadBalancer
