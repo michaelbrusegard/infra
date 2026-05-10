@@ -8,7 +8,7 @@ _: {
   # systemd pings /dev/watchdog0; the chipset timer resets the box if PID 1
   # (or the whole kernel) stops responding.
   systemd.settings.Manager = {
-    RuntimeWatchdogSec = "30s";
+    RuntimeWatchdogSec = "15s";
     RebootWatchdogSec = "5min";
   };
 }
