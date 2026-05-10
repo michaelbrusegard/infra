@@ -363,8 +363,13 @@ in {
     };
 
     blocky.settings = {
+      # Forward both zones to k8s-gateway so LAN clients reach cluster
+      # services via the internal LB VIP instead of bouncing off the WAN
+      # IP. Non-cluster manafishrov.com subdomains fall through to upstream
+      # DNS via k8s-gateway's fallthrough config.
       conditional.mapping = {
         "${baseDomain}" = "10.0.188.5,fd7a:115c:a1e0:188::5";
+        "manafishrov.com" = "10.0.188.5,fd7a:115c:a1e0:188::5";
       };
       customDNS.mapping = {
         "${routerDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
