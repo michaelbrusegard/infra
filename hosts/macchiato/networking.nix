@@ -20,6 +20,13 @@ in {
     bridges.br_clients.interfaces = clientInterfaces;
     bridges.br_servers.interfaces = serverInterfaces;
 
+    nameservers = [
+      "127.0.0.1"
+      "::1"
+      "1.1.1.1"
+      "2606:4700:4700::1111"
+    ];
+
     vlans = {
       iot = {
         id = 189;
