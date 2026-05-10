@@ -16,6 +16,7 @@
     inputs.self.nixosModules.openthread-border-router
     inputs.self.nixosModules.prometheus
     inputs.self.nixosModules.security
+    inputs.self.nixosModules.watchdog
     ./hardware.nix
     ./networking.nix
   ];
