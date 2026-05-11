@@ -126,4 +126,4 @@ spec:
         resources:
           requests:
             storage: 50Gi
-        storageClassName: nvme-single
+        storageClassName: ssd-ha
