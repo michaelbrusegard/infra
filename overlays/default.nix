@@ -5,23 +5,6 @@ in
     (_: prev: import ../packages {pkgs = prev;})
     inputs.yazi.overlays.default
     inputs.brew-nix.overlays.default
-    # Workaround for https://github.com/BatteredBunny/brew-nix/issues/35
-    # The raycast cask URL ("…/download?build=arm") is fetched without a
-    # `.dmg` extension, so brew-nix's case-statement falls through to the
-    # 7zz branch, where the `?` in the path is interpreted as a wildcard
-    # and crashes scanning the nix store. Force undmg, like the old logic.
-    (_: prev: {
-      brewCasks =
-        prev.brewCasks
-        // {
-          raycast = prev.brewCasks.raycast.overrideAttrs (_: {
-            unpackPhase = ''
-              undmg "$src"
-              find . -maxdepth 1 -type l -delete
-            '';
-          });
-        };
-    })
     # Strip AppleDouble sidecar files (e.g. `Info.plist:com.apple.quarantine`)
     # from every cask: they break codesign and make Gatekeeper reject the app.
     (_: prev: {
