@@ -25,6 +25,7 @@
       fluxcd
       kubernetes-helm
       etcd
+      kubeconform
     ];
     sessionVariables.KUBECONFIG = config.secrets.home.kubeConfigFile;
   };

@@ -224,6 +224,7 @@
           kubectl
           kubernetes-helm
           kustomize
+          kubeconform
           opentofu
           sops
           yq-go
