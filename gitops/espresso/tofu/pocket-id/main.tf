@@ -22,15 +22,3 @@ resource "pocketid_client" "netbird" {
 
   allowed_user_groups = [pocketid_group.users.id]
 }
-
-# Imports for the manually-created objects. After the first successful apply
-# these blocks can stay (they are no-ops once state matches) or be removed.
-import {
-  to = pocketid_group.users
-  id = "bae4aed3-11e2-4130-9fd0-bc807313da68"
-}
-
-import {
-  to = pocketid_client.netbird
-  id = "a21f6c77-3db2-493f-92ad-abb86c0bcaaf"
-}
