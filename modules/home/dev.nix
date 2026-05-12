@@ -32,6 +32,7 @@
     file.".pgpass".source = config.lib.file.mkOutOfStoreSymlink config.secrets.home.pgpassFile;
     packages = with pkgs; [
       postgresql
+      vite-plus
     ];
   };
 }
