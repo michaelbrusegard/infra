@@ -19,3 +19,4 @@ resources:
   - rustfs
   - honcho-tofu
   - netbird-tofu
+  - pocket-id-tofu

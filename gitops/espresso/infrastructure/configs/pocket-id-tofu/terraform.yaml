@@ -1,0 +1,21 @@
+apiVersion: infra.contrib.fluxcd.io/v1alpha2
+kind: Terraform
+metadata:
+  name: pocket-id-infra
+  namespace: flux-system
+spec:
+  path: ./gitops/espresso/tofu/pocket-id
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 10m
+  approvePlan: auto
+  destroyResourcesOnDeletion: false
+  storeReadablePlan: human
+  backendConfig:
+    secretSuffix: pocket-id-infra
+  varsFrom:
+    - kind: Secret
+      name: pocket-id-credentials
+  alwaysCleanupRunnerPod: true
