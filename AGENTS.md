@@ -4,7 +4,7 @@
 
 Personal multi-host Nix flake. Manages NixOS, nix-darwin, and Home Manager,
 plus a FluxCD-managed Kubernetes cluster (`espresso`) under `gitops/`. Pairs
-with the private sibling flake `../nix-secrets`.
+with the private sibling flake `../infra-secrets` exposed as input `secrets`.
 
 ## Hosts
 
@@ -77,17 +77,17 @@ tofu -chdir=gitops/espresso/tofu/<stack> validate
 ### Sibling secrets repo
 
 ```sh
-nix run .#fmt-nix-secrets    # treefmt on ../nix-secrets
-nix run .#lint-nix-secrets   # treefmt + statix + deadnix on ../nix-secrets
+nix run .#fmt-infra-secrets    # treefmt on ../infra-secrets
+nix run .#lint-infra-secrets   # treefmt + statix + deadnix on ../infra-secrets
 ```
 
 Pull in new commits from the secrets flake (after they land on its `main`):
 
 ```sh
-nix flake update nix-secrets   # bumps just the nix-secrets input in flake.lock
+nix flake update secrets   # bumps just the secrets input in flake.lock
 ```
 
-Commit the resulting `flake.lock` change as `chore(flake): bump nix-secrets`
+Commit the resulting `flake.lock` change as `chore(flake): bump secrets`
 (or describe the *why* if it's tied to a specific feature).
 
 ## Rules
@@ -96,7 +96,7 @@ Commit the resulting `flake.lock` change as `chore(flake): bump nix-secrets`
   done.
 - Match existing module style; modules are split by platform under `modules/`.
 - Don't add dependencies without a clear reason.
-- Anything sensitive belongs in `../nix-secrets`. Never write plaintext
+- Anything sensitive belongs in `../infra-secrets`. Never write plaintext
   secrets here.
 - Commit freely; **never push without being asked**. Pushes to `main` trigger
   CI for the whole flake and roll out `gitops/espresso/` to the cluster via
@@ -135,7 +135,7 @@ Good:
 - `fix(nh): correct double-gc configuration on darwin`
 - `refactor(home): split cli modules by user scope`
 - `feat(espresso): add tofu-controller credentials`
-- `chore(flake): bump nix-secrets`
+- `chore(flake): bump secrets`
 
 Bad:
 

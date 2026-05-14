@@ -1,4 +1,4 @@
-# nix-config
+# infra
 
 This is primarily a guide for myself on how to setup my own systems, feel free
 to copy anything, but do not expect a direct copy of everything to
@@ -7,7 +7,7 @@ work for you.
 Note to self: Make sure to follow the guide for each system step by step.
 
 > [!NOTE]
-> I also maintain a private repository with a nix flake containing soft
+> I also maintain a private repository with a Nix flake containing soft
 > and hard secrets. Directly copying the configuration will therefore fail
 > since it will fail to fetch the private repository. The private flake uses
 > Age keys to further encrypt the most critical secrets. To include them in
@@ -54,7 +54,7 @@ sudo launchctl bootout system /Library/LaunchDaemons/systems.lix.nix-installer.n
 sudo rm -f /Library/LaunchDaemons/systems.lix.nix-installer.nix-hook.plist
 ```
 
-### Clone nix configuration (Lungo)
+### Clone infrastructure configuration (Lungo)
 
 Add the GitHub SSH private key:
 
@@ -62,10 +62,10 @@ Add the GitHub SSH private key:
 ssh-add ./private-key
 ```
 
-Then clone the nix configuration:
+Then clone the infrastructure configuration:
 
 ```sh
-git clone git@github.com:michaelbrusegard/nix-config.git ~/Projects/nix-config
+git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra
 ```
 
 ### Initial Build (Lungo)
@@ -74,7 +74,7 @@ Put the user secrets Age key to `~/.config/sops/age/keys.txt`.
 Build the system the first time using the following command:
 
 ```sh
-sudo nix --extra-experimental-features "nix-command flakes" run nix-darwin -- switch --flake $HOME/Projects/nix-config#lungo
+sudo nix --extra-experimental-features "nix-command flakes" run nix-darwin -- switch --flake $HOME/Projects/infra#lungo
 ```
 
 Later rebuilds can use the `nrs` alias.
@@ -129,7 +129,7 @@ You can run `ip a` to find the IP address.
 
 3. **Post-Install**:
    - Add user Age key to `~/.config/sops/age/keys.txt`).
-   - Move over the GitHub SSH private key and clone the nix configuration: `git clone git@github.com:michaelbrusegard/nix-config.git ~/Projects/nix-config`.
+   - Move over the GitHub SSH private key and clone the infrastructure configuration: `git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
    - For TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+11 /dev/sda2`.
 
 ### Create Windows installer
@@ -211,7 +211,7 @@ To enter the WSL environment, run:
 wsl
 ```
 
-Now clone the nix-config repository, add the age keys and rebuild.
+Now clone the infra repository, add the age keys and rebuild.
 
 ### Applying system preferences and installing packages
 
@@ -230,7 +230,7 @@ Then run the `setup.ps1` script to install packages and apply registry tweaks:
 
 ```sh
 powershell -ExecutionPolicy Bypass -File \
-  \\wsl.localhost\NixOS\home\michaelbrusegard\Developer\dotfiles\windows\setup.ps1
+  \\wsl.localhost\NixOS\home\michaelbrusegard\Projects\infra\windows\setup.ps1
 ```
 
 ### Keyboard
@@ -245,7 +245,7 @@ and the configuration can be imported into the app to be edited via
 To apply the custom keyboard layout copy the `keyboard.zip` file from WSL:
 
 ```sh
-SRC=\\wsl$\\NixOS\\home\\michaelbrusegard\\Developer\\dotfiles\\windows\\keyboard.zip
+SRC=\\wsl$\\NixOS\\home\\michaelbrusegard\\Projects\\infra\\windows\\keyboard.zip
 cp $SRC C:\Users\michaelbrusegard\Downloads
 ```
 

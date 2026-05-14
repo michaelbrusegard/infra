@@ -16,7 +16,7 @@ inputs: {
 
     imports =
       [
-        inputs.nix-secrets.nixosModules.secrets
+        inputs.secrets.nixosModules.secrets
         (inputs.self + "/hosts/${hostConfig}")
       ]
       ++ map (user: inputs.self + "/users/${user}/nixos.nix") users;

@@ -24,7 +24,7 @@ in
         (inputs.self + "/hosts/${resolvedHostConfig}")
         {
           imports = [
-            inputs.nix-secrets.nixosModules.secrets
+            inputs.secrets.nixosModules.secrets
           ];
         }
       ]

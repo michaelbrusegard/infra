@@ -5,7 +5,7 @@
   isWsl,
   ...
 }: let
-  dmsConfig = "${config.home.homeDirectory}/Projects/nix-config/config/dms";
+  dmsConfig = "${config.home.homeDirectory}/Projects/infra/config/dms";
 in {
   home = {
     sessionVariables = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {

@@ -23,7 +23,7 @@ in
         (inputs.self + "/hosts/${resolvedHostConfig}")
         {
           imports = [
-            inputs.nix-secrets.darwinModules.secrets
+            inputs.secrets.darwinModules.secrets
             inputs.brew-nix.darwinModules.default
           ];
         }

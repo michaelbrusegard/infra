@@ -5,7 +5,7 @@
   isWsl,
   ...
 }: let
-  freecadConfig = "${config.home.homeDirectory}/Projects/nix-config/config/freecad";
+  freecadConfig = "${config.home.homeDirectory}/Projects/infra/config/freecad";
 in {
   home.packages =
     lib.optionals (pkgs.stdenv.isLinux && !isWsl) [

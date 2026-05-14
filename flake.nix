@@ -131,8 +131,8 @@
       url = "github:JuliusBrussee/caveman";
       flake = false;
     };
-    nix-secrets = {
-      url = "git+ssh://git@github.com/michaelbrusegard/nix-secrets.git";
+    secrets = {
+      url = "git+ssh://git@github.com/michaelbrusegard/infra-secrets.git";
       inputs = {
         sops-nix.follows = "sops-nix";
       };
@@ -155,17 +155,17 @@
         .build
         .wrapper
     );
-    nixSecretsTools = lib.forAllSystems (
+    secretsTools = lib.forAllSystems (
       system: let
         pkgs = nixpkgs.legacyPackages.${system};
         treefmt = "${formatters.${system}}/bin/treefmt";
       in {
-        fmt-nix-secrets = pkgs.writeShellApplication {
-          name = "fmt-nix-secrets";
+        fmt-infra-secrets = pkgs.writeShellApplication {
+          name = "fmt-infra-secrets";
           text = ''
             set -euo pipefail
 
-            target="''${1:-../nix-secrets}"
+            target="''${1:-../infra-secrets}"
 
             if [ ! -d "$target" ]; then
               printf 'Target repo not found: %s\n' "$target" >&2
@@ -177,12 +177,12 @@
           '';
         };
 
-        lint-nix-secrets = pkgs.writeShellApplication {
-          name = "lint-nix-secrets";
+        lint-infra-secrets = pkgs.writeShellApplication {
+          name = "lint-infra-secrets";
           text = ''
             set -euo pipefail
 
-            target="''${1:-../nix-secrets}"
+            target="''${1:-../infra-secrets}"
 
             if [ ! -d "$target" ]; then
               printf 'Target repo not found: %s\n' "$target" >&2
@@ -201,13 +201,13 @@
     inherit lib;
     formatter = formatters;
     apps = lib.forAllSystems (system: {
-      fmt-nix-secrets = {
+      fmt-infra-secrets = {
         type = "app";
-        program = "${nixSecretsTools.${system}.fmt-nix-secrets}/bin/fmt-nix-secrets";
+        program = "${secretsTools.${system}.fmt-infra-secrets}/bin/fmt-infra-secrets";
       };
-      lint-nix-secrets = {
+      lint-infra-secrets = {
         type = "app";
-        program = "${nixSecretsTools.${system}.lint-nix-secrets}/bin/lint-nix-secrets";
+        program = "${secretsTools.${system}.lint-infra-secrets}/bin/lint-infra-secrets";
       };
     });
     devShells = lib.forAllSystems (system: let
@@ -236,7 +236,7 @@
         (import ./packages {
           pkgs = nixpkgs.legacyPackages.${system};
         })
-        // nixSecretsTools.${system}
+        // secretsTools.${system}
     );
     overlays = {
       default = import ./overlays {inherit inputs;};

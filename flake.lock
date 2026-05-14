@@ -1158,26 +1158,6 @@
         "type": "github"
       }
     },
-    "nix-secrets": {
-      "inputs": {
-        "sops-nix": [
-          "sops-nix"
-        ]
-      },
-      "locked": {
-        "lastModified": 1778602243,
-        "narHash": "sha256-+DOIMqxC5Qq9iGqiE79rGEug10dE/4RShLPfrw02P2w=",
-        "ref": "refs/heads/main",
-        "rev": "e22e306727fbebc874bafd044fe647d44a167496",
-        "revCount": 298,
-        "type": "git",
-        "url": "ssh://git@github.com/michaelbrusegard/nix-secrets.git"
-      },
-      "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/michaelbrusegard/nix-secrets.git"
-      }
-    },
     "nixos-images": {
       "inputs": {
         "nixos-stable": [
@@ -1531,13 +1511,13 @@
         "nix-darwin-nh": "nix-darwin-nh",
         "nix-homebrew": "nix-homebrew",
         "nix-index-database": "nix-index-database",
-        "nix-secrets": "nix-secrets",
         "nixos-raspberrypi": "nixos-raspberrypi",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_5",
         "nixpkgs-otbr": "nixpkgs-otbr",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "quickshell": "quickshell_2",
+        "secrets": "secrets",
         "sops-nix": "sops-nix",
         "t3code": "t3code",
         "treefmt-nix": "treefmt-nix_2",
@@ -1624,6 +1604,26 @@
         "owner": "oxalica",
         "repo": "rust-overlay",
         "type": "github"
+      }
+    },
+    "secrets": {
+      "inputs": {
+        "sops-nix": [
+          "sops-nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1778775824,
+        "narHash": "sha256-39Mqxvszxsz5xIZ2+h0zX1/cANpeOnqJ8oraOwt2JDk=",
+        "ref": "refs/heads/main",
+        "rev": "2b6559f81a1998b2aa6f0dfc1b88fcffe917cbd0",
+        "revCount": 299,
+        "type": "git",
+        "url": "ssh://git@github.com/michaelbrusegard/infra-secrets.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/michaelbrusegard/infra-secrets.git"
       }
     },
     "sops-nix": {

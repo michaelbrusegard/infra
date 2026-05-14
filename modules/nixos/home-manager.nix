@@ -24,7 +24,7 @@
       value = _: {
         imports = [
           (inputs.self + "/users/${user}/home.nix")
-          inputs.nix-secrets.homeManagerModules.secrets
+          inputs.secrets.homeManagerModules.secrets
         ];
       };
     })

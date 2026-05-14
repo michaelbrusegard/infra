@@ -146,7 +146,7 @@
     {
       "enabled": false,
       "matchPackageNames": [
-        "/nix-secrets/"
+      "/infra-secrets/"
       ]
     },
     {
