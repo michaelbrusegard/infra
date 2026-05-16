@@ -1,0 +1,35 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: manafishrov-sa-namespace-scope
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["*"]
+        apiVersions: ["*"]
+        operations: ["CREATE", "UPDATE", "DELETE"]
+        resources: ["*"]
+  matchConditions:
+    - name: only-manafishrov-sa
+      expression: 'request.userInfo.username == "system:serviceaccount:flux-system:manafishrov"'
+  validations:
+    # Namespaced resources must live in a manafishrov* namespace.
+    - expression: |
+        request.resource.resource == "namespaces" ||
+        request.namespace == "" ||
+        request.namespace.startsWith("manafishrov")
+      message: "manafishrov SA may only operate in manafishrov* namespaces"
+    # The Namespace resource itself must be named manafishrov*.
+    - expression: |
+        request.resource.resource != "namespaces" ||
+        request.name.startsWith("manafishrov")
+      message: "manafishrov SA may only manage namespaces matching manafishrov*"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: manafishrov-sa-namespace-scope
+spec:
+  policyName: manafishrov-sa-namespace-scope
+  validationActions: [Deny]
