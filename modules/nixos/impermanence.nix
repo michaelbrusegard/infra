@@ -14,14 +14,29 @@
     "/var/log"
   ];
 
-  userDirectories =
-    map (user: {
-      directory = "/home/${user}";
-      inherit user;
-      inherit (config.users.users.${user}) group;
-      mode = "u=rwx,g=,o=";
-    })
-    users;
+  userPersistence = {
+    admin.files = [
+      ".config/sops/age/keys.txt"
+      ".config/zsh/.zsh_history"
+    ];
+    michaelbrusegard = {
+      directories = [
+        "Desktop"
+        "Documents"
+        "Downloads"
+        "Music"
+        "Pictures"
+        "Projects"
+        "Public"
+        "Templates"
+        "Videos"
+      ];
+      files = [
+        ".config/sops/age/keys.txt"
+        ".config/zsh/.zsh_history"
+      ];
+    };
+  };
 
   serviceDirectories =
     lib.optionals config.services.k3s.enable [
@@ -52,11 +67,11 @@
     ++ lib.optionals config.networking.networkmanager.enable [
       "/etc/NetworkManager/system-connections"
     ]
-    ++ lib.optionals config.boot.lanzaboote.enable [
+    ++ lib.optionals (config.boot.lanzaboote.enable or false) [
       config.boot.lanzaboote.pkiBundle
     ];
 
-  persistedDirectories = lib.unique (baseDirectories ++ userDirectories ++ serviceDirectories);
+  persistedDirectories = lib.unique (baseDirectories ++ serviceDirectories);
 
   persistedFiles = [
     "/etc/machine-id"
@@ -72,6 +87,7 @@ in {
     hideMounts = true;
     directories = persistedDirectories;
     files = persistedFiles;
+    users = lib.filterAttrs (user: _: builtins.elem user users) userPersistence;
   };
 
   systemd.tmpfiles.rules = [
