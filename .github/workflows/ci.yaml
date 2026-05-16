@@ -107,6 +107,7 @@ jobs:
         tofu-dir:
           - gitops/espresso/tofu/honcho
           - gitops/espresso/tofu/netbird
+          - gitops/espresso/tofu/pocket-id
     env:
       OPENTOFU_VERSION: 1.11.5
     steps:
