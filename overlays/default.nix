@@ -5,22 +5,6 @@ in
     (_: prev: import ../packages {pkgs = prev;})
     inputs.yazi.overlays.default
     inputs.brew-nix.overlays.default
-    # Strip AppleDouble sidecar files (e.g. `Info.plist:com.apple.quarantine`)
-    # from every cask: they break codesign and make Gatekeeper reject the app.
-    (_: prev: {
-      brewCasks =
-        prev.lib.mapAttrs (
-          _: cask:
-            cask.overrideAttrs (old: {
-              unpackPhase =
-                (old.unpackPhase or "")
-                + ''
-                  find . -name '*:com.apple.*' -print -delete
-                '';
-            })
-        )
-        prev.brewCasks;
-    })
     (
       _: prev: let
         inherit (prev.stdenv.hostPlatform) system;
