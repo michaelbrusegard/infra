@@ -29,6 +29,25 @@ spec:
         - gullhaugveien.michaelbrusegard.com
         - manafishrov.com
     ttl: 300
+    # Forward fallthrough queries directly to public DNS instead of the cluster
+    # resolver. Otherwise the chart's default `/etc/resolv.conf` would route
+    # back through CoreDNS in kube-system, which forwards back to macchiato's
+    # blocky, which conditionally forwards manafishrov.com back here — a loop
+    # that prevents non-cluster subdomains from ever resolving on LAN.
+    extraZonePlugins:
+      - name: log
+      - name: errors
+      - name: health
+        configBlock: |-
+          lameduck 5s
+      - name: ready
+      - name: prometheus
+        parameters: 0.0.0.0:9153
+      - name: forward
+        parameters: . 1.1.1.1 9.9.9.9
+      - name: loop
+      - name: reload
+      - name: loadbalance
     service:
       type: LoadBalancer
       port: 53
