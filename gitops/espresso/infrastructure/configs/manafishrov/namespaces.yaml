@@ -2,13 +2,3 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: manafishrov
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: manafishrov-pocket-id
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: manafishrov-vaultwarden
