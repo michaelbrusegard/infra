@@ -4,5 +4,4 @@ resources:
   - namespace.yaml
   - public-gateway.yaml
   - internal-gateway.yaml
-  - public-redirects.yaml
   - macchiato-dns.yaml
