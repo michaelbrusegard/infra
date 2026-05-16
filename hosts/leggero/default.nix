@@ -8,6 +8,7 @@
     inputs.self.nixosModules.disable-documentation
     inputs.self.nixosModules.home-manager
     inputs.self.nixosModules.home-assistant
+    inputs.self.nixosModules.impermanence
     inputs.self.nixosModules.locale
     inputs.self.nixosModules.networking
     inputs.self.nixosModules.nh
