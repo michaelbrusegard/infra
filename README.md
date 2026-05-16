@@ -119,7 +119,7 @@ You can run `ip a` to find the IP address.
 
 1. **Prepare Local Files**:
    - Create LUKS passphrase file: `./secret.key`.
-   - Get host SSH key: `./keys/etc/ssh/ssh_host_ed25519_key` and `./keys/etc/ssh/ssh_host_ed25519_key.pub`
+   - Get host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
 
 2. **Run Install**:
 

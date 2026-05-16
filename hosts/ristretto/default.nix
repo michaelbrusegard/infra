@@ -29,6 +29,7 @@
       inputs.self.nixosModules.fonts
       inputs.self.nixosModules.gtk
       inputs.self.nixosModules.hyprland
+      inputs.self.nixosModules.impermanence
       inputs.self.nixosModules.kanata
       inputs.self.nixosModules.lanzaboote
       inputs.self.nixosModules.libvirt
