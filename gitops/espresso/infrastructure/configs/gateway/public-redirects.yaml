@@ -1,0 +1,21 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: public-https-redirect
+  namespace: gateway
+spec:
+  parentRefs:
+    - name: public
+      namespace: gateway
+      sectionName: http
+  hostnames:
+    - id.gullhaugveien.michaelbrusegard.com
+    - status.gullhaugveien.michaelbrusegard.com
+    - netbird.gullhaugveien.michaelbrusegard.com
+    - s3.manafishrov.com
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
