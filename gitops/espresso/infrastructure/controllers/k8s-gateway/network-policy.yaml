@@ -38,6 +38,13 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-    # Kubernetes API for watching HTTPRoutes and Services
     - toEntities:
         - kube-apiserver
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
