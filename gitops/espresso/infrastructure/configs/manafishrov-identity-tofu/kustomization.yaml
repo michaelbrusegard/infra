@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../manafishrov-tofu-base
+patches:
+  - target:
+      kind: Terraform
+      name: manafishrov-base
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: manafishrov-identity
+  - target:
+      kind: Terraform
+      name: manafishrov-identity
+    patch: |
+      apiVersion: infra.contrib.fluxcd.io/v1alpha2
+      kind: Terraform
+      metadata:
+        name: manafishrov-identity
+      spec:
+        path: ./tofu/identity
+        backendConfig:
+          secretSuffix: manafishrov-identity
+        varsFrom:
+          - kind: Secret
+            name: manafishrov-pocket-id-credentials
+            varsKeys:
+              - pocketid_api_token
+        writeOutputsToSecret:
+          name: manafishrov-tofu-outputs
+          outputs:
+            - vaultwarden_pocketid_client_id
+            - vaultwarden_pocketid_client_secret

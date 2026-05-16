@@ -20,3 +20,6 @@ resources:
   - honcho-tofu
   - netbird-tofu
   - pocket-id-tofu
+  - manafishrov-storage-tofu
+  - manafishrov-dns-tofu
+  - manafishrov-identity-tofu

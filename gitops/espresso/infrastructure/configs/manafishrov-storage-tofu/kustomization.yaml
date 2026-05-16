@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../manafishrov-tofu-base
+patches:
+  - target:
+      kind: Terraform
+      name: manafishrov-base
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: manafishrov-storage
+  - target:
+      kind: Terraform
+      name: manafishrov-storage
+    patch: |
+      apiVersion: infra.contrib.fluxcd.io/v1alpha2
+      kind: Terraform
+      metadata:
+        name: manafishrov-storage
+      spec:
+        path: ./tofu/storage
+        backendConfig:
+          secretSuffix: manafishrov-storage
+        varsFrom:
+          - kind: Secret
+            name: rustfs-secret
+            varsKeys:
+              - RUSTFS_ACCESS_KEY:rustfs_access_key
+              - RUSTFS_SECRET_KEY:rustfs_secret_key
+              - firmware_ci_secret_key

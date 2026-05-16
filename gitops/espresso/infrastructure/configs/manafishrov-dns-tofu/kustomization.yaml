@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../manafishrov-tofu-base
+patches:
+  - target:
+      kind: Terraform
+      name: manafishrov-base
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: manafishrov-dns
+  - target:
+      kind: Terraform
+      name: manafishrov-dns
+    patch: |
+      apiVersion: infra.contrib.fluxcd.io/v1alpha2
+      kind: Terraform
+      metadata:
+        name: manafishrov-dns
+      spec:
+        path: ./tofu/dns
+        backendConfig:
+          secretSuffix: manafishrov-dns
+        runnerPodTemplate:
+          spec:
+            env:
+              - name: CLOUDFLARE_API_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: cloudflare-api-token
+                    key: api-token

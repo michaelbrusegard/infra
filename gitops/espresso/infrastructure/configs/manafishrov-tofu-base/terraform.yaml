@@ -1,0 +1,15 @@
+apiVersion: infra.contrib.fluxcd.io/v1alpha2
+kind: Terraform
+metadata:
+  name: manafishrov-base
+  namespace: flux-system
+spec:
+  sourceRef:
+    kind: GitRepository
+    name: manafishrov
+    namespace: flux-system
+  interval: 10m
+  approvePlan: auto
+  destroyResourcesOnDeletion: false
+  storeReadablePlan: human
+  alwaysCleanupRunnerPod: true
