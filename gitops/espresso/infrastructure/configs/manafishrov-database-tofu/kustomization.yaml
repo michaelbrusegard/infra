@@ -33,6 +33,6 @@ patches:
             varsKeys:
               - nextcloud_db_password
         writeOutputsToSecret:
-          name: manafishrov-tofu-outputs
+          name: manafishrov-database-outputs
           outputs:
             - nextcloud_db_password

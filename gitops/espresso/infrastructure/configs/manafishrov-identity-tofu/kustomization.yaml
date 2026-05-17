@@ -28,7 +28,7 @@ patches:
             varsKeys:
               - pocketid_api_token
         writeOutputsToSecret:
-          name: manafishrov-tofu-outputs
+          name: manafishrov-identity-outputs
           outputs:
             - vaultwarden_pocketid_client_id
             - vaultwarden_pocketid_client_secret
