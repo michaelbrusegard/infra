@@ -9,28 +9,30 @@ patches:
     patch: |
       - op: replace
         path: /metadata/name
-        value: manafishrov-identity
+        value: manafishrov-database
   - target:
       kind: Terraform
-      name: manafishrov-identity
+      name: manafishrov-database
     patch: |
       apiVersion: infra.contrib.fluxcd.io/v1alpha2
       kind: Terraform
       metadata:
-        name: manafishrov-identity
+        name: manafishrov-database
       spec:
-        path: ./tofu/identity
+        path: ./tofu/database
         backendConfig:
-          secretSuffix: manafishrov-identity
+          secretSuffix: manafishrov-database
         varsFrom:
           - kind: Secret
-            name: manafishrov-pocket-id-credentials
+            name: postgres-admin
             varsKeys:
-              - pocketid_api_token
+              - POSTGRES_USER:pg_admin_user
+              - POSTGRES_PASSWORD:pg_admin_password
+          - kind: Secret
+            name: manafishrov-nextcloud-db
+            varsKeys:
+              - nextcloud_db_password
         writeOutputsToSecret:
           name: manafishrov-tofu-outputs
           outputs:
-            - vaultwarden_pocketid_client_id
-            - vaultwarden_pocketid_client_secret
-            - nextcloud_pocketid_client_id
-            - nextcloud_pocketid_client_secret
+            - nextcloud_db_password

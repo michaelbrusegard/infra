@@ -34,6 +34,14 @@ spec:
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
+            k8s:io.kubernetes.pod.namespace: manafishrov-nextcloud
+            k8s:app: nextcloud
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
             k8s:io.kubernetes.pod.namespace: flux-system
       toPorts:
         - ports:

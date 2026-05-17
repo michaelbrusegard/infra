@@ -23,3 +23,4 @@ resources:
   - manafishrov-storage-tofu
   - manafishrov-dns-tofu
   - manafishrov-identity-tofu
+  - manafishrov-database-tofu
