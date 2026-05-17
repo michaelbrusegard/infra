@@ -16,9 +16,20 @@ spec:
         component: api
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: api
-          image: ghcr.io/plastic-labs/honcho:latest@sha256:a8c4a8dcead76ef9b580559469db4f140eae2c51510ee7d7d3a1485576fee554
+          image: ghcr.io/plastic-labs/honcho:v3.0.6@sha256:5ebbd47fe03f2e77c14922abf587c5b21c559a490187339d9f70bad6ef1f775c
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           command:
             - sh
             - docker/entrypoint.sh
@@ -151,6 +162,12 @@ spec:
         component: deriver
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         - name: wait-for-honcho-api
           image: busybox:1.37.0@sha256:b8d1827e38a1d49cd17217efd7b07d689e4ea1744e39c7dcbb95533d175bea65
@@ -158,9 +175,19 @@ spec:
             - sh
             - -c
             - until wget -qO- http://honcho:8000/health >/dev/null 2>&1; do sleep 2; done
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       containers:
         - name: deriver
-          image: ghcr.io/plastic-labs/honcho:latest@sha256:a8c4a8dcead76ef9b580559469db4f140eae2c51510ee7d7d3a1485576fee554
+          image: ghcr.io/plastic-labs/honcho:v3.0.6@sha256:5ebbd47fe03f2e77c14922abf587c5b21c559a490187339d9f70bad6ef1f775c
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           command:
             - /app/.venv/bin/python
             - -m
