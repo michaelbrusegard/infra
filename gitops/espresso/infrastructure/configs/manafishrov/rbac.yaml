@@ -13,7 +13,6 @@ rules:
     resources:
       - namespaces
       - configmaps
-      - secrets
       - services
       - persistentvolumeclaims
     verbs: ["*"]
@@ -56,4 +55,123 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: manafishrov
+  apiGroup: rbac.authorization.k8s.io
+---
+# Secrets access is split out of the cluster-wide grant so the manafishrov
+# SA cannot read Secrets in foreign namespaces (e.g. flux-system/sops-age).
+# The ClusterRole below is bound per-namespace via RoleBindings; reads and
+# writes only succeed inside namespaces with an explicit binding.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manafishrov-secrets
+rules:
+  - apiGroups: [""]
+    resources:
+      - secrets
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-secrets
+  namespace: manafishrov
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: ClusterRole
+  name: manafishrov-secrets
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-secrets
+  namespace: manafishrov-vaultwarden
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: ClusterRole
+  name: manafishrov-secrets
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-secrets
+  namespace: manafishrov-pocket-id
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: ClusterRole
+  name: manafishrov-secrets
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-secrets
+  namespace: manafishrov-nextcloud
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: ClusterRole
+  name: manafishrov-secrets
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-secrets
+  namespace: manafishrov-public
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: ClusterRole
+  name: manafishrov-secrets
+  apiGroup: rbac.authorization.k8s.io
+---
+# In flux-system the manafishrov SA only needs access to the specific
+# tf-controller input Secrets it ships from infra-secrets. Allowlisted by
+# name so it cannot read sops-age, webhook tokens, or other operator
+# Secrets. Append new entries here when a new tofu input Secret is added.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manafishrov-flux-secrets
+  namespace: flux-system
+rules:
+  - apiGroups: [""]
+    resources:
+      - secrets
+    resourceNames:
+      - manafishrov-pocket-id-credentials
+    verbs: ["get", "patch", "update", "delete"]
+  - apiGroups: [""]
+    resources:
+      - secrets
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-flux-secrets
+  namespace: flux-system
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: Role
+  name: manafishrov-flux-secrets
   apiGroup: rbac.authorization.k8s.io
