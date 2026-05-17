@@ -17,7 +17,7 @@ spec:
       initContainers:
         - name: uptime-kuma
           restartPolicy: Always
-          image: louislam/uptime-kuma:2@sha256:9aeb4e51d038047f414309c77a1af553281ca535723cb88907d907269d0a908e
+          image: louislam/uptime-kuma:2.3.2@sha256:dbede95c52962acf5dedc67b46d98fe9ad366c708aebc5e0ee70ca5245181482
           ports:
             - containerPort: 3001
               name: http
@@ -42,7 +42,7 @@ spec:
               name: data
       containers:
         - name: autokuma
-          image: ghcr.io/bigboot/autokuma:2@sha256:8acbd3ad3ec8cb6c066aa0ee541154921283ec78159015937128541921c47974
+          image: ghcr.io/bigboot/autokuma:2.0.0@sha256:8acbd3ad3ec8cb6c066aa0ee541154921283ec78159015937128541921c47974
           env:
             - name: AUTOKUMA__KUMA__URL
               value: "http://localhost:3001"

@@ -18,7 +18,7 @@ spec:
         kubernetes.io/hostname: espresso-1
       initContainers:
         - name: init-dirs
-          image: busybox:1.37@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e
+          image: busybox:1.37.0@sha256:b8d1827e38a1d49cd17217efd7b07d689e4ea1744e39c7dcbb95533d175bea65
           command:
             - sh
             - -c
@@ -27,7 +27,7 @@ spec:
             - mountPath: /data
               name: media-data
         - name: init-transmission-config
-          image: busybox:1.37@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e
+          image: busybox:1.37.0@sha256:b8d1827e38a1d49cd17217efd7b07d689e4ea1744e39c7dcbb95533d175bea65
           command:
             - sh
             - -c
