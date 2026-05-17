@@ -14,12 +14,16 @@ spec:
     - name: only-manafishrov-sa
       expression: 'request.userInfo.username == "system:serviceaccount:flux-system:manafishrov"'
   validations:
-    # Namespaced resources must live in a manafishrov* namespace.
+    # Namespaced resources must live in a manafishrov* namespace,
+    # except for manafishrov-*-named resources in flux-system (so
+    # tf-controller varsFrom Secrets like manafishrov-pocket-id-credentials
+    # can be reconciled by this SA without widening its blast radius).
     - expression: |
         request.resource.resource == "namespaces" ||
         request.namespace == "" ||
-        request.namespace.startsWith("manafishrov")
-      message: "manafishrov SA may only operate in manafishrov* namespaces"
+        request.namespace.startsWith("manafishrov") ||
+        (request.namespace == "flux-system" && request.name.startsWith("manafishrov-"))
+      message: "manafishrov SA may only operate in manafishrov* namespaces (or on manafishrov-* resources in flux-system)"
     # The Namespace resource itself must be named manafishrov*.
     - expression: |
         request.resource.resource != "namespaces" ||
