@@ -18,7 +18,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: api
-          image: ghcr.io/plastic-labs/honcho:latest@sha256:a8c4a8dcead76ef9b580559469db4f140eae2c51510ee7d7d3a1485576fee554
+          image: ghcr.io/plastic-labs/honcho:latest@sha256:51c46601eae330fa48d8d3249b0a0a12b3a4d29f88a6fb8d21198e1a0deedc8b
           command:
             - sh
             - docker/entrypoint.sh
@@ -160,7 +160,7 @@ spec:
             - until wget -qO- http://honcho:8000/health >/dev/null 2>&1; do sleep 2; done
       containers:
         - name: deriver
-          image: ghcr.io/plastic-labs/honcho:latest@sha256:a8c4a8dcead76ef9b580559469db4f140eae2c51510ee7d7d3a1485576fee554
+          image: ghcr.io/plastic-labs/honcho:latest@sha256:51c46601eae330fa48d8d3249b0a0a12b3a4d29f88a6fb8d21198e1a0deedc8b
           command:
             - /app/.venv/bin/python
             - -m
