@@ -56,6 +56,7 @@
       notion-app
       brewCasks.wootility
       utm
+      brewCasks.crystalfetch
       brewCasks.ungoogled-chromium
     ]);
 
