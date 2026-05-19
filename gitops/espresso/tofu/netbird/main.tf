@@ -102,6 +102,11 @@ locals {
       address = "zigbee.${local.domain}"
       group   = "home"
     }
+    pgweb = {
+      name    = "pgweb"
+      address = "pgweb.${local.domain}"
+      group   = "infra"
+    }
     pocket_id = {
       name    = "Pocket ID"
       address = "id.${local.domain}"

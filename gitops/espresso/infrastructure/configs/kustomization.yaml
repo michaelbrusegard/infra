@@ -17,6 +17,7 @@ resources:
   - unifi
   - zigbee2mqtt
   - rustfs
+  - postgres
   - honcho-tofu
   - netbird-tofu
   - pocket-id-tofu

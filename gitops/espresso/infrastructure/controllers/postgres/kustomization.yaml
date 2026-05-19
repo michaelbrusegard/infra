@@ -4,4 +4,6 @@ resources:
   - namespace.yaml
   - statefulset.yaml
   - service.yaml
+  - pgweb-deployment.yaml
+  - pgweb-service.yaml
   - network-policy.yaml
