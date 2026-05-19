@@ -103,7 +103,7 @@ locals {
       group   = "home"
     }
     pgweb = {
-      name    = "pgweb"
+      name    = "Pgweb"
       address = "pgweb.${local.domain}"
       group   = "infra"
     }
