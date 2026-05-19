@@ -65,24 +65,6 @@ data:
         "active": true
       }
     ]
-  manafish.json: |
-    [
-      {
-        "name": "Manafish",
-        "type": "group"
-      },
-      {
-        "name": "Manafish Public S3 API",
-        "type": "port",
-        "parent_name": "manafish[0]",
-        "hostname": "10.0.188.2",
-        "port": 443,
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      }
-    ]
   networking.json: |
     [
       {

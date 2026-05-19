@@ -54,6 +54,8 @@ spec:
               value: "true"
             - name: AUTOKUMA__FILES__FOLLOW_SYMLINKS
               value: "true"
+            - name: AUTOKUMA__ON_DELETE
+              value: "delete"
           envFrom:
             - secretRef:
                 name: uptime-kuma-env
@@ -65,8 +67,13 @@ spec:
               name: autokuma-data
       volumes:
         - name: monitors
-          configMap:
-            name: uptime-kuma-monitors
+          projected:
+            sources:
+              - configMap:
+                  name: uptime-kuma-monitors
+              - configMap:
+                  name: uptime-kuma-monitors-manafish
+                  optional: true
   volumeClaimTemplates:
     - metadata:
         name: data
