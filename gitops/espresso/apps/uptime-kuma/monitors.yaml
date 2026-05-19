@@ -54,7 +54,7 @@ data:
         "active": true
       },
       {
-        "name": "pgweb",
+        "name": "Pgweb",
         "type": "port",
         "parent_name": "infrastructure[0]",
         "hostname": "pgweb.postgres.svc.cluster.local",
