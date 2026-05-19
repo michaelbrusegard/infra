@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgweb-entrypoint
+  namespace: postgres
+data:
+  entrypoint.sh: |
+    #!/bin/sh
+    set -e
+
+    DSN="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/postgres?sslmode=${PGSSLMODE}"
+
+    until psql "$DSN" -tAc 'SELECT 1' >/dev/null 2>&1; do
+      echo "waiting for postgres..."
+      sleep 2
+    done
+
+    mkdir -p /tmp/bookmarks
+    rm -f /tmp/bookmarks/*.toml
+
+    psql "$DSN" -tAc "
+      SELECT datname
+      FROM pg_database
+      WHERE datistemplate = false
+        AND datname NOT IN ('postgres', 'postgres_admin')
+      ORDER BY 1
+    " | while IFS= read -r db; do
+      [ -z "$db" ] && continue
+      cat > "/tmp/bookmarks/${db}.toml" <<EOF
+    host = "${PGHOST}"
+    port = ${PGPORT}
+    user = "${PGUSER}"
+    password = "${PGPASSWORD}"
+    database = "${db}"
+    sslmode = "${PGSSLMODE}"
+    EOF
+    done
+
+    exec pgweb \
+      --bind=0.0.0.0 \
+      --listen=8081 \
+      --sessions \
+      --bookmarks-dir=/tmp/bookmarks \
+      --bookmarks-only
