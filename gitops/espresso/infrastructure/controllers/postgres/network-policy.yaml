@@ -91,6 +91,14 @@ spec:
         - ports:
             - port: "8081"
               protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
