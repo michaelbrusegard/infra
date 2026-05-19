@@ -16,10 +16,35 @@ spec:
       containers:
         - name: pgweb
           image: sosedoff/pgweb:0.17.0@sha256:a5256d416e2e8b92d69a4459058e3eca33a9f075d8325491644411d0bc3bd70b
-          args:
-            - --bind=0.0.0.0
-            - --listen=8081
-            - --sessions
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              mkdir -p /tmp/bookmarks
+              until psql "postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/postgres?sslmode=$PGSSLMODE" -tAc 'SELECT 1' >/dev/null 2>&1; do
+                echo "waiting for postgres..."
+                sleep 2
+              done
+              psql "postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/postgres?sslmode=$PGSSLMODE" \
+                -tAc "SELECT datname FROM pg_database WHERE datistemplate=false ORDER BY 1" \
+              | while IFS= read -r db; do
+                  [ -z "$db" ] && continue
+                  cat > "/tmp/bookmarks/$db.toml" <<EOF
+              host = "$PGHOST"
+              port = $PGPORT
+              user = "$PGUSER"
+              password = "$PGPASSWORD"
+              database = "$db"
+              sslmode = "$PGSSLMODE"
+              EOF
+                done
+              exec pgweb \
+                --bind=0.0.0.0 \
+                --listen=8081 \
+                --sessions \
+                --bookmarks-dir=/tmp/bookmarks \
+                --bookmarks-only
           envFrom:
             - secretRef:
                 name: postgres-admin
