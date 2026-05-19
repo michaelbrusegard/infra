@@ -4,3 +4,4 @@ metadata:
   name: gateway
   labels:
     gateway-access: public
+    pod-security.kubernetes.io/enforce: restricted

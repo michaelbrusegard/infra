@@ -4,3 +4,4 @@ metadata:
   name: pocket-id
   labels:
     gateway-access: public
+    pod-security.kubernetes.io/enforce: baseline

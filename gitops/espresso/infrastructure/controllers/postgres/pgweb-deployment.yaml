@@ -59,6 +59,9 @@ spec:
             periodSeconds: 30
           securityContext:
             allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL

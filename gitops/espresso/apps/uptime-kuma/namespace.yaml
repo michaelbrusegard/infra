@@ -4,3 +4,4 @@ metadata:
   name: uptime-kuma
   labels:
     gateway-access: public
+    pod-security.kubernetes.io/enforce: baseline
