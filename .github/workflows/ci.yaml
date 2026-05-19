@@ -14,6 +14,7 @@ jobs:
       nix: ${{ steps.filter.outputs.nix }}
       gitops: ${{ steps.filter.outputs.gitops }}
       tofu: ${{ steps.filter.outputs.tofu }}
+      tofu-dirs: ${{ steps.list-tofu.outputs.dirs }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
@@ -32,6 +33,10 @@ jobs:
               - '**/*.tf'
               - '**/.terraform.lock.hcl'
               - '.github/workflows/ci.yaml'
+      - id: list-tofu
+        run: |
+          dirs=$(printf '%s\n' gitops/espresso/tofu/*/ | sed 's:/$::' | jq -R . | jq -sc .)
+          echo "dirs=$dirs" >> "$GITHUB_OUTPUT"
   code-quality:
     needs: filter
     if: needs.filter.outputs.nix == 'true'
@@ -104,10 +109,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tofu-dir:
-          - gitops/espresso/tofu/honcho
-          - gitops/espresso/tofu/netbird
-          - gitops/espresso/tofu/pocket-id
+        tofu-dir: ${{ fromJSON(needs.filter.outputs.tofu-dirs) }}
     env:
       OPENTOFU_VERSION: 1.11.5
     steps:
