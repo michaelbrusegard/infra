@@ -4,67 +4,106 @@ metadata:
   name: uptime-kuma-status-page-reconciler
   namespace: uptime-kuma
 data:
-  reconcile.sh: |
-    #!/usr/bin/env bash
+  reconcile.py: |
+    #!/usr/bin/env python3
     # AutoKuma does not resolve monitor names in status_page entities and
-    # never updates them after creation (sync.rs match falls through to
-    # `_ => {}`). This script reconciles status pages declaratively by
-    # resolving monitor names to numeric IDs via kuma-cli and upserting.
-    set -euo pipefail
+    # never updates them after creation (sync.rs update_entity match falls
+    # through to `_ => {}`). This script reconciles status pages
+    # declaratively: resolve monitor names to numeric IDs against the live
+    # Kuma API, then upsert via add_status_page / save_status_page.
+    import json
+    import os
+    import pathlib
+    import sys
+    import time
 
-    apt-get update >/dev/null
-    apt-get install -y --no-install-recommends jq >/dev/null
-    rm -rf /var/lib/apt/lists/*
+    from uptime_kuma_api import UptimeKumaApi, UptimeKumaException
 
-    export KUMA__URL="http://uptime-kuma-internal.uptime-kuma.svc.cluster.local:3001"
-    export KUMA__USERNAME="${AUTOKUMA__KUMA__USERNAME}"
-    export KUMA__PASSWORD="${AUTOKUMA__KUMA__PASSWORD}"
+    URL = "http://uptime-kuma-internal.uptime-kuma.svc.cluster.local:3001"
+    USERNAME = os.environ["AUTOKUMA__KUMA__USERNAME"]
+    PASSWORD = os.environ["AUTOKUMA__KUMA__PASSWORD"]
 
-    for i in $(seq 1 60); do
-      kuma monitor ls >/tmp/monitors.json 2>/dev/null && break
-      echo "Waiting for uptime-kuma API..."
-      sleep 2
-    done
+    SAVE_KEYS = {
+        "title",
+        "description",
+        "theme",
+        "published",
+        "showTags",
+        "domainNameList",
+        "googleAnalyticsId",
+        "customCSS",
+        "footerText",
+        "showPoweredBy",
+        "showCertificateExpiry",
+        "icon",
+        "publicGroupList",
+    }
 
-    # kuma monitor ls returns { "<id>": { "<type>": { id, name, ... } } }.
-    # Flatten into [{name, id}] for lookup by monitor name.
-    jq '
-      to_entries
-      | map({
-          id:   (.value | to_entries[0].value.id),
-          name: (.value | to_entries[0].value.name)
-        })
-      | map(select(.name != null and .id != null))
-    ' /tmp/monitors.json >/tmp/index.json
 
-    for page in /pages/*.json; do
-      [ -f "$page" ] || continue
-      slug=$(jq -r '.slug' "$page")
-      echo "Reconciling status page: $slug"
+    def connect() -> UptimeKumaApi:
+        last: Exception | None = None
+        for _ in range(60):
+            try:
+                api = UptimeKumaApi(URL, wait_timeout=30)
+                api.login(USERNAME, PASSWORD)
+                return api
+            except Exception as exc:  # noqa: BLE001
+                last = exc
+                print("Waiting for uptime-kuma API...", flush=True)
+                time.sleep(2)
+        raise SystemExit(f"uptime-kuma API never became ready: {last}")
 
-      jq --slurpfile idx /tmp/index.json '
-        .publicGroupList |= map(
-          .monitorList |= map(
-            . as $m
-            | ($idx[0][] | select(.name == $m.name)) as $f
-            | if $f then {id: $f.id, name: $m.name}
-              else error("monitor not found: " + ($m.name // "<null>"))
-              end
-          )
-        )
-      ' "$page" >/tmp/page.json
 
-      if kuma status-page edit --file /tmp/page.json >/dev/null 2>&1; then
-        echo "  Updated: $slug"
-      elif kuma status-page add --file /tmp/page.json >/dev/null; then
-        echo "  Created: $slug"
-      else
-        echo "  FAILED:  $slug" >&2
-        exit 1
-      fi
-    done
+    def resolve(page: dict, monitors_by_name: dict[str, int]) -> dict:
+        groups = page.get("publicGroupList") or []
+        for group in groups:
+            resolved = []
+            for entry in group.get("monitorList") or []:
+                name = entry.get("name")
+                mid = monitors_by_name.get(name)
+                if mid is None:
+                    raise SystemExit(f"monitor not found: {name!r}")
+                resolved.append({"id": mid, "name": name})
+            group["monitorList"] = resolved
+        return page
 
-    echo "Reconciliation complete."
+
+    def main() -> int:
+        api = connect()
+        try:
+            monitors_by_name = {m["name"]: m["id"] for m in api.get_monitors()}
+            existing_slugs = {p["slug"] for p in api.get_status_pages()}
+
+            pages_dir = pathlib.Path("/pages")
+            for page_file in sorted(pages_dir.glob("*.json")):
+                page = json.loads(page_file.read_text())
+                slug = page["slug"]
+                title = page.get("title", slug)
+                print(f"Reconciling status page: {slug}", flush=True)
+
+                resolve(page, monitors_by_name)
+                payload = {k: v for k, v in page.items() if k in SAVE_KEYS}
+
+                if slug not in existing_slugs:
+                    api.add_status_page(slug, title)
+                    existing_slugs.add(slug)
+                    print(f"  Created: {slug}", flush=True)
+
+                try:
+                    api.save_status_page(slug, **payload)
+                except UptimeKumaException as exc:
+                    print(f"  FAILED:  {slug}: {exc}", file=sys.stderr, flush=True)
+                    return 1
+                print(f"  Updated: {slug}", flush=True)
+        finally:
+            api.disconnect()
+
+        print("Reconciliation complete.", flush=True)
+        return 0
+
+
+    if __name__ == "__main__":
+        raise SystemExit(main())
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -88,8 +127,15 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: reconciler
-              image: ghcr.io/bigboot/autokuma:2.3.2@sha256:8acbd3ad3ec8cb6c066aa0ee541154921283ec78159015937128541921c47974
-              command: ["bash", "/scripts/reconcile.sh"]
+              image: docker.io/library/python:3.13-slim@sha256:0ee2df98db454606ca92bb7a79d47ff7dc9cc0c8d5901e32eb71e6b5203377b2
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  pip install --quiet --no-cache-dir --root-user-action=ignore \
+                    'uptime-kuma-api==1.2.1'
+                  exec python /scripts/reconcile.py
               envFrom:
                 - secretRef:
                     name: uptime-kuma-env
@@ -149,12 +195,11 @@ spec:
         - ports:
             - port: "3001"
               protocol: TCP
-    # apt-get for jq install. Debian mirrors only.
+    # pip install at runtime: PyPI + warehouse file CDN.
     - toFQDNs:
-        - matchPattern: "*.debian.org"
+        - matchName: "pypi.org"
+        - matchName: "files.pythonhosted.org"
       toPorts:
         - ports:
-            - port: "80"
-              protocol: TCP
             - port: "443"
               protocol: TCP
