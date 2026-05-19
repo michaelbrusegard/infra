@@ -44,7 +44,7 @@ data:
         last: Exception | None = None
         for _ in range(60):
             try:
-                api = UptimeKumaApi(URL, wait_timeout=30)
+                api = UptimeKumaApi(URL, timeout=30)
                 api.login(USERNAME, PASSWORD)
                 return api
             except Exception as exc:  # noqa: BLE001
