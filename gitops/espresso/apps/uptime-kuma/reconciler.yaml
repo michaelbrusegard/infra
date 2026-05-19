@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uptime-kuma-status-page-reconciler
+  namespace: uptime-kuma
+data:
+  reconcile.sh: |
+    #!/usr/bin/env bash
+    # AutoKuma does not resolve monitor names in status_page entities and
+    # never updates them after creation (sync.rs match falls through to
+    # `_ => {}`). This script reconciles status pages declaratively by
+    # resolving monitor names to numeric IDs via kuma-cli and upserting.
+    set -euo pipefail
+
+    apt-get update >/dev/null
+    apt-get install -y --no-install-recommends jq >/dev/null
+    rm -rf /var/lib/apt/lists/*
+
+    export KUMA__URL="http://uptime-kuma-internal.uptime-kuma.svc.cluster.local:3001"
+    export KUMA__USERNAME="${AUTOKUMA__KUMA__USERNAME}"
+    export KUMA__PASSWORD="${AUTOKUMA__KUMA__PASSWORD}"
+
+    for i in $(seq 1 60); do
+      kuma monitor ls >/tmp/monitors.json 2>/dev/null && break
+      echo "Waiting for uptime-kuma API..."
+      sleep 2
+    done
+
+    # kuma monitor ls returns { "<id>": { "<type>": { id, name, ... } } }.
+    # Flatten into [{name, id}] for lookup by monitor name.
+    jq '
+      to_entries
+      | map({
+          id:   (.value | to_entries[0].value.id),
+          name: (.value | to_entries[0].value.name)
+        })
+      | map(select(.name != null and .id != null))
+    ' /tmp/monitors.json >/tmp/index.json
+
+    for page in /pages/*.json; do
+      [ -f "$page" ] || continue
+      slug=$(jq -r '.slug' "$page")
+      echo "Reconciling status page: $slug"
+
+      jq --slurpfile idx /tmp/index.json '
+        .publicGroupList |= map(
+          .monitorList |= map(
+            . as $m
+            | ($idx[0][] | select(.name == $m.name)) as $f
+            | if $f then {id: $f.id, name: $m.name}
+              else error("monitor not found: " + ($m.name // "<null>"))
+              end
+          )
+        )
+      ' "$page" >/tmp/page.json
+
+      if kuma status-page edit --file /tmp/page.json >/dev/null 2>&1; then
+        echo "  Updated: $slug"
+      elif kuma status-page add --file /tmp/page.json >/dev/null; then
+        echo "  Created: $slug"
+      else
+        echo "  FAILED:  $slug" >&2
+        exit 1
+      fi
+    done
+
+    echo "Reconciliation complete."
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: uptime-kuma-status-page-reconciler
+  namespace: uptime-kuma
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 600
+      template:
+        metadata:
+          labels:
+            app: uptime-kuma-status-page-reconciler
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: reconciler
+              image: ghcr.io/bigboot/autokuma:2.3.2@sha256:8acbd3ad3ec8cb6c066aa0ee541154921283ec78159015937128541921c47974
+              command: ["bash", "/scripts/reconcile.sh"]
+              envFrom:
+                - secretRef:
+                    name: uptime-kuma-env
+              volumeMounts:
+                - mountPath: /scripts
+                  name: script
+                  readOnly: true
+                - mountPath: /pages
+                  name: pages
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+          volumes:
+            - name: script
+              configMap:
+                name: uptime-kuma-status-page-reconciler
+                defaultMode: 0755
+            - name: pages
+              projected:
+                sources:
+                  - configMap:
+                      name: uptime-kuma-status-pages
+                  - configMap:
+                      name: uptime-kuma-status-pages-manafish
+                      optional: true
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: uptime-kuma-status-page-reconciler
+  namespace: uptime-kuma
+spec:
+  endpointSelector:
+    matchLabels:
+      app: uptime-kuma-status-page-reconciler
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toEndpoints:
+        - matchLabels:
+            app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "3001"
+              protocol: TCP
+    # apt-get for jq install. Debian mirrors only.
+    - toFQDNs:
+        - matchPattern: "*.debian.org"
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP

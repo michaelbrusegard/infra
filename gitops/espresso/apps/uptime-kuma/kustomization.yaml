@@ -5,5 +5,7 @@ resources:
   - statefulset.yaml
   - services.yaml
   - monitors.yaml
+  - status-pages.yaml
+  - reconciler.yaml
   - httproute.yaml
   - network-policy.yaml

@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uptime-kuma-status-pages
+  namespace: uptime-kuma
+data:
+  netbird.json: |
+    {
+      "slug": "netbird",
+      "title": "NetBird",
+      "description": "NetBird overlay network and identity services.",
+      "icon": "https://github.com/netbirdio.png",
+      "theme": "auto",
+      "published": true,
+      "showTags": false,
+      "showPoweredBy": false,
+      "showCertificateExpiry": false,
+      "publicGroupList": [
+        {
+          "name": "NetBird",
+          "weight": 1,
+          "monitorList": [
+            {"name": "NetBird Management"},
+            {"name": "NetBird Dashboard"},
+            {"name": "NetBird Signal"},
+            {"name": "NetBird Relay"},
+            {"name": "Pocket ID"}
+          ]
+        }
+      ]
+    }
+  media.json: |
+    {
+      "slug": "media",
+      "title": "Media",
+      "description": "Self-hosted media stack.",
+      "icon": "https://github.com/jellyfin.png",
+      "theme": "auto",
+      "published": true,
+      "showTags": false,
+      "showPoweredBy": false,
+      "showCertificateExpiry": false,
+      "publicGroupList": [
+        {
+          "name": "Media",
+          "weight": 1,
+          "monitorList": [
+            {"name": "Jellyfin"},
+            {"name": "Seerr"},
+            {"name": "Navidrome"},
+            {"name": "Prowlarr"},
+            {"name": "Sonarr"},
+            {"name": "Radarr"},
+            {"name": "Bazarr"},
+            {"name": "Lidarr"},
+            {"name": "Transmission"}
+          ]
+        }
+      ]
+    }
