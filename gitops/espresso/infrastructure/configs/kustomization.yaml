@@ -5,17 +5,13 @@ resources:
   - openebs
   - hubble-ui
   - grafana
-  - loki
   - flux
   - netbird
   - openebs-monitoring
-  - manafishrov
+  - manafishrov-tenant
   - cert-manager
   - gateway
   - public-dns
-  - homebridge
-  - unifi
-  - zigbee2mqtt
   - rustfs
   - postgres
   - honcho-tofu

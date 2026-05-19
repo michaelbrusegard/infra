@@ -6,3 +6,6 @@ resources:
   - internal-gateway.yaml
   - public-redirects.yaml
   - macchiato-dns.yaml
+  - homebridge.yaml
+  - unifi.yaml
+  - zigbee2mqtt.yaml
