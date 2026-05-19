@@ -23,7 +23,7 @@ data:
     USERNAME = os.environ["AUTOKUMA__KUMA__USERNAME"]
     PASSWORD = os.environ["AUTOKUMA__KUMA__PASSWORD"]
 
-    SAVE_KEYS = {
+    CONFIG_KEYS = {
         "title",
         "description",
         "theme",
@@ -36,8 +36,9 @@ data:
         "showPoweredBy",
         "showCertificateExpiry",
         "icon",
-        "publicGroupList",
     }
+    DEFAULT_THEME = "auto"
+    DEFAULT_ICON = "/icon.svg"
 
 
     def connect() -> UptimeKumaApi:
@@ -68,6 +69,28 @@ data:
         return page
 
 
+    def save_page(api: UptimeKumaApi, slug: str, page: dict) -> None:
+        existing = api._call("getStatusPage", slug)["config"]
+        config = {
+            "id": existing["id"],
+            "slug": slug,
+            "title": page.get("title", slug),
+            "description": page.get("description"),
+            "icon": page.get("icon", DEFAULT_ICON),
+            "theme": page.get("theme", DEFAULT_THEME),
+            "published": page.get("published", True),
+            "showTags": page.get("showTags", False),
+            "domainNameList": page.get("domainNameList") or [],
+            "googleAnalyticsId": page.get("googleAnalyticsId"),
+            "customCSS": page.get("customCSS", ""),
+            "footerText": page.get("footerText"),
+            "showPoweredBy": page.get("showPoweredBy", True),
+            "showCertificateExpiry": page.get("showCertificateExpiry", False),
+        }
+        public_group_list = page.get("publicGroupList") or []
+        api._call("saveStatusPage", (slug, config, config["icon"], public_group_list))
+
+
     def main() -> int:
         api = connect()
         try:
@@ -82,7 +105,6 @@ data:
                 print(f"Reconciling status page: {slug}", flush=True)
 
                 resolve(page, monitors_by_name)
-                payload = {k: v for k, v in page.items() if k in SAVE_KEYS}
 
                 if slug not in existing_slugs:
                     api.add_status_page(slug, title)
@@ -90,7 +112,7 @@ data:
                     print(f"  Created: {slug}", flush=True)
 
                 try:
-                    api.save_status_page(slug, **payload)
+                    save_page(api, slug, page)
                 except UptimeKumaException as exc:
                     print(f"  FAILED:  {slug}: {exc}", file=sys.stderr, flush=True)
                     return 1
