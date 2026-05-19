@@ -70,25 +70,27 @@ data:
 
 
     def save_page(api: UptimeKumaApi, slug: str, page: dict) -> None:
-        existing = api._call("getStatusPage", slug)["config"]
         config = {
-            "id": existing["id"],
             "slug": slug,
             "title": page.get("title", slug),
             "description": page.get("description") or "",
-            "icon": page.get("icon", DEFAULT_ICON),
             "theme": page.get("theme", DEFAULT_THEME),
-            "published": page.get("published", True),
+            "autoRefreshInterval": page.get("autoRefreshInterval", 300),
             "showTags": page.get("showTags", False),
-            "domainNameList": page.get("domainNameList") or [],
-            "googleAnalyticsId": page.get("googleAnalyticsId") or "",
-            "customCSS": page.get("customCSS", ""),
             "footerText": page.get("footerText") or "",
+            "customCSS": page.get("customCSS", ""),
             "showPoweredBy": page.get("showPoweredBy", True),
+            "rssTitle": page.get("rssTitle", ""),
+            "showOnlyLastHeartbeat": page.get("showOnlyLastHeartbeat", False),
             "showCertificateExpiry": page.get("showCertificateExpiry", False),
+            "domainNameList": page.get("domainNameList") or [],
+            "analyticsId": page.get("analyticsId") or "",
+            "analyticsScriptUrl": page.get("analyticsScriptUrl") or "",
+            "analyticsType": page.get("analyticsType"),
         }
+        icon = page.get("icon", DEFAULT_ICON)
         public_group_list = page.get("publicGroupList") or []
-        api._call("saveStatusPage", (slug, config, config["icon"], public_group_list))
+        api._call("saveStatusPage", (slug, config, icon, public_group_list))
 
 
     def main() -> int:
