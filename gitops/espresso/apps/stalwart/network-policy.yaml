@@ -33,14 +33,23 @@ spec:
         - ports:
             - port: "8080"
               protocol: TCP
-    # Inbound SMTP from the world (mail delivery)
+    # Public-facing mail ports: inbound SMTP, client submission, and IMAP.
+    # Auth ports are exposed to the world so mail clients work without VPN;
+    # Stalwart's built-in fail2ban handles brute-force noise.
     - fromEntities:
         - world
       toPorts:
         - ports:
             - port: "25"
               protocol: TCP
-    # Client ports (submission, IMAP, ManageSieve): LAN + NetBird VPN only
+            - port: "465"
+              protocol: TCP
+            - port: "587"
+              protocol: TCP
+            - port: "993"
+              protocol: TCP
+    # ManageSieve stays LAN + NetBird VPN only - rarely used remotely and
+    # has a smaller battle-tested surface than IMAP/SMTP.
     - fromCIDR:
         - 10.0.186.0/24
         - fd7a:115c:a1e0:186::/64
@@ -49,12 +58,6 @@ spec:
         - 100.102.0.0/16
       toPorts:
         - ports:
-            - port: "465"
-              protocol: TCP
-            - port: "587"
-              protocol: TCP
-            - port: "993"
-              protocol: TCP
             - port: "4190"
               protocol: TCP
     # Uptime-kuma monitoring (TCP probes on all listeners)

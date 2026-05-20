@@ -153,6 +153,21 @@ in {
           sourcePort = 25;
         }
         {
+          destination = "10.0.188.12:465";
+          proto = "tcp";
+          sourcePort = 465;
+        }
+        {
+          destination = "10.0.188.12:587";
+          proto = "tcp";
+          sourcePort = 587;
+        }
+        {
+          destination = "10.0.188.12:993";
+          proto = "tcp";
+          sourcePort = 993;
+        }
+        {
           destination = "10.0.188.34:3478";
           proto = "udp";
           sourcePort = 3478;
