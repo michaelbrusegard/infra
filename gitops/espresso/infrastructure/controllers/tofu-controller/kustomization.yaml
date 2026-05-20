@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - helm-repository.yaml
   - helm-release.yaml
+  - priority-class.yaml

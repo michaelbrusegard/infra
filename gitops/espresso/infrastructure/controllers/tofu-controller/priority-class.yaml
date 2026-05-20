@@ -1,0 +1,11 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: tf-runner-critical
+value: 1000000000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: >-
+  Tofu-controller runner pods. Raises priority above default workloads so
+  in-flight terraform plan/apply runs are not evicted by node pressure or
+  preempted mid-operation, which previously orphaned state locks.
