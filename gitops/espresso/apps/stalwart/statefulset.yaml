@@ -14,6 +14,11 @@ spec:
       labels:
         app: stalwart
     spec:
+      securityContext:
+        runAsUser: 2000
+        runAsGroup: 2000
+        fsGroup: 2000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: stalwart
           image: stalwartlabs/stalwart:v0.16.5@sha256:c435a9b97526205dd0bc46245ae97b960cf4cd7a5f1e411f14f36a9d5fc6efdb
