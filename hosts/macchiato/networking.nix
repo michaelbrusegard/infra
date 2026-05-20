@@ -318,6 +318,8 @@ in {
           "d0:d2:b0:9d:70:18,10.0.186.8,small-living-room-tv"
           "d0:d2:b0:96:23:88,10.0.186.9,basement-tv"
 
+          "f0:2f:74:15:dd:d1,10.0.186.16,ristretto"
+
           "c8:98:db:19:12:30,10.0.187.2,espresso-0"
           "b4:96:91:26:31:fa,10.0.187.3,espresso-1"
           "b4:96:91:ff:ff:ff,10.0.187.4,espresso-2"
