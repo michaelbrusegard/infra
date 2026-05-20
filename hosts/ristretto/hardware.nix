@@ -15,8 +15,9 @@
       "aarch64-linux"
     ];
 
-    initrd.luks.devices.crypted = {
-      crypttabExtraOpts = ["tpm2-device=auto"];
+    initrd.luks.devices = {
+      crypted1.crypttabExtraOpts = ["tpm2-device=auto"];
+      crypted2.crypttabExtraOpts = ["tpm2-device=auto"];
     };
   };
 

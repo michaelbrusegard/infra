@@ -1,49 +1,82 @@
 _: {
   disko.devices = {
-    disk.main = {
-      type = "disk";
-      device = "/dev/disk/by-id/ata-Samsung_SSD_860_PRO_1TB_S42NNX0R301973E";
-      content = {
-        type = "gpt";
-        partitions = {
-          ESP = {
-            priority = 1;
-            name = "ESP";
-            start = "1M";
-            end = "512M";
-            type = "EF00";
-            content = {
-              type = "filesystem";
-              format = "vfat";
-              mountpoint = "/boot";
-              mountOptions = ["umask=0077"];
+    disk = {
+      disk1 = {
+        type = "disk";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24057W";
+        content = {
+          type = "gpt";
+          partitions = {
+            ESP = {
+              priority = 1;
+              name = "ESP";
+              start = "1M";
+              end = "1G";
+              type = "EF00";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = ["umask=0077"];
+              };
+            };
+            root = {
+              size = "100%";
+              content = {
+                type = "luks";
+                name = "crypted1";
+                settings = {
+                  allowDiscards = true;
+                  bypassWorkqueues = true;
+                };
+                passwordFile = "/tmp/secret.key";
+              };
             };
           };
-          root = {
-            size = "100%";
-            content = {
-              type = "luks";
-              name = "crypted";
-              settings = {
-                allowDiscards = true;
-                bypassWorkqueues = true;
-              };
-              passwordFile = "/tmp/secret.key";
+        };
+      };
+
+      disk2 = {
+        type = "disk";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24072T";
+        content = {
+          type = "gpt";
+          partitions = {
+            root = {
+              size = "100%";
               content = {
-                type = "btrfs";
-                extraArgs = ["-f"];
-                subvolumes = {
-                  "/persistent" = {
-                    mountpoint = "/persistent";
-                    mountOptions = ["compress=zstd" "noatime"];
-                  };
-                  "/nix" = {
-                    mountpoint = "/nix";
-                    mountOptions = ["compress=zstd" "noatime"];
-                  };
-                  "/swap" = {
-                    mountpoint = "/.swapvol";
-                    swap.swapfile.size = "8G";
+                type = "luks";
+                name = "crypted2";
+                settings = {
+                  allowDiscards = true;
+                  bypassWorkqueues = true;
+                };
+                passwordFile = "/tmp/secret.key";
+                content = {
+                  type = "btrfs";
+                  extraArgs = [
+                    "-f"
+                    "-L"
+                    "ristretto"
+                    "-d"
+                    "raid0"
+                    "-m"
+                    "raid1"
+                    "/dev/mapper/crypted1"
+                  ];
+                  subvolumes = {
+                    "/persistent" = {
+                      mountpoint = "/persistent";
+                      mountOptions = ["compress=zstd" "noatime"];
+                    };
+                    "/nix" = {
+                      mountpoint = "/nix";
+                      mountOptions = ["compress=zstd" "noatime"];
+                    };
+                    "/swap" = {
+                      mountpoint = "/.swapvol";
+                      swap.swapfile.size = "8G";
+                    };
                   };
                 };
               };

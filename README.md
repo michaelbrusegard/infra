@@ -114,7 +114,8 @@ with the path to your USB drive.
 
 ### Install NixOS with nixos-anywhere (Using Minimal NixOS Installer)
 
-Plug in the installer USB and set a temporary password using the `passwd` command for SSH access.
+Plug in the installer USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
+Set a temporary password using the `passwd` command for SSH access.
 You can run `ip a` to find the IP address.
 
 1. **Prepare Local Files**:
@@ -130,7 +131,12 @@ You can run `ip a` to find the IP address.
 3. **Post-Install**:
    - Add user Age key to `~/.config/sops/age/keys.txt`).
    - Move over the GitHub SSH private key and clone the infrastructure configuration: `git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
-   - For TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+11 /dev/sda2`.
+   - Setup TPM auto unlock for both LUKS partitions (run `lsblk` to identify which NVMe holds which container — `disk1` has ESP + LUKS, `disk2` has only LUKS):
+
+     ```sh
+     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p2
+     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme1n1p1
+     ```
 
 ### Create Windows installer
 
