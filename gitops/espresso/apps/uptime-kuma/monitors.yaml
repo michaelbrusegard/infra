@@ -324,3 +324,76 @@ data:
         "active": true
       }
     ]
+  mail.json: |
+    [
+      {
+        "name": "Mail",
+        "type": "group"
+      },
+      {
+        "name": "Stalwart HTTP",
+        "type": "port",
+        "parent_name": "mail[0]",
+        "hostname": "stalwart-internal.stalwart.svc.cluster.local",
+        "port": 8080,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Stalwart SMTP",
+        "type": "port",
+        "parent_name": "mail[0]",
+        "hostname": "stalwart-internal.stalwart.svc.cluster.local",
+        "port": 25,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Stalwart Submissions",
+        "type": "port",
+        "parent_name": "mail[0]",
+        "hostname": "stalwart-internal.stalwart.svc.cluster.local",
+        "port": 465,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Stalwart Submission",
+        "type": "port",
+        "parent_name": "mail[0]",
+        "hostname": "stalwart-internal.stalwart.svc.cluster.local",
+        "port": 587,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Stalwart IMAPS",
+        "type": "port",
+        "parent_name": "mail[0]",
+        "hostname": "stalwart-internal.stalwart.svc.cluster.local",
+        "port": 993,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Stalwart ManageSieve",
+        "type": "port",
+        "parent_name": "mail[0]",
+        "hostname": "stalwart-internal.stalwart.svc.cluster.local",
+        "port": 4190,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      }
+    ]
