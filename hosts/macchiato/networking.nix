@@ -148,6 +148,11 @@ in {
           sourcePort = 443;
         }
         {
+          destination = "10.0.188.12:25";
+          proto = "tcp";
+          sourcePort = 25;
+        }
+        {
           destination = "10.0.188.34:3478";
           proto = "udp";
           sourcePort = 3478;
@@ -228,7 +233,10 @@ in {
   };
 
   services = {
-    cloudflare-dyndns.domains = [routerDomain];
+    cloudflare-dyndns.domains = [
+      routerDomain
+      "mail.michaelbrusegard.com"
+    ];
 
     # Advertise IPv6 prefixes on both bridges so LAN devices get public
     # GUA addresses (from ISP prefix delegation) via SLAAC
