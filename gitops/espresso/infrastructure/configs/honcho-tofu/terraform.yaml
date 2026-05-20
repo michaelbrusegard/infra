@@ -26,3 +26,14 @@ spec:
       varsKeys:
         - HONCHO_DB_PASSWORD:honcho_db_password
   alwaysCleanupRunnerPod: true
+  runnerTerminationGracePeriodSeconds: 300
+  runnerPodTemplate:
+    spec:
+      priorityClassName: tf-runner-critical
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 1Gi
