@@ -6,4 +6,5 @@ resources:
   - netbird
   - ollama
   - pocket-id
+  - stalwart
   - uptime-kuma

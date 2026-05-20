@@ -1,0 +1,105 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: stalwart
+  namespace: stalwart
+spec:
+  endpointSelector:
+    matchLabels:
+      app: stalwart
+  ingress:
+    # Kubelet HTTP probes and node-forwarded LB traffic
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "25"
+              protocol: TCP
+            - port: "465"
+              protocol: TCP
+            - port: "587"
+              protocol: TCP
+            - port: "993"
+              protocol: TCP
+            - port: "4190"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
+    # Gateway API traffic (public mta-sts + internal admin/JMAP/autoconfig)
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    # Inbound SMTP from the world (mail delivery)
+    - fromEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "25"
+              protocol: TCP
+    # Client ports (submission, IMAP, ManageSieve): LAN + NetBird VPN only
+    - fromCIDR:
+        - 10.0.186.0/24
+        - fd7a:115c:a1e0:186::/64
+        - 10.0.187.0/24
+        - fd7a:115c:a1e0:187::/64
+        - 100.102.0.0/16
+      toPorts:
+        - ports:
+            - port: "465"
+              protocol: TCP
+            - port: "587"
+              protocol: TCP
+            - port: "993"
+              protocol: TCP
+            - port: "4190"
+              protocol: TCP
+    # Uptime-kuma monitoring (TCP probes on all listeners)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "25"
+              protocol: TCP
+            - port: "465"
+              protocol: TCP
+            - port: "587"
+              protocol: TCP
+            - port: "993"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # Outbound SMTP delivery to the world (port 25) + TLS lookups (443) for
+    # MTA-STS policy fetching / WebPKI revocation.
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "25"
+              protocol: TCP
+            - port: "465"
+              protocol: TCP
+            - port: "587"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP

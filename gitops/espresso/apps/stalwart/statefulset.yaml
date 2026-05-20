@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stalwart
+  namespace: stalwart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stalwart
+  serviceName: stalwart-internal
+  template:
+    metadata:
+      labels:
+        app: stalwart
+    spec:
+      containers:
+        - name: stalwart
+          image: stalwartlabs/stalwart:v0.16.5@sha256:c435a9b97526205dd0bc46245ae97b960cf4cd7a5f1e411f14f36a9d5fc6efdb
+          env:
+            - name: STALWART_PUBLIC_URL
+              value: https://mail.michaelbrusegard.com
+          envFrom:
+            - secretRef:
+                name: stalwart-env
+                optional: true
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 25
+              name: smtp
+            - containerPort: 465
+              name: submissions
+            - containerPort: 587
+              name: submission
+            - containerPort: 993
+              name: imaps
+            - containerPort: 4190
+              name: sieve
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /var/lib/stalwart
+              name: data
+            - mountPath: /etc/stalwart/config.json
+              name: config
+              subPath: config.json
+              readOnly: true
+            - mountPath: /etc/stalwart/private/tls
+              name: tls
+              readOnly: true
+            - mountPath: /etc/stalwart/private/dkim
+              name: dkim
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: stalwart-config
+        - name: tls
+          secret:
+            secretName: wildcard-tls
+        - name: dkim
+          secret:
+            secretName: stalwart-dkim
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+        storageClassName: nvme-ha

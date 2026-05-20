@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - cert-manager
   - cilium
+  - dns-tofu
   - flux
   - gateway
   - grafana

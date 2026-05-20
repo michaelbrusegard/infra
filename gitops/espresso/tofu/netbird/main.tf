@@ -82,6 +82,11 @@ locals {
       address = "sonarr.${local.domain}"
       group   = "media_admin"
     }
+    stalwart = {
+      name    = "Stalwart"
+      address = "mail.michaelbrusegard.com"
+      group   = "infra"
+    }
     transmission = {
       name    = "Transmission"
       address = "transmission.${local.domain}"

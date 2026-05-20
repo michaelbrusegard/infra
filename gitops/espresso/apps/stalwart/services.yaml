@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: stalwart-internal
+  namespace: stalwart
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: stalwart
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+    - name: smtp
+      port: 25
+      targetPort: smtp
+    - name: submissions
+      port: 465
+      targetPort: submissions
+    - name: submission
+      port: 587
+      targetPort: submission
+    - name: imaps
+      port: 993
+      targetPort: imaps
+    - name: sieve
+      port: 4190
+      targetPort: sieve
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stalwart
+  namespace: stalwart
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.12,fd7a:115c:a1e0:188::12
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  externalTrafficPolicy: Local
+  selector:
+    app: stalwart
+  ports:
+    - name: smtp
+      port: 25
+      targetPort: smtp
+    - name: submissions
+      port: 465
+      targetPort: submissions
+    - name: submission
+      port: 587
+      targetPort: submission
+    - name: imaps
+      port: 993
+      targetPort: imaps
+    - name: sieve
+      port: 4190
+      targetPort: sieve

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-config
+  namespace: stalwart
+data:
+  config.json: |
+    {"@type":"RocksDb","path":"/var/lib/stalwart/"}

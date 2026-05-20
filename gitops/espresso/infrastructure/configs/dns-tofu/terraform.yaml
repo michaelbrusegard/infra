@@ -1,0 +1,38 @@
+apiVersion: infra.contrib.fluxcd.io/v1alpha2
+kind: Terraform
+metadata:
+  name: dns-infra
+  namespace: flux-system
+spec:
+  path: ./gitops/espresso/tofu/dns
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 10m
+  approvePlan: auto
+  destroyResourcesOnDeletion: false
+  storeReadablePlan: human
+  backendConfig:
+    secretSuffix: dns-infra
+  varsFrom:
+    - kind: Secret
+      name: dns-records
+  alwaysCleanupRunnerPod: true
+  runnerTerminationGracePeriodSeconds: 300
+  runnerPodTemplate:
+    spec:
+      priorityClassName: tf-runner-critical
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 1Gi
+      env:
+        - name: CLOUDFLARE_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: cloudflare-api-token
+              key: api-token
