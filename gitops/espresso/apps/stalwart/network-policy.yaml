@@ -74,6 +74,8 @@ spec:
               protocol: TCP
             - port: "993"
               protocol: TCP
+            - port: "4190"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
