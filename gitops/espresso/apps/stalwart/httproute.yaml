@@ -30,7 +30,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - mail.michaelbrusegard.com
+    - mail.gullhaugveien.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: stalwart-internal

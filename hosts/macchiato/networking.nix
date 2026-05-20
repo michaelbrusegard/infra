@@ -235,7 +235,7 @@ in {
   services = {
     cloudflare-dyndns.domains = [
       routerDomain
-      "mail.michaelbrusegard.com"
+      "mail.${baseDomain}"
     ];
 
     # Advertise IPv6 prefixes on both bridges so LAN devices get public

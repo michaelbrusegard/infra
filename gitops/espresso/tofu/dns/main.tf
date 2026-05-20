@@ -32,11 +32,11 @@ locals {
   # (bootstrap done, listeners up, test mail round-trips, DKIM passes). These
   # will steal mail-flow from any existing provider.
   #
-  # mail.michaelbrusegard.com is intentionally absent from this block: its A
-  # record is managed by cloudflare-dyndns on macchiato so it tracks the WAN
-  # IP automatically. The MX target must resolve directly to an A record
-  # (RFC 5321 forbids MX-to-CNAME), so MX points at the dyndns-managed name.
-  # Other service hostnames CNAME to mail.michaelbrusegard.com.
+  # The server hostname mail.gullhaugveien.michaelbrusegard.com is managed by
+  # cloudflare-dyndns on macchiato (A+AAAA tracking WAN). The MX target must
+  # resolve directly to an A record (RFC 5321 forbids MX-to-CNAME), so MX
+  # points at the dyndns-managed name. Other apex-zone names (autoconfig,
+  # autodiscover, mta-sts) CNAME to it.
   #
   # IPv6 omitted: cluster LB pool uses ULA fd7a:115c:a1e0:188::/64 which is
   # not internet-routable. v6 inbound mail requires assigning a GUA prefix to
@@ -46,22 +46,22 @@ locals {
   #   mta_sts = {
   #     name    = "mta-sts"
   #     type    = "CNAME"
-  #     content = "mail.michaelbrusegard.com"
+  #     content = "mail.gullhaugveien.michaelbrusegard.com"
   #   }
   #   autoconfig = {
   #     name    = "autoconfig"
   #     type    = "CNAME"
-  #     content = "mail.michaelbrusegard.com"
+  #     content = "mail.gullhaugveien.michaelbrusegard.com"
   #   }
   #   autodiscover = {
   #     name    = "autodiscover"
   #     type    = "CNAME"
-  #     content = "mail.michaelbrusegard.com"
+  #     content = "mail.gullhaugveien.michaelbrusegard.com"
   #   }
   #   mx = {
   #     name     = "@"
   #     type     = "MX"
-  #     content  = "mail.michaelbrusegard.com"
+  #     content  = "mail.gullhaugveien.michaelbrusegard.com"
   #     priority = 10
   #   }
   #   spf = {

@@ -84,7 +84,7 @@ locals {
     }
     stalwart = {
       name    = "Stalwart"
-      address = "mail.michaelbrusegard.com"
+      address = "mail.${local.domain}"
       group   = "infra"
     }
     transmission = {

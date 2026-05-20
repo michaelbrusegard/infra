@@ -27,7 +27,7 @@ spec:
             - /var/lib/stalwart/config.json
           env:
             - name: STALWART_PUBLIC_URL
-              value: https://mail.michaelbrusegard.com
+              value: https://mail.gullhaugveien.michaelbrusegard.com
           envFrom:
             - secretRef:
                 name: stalwart-env
