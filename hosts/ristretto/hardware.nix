@@ -56,6 +56,11 @@
   };
   environment.variables.RUSTICL_ENABLE = "radeonsi";
 
+  zramSwap = {
+    enable = true;
+    memoryPercent = 25;
+  };
+
   environment.systemPackages = with pkgs; [
     lm_sensors
     pciutils
