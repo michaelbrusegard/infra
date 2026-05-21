@@ -126,13 +126,8 @@ $packages = @(
   "VB-Audio.Voicemeeter.Banana",
   "FocusriteAudioEngineeringLtd.FocusriteControl",
   "Microsoft.PowerToys",
-  "glzr-io.glazewm",
   "wez.wezterm",
   "Zen-Team.Zen-Browser",
-  "Proton.ProtonMail",
-  "Proton.ProtonPass",
-  "Proton.ProtonVPN",
-  "Proton.ProtonDrive",
   "smartfrigde.Legcord",
   "OBSProject.OBSStudio",
   "RiotGames.Valorant.EU",
@@ -142,8 +137,6 @@ $packages = @(
   "EpicGames.EpicGamesLauncher",
   "GOG.Galaxy",
   "Ubisoft.Connect",
-  "Modrinth.ModrinthApp",
-  "FTB.App"
 )
 
 foreach ($packageId in $packages) {
