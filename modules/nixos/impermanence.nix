@@ -21,6 +21,13 @@
     ];
     michaelbrusegard = {
       directories = [
+        ".cache/direnv"
+        ".config/opencode"
+        ".local/share/direnv"
+        ".local/share/opencode"
+        ".local/share/zoxide"
+        ".local/state/pnpm"
+        ".omo"
         "Desktop"
         "Documents"
         "Downloads"
@@ -34,6 +41,7 @@
       files = [
         ".config/sops/age/keys.txt"
         ".config/zsh/.zsh_history"
+        ".ssh/known_hosts"
       ];
     };
   };
