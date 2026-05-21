@@ -32,7 +32,7 @@ spec:
     storageclass:
       name: ssd-ha
       dataStorageSize: 1Ti
-      logStorageSize: 1Gi
+      logStorageSize: 5Gi
     resources:
       limits:
         cpu: "1"
