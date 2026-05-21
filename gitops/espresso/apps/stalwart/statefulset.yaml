@@ -68,6 +68,10 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/stalwart
               name: data
+            - mountPath: /var/lib/stalwart/config.json
+              name: config
+              subPath: config.json
+              readOnly: true
             - mountPath: /var/lib/stalwart/private/tls
               name: tls
               readOnly: true
@@ -75,6 +79,9 @@ spec:
               name: dkim
               readOnly: true
       volumes:
+        - name: config
+          configMap:
+            name: stalwart-config
         - name: tls
           secret:
             secretName: wildcard-tls
