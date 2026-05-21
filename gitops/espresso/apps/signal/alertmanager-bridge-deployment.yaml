@@ -43,6 +43,10 @@ spec:
               value: "8080"
             - name: LOG_LEVEL
               value: INFO
+            - name: GRAFANA_BASE_URL
+              value: https://grafana.gullhaugveien.michaelbrusegard.com
+            - name: GRAFANA_PROMETHEUS_DATASOURCE
+              value: Prometheus
           ports:
             - containerPort: 8080
               name: http

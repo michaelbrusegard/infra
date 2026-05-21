@@ -19,11 +19,32 @@ data:
     import logging
     import os
     import sys
+    import urllib.parse
     import urllib.request
 
     SIGNAL_URL = os.environ["SIGNAL_URL"]
     SIGNAL_RECIPIENT = os.environ["SIGNAL_RECIPIENT"]
     PORT = int(os.environ.get("PORT", "8080"))
+    GRAFANA_BASE_URL = os.environ.get("GRAFANA_BASE_URL", "").rstrip("/")
+    GRAFANA_PROMETHEUS_DATASOURCE = os.environ.get(
+        "GRAFANA_PROMETHEUS_DATASOURCE", "Prometheus"
+    )
+
+    # Label keys we will prefer (in order) when picking a "target" for the message.
+    # Generic Prometheus alert labels are way more useful than the kubelet endpoint
+    # that ends up in `instance` for kubelet-derived alerts.
+    TARGET_LABEL_PRIORITY = (
+        "persistentvolumeclaim",
+        "pod",
+        "deployment",
+        "statefulset",
+        "daemonset",
+        "container",
+        "node",
+        "service",
+        "job",
+        "instance",
+    )
 
     logging.basicConfig(
         level=os.environ.get("LOG_LEVEL", "INFO"),
@@ -33,24 +54,70 @@ data:
     log = logging.getLogger("bridge")
 
 
+    def pick_target(labels: dict) -> str:
+        ns = labels.get("namespace")
+        for key in TARGET_LABEL_PRIORITY:
+            value = labels.get(key)
+            if not value:
+                continue
+            if ns and key != "namespace":
+                return f"{ns}/{value} ({key})"
+            return f"{value} ({key})"
+        return ns or ""
+
+
+    def rewrite_url(generator_url: str) -> str:
+        if not generator_url:
+            return ""
+        if not GRAFANA_BASE_URL:
+            return generator_url
+        try:
+            parsed = urllib.parse.urlparse(generator_url)
+            params = urllib.parse.parse_qs(parsed.query)
+            expr = (params.get("g0.expr") or [""])[0]
+        except (ValueError, KeyError):
+            return generator_url
+        if not expr:
+            return generator_url
+        left = json.dumps(
+            {
+                "datasource": GRAFANA_PROMETHEUS_DATASOURCE,
+                "queries": [
+                    {
+                        "refId": "A",
+                        "expr": expr,
+                        "datasource": {"type": "prometheus", "uid": GRAFANA_PROMETHEUS_DATASOURCE},
+                    }
+                ],
+                "range": {"from": "now-1h", "to": "now"},
+            },
+            separators=(",", ":"),
+        )
+        query = urllib.parse.urlencode({"orgId": "1", "left": left})
+        return f"{GRAFANA_BASE_URL}/explore?{query}"
+
+
     def format_alert(alert: dict) -> str:
         status = alert.get("status", "firing")
         labels = alert.get("labels", {})
         annotations = alert.get("annotations", {})
         severity = labels.get("severity", "unknown")
         name = labels.get("alertname", "alert")
-        summary = annotations.get("summary") or annotations.get("description") or ""
-        instance = labels.get("instance") or labels.get("namespace") or ""
+        body = annotations.get("description") or annotations.get("summary") or ""
         icon = "🔥" if status == "firing" else "✅"
 
         lines = [f"{icon} [{severity.upper()}] {name} ({status})"]
-        if summary:
-            lines.append(summary)
-        if instance:
-            lines.append(f"target: {instance}")
-        url = alert.get("generatorURL")
-        if url:
-            lines.append(url)
+        if body:
+            lines.append(body)
+        target = pick_target(labels)
+        if target:
+            lines.append(f"target: {target}")
+        runbook = annotations.get("runbook_url")
+        if runbook:
+            lines.append(f"runbook: {runbook}")
+        link = rewrite_url(alert.get("generatorURL", ""))
+        if link:
+            lines.append(link)
         return "\n".join(lines).strip()
 
 
