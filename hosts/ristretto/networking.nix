@@ -6,6 +6,7 @@ _: {
       wifi.backend = "iwd";
     };
     dhcpcd.enable = false;
+    interfaces.enp6s0.wakeOnLan.enable = true;
   };
   services.netbird = {
     useRoutingFeatures = "client";
