@@ -21,6 +21,7 @@
     ];
     michaelbrusegard = {
       directories = [
+        ".cache/antidote"
         ".cache/direnv"
         ".config/opencode"
         ".local/share/direnv"
