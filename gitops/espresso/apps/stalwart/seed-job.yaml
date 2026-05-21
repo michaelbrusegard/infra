@@ -81,7 +81,7 @@ spec:
                 *) echo "unsupported arch: $ARCH"; exit 1 ;;
               esac
               CLI_URL="https://github.com/stalwartlabs/cli/releases/download/${STALWART_CLI_VERSION}/stalwart-cli-${TARGET}.tar.xz"
-              curl -fsSL "$CLI_URL" | tar -xJ -C /usr/local/bin/ --strip-components=1 "stalwart-cli-${TARGET}/stalwart-cli"
+              curl -fsSL "$CLI_URL" | tar -xJ -C /usr/local/bin/ stalwart-cli
               chmod +x /usr/local/bin/stalwart-cli
               echo "::: wait for stalwart-0 recovery listener"
               for i in $(seq 1 60); do
