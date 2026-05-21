@@ -129,14 +129,16 @@ You can run `ip a` to find the IP address.
    ```
 
 3. **Post-Install**:
-   - Add user Age key to `~/.config/sops/age/keys.txt`).
-   - Move over the GitHub SSH private key and clone the infrastructure configuration: `git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
    - Setup TPM auto unlock for both LUKS partitions (run `lsblk` to identify which NVMe holds which container — `disk1` has ESP + LUKS, `disk2` has only LUKS):
 
      ```sh
-     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p1
      sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme1n1p2
+     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p1
      ```
+
+   - Add user Age key to `~/.config/sops/age/keys.txt`).
+   - Clone the infrastructure configuration using the GitHub SSH private key: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
+   - Rebuild the configuration: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' nh os switch`.
 
 ### Create Windows installer
 
