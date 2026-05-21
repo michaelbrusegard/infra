@@ -5,3 +5,7 @@ resources:
   - statefulset.yaml
   - services.yaml
   - network-policy.yaml
+  - alertmanager-bridge-configmap.yaml
+  - alertmanager-bridge-deployment.yaml
+  - alertmanager-bridge-service.yaml
+  - alertmanager-bridge-network-policy.yaml

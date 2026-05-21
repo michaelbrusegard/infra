@@ -1,12 +1,12 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: signal-cli
+  name: alertmanager-signal-bridge
   namespace: signal
 spec:
   endpointSelector:
     matchLabels:
-      app: signal-cli
+      app: alertmanager-signal-bridge
   ingress:
     - fromEntities:
         - host
@@ -14,18 +14,15 @@ spec:
         - kube-apiserver
       toPorts:
         - ports:
-            - port: "3000"
+            - port: "8080"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: hermes-agent
-            k8s:app: hermes-agent
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: signal
-            k8s:app: alertmanager-signal-bridge
+            k8s:io.kubernetes.pod.namespace: monitoring
+            k8s:app.kubernetes.io/name: alertmanager
       toPorts:
         - ports:
-            - port: "3000"
+            - port: "8080"
               protocol: TCP
   egress:
     - toEndpoints:
@@ -40,19 +37,11 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-    - toEntities:
-        - world
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-            - port: "80"
-              protocol: TCP
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: hermes-agent
-            k8s:app: hermes-agent
+            k8s:io.kubernetes.pod.namespace: signal
+            k8s:app: signal-cli
       toPorts:
         - ports:
-            - port: "8642"
+            - port: "3000"
               protocol: TCP

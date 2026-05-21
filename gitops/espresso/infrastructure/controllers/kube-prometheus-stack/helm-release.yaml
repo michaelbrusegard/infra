@@ -73,6 +73,46 @@ spec:
               resources:
                 requests:
                   storage: 5Gi
+      config:
+        global:
+          resolve_timeout: 5m
+        route:
+          group_by: ["namespace", "alertname"]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 12h
+          receiver: "null"
+          routes:
+            - matchers:
+                - alertname = "Watchdog"
+              receiver: "null"
+            - matchers:
+                - severity = "critical"
+              receiver: signal
+              continue: true
+        inhibit_rules:
+          - source_matchers:
+              - severity = "critical"
+            target_matchers:
+              - severity =~ "warning|info"
+            equal: ["namespace", "alertname"]
+          - source_matchers:
+              - severity = "warning"
+            target_matchers:
+              - severity = "info"
+            equal: ["namespace", "alertname"]
+          - source_matchers:
+              - alertname = "InfoInhibitor"
+            target_matchers:
+              - severity = "info"
+            equal: ["namespace"]
+        receivers:
+          - name: "null"
+          - name: signal
+            webhook_configs:
+              - url: http://alertmanager-signal-bridge.signal.svc.cluster.local:8080/alert
+                send_resolved: true
+                max_alerts: 0
 
     grafana:
       admin:

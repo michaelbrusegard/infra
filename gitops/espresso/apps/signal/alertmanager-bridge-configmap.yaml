@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-signal-bridge
+  namespace: signal
+data:
+  bridge.py: |
+    #!/usr/bin/env python3
+    """Tiny alertmanager -> signal-cli JSON-RPC bridge.
+
+    Accepts Alertmanager webhook POST on /alert, batches each contained
+    alert into one Signal message, and forwards it to signal-cli's native
+    JSON-RPC daemon HTTP endpoint.
+    """
+    from __future__ import annotations
+
+    import http.server
+    import json
+    import logging
+    import os
+    import sys
+    import urllib.request
+
+    SIGNAL_URL = os.environ["SIGNAL_URL"]
+    SIGNAL_RECIPIENT = os.environ["SIGNAL_RECIPIENT"]
+    PORT = int(os.environ.get("PORT", "8080"))
+
+    logging.basicConfig(
+        level=os.environ.get("LOG_LEVEL", "INFO"),
+        format="%(asctime)s %(levelname)s %(message)s",
+        stream=sys.stdout,
+    )
+    log = logging.getLogger("bridge")
+
+
+    def format_alert(alert: dict) -> str:
+        status = alert.get("status", "firing")
+        labels = alert.get("labels", {})
+        annotations = alert.get("annotations", {})
+        severity = labels.get("severity", "unknown")
+        name = labels.get("alertname", "alert")
+        summary = annotations.get("summary") or annotations.get("description") or ""
+        instance = labels.get("instance") or labels.get("namespace") or ""
+        icon = "🔥" if status == "firing" else "✅"
+
+        lines = [f"{icon} [{severity.upper()}] {name} ({status})"]
+        if summary:
+            lines.append(summary)
+        if instance:
+            lines.append(f"target: {instance}")
+        url = alert.get("generatorURL")
+        if url:
+            lines.append(url)
+        return "\n".join(lines).strip()
+
+
+    def send_signal(message: str) -> None:
+        body = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": "send",
+                "params": {
+                    "recipient": [SIGNAL_RECIPIENT],
+                    "message": message,
+                },
+                "id": 1,
+            }
+        ).encode()
+        req = urllib.request.Request(
+            SIGNAL_URL,
+            data=body,
+            headers={"content-type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            payload = resp.read().decode()
+            log.info("signal-cli response: %s", payload[:300])
+
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            if self.path == "/healthz":
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"ok")
+                return
+            self.send_response(404)
+            self.end_headers()
+
+        def do_POST(self):  # noqa: N802
+            if self.path != "/alert":
+                self.send_response(404)
+                self.end_headers()
+                return
+            length = int(self.headers.get("content-length", 0) or 0)
+            try:
+                payload = json.loads(self.rfile.read(length) or b"{}")
+            except json.JSONDecodeError as err:
+                log.error("invalid JSON: %s", err)
+                self.send_response(400)
+                self.end_headers()
+                return
+
+            alerts = payload.get("alerts", [])
+            log.info(
+                "received %d alert(s); status=%s receiver=%s",
+                len(alerts),
+                payload.get("status"),
+                payload.get("receiver"),
+            )
+
+            errors: list[str] = []
+            for alert in alerts:
+                msg = format_alert(alert)
+                try:
+                    send_signal(msg)
+                except Exception as err:  # noqa: BLE001
+                    log.exception("send failed: %s", err)
+                    errors.append(str(err))
+
+            if errors:
+                self.send_response(502)
+                self.end_headers()
+                self.wfile.write(json.dumps({"errors": errors}).encode())
+                return
+            self.send_response(204)
+            self.end_headers()
+
+        def log_message(self, format, *args):  # noqa: A002,N802
+            log.info("%s - %s", self.address_string(), format % args)
+
+
+    if __name__ == "__main__":
+        log.info(
+            "alertmanager-signal-bridge listening on :%d -> %s recipient=%s",
+            PORT,
+            SIGNAL_URL,
+            SIGNAL_RECIPIENT,
+        )
+        http.server.ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
