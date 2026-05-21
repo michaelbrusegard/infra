@@ -3,7 +3,7 @@ _: {
     disk = {
       disk1 = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24057W";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24072T";
         content = {
           type = "gpt";
           partitions = {
@@ -38,7 +38,7 @@ _: {
 
       disk2 = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24072T";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24057W";
         content = {
           type = "gpt";
           partitions = {
@@ -72,10 +72,6 @@ _: {
                     "/nix" = {
                       mountpoint = "/nix";
                       mountOptions = ["compress=zstd" "noatime"];
-                    };
-                    "/swap" = {
-                      mountpoint = "/.swapvol";
-                      swap.swapfile.size = "8G";
                     };
                   };
                 };
