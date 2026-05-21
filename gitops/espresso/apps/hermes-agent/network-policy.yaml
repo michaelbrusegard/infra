@@ -63,6 +63,14 @@ spec:
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: hermes-agent
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: signal
+            k8s:app: signal-cli
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
     - toCIDRSet:
         - cidr: 10.42.0.0/16
         - cidr: 10.43.0.0/16

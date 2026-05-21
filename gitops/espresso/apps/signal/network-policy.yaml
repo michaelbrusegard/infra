@@ -2,7 +2,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: signal-cli
-  namespace: hermes-agent
+  namespace: signal
 spec:
   endpointSelector:
     matchLabels:
@@ -20,6 +20,9 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: hermes-agent
             k8s:app: hermes-agent
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            k8s:app.kubernetes.io/name: alertmanager
       toPorts:
         - ports:
             - port: "3000"

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: signal-cli
-  namespace: hermes-agent
+  namespace: signal
 spec:
   replicas: 1
   selector:
