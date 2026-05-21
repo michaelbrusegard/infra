@@ -32,7 +32,15 @@ spec:
     storageclass:
       name: ssd-ha
       dataStorageSize: 1Ti
-      logStorageSize: 5Gi
+      logStorageSize: 256Mi
+    config:
+      rustfs:
+        log_level: warn
+        obs_environment: production
+        log_rotation:
+          size: 50
+          time: hour
+          keep_files: 24
     resources:
       limits:
         cpu: "1"
