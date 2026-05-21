@@ -22,9 +22,8 @@ spec:
       containers:
         - name: stalwart
           image: stalwartlabs/stalwart:v0.16.5@sha256:c435a9b97526205dd0bc46245ae97b960cf4cd7a5f1e411f14f36a9d5fc6efdb
-          args:
-            - --config
-            - /var/lib/stalwart/config.json
+          command:
+            - /entrypoint/entrypoint.sh
           env:
             - name: STALWART_PUBLIC_URL
               value: https://mail.gullhaugveien.michaelbrusegard.com
@@ -68,19 +67,33 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/stalwart
               name: data
+            - mountPath: /var/lib/stalwart/config.json
+              name: config
+              subPath: config.json
+              readOnly: true
             - mountPath: /var/lib/stalwart/private/tls
               name: tls
               readOnly: true
             - mountPath: /var/lib/stalwart/private/dkim
               name: dkim
               readOnly: true
+            - mountPath: /entrypoint
+              name: entrypoint
+              readOnly: true
       volumes:
+        - name: config
+          configMap:
+            name: stalwart-config
         - name: tls
           secret:
             secretName: wildcard-tls
         - name: dkim
           secret:
             secretName: stalwart-dkim
+        - name: entrypoint
+          configMap:
+            name: stalwart-entrypoint
+            defaultMode: 0555
   volumeClaimTemplates:
     - metadata:
         name: data

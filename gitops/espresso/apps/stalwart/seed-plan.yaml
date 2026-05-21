@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-seed-plan
+  namespace: stalwart
+data:
+  plan.ndjson: |
+    {"@type":"create","object":"Domain","value":{"d-michaelbrusegard":{"name":"michaelbrusegard.com","aliases":{},"certificateManagement":{"@type":"Manual"},"dkimManagement":{"@type":"Manual"},"dnsManagement":{"@type":"Manual"},"subAddressing":{"@type":"Enabled"},"reportAddressUri":"mailto:postmaster@michaelbrusegard.com"}}}
+    {"@type":"create","object":"Certificate","value":{"cert-wildcard":{"certificate":{"@type":"File","filePath":"/var/lib/stalwart/private/tls/tls.crt"},"privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/tls/tls.key"}}}}
+    {"@type":"create","object":"DkimSignature","value":{"dkim-rsa-michaelbrusegard":{"@type":"Dkim1RsaSha256","domainId":"#d-michaelbrusegard","selector":"stalwart-rsa","privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/dkim/michaelbrusegard.com.rsa.key"}},"dkim-ed25519-michaelbrusegard":{"@type":"Dkim1Ed25519Sha256","domainId":"#d-michaelbrusegard","selector":"stalwart-ed25519","privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/dkim/michaelbrusegard.com.ed25519.key"}}}}
+    {"@type":"create","object":"NetworkListener","value":{"smtp":{"bind":{"[::]:25":true},"protocol":"smtp","useTls":true,"tlsImplicit":false},"submissions":{"bind":{"[::]:465":true},"protocol":"smtp","useTls":true,"tlsImplicit":true},"submission":{"bind":{"[::]:587":true},"protocol":"smtp","useTls":true,"tlsImplicit":false},"imaps":{"bind":{"[::]:993":true},"protocol":"imap","useTls":true,"tlsImplicit":true},"sieve":{"bind":{"[::]:4190":true},"protocol":"manageSieve","useTls":true,"tlsImplicit":false},"http":{"bind":{"[::]:8080":true},"protocol":"http","useTls":false}}}
+    {"@type":"update","object":"SystemSettings","value":{"defaultHostname":"mail.gullhaugveien.michaelbrusegard.com","defaultCertificateId":"cert-wildcard"}}
+    {"@type":"update","object":"MtaSts","value":{"mode":"testing","maxAge":"7d","mxHosts":{"mail.gullhaugveien.michaelbrusegard.com":true}}}

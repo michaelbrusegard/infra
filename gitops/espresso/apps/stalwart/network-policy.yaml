@@ -79,6 +79,15 @@ spec:
               protocol: TCP
             - port: "4190"
               protocol: TCP
+    # Seed Job: declarative apply via stalwart-cli over the HTTP listener
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: stalwart
+            k8s:app: stalwart-seed
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:

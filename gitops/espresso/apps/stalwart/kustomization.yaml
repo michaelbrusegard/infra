@@ -6,3 +6,7 @@ resources:
   - services.yaml
   - httproute.yaml
   - network-policy.yaml
+  - config.yaml
+  - entrypoint.yaml
+  - seed-plan.yaml
+  - seed-job.yaml
