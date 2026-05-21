@@ -132,8 +132,8 @@ You can run `ip a` to find the IP address.
    - Setup TPM auto unlock for both LUKS partitions (run `lsblk` to identify which NVMe holds which container — `disk1` has ESP + LUKS `crypted1`, `disk2` has only LUKS `crypted2`):
 
      ```sh
-     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p2
-     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme1n1p1
+     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme1n1p2
+     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p1
      ```
 
    - Add user Age key to `~/.config/sops/age/keys.txt`).
