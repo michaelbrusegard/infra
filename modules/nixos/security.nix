@@ -1,8 +1,8 @@
-_: {
+{isWsl, ...}: {
   security = {
     sudo-rs = {
       enable = true;
-      wheelNeedsPassword = true;
+      wheelNeedsPassword = !isWsl;
       execWheelOnly = true;
     };
 
