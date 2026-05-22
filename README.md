@@ -183,7 +183,7 @@ First run the WinUtil tool for runtime tweaks not handled by `setup.ps1`:
 irm "https://christitus.com/win" | iex
 ```
 
-Under Performance Plan click "Add and Activate Ultimate Performance Profile".
+Under Tweaks click "Ultimate Performance Profile - Enable".
 
 In the Updates tab select "Security Settings" to prevent Windows Updates
 from automatically installing updates at the worst times.
