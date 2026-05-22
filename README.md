@@ -144,7 +144,7 @@ the following command on a nix machine:
 sudo nix run .#nixosConfigurations.ristretto-wsl.config.system.build.tarballBuilder
 ```
 
-This produces `nixos.tar.gz` in the current directory. Put it on a flash
+This produces `nixos.wsl` in the current directory. Put it on a flash
 drive and copy it to the Windows machine.
 
 Then start by installing Windows Subsystem for Linux (WSL) on Windows:
@@ -153,12 +153,10 @@ Then start by installing Windows Subsystem for Linux (WSL) on Windows:
 wsl --install --no-distribution
 ```
 
-Reboot the computer, move the tarball next to your working directory and
-install the NixOS WSL distro (the file is a tarball — `--from-file` accepts
-both `.tar.gz` and `.wsl` on modern WSL):
+Reboot the computer, connect the USB drive and move the `nixos.wsl` file over, install the NixOS WSL distro:
 
 ```sh
-wsl --install --from-file nixos.tar.gz
+wsl --install --from-file nixos.wsl
 ```
 
 To enter the WSL environment, run:
