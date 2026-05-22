@@ -123,16 +123,10 @@ You can run `ip a` to find the IP address.
    ```
 
 3. **Post-Install**:
-   - Setup TPM auto unlock for both LUKS partitions (run `lsblk` to identify which NVMe holds which container — `disk1` has ESP + LUKS `crypted1`, `disk2` has only LUKS `crypted2`):
-
-     ```sh
-     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme1n1p2
-     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p1
-     ```
-
    - Add user Age key to `~/.config/sops/age/keys.txt`).
    - Clone the infrastructure configuration using the GitHub SSH private key: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
    - Rebuild the configuration: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' nh os switch`.
+   - TPM auto unlock is enrolled later, after Windows is installed (see [Setup TPM auto unlock](#setup-tpm-auto-unlock)). Until then, NixOS will prompt for the LUKS passphrase on boot.
 
 ### Screenshot (Ristretto)
 
@@ -160,7 +154,10 @@ irm "https://christitus.com/win" | iex
 In the tool we can download the newest Windows ISO image from Microsoft.
 It then applies the modifications and flashes a USB drive.
 
-Go through the regular windows installation.
+Go through the regular windows installation. When the installer asks for a
+name, enter `michaelbrusegard` (lowercase, no space) — Windows derives the
+`C:\Users\<name>` folder from this field.
+
 After installation has finished go to Windows Update and run it to make sure the
 system is updated.
 
@@ -255,6 +252,17 @@ After running, load Voicemeeter Banana's saved layout manually — the
 `desktop.xml` lives at
 `\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\infra\windows\programs\voicemeeter\desktop.xml`.
 In Voicemeeter use **Menu → Load Settings** and point at that file.
+
+### Setup TPM auto unlock
+
+Do this **after** Windows is installed and fully updated — Windows mutates
+Secure Boot state, shifting PCR 7 and breaking earlier enrollments. Run
+`lsblk` to map containers (`disk1` has ESP + LUKS `crypted1`, `disk2` has only LUKS `crypted2`).
+
+```sh
+sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme1n1p2
+sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p1
+```
 
 ## Macchiato (NixOS Router)
 
