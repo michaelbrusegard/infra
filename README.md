@@ -260,8 +260,10 @@ Secure Boot state, shifting PCR 7 and breaking earlier enrollments. Run
 `lsblk` to map containers (`disk1` has ESP + LUKS `crypted1`, `disk2` has only LUKS `crypted2`).
 
 ```sh
-sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme1n1p2
-sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p1
+sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24072T-part2
+sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24057W-part1
 ```
 
 ## Macchiato (NixOS Router)
@@ -296,7 +298,12 @@ nixos-anywhere --extra-files ./keys --flake .#macchiato --disk-encryption-keys /
 ### Post install
 
 Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt user secrets.
-**Important:** Setup TPM auto unlock: `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/sda2`.
+**Important:** Setup TPM auto unlock:
+
+```sh
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/ata-INTEL_SSDSCKKW120H6_CVLY630102UX120H-part2
+```
 
 ## Espresso (NixOS K3S Cluster)
 
@@ -336,14 +343,41 @@ nixos-anywhere --extra-files ./keys --flake .#espresso-NODE --disk-encryption-ke
 Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt user secrets. Then
 rebuild the configuration using colmena.
 
-Setup TPM auto unlock for all the applicable disks (run `lsblk` to see the disks):
+Setup TPM auto unlock for all the applicable disks.
+
+espresso-0:
 
 ```sh
-sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p2
-sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p3
-# These will only be applicable for espresso-1 and espresso-2:
-sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/sda1
-sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/sdb1
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB59074B-part2
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB59074B-part3
+```
+
+espresso-1:
+
+```sh
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB58943B-part2
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB58943B-part3
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/ata-MZ7LM3T8HMLP0D3_S37MNX0J600459-part1
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/ata-MZ7LM3T8HMLP0D3_S37MNX0J900816-part1
+```
+
+espresso-2:
+
+```sh
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB59076B-part2
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB59076B-part3
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/ata-MZ7LM3T8HMLP0D3_S37MNX0J600452-part1
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/ata-MZ7LM3T8HMLP0D3_S37MNX0J600844-part1
 ```
 
 ## Inspiration…
