@@ -37,25 +37,18 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 }
 
 # =============================================================================
-# WSL AVAILABILITY GATE
+# WSL PATHS
 # =============================================================================
-# All UNC paths below depend on the WSL distro being reachable. Start it
-# eagerly so subsequent \\wsl.localhost\... access doesn't fail silently.
-Write-Host "--- Verifying WSL distro '$WslDistro' is reachable ---"
-$wslRoot     = "\\wsl.localhost\$WslDistro"
-$wslHome     = "$wslRoot\home\$WslUser"
-$wslRepoUnc  = Join-Path $wslHome ($RepoPath -replace '/', '\')
+Write-Host "--- Initializing WSL paths for '$WslDistro' ---"
+$wslRoot    = "\\wsl.localhost\$WslDistro"
+$wslHome    = "$wslRoot\home\$WslUser"
+$wslRepoUnc = Join-Path $wslHome ($RepoPath -replace '/', '\')
 
-& wsl.exe -d $WslDistro -e true 2>$null | Out-Null
-if ($LASTEXITCODE -ne 0) {
-  Write-Error "WSL distro '$WslDistro' is not available. Install/start it and retry."
-  exit 1
+if (-not (Test-Path -LiteralPath $wslRepoUnc)) {
+  Write-Warning "WSL repo path '$wslRepoUnc' is not reachable. WSL-backed sections will skip missing files. If needed, start WSL or pass -WslDistro/-WslUser/-RepoPath."
+} else {
+  Write-Host "Using WSL repo: $wslRepoUnc"
 }
-if (-not (Test-Path $wslRepoUnc)) {
-  Write-Error "Repo path '$wslRepoUnc' not found in WSL. Aborting."
-  exit 1
-}
-Write-Host "WSL '$WslDistro' OK. Repo: $wslRepoUnc"
 
 # =============================================================================
 # HELPER FUNCTIONS
