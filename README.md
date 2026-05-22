@@ -97,6 +97,47 @@ sure the Karabiner DriverKit VirtualHIDDevice is selected as the keyboard.
 
 ## Ristretto (NixOS/Windows Desktop)
 
+Create an installer by downloading the minimal ISO image from
+[NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
+an USB drive using the following command:
+
+```sh
+sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
+```
+
+Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
+with the path to your USB drive.
+
+Plug in the installer USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
+Set a temporary password using the `passwd` command for SSH access.
+You can run `ip a` to find the IP address.
+
+1. **Prepare Local Files**:
+   - Create LUKS passphrase file: `./secret.key`.
+   - Get host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
+
+2. **Run Install**:
+
+   ```sh
+   nixos-anywhere --extra-files ./keys --flake .#ristretto --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
+   ```
+
+3. **Post-Install**:
+   - Setup TPM auto unlock for both LUKS partitions (run `lsblk` to identify which NVMe holds which container — `disk1` has ESP + LUKS `crypted1`, `disk2` has only LUKS `crypted2`):
+
+     ```sh
+     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme1n1p2
+     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p1
+     ```
+
+   - Add user Age key to `~/.config/sops/age/keys.txt`).
+   - Clone the infrastructure configuration using the GitHub SSH private key: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
+   - Rebuild the configuration: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' nh os switch`.
+
+### Screenshot (Ristretto)
+
+![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
+
 ### Create Windows installer
 
 To create the installation ISO for Windows, we use Chris Titus Tech's Windows
@@ -214,49 +255,6 @@ After running, load Voicemeeter Banana's saved layout manually — the
 `desktop.xml` lives at
 `\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\infra\windows\programs\voicemeeter\desktop.xml`.
 In Voicemeeter use **Menu → Load Settings** and point at that file.
-
-### Install NixOS with nixos-anywhere (Using Minimal NixOS Installer)
-
-Create an installer by downloading the minimal ISO image from
-[NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
-an USB drive using the following command:
-
-```sh
-sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
-```
-
-Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
-with the path to your USB drive.
-
-Plug in the installer USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
-Set a temporary password using the `passwd` command for SSH access.
-You can run `ip a` to find the IP address.
-
-1. **Prepare Local Files**:
-   - Create LUKS passphrase file: `./secret.key`.
-   - Get host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
-
-2. **Run Install**:
-
-   ```sh
-   nixos-anywhere --extra-files ./keys --flake .#ristretto --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
-   ```
-
-3. **Post-Install**:
-   - Setup TPM auto unlock for both LUKS partitions (run `lsblk` to identify which NVMe holds which container — `disk1` has ESP + LUKS `crypted1`, `disk2` has only LUKS `crypted2`):
-
-     ```sh
-     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme1n1p2
-     sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/nvme0n1p1
-     ```
-
-   - Add user Age key to `~/.config/sops/age/keys.txt`).
-   - Clone the infrastructure configuration using the GitHub SSH private key: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
-   - Rebuild the configuration: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' nh os switch`.
-
-### Screenshot (Ristretto)
-
-![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
 ## Macchiato (NixOS Router)
 
