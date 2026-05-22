@@ -4,7 +4,7 @@ Set-PSReadLineOption -PredictionSource History
 Set-PSReadLineOption -PredictionViewStyle InlineView
 Set-PSReadLineOption -HistorySaveStyle SaveIncrementally
 Set-PSReadLineOption -HistoryNoDuplicates
-Set-PSReadLineOption -AddToHistoryHandler { param($line) -return $line -notmatch '^\s' }
+Set-PSReadLineOption -AddToHistoryHandler { param($line) return $line -notmatch '^\s' }
 Set-PSReadLineOption -MaximumHistoryCount 10000
 Set-PSReadLineOption -ViModeIndicator Cursor
 Set-PSReadLineOption -BellStyle None

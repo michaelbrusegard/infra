@@ -97,6 +97,128 @@ sure the Karabiner DriverKit VirtualHIDDevice is selected as the keyboard.
 
 ## Ristretto (NixOS/Windows Desktop)
 
+### Create Windows installer
+
+To create the installation ISO for Windows, we use Chris Titus Tech's Windows
+Utility to create a clean telemetry-free ISO that does not require a Microsoft
+account (This has to be run on a Windows machine or in a VM). The commands require
+administrator privileges, so make sure to run PowerShell as administrator.
+
+First, enable execution of scripts in PowerShell:
+
+```sh
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+Then load the tool:
+
+```sh
+irm "https://christitus.com/win" | iex
+```
+
+In the tool we can download the newest Windows ISO image from Microsoft.
+It then applies the modifications and flashes a USB drive.
+
+Go through the regular windows installation.
+After installation has finished go to Windows Update and run it to make sure the
+system is updated.
+
+Also make sure to install updated drivers for the system, the download
+pages for the current system can be found below:
+
+- [Chipset and Motherboard](https://rog.asus.com/motherboards/rog-crosshair/rog-crosshair-viii-impact-model/helpdesk_download/)
+- [Processor and Graphics](https://www.amd.com/en/support/download/drivers.html)
+
+Lastly enable bitlocker for additional security.
+
+### Screenshot (Windows)
+
+![Screenshot 2025-06-14 at 19 55 23](https://github.com/user-attachments/assets/c56e99a1-d473-4817-b2ee-eaad579ac415)
+
+### NixOS WSL
+
+First we need to build the NixOS WSL tarball. This can be done by running
+the following command on a nix machine:
+
+```sh
+sudo nix run .#nixosConfigurations.ristretto-wsl.config.system.build.tarballBuilder
+```
+
+This produces `nixos.tar.gz` in the current directory. Put it on a flash
+drive and copy it to the Windows machine.
+
+Then start by installing Windows Subsystem for Linux (WSL) on Windows:
+
+```sh
+wsl --install --no-distribution
+```
+
+Reboot the computer, move the tarball next to your working directory and
+install the NixOS WSL distro (the file is a tarball — `--from-file` accepts
+both `.tar.gz` and `.wsl` on modern WSL):
+
+```sh
+wsl --install --from-file nixos.tar.gz
+```
+
+To enter the WSL environment, run:
+
+```sh
+wsl
+```
+
+Add the user Age key to `~/.config/sops/age/keys.txt`, then clone the
+infra repository using the GitHub SSH private key and rebuild:
+
+```sh
+GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' \
+  git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra
+GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' \
+  nh os switch
+```
+
+### Applying system preferences and installing packages
+
+First run the WinUtil tool for runtime tweaks not handled by `setup.ps1`:
+
+```sh
+irm "https://christitus.com/win" | iex
+```
+
+Under Performance Plan click "Add and Activate Ultimate Performance Profile".
+
+In the Updates tab select "Security Settings" to prevent Windows Updates
+from automatically installing updates at the worst times.
+
+Then run the `setup.ps1` script from an **elevated PowerShell** (the script
+self-checks for admin and exits otherwise). It requires the NixOS WSL
+distro to be running so it can reach files via `\\wsl.localhost\NixOS\...`:
+
+```sh
+powershell -ExecutionPolicy Bypass -File \
+  \\wsl.localhost\NixOS\home\michaelbrusegard\Projects\infra\windows\setup.ps1
+```
+
+The script:
+
+- Installs winget packages (browsers, terminals, dev tools, games launchers).
+- Symlinks the PowerShell 7 profile and FanControl config from WSL.
+- Sets `WEZTERM_CONFIG_FILE` to the home-manager-generated `wezterm.lua`
+  in WSL.
+- Extracts `windows/keyboard.zip` and runs the MSKLC `setup.exe` to install
+  the custom AltGr-on-US keyboard layout (edit `keyboard.klc` in MSKLC to
+  modify).
+- Copies the wallpaper, applies it as desktop + lock screen.
+- Applies registry tweaks (dark mode, taskbar, NumLock off,
+  fast key repeat, no mouse acceleration, etc.).
+
+After running, load Voicemeeter Banana's saved layout manually — the
+`desktop.xml` lives at
+`\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\infra\windows\programs\voicemeeter\desktop.xml`.
+In Voicemeeter use **Menu → Load Settings** and point at that file.
+
+### Install NixOS with nixos-anywhere (Using Minimal NixOS Installer)
+
 Create an installer by downloading the minimal ISO image from
 [NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
 an USB drive using the following command:
@@ -107,12 +229,6 @@ sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
 
 Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
 with the path to your USB drive.
-
-### Screenshot (Ristretto)
-
-![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
-
-### Install NixOS with nixos-anywhere (Using Minimal NixOS Installer)
 
 Plug in the installer USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
 Set a temporary password using the `passwd` command for SSH access.
@@ -140,122 +256,9 @@ You can run `ip a` to find the IP address.
    - Clone the infrastructure configuration using the GitHub SSH private key: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
    - Rebuild the configuration: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' nh os switch`.
 
-### Create Windows installer
+### Screenshot (Ristretto)
 
-To create the installation ISO for Windows, we use Chris Titus Tech's Windows
-Utility to create a clean telemetry-free ISO that does not require a Microsoft
-account (This has to be run on a Windows machine or in a VM). The commands require
-administrator privileges, so make sure to run PowerShell as administrator.
-
-First, enable execution of scripts in PowerShell:
-
-```sh
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-Then load the tool:
-
-```sh
-irm "https://christitus.com/win" | iex
-```
-
-In the tool we can download the newest Windows ISO image from Microsoft.
-Then choose the username and password.
-Append the tweaks settings from `windows/winutil.json` and start the process.
-
-When we have the MicroWin
-ISO we can flash an USB drive using Rufus.
-
-> [!INFO]
-> The current setup also requires the AMD RAID driver to run the two NVMe
-> drives in RAID 0. This is not supported by the Windows installer, so we need
-> to add the drivers manually. They can be downloaded from here
-> [ASUS motherboard downloads](https://rog.asus.com/motherboards/rog-crosshair/rog-crosshair-viii-impact-model/helpdesk_download/).
-
-Create a `drivers` directory on the installer USB and add the rcbottom.inf,
-rcraid.inf and rccfg.inf. They should be loaded in that order during the installation.
-
-After installation has finished go to Windows Update and run it to make sure the
-system is updated.
-
-Also make sure to install updated drivers for the system, the download
-pages for the current system can be found below:
-
-- [Chipset and Motherboard](https://rog.asus.com/motherboards/rog-crosshair/rog-crosshair-viii-impact-model/helpdesk_download/)
-- [Processor and Graphics](https://www.amd.com/en/support/download/drivers.html)
-
-### Screenshot (Windows)
-
-![Screenshot 2025-06-14 at 19 55 23](https://github.com/user-attachments/assets/c56e99a1-d473-4817-b2ee-eaad579ac415)
-
-### NixOS WSL
-
-First we need to build the NixOS WSL tarball. This can be done by running
-the following command on a nix machine:
-
-```sh
-sudo nix run .#nixosConfigurations.ristretto-wsl.config.system.build.tarballBuilder
-```
-
-Put this on a flash drive and copy it to the Windows machine.
-
-Then start by installing Windows Subsystem for Linux (WSL) on Windows:
-
-```sh
-wsl --install --no-distribution
-```
-
-Then reboot the computer and install the NixOS WSL tarball by running the
-following command (You have to move the tarball to the current directory
-first from the flash drive):
-
-```sh
-wsl --install --from-file nixos.wsl
-```
-
-To enter the WSL environment, run:
-
-```sh
-wsl
-```
-
-Now clone the infra repository, add the age keys and rebuild.
-
-### Applying system preferences and installing packages
-
-First rerun the WinUtil tool:
-
-```sh
-irm "https://christitus.com/win" | iex
-```
-
-Under Performance Plan click "Add and Activate Ultimate Performance Profile".
-
-In the Updates tab select "Security Settings" to prevent Windows Updates
-from automatically installing updates at the worst times.
-
-Then run the `setup.ps1` script to install packages and apply registry tweaks:
-
-```sh
-powershell -ExecutionPolicy Bypass -File \
-  \\wsl.localhost\NixOS\home\michaelbrusegard\Projects\infra\windows\setup.ps1
-```
-
-### Keyboard
-
-The custom keyboard layout is set up like the default US layout, but with
-mac like behaviour for special characters when holding AltGr (This helps with
-typing Norwegian characters like æøå when using the US layout). It is
-configured with [MSKLC](https://www.microsoft.com/en-us/download/details.aspx?id=102134)
-and the configuration can be imported into the app to be edited via
-`keyboard.klc`.
-
-To apply the custom keyboard layout copy the `keyboard.zip` file from WSL:
-
-```sh
-SRC=\\wsl$\\NixOS\\home\\michaelbrusegard\\Projects\\infra\\windows\\keyboard.zip
-cp $SRC C:\Users\michaelbrusegard\Downloads
-```
+![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
 
 ## Macchiato (NixOS Router)
 
