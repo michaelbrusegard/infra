@@ -40,3 +40,6 @@ data:
 
   85-imap.ndjson.tmpl: |
     {"@type":"update","object":"Imap","value":{"maxAuthFailures":30}}
+
+  90-tracer-stdout.ndjson.tmpl: |
+    {"@type":"create","object":"Tracer","value":{"stdout":{"@type":"Stdout","enable":true,"level":"info","ansi":false,"buffered":false,"eventsPolicy":"exclude","events":{}}}}

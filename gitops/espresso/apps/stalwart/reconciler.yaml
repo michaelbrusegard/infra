@@ -95,10 +95,12 @@ data:
     QUERY_FIELDS = {
         'Certificate': 'id,certificate',
         'Directory':   'id,issuerUrl',
+        'Tracer':      'id,@type',
     }
 
     LIVE_TYPES = ('Domain', 'NetworkListener', 'MtaRoute',
-                  'Account', 'DkimSignature', 'Certificate', 'Directory')
+                  'Account', 'DkimSignature', 'Certificate',
+                  'Directory', 'Tracer')
 
     def query_live(obj_type):
         args = ['stalwart-cli', 'query', obj_type, '--json']
@@ -155,6 +157,8 @@ data:
             return cert.get('filePath')
         if obj_type == 'Directory':
             return spec_or_live.get('issuerUrl')
+        if obj_type == 'Tracer':
+            return spec_or_live.get('@type')
         return None
 
     live_id_by_key = {}
