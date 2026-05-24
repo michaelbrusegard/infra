@@ -172,8 +172,8 @@ resource "netbird_setup_key" "macchiato" {
 }
 
 resource "netbird_network" "asgard" {
-  name        = "Gullhaugveien"
-  description = "Routed internal services at Gullhaugveien"
+  name        = "Asgard"
+  description = "Routed internal services at Asgard"
 }
 
 resource "netbird_network_router" "macchiato" {
@@ -189,7 +189,7 @@ resource "netbird_network_resource" "resources" {
 
   network_id  = netbird_network.asgard.id
   name        = each.value.name
-  description = "${each.value.name} at Gullhaugveien"
+  description = "${each.value.name} at Asgard"
   address     = each.value.address
   groups = [
     each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "media" ? netbird_group.media.id : each.value.group == "public" ? netbird_group.public.id : each.value.group == "manafish" ? netbird_group.manafish.id : netbird_group.media_admin.id,
@@ -327,7 +327,7 @@ resource "netbird_nameserver_group" "router_public_dns" {
 
 resource "netbird_nameserver_group" "macchiato_blocky_dns" {
   name        = "Macchiato Blocky DNS"
-  description = "Blocky DNS on macchiato for Gullhaugveien domain"
+  description = "Blocky DNS on macchiato for Asgard domain"
   enabled     = true
   primary     = false
   domains     = [local.domain]

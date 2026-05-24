@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: pocket-id
+      annotations:
+        secret.reloader.stakater.com/reload: pocket-id-env
     spec:
       containers:
         - name: pocket-id

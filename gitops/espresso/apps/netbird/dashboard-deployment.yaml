@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: netbird-dashboard
+      annotations:
+        secret.reloader.stakater.com/reload: netbird-dashboard-env
     spec:
       containers:
         - name: dashboard

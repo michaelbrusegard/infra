@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: netbird-server
+      annotations:
+        secret.reloader.stakater.com/reload: netbird-server-config
     spec:
       containers:
         - name: management
@@ -45,9 +47,9 @@ spec:
               path: /api/instance
               port: http
           volumeMounts:
-            - mountPath: /etc/netbird/management.json
+            - mountPath: /etc/netbird
               name: config
-              subPath: management.json
+              readOnly: true
             - mountPath: /var/lib/netbird
               name: data
       volumes:

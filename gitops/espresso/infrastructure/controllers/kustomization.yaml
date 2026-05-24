@@ -12,6 +12,7 @@ resources:
   - rustfs
   - postgres
   - reflector
+  - reloader
   - tofu-controller
   - k8s-gateway
   - external-dns

@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: netbird-relay
+      annotations:
+        secret.reloader.stakater.com/reload: netbird-relay-env
     spec:
       containers:
         - name: relay

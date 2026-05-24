@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: netbird-coturn
+      annotations:
+        secret.reloader.stakater.com/reload: netbird-coturn-config
     spec:
       containers:
         - name: coturn
