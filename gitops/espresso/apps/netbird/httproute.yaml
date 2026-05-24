@@ -9,7 +9,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - netbird.gullhaugveien.michaelbrusegard.com
+    - netbird.asgard.michaelbrusegard.com
   rules:
     - matches:
         - path:
@@ -30,7 +30,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - netbird.gullhaugveien.michaelbrusegard.com
+    - netbird.asgard.michaelbrusegard.com
   rules:
     - matches:
         - path:
@@ -58,7 +58,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - netbird.gullhaugveien.michaelbrusegard.com
+    - netbird.asgard.michaelbrusegard.com
   rules:
     - matches:
         - path:
@@ -86,7 +86,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - netbird.gullhaugveien.michaelbrusegard.com
+    - netbird.asgard.michaelbrusegard.com
   rules:
     - matches:
         - path:
@@ -107,7 +107,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - netbird-admin.gullhaugveien.michaelbrusegard.com
+    - netbird-admin.asgard.michaelbrusegard.com
   rules:
     - matches:
         - path:
@@ -163,7 +163,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - netbird-admin.gullhaugveien.michaelbrusegard.com
+    - netbird-admin.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: netbird-dashboard

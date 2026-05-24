@@ -1,5 +1,5 @@
 locals {
-  domain = "gullhaugveien.michaelbrusegard.com"
+  domain = "asgard.michaelbrusegard.com"
 
   resources = {
     bazarr = {
@@ -171,13 +171,13 @@ resource "netbird_setup_key" "macchiato" {
   revoked                = false
 }
 
-resource "netbird_network" "gullhaugveien" {
+resource "netbird_network" "asgard" {
   name        = "Gullhaugveien"
   description = "Routed internal services at Gullhaugveien"
 }
 
 resource "netbird_network_router" "macchiato" {
-  network_id  = netbird_network.gullhaugveien.id
+  network_id  = netbird_network.asgard.id
   peer_groups = [netbird_group.routing_peers.id]
   enabled     = true
   masquerade  = true
@@ -187,7 +187,7 @@ resource "netbird_network_router" "macchiato" {
 resource "netbird_network_resource" "resources" {
   for_each = local.resources
 
-  network_id  = netbird_network.gullhaugveien.id
+  network_id  = netbird_network.asgard.id
   name        = each.value.name
   description = "${each.value.name} at Gullhaugveien"
   address     = each.value.address

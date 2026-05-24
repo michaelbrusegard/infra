@@ -76,7 +76,7 @@ spec:
                 - name: KUBECTL_VERSION
                   value: v1.34.5
                 - name: STALWART_HOSTNAME
-                  value: mail.gullhaugveien.michaelbrusegard.com
+                  value: mail.asgard.michaelbrusegard.com
               command:
                 - sh
                 - -c

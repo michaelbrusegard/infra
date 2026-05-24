@@ -2,7 +2,7 @@
   wanInterface = "enp2s0";
   clientInterfaces = ["enp3s0" "enp4s0"];
   serverInterfaces = ["enp5s0" "enp1s0f0" "enp1s0f1"];
-  baseDomain = "gullhaugveien.michaelbrusegard.com";
+  baseDomain = "asgard.michaelbrusegard.com";
   routerDomain = "router.${baseDomain}";
   netbirdPublicDomain = "netbird.${baseDomain}";
 in {

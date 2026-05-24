@@ -9,7 +9,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - jellyfin.gullhaugveien.michaelbrusegard.com
+    - jellyfin.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: jellyfin
@@ -26,7 +26,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - seerr.gullhaugveien.michaelbrusegard.com
+    - seerr.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: jellyseerr
@@ -43,7 +43,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - sonarr.gullhaugveien.michaelbrusegard.com
+    - sonarr.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: sonarr
@@ -60,7 +60,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - radarr.gullhaugveien.michaelbrusegard.com
+    - radarr.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: radarr
@@ -77,7 +77,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - prowlarr.gullhaugveien.michaelbrusegard.com
+    - prowlarr.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: prowlarr
@@ -94,7 +94,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - transmission.gullhaugveien.michaelbrusegard.com
+    - transmission.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: transmission
@@ -111,7 +111,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - bazarr.gullhaugveien.michaelbrusegard.com
+    - bazarr.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: bazarr
@@ -128,7 +128,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - lidarr.gullhaugveien.michaelbrusegard.com
+    - lidarr.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: lidarr
@@ -145,7 +145,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - navidrome.gullhaugveien.michaelbrusegard.com
+    - navidrome.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: navidrome

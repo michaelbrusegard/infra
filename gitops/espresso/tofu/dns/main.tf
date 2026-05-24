@@ -32,7 +32,7 @@ locals {
   # (bootstrap done, listeners up, test mail round-trips, DKIM passes). These
   # will steal mail-flow from any existing provider.
   #
-  # The server hostname mail.gullhaugveien.michaelbrusegard.com is managed by
+  # The server hostname mail.asgard.michaelbrusegard.com is managed by
   # cloudflare-dyndns on macchiato (A+AAAA tracking WAN). The MX target must
   # resolve directly to an A record (RFC 5321 forbids MX-to-CNAME), so MX
   # points at the dyndns-managed name. Other apex-zone names (autoconfig,
@@ -46,22 +46,22 @@ locals {
   #   mta_sts = {
   #     name    = "mta-sts"
   #     type    = "CNAME"
-  #     content = "mail.gullhaugveien.michaelbrusegard.com"
+  #     content = "mail.asgard.michaelbrusegard.com"
   #   }
   #   autoconfig = {
   #     name    = "autoconfig"
   #     type    = "CNAME"
-  #     content = "mail.gullhaugveien.michaelbrusegard.com"
+  #     content = "mail.asgard.michaelbrusegard.com"
   #   }
   #   autodiscover = {
   #     name    = "autodiscover"
   #     type    = "CNAME"
-  #     content = "mail.gullhaugveien.michaelbrusegard.com"
+  #     content = "mail.asgard.michaelbrusegard.com"
   #   }
   #   mx = {
   #     name     = "@"
   #     type     = "MX"
-  #     content  = "mail.gullhaugveien.michaelbrusegard.com"
+  #     content  = "mail.asgard.michaelbrusegard.com"
   #     priority = 10
   #   }
   #   spf = {

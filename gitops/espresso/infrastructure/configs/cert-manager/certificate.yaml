@@ -9,7 +9,7 @@ spec:
     name: letsencrypt
     kind: ClusterIssuer
   dnsNames:
-    - "*.gullhaugveien.michaelbrusegard.com"
+    - "*.asgard.michaelbrusegard.com"
     - "*.michaelbrusegard.com"
     - "*.manafishrov.com"
   secretTemplate:

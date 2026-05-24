@@ -26,7 +26,7 @@ spec:
             - /entrypoint/entrypoint.sh
           env:
             - name: STALWART_PUBLIC_URL
-              value: https://mail.gullhaugveien.michaelbrusegard.com
+              value: https://mail.asgard.michaelbrusegard.com
           envFrom:
             - secretRef:
                 name: stalwart-env
