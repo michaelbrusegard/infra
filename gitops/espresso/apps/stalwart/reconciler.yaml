@@ -200,7 +200,7 @@ data:
                     'value': value,
                 }))
             else:
-                remaining[alias] = spec
+                remaining[alias] = resolve_refs(spec)
         if remaining:
             out_lines.append(json.dumps({
                 '@type': 'create',
