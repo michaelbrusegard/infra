@@ -36,6 +36,19 @@
       };
     };
 
+    amphetamine = {
+      enable = true;
+      config = {
+        ProgramArguments = [
+          "/usr/bin/open"
+          "-a"
+          "Amphetamine"
+        ];
+        RunAtLoad = true;
+        LimitLoadToSessionType = "Aqua";
+      };
+    };
+
     netbird-ui = {
       enable = true;
       config = {
