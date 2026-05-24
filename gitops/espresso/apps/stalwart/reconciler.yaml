@@ -87,17 +87,24 @@ data:
       python3 - <<'PY'
     import json, subprocess, sys
 
-    NATURAL_KEY_FIELDS = {
-        'Domain':          ('name',),
-        'NetworkListener': ('name',),
-        'MtaRoute':        ('name',),
-        'Account':         ('name', 'domainId'),
-        'DkimSignature':   ('selector', 'domainId'),
+    # `name` is read-only after create on several types; the natural key
+    # is also `name` so we never need it in an update payload anyway.
+    UPDATE_STRIP_FIELDS = ('name',)
+
+    QUERY_FIELDS = {
+        'Certificate': 'id,certificate',
+        'Directory':   'id,issuerUrl',
     }
 
+    LIVE_TYPES = ('Domain', 'NetworkListener', 'MtaRoute',
+                  'Account', 'DkimSignature', 'Certificate', 'Directory')
+
     def query_live(obj_type):
-        r = subprocess.run(['stalwart-cli', 'query', obj_type, '--json'],
-                           capture_output=True, text=True)
+        args = ['stalwart-cli', 'query', obj_type, '--json']
+        fields = QUERY_FIELDS.get(obj_type)
+        if fields:
+            args += ['--fields', fields]
+        r = subprocess.run(args, capture_output=True, text=True)
         if r.returncode != 0:
             return []
         out = []
@@ -133,7 +140,6 @@ data:
             if is_plan_spec:
                 alias = (spec_or_live.get('domainId') or '').lstrip('#')
                 return f"{spec_or_live.get('name')}@{alias_to_live_domain_id.get(alias, alias)}"
-            # live Account has emailAddress (name@domain.name); convert to name@id via plan_domain_name_by_alias inverse
             email = spec_or_live.get('emailAddress', '')
             local, _, domain_name = email.partition('@')
             domain_id = live_domain_id_by_name.get(domain_name)
@@ -143,10 +149,15 @@ data:
                 alias = (spec_or_live.get('domainId') or '').lstrip('#')
                 return f"{spec_or_live.get('selector')}@{alias_to_live_domain_id.get(alias, alias)}"
             return f"{spec_or_live.get('selector')}@{spec_or_live.get('domainId')}"
+        if obj_type == 'Certificate':
+            cert = spec_or_live.get('certificate') or {}
+            return cert.get('filePath')
+        if obj_type == 'Directory':
+            return spec_or_live.get('issuerUrl')
         return None
 
     live_id_by_key = {}
-    for obj_type in NATURAL_KEY_FIELDS:
+    for obj_type in LIVE_TYPES:
         for obj in query_live(obj_type):
             key = natural_key(obj_type, obj, is_plan_spec=False)
             if key is not None:
@@ -174,11 +185,15 @@ data:
             key = natural_key(obj_type, spec, is_plan_spec=True)
             live_id = live_id_by_key.get((obj_type, key)) if key else None
             if live_id:
+                value = resolve_refs(spec)
+                if isinstance(value, dict):
+                    for f in UPDATE_STRIP_FIELDS:
+                        value.pop(f, None)
                 out_lines.append(json.dumps({
                     '@type': 'update',
                     'object': obj_type,
                     'id': live_id,
-                    'value': resolve_refs(spec),
+                    'value': value,
                 }))
             else:
                 remaining[alias] = spec
