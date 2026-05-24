@@ -37,3 +37,6 @@ data:
 
   80-mta-sts.ndjson.tmpl: |
     {"@type":"update","object":"MtaSts","value":{"mode":"testing","maxAge":604800000,"mxHosts":{}}}
+
+  85-imap.ndjson.tmpl: |
+    {"@type":"update","object":"Imap","value":{"maxAuthFailures":30}}
