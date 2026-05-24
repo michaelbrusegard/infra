@@ -14,6 +14,7 @@ spec:
       labels:
         app: stalwart
     spec:
+      shareProcessNamespace: true
       securityContext:
         runAsUser: 2000
         runAsGroup: 2000
@@ -80,6 +81,32 @@ spec:
             - mountPath: /entrypoint
               name: entrypoint
               readOnly: true
+        - name: reconciler
+          image: alpine:3.20
+          command:
+            - /reconciler/reconciler.sh
+          env:
+            - name: STALWART_CLI_VERSION
+              value: v1.0.7
+          envFrom:
+            - secretRef:
+                name: stalwart-env
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - mountPath: /var/lib/stalwart
+              name: data
+            - mountPath: /plan
+              name: plan
+              readOnly: true
+            - mountPath: /reconciler
+              name: reconciler
+              readOnly: true
       volumes:
         - name: config
           configMap:
@@ -93,6 +120,13 @@ spec:
         - name: entrypoint
           configMap:
             name: stalwart-entrypoint
+            defaultMode: 0555
+        - name: plan
+          configMap:
+            name: stalwart-plan
+        - name: reconciler
+          configMap:
+            name: stalwart-reconciler
             defaultMode: 0555
   volumeClaimTemplates:
     - metadata:

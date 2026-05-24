@@ -10,6 +10,7 @@ spec:
       sectionName: https
   hostnames:
     - mta-sts.michaelbrusegard.com
+    - mta-sts.manafishrov.com
   rules:
     - matches:
         - path:
@@ -49,6 +50,8 @@ spec:
   hostnames:
     - autoconfig.michaelbrusegard.com
     - autodiscover.michaelbrusegard.com
+    - autoconfig.manafishrov.com
+    - autodiscover.manafishrov.com
   rules:
     - backendRefs:
         - name: stalwart-internal

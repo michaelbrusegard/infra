@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-plan
+  namespace: stalwart
+data:
+  # Source-of-truth declarative plan for stalwart, applied by the reconciler
+  # sidecar. Each line is a stalwart-cli NDJSON op. The reconciler rewrites
+  # create -> update on a per-object basis so the same plan converges an
+  # empty DB (first bootstrap) and a converged DB (every subsequent loop).
+  #
+  # Ordering matters: within a single apply, stalwart-cli runs destroy ->
+  # update -> create. Within each phase, ops run in plan-file order. Cross-
+  # object refs inside one apply must use "#id" alias syntax so they resolve
+  # via JMAP's createdIds mechanism. Files are concatenated in lexical order
+  # by the reconciler.
+
+  00-listeners.ndjson.tmpl: |
+    {"@type":"create","object":"NetworkListener","value":{"smtp":{"name":"smtp","protocol":"smtp","bind":{"[::]:25":true},"useTls":true,"tlsImplicit":false},"submissions":{"name":"submissions","protocol":"smtp","bind":{"[::]:465":true},"useTls":true,"tlsImplicit":true},"submission":{"name":"submission","protocol":"smtp","bind":{"[::]:587":true},"useTls":true,"tlsImplicit":false},"imaps":{"name":"imaps","protocol":"imap","bind":{"[::]:993":true},"useTls":true,"tlsImplicit":true},"sieve":{"name":"sieve","protocol":"manageSieve","bind":{"[::]:4190":true},"useTls":true,"tlsImplicit":false},"http":{"name":"http","protocol":"http","bind":{"[::]:8080":true},"useTls":false,"tlsImplicit":false}}}
+
+  10-certificate.ndjson.tmpl: |
+    {"@type":"create","object":"Certificate","value":{"cert-wildcard":{"certificate":{"@type":"File","filePath":"/var/lib/stalwart/private/tls/tls.crt"},"privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/tls/tls.key"}}}}
+
+  20-domain-michaelbrusegard.ndjson.tmpl: |
+    {"@type":"create","object":"Domain","value":{"d-michaelbrusegard":{"name":"michaelbrusegard.com","aliases":{},"certificateManagement":{"@type":"Manual"},"dkimManagement":{"@type":"Manual"},"dnsManagement":{"@type":"Manual"},"subAddressing":{"@type":"Enabled"},"reportAddressUri":"mailto:postmaster@michaelbrusegard.com","allowRelaying":false,"isEnabled":true,"directoryId":null,"memberTenantId":null,"catchAllAddress":null,"description":null,"logo":null}}}
+
+  30-dkim-michaelbrusegard.ndjson.tmpl: |
+    {"@type":"create","object":"DkimSignature","value":{"dkim-rsa-mb":{"@type":"Dkim1RsaSha256","domainId":"#d-michaelbrusegard","selector":"stalwart-rsa","privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/dkim/michaelbrusegard.com.rsa.key"}},"dkim-ed25519-mb":{"@type":"Dkim1Ed25519Sha256","domainId":"#d-michaelbrusegard","selector":"stalwart-ed25519","privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/dkim/michaelbrusegard.com.ed25519.key"}}}}
+
+  40-accounts-michaelbrusegard.ndjson.tmpl: |
+    {"@type":"create","object":"Account","value":{"admin":{"@type":"User","name":${ADMIN_LOCAL_JSON},"domainId":"#d-michaelbrusegard","credentials":{"0":{"@type":"Password","secret":${ADMIN_PASSWORD_JSON}}},"memberGroupIds":{},"roles":{"@type":"Admin"},"permissions":{"@type":"Inherit"},"quotas":{},"aliases":{},"encryptionAtRest":{"@type":"Disabled"}},"mail-master":{"@type":"User","name":"mail-master","domainId":"#d-michaelbrusegard","credentials":{"0":{"@type":"Password","secret":${MAIL_MASTER_PASSWORD_JSON}}},"memberGroupIds":{},"roles":{"@type":"User"},"permissions":{"@type":"Replace","enabledPermissions":{"Authenticate":true,"Impersonate":true}},"quotas":{},"aliases":{},"encryptionAtRest":{"@type":"Disabled"}}}}
+
+  20-domain-manafishrov.ndjson.tmpl: |
+    {"@type":"create","object":"Domain","value":{"d-manafishrov":{"name":"manafishrov.com","aliases":{},"certificateManagement":{"@type":"Manual"},"dkimManagement":{"@type":"Manual"},"dnsManagement":{"@type":"Manual"},"subAddressing":{"@type":"Enabled"},"reportAddressUri":"mailto:postmaster@manafishrov.com","allowRelaying":false,"isEnabled":true,"directoryId":null,"memberTenantId":null,"catchAllAddress":null,"description":null,"logo":null}}}
+
+  30-dkim-manafishrov.ndjson.tmpl: |
+    {"@type":"create","object":"DkimSignature","value":{"dkim-rsa-mf":{"@type":"Dkim1RsaSha256","domainId":"#d-manafishrov","selector":"stalwart-rsa","privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/dkim/manafishrov.com.rsa.key"}},"dkim-ed25519-mf":{"@type":"Dkim1Ed25519Sha256","domainId":"#d-manafishrov","selector":"stalwart-ed25519","privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/dkim/manafishrov.com.ed25519.key"}}}}
+
+  15-directory-manafishrov.ndjson.tmpl: |
+    {"@type":"create","object":"Directory","value":{"dir-pocket-manafishrov":{"@type":"Oidc","description":"Dormant scaffolding. Stalwart 0.16 community has NO webmail OIDC code flow (login.html is password-only) and Domain.directoryId is enterprise-gated, so this directory is not bound to anything. Activates only if (a) we move to enterprise edition and bind via Domain.directoryId, or (b) we set Authentication singleton's directoryId globally (would force all users including admin@michaelbrusegard.com to use OIDC).","issuerUrl":"https://id.manafishrov.com","requireScopes":{"openid":true,"email":true},"requireAudience":"stalwart","claimUsername":"email","claimName":"name","usernameDomain":"manafishrov.com"}}}
+
+  60-route-smtp2go.ndjson.tmpl: |
+    {"@type":"create","object":"MtaRoute","value":{"mx":{"@type":"Relay","name":"mx","address":"mail.smtp2go.com","port":2525,"protocol":"smtp","authUsername":${SMTP2GO_USERNAME_JSON},"authSecret":{"@type":"Value","secret":${SMTP2GO_PASSWORD_JSON}},"implicitTls":false,"allowInvalidCerts":false,"description":"SMTP2GO smarthost for all external outbound"}}}
+
+  80-mta-sts.ndjson.tmpl: |
+    {"@type":"update","object":"MtaSts","value":{"mode":"testing","maxAge":604800000,"mxHosts":{}}}

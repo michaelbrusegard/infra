@@ -1,0 +1,199 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-reconciler
+  namespace: stalwart
+data:
+  reconciler.sh: |
+    #!/bin/sh
+    # Sidecar that converges stalwart's database against the declarative plan
+    # in /plan/*.ndjson.tmpl. The plan is the source of truth in Git.
+    #
+    # stalwart-cli `apply` has no upsert op: `create` errors on existing
+    # objects and `update` errors on missing ones. We bridge that gap by
+    # querying live state for each object and rewriting `create` -> `update`
+    # before applying, so the same plan is idempotent against an empty DB
+    # (first bootstrap) and a converged DB (every subsequent reconcile).
+    #
+    # Bootstrap flow:
+    #   1. main container boots with STALWART_RECOVERY_MODE=true (entrypoint
+    #      sets it when /var/lib/stalwart/.bootstrapped is absent)
+    #   2. this sidecar authenticates with STALWART_RECOVERY_ADMIN, applies
+    #      the full plan (everything is a `create`), touches the marker,
+    #      and kills the main stalwart process via shareProcessNamespace
+    #   3. main restarts, sees the marker, drops recovery mode
+    #   4. sidecar's next iteration runs as admin and converges via `update`
+    set -u
+
+    log() { printf '[reconciler %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
+
+    : "${STALWART_CLI_VERSION:?}"
+    : "${STALWART_ADMIN_PASSWORD:?}"
+    : "${STALWART_RECOVERY_ADMIN:?}"
+    : "${STALWART_SMTP2GO_USERNAME:?}"
+    : "${STALWART_SMTP2GO_PASSWORD:?}"
+    : "${STALWART_MAIL_MASTER_PASSWORD:?}"
+
+    apk add --no-cache curl xz python3 gettext procps ca-certificates >/dev/null
+
+    if [ ! -x /usr/local/bin/stalwart-cli ]; then
+      ARCH=$(uname -m)
+      case "$ARCH" in
+        x86_64)  TARGET=x86_64-unknown-linux-musl ;;
+        aarch64) TARGET=aarch64-unknown-linux-musl ;;
+        *) log "unsupported arch: $ARCH"; exit 1 ;;
+      esac
+      log "installing stalwart-cli ${STALWART_CLI_VERSION}"
+      curl -fsSL "https://github.com/stalwartlabs/cli/releases/download/${STALWART_CLI_VERSION}/stalwart-cli-${TARGET}.tar.xz" \
+        | tar -xJ -C /usr/local/bin/ --strip-components=1 "stalwart-cli-${TARGET}/stalwart-cli"
+      chmod +x /usr/local/bin/stalwart-cli
+    fi
+
+    export STALWART_URL=http://localhost:8080
+    MARKER=/var/lib/stalwart/.bootstrapped
+
+    wait_for_stalwart() {
+      i=0
+      while [ "$i" -lt 60 ]; do
+        if curl -sf -o /dev/null --max-time 3 "$STALWART_URL/" \
+          || curl -sf -o /dev/null --max-time 3 "$STALWART_URL/healthz/live"; then
+          return 0
+        fi
+        i=$((i + 1))
+        sleep 5
+      done
+      return 1
+    }
+
+    resolve_creds() {
+      if [ -f "$MARKER" ]; then
+        MODE=reconcile
+        export STALWART_USER=admin
+        export STALWART_PASSWORD="$STALWART_ADMIN_PASSWORD"
+      else
+        MODE=bootstrap
+        export STALWART_USER="${STALWART_RECOVERY_ADMIN%%:*}"
+        export STALWART_PASSWORD="${STALWART_RECOVERY_ADMIN#*:}"
+      fi
+    }
+
+    render_plan() {
+      jsonenc() { printf '%s' "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
+      ADMIN_LOCAL_JSON=$(jsonenc "infra")
+      ADMIN_PASSWORD_JSON=$(jsonenc "$STALWART_ADMIN_PASSWORD")
+      SMTP2GO_USERNAME_JSON=$(jsonenc "$STALWART_SMTP2GO_USERNAME")
+      SMTP2GO_PASSWORD_JSON=$(jsonenc "$STALWART_SMTP2GO_PASSWORD")
+      MAIL_MASTER_PASSWORD_JSON=$(jsonenc "$STALWART_MAIL_MASTER_PASSWORD")
+      export ADMIN_LOCAL_JSON ADMIN_PASSWORD_JSON \
+             SMTP2GO_USERNAME_JSON SMTP2GO_PASSWORD_JSON \
+             MAIL_MASTER_PASSWORD_JSON
+
+      : > /tmp/plan.raw.ndjson
+      for f in /plan/*.ndjson.tmpl; do
+        envsubst '${ADMIN_LOCAL_JSON} ${ADMIN_PASSWORD_JSON} ${SMTP2GO_USERNAME_JSON} ${SMTP2GO_PASSWORD_JSON} ${MAIL_MASTER_PASSWORD_JSON}' < "$f" >> /tmp/plan.raw.ndjson
+        printf '\n' >> /tmp/plan.raw.ndjson
+      done
+    }
+
+    # Per-object create->update rewrite based on live state.
+    rewrite_plan() {
+      python3 - <<'PY'
+    import json, subprocess
+
+    with open('/tmp/plan.raw.ndjson') as fh:
+        lines = [l.strip() for l in fh if l.strip()]
+
+    cache = {}
+    def existing_ids(obj_type):
+        if obj_type in cache:
+            return cache[obj_type]
+        r = subprocess.run(['stalwart-cli', 'query', obj_type, '--no-color'],
+                           capture_output=True, text=True)
+        ids = []
+        if r.returncode == 0:
+            for line in r.stdout.splitlines()[1:]:  # skip header row
+                parts = line.split()
+                if parts:
+                    ids.append(parts[0])
+        cache[obj_type] = ids
+        return ids
+
+    def strip_aliases(node):
+        if isinstance(node, str):
+            return node[1:] if node.startswith('#') and len(node) > 1 else node
+        if isinstance(node, dict):
+            return {k: strip_aliases(v) for k, v in node.items()}
+        if isinstance(node, list):
+            return [strip_aliases(v) for v in node]
+        return node
+
+    out = []
+    for line in lines:
+        op = json.loads(line)
+        if op.get('@type') != 'create':
+            out.append(line)
+            continue
+        obj_type = op['object']
+        existing = existing_ids(obj_type)
+        remaining_creates = {}
+        for obj_id, spec in op['value'].items():
+            clean_id = obj_id.lstrip('#')
+            if clean_id in existing:
+                out.append(json.dumps({
+                    '@type': 'update',
+                    'object': obj_type,
+                    'id': clean_id,
+                    'value': strip_aliases(spec),
+                }))
+            else:
+                remaining_creates[obj_id] = spec
+        if remaining_creates:
+            out.append(json.dumps({
+                '@type': 'create',
+                'object': obj_type,
+                'value': remaining_creates,
+            }))
+
+    with open('/tmp/plan.final.ndjson', 'w') as fh:
+        fh.write('\n'.join(out) + '\n')
+    PY
+    }
+
+    apply_plan() {
+      log "applying plan ($MODE)"
+      stalwart-cli apply --continue-on-error --file /tmp/plan.final.ndjson
+    }
+
+    post_bootstrap() {
+      log "bootstrap apply succeeded; marking + restarting main"
+      touch "$MARKER"
+      # shareProcessNamespace=true exposes the main container's pid to us.
+      pkill -TERM -f '/usr/local/bin/stalwart' || true
+      sleep 5
+      wait_for_stalwart || log "stalwart did not return after restart"
+    }
+
+    log "reconciler starting"
+    if ! wait_for_stalwart; then
+      log "stalwart never came up; exiting"
+      exit 1
+    fi
+
+    while true; do
+      resolve_creds
+      render_plan
+      if ! rewrite_plan; then
+        log "rewrite_plan failed; sleeping"
+        sleep 60
+        continue
+      fi
+      if apply_plan; then
+        if [ "$MODE" = bootstrap ]; then
+          post_bootstrap
+          continue
+        fi
+      else
+        log "apply returned non-zero"
+      fi
+      sleep 60
+    done
