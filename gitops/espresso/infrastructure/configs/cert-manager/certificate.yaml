@@ -10,8 +10,6 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - "*.asgard.michaelbrusegard.com"
-    # TODO: drop once passkeys are re-registered against id.asgard.
-    - "*.gullhaugveien.michaelbrusegard.com"
     - "*.michaelbrusegard.com"
     - "*.manafishrov.com"
   secretTemplate:
