@@ -3,6 +3,9 @@ kind: StatefulSet
 metadata:
   name: stalwart
   namespace: stalwart
+  annotations:
+    configmap.reloader.stakater.com/reload: stalwart-plan,stalwart-reconciler,stalwart-entrypoint
+    secret.reloader.stakater.com/reload: stalwart-env,stalwart-dkim
 spec:
   replicas: 1
   selector:
