@@ -9,6 +9,11 @@ spec:
       recordType: CNAME
       targets:
         - router.asgard.michaelbrusegard.com
+    # TODO: drop once passkeys are re-registered against id.asgard.
+    - dnsName: id.gullhaugveien.michaelbrusegard.com
+      recordType: CNAME
+      targets:
+        - router.asgard.michaelbrusegard.com
     - dnsName: status.asgard.michaelbrusegard.com
       recordType: CNAME
       targets:

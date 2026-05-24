@@ -10,6 +10,8 @@ spec:
       sectionName: https
   hostnames:
     - id.asgard.michaelbrusegard.com
+    # TODO: drop once passkeys are re-registered against id.asgard.
+    - id.gullhaugveien.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: pocket-id
@@ -27,6 +29,8 @@ spec:
       sectionName: https
   hostnames:
     - id.asgard.michaelbrusegard.com
+    # TODO: drop once passkeys are re-registered against id.asgard.
+    - id.gullhaugveien.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: pocket-id
