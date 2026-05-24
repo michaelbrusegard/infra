@@ -61,14 +61,16 @@ data:
 
     render_plan() {
       jsonenc() { printf '%s' "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
+      ADMIN_LOCAL_JSON=$(jsonenc "infra")
       ADMIN_PASSWORD_JSON=$(jsonenc "$STALWART_ADMIN_PASSWORD")
       RESEND_API_KEY_JSON=$(jsonenc "$STALWART_RESEND_API_KEY")
       MAIL_MASTER_PASSWORD_JSON=$(jsonenc "$STALWART_MAIL_MASTER_PASSWORD")
-      export ADMIN_PASSWORD_JSON RESEND_API_KEY_JSON MAIL_MASTER_PASSWORD_JSON
+      export ADMIN_LOCAL_JSON ADMIN_PASSWORD_JSON \
+             RESEND_API_KEY_JSON MAIL_MASTER_PASSWORD_JSON
 
       : > /tmp/plan.raw.ndjson
       for f in /plan/*.ndjson.tmpl; do
-        envsubst '${ADMIN_PASSWORD_JSON} ${RESEND_API_KEY_JSON} ${MAIL_MASTER_PASSWORD_JSON}' < "$f" >> /tmp/plan.raw.ndjson
+        envsubst '${ADMIN_LOCAL_JSON} ${ADMIN_PASSWORD_JSON} ${RESEND_API_KEY_JSON} ${MAIL_MASTER_PASSWORD_JSON}' < "$f" >> /tmp/plan.raw.ndjson
         printf '\n' >> /tmp/plan.raw.ndjson
       done
     }
