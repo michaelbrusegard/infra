@@ -6,23 +6,6 @@ metadata:
 data:
   reconciler.sh: |
     #!/bin/sh
-    # Sidecar that converges stalwart's database against the declarative plan
-    # in /plan/*.ndjson.tmpl. The plan is the source of truth in Git.
-    #
-    # stalwart-cli `apply` has no upsert op: `create` errors on existing
-    # objects and `update` errors on missing ones. We bridge that gap by
-    # querying live state for each object and rewriting `create` -> `update`
-    # before applying, so the same plan is idempotent against an empty DB
-    # (first bootstrap) and a converged DB (every subsequent reconcile).
-    #
-    # Bootstrap flow:
-    #   1. main container boots with STALWART_RECOVERY_MODE=true (entrypoint
-    #      sets it when /var/lib/stalwart/.bootstrapped is absent)
-    #   2. this sidecar authenticates with STALWART_RECOVERY_ADMIN, applies
-    #      the full plan (everything is a `create`), touches the marker,
-    #      and kills the main stalwart process via shareProcessNamespace
-    #   3. main restarts, sees the marker, drops recovery mode
-    #   4. sidecar's next iteration runs as admin and converges via `update`
     set -u
 
     log() { printf '[reconciler %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
@@ -68,7 +51,7 @@ data:
     resolve_creds() {
       if [ -f "$MARKER" ]; then
         MODE=reconcile
-        export STALWART_USER=admin
+        export STALWART_USER=infra@michaelbrusegard.com
         export STALWART_PASSWORD="$STALWART_ADMIN_PASSWORD"
       else
         MODE=bootstrap
@@ -95,67 +78,119 @@ data:
       done
     }
 
-    # Per-object create->update rewrite based on live state.
+    # stalwart-cli assigns its own ids on create, so plan aliases don't
+    # become stored ids. To make subsequent applies idempotent we match
+    # each desired object against live state by its natural key, then
+    # emit `update` with the live id (+ refs in the spec rewritten to
+    # live ids). Objects with no natural key fall through as `create`.
     rewrite_plan() {
       python3 - <<'PY'
-    import json, subprocess
+    import json, subprocess, sys
+
+    NATURAL_KEY_FIELDS = {
+        'Domain':          ('name',),
+        'NetworkListener': ('name',),
+        'MtaRoute':        ('name',),
+        'Account':         ('name', 'domainId'),
+        'DkimSignature':   ('selector', 'domainId'),
+    }
+
+    def query_live(obj_type):
+        r = subprocess.run(['stalwart-cli', 'query', obj_type, '--json'],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            return []
+        out = []
+        for line in r.stdout.splitlines():
+            line = line.strip()
+            if line:
+                try: out.append(json.loads(line))
+                except: pass
+        return out
 
     with open('/tmp/plan.raw.ndjson') as fh:
-        lines = [l.strip() for l in fh if l.strip()]
+        plan_ops = [json.loads(l) for l in fh if l.strip()]
 
-    cache = {}
-    def existing_ids(obj_type):
-        if obj_type in cache:
-            return cache[obj_type]
-        r = subprocess.run(['stalwart-cli', 'query', obj_type, '--no-color'],
-                           capture_output=True, text=True)
-        ids = []
-        if r.returncode == 0:
-            for line in r.stdout.splitlines()[1:]:  # skip header row
-                parts = line.split()
-                if parts:
-                    ids.append(parts[0])
-        cache[obj_type] = ids
-        return ids
+    # Pass 1: plan-side alias -> domain name (Domain creates only).
+    plan_domain_name_by_alias = {}
+    for op in plan_ops:
+        if op.get('@type') == 'create' and op.get('object') == 'Domain':
+            for alias, spec in op.get('value', {}).items():
+                plan_domain_name_by_alias[alias.lstrip('#')] = spec.get('name')
 
-    def strip_aliases(node):
+    # Pass 2: live state per relevant type, indexed by natural key.
+    live_domain_id_by_name = {d.get('name'): d['id'] for d in query_live('Domain') if d.get('name')}
+    alias_to_live_domain_id = {
+        a: live_domain_id_by_name[n]
+        for a, n in plan_domain_name_by_alias.items()
+        if n in live_domain_id_by_name
+    }
+
+    def natural_key(obj_type, spec_or_live, *, is_plan_spec):
+        if obj_type in ('Domain', 'NetworkListener', 'MtaRoute'):
+            return spec_or_live.get('name')
+        if obj_type == 'Account':
+            if is_plan_spec:
+                alias = (spec_or_live.get('domainId') or '').lstrip('#')
+                return f"{spec_or_live.get('name')}@{alias_to_live_domain_id.get(alias, alias)}"
+            # live Account has emailAddress (name@domain.name); convert to name@id via plan_domain_name_by_alias inverse
+            email = spec_or_live.get('emailAddress', '')
+            local, _, domain_name = email.partition('@')
+            domain_id = live_domain_id_by_name.get(domain_name)
+            return f"{local}@{domain_id}" if domain_id else email
+        if obj_type == 'DkimSignature':
+            if is_plan_spec:
+                alias = (spec_or_live.get('domainId') or '').lstrip('#')
+                return f"{spec_or_live.get('selector')}@{alias_to_live_domain_id.get(alias, alias)}"
+            return f"{spec_or_live.get('selector')}@{spec_or_live.get('domainId')}"
+        return None
+
+    live_id_by_key = {}
+    for obj_type in NATURAL_KEY_FIELDS:
+        for obj in query_live(obj_type):
+            key = natural_key(obj_type, obj, is_plan_spec=False)
+            if key is not None:
+                live_id_by_key[(obj_type, key)] = obj['id']
+
+    def resolve_refs(node):
         if isinstance(node, str):
-            return node[1:] if node.startswith('#') and len(node) > 1 else node
+            if node.startswith('#'):
+                return alias_to_live_domain_id.get(node[1:], node)
+            return node
         if isinstance(node, dict):
-            return {k: strip_aliases(v) for k, v in node.items()}
+            return {k: resolve_refs(v) for k, v in node.items()}
         if isinstance(node, list):
-            return [strip_aliases(v) for v in node]
+            return [resolve_refs(v) for v in node]
         return node
 
-    out = []
-    for line in lines:
-        op = json.loads(line)
+    out_lines = []
+    for op in plan_ops:
         if op.get('@type') != 'create':
-            out.append(line)
+            out_lines.append(json.dumps(op))
             continue
         obj_type = op['object']
-        existing = existing_ids(obj_type)
-        remaining_creates = {}
-        for obj_id, spec in op['value'].items():
-            clean_id = obj_id.lstrip('#')
-            if clean_id in existing:
-                out.append(json.dumps({
+        remaining = {}
+        for alias, spec in op.get('value', {}).items():
+            key = natural_key(obj_type, spec, is_plan_spec=True)
+            live_id = live_id_by_key.get((obj_type, key)) if key else None
+            if live_id:
+                out_lines.append(json.dumps({
                     '@type': 'update',
                     'object': obj_type,
-                    'id': clean_id,
-                    'value': strip_aliases(spec),
+                    'id': live_id,
+                    'value': resolve_refs(spec),
                 }))
             else:
-                remaining_creates[obj_id] = spec
-        if remaining_creates:
-            out.append(json.dumps({
+                remaining[alias] = spec
+        if remaining:
+            out_lines.append(json.dumps({
                 '@type': 'create',
                 'object': obj_type,
-                'value': remaining_creates,
+                'value': remaining,
             }))
 
     with open('/tmp/plan.final.ndjson', 'w') as fh:
-        fh.write('\n'.join(out) + '\n')
+        fh.write('\n'.join(out_lines) + '\n')
     PY
     }
 
@@ -165,7 +200,6 @@ data:
     }
 
     post_bootstrap() {
-      log "bootstrap apply succeeded; marking + restarting main"
       touch "$MARKER"
       # shareProcessNamespace=true exposes the main container's pid to us.
       pkill -TERM -f '/usr/local/bin/stalwart' || true
@@ -179,19 +213,16 @@ data:
       exit 1
     fi
 
-    if [ -f "$MARKER" ]; then
-      log "marker present -> already bootstrapped; sidecar idling"
-      while true; do sleep 3600; done
-    fi
-
-    resolve_creds
-    render_plan
-    if ! rewrite_plan; then
-      log "rewrite_plan failed"
-      exit 1
-    fi
-    apply_plan || log "apply had failures (treated as partial-success for bootstrap purposes)"
-    log "first apply complete; marking bootstrapped + signalling main restart"
-    post_bootstrap
-    log "sidecar idling forever; restart pod to re-apply plan"
-    while true; do sleep 3600; done
+    while true; do
+      resolve_creds
+      render_plan
+      if rewrite_plan && apply_plan; then
+        if [ "$MODE" = bootstrap ]; then
+          log "bootstrap complete; signalling main restart"
+          post_bootstrap
+        fi
+      else
+        log "apply had non-zero exit (drift or schema issue)"
+      fi
+      sleep 60
+    done
