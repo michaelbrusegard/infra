@@ -179,21 +179,19 @@ data:
       exit 1
     fi
 
-    while true; do
-      resolve_creds
-      render_plan
-      if ! rewrite_plan; then
-        log "rewrite_plan failed; sleeping"
-        sleep 60
-        continue
-      fi
-      if apply_plan; then
-        if [ "$MODE" = bootstrap ]; then
-          post_bootstrap
-          continue
-        fi
-      else
-        log "apply returned non-zero"
-      fi
-      sleep 60
-    done
+    if [ -f "$MARKER" ]; then
+      log "marker present -> already bootstrapped; sidecar idling"
+      while true; do sleep 3600; done
+    fi
+
+    resolve_creds
+    render_plan
+    if ! rewrite_plan; then
+      log "rewrite_plan failed"
+      exit 1
+    fi
+    apply_plan || log "apply had failures (treated as partial-success for bootstrap purposes)"
+    log "first apply complete; marking bootstrapped + signalling main restart"
+    post_bootstrap
+    log "sidecar idling forever; restart pod to re-apply plan"
+    while true; do sleep 3600; done
