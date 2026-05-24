@@ -79,6 +79,18 @@ spec:
               protocol: TCP
             - port: "4190"
               protocol: TCP
+    # Nextcloud Mail in the manafishrov tenant: IMAPS + Submissions for
+    # the master-user impersonation flow.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: manafishrov-nextcloud
+            k8s:app: nextcloud
+      toPorts:
+        - ports:
+            - port: "993"
+              protocol: TCP
+            - port: "465"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
