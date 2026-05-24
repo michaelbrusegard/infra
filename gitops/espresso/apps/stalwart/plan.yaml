@@ -32,8 +32,8 @@ data:
   40-accounts-michaelbrusegard.ndjson.tmpl: |
     {"@type":"create","object":"Account","value":{"admin":{"@type":"User","name":${ADMIN_LOCAL_JSON},"domainId":"#d-michaelbrusegard","credentials":{"0":{"@type":"Password","secret":${ADMIN_PASSWORD_JSON}}},"memberGroupIds":{},"roles":{"@type":"Admin"},"permissions":{"@type":"Inherit"},"quotas":{},"aliases":{},"encryptionAtRest":{"@type":"Disabled"}},"mail-master":{"@type":"User","name":"mail-master","domainId":"#d-michaelbrusegard","credentials":{"0":{"@type":"Password","secret":${MAIL_MASTER_PASSWORD_JSON}}},"memberGroupIds":{},"roles":{"@type":"User"},"permissions":{"@type":"Replace","enabledPermissions":{"authenticate":true,"impersonate":true}},"quotas":{},"aliases":{},"encryptionAtRest":{"@type":"Disabled"}}}}
 
-  60-route-smtp2go.ndjson.tmpl: |
-    {"@type":"create","object":"MtaRoute","value":{"mx":{"@type":"Relay","name":"mx","address":"mail.smtp2go.com","port":2525,"protocol":"smtp","authUsername":${SMTP2GO_USERNAME_JSON},"authSecret":{"@type":"Value","secret":${SMTP2GO_PASSWORD_JSON}},"implicitTls":false,"allowInvalidCerts":false,"description":"SMTP2GO smarthost for all external outbound"}}}
+  60-route-resend.ndjson.tmpl: |
+    {"@type":"create","object":"MtaRoute","value":{"mx":{"@type":"Relay","name":"mx","address":"smtp.resend.com","port":465,"protocol":"smtp","authUsername":"resend","authSecret":{"@type":"Value","secret":${RESEND_API_KEY_JSON}},"implicitTls":true,"allowInvalidCerts":false,"description":"Resend smarthost for all external outbound"}}}
 
   80-mta-sts.ndjson.tmpl: |
     {"@type":"update","object":"MtaSts","value":{"mode":"testing","maxAge":604800000,"mxHosts":{}}}
