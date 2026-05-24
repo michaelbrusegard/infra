@@ -87,9 +87,13 @@ data:
       python3 - <<'PY'
     import json, subprocess, sys
 
-    # `name` is read-only after create on several types; the natural key
-    # is also `name` so we never need it in an update payload anyway.
-    UPDATE_STRIP_FIELDS = ('name',)
+    # `name` is read-only after create on several types and is also the
+    # natural key so it doesn't belong in updates anyway. `credentials`
+    # plaintext is hashed only on create; sending it again on update
+    # appears to store it verbatim, breaking subsequent auth - strip it
+    # so the create-time hash survives. Password rotation is then via
+    # admin UI or a direct one-off `stalwart-cli apply` update.
+    UPDATE_STRIP_FIELDS = ('name', 'credentials')
 
     QUERY_FIELDS = {
         'Certificate': 'id,certificate',
