@@ -32,6 +32,9 @@
       "michaelbrusegard/homebrew-extras"
       "netbirdio/homebrew-tap"
     ];
+    brews = [
+      "mas"
+    ];
     casks = [
       "netbird-ui"
       "scribus"
