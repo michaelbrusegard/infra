@@ -76,7 +76,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - uptime.manafishrov.com
+    - status.manafishrov.com
   rules:
     - matches:
         - path:

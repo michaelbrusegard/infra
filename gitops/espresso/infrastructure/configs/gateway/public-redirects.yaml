@@ -13,6 +13,7 @@ spec:
     - status.asgard.michaelbrusegard.com
     - netbird.asgard.michaelbrusegard.com
     - s3.manafishrov.com
+    - status.manafishrov.com
   rules:
     - filters:
         - type: RequestRedirect

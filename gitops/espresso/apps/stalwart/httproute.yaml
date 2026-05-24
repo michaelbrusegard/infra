@@ -33,6 +33,17 @@ spec:
   hostnames:
     - mail.asgard.michaelbrusegard.com
   rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /admin/
+            statusCode: 302
     - backendRefs:
         - name: stalwart-internal
           port: 8080
