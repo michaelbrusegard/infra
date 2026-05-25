@@ -49,7 +49,7 @@ spec:
               mountPath: /bootstrap-secret
       containers:
         - name: gateway
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-b72b0c7f25d77503dcb73b35b4da43e739896bc7@sha256:6c6419ad3f6e74538618702a0e0fa7cb4f09e4a479cd3feabbca84a1711c86bb
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-5c30637a2bef95c6cda834a59751d6a72f81fd68@sha256:9c85f0b4ff4207f63a9d7cfcc91dbfc7e1c6e23d56da698acd7d5b449c447cb5
           args:
             - gateway
             - run
@@ -95,7 +95,7 @@ spec:
             - name: data
               mountPath: /opt/data
         - name: dashboard
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-b72b0c7f25d77503dcb73b35b4da43e739896bc7@sha256:6c6419ad3f6e74538618702a0e0fa7cb4f09e4a479cd3feabbca84a1711c86bb
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-5c30637a2bef95c6cda834a59751d6a72f81fd68@sha256:9c85f0b4ff4207f63a9d7cfcc91dbfc7e1c6e23d56da698acd7d5b449c447cb5
           args:
             - dashboard
             - --host
