@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: dashboard
-          image: netbirdio/dashboard:v2.38.0@sha256:52b268431fea6f6162272c0ce404e82400c6c35ee096810a68c3811b7ab7c747
+          image: netbirdio/dashboard:v2.38.1@sha256:48c0f3a6a2fe4626f00cb72c33bcbf03e91774048cf87f4cc32f5462e56471c9
           envFrom:
             - secretRef:
                 name: netbird-dashboard-env
