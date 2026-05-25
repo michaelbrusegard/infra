@@ -9,7 +9,7 @@ ARG POSTGRESQL_18_HYPOPG_VERSION=1.4.2-2.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-partman
 ARG POSTGRESQL_18_PARTMAN_VERSION=5.4.3-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pgaudit
-ARG POSTGRESQL_18_PGAUDIT_VERSION=18.0-2.pgdg12+1
+ARG POSTGRESQL_18_PGAUDIT_VERSION=18.0-3.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pg-stat-kcache
 ARG POSTGRESQL_18_PG_STAT_KCACHE_VERSION=2.3.1-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pg-wait-sampling
@@ -29,7 +29,7 @@ ARG POSTGRESQL_18_POSTGIS_3_SCRIPTS_VERSION=3.6.3+dfsg-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-repack
 ARG POSTGRESQL_18_REPACK_VERSION=1.5.3-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-timescaledb
-ARG POSTGRESQL_18_TIMESCALEDB_VERSION=2.27.0+dfsg-1.pgdg12+1
+ARG POSTGRESQL_18_TIMESCALEDB_VERSION=2.27.1+dfsg-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-wal2json
 ARG POSTGRESQL_18_WAL2JSON_VERSION=2.6-3.pgdg12+1
 
