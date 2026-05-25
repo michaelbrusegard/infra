@@ -1,569 +1,399 @@
 {
-  "__VERSION__": "226",
-  "Main": {
+  "__VERSION__": "268",
+  "FanControl": {
     "Controls": [
       {
-        "Calibration": [
-          [
-            0,
-            0
-          ],
-          [
-            10,
-            236
-          ],
-          [
-            20,
-            524
-          ],
-          [
-            30,
-            741
-          ],
-          [
-            40,
-            940
-          ],
-          [
-            50,
-            1118
-          ],
-          [
-            60,
-            1279
-          ],
-          [
-            70,
-            1412
-          ],
-          [
-            80,
-            1551
-          ],
-          [
-            90,
-            1680
-          ],
-          [
-            100,
-            1802
-          ]
-        ],
-        "Enable": true,
-        "ForceApply": false,
+        "NickName": "Chassis",
         "Identifier": "/lpc/nct6798d/control/0",
         "IsHidden": false,
-        "ManualControl": false,
-        "ManualControlValue": 50,
-        "MinimumPercent": 0,
-        "Name": "Fan #1",
-        "NickName": "Chassis",
-        "PairedFanSensor": {
-          "Identifier": "/lpc/nct6798d/fan/0",
-          "IsHidden": false,
-          "Name": "Fan #1",
-          "NickName": "Chassis"
-        },
-        "SelectedCommandStepDown": 8,
-        "SelectedCommandStepUp": 8,
-        "SelectedFanCurve": {
-          "CommandMode": 0,
-          "HysteresisConfig": {
-            "HysteresisValueDown": 2,
-            "HysteresisValueUp": 2,
-            "IgnoreHysteresisAtLimits": true,
-            "ResponseTimeDown": 1,
-            "ResponseTimeUp": 1
-          },
-          "IsHidden": false,
-          "MaximumCommand": 100,
-          "MaximumTemperature": 120,
-          "MinimumTemperature": 20,
-          "Name": "AVG",
-          "Points": [
-            "40,20",
-            "80,80"
-          ],
-          "SelectedTempSource": {
-            "Identifier": "Mix/Mix",
-            "IsHidden": false,
-            "Name": "Mix",
-            "SelectedMixFunction": 0,
-            "SelectedSensors": [
-              {
-                "Identifier": "Time/Time Average CPU",
-                "IsHidden": false,
-                "Name": "Time Average CPU",
-                "SelectedTempSource": {
-                  "Identifier": "/amdcpu/0/temperature/2",
-                  "IsHidden": false,
-                  "Name": "Core (Tctl/Tdie)",
-                  "NickName": "Core (Tctl/Tdie)"
-                },
-                "SelectedTime": 10
-              },
-              {
-                "Identifier": "Time/Time Average GPU",
-                "IsHidden": false,
-                "Name": "Time Average GPU",
-                "SelectedTempSource": {
-                  "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/temp/Hotspot",
-                  "IsHidden": false,
-                  "Name": "Hotspot",
-                  "NickName": "Hotspot"
-                },
-                "SelectedTime": 10
-              }
-            ]
-          }
-        },
-        "SelectedOffset": 0,
-        "SelectedStart": 18,
-        "SelectedStop": 6
-      },
-      {
-        "Calibration": [
-          [
-            10,
-            0
-          ],
-          [
-            20,
-            330
-          ],
-          [
-            30,
-            488
-          ],
-          [
-            40,
-            636
-          ],
-          [
-            50,
-            783
-          ],
-          [
-            60,
-            915
-          ],
-          [
-            70,
-            1024
-          ],
-          [
-            80,
-            1147
-          ],
-          [
-            90,
-            1255
-          ],
-          [
-            100,
-            1364
-          ]
-        ],
         "Enable": true,
-        "ForceApply": false,
-        "Identifier": "/lpc/nct6798d/control/1",
-        "IsHidden": false,
-        "ManualControl": false,
-        "ManualControlValue": 50,
-        "MinimumPercent": 0,
-        "Name": "Fan #2",
-        "NickName": "CPU",
-        "PairedFanSensor": {
-          "Identifier": "/lpc/nct6798d/fan/1",
-          "IsHidden": false,
-          "Name": "Fan #2",
-          "NickName": "CPU"
-        },
-        "SelectedCommandStepDown": 8,
-        "SelectedCommandStepUp": 8,
         "SelectedFanCurve": {
-          "CommandMode": 0,
-          "HysteresisConfig": {
-            "HysteresisValueDown": 2,
-            "HysteresisValueUp": 2,
-            "IgnoreHysteresisAtLimits": true,
-            "ResponseTimeDown": 1,
-            "ResponseTimeUp": 1
-          },
-          "IsHidden": false,
-          "MaximumCommand": 100,
-          "MaximumTemperature": 120,
-          "MinimumTemperature": 20,
-          "Name": "CPU",
-          "Points": [
-            "40,20",
-            "80.02982614003184,100"
-          ],
-          "SelectedTempSource": {
-            "Identifier": "/amdcpu/0/temperature/2",
-            "IsHidden": false,
-            "Name": "Core (Tctl/Tdie)",
-            "NickName": "Core (Tctl/Tdie)"
-          }
+          "Name": "AVG"
         },
         "SelectedOffset": 0,
-        "SelectedStart": 19,
-        "SelectedStop": 16
-      },
-      {
+        "PairedFanSensor": {
+          "Identifier": "/lpc/nct6798d/fan/0"
+        },
+        "SelectedStart": 18,
+        "SelectedStop": 6,
+        "MinimumPercent": 0,
+        "SelectedCommandStepUp": 8,
+        "SelectedCommandStepDown": 8,
+        "ManualControlValue": 50,
+        "ManualControl": false,
+        "ForceApply": false,
         "Calibration": [
           [
             0,
-            0
+            0,
+            false
           ],
           [
             10,
-            234
+            236,
+            false
           ],
           [
             20,
-            511
+            524,
+            false
           ],
           [
             30,
-            732
+            741,
+            false
           ],
           [
             40,
-            950
+            940,
+            false
           ],
           [
             50,
-            1147
+            1118,
+            false
           ],
           [
             60,
-            1326
+            1279,
+            false
           ],
           [
             70,
-            1470
+            1412,
+            false
           ],
           [
             80,
-            1614
+            1551,
+            false
           ],
           [
             90,
-            1758
+            1680,
+            false
           ],
           [
             100,
-            1909
+            1802,
+            false
           ]
-        ],
-        "Enable": true,
-        "ForceApply": false,
-        "Identifier": "/lpc/nct6798d/control/2",
-        "IsHidden": false,
-        "ManualControl": false,
-        "ManualControlValue": 50,
-        "MinimumPercent": 0,
-        "Name": "Fan #3",
-        "NickName": "GPU",
-        "PairedFanSensor": {
-          "Identifier": "/lpc/nct6798d/fan/2",
-          "IsHidden": false,
-          "Name": "Fan #3",
-          "NickName": "GPU"
-        },
-        "SelectedCommandStepDown": 8,
-        "SelectedCommandStepUp": 8,
-        "SelectedFanCurve": {
-          "CommandMode": 0,
-          "HysteresisConfig": {
-            "HysteresisValueDown": 2,
-            "HysteresisValueUp": 2,
-            "IgnoreHysteresisAtLimits": true,
-            "ResponseTimeDown": 1,
-            "ResponseTimeUp": 1
-          },
-          "IsHidden": false,
-          "MaximumCommand": 100,
-          "MaximumTemperature": 120,
-          "MinimumTemperature": 20,
-          "Name": "GPU",
-          "Points": [
-            "40,20",
-            "80.02982614003184,100"
-          ],
-          "SelectedTempSource": {
-            "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/temp/Hotspot",
-            "IsHidden": false,
-            "Name": "Hotspot",
-            "NickName": "Hotspot"
-          }
-        },
-        "SelectedOffset": 0,
-        "SelectedStart": 18,
-        "SelectedStop": 6
-      },
-      {
-        "Calibration": [],
-        "Enable": false,
-        "ForceApply": false,
-        "Identifier": "/lpc/nct6798d/control/3",
-        "IsHidden": true,
-        "ManualControl": false,
-        "ManualControlValue": 50,
-        "MinimumPercent": 0,
-        "Name": "Fan #4",
-        "NickName": "Fan #4",
-        "PairedFanSensor": null,
-        "SelectedCommandStepDown": 8,
-        "SelectedCommandStepUp": 8,
-        "SelectedFanCurve": null,
-        "SelectedOffset": 0,
-        "SelectedStart": 0,
-        "SelectedStop": 0
-      },
-      {
-        "Calibration": [],
-        "Enable": false,
-        "ForceApply": false,
-        "Identifier": "/lpc/nct6798d/control/4",
-        "IsHidden": true,
-        "ManualControl": false,
-        "ManualControlValue": 50,
-        "MinimumPercent": 0,
-        "Name": "Fan #5",
-        "NickName": "Fan #5",
-        "PairedFanSensor": null,
-        "SelectedCommandStepDown": 8,
-        "SelectedCommandStepUp": 8,
-        "SelectedFanCurve": null,
-        "SelectedOffset": 0,
-        "SelectedStart": 0,
-        "SelectedStop": 0
-      },
-      {
-        "Calibration": [],
-        "Enable": false,
-        "ForceApply": false,
-        "Identifier": "/lpc/nct6798d/control/5",
-        "IsHidden": true,
-        "ManualControl": false,
-        "ManualControlValue": 50,
-        "MinimumPercent": 0,
-        "Name": "Fan #6",
-        "NickName": "Fan #6",
-        "PairedFanSensor": null,
-        "SelectedCommandStepDown": 8,
-        "SelectedCommandStepUp": 8,
-        "SelectedFanCurve": null,
-        "SelectedOffset": 0,
-        "SelectedStart": 0,
-        "SelectedStop": 0
-      },
-      {
-        "Calibration": [],
-        "Enable": false,
-        "ForceApply": false,
-        "Identifier": "/lpc/nct6798d/control/6",
-        "IsHidden": true,
-        "ManualControl": false,
-        "ManualControlValue": 50,
-        "MinimumPercent": 0,
-        "Name": "Fan #7",
-        "NickName": "Fan #7",
-        "PairedFanSensor": null,
-        "SelectedCommandStepDown": 8,
-        "SelectedCommandStepUp": 8,
-        "SelectedFanCurve": null,
-        "SelectedOffset": 0,
-        "SelectedStart": 0,
-        "SelectedStop": 0
-      },
-      {
-        "Calibration": null,
-        "Enable": false,
-        "ForceApply": false,
-        "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/control",
-        "IsHidden": true,
-        "ManualControl": false,
-        "ManualControlValue": 50,
-        "MinimumPercent": 0,
-        "Name": "Control 1 - AMD Radeon RX 6800 XT",
-        "NickName": "Control 1 - AMD Radeon RX 6800 XT",
-        "PairedFanSensor": null,
-        "SelectedCommandStepDown": 8,
-        "SelectedCommandStepUp": 8,
-        "SelectedFanCurve": null,
-        "SelectedOffset": 0,
-        "SelectedStart": 0,
-        "SelectedStop": 0
-      }
-    ],
-    "CustomSensors": [
-      {
-        "Identifier": "Mix/Mix",
-        "IsHidden": false,
-        "Name": "Mix",
-        "SelectedMixFunction": 0,
-        "SelectedSensors": [
-          {
-            "Identifier": "Time/Time Average CPU",
-            "IsHidden": false,
-            "Name": "Time Average CPU",
-            "SelectedTempSource": {
-              "Identifier": "/amdcpu/0/temperature/2",
-              "IsHidden": false,
-              "Name": "Core (Tctl/Tdie)",
-              "NickName": "Core (Tctl/Tdie)"
-            },
-            "SelectedTime": 10
-          },
-          {
-            "Identifier": "Time/Time Average GPU",
-            "IsHidden": false,
-            "Name": "Time Average GPU",
-            "SelectedTempSource": {
-              "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/temp/Hotspot",
-              "IsHidden": false,
-              "Name": "Hotspot",
-              "NickName": "Hotspot"
-            },
-            "SelectedTime": 10
-          }
         ]
       },
       {
-        "Identifier": "Time/Time Average CPU",
+        "NickName": "CPU",
+        "Identifier": "/lpc/nct6798d/control/1",
         "IsHidden": false,
-        "Name": "Time Average CPU",
-        "SelectedTempSource": {
-          "Identifier": "/amdcpu/0/temperature/2",
-          "IsHidden": false,
-          "Name": "Core (Tctl/Tdie)",
-          "NickName": "Core (Tctl/Tdie)"
+        "Enable": true,
+        "SelectedFanCurve": {
+          "Name": "CPU"
         },
-        "SelectedTime": 10
+        "SelectedOffset": 0,
+        "PairedFanSensor": {
+          "Identifier": "/lpc/nct6798d/fan/1"
+        },
+        "SelectedStart": 19,
+        "SelectedStop": 16,
+        "MinimumPercent": 0,
+        "SelectedCommandStepUp": 8,
+        "SelectedCommandStepDown": 8,
+        "ManualControlValue": 50,
+        "ManualControl": false,
+        "ForceApply": false,
+        "Calibration": [
+          [
+            10,
+            0,
+            false
+          ],
+          [
+            20,
+            330,
+            false
+          ],
+          [
+            30,
+            488,
+            false
+          ],
+          [
+            40,
+            636,
+            false
+          ],
+          [
+            50,
+            783,
+            false
+          ],
+          [
+            60,
+            915,
+            false
+          ],
+          [
+            70,
+            1024,
+            false
+          ],
+          [
+            80,
+            1147,
+            false
+          ],
+          [
+            90,
+            1255,
+            false
+          ],
+          [
+            100,
+            1364,
+            false
+          ]
+        ]
       },
       {
-        "Identifier": "Time/Time Average GPU",
+        "NickName": "GPU",
+        "Identifier": "/lpc/nct6798d/control/2",
         "IsHidden": false,
-        "Name": "Time Average GPU",
-        "SelectedTempSource": {
-          "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/temp/Hotspot",
-          "IsHidden": false,
-          "Name": "Hotspot",
-          "NickName": "Hotspot"
+        "Enable": true,
+        "SelectedFanCurve": {
+          "Name": "GPU"
         },
-        "SelectedTime": 10
+        "SelectedOffset": 0,
+        "PairedFanSensor": {
+          "Identifier": "/lpc/nct6798d/fan/2"
+        },
+        "SelectedStart": 18,
+        "SelectedStop": 6,
+        "MinimumPercent": 0,
+        "SelectedCommandStepUp": 8,
+        "SelectedCommandStepDown": 8,
+        "ManualControlValue": 50,
+        "ManualControl": false,
+        "ForceApply": false,
+        "Calibration": [
+          [
+            0,
+            0,
+            false
+          ],
+          [
+            10,
+            234,
+            false
+          ],
+          [
+            20,
+            511,
+            false
+          ],
+          [
+            30,
+            732,
+            false
+          ],
+          [
+            40,
+            950,
+            false
+          ],
+          [
+            50,
+            1147,
+            false
+          ],
+          [
+            60,
+            1326,
+            false
+          ],
+          [
+            70,
+            1470,
+            false
+          ],
+          [
+            80,
+            1614,
+            false
+          ],
+          [
+            90,
+            1758,
+            false
+          ],
+          [
+            100,
+            1909,
+            false
+          ]
+        ]
+      },
+      {
+        "NickName": "Fan #4",
+        "Identifier": "/lpc/nct6798d/control/3",
+        "IsHidden": true,
+        "Enable": false,
+        "SelectedFanCurve": null,
+        "SelectedOffset": 0,
+        "PairedFanSensor": null,
+        "SelectedStart": 0,
+        "SelectedStop": 0,
+        "MinimumPercent": 0,
+        "SelectedCommandStepUp": 8,
+        "SelectedCommandStepDown": 8,
+        "ManualControlValue": 50,
+        "ManualControl": false,
+        "ForceApply": false,
+        "Calibration": []
+      },
+      {
+        "NickName": "Fan #5",
+        "Identifier": "/lpc/nct6798d/control/4",
+        "IsHidden": true,
+        "Enable": false,
+        "SelectedFanCurve": null,
+        "SelectedOffset": 0,
+        "PairedFanSensor": null,
+        "SelectedStart": 0,
+        "SelectedStop": 0,
+        "MinimumPercent": 0,
+        "SelectedCommandStepUp": 8,
+        "SelectedCommandStepDown": 8,
+        "ManualControlValue": 50,
+        "ManualControl": false,
+        "ForceApply": false,
+        "Calibration": []
+      },
+      {
+        "NickName": "Fan #6",
+        "Identifier": "/lpc/nct6798d/control/5",
+        "IsHidden": true,
+        "Enable": false,
+        "SelectedFanCurve": null,
+        "SelectedOffset": 0,
+        "PairedFanSensor": null,
+        "SelectedStart": 0,
+        "SelectedStop": 0,
+        "MinimumPercent": 0,
+        "SelectedCommandStepUp": 8,
+        "SelectedCommandStepDown": 8,
+        "ManualControlValue": 50,
+        "ManualControl": false,
+        "ForceApply": false,
+        "Calibration": []
+      },
+      {
+        "NickName": "Fan #7",
+        "Identifier": "/lpc/nct6798d/control/6",
+        "IsHidden": true,
+        "Enable": false,
+        "SelectedFanCurve": null,
+        "SelectedOffset": 0,
+        "PairedFanSensor": null,
+        "SelectedStart": 0,
+        "SelectedStop": 0,
+        "MinimumPercent": 0,
+        "SelectedCommandStepUp": 8,
+        "SelectedCommandStepDown": 8,
+        "ManualControlValue": 50,
+        "ManualControl": false,
+        "ForceApply": false,
+        "Calibration": []
+      },
+      {
+        "NickName": "Control 1 - AMD Radeon RX 6800 XT",
+        "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/control",
+        "IsHidden": true,
+        "Enable": false,
+        "SelectedFanCurve": null,
+        "SelectedOffset": 0,
+        "PairedFanSensor": null,
+        "SelectedStart": 0,
+        "SelectedStop": 0,
+        "MinimumPercent": 0,
+        "SelectedCommandStepUp": 8,
+        "SelectedCommandStepDown": 8,
+        "ManualControlValue": 50,
+        "ManualControl": false,
+        "ForceApply": false,
+        "Calibration": null
       }
     ],
-    "Fahrenheit": false,
+    "CustomSensors": [],
     "FanCurves": [
       {
-        "CommandMode": 0,
-        "IsHidden": true,
         "Name": "Flat",
+        "IsHidden": true,
+        "CommandMode": 0,
         "Percent": 50
       },
       {
-        "CommandMode": 0,
-        "HysteresisConfig": {
-          "HysteresisValueDown": 2,
-          "HysteresisValueUp": 2,
-          "IgnoreHysteresisAtLimits": true,
-          "ResponseTimeDown": 1,
-          "ResponseTimeUp": 1
-        },
-        "IsHidden": false,
-        "MaximumCommand": 100,
-        "MaximumTemperature": 120,
-        "MinimumTemperature": 20,
         "Name": "CPU",
+        "IsHidden": false,
+        "CommandMode": 0,
+        "SelectedTempSource": {
+          "Identifier": "/amdcpu/0/temperature/2"
+        },
         "Points": [
           "40,20",
           "80.02982614003184,100"
         ],
-        "SelectedTempSource": {
-          "Identifier": "/amdcpu/0/temperature/2",
-          "IsHidden": false,
-          "Name": "Core (Tctl/Tdie)",
-          "NickName": "Core (Tctl/Tdie)"
+        "MaximumTemperature": 120,
+        "MinimumTemperature": 20,
+        "MaximumCommand": 100,
+        "HysteresisConfig": {
+          "ResponseTimeUp": 1,
+          "ResponseTimeDown": 1,
+          "HysteresisValueUp": 2,
+          "HysteresisValueDown": 2,
+          "IgnoreHysteresisAtLimits": true
         }
       },
       {
-        "CommandMode": 0,
-        "HysteresisConfig": {
-          "HysteresisValueDown": 2,
-          "HysteresisValueUp": 2,
-          "IgnoreHysteresisAtLimits": true,
-          "ResponseTimeDown": 1,
-          "ResponseTimeUp": 1
-        },
-        "IsHidden": false,
-        "MaximumCommand": 100,
-        "MaximumTemperature": 120,
-        "MinimumTemperature": 20,
         "Name": "GPU",
+        "IsHidden": false,
+        "CommandMode": 0,
+        "SelectedTempSource": {
+          "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/temp/Hotspot"
+        },
         "Points": [
           "40,20",
           "80.02982614003184,100"
         ],
-        "SelectedTempSource": {
-          "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/temp/Hotspot",
-          "IsHidden": false,
-          "Name": "Hotspot",
-          "NickName": "Hotspot"
+        "MaximumTemperature": 120,
+        "MinimumTemperature": 20,
+        "MaximumCommand": 100,
+        "HysteresisConfig": {
+          "ResponseTimeUp": 1,
+          "ResponseTimeDown": 1,
+          "HysteresisValueUp": 2,
+          "HysteresisValueDown": 2,
+          "IgnoreHysteresisAtLimits": true
         }
       },
       {
-        "CommandMode": 0,
-        "HysteresisConfig": {
-          "HysteresisValueDown": 2,
-          "HysteresisValueUp": 2,
-          "IgnoreHysteresisAtLimits": true,
-          "ResponseTimeDown": 1,
-          "ResponseTimeUp": 1
-        },
-        "IsHidden": false,
-        "MaximumCommand": 100,
-        "MaximumTemperature": 120,
-        "MinimumTemperature": 20,
         "Name": "AVG",
+        "IsHidden": false,
+        "CommandMode": 0,
+        "SelectedTempSource": {
+          "Identifier": "/amdcpu/0/temperature/7"
+        },
         "Points": [
           "40,20",
           "80,80"
         ],
-        "SelectedTempSource": {
-          "Identifier": "Mix/Mix",
-          "IsHidden": false,
-          "Name": "Mix",
-          "SelectedMixFunction": 0,
-          "SelectedSensors": [
-            {
-              "Identifier": "Time/Time Average CPU",
-              "IsHidden": false,
-              "Name": "Time Average CPU",
-              "SelectedTempSource": {
-                "Identifier": "/amdcpu/0/temperature/2",
-                "IsHidden": false,
-                "Name": "Core (Tctl/Tdie)",
-                "NickName": "Core (Tctl/Tdie)"
-              },
-              "SelectedTime": 10
-            },
-            {
-              "Identifier": "Time/Time Average GPU",
-              "IsHidden": false,
-              "Name": "Time Average GPU",
-              "SelectedTempSource": {
-                "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/temp/Hotspot",
-                "IsHidden": false,
-                "Name": "Hotspot",
-                "NickName": "Hotspot"
-              },
-              "SelectedTime": 10
-            }
-          ]
+        "MaximumTemperature": 120,
+        "MinimumTemperature": 20,
+        "MaximumCommand": 100,
+        "HysteresisConfig": {
+          "ResponseTimeUp": 1,
+          "ResponseTimeDown": 1,
+          "HysteresisValueUp": 2,
+          "HysteresisValueDown": 2,
+          "IgnoreHysteresisAtLimits": true
         }
       }
     ],
@@ -571,118 +401,45 @@
       {
         "Identifier": "/lpc/nct6798d/fan/0",
         "IsHidden": false,
-        "Name": "Fan #1",
         "NickName": "Chassis"
       },
       {
         "Identifier": "/lpc/nct6798d/fan/1",
         "IsHidden": false,
-        "Name": "Fan #2",
         "NickName": "CPU"
       },
       {
         "Identifier": "/lpc/nct6798d/fan/2",
         "IsHidden": false,
-        "Name": "Fan #3",
         "NickName": "GPU"
       },
       {
         "Identifier": "/lpc/nct6798d/fan/3",
         "IsHidden": false,
-        "Name": "Fan #4",
         "NickName": "Fan #4"
       },
       {
         "Identifier": "/lpc/nct6798d/fan/4",
         "IsHidden": false,
-        "Name": "Fan #5",
         "NickName": "Fan #5"
       },
       {
         "Identifier": "/lpc/nct6798d/fan/5",
         "IsHidden": false,
-        "Name": "Fan #6",
         "NickName": "Fan #6"
       },
       {
         "Identifier": "/lpc/nct6798d/fan/6",
         "IsHidden": false,
-        "Name": "Fan #7",
         "NickName": "Fan #7"
       },
       {
         "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/fan",
         "IsHidden": false,
-        "Name": "Fan 1 - AMD Radeon RX 6800 XT",
         "NickName": "Fan 1 - AMD Radeon RX 6800 XT"
       }
     ],
-    "HideCalibration": false,
-    "HideFanSpeedCards": true,
-    "HorizontalUIOrientation": false,
-    "PrimaryColor": "#FF618698",
-    "SecondaryColor": "#FFC6FF00",
-    "SelectedTheme": "",
-    "ShowHiddenCards": false,
-    "SyncThemeWithWindows": true,
-    "SyncTrayIconColorWithWindows": true,
-    "TemperatureSensors": [],
-    "TrayIconColor": null,
-    "TrayIcons": [
-      {
-        "Color": "#FFFFFF00",
-        "SensorId": {
-          "Identifier": "/amdcpu/0/temperature/2",
-          "IsHidden": false,
-          "Name": "Core (Tctl/Tdie)",
-          "NickName": "Core (Tctl/Tdie)"
-        }
-      },
-      {
-        "Color": "#FFFF0000",
-        "SensorId": {
-          "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/temp/Hotspot",
-          "IsHidden": false,
-          "Name": "Hotspot",
-          "NickName": "Hotspot"
-        }
-      },
-      {
-        "Color": "#FFFF8800",
-        "SensorId": {
-          "Identifier": "Mix/Mix",
-          "IsHidden": false,
-          "Name": "Mix",
-          "SelectedMixFunction": 0,
-          "SelectedSensors": [
-            {
-              "Identifier": "Time/Time Average CPU",
-              "IsHidden": false,
-              "Name": "Time Average CPU",
-              "SelectedTempSource": {
-                "Identifier": "/amdcpu/0/temperature/2",
-                "IsHidden": false,
-                "Name": "Core (Tctl/Tdie)",
-                "NickName": "Core (Tctl/Tdie)"
-              },
-              "SelectedTime": 10
-            },
-            {
-              "Identifier": "Time/Time Average GPU",
-              "IsHidden": false,
-              "Name": "Time Average GPU",
-              "SelectedTempSource": {
-                "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/temp/Hotspot",
-                "IsHidden": false,
-                "Name": "Hotspot",
-                "NickName": "Hotspot"
-              },
-              "SelectedTime": 10
-            }
-          ]
-        }
-      }
-    ]
+    "TemperatureSensors": []
   },
   "Sensors": {
     "AdlxWrapperSettings": {
@@ -695,17 +452,44 @@
       "CPU": true,
       "EmbeddedEC": false,
       "GPU": true,
-      "InpOut": false,
       "Memory": false,
       "Motherboard": true,
+      "PowerMonitor": false,
       "PSU": false,
       "Storage": false,
+      "StorageUpdateInterval": "00:01:00",
       "ZeroRPMOverride": false
     },
     "NvAPIWrapperSettings": {
       "Enabled": false,
       "ZeroRPMOverride": false
-    },
-    "SensorCount": 28
+    }
+  },
+  "MainWindow": {
+    "Fahrenheit": false,
+    "HideCalibration": false,
+    "HideFanSpeedCards": true,
+    "HorizontalUIOrientation": false,
+    "PrimaryColor": "#FF618698",
+    "SecondaryColor": "#FFC6FF00",
+    "SelectedTheme": "",
+    "ShowHiddenCards": false,
+    "SyncThemeWithWindows": true,
+    "SyncTrayIconColorWithWindows": true,
+    "TrayIconColor": null,
+    "TrayIcons": [
+      {
+        "SensorId": {
+          "Identifier": "/amdcpu/0/temperature/2"
+        },
+        "Color": "#FFFFFF00"
+      },
+      {
+        "SensorId": {
+          "Identifier": "ADLX/AMD Radeon RX 6800 XT/3072/temp/Hotspot"
+        },
+        "Color": "#FFFF0000"
+      }
+    ]
   }
 }
