@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: bridge
-          image: python:3.13-alpine@sha256:9b4929a72599b6c6389ece4ecbf415fd1355129f22bb92bb137eea098f05e975
+          image: python:3.13-alpine@sha256:420cd0bf0f3998275875e02ecd5808168cf0843cbb4d3c536432f729247b2acc
           command:
             - python3
             - -u

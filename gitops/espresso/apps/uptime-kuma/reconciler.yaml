@@ -151,7 +151,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: reconciler
-              image: docker.io/library/python:3.13-slim@sha256:0ee2df98db454606ca92bb7a79d47ff7dc9cc0c8d5901e32eb71e6b5203377b2
+              image: docker.io/library/python:3.13-slim@sha256:7ba5f5888fbe0014ab9edb2278922995c2201fc3752c46b0be24763eb46fa9f3
               command:
                 - sh
                 - -c
