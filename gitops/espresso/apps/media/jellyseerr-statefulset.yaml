@@ -18,7 +18,7 @@ spec:
         kubernetes.io/hostname: espresso-1
       initContainers:
         - name: init-config
-          image: busybox:1.37.0@sha256:7a3ebe5bfd1a4a19797d20b0c0bb39d44393e9a03fd852c0865b0f540d868df0
+          image: busybox:1.38.0@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8
           command:
             - sh
             - -c
