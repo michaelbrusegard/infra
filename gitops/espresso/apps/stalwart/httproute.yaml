@@ -10,6 +10,7 @@ spec:
       sectionName: https
   hostnames:
     - mta-sts.michaelbrusegard.com
+    - mta-sts.manafishrov.com
   rules:
     - matches:
         - path:
@@ -30,8 +31,19 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - mail.gullhaugveien.michaelbrusegard.com
+    - mail.asgard.michaelbrusegard.com
   rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /admin/
+            statusCode: 302
     - backendRefs:
         - name: stalwart-internal
           port: 8080
@@ -49,6 +61,8 @@ spec:
   hostnames:
     - autoconfig.michaelbrusegard.com
     - autodiscover.michaelbrusegard.com
+    - autoconfig.manafishrov.com
+    - autodiscover.manafishrov.com
   rules:
     - backendRefs:
         - name: stalwart-internal

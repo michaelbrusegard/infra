@@ -9,7 +9,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - grafana.gullhaugveien.michaelbrusegard.com
+    - grafana.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: kube-prometheus-stack-grafana

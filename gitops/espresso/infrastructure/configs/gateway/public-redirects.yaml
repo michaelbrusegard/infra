@@ -9,10 +9,11 @@ spec:
       namespace: gateway
       sectionName: http
   hostnames:
-    - id.gullhaugveien.michaelbrusegard.com
-    - status.gullhaugveien.michaelbrusegard.com
-    - netbird.gullhaugveien.michaelbrusegard.com
+    - id.asgard.michaelbrusegard.com
+    - status.asgard.michaelbrusegard.com
+    - netbird.asgard.michaelbrusegard.com
     - s3.manafishrov.com
+    - status.manafishrov.com
   rules:
     - filters:
         - type: RequestRedirect

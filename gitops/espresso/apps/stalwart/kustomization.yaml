@@ -8,5 +8,5 @@ resources:
   - network-policy.yaml
   - config.yaml
   - entrypoint.yaml
-  - seed-plan.yaml
-  - seed-cronjob.yaml
+  - plan.yaml
+  - reconciler.yaml

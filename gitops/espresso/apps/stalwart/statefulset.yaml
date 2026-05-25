@@ -3,6 +3,9 @@ kind: StatefulSet
 metadata:
   name: stalwart
   namespace: stalwart
+  annotations:
+    configmap.reloader.stakater.com/reload: stalwart-plan,stalwart-reconciler,stalwart-entrypoint
+    secret.reloader.stakater.com/reload: stalwart-env,stalwart-dkim
 spec:
   replicas: 1
   selector:
@@ -14,6 +17,7 @@ spec:
       labels:
         app: stalwart
     spec:
+      shareProcessNamespace: true
       securityContext:
         runAsUser: 2000
         runAsGroup: 2000
@@ -26,7 +30,7 @@ spec:
             - /entrypoint/entrypoint.sh
           env:
             - name: STALWART_PUBLIC_URL
-              value: https://mail.gullhaugveien.michaelbrusegard.com
+              value: https://mail.asgard.michaelbrusegard.com
           envFrom:
             - secretRef:
                 name: stalwart-env
@@ -80,6 +84,35 @@ spec:
             - mountPath: /entrypoint
               name: entrypoint
               readOnly: true
+        - name: reconciler
+          image: alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+          command:
+            - /reconciler/reconciler.sh
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          env:
+            - name: STALWART_CLI_VERSION
+              value: v1.0.7
+          envFrom:
+            - secretRef:
+                name: stalwart-env
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - mountPath: /var/lib/stalwart
+              name: data
+            - mountPath: /plan
+              name: plan
+              readOnly: true
+            - mountPath: /reconciler
+              name: reconciler
+              readOnly: true
       volumes:
         - name: config
           configMap:
@@ -93,6 +126,13 @@ spec:
         - name: entrypoint
           configMap:
             name: stalwart-entrypoint
+            defaultMode: 0555
+        - name: plan
+          configMap:
+            name: stalwart-plan
+        - name: reconciler
+          configMap:
+            name: stalwart-reconciler
             defaultMode: 0555
   volumeClaimTemplates:
     - metadata:

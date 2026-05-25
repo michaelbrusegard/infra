@@ -7,7 +7,7 @@ data:
   entrypoint.sh: |
     #!/bin/sh
     set -e
-    MARKER=/var/lib/stalwart/.seeded
+    MARKER=/var/lib/stalwart/.bootstrapped
     if [ ! -f "$MARKER" ]; then
       echo "stalwart-entrypoint: marker absent -> booting in recovery mode"
       export STALWART_RECOVERY_MODE=true

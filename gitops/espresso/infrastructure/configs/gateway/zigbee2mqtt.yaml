@@ -30,7 +30,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - zigbee.gullhaugveien.michaelbrusegard.com
+    - zigbee.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: zigbee2mqtt

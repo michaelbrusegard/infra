@@ -18,7 +18,7 @@ spec:
     # Multi-zone Corefile: serves both zones. Fallthrough below sends names
     # without a matching HTTPRoute (e.g. files.manafishrov.com) to upstream
     # DNS so non-cluster subdomains still resolve on LAN.
-    domain: "gullhaugveien.michaelbrusegard.com manafishrov.com"
+    domain: "asgard.michaelbrusegard.com manafishrov.com"
     apex: macchiato.gateway
     watchedResources:
       - HTTPRoute
@@ -26,7 +26,7 @@ spec:
     fallthrough:
       enabled: true
       zones:
-        - gullhaugveien.michaelbrusegard.com
+        - asgard.michaelbrusegard.com
         - manafishrov.com
     ttl: 300
     # Forward fallthrough queries directly to public DNS instead of the cluster

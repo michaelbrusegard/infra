@@ -1,4 +1,4 @@
-FROM postgres:18-bookworm@sha256:47855c76129d1383e7efc66a1a776e33c9171b3450e95deb822119e02eaab592
+FROM postgres:18-bookworm@sha256:501c9112cb737119b90618d7c09ad4eaab243e4b370050eb280061284cd2ed63
 
 # renovate: suite=bookworm-pgdg depName=postgresql-18-cron
 ARG POSTGRESQL_18_CRON_VERSION=1.6.7-2.pgdg12+1

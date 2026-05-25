@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-plan
+  namespace: stalwart
+data:
+  # stalwart-cli `apply` runs destroy -> update -> create. Within each
+  # phase, ops run in plan-file lexical order. Files concatenate in
+  # lexical order, so cross-object refs (#alias) must point at objects
+  # declared in earlier files within the same batch.
+  00-listeners.ndjson.tmpl: |
+    {"@type":"create","object":"NetworkListener","value":{"smtp":{"name":"smtp","protocol":"smtp","bind":{"[::]:25":true},"useTls":true,"tlsImplicit":false},"submissions":{"name":"submissions","protocol":"smtp","bind":{"[::]:465":true},"useTls":true,"tlsImplicit":true},"submission":{"name":"submission","protocol":"smtp","bind":{"[::]:587":true},"useTls":true,"tlsImplicit":false},"imaps":{"name":"imaps","protocol":"imap","bind":{"[::]:993":true},"useTls":true,"tlsImplicit":true},"sieve":{"name":"sieve","protocol":"manageSieve","bind":{"[::]:4190":true},"useTls":true,"tlsImplicit":false},"http":{"name":"http","protocol":"http","bind":{"[::]:8080":true},"useTls":false,"tlsImplicit":false}}}
+
+  10-certificate.ndjson.tmpl: |
+    {"@type":"create","object":"Certificate","value":{"cert-wildcard":{"certificate":{"@type":"File","filePath":"/var/lib/stalwart/private/tls/tls.crt"},"privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/tls/tls.key"}}}}
+
+  15-directory-manafishrov.ndjson.tmpl: |
+    {"@type":"create","object":"Directory","value":{"dir-pocket-manafishrov":{"@type":"Oidc","description":"Pocket ID for manafishrov.com (dormant: webmail UI does not initiate OIDC code flow in 0.16 community).","issuerUrl":"https://id.manafishrov.com","requireScopes":{"openid":true,"email":true},"requireAudience":"stalwart","claimUsername":"email","claimName":"name","usernameDomain":"manafishrov.com"}}}
+
+  20-domain-michaelbrusegard.ndjson.tmpl: |
+    {"@type":"create","object":"Domain","value":{"d-michaelbrusegard":{"name":"michaelbrusegard.com","aliases":{},"certificateManagement":{"@type":"Manual"},"dkimManagement":{"@type":"Manual"},"dnsManagement":{"@type":"Manual"},"subAddressing":{"@type":"Enabled"},"reportAddressUri":"mailto:postmaster@michaelbrusegard.com","allowRelaying":false,"isEnabled":true,"directoryId":null,"memberTenantId":null,"catchAllAddress":null,"description":null,"logo":null}}}
+
+  20-domain-manafishrov.ndjson.tmpl: |
+    {"@type":"create","object":"Domain","value":{"d-manafishrov":{"name":"manafishrov.com","aliases":{},"certificateManagement":{"@type":"Manual"},"dkimManagement":{"@type":"Manual"},"dnsManagement":{"@type":"Manual"},"subAddressing":{"@type":"Enabled"},"reportAddressUri":"mailto:postmaster@manafishrov.com","allowRelaying":false,"isEnabled":true,"directoryId":null,"memberTenantId":null,"catchAllAddress":null,"description":null,"logo":null}}}
+
+  30-dkim-michaelbrusegard.ndjson.tmpl: |
+    {"@type":"create","object":"DkimSignature","value":{"dkim-rsa-mb":{"@type":"Dkim1RsaSha256","domainId":"#d-michaelbrusegard","selector":"stalwart-rsa","privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/dkim/michaelbrusegard.com.rsa.key"}},"dkim-ed25519-mb":{"@type":"Dkim1Ed25519Sha256","domainId":"#d-michaelbrusegard","selector":"stalwart-ed25519","privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/dkim/michaelbrusegard.com.ed25519.key"}}}}
+
+  30-dkim-manafishrov.ndjson.tmpl: |
+    {"@type":"create","object":"DkimSignature","value":{"dkim-rsa-mf":{"@type":"Dkim1RsaSha256","domainId":"#d-manafishrov","selector":"stalwart-rsa","privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/dkim/manafishrov.com.rsa.key"}},"dkim-ed25519-mf":{"@type":"Dkim1Ed25519Sha256","domainId":"#d-manafishrov","selector":"stalwart-ed25519","privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/dkim/manafishrov.com.ed25519.key"}}}}
+
+  40-accounts-michaelbrusegard.ndjson.tmpl: |
+    {"@type":"create","object":"Account","value":{"admin":{"@type":"User","name":${ADMIN_LOCAL_JSON},"domainId":"#d-michaelbrusegard","credentials":{"0":{"@type":"Password","secret":${ADMIN_PASSWORD_JSON}}},"memberGroupIds":{},"roles":{"@type":"Admin"},"permissions":{"@type":"Inherit"},"quotas":{},"aliases":{},"encryptionAtRest":{"@type":"Disabled"}},"mail-master":{"@type":"User","name":"mail-master","domainId":"#d-michaelbrusegard","credentials":{"0":{"@type":"Password","secret":${MAIL_MASTER_PASSWORD_JSON}}},"memberGroupIds":{},"roles":{"@type":"User"},"permissions":{"@type":"Replace","enabledPermissions":{"authenticate":true,"impersonate":true}},"quotas":{},"aliases":{},"encryptionAtRest":{"@type":"Disabled"}}}}
+
+  60-route-resend.ndjson.tmpl: |
+    {"@type":"create","object":"MtaRoute","value":{"mx":{"@type":"Relay","name":"mx","address":"smtp.resend.com","port":465,"protocol":"smtp","authUsername":"resend","authSecret":{"@type":"Value","secret":${RESEND_API_KEY_JSON}},"implicitTls":true,"allowInvalidCerts":false,"description":"Resend smarthost for all external outbound"}}}
+
+  80-mta-sts.ndjson.tmpl: |
+    {"@type":"update","object":"MtaSts","value":{"mode":"testing","maxAge":604800000,"mxHosts":{}}}
+
+  85-imap.ndjson.tmpl: |
+    {"@type":"update","object":"Imap","value":{"maxAuthFailures":30}}
+
+  90-tracer-stdout.ndjson.tmpl: |
+    {"@type":"create","object":"Tracer","value":{"stdout":{"@type":"Stdout","enable":true,"level":"info","ansi":false,"buffered":false,"eventsPolicy":"exclude","events":{}}}}

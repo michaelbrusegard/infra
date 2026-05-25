@@ -5,15 +5,15 @@ metadata:
   namespace: gateway
 spec:
   endpoints:
-    - dnsName: id.gullhaugveien.michaelbrusegard.com
+    - dnsName: id.asgard.michaelbrusegard.com
       recordType: CNAME
       targets:
-        - router.gullhaugveien.michaelbrusegard.com
-    - dnsName: status.gullhaugveien.michaelbrusegard.com
+        - router.asgard.michaelbrusegard.com
+    - dnsName: status.asgard.michaelbrusegard.com
       recordType: CNAME
       targets:
-        - router.gullhaugveien.michaelbrusegard.com
-    - dnsName: netbird.gullhaugveien.michaelbrusegard.com
+        - router.asgard.michaelbrusegard.com
+    - dnsName: netbird.asgard.michaelbrusegard.com
       recordType: CNAME
       targets:
-        - router.gullhaugveien.michaelbrusegard.com
+        - router.asgard.michaelbrusegard.com

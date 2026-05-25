@@ -1,5 +1,5 @@
 locals {
-  domain = "gullhaugveien.michaelbrusegard.com"
+  domain = "asgard.michaelbrusegard.com"
 }
 
 resource "pocketid_group" "users" {

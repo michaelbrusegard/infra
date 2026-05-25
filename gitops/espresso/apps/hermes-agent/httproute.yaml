@@ -9,7 +9,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - hermes.gullhaugveien.michaelbrusegard.com
+    - hermes.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: hermes-agent

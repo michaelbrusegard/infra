@@ -9,7 +9,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - pgweb.gullhaugveien.michaelbrusegard.com
+    - pgweb.asgard.michaelbrusegard.com
   rules:
     - backendRefs:
         - name: pgweb
