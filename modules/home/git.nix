@@ -1,6 +1,7 @@
 {
   pkgs,
   config,
+  lib,
   ...
 }: {
   programs = {
@@ -14,14 +15,17 @@
         signByDefault = true;
       };
 
-      ignores = [
-        ".DS_Store"
-        "*.swp"
-        "*.swo"
-        ".env"
-        ".direnv"
-        "node_modules"
-      ];
+      ignores =
+        [
+          "*.swp"
+          "*.swo"
+          ".env"
+          ".direnv"
+          "node_modules"
+        ]
+        ++ lib.optionals pkgs.stdenv.isDarwin [
+          ".DS_Store"
+        ];
 
       settings = {
         user = {
