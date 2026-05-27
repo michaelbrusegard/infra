@@ -182,6 +182,11 @@ in {
           proto = "tcp";
           sourcePort = 5349;
         }
+        {
+          destination = "10.0.187.3:49152-65535";
+          proto = "udp";
+          sourcePort = "49152:65535";
+        }
       ];
     };
 
