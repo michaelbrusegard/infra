@@ -52,9 +52,6 @@
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? anthropicApiKeyFile) {
         ANTHROPIC_API_KEY = "$( [ -f ${config.secrets.keys.anthropicApiKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.anthropicApiKeyFile} )";
       }
-      // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? openaiApiKeyFile) {
-        OPENAI_API_KEY = "$( [ -f ${config.secrets.keys.openaiApiKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.openaiApiKeyFile} )";
-      }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? tauriSigningPrivateKeyFile) {
         TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.keys.tauriSigningPrivateKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.tauriSigningPrivateKeyFile} )";
       };
