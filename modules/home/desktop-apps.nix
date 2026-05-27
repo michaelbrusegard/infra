@@ -34,6 +34,8 @@
       notion-app-enhanced
       wootility
       ungoogled-chromium
+      nextcloud-client
+      nextcloud-talk-desktop
     ]
     ++ lib.optionals pkgs.stdenv.isDarwin [
       ice-bar
@@ -58,6 +60,8 @@
       utm
       brewCasks.crystalfetch
       brewCasks.ungoogled-chromium
+      brewCasks.nextcloud
+      brewCasks.nextcloud-talk
     ]);
 
   xdg.mimeApps.defaultApplications = lib.mkIf (!isWsl) {
