@@ -34,3 +34,5 @@ patches:
             - vaultwarden_pocketid_client_secret
             - nextcloud_pocketid_client_id
             - nextcloud_pocketid_client_secret
+            - n8n_pocketid_client_id
+            - n8n_pocketid_client_secret
