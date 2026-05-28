@@ -42,6 +42,17 @@ spec:
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
+            k8s:io.kubernetes.pod.namespace: manafishrov-twenty
+            k8s:app: twenty
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: manafishrov-twenty
+            k8s:app: twenty-worker
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
             k8s:app: pgweb
       toPorts:
         - ports:
