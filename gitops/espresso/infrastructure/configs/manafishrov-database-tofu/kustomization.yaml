@@ -32,7 +32,12 @@ patches:
             name: manafishrov-nextcloud-db
             varsKeys:
               - nextcloud_db_password
+          - kind: Secret
+            name: manafishrov-twenty-db
+            varsKeys:
+              - twenty_db_password
         writeOutputsToSecret:
           name: manafishrov-database-outputs
           outputs:
             - nextcloud_db_password
+            - twenty_db_password

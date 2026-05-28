@@ -29,3 +29,9 @@ patches:
               - RUSTFS_ACCESS_KEY:rustfs_access_key
               - RUSTFS_SECRET_KEY:rustfs_secret_key
               - firmware_ci_secret_key
+              - twenty_app_secret_key
+        writeOutputsToSecret:
+          name: manafishrov-storage-outputs
+          outputs:
+            - twenty_storage_access_key_id
+            - twenty_storage_secret_access_key
