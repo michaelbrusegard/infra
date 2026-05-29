@@ -8,6 +8,7 @@
     inputs.self.homeManagerModules.cli-core
     inputs.self.homeManagerModules.cli-extras
     inputs.self.homeManagerModules.cli-desktop
+    inputs.self.homeManagerModules.codex
     inputs.self.homeManagerModules.desktop-apps
     inputs.self.homeManagerModules.dev
     inputs.self.homeManagerModules.dms

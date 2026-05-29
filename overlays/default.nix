@@ -37,6 +37,7 @@ in
           vimPlugins
           opencode
           opencode-desktop
+          codex
           uv
           ty
           oxlint
