@@ -54,6 +54,11 @@
 
     wooting.enable = true;
   };
+  local.hyprland.monitors = [
+    "DP-1,3440x1440@144,0x0,1, bitdepth, 10"
+    "DP-3,2560x1440@144,3440x0,1, bitdepth, 10"
+  ];
+
   environment.variables.RUSTICL_ENABLE = "radeonsi";
 
   zramSwap = {
