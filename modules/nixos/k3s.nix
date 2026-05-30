@@ -17,4 +17,9 @@
       "metrics-server"
     ];
   };
+
+  environment.persistence."/persistent".directories = [
+    "/var/lib/rancher/k3s"
+    "/var/local/openebs"
+  ];
 }

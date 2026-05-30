@@ -1,4 +1,4 @@
-_: {
+{config, ...}: {
   networking = {
     wireless.iwd.enable = true;
     networkmanager = {
@@ -15,4 +15,9 @@ _: {
       port = 51820;
     };
   };
+
+  environment.persistence."/persistent".directories = [
+    "/etc/NetworkManager/system-connections"
+    config.services.netbird.clients.default.dir.state
+  ];
 }

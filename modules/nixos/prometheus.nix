@@ -1,4 +1,4 @@
-_: {
+{config, ...}: {
   services.prometheus = {
     enable = true;
 
@@ -7,4 +7,8 @@ _: {
       evaluation_interval = "15s";
     };
   };
+
+  environment.persistence."/persistent".directories = [
+    "/var/lib/${config.services.prometheus.stateDir}"
+  ];
 }

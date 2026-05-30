@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   inputs,
   ...
@@ -25,4 +26,8 @@
       pkiBundle = "/var/lib/sbctl";
     };
   };
+
+  environment.persistence."/persistent".directories = [
+    config.boot.lanzaboote.pkiBundle
+  ];
 }

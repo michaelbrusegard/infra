@@ -59,4 +59,10 @@
   };
 
   users.users.zigbee2mqtt.extraGroups = ["dialout"];
+
+  environment.persistence."/persistent".directories = [
+    config.services.mosquitto.dataDir
+    config.services.homebridge.userStoragePath
+    config.services.zigbee2mqtt.dataDir
+  ];
 }

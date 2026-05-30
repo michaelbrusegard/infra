@@ -17,4 +17,8 @@
       Restart = "always";
     };
   };
+
+  environment.persistence."/persistent".directories = [
+    "/var/lib/unifi"
+  ];
 }

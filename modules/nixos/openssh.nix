@@ -1,4 +1,10 @@
-{config, ...}: {
+{
+  config,
+  lib,
+  isWsl,
+  ...
+}:
+{
   services.openssh = {
     enable = true;
     openFirewall = true;
@@ -21,4 +27,9 @@
     enable = true;
     bantime = "1h";
   };
+}
+// lib.optionalAttrs (!isWsl) {
+  environment.persistence."/persistent".directories = [
+    "/var/lib/fail2ban"
+  ];
 }
