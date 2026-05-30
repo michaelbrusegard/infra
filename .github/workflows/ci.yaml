@@ -64,6 +64,8 @@ jobs:
             os: macos-latest
           - host: ristretto
             os: ubuntu-24.04
+          - host: forte
+            os: ubuntu-24.04
           - host: macchiato
             os: ubuntu-24.04
           - host: espresso-0

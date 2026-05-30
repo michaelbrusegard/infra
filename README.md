@@ -266,6 +266,47 @@ sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 \
   /dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24057W-part1
 ```
 
+## Forte (NixOS Laptop)
+
+ASUS ProArt P16 (H7606WW): AMD Ryzen AI iGPU + NVIDIA RTX 5080 mobile
+dGPU. Single LUKS NVMe, same install flow as Ristretto.
+
+Create an installer by downloading the minimal ISO image from
+[NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
+an USB drive using the following command:
+
+```sh
+sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
+```
+
+Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
+with the path to your USB drive.
+
+Plug in the installer USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
+Set a temporary password using the `passwd` command for SSH access.
+You can run `ip a` to find the IP address.
+
+1. **Prepare Local Files**:
+   - Create LUKS passphrase file: `./secret.key`.
+   - Get host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
+   - Edit `hosts/forte/disko.nix` and replace `nvme-FORTE_PRIMARY_PLACEHOLDER` with the actual `/dev/disk/by-id/` path (`ls -l /dev/disk/by-id/` from the installer).
+
+2. **Run Install**:
+
+   ```sh
+   nixos-anywhere --extra-files ./keys --flake .#forte --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
+   ```
+
+3. **Post-Install**:
+   - Add user Age key to `~/.config/sops/age/keys.txt`.
+   - Clone the infrastructure configuration using the GitHub SSH private key: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
+   - Rebuild: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' nh os switch`.
+   - Enroll TPM auto unlock:
+
+     ```sh
+     sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-id/<nvme-…>-part2
+     ```
+
 ## Macchiato (NixOS Router)
 
 Create a minimal installer USB by downloading from [here](https://nixos.org/download/#nixos-iso)

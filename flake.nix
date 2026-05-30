@@ -253,6 +253,12 @@
       })
 
       (lib.mkSystem {
+        name = "forte";
+        system = "x86_64-linux";
+        users = ["michaelbrusegard"];
+      })
+
+      (lib.mkSystem {
         name = "ristretto-wsl";
         system = "x86_64-linux";
         users = ["michaelbrusegard"];

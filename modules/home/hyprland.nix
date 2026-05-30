@@ -20,6 +20,8 @@
         no_donation_nag = true;
       };
 
+      experimental.xx_color_management_v4 = true;
+
       general = {
         border_size = 2;
         gaps_in = 3;

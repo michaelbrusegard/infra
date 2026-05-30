@@ -8,14 +8,15 @@ with the private sibling flake `../infra-secrets` exposed as input `secrets`.
 
 ## Hosts
 
-| Host                 | Type         | Apply                           |
-| -------------------- | ------------ | ------------------------------- |
-| `lungo`              | nix-darwin   | `nh darwin switch`              |
-| `ristretto`          | NixOS        | `nh os switch`                  |
-| `ristretto-wsl`      | NixOS WSL    | `nh os switch`                  |
-| `macchiato`          | NixOS router | `colmena apply --on macchiato`  |
-| `leggero`            | NixOS RPi    | `colmena apply --on leggero`    |
-| `espresso-{0,1,2}`   | NixOS k3s    | `colmena apply --on espresso-*` |
+| Host               | Type          | Apply                           |
+| ------------------ | ------------- | ------------------------------- |
+| `lungo`            | nix-darwin    | `nh darwin switch`              |
+| `ristretto`        | NixOS desktop | `nh os switch`                  |
+| `forte`            | NixOS laptop  | `nh os switch`                  |
+| `ristretto-wsl`    | NixOS WSL     | `nh os switch`                  |
+| `macchiato`        | NixOS router  | `colmena apply --on macchiato`  |
+| `leggero`          | NixOS RPi     | `colmena apply --on leggero`    |
+| `espresso-{0,1,2}` | NixOS k3s     | `colmena apply --on espresso-*` |
 
 `programs.nh` is wired to this flake on every system, so `nh` works without
 flags. First-time bare-metal installs use `nixos-anywhere` — see `README.md`.
@@ -88,7 +89,7 @@ nix flake update secrets   # bumps just the secrets input in flake.lock
 ```
 
 Commit the resulting `flake.lock` change as `chore(flake): bump secrets`
-(or describe the *why* if it's tied to a specific feature).
+(or describe the _why_ if it's tied to a specific feature).
 
 ## Rules
 
@@ -120,13 +121,13 @@ Format:
 ```
 
 - **Subject**: imperative, lowercase, ≤72 chars, no trailing period.
-- **Body**: include one whenever the *why* isn't obvious from the subject. The
-  diff already shows the *what*.
+- **Body**: include one whenever the _why_ isn't obvious from the subject. The
+  diff already shows the _what_.
 - **Types**: `feat`, `fix`, `refactor`, `perf`, `docs`, `chore`, `ci`, `build`,
   `revert`. `chore(deps)` is reserved for Renovate.
 - **Scope**: prefer one whenever the change is local to a slice. Common scopes:
   - Platform: `darwin`, `nixos`, `home`, `common`
-  - Host/cluster: `lungo`, `ristretto`, `macchiato`, `leggero`, `espresso`
+  - Host/cluster: `lungo`, `ristretto`, `forte`, `macchiato`, `leggero`, `espresso`
   - Area: `flake`, `lib`, `gitops`, `tofu`, `cli`, `neovim`, `wezterm`, `hyprland`
 
 Good:
