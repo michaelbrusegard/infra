@@ -14,6 +14,7 @@
     inputs.self.darwinModules.security
     inputs.self.darwinModules.system
     inputs.self.darwinModules.virtualisation
+    inputs.self.darwinModules.wallpaper
   ];
 
   system.stateVersion = 5;
