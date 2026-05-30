@@ -37,7 +37,12 @@
     ];
     casks = [
       "netbird-ui"
-      "scribus"
+      # TODO: re-enable once the upstream homebrew-cask scribus definition
+      # stops declaring conflicting `depends_on macos` (on_arm/on_intel
+      # versions plus a bare `depends_on :macos`), which brew rejects with
+      # "Only a single 'depends_on macos' is allowed". The nixpkgs scribus
+      # is also marked broken on darwin, so there's no Nix fallback.
+      # "scribus"
       "proton-drive"
     ];
     masApps = {

@@ -22,7 +22,7 @@ in {
     default = [];
   };
 
-  config.programs.neovim.extraLuaConfig = lib.mkOrder 250 ''
+  config.programs.neovim.initLua = lib.mkOrder 250 ''
     ${concatStringsSep "\n" (map (
         g: ''vim.api.nvim_create_augroup("${g.name}", { clear = ${genLua g.clear} })''
       )

@@ -1,25 +1,41 @@
-{config, ...}: {
+{
+  config,
+  lib,
+  ...
+}: let
+  # Map the secrets repo's semantic match-block shape (lowercase keys, kept
+  # home-manager-version-agnostic) onto home-manager 26.05's
+  # `programs.ssh.settings`, which expects OpenSSH directive names.
+  toSettings = lib.mapAttrs (_: block:
+    lib.filterAttrs (_: v: v != null) {
+      HostName = block.hostname or null;
+      Port = block.port or null;
+      User = block.user or null;
+      IdentityFile = block.identityFile or null;
+      ProxyJump = block.proxyJump or null;
+    });
+in {
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
 
-    matchBlocks =
+    settings =
       {
         "*" = {
-          identitiesOnly = true;
-          hashKnownHosts = true;
-          addKeysToAgent = "yes";
-          serverAliveInterval = 5;
+          IdentitiesOnly = true;
+          HashKnownHosts = true;
+          AddKeysToAgent = "yes";
+          ServerAliveInterval = 5;
         };
 
         git = {
-          host = "github.com";
-          user = "git";
-          identityFile = config.secrets.ssh.gitKeyFile;
+          header = "Host github.com";
+          User = "git";
+          IdentityFile = config.secrets.ssh.gitKeyFile;
         };
       }
-      // config.secrets.ssh.hostMatchBlocks
-      // config.secrets.ssh.deployMatchBlocks
-      // config.secrets.ssh.telescopeMatchBlocks;
+      // toSettings config.secrets.ssh.hostMatchBlocks
+      // toSettings config.secrets.ssh.deployMatchBlocks
+      // toSettings config.secrets.ssh.telescopeMatchBlocks;
   };
 }

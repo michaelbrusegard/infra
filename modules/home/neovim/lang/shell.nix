@@ -6,7 +6,7 @@
     ];
 
     lsp.servers.bashls = {
-      package = pkgs.nodePackages.bash-language-server;
+      package = pkgs.bash-language-server;
     };
 
     linting.filetypes = {

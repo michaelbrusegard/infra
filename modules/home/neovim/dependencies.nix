@@ -14,5 +14,7 @@
       libxml2
     ];
     withNodeJs = true;
+    withRuby = false;
+    withPython3 = false;
   };
 }

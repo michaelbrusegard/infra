@@ -78,7 +78,7 @@ in {
     default = [];
   };
 
-  config.programs.neovim.extraLuaConfig = lib.mkOrder 450 ''
+  config.programs.neovim.initLua = lib.mkOrder 450 ''
     ${concatStringsSep "\n" (map mkKeymapLua (filter (k: k.enable) cfg.keymaps))}
   '';
 }

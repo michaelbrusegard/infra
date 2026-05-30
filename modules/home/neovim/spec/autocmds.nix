@@ -50,7 +50,7 @@ in {
       }
     ];
 
-    programs.neovim.extraLuaConfig = lib.mkOrder 300 ''
+    programs.neovim.initLua = lib.mkOrder 300 ''
       ${concatStringsSep "\n" (map (
           cmd: let
             opts = filter (s: s != "") [

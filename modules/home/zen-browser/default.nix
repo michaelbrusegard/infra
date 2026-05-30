@@ -17,6 +17,5 @@
     ./spaces.nix
     ./pins.nix
     ./shortcuts.nix
-    ./mimeapps.nix
   ];
 }

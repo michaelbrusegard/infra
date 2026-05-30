@@ -10,7 +10,6 @@ in
         inherit (prev.stdenv.hostPlatform) system;
       in {
         inherit (inputs.hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
-        inherit (inputs.nixpkgs-otbr.legacyPackages.${system}) openthread-border-router;
 
         quickshell = inputs.quickshell.packages.${system}.default;
         dms-shell = inputs.dms.packages.${system}.default;
@@ -19,6 +18,26 @@ in
         wezterm = inputs.wezterm.packages.${system}.default;
         t3code = inputs.t3code.packages.${system}.t3-code;
       }
+    )
+    # nixpkgs 26.05's firefox wrapper emits an unquoted
+    # `touch $out/Applications/<App Name>.app/.../is-packaged-app`, which
+    # breaks under bash when the app name contains shell metacharacters
+    # (e.g. zen's "Zen Browser (Beta)") on darwin. Quote the path until the
+    # stable channel picks up the upstream fix.
+    (
+      _: prev:
+        prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
+          wrapFirefox = browser: args: let
+            wrapped = prev.wrapFirefox browser args;
+          in
+            wrapped.overrideAttrs (old: {
+              buildCommand =
+                builtins.replaceStrings
+                ["\ntouch $out/" "/is-packaged-app\n"]
+                ["\ntouch \"$out/" "/is-packaged-app\"\n"]
+                old.buildCommand;
+            });
+        }
     )
     (
       _: prev: let
@@ -50,6 +69,11 @@ in
           kubectl
           kubernetes-helm
           etcd
+          # Pull the nextcloud clients from unstable: the stable 26.05
+          # nextcloud server package set (touched transitively) carries a
+          # nested-list nativeBuildInputs deprecation warning.
+          nextcloud-client
+          nextcloud-talk-desktop
           ;
         ruff-unstable = pkgs-unstable.ruff;
         eslint = pkgs-unstable.eslint.overrideAttrs (old: {

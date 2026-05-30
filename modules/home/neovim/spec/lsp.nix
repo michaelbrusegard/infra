@@ -81,7 +81,7 @@ in {
         lib.unique
       ];
 
-      extraLuaConfig = lib.mkOrder 400 ''
+      initLua = lib.mkOrder 400 ''
         do
           local capabilities = vim.lsp.protocol.make_client_capabilities()
           capabilities.workspace = {

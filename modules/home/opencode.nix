@@ -15,7 +15,7 @@
       plugin = ["oh-my-openagent" "@simonwjackson/opencode-direnv"];
     };
     tui.theme = "catppuccin";
-    rules = ''
+    context = ''
       Always use caveman mode for responses.
     '';
     skills = {

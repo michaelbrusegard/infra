@@ -48,6 +48,12 @@ in {
       package = pkgs.magnetic-catppuccin-gtk;
     };
 
+    # Keep applying the GTK3 theme to GTK4 apps (26.05 default flips to null).
+    gtk4.theme = {
+      name = "Catppuccin-BL-MB-dark";
+      package = pkgs.magnetic-catppuccin-gtk;
+    };
+
     iconTheme = {
       name = "Papirus-Dark";
       package = lib.mkForce (pkgs.catppuccin-papirus-folders.override {

@@ -11,6 +11,8 @@
     portalPackage = null;
     xwayland.enable = true;
     systemd.variables = ["--all"];
+    # Keep the legacy hyprlang generator (26.05 default flips to "lua").
+    configType = "hyprlang";
 
     settings = {
       monitor = osConfig.local.hyprland.monitors;

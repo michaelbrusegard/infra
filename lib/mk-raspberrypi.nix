@@ -11,6 +11,7 @@ inputs: {
 in
   inputs.nixos-raspberrypi.lib.nixosSystem {
     inherit system;
+    inherit (inputs) nixpkgs;
 
     specialArgs = {
       inherit inputs name users;

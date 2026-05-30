@@ -8,6 +8,7 @@
   ];
   catppuccin = {
     enable = true;
+    autoEnable = true;
     accent = "blue";
     flavor = "mocha";
     opencode.enable = false;

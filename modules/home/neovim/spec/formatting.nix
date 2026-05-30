@@ -164,7 +164,7 @@ in {
         lib.unique
       ];
 
-      extraLuaConfig = lib.mkOrder 500 ''
+      initLua = lib.mkOrder 500 ''
         vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
       '';
     };

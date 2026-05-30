@@ -258,7 +258,7 @@ in {
       ]
       ++ map (p: p.package) enabledPluginsList;
 
-    programs.neovim.extraLuaConfig = lib.mkOrder 100 ''
+    programs.neovim.initLua = lib.mkOrder 100 ''
       ${beforeAllCode}
       require('lz.n').load({
       ${allSpecsLua}

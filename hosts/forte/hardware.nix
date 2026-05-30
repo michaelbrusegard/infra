@@ -63,10 +63,7 @@
 
   services = {
     xserver.videoDrivers = ["nvidia"];
-    asusd = {
-      enable = true;
-      enableUserService = true;
-    };
+    asusd.enable = true;
 
     power-profiles-daemon.enable = true;
     fwupd.enable = true;
@@ -80,8 +77,4 @@
     enable = true;
     memoryPercent = 25;
   };
-
-  # `lspci` for the one-time PRIME bus-ID step. Diagnostic tools come
-  # from other modules / nix-shell when needed.
-  environment.systemPackages = [pkgs.pciutils];
 }

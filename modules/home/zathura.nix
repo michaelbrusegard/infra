@@ -1,16 +1,19 @@
 {
   lib,
+  pkgs,
   isWsl,
   ...
-}: {
-  programs.zathura = lib.mkIf (!isWsl) {
+}: let
+  enable = pkgs.stdenv.isLinux && !isWsl;
+in {
+  programs.zathura = lib.mkIf enable {
     enable = true;
     options = {
       selection-clipboard = "clipboard";
     };
   };
 
-  xdg.mimeApps.defaultApplications = lib.mkIf (!isWsl) {
+  xdg.mimeApps.defaultApplications = lib.mkIf enable {
     "application/pdf" = ["org.pwmt.zathura.desktop"];
   };
 }

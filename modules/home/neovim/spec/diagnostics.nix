@@ -12,7 +12,7 @@ in {
   };
 
   config = mkIf (cfg != {}) {
-    programs.neovim.extraLuaConfig = mkOrder 350 ''
+    programs.neovim.initLua = mkOrder 350 ''
       vim.diagnostic.config(${generators.toLua {} cfg})
     '';
   };

@@ -1,8 +1,4 @@
-{
-  inputs,
-  pkgs,
-  ...
-}: {
+{inputs, ...}: {
   imports = [
     inputs.self.homeManagerModules.catppuccin
     inputs.self.homeManagerModules.cli-core
@@ -34,15 +30,4 @@
   ];
 
   home.stateVersion = "25.11";
-
-  # HACK: workaround for sops-nix file missing.
-  # see https://github.com/Mic92/sops-nix/issues/890
-  launchd.agents.sops-nix = pkgs.lib.mkIf pkgs.stdenv.isDarwin {
-    enable = true;
-    config = {
-      EnvironmentVariables = {
-        PATH = pkgs.lib.mkForce "/usr/bin:/bin:/usr/sbin:/sbin";
-      };
-    };
-  };
 }

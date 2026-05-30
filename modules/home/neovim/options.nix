@@ -107,7 +107,7 @@
         markdown = "markdown.mdx";
       };
     };
-    extraLuaConfig = lib.mkOrder 100 ''
+    initLua = lib.mkOrder 100 ''
       if vim.env.SSH_CONNECTION then
         vim.opt.clipboard = ""
       else

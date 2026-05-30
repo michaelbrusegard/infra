@@ -48,7 +48,7 @@ in {
     };
   };
 
-  config.programs.neovim.extraLuaConfig = lib.mkMerge [
+  config.programs.neovim.initLua = lib.mkMerge [
     (lib.mkOrder 50 ''
       ${optionalString (ftAdd != "") ftAdd}
       ${concatStringsSep "\n" (mapAttrsToList (k: v: "vim.g.${k} = ${genLua v}") cfg.globals)}

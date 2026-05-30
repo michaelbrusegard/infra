@@ -9,6 +9,12 @@
   ];
 
   hardware.bluetooth.enable = true;
+
+  # The nixos-raspberrypi sd-image module pulls zfs into
+  # boot.supportedFilesystems, but the vendor RPi kernel's zfs build does
+  # not match the 26.05 zfs userspace. leggero runs on ext4, so drop zfs.
+  boot.supportedFilesystems.zfs = lib.mkForce false;
+
   services.openthread-border-router.radio = {
     device = "/dev/serial/by-id/usb-dresden_elektronik_Thread_RCP__ConBee_II__DE2688235-if00";
     flowControl = true;
