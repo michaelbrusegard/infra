@@ -1,6 +1,8 @@
 {
   inputs,
   pkgs,
+  lib,
+  homePersistenceRoot ? null,
   ...
 }: {
   disabledModules = ["${inputs.home-manager}/modules/programs/opencode.nix"];
@@ -29,7 +31,17 @@
       include_co_authored_by = false;
     };
   };
-  home.packages = with pkgs; [
-    opencode-desktop
-  ];
+  home =
+    {
+      packages = with pkgs; [
+        opencode-desktop
+      ];
+    }
+    // lib.optionalAttrs (homePersistenceRoot != null) {
+      persistence.${homePersistenceRoot}.directories = [
+        ".config/opencode"
+        ".local/share/opencode"
+        ".omo"
+      ];
+    };
 }

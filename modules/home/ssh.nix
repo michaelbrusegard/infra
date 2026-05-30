@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  homePersistenceRoot ? null,
   ...
 }: let
   # Map the secrets repo's semantic match-block shape (lowercase keys, kept
@@ -15,6 +16,12 @@
       ProxyJump = block.proxyJump or null;
     });
 in {
+  home = lib.optionalAttrs (homePersistenceRoot != null) {
+    persistence.${homePersistenceRoot}.files = [
+      ".ssh/known_hosts"
+    ];
+  };
+
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;

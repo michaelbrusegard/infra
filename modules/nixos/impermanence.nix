@@ -13,21 +13,15 @@
     "/var/log"
   ];
 
+  # App-owned user state is colocated in the owning home-manager modules
+  # (via the homePersistenceRoot guard). Only identity material and the
+  # generic XDG user directories stay centralized here.
   userPersistence = {
     admin.files = [
       ".config/sops/age/keys.txt"
-      ".config/zsh/.zsh_history"
     ];
     michaelbrusegard = {
       directories = [
-        ".cache/antidote"
-        ".cache/direnv"
-        ".config/opencode"
-        ".local/share/direnv"
-        ".local/share/opencode"
-        ".local/share/zoxide"
-        ".local/state/pnpm"
-        ".omo"
         "Desktop"
         "Documents"
         "Downloads"
@@ -40,8 +34,6 @@
       ];
       files = [
         ".config/sops/age/keys.txt"
-        ".config/zsh/.zsh_history"
-        ".ssh/known_hosts"
       ];
     };
   };

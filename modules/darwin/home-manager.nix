@@ -14,8 +14,11 @@
     backupFileExtension = "backup";
   };
 
+  # darwin never uses impermanence; the persistence root stays null so
+  # the home modules that colocate persistence become no-ops here.
   home-manager.extraSpecialArgs = {
     inherit inputs isWsl;
+    homePersistenceRoot = null;
   };
 
   home-manager.users = builtins.listToAttrs (

@@ -1,5 +1,6 @@
 {
   inputs,
+  options,
   users,
   isWsl,
   ...
@@ -14,8 +15,16 @@
     backupFileExtension = "backup";
   };
 
+  # Home-manager modules colocate their own impermanence persistence by
+  # guarding on this root. It is the storage prefix the impermanence
+  # home-manager integration expects, or null where impermanence isn't
+  # active (WSL here, darwin in the sibling module).
   home-manager.extraSpecialArgs = {
     inherit inputs isWsl;
+    homePersistenceRoot =
+      if options.environment ? persistence
+      then "/persistent"
+      else null;
   };
 
   home-manager.users = builtins.listToAttrs (

@@ -3,6 +3,7 @@
   lib,
   config,
   inputs,
+  homePersistenceRoot ? null,
   ...
 }: {
   programs.zsh = {
@@ -59,43 +60,55 @@
     };
   };
 
-  home = {
-    shellAliases = {
-      dl = "cd $HOME/Downloads";
-      dt = "cd $HOME/Desktop";
-      dc = "cd $HOME/Documents";
-      dp = "cd $HOME/Projects";
+  home =
+    {
+      shellAliases = {
+        dl = "cd $HOME/Downloads";
+        dt = "cd $HOME/Desktop";
+        dc = "cd $HOME/Documents";
+        dp = "cd $HOME/Projects";
 
-      ".." = "cd ..";
-      "..." = "cd ../..";
-      "...." = "cd ../../..";
-      "....." = "cd ../../../..";
-      "......" = "cd ../../../../..";
-      "-" = "cd -";
+        ".." = "cd ..";
+        "..." = "cd ../..";
+        "...." = "cd ../../..";
+        "....." = "cd ../../../..";
+        "......" = "cd ../../../../..";
+        "-" = "cd -";
 
-      vim = "nvim";
-      vi = "nvim";
+        vim = "nvim";
+        vi = "nvim";
+      };
+
+      sessionVariables = {
+        SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
+      };
+
+      sessionPath =
+        [
+          "$HOME/.local/bin"
+          "$HOME/bin"
+          "$HOME/.cargo/bin"
+          "$HOME/.local/state/pnpm"
+        ]
+        ++ lib.optionals pkgs.stdenv.isDarwin [
+          "/opt/homebrew/bin"
+        ];
+
+      activation = lib.optionalAttrs pkgs.stdenv.isDarwin {
+        createScreenshotsDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
+          $DRY_RUN_CMD mkdir -p "$HOME/Pictures/screenshots"
+        '';
+      };
+    }
+    // lib.optionalAttrs (homePersistenceRoot != null) {
+      persistence.${homePersistenceRoot} = {
+        directories = [
+          ".cache/antidote"
+          ".local/state/pnpm"
+        ];
+        files = [
+          ".config/zsh/.zsh_history"
+        ];
+      };
     };
-
-    sessionVariables = {
-      SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
-    };
-
-    sessionPath =
-      [
-        "$HOME/.local/bin"
-        "$HOME/bin"
-        "$HOME/.cargo/bin"
-        "$HOME/.local/state/pnpm"
-      ]
-      ++ lib.optionals pkgs.stdenv.isDarwin [
-        "/opt/homebrew/bin"
-      ];
-
-    activation = lib.optionalAttrs pkgs.stdenv.isDarwin {
-      createScreenshotsDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        $DRY_RUN_CMD mkdir -p "$HOME/Pictures/screenshots"
-      '';
-    };
-  };
 }

@@ -1,6 +1,8 @@
 {
   pkgs,
   config,
+  lib,
+  homePersistenceRoot ? null,
   ...
 }: {
   programs = {
@@ -28,11 +30,18 @@
       };
     };
   };
-  home = {
-    file.".pgpass".source = config.lib.file.mkOutOfStoreSymlink config.secrets.home.pgpassFile;
-    packages = with pkgs; [
-      postgresql
-      vite-plus
-    ];
-  };
+  home =
+    {
+      file.".pgpass".source = config.lib.file.mkOutOfStoreSymlink config.secrets.home.pgpassFile;
+      packages = with pkgs; [
+        postgresql
+        vite-plus
+      ];
+    }
+    // lib.optionalAttrs (homePersistenceRoot != null) {
+      persistence.${homePersistenceRoot}.directories = [
+        ".cache/direnv"
+        ".local/share/direnv"
+      ];
+    };
 }

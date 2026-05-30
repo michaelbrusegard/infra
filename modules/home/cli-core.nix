@@ -1,4 +1,9 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  homePersistenceRoot ? null,
+  ...
+}: {
   programs = {
     fd = {
       enable = true;
@@ -55,47 +60,53 @@
     btop.enable = true;
   };
 
-  home = {
-    packages = with pkgs; [
-      # Network/transfer
-      curl
-      wget
-      rsync
-      rclone
+  home =
+    {
+      packages = with pkgs; [
+        # Network/transfer
+        curl
+        wget
+        rsync
+        rclone
 
-      # Network diagnostics
-      nmap
-      netcat
-      bind
-      whois
-      mtr
+        # Network diagnostics
+        nmap
+        netcat
+        bind
+        whois
+        mtr
 
-      # Secrets
-      age
-      sops
-      ssh-to-age
+        # Secrets
+        age
+        sops
+        ssh-to-age
 
-      # Crypto
-      openssl
+        # Crypto
+        openssl
 
-      # Compression/archive
-      zstd
-      gnutar
-      unzip
+        # Compression/archive
+        zstd
+        gnutar
+        unzip
 
-      # GNU/POSIX baseline
-      uutils-coreutils
-      findutils
-      file
+        # GNU/POSIX baseline
+        uutils-coreutils
+        findutils
+        file
 
-      # Sysadmin essentials
-      yq
-      lsof
-    ];
+        # Sysadmin essentials
+        yq
+        lsof
+      ];
 
-    shellAliases = {
-      ls = "eza";
-      cat = "bat";
+      shellAliases = {
+        ls = "eza";
+        cat = "bat";
+      };
+    }
+    // lib.optionalAttrs (homePersistenceRoot != null) {
+      persistence.${homePersistenceRoot}.directories = [
+        ".local/share/zoxide"
+      ];
     };
-  };
 }
