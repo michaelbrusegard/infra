@@ -22,7 +22,7 @@
         no_donation_nag = true;
       };
 
-      experimental.xx_color_management_v4 = true;
+      experimental.wp_cm_1_2 = true;
 
       general = {
         border_size = 2;
