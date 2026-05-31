@@ -63,11 +63,73 @@
 
   services = {
     xserver.videoDrivers = ["nvidia"];
-    asusd.enable = true;
+    asusd = {
+      enable = true;
+      asusdConfig.text = ''
+        (
+            charge_control_end_threshold: 90,
+            base_charge_control_end_threshold: 90,
+            disable_nvidia_powerd_on_battery: true,
+            ac_command: "",
+            bat_command: "",
+            platform_profile_linked_epp: true,
+            platform_profile_on_battery: Quiet,
+            change_platform_profile_on_battery: true,
+            platform_profile_on_ac: Performance,
+            change_platform_profile_on_ac: true,
+            profile_quiet_epp: Power,
+            profile_balanced_epp: BalancePower,
+            profile_custom_epp: Performance,
+            profile_performance_epp: Performance,
+            ac_profile_tunings: {},
+            dc_profile_tunings: {},
+            armoury_settings: {},
+        )
+      '';
+      auraConfigs."19b6".text = ''
+        (
+            config_name: "aura_19b6.ron",
+            brightness: Low,
+            current_mode: Static,
+            builtins: {
+                Static: (
+                    mode: Static,
+                    zone: r#None,
+                    colour1: (
+                        r: 255,
+                        g: 255,
+                        b: 255,
+                    ),
+                    colour2: (
+                        r: 0,
+                        g: 0,
+                        b: 0,
+                    ),
+                    speed: Med,
+                    direction: Right,
+                ),
+            },
+            multizone_on: false,
+            enabled: (
+                states: [
+                    (
+                        zone: Keyboard,
+                        boot: true,
+                        awake: true,
+                        sleep: true,
+                        shutdown: true,
+                    ),
+                ],
+            ),
+        )
+      '';
+    };
 
     power-profiles-daemon.enable = true;
+    upower.enable = true;
     fwupd.enable = true;
   };
+
   local.hyprland.monitors = [
     "eDP-1,3840x2400@120,0x0,2,cm,wide,bitdepth,10"
     ",preferred,auto,1"
