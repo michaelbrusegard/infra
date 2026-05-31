@@ -3,8 +3,7 @@ _: {
     disk = {
       disk1 = {
         type = "disk";
-        # TODO: replace with the real /dev/disk/by-id path during nixos-anywhere bootstrap.
-        device = "/dev/disk/by-id/nvme-FORTE_PRIMARY_PLACEHOLDER";
+        device = "/dev/disk/by-id/nvme-MTFDKBA2T0QGN-1BN1AABGA_25194FF55405";
         content = {
           type = "gpt";
           partitions = {

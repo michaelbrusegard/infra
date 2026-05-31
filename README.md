@@ -289,7 +289,6 @@ You can run `ip a` to find the IP address.
 1. **Prepare Local Files**:
    - Create LUKS passphrase file: `./secret.key`.
    - Get host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
-   - Edit `hosts/forte/disko.nix` and replace `nvme-FORTE_PRIMARY_PLACEHOLDER` with the actual `/dev/disk/by-id/` path (`ls -l /dev/disk/by-id/` from the installer).
 
 2. **Run Install**:
 
@@ -304,7 +303,7 @@ You can run `ip a` to find the IP address.
    - Enroll TPM auto unlock:
 
      ```sh
-     sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-id/<nvme-…>-part2
+      sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-id/nvme-MTFDKBA2T0QGN-1BN1AABGA_25194FF55405-part2
      ```
 
 ## Macchiato (NixOS Router)
