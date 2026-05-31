@@ -15,9 +15,14 @@ _: {
   };
 
   # systemd pings /dev/watchdog0; the chipset timer resets the box if PID 1
-  # (or the whole kernel) stops responding.
+  # (or the whole kernel) stops responding. Keep this generous: under a
+  # Mayastor replica rebuild + etcd catch-up after a reboot, the disk can
+  # legitimately stall PID 1 for well over 15s, which turned the watchdog into
+  # a reboot loop (rebuild -> IO stall -> hard reset -> rebuild ...). The
+  # kernel panic sysctls above still cover genuine D-state/RCU wedges; this
+  # timer only needs to catch a fully dead PID 1.
   systemd.settings.Manager = {
-    RuntimeWatchdogSec = "15s";
+    RuntimeWatchdogSec = "2min";
     RebootWatchdogSec = "5min";
   };
 }
