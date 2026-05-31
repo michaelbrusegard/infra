@@ -17,7 +17,7 @@
     loader.efi.canTouchEfiVariables = true;
     lanzaboote = {
       enable = true;
-      configurationLimit = 10;
+      configurationLimit = 3;
       autoGenerateKeys.enable = true;
       autoEnrollKeys = {
         enable = true;

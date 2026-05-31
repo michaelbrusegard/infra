@@ -3,7 +3,6 @@ _: {
     ../common/nix.nix
   ];
   nix = {
-    gc.dates = "weekly";
     daemonCPUSchedPolicy = "idle";
     daemonIOSchedClass = "idle";
     settings = {
