@@ -5,11 +5,6 @@
   homePersistenceRoot ? null,
   ...
 }: {
-  disabledModules = ["${inputs.home-manager}/modules/programs/opencode.nix"];
-  imports = [
-    "${inputs.home-manager-unstable}/modules/programs/opencode.nix"
-  ];
-
   programs.opencode = {
     enable = true;
     settings = {
