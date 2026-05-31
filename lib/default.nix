@@ -19,6 +19,19 @@ inputs: let
   mkColmenaMeta =
     import ./mk-colmena-meta.nix inputs;
 
+  mkColmena = specs: let
+    nodes = map mkNode specs;
+  in
+    merge (
+      [
+        (mkColmenaMeta {
+          nodeSpecialArgs =
+            merge (map (n: {${n.name} = n.specialArgs;}) nodes);
+        })
+      ]
+      ++ map (n: n.node) nodes
+    );
+
   mkCluster = {
     names,
     system,
@@ -44,6 +57,7 @@ in {
     mkSystem
     mkNode
     mkColmenaMeta
+    mkColmena
     mkCluster
     exportModules
     ;

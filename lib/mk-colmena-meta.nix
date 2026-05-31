@@ -1,4 +1,4 @@
-inputs: {
+inputs: {nodeSpecialArgs ? {}}: {
   meta = {
     allowApplyAll = false;
     nixpkgs = import inputs.nixpkgs {
@@ -9,5 +9,6 @@ inputs: {
     specialArgs = {
       inherit inputs;
     };
+    inherit nodeSpecialArgs;
   };
 }

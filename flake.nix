@@ -294,35 +294,34 @@
       })
     ];
 
-    colmena = lib.merge [
-      lib.mkColmenaMeta
-      (lib.mkNode {
+    colmena = lib.mkColmena [
+      {
         name = "espresso-0";
         hostConfig = "espresso";
         system = "x86_64-linux";
         buildOnTarget = true;
-      })
-      (lib.mkNode {
+      }
+      {
         name = "espresso-1";
         hostConfig = "espresso";
         system = "x86_64-linux";
         buildOnTarget = true;
-      })
-      (lib.mkNode {
+      }
+      {
         name = "espresso-2";
         hostConfig = "espresso";
         system = "x86_64-linux";
         buildOnTarget = true;
-      })
-      (lib.mkNode {
+      }
+      {
         name = "macchiato";
         system = "x86_64-linux";
         buildOnTarget = true;
-      })
-      (lib.mkNode {
+      }
+      {
         name = "leggero";
         system = "aarch64-linux";
-      })
+      }
     ];
   };
 }
