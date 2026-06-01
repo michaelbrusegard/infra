@@ -3,6 +3,7 @@
     inputs.self.nixosModules.boot
     inputs.self.nixosModules.catppuccin
     inputs.self.nixosModules.console
+    inputs.self.nixosModules.dialpad
     inputs.self.nixosModules.disko
     inputs.self.nixosModules.dms-greeter
     inputs.self.nixosModules.dms-shell
