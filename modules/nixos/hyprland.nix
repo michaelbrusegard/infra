@@ -1,6 +1,10 @@
-{lib, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   options.local.hyprland.monitors = lib.mkOption {
-    type = lib.types.listOf lib.types.str;
+    type = lib.types.listOf (lib.types.attrsOf lib.types.anything);
     default = [];
   };
 
@@ -8,6 +12,15 @@
     programs.hyprland = {
       enable = true;
       withUWSM = true;
+      package = pkgs.hyprland.overrideAttrs (old: {
+        postInstall =
+          (old.postInstall or "")
+          + ''
+            substituteInPlace $out/share/wayland-sessions/hyprland.desktop \
+              --replace-fail "[Desktop Entry]" "[Desktop Entry]
+            NoDisplay=true"
+          '';
+      });
     };
   };
 }

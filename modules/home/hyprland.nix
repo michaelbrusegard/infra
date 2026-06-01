@@ -4,173 +4,249 @@
   osConfig,
   isWsl,
   ...
-}: {
-  wayland.windowManager.hyprland = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
-    enable = true;
-    package = null;
-    portalPackage = null;
-    xwayland.enable = true;
-    systemd.variables = ["--all"];
-    # Keep the legacy hyprlang generator (26.05 default flips to "lua").
-    configType = "hyprlang";
+}: let
+  inherit (lib.generators) mkLuaInline;
 
-    settings = {
-      monitor = osConfig.local.hyprland.monitors;
+  wezterm = lib.getExe pkgs.wezterm;
+  hyprctl = lib.getExe' pkgs.hyprland "hyprctl";
+  sh = lib.getExe' pkgs.bash "sh";
+  yazi = lib.getExe pkgs.yazi;
+  jq = lib.getExe pkgs.jq;
+  pkill = lib.getExe' pkgs.uutils-coreutils "uutils-pkill";
 
-      ecosystem = {
-        no_update_news = true;
-        no_donation_nag = true;
-      };
+  exec = cmd: mkLuaInline ''hl.dsp.exec_cmd("${cmd}")'';
+  execRaw = cmd: mkLuaInline "hl.dsp.exec_cmd([[${cmd}]])";
+  movefocus = dir: mkLuaInline ''hl.dsp.focus({ direction = "${dir}" })'';
+  movewindow = dir: mkLuaInline ''hl.dsp.window.move({ direction = "${dir}" })'';
+  focusWorkspace = n: mkLuaInline "hl.dsp.focus({ workspace = ${toString n} })";
+  moveToWorkspace = n: mkLuaInline "hl.dsp.window.move({ workspace = ${toString n} })";
+  togglefloating = mkLuaInline ''hl.dsp.window.float({ action = "toggle" })'';
+  fullscreenToggle = mkLuaInline ''hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" })'';
+  resizeactive = x: y: mkLuaInline "hl.dsp.window.resize({ x = ${toString x}, y = ${toString y}, relative = true })";
+  drag = mkLuaInline "hl.dsp.window.drag()";
+  resizeMouse = mkLuaInline "hl.dsp.window.resize()";
 
-      experimental.wp_cm_1_2 = true;
-
-      general = {
-        border_size = 2;
-        gaps_in = 3;
-        gaps_out = 6;
-        resize_on_border = true;
-        no_focus_fallback = true;
-        "col.active_border" = "0xff89b4fa";
-        "col.inactive_border" = "0xff45475a";
-      };
-
-      decoration = {
-        rounding = 12;
-        blur.enabled = false;
-        shadow = {
-          range = 30;
-          render_power = 5;
-          offset = "0 5";
-          color = "0x00000070";
-        };
-      };
-
-      animations.enabled = false;
-
-      input = {
-        kb_layout = "us";
-        kb_variant = "mac";
-        kb_options = "lv3:lalt_switch";
-        repeat_rate = 65;
-        repeat_delay = 150;
-        accel_profile = "flat";
-        sensitivity = -0.2;
-        follow_mouse = 0;
-      };
-
-      group = {
-        auto_group = false;
-        groupbar = {
-          enabled = false;
-          render_titles = false;
-        };
-      };
-
-      misc = {
-        disable_hyprland_logo = true;
-        disable_splash_rendering = true;
-        disable_watchdog_warning = true;
-        font_family = "GoogleSansCode Nerd Font";
-        mouse_move_enables_dpms = true;
-        key_press_enables_dpms = true;
-        disable_autoreload = true;
-        middle_click_paste = false;
-      };
-
-      cursor.no_warps = true;
-      binds.workspace_back_and_forth = true;
-
-      bind = [
-        # Focus window
-        "mod5, h, movefocus, l"
-        "mod5, j, movefocus, d"
-        "mod5, k, movefocus, u"
-        "mod5, l, movefocus, r"
-
-        # Move window
-        "mod5 shift, h, movewindow, l"
-        "mod5 shift, j, movewindow, d"
-        "mod5 shift, k, movewindow, u"
-        "mod5 shift, l, movewindow, r"
-
-        # Workspaces
-        "mod5, 1, workspace, 1"
-        "mod5, 2, workspace, 2"
-        "mod5, 3, workspace, 3"
-        "mod5, 4, workspace, 4"
-        "mod5, 5, workspace, 5"
-        "mod5, 6, workspace, 6"
-        "mod5, 7, workspace, 7"
-        "mod5, 8, workspace, 8"
-        "mod5, 9, workspace, 9"
-
-        "mod5 shift, 1, movetoworkspace, 1"
-        "mod5 shift, 2, movetoworkspace, 2"
-        "mod5 shift, 3, movetoworkspace, 3"
-        "mod5 shift, 4, movetoworkspace, 4"
-        "mod5 shift, 5, movetoworkspace, 5"
-        "mod5 shift, 6, movetoworkspace, 6"
-        "mod5 shift, 7, movetoworkspace, 7"
-        "mod5 shift, 8, movetoworkspace, 8"
-        "mod5 shift, 9, movetoworkspace, 9"
-
-        "mod5, 0, togglefloating,"
-
-        # System
-        "mod5, return, exec, ${lib.getExe pkgs.wezterm} start --always-new-process"
-        "mod5 shift, return, exec, ${lib.getExe pkgs.wezterm} start --always-new-process -e ${lib.getExe' pkgs.bash "sh"} -c '${lib.getExe pkgs.yazi}'"
-        "super, space, exec, dms ipc call spotlight toggle"
-        "super shift, v, exec, dms ipc call clipboard toggle"
-        "super, q, exec, ${lib.getExe' pkgs.hyprland "hyprctl"} dispatch killactive"
-        "super shift, q, exec, ${lib.getExe' pkgs.hyprland "hyprctl"} dispatch killactive; WID=$(${lib.getExe pkgs.jq} -r .class <<< $(${lib.getExe' pkgs.hyprland "hyprctl"} activewindow -j)); ${lib.getExe' pkgs.uutils-coreutils "uutils-pkill"} -KILL -f \"$WID\""
-        "super ctrl, q, exec, dms ipc call lock lock"
-        "super ctrl, f, fullscreen, 0"
-        "super shift, 3, exec, dms screenshot full -d ~/Pictures/screenshots"
-        "super shift, 4, exec, dms screenshot -d ~/Pictures/screenshots"
-      ];
-
-      binde = [
-        "mod5, left, resizeactive, -20 0"
-        "mod5, down, resizeactive, 0 20"
-        "mod5, up, resizeactive, 0 -20"
-        "mod5, right, resizeactive, 20 0"
-      ];
-
-      bindel = [
-        ", XF86AudioRaiseVolume, exec, dms ipc call audio increment 3"
-        ", XF86AudioLowerVolume, exec, dms ipc call audio decrement 3"
-        ", XF86MonBrightnessUp, exec, dms ipc call brightness increment 5"
-        ", XF86MonBrightnessDown, exec, dms ipc call brightness decrement 5"
-      ];
-
-      bindm = [
-        "mod5, mouse:272, movewindow"
-        "mod5, mouse:273, resizewindow"
-      ];
-
-      bindl = [
-        ", XF86AudioMute, exec, dms ipc call audio mute"
-      ];
-
-      windowrule = [
-        "match:class ^(zen-beta)$, workspace 2"
-        "match:class ^(Proton Mail)$, workspace 3"
-        "match:class ^(Proton Pass)$, workspace 3"
-
-        "match:class ^(libreoffice)$, workspace 4"
-        "match:class ^(Notion)$, workspace 4"
-        "match:class ^(legcord)$, workspace 5"
-        "match:class ^(Element)$, workspace 5"
-        "match:class ^(Slack)$, workspace 5"
-        "match:class ^(Signal)$, workspace 5"
-        "match:class ^(zenity)$, workspace 6"
-        "match:class ^(OrcaSlicer)$, workspace 6"
-        "match:class ^(resolve)$, workspace 6"
-        "match:class ^(Gimp)$, workspace 6"
-        "match:class ^(org.inkscape.Inkscape)$, workspace 6"
-        "match:class ^(scribus)$, workspace 6"
-        "match:class ^(org.freecad.FreeCAD)$, workspace 6"
-      ];
-    };
+  bind = key: dsp: {_args = [key dsp];};
+  bindFlags = flags: key: dsp: {_args = [key dsp flags];};
+  bindRepeat = bindFlags {repeating = true;};
+  bindLocked = bindFlags {locked = true;};
+  bindLockedRepeat = bindFlags {
+    locked = true;
+    repeating = true;
   };
-}
+  bindMouse = bindFlags {mouse = true;};
+
+  workspaces = lib.range 1 9;
+
+  workspaceRules = [
+    {
+      class = "^(zen-beta)$";
+      workspace = 2;
+    }
+    {
+      class = "^(Proton Mail)$";
+      workspace = 3;
+    }
+    {
+      class = "^(Proton Pass)$";
+      workspace = 3;
+    }
+    {
+      class = "^(libreoffice)$";
+      workspace = 4;
+    }
+    {
+      class = "^(Notion)$";
+      workspace = 4;
+    }
+    {
+      class = "^(legcord)$";
+      workspace = 5;
+    }
+    {
+      class = "^(Element)$";
+      workspace = 5;
+    }
+    {
+      class = "^(Slack)$";
+      workspace = 5;
+    }
+    {
+      class = "^(Signal)$";
+      workspace = 5;
+    }
+    {
+      class = "^(zenity)$";
+      workspace = 6;
+    }
+    {
+      class = "^(OrcaSlicer)$";
+      workspace = 6;
+    }
+    {
+      class = "^(resolve)$";
+      workspace = 6;
+    }
+    {
+      class = "^(Gimp)$";
+      workspace = 6;
+    }
+    {
+      class = "^(org.inkscape.Inkscape)$";
+      workspace = 6;
+    }
+    {
+      class = "^(scribus)$";
+      workspace = 6;
+    }
+    {
+      class = "^(org.freecad.FreeCAD)$";
+      workspace = 6;
+    }
+  ];
+in
+  lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+    wayland.windowManager.hyprland = {
+      enable = true;
+      package = null;
+      portalPackage = null;
+      xwayland.enable = true;
+      systemd.variables = ["--all"];
+      configType = "lua";
+
+      settings = {
+        monitor = osConfig.local.hyprland.monitors;
+
+        config = {
+          ecosystem = {
+            no_update_news = true;
+            no_donation_nag = true;
+          };
+
+          general = {
+            border_size = 2;
+            gaps_in = 3;
+            gaps_out = 6;
+            resize_on_border = true;
+            no_focus_fallback = true;
+            "col.active_border" = "0xff89b4fa";
+            "col.inactive_border" = "0xff45475a";
+          };
+
+          decoration = {
+            rounding = 12;
+            blur.enabled = false;
+            shadow = {
+              range = 30;
+              render_power = 5;
+              offset = "0 5";
+              color = "0x00000070";
+            };
+          };
+
+          animations.enabled = false;
+
+          input = {
+            kb_variant = "mac";
+            kb_options = "lv3:lalt_switch";
+            repeat_rate = 65;
+            repeat_delay = 150;
+            accel_profile = "flat";
+            sensitivity = -0.2;
+            follow_mouse = 0;
+
+            touchpad = {
+              natural_scroll = true;
+              scroll_factor = 0.3;
+              disable_while_typing = true;
+            };
+          };
+
+          group = {
+            auto_group = false;
+            groupbar = {
+              enabled = false;
+              render_titles = false;
+            };
+          };
+
+          misc = {
+            disable_hyprland_logo = true;
+            disable_splash_rendering = true;
+            disable_watchdog_warning = true;
+            font_family = "GoogleSansCode Nerd Font";
+            mouse_move_enables_dpms = true;
+            key_press_enables_dpms = true;
+            disable_autoreload = true;
+            middle_click_paste = false;
+          };
+
+          cursor.no_warps = true;
+          binds.workspace_back_and_forth = true;
+        };
+
+        bind =
+          [
+            # Focus window
+            (bind "MOD5 + H" (movefocus "left"))
+            (bind "MOD5 + J" (movefocus "down"))
+            (bind "MOD5 + K" (movefocus "up"))
+            (bind "MOD5 + L" (movefocus "right"))
+
+            # Move window
+            (bind "MOD5 + SHIFT + H" (movewindow "left"))
+            (bind "MOD5 + SHIFT + J" (movewindow "down"))
+            (bind "MOD5 + SHIFT + K" (movewindow "up"))
+            (bind "MOD5 + SHIFT + L" (movewindow "right"))
+          ]
+          ++ map (n: bind "MOD5 + ${toString n}" (focusWorkspace n)) workspaces
+          ++ map (n: bind "MOD5 + SHIFT + ${toString n}" (moveToWorkspace n)) workspaces
+          ++ [
+            (bind "MOD5 + 0" togglefloating)
+
+            # System
+            (bind "MOD5 + RETURN" (exec "${wezterm} start --always-new-process"))
+            (bind "MOD5 + SHIFT + RETURN"
+              (execRaw "${wezterm} start --always-new-process -e ${sh} -c '${yazi}'"))
+            (bind "SUPER + SPACE" (exec "dms ipc call spotlight toggle"))
+            (bind "SUPER + SHIFT + V" (exec "dms ipc call clipboard toggle"))
+            (bind "SUPER + Q" (exec "${hyprctl} dispatch killactive"))
+            (bind "SUPER + SHIFT + Q"
+              (execRaw ''${hyprctl} dispatch killactive; WID=$(${jq} -r .class <<< $(${hyprctl} activewindow -j)); ${pkill} -KILL -f "$WID"''))
+            (bind "SUPER + CTRL + Q" (exec "dms ipc call lock lock"))
+            (bind "SUPER + CTRL + F" fullscreenToggle)
+            (bind "SUPER + SHIFT + 3" (exec "dms screenshot full -d ~/Pictures/screenshots"))
+            (bind "SUPER + SHIFT + 4" (exec "dms screenshot -d ~/Pictures/screenshots"))
+
+            # Resize
+            (bindRepeat "MOD5 + left" (resizeactive (-20) 0))
+            (bindRepeat "MOD5 + down" (resizeactive 0 20))
+            (bindRepeat "MOD5 + up" (resizeactive 0 (-20)))
+            (bindRepeat "MOD5 + right" (resizeactive 20 0))
+
+            # Audio/brightness
+            (bindLockedRepeat "XF86AudioRaiseVolume" (exec "dms ipc call audio increment 3"))
+            (bindLockedRepeat "XF86AudioLowerVolume" (exec "dms ipc call audio decrement 3"))
+            (bindLockedRepeat "XF86MonBrightnessUp" (execRaw ''dms ipc call brightness increment 5 ""''))
+            (bindLockedRepeat "XF86MonBrightnessDown" (execRaw ''dms ipc call brightness decrement 5 ""''))
+            (bindLocked "XF86AudioMute" (exec "dms ipc call audio mute"))
+            (bindLocked "XF86AudioMicMute" (exec "dms ipc call audio micmute"))
+            (bindLocked "XF86AudioPlay" (exec "dms ipc call mpris playPause"))
+            (bindLocked "XF86AudioPause" (exec "dms ipc call mpris playPause"))
+            (bindLocked "XF86AudioNext" (exec "dms ipc call mpris next"))
+            (bindLocked "XF86AudioPrev" (exec "dms ipc call mpris previous"))
+
+            # Mouse
+            (bindMouse "MOD5 + mouse:272" drag)
+            (bindMouse "MOD5 + mouse:273" resizeMouse)
+          ];
+
+        window_rule =
+          map (r: {
+            match.class = r.class;
+            inherit (r) workspace;
+          })
+          workspaceRules;
+      };
+    };
+  }
