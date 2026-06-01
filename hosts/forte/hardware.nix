@@ -36,28 +36,14 @@
       nvidiaSettings = true;
       powerManagement.enable = true;
       package = config.boot.kernelPackages.nvidiaPackages.beta;
-
-      # PRIME render offload (AMD iGPU primary, dGPU on-demand via
-      # `nvidia-offload <cmd>`).
-      #
-      # Bus IDs depend on the running kernel's enumeration and aren't
-      # known until first boot. Two-step bootstrap:
-      #   1. Leave this block commented for the install; system boots
-      #      fine with the dGPU idle-ish.
-      #   2. After first login:
-      #        lspci -nn | grep -E 'VGA|3D|Display'
-      #      Convert hex bus:device.func to decimal PCI:B:D:F.
-      #      e.g. `05:00.0` → "PCI:5:0:0", `01:00.0` → "PCI:1:0:0".
-      #   3. Uncomment, set the IDs, rebuild.
-      #
-      # prime = {
-      #   offload = {
-      #     enable = true;
-      #     enableOffloadCmd = true;
-      #   };
-      #   amdgpuBusId = "PCI:?:0:0";
-      #   nvidiaBusId = "PCI:?:0:0";
-      # };
+      prime = {
+        offload = {
+          enable = true;
+          enableOffloadCmd = true;
+        };
+        amdgpuBusId = "PCI:101:0:0";
+        nvidiaBusId = "PCI:100:0:0";
+      };
     };
   };
 
