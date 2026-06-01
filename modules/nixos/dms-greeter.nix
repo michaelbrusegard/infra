@@ -5,6 +5,10 @@
 }: {
   environment.systemPackages = [pkgs.bibata-cursors];
 
+  environment.persistence."/persistent".directories = [
+    "/var/lib/dms-greeter"
+  ];
+
   services.displayManager.dms-greeter = {
     enable = true;
     configHome = "/home/${builtins.head users}";

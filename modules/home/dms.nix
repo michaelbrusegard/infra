@@ -3,24 +3,31 @@
   lib,
   config,
   isWsl,
+  homePersistenceRoot ? null,
   ...
 }: let
   dmsConfig = "${config.home.homeDirectory}/Projects/infra/config/dms";
 in {
-  home = {
-    sessionVariables = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
-      ELECTRON_OZONE_PLATFORM_HINT = "auto";
-    };
+  home =
+    {
+      sessionVariables = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+        ELECTRON_OZONE_PLATFORM_HINT = "auto";
+      };
 
-    pointerCursor = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
-      package = pkgs.bibata-cursors;
-      name = "Bibata-Modern-Classic";
-      size = 24;
-      gtk.enable = true;
-      x11.enable = true;
-      hyprcursor.enable = true;
+      pointerCursor = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+        package = pkgs.bibata-cursors;
+        name = "Bibata-Modern-Classic";
+        size = 24;
+        gtk.enable = true;
+        x11.enable = true;
+        hyprcursor.enable = true;
+      };
+    }
+    // lib.optionalAttrs (homePersistenceRoot != null) {
+      persistence.${homePersistenceRoot}.directories = [
+        ".local/state/DankMaterialShell"
+      ];
     };
-  };
 
   qt = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) ({
       enable = true;
