@@ -117,8 +117,22 @@
   };
 
   local.hyprland.monitors = [
-    "eDP-1,3840x2400@120,0x0,2,cm,wide,bitdepth,10"
-    ",preferred,auto,1"
+    {
+      output = "eDP-1";
+      mode = "3840x2400@120";
+      position = "0x0";
+      scale = 2;
+      bitdepth = 10;
+      # The factory panel ICC drives color and overrides any `cm` preset, so
+      # there is no `cm` here on purpose.
+      icc = "${../../config/color-profiles/H7606WW_1002_834C420E_CMDEF.icm}";
+    }
+    {
+      output = "";
+      mode = "preferred";
+      position = "auto";
+      scale = 1;
+    }
   ];
 
   zramSwap = {
