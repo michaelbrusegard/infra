@@ -12,3 +12,7 @@ nixos.wsl
 # secrets
 secret.key
 keys
+
+# DMS runtime state markers
+config/dms/.changelog-*
+config/dms/.firstlaunch
