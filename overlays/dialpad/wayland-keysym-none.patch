@@ -1,0 +1,27 @@
+From: infra <infra@localhost>
+Date: Mon, 1 Jun 2026 00:00:00 +0000
+Subject: [PATCH] wayland: guard load_evdev_key_for_wayland against None char
+
+On a Wayland session the keymap handler resolves modifiers via
+mod_name_to_specific_keysym_name(), which returns None for modifier
+names it does not know (e.g. LevelThree from an `lv3:*` XKB option that
+maps Left Alt to Mod5). That None is then fed straight into
+xkb.keysym_from_name(char), which calls char.encode('ascii') and raises
+AttributeError, killing the dialpad daemon on connect.
+
+Callers already treat a falsy return as "no evdev key" (e.g.
+`if not mod_as_evdev_key: continue`), and the function already returns
+None implicitly when nothing matches, so returning None early for an
+unresolvable char is consistent and non-fatal.
+--- a/dialpad.py
++++ b/dialpad.py
+@@ -1779,6 +1779,9 @@
+ def load_evdev_key_for_wayland(char, keyboard_state):
+     global gnome_current_layout_index
+ 
++    if char is None:
++        return None
++
+     keysym = xkb.keysym_from_name(char)
+ 
+     keymap = keyboard_state.get_keymap()
