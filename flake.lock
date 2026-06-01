@@ -79,6 +79,26 @@
         "type": "github"
       }
     },
+    "asus-dialpad-driver": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1779517639,
+        "narHash": "sha256-cRI7D9FJf2/pTOaGCpwx/HDGrDnQMVaMp2GRlL6/DjM=",
+        "owner": "asus-linux-drivers",
+        "repo": "asus-dialpad-driver",
+        "rev": "de210fd14025402b6621e89a0cd52e84c1cbfec2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "asus-linux-drivers",
+        "repo": "asus-dialpad-driver",
+        "type": "github"
+      }
+    },
     "brew-api": {
       "flake": false,
       "locked": {
@@ -1514,6 +1534,7 @@
     "root": {
       "inputs": {
         "affinity": "affinity",
+        "asus-dialpad-driver": "asus-dialpad-driver",
         "brew-api": "brew-api",
         "brew-nix": "brew-nix",
         "catppuccin": "catppuccin",
