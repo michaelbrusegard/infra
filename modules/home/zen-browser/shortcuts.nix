@@ -1,36 +1,7 @@
 _: {
   programs.zen-browser.profiles."default" = {
-    keyboardShortcutsVersion = 16;
+    keyboardShortcutsVersion = 19;
     keyboardShortcuts = [
-      {
-        id = "key_hideOtherAppsCmdMac";
-        key = "h";
-        modifiers = {
-          alt = true;
-          meta = true;
-        };
-      }
-      {
-        id = "key_hideThisAppCmdMac";
-        key = "h";
-        modifiers = {
-          meta = true;
-        };
-      }
-      {
-        id = "key_preferencesCmdMac";
-        key = ",";
-        modifiers = {
-          meta = true;
-        };
-      }
-      {
-        id = "key_minimizeWindow";
-        key = "m";
-        modifiers = {
-          meta = true;
-        };
-      }
       {
         id = "key_wrToggleCaptureSequenceCmd";
         key = "6";
@@ -134,14 +105,6 @@ _: {
         };
       }
       {
-        id = "key_sanitize_mac";
-        keycode = "VK_BACK";
-        modifiers = {
-          shift = true;
-          meta = true;
-        };
-      }
-      {
         id = "key_sanitize";
         keycode = "VK_DELETE";
         modifiers = {
@@ -225,13 +188,6 @@ _: {
         };
       }
       {
-        id = "key_stop_mac";
-        key = ".";
-        modifiers = {
-          meta = true;
-        };
-      }
-      {
         id = "key_stop";
         keycode = "VK_ESCAPE";
       }
@@ -274,13 +230,6 @@ _: {
         };
       }
       {
-        id = "key_findSelection";
-        key = "e";
-        modifiers = {
-          meta = true;
-        };
-      }
-      {
         id = "key_findPrevious";
         key = "g";
         modifiers = {
@@ -306,14 +255,6 @@ _: {
         id = "key_viewInfo";
         key = "i";
         modifiers = {
-          meta = true;
-        };
-      }
-      {
-        id = "key_viewSourceSafari";
-        key = "u";
-        modifiers = {
-          alt = true;
           meta = true;
         };
       }
@@ -364,34 +305,10 @@ _: {
         };
       }
       {
-        id = "key_exitFullScreen_compat";
-        keycode = "VK_F11";
-      }
-      {
-        id = "key_exitFullScreen_old";
-        key = "f";
-        modifiers = {
-          shift = true;
-          meta = true;
-        };
-      }
-      {
         id = "key_exitFullScreen";
         key = "f";
         modifiers = {
           control = true;
-          meta = true;
-        };
-      }
-      {
-        id = "key_enterFullScreen_compat";
-        keycode = "VK_F11";
-      }
-      {
-        id = "key_enterFullScreen_old";
-        key = "f";
-        modifiers = {
-          shift = true;
           meta = true;
         };
       }
@@ -784,14 +701,6 @@ _: {
       {
         id = "zen-new-unsynced-window";
         key = "n";
-        modifiers = {
-          shift = true;
-          meta = true;
-        };
-      }
-      {
-        id = "key_inspectorMac";
-        key = "L";
         modifiers = {
           shift = true;
           meta = true;
