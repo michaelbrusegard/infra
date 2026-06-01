@@ -28,7 +28,6 @@
     inputs.self.nixosModules.udisks2
     inputs.self.nixosModules.virtualisation
     inputs.self.nixosModules.xdg-portal
-    ./color-profiles.nix
     ./disko.nix
     ./hardware.nix
     ./networking.nix
