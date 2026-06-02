@@ -1,6 +1,14 @@
-{lib, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   programs.wezterm.spec.plugins."tabline" = {
     url = "https://github.com/michaelbrusegard/tabline.wez";
+    # tabline.apply_to_config() force-sets window_decorations = "RESIZE",
+    extraLuaAfter = lib.optionalString pkgs.stdenv.isLinux ''
+      config.window_decorations = "NONE"
+    '';
     setupOpts = {
       options = {
         icons_enabled = true;
