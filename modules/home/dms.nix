@@ -27,6 +27,7 @@ in {
     // lib.optionalAttrs (homePersistenceRoot != null) {
       persistence.${homePersistenceRoot}.directories = [
         ".local/state/DankMaterialShell"
+        ".cache/DankMaterialShell"
       ];
     };
 
