@@ -1,8 +1,4 @@
-{
-  lib,
-  pkgs,
-  ...
-}: {
+{lib, ...}: {
   programs.wezterm.spec.options = {
     set_environment_variables = lib.generators.mkLuaInline ''{ PATH = '/usr/local/bin:/usr/bin:/bin:' .. os.getenv('PATH') }'';
     check_for_updates = false;
@@ -31,10 +27,7 @@
       top = 0;
       bottom = 0;
     };
-    window_decorations =
-      if pkgs.stdenv.isLinux
-      then "NONE"
-      else "RESIZE";
+    window_decorations = "RESIZE";
     inactive_pane_hsb = {
       saturation = 1.0;
       brightness = 0.9;
