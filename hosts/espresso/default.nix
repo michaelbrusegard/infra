@@ -14,6 +14,7 @@
     inputs.self.nixosModules.nh
     inputs.self.nixosModules.nix
     inputs.self.nixosModules.openssh
+    inputs.self.nixosModules.rasdaemon
     inputs.self.nixosModules.security
     inputs.self.nixosModules.watchdog
     ./cluster.nix
