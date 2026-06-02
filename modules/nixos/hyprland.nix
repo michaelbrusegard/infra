@@ -19,6 +19,8 @@
             substituteInPlace $out/share/wayland-sessions/hyprland.desktop \
               --replace-fail "[Desktop Entry]" "[Desktop Entry]
             NoDisplay=true"
+            substituteInPlace $out/share/wayland-sessions/hyprland-uwsm.desktop \
+              --replace-fail "Name=Hyprland (uwsm-managed)" "Name=Hyprland"
           '';
       });
     };
