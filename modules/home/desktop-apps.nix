@@ -69,8 +69,6 @@
 // lib.optionalAttrs (homePersistenceRoot != null) {
   home.persistence.${homePersistenceRoot}.directories = [
     ".config/OrcaSlicer"
-    ".config/FreeCAD"
-    ".local/share/FreeCAD"
     ".config/GIMP"
     ".config/scribus"
     ".config/inkscape"
