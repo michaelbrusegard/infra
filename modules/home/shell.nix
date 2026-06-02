@@ -27,7 +27,7 @@
       ignoreSpace = true;
       extended = true;
       share = true;
-      path = "$ZDOTDIR/.zsh_history";
+      path = "${config.xdg.configHome}/zsh/.zsh_history";
     };
     historySubstringSearch = {
       enable = true;
