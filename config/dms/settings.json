@@ -114,12 +114,7 @@
       "width": 50
     },
     {
-      "id": "nightMode",
-      "enabled": true,
-      "width": 50
-    },
-    {
-      "id": "darkMode",
+      "id": "builtin_vpn",
       "enabled": true,
       "width": 50
     }
