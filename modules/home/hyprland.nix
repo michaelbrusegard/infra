@@ -10,6 +10,7 @@
   wezterm = lib.getExe pkgs.wezterm;
   sh = lib.getExe' pkgs.bash "sh";
   yazi = lib.getExe pkgs.yazi;
+  systemctl = lib.getExe' pkgs.systemd "systemctl";
 
   exec = cmd: mkLuaInline ''hl.dsp.exec_cmd("${cmd}")'';
   execRaw = cmd: mkLuaInline "hl.dsp.exec_cmd([[${cmd}]])";
@@ -36,6 +37,22 @@
   bindMouse = bindFlags {mouse = true;};
 
   workspaces = lib.range 1 9;
+
+  lidSwitch = osConfig.local.hyprland.lidSwitch or null;
+  lidMonitor =
+    if lidSwitch != null
+    then lib.lists.findFirst (m: m.output == lidSwitch.output) null osConfig.local.hyprland.monitors
+    else null;
+  encodeLua = v: lib.generators.toLua {} v;
+  lidBinds = lib.optionals (lidSwitch != null && lidMonitor != null) [
+    (bindLocked "switch:on:${lidSwitch.name}"
+      (mkLuaInline "function() hl.monitor(${encodeLua {
+        inherit (lidSwitch) output;
+        disabled = true;
+      }}) end"))
+    (bindLocked "switch:off:${lidSwitch.name}"
+      (mkLuaInline "function() hl.monitor(${encodeLua lidMonitor}) end"))
+  ];
 
   workspaceRules = [
     {
@@ -233,6 +250,7 @@ in
             (bind "SUPER + Q" closewindow)
             (bind "SUPER + SHIFT + Q" killwindow)
             (bind "SUPER + CTRL + Q" (exec "dms ipc call lock lock"))
+            (bind "SUPER + CTRL + S" (exec "dms ipc call lock lock && ${systemctl} suspend"))
             (bind "SUPER + CTRL + F" fullscreenToggle)
             (bind "SUPER + SHIFT + 3" (exec "dms screenshot full -d ~/Pictures/screenshots"))
             (bind "SUPER + SHIFT + 4" (exec "dms screenshot -d ~/Pictures/screenshots"))
@@ -258,7 +276,8 @@ in
             # Mouse
             (bindMouse "MOD5 + mouse:272" drag)
             (bindMouse "MOD5 + mouse:273" resizeMouse)
-          ];
+          ]
+          ++ lidBinds;
 
         window_rule =
           map (r: {

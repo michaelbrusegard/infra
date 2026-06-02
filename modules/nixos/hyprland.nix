@@ -3,9 +3,26 @@
   pkgs,
   ...
 }: {
-  options.local.hyprland.monitors = lib.mkOption {
-    type = lib.types.listOf (lib.types.attrsOf lib.types.anything);
-    default = [];
+  options.local.hyprland = {
+    monitors = lib.mkOption {
+      type = lib.types.listOf (lib.types.attrsOf lib.types.anything);
+      default = [];
+    };
+
+    lidSwitch = lib.mkOption {
+      type = lib.types.nullOr (lib.types.submodule {
+        options = {
+          name = lib.mkOption {
+            type = lib.types.str;
+            default = "Lid Switch";
+          };
+          output = lib.mkOption {
+            type = lib.types.str;
+          };
+        };
+      });
+      default = null;
+    };
   };
 
   config = {
