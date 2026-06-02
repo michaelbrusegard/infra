@@ -1,4 +1,8 @@
-{inputs, ...}: {
+{
+  inputs,
+  pkgs,
+  ...
+}: {
   imports = [
     inputs.self.nixosModules.alloy
     inputs.self.nixosModules.boot
@@ -32,6 +36,18 @@
     enabledCollectors = ["systemd"];
   };
 
+  # Receive netconsole UDP from the espresso nodes and tail it into Loki.
+  systemd.services.netconsole-collector = {
+    wantedBy = ["multi-user.target"];
+    after = ["network.target"];
+    serviceConfig = {
+      ExecStart = "${pkgs.socat}/bin/socat -u UDP-RECVFROM:6666,fork,reuseaddr OPEN:/var/log/netconsole.log,creat,append";
+      Restart = "on-failure";
+      RestartSec = 5;
+      DynamicUser = false;
+    };
+  };
+
   environment.etc."alloy/config.alloy".text = ''
     loki.source.journal "macchiato" {
       forward_to = [loki.process.journal.receiver]
@@ -39,6 +55,11 @@
         host = "macchiato",
         job  = "systemd-journal",
       }
+    }
+
+    loki.source.file "netconsole" {
+      targets    = [{ __path__ = "/var/log/netconsole.log" }]
+      forward_to = [loki.write.default.receiver]
     }
 
     loki.process "journal" {
