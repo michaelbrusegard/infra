@@ -34,9 +34,6 @@
         less = "moor";
         more = "moor";
         lsql = "lazysql -config $HOME/.config/lazysql/config.toml";
-      }
-      // lib.optionalAttrs pkgs.stdenv.isDarwin {
-        groundctl = "cd $HOME/Projects/Telescope/tooling/groundctl && uv run groundctl";
       };
 
     sessionVariables =
