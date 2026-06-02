@@ -422,10 +422,6 @@
       "showOnLastDisplay": true,
       "leftWidgets": [
         {
-          "id": "controlCenterButton",
-          "enabled": true
-        },
-        {
           "id": "launcherButton",
           "enabled": true
         },
@@ -434,38 +430,32 @@
           "enabled": true
         },
         {
-          "id": "runningApps",
+          "id": "focusedWindow",
           "enabled": true
         }
       ],
-      "centerWidgets": [],
-      "rightWidgets": [
+      "centerWidgets": [
         {
           "id": "music",
           "enabled": true
         },
         {
-          "id": "systemTray",
-          "enabled": true
-        },
-        {
-          "id": "memUsage",
-          "enabled": true
-        },
-        {
-          "id": "cpuUsage",
-          "enabled": true
-        },
-        {
-          "id": "network_speed_monitor",
-          "enabled": true
+          "id": "clock",
+          "enabled": true,
+          "clockCompactMode": false
         },
         {
           "id": "weather",
           "enabled": true
+        }
+      ],
+      "rightWidgets": [
+        {
+          "id": "systemTray",
+          "enabled": true
         },
         {
-          "id": "clock",
+          "id": "clipboard",
           "enabled": true
         },
         {
@@ -474,6 +464,10 @@
         },
         {
           "id": "battery",
+          "enabled": true
+        },
+        {
+          "id": "controlCenterButton",
           "enabled": true
         }
       ],
