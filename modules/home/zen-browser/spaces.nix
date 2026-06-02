@@ -55,33 +55,6 @@ _: {
           texture = 0.3;
         };
       };
-      "Manafish" = {
-        id = "49f72204-7a80-4b4b-9c5c-99dfc81e0050";
-        icon = "";
-        position = 2;
-        container = 2;
-        theme = {
-          type = "gradient";
-          colors = [
-            {
-              red = 250;
-              green = 179;
-              blue = 135;
-              algorithm = "floating";
-              type = "explicit-lightness";
-            }
-            {
-              red = 203;
-              green = 166;
-              blue = 247;
-              algorithm = "floating";
-              type = "explicit-lightness";
-            }
-          ];
-          opacity = 0.7;
-          texture = 0.3;
-        };
-      };
     };
   };
 }

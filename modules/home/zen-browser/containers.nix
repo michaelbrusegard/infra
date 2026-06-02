@@ -7,11 +7,6 @@ _: {
         icon = "briefcase";
         id = 1;
       };
-      Manafish = {
-        color = "blue";
-        icon = "dollar";
-        id = 2;
-      };
     };
   };
 }
