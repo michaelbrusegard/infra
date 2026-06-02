@@ -105,6 +105,8 @@
         directories = [
           ".cache/antidote"
           ".local/state/pnpm"
+          ".cache/gitstatus"
+          ".cache/p10k-${config.home.username}"
         ];
         files = [
           ".config/zsh/.zsh_history"
