@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  inputs,
   isWsl,
   ...
 }: {
@@ -25,7 +24,6 @@
       scribus
       gimp-with-plugins
       blender
-      inputs.affinity.packages.x86_64-linux.v3
       davinci-resolve
       orca-slicer
       bambu-studio
@@ -50,7 +48,6 @@
       libreoffice-bin
       brewCasks.gimp
       brewCasks.blender
-      brewCasks.affinity
       brewCasks.orcaslicer
       brewCasks.bambu-studio
       brewCasks.betaflight-configurator

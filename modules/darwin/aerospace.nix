@@ -42,7 +42,7 @@ _: {
             run = "move-node-to-workspace 5";
           }
           {
-            "if".app-name-regex-substring = "^(Affinity|Inkscape|Gimp|Scribus|DaVinci Resolve|FreeCAD|OrcaSlicer)$";
+            "if".app-name-regex-substring = "^(Inkscape|Gimp|Scribus|DaVinci Resolve|FreeCAD|OrcaSlicer)$";
             run = "move-node-to-workspace 6";
           }
           {

@@ -122,10 +122,6 @@
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    affinity = {
-      url = "github:mrshmllow/affinity-nix";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
     claude-code-skills = {
       url = "github:anthropics/claude-code";
       flake = false;
