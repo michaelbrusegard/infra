@@ -43,19 +43,19 @@
       workspace = 2;
     }
     {
-      class = "^(Proton Mail)$";
+      class = "^(proton-mail)$";
       workspace = 3;
     }
     {
-      class = "^(Proton Pass)$";
+      class = "^(proton-pass)$";
       workspace = 3;
     }
     {
-      class = "^(libreoffice)$";
+      class = "^(libreoffice-.*)$";
       workspace = 4;
     }
     {
-      class = "^(legcord)$";
+      class = "^([Ll]egcord)$";
       workspace = 5;
     }
     {
@@ -67,7 +67,7 @@
       workspace = 5;
     }
     {
-      class = "^(Signal)$";
+      class = "^(signal)$";
       workspace = 5;
     }
     {
@@ -75,7 +75,7 @@
       workspace = 6;
     }
     {
-      class = "^(OrcaSlicer)$";
+      class = "^([Oo]rca-?[Ss]licer)$";
       workspace = 6;
     }
     {
@@ -83,7 +83,7 @@
       workspace = 6;
     }
     {
-      class = "^(Gimp)$";
+      class = "^(gimp)$";
       workspace = 6;
     }
     {
