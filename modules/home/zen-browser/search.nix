@@ -7,7 +7,7 @@ in {
     privateDefault = "ddg";
     order = [
       "ddg"
-      "T3 Chat"
+      "ChatGPT"
       "Nix Packages"
       "Nix Options"
       "Home Manager"
@@ -35,10 +35,10 @@ in {
         icon = "https://duckduckgo.com/favicon.ico";
         definedAliases = ["@dd" "@ddg" "@duck"];
       };
-      "T3 Chat" = {
+      "ChatGPT" = {
         urls = [
           {
-            template = "https://www.t3.chat/new";
+            template = "https://chatgpt.com/";
             params = [
               {
                 name = "q";
@@ -47,8 +47,8 @@ in {
             ];
           }
         ];
-        icon = "https://t3.chat/favicon.ico";
-        definedAliases = ["@t3" "@t3chat"];
+        icon = "https://chatgpt.com/favicon.ico";
+        definedAliases = ["@gpt" "@chatgpt" "@ai"];
       };
       "Nix Packages" = {
         urls = [
@@ -71,7 +71,7 @@ in {
           }
         ];
         icon = nixSnowflakeIcon;
-        definedAliases = ["@pkgs"];
+        definedAliases = ["@np" "@pkgs" "@nixpkgs"];
       };
       "Nix Options" = {
         urls = [
@@ -90,7 +90,7 @@ in {
           }
         ];
         icon = nixSnowflakeIcon;
-        definedAliases = ["@nop"];
+        definedAliases = ["@no" "@nop" "@nixopt"];
       };
       "Home Manager" = {
         urls = [
@@ -109,22 +109,7 @@ in {
           }
         ];
         icon = nixSnowflakeIcon;
-        definedAliases = ["@hmop"];
-      };
-      "Maps" = {
-        urls = [
-          {
-            template = "http://maps.apple.com";
-            params = [
-              {
-                name = "q";
-                value = "{searchTerms}";
-              }
-            ];
-          }
-        ];
-        icon = "https://maps.apple.com/favicon.ico";
-        definedAliases = ["@maps"];
+        definedAliases = ["@hm" "@hmop" "@hmgr"];
       };
       "MakerWorld" = {
         urls = [

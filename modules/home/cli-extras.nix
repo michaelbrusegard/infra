@@ -29,12 +29,11 @@
         iproute2mac
       ];
 
-    shellAliases =
-      {
-        less = "moor";
-        more = "moor";
-        lsql = "lazysql -config $HOME/.config/lazysql/config.toml";
-      };
+    shellAliases = {
+      less = "moor";
+      more = "moor";
+      lsql = "lazysql -config $HOME/.config/lazysql/config.toml";
+    };
 
     sessionVariables =
       {
