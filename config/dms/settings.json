@@ -189,7 +189,7 @@
   "dankLauncherV2BorderColor": "primary",
   "dankLauncherV2ShowFooter": true,
   "dankLauncherV2UnloadOnClose": false,
-  "useAutoLocation": false,
+  "useAutoLocation": true,
   "weatherEnabled": true,
   "networkPreference": "ethernet",
   "iconTheme": "System Default",
