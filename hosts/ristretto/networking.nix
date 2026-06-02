@@ -11,7 +11,7 @@
   services.netbird = {
     useRoutingFeatures = "client";
     clients.default = {
-      autoStart = false;
+      autoStart = true;
       port = 51820;
     };
   };

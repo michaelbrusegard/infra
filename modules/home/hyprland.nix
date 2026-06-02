@@ -101,6 +101,33 @@
   ];
 in
   lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+    # Upstream netbird.desktop ships `Exec=netbird-ui`, but the NixOS module
+    # only renames Name/Icon, leaving Exec pointing at a binary that isn't on
+    # PATH. The per-client wrapper `netbird-ui-default` carries the
+    # `--daemon-addr` the launcher needs, so override the entry to call it.
+    xdg.desktopEntries."netbird-default" = {
+      name = "NetBird @ netbird-default";
+      exec = "netbird-ui-default";
+      icon = "netbird";
+      terminal = false;
+      type = "Application";
+      categories = ["Utility"];
+    };
+
+    systemd.user.services.netbird-ui = {
+      Unit = {
+        Description = "NetBird tray UI";
+        PartOf = ["graphical-session.target"];
+        After = ["graphical-session.target"];
+      };
+      Service = {
+        ExecStart = "/run/current-system/sw/bin/netbird-ui-default";
+        Restart = "on-failure";
+        RestartSec = 3;
+      };
+      Install.WantedBy = ["graphical-session.target"];
+    };
+
     wayland.windowManager.hyprland = {
       enable = true;
       package = null;
