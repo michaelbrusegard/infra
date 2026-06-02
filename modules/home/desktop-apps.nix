@@ -2,8 +2,10 @@
   pkgs,
   lib,
   isWsl,
+  homePersistenceRoot ? null,
   ...
-}: {
+}:
+{
   home.packages = lib.mkIf (!isWsl) (with pkgs;
     [
       element-desktop
@@ -63,4 +65,18 @@
     "image/png" = ["imv.desktop"];
     "image/jpeg" = ["imv.desktop"];
   };
+}
+// lib.optionalAttrs (homePersistenceRoot != null) {
+  home.persistence.${homePersistenceRoot}.directories = [
+    ".config/OrcaSlicer"
+    ".config/FreeCAD"
+    ".local/share/FreeCAD"
+    ".config/GIMP"
+    ".config/scribus"
+    ".config/inkscape"
+    ".config/Signal"
+    ".config/Proton Mail"
+    ".config/Proton Pass"
+    ".config/libreoffice"
+  ];
 }

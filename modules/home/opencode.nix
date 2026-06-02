@@ -35,6 +35,7 @@
     // lib.optionalAttrs (homePersistenceRoot != null) {
       persistence.${homePersistenceRoot}.directories = [
         ".config/opencode"
+        ".config/ai.opencode.desktop"
         ".local/share/opencode"
         ".omo"
       ];

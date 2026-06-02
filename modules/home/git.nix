@@ -2,8 +2,10 @@
   pkgs,
   config,
   lib,
+  homePersistenceRoot ? null,
   ...
-}: {
+}:
+{
   programs = {
     git = {
       enable = true;
@@ -133,5 +135,10 @@
   home.packages = with pkgs; [
     git-filter-repo
     git-lfs
+  ];
+}
+// lib.optionalAttrs (homePersistenceRoot != null) {
+  home.persistence.${homePersistenceRoot}.directories = [
+    ".local/share/lazygit"
   ];
 }
