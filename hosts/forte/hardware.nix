@@ -1,4 +1,8 @@
-{config, ...}: {
+{
+  inputs,
+  config,
+  ...
+}: {
   boot = {
     initrd.availableKernelModules = [
       "nvme"
@@ -138,5 +142,10 @@
   zramSwap = {
     enable = true;
     memoryPercent = 25;
+  };
+
+  services.kanata.keyboards.internal = {
+    devices = ["/dev/input/by-path/pci-0000:67:00.0-usb-0:4:1.0-event-mouse"];
+    configFile = inputs.self + "/config/kanata/linux-internal.kbd";
   };
 }
