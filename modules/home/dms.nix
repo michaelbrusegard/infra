@@ -12,6 +12,7 @@ in {
     {
       sessionVariables = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
         ELECTRON_OZONE_PLATFORM_HINT = "auto";
+        GTK_THEME = "Catppuccin-BL-MB-dark";
       };
 
       pointerCursor = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {

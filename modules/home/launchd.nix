@@ -1,4 +1,9 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}:
+lib.mkIf pkgs.stdenv.isDarwin {
   launchd.agents = {
     ice = {
       enable = true;

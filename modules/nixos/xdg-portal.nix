@@ -1,8 +1,12 @@
-{pkgs, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   xdg.portal = {
     enable = true;
     xdgOpenUsePortal = true;
-    extraPortals = [
+    extraPortals = lib.mkForce [
       pkgs.kdePackages.xdg-desktop-portal-kde
     ];
     config.common = {

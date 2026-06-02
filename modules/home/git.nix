@@ -2,10 +2,8 @@
   pkgs,
   config,
   lib,
-  homePersistenceRoot ? null,
   ...
-}:
-{
+}: {
   programs = {
     git = {
       enable = true;
@@ -102,6 +100,7 @@
           parseEmoji = true;
         };
 
+        disableStartupPopups = true;
         quitOnTopLevelReturn = true;
         os.editPreset = "nvim-remote";
       };
@@ -135,10 +134,5 @@
   home.packages = with pkgs; [
     git-filter-repo
     git-lfs
-  ];
-}
-// lib.optionalAttrs (homePersistenceRoot != null) {
-  home.persistence.${homePersistenceRoot}.directories = [
-    ".local/share/lazygit"
   ];
 }
