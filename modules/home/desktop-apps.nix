@@ -76,5 +76,6 @@
     ".config/Proton Mail"
     ".config/Proton Pass"
     ".config/libreoffice"
+    ".config/blender"
   ];
 }
