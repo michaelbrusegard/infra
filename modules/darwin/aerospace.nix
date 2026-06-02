@@ -34,7 +34,7 @@ _: {
             run = "move-node-to-workspace 3";
           }
           {
-            "if".app-name-regex-substring = "^(Notes|LibreOffice|Notion)$";
+            "if".app-name-regex-substring = "^(Notes|LibreOffice)$";
             run = "move-node-to-workspace 4";
           }
           {

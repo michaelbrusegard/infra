@@ -29,7 +29,6 @@
       bambu-studio
       betaflight-configurator
       qgis
-      notion-app-enhanced
       wootility
       ungoogled-chromium
       nextcloud-client
@@ -52,7 +51,6 @@
       brewCasks.bambu-studio
       brewCasks.betaflight-configurator
       brewCasks.qgis
-      notion-app
       brewCasks.wootility
       utm
       brewCasks.crystalfetch

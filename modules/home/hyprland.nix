@@ -55,10 +55,6 @@
       workspace = 4;
     }
     {
-      class = "^(Notion)$";
-      workspace = 4;
-    }
-    {
       class = "^(legcord)$";
       workspace = 5;
     }
