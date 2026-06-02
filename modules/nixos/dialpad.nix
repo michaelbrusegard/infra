@@ -1,15 +1,15 @@
 {
   inputs,
   lib,
+  pkgs,
   ...
-}:
-# The path unit below gates startup on the wayland socket already existing,
-# so no ExecStartPre wait is needed in the service itself.
-let
+}: let
   # The dms-greeter runs its own Hyprland and grabs wayland-0, so the actual
   # user session lands on wayland-1.
   uid = 1000;
   waylandSocket = "/run/user/${toString uid}/wayland-1";
+  dialpadPkg = inputs.asus-dialpad-driver.packages.${pkgs.system}.default;
+  configDir = "/var/lib/asus-dialpad-driver";
 in {
   imports = [
     inputs.asus-dialpad-driver.nixosModules.default
@@ -26,19 +26,21 @@ in {
     waylandDisplay = "wayland-1";
   };
 
-  # The upstream unit is wantedBy default.target, so at boot it races ahead of
-  # the user Wayland session, fails to connect to the compositor, and burns its
-  # restart limit. Detach it from boot and start it from a path unit that fires
-  # once the session's wayland socket actually exists.
   systemd.services.asus-dialpad-driver = {
     wantedBy = lib.mkForce [];
     after = ["graphical.target"];
     unitConfig.ConditionPathExists = waylandSocket;
-    serviceConfig.RestartSec = lib.mkForce 5;
+    serviceConfig = {
+      RestartSec = lib.mkForce 5;
+      # The module passes the nix store path as config dir, which is read-only.
+      # Override ExecStart to use a writable StateDirectory instead.
+      ExecStart = lib.mkForce "${dialpadPkg}/share/asus-dialpad-driver/dialpad.py proartp16 ${configDir}/";
+      StateDirectory = "asus-dialpad-driver";
+      StateDirectoryMode = "0755";
+    };
   };
 
   systemd.paths.asus-dialpad-driver = {
-    description = "Start Asus DialPad Driver once the user Wayland socket exists";
     wantedBy = ["paths.target"];
     pathConfig = {
       PathExists = waylandSocket;

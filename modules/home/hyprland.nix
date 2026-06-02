@@ -8,11 +8,8 @@
   inherit (lib.generators) mkLuaInline;
 
   wezterm = lib.getExe pkgs.wezterm;
-  hyprctl = lib.getExe' pkgs.hyprland "hyprctl";
   sh = lib.getExe' pkgs.bash "sh";
   yazi = lib.getExe pkgs.yazi;
-  jq = lib.getExe pkgs.jq;
-  pkill = lib.getExe' pkgs.uutils-coreutils "uutils-pkill";
 
   exec = cmd: mkLuaInline ''hl.dsp.exec_cmd("${cmd}")'';
   execRaw = cmd: mkLuaInline "hl.dsp.exec_cmd([[${cmd}]])";
@@ -23,6 +20,8 @@
   togglefloating = mkLuaInline ''hl.dsp.window.float({ action = "toggle" })'';
   fullscreenToggle = mkLuaInline ''hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" })'';
   resizeactive = x: y: mkLuaInline "hl.dsp.window.resize({ x = ${toString x}, y = ${toString y}, relative = true })";
+  closewindow = mkLuaInline "hl.dsp.window.close()";
+  killwindow = mkLuaInline "hl.dsp.window.kill()";
   drag = mkLuaInline "hl.dsp.window.drag()";
   resizeMouse = mkLuaInline "hl.dsp.window.resize()";
 
@@ -110,7 +109,6 @@ in
       enable = true;
       package = null;
       portalPackage = null;
-      xwayland.enable = true;
       systemd.variables = ["--all"];
       configType = "lua";
 
@@ -177,7 +175,6 @@ in
             font_family = "GoogleSansCode Nerd Font";
             mouse_move_enables_dpms = true;
             key_press_enables_dpms = true;
-            disable_autoreload = true;
             middle_click_paste = false;
           };
 
@@ -210,9 +207,8 @@ in
               (execRaw "${wezterm} start --always-new-process -e ${sh} -c '${yazi}'"))
             (bind "SUPER + SPACE" (exec "dms ipc call spotlight toggle"))
             (bind "SUPER + SHIFT + V" (exec "dms ipc call clipboard toggle"))
-            (bind "SUPER + Q" (exec "${hyprctl} dispatch killactive"))
-            (bind "SUPER + SHIFT + Q"
-              (execRaw ''${hyprctl} dispatch killactive; WID=$(${jq} -r .class <<< $(${hyprctl} activewindow -j)); ${pkill} -KILL -f "$WID"''))
+            (bind "SUPER + Q" closewindow)
+            (bind "SUPER + SHIFT + Q" killwindow)
             (bind "SUPER + CTRL + Q" (exec "dms ipc call lock lock"))
             (bind "SUPER + CTRL + F" fullscreenToggle)
             (bind "SUPER + SHIFT + 3" (exec "dms screenshot full -d ~/Pictures/screenshots"))
