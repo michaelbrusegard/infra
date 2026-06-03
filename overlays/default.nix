@@ -9,5 +9,6 @@ in
     (import ./dialpad)
     (import ./flake-packages.nix inputs)
     (import ./firefox-darwin.nix)
+    (import ./orca-slicer.nix)
     (import ./unstable-packages.nix inputs)
   ]
