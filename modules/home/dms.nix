@@ -12,7 +12,7 @@ in {
     {
       sessionVariables = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
         ELECTRON_OZONE_PLATFORM_HINT = "auto";
-        GTK_THEME = "Catppuccin-BL-MB-dark";
+        GTK_THEME = "Catppuccin-GTK-Dark";
       };
 
       pointerCursor = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
@@ -53,13 +53,13 @@ in {
     colorScheme = "dark";
 
     theme = {
-      name = "Catppuccin-BL-MB-dark";
+      name = "Catppuccin-GTK-Dark";
       package = pkgs.magnetic-catppuccin-gtk;
     };
 
     # Keep applying the GTK3 theme to GTK4 apps (26.05 default flips to null).
     gtk4.theme = {
-      name = "Catppuccin-BL-MB-dark";
+      name = "Catppuccin-GTK-Dark";
       package = pkgs.magnetic-catppuccin-gtk;
     };
 
