@@ -16,6 +16,10 @@
     };
   };
 
+  users.users.michaelbrusegard.extraGroups = [
+    config.services.netbird.clients.default.user.group
+  ];
+
   environment.persistence."/persistent".directories = [
     "/etc/NetworkManager/system-connections"
     config.services.netbird.clients.default.dir.state
