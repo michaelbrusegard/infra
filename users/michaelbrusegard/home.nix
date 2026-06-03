@@ -21,6 +21,7 @@
     inputs.self.homeManagerModules.pentest
     inputs.self.homeManagerModules.scripts
     inputs.self.homeManagerModules.shell
+    inputs.self.homeManagerModules.slicer
     inputs.self.homeManagerModules.ssh
     inputs.self.homeManagerModules.wezterm
     inputs.self.homeManagerModules.xdg

@@ -28,8 +28,6 @@
           gimp-with-plugins
           blender
           davinci-resolve
-          orca-slicer
-          bambu-studio
           betaflight-configurator
           qgis
           wootility
@@ -50,8 +48,6 @@
           libreoffice-bin
           brewCasks.gimp
           brewCasks.blender
-          brewCasks.orcaslicer
-          brewCasks.bambu-studio
           brewCasks.betaflight-configurator
           brewCasks.qgis
           brewCasks.wootility
@@ -65,7 +61,6 @@
     // lib.optionalAttrs (homePersistenceRoot != null) {
       persistence = {
         ${homePersistenceRoot}.directories = [
-          ".config/OrcaSlicer"
           ".config/GIMP"
           ".config/scribus"
           ".config/inkscape"
