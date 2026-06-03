@@ -8,6 +8,7 @@
     xdgOpenUsePortal = true;
     extraPortals = lib.mkForce [
       pkgs.kdePackages.xdg-desktop-portal-kde
+      pkgs.xdg-desktop-portal-hyprland
     ];
     config.common = {
       default = ["kde" "hyprland"];
