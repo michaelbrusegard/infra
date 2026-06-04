@@ -430,7 +430,7 @@ in {
       };
       customDNS.mapping = {
         "${routerDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-        # mail listener is on the stalwart LB, not the HTTP gateway
+        # mail + WebUI listeners are on the stalwart LB, not the HTTP gateway
         "mail.${baseDomain}" = "10.0.188.12,fd7a:115c:a1e0:188::12";
       };
     };

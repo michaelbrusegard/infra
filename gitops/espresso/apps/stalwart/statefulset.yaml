@@ -5,7 +5,9 @@ metadata:
   namespace: stalwart
   annotations:
     configmap.reloader.stakater.com/reload: stalwart-plan,stalwart-reconciler,stalwart-entrypoint
-    secret.reloader.stakater.com/reload: stalwart-env,stalwart-dkim
+    # wildcard-tls included so the pod rolls on renewal - Stalwart reads file
+    # certs only at startup.
+    secret.reloader.stakater.com/reload: stalwart-env,stalwart-dkim,wildcard-tls
 spec:
   replicas: 1
   selector:
@@ -38,6 +40,8 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+            - containerPort: 443
+              name: https
             - containerPort: 25
               name: smtp
             - containerPort: 465

@@ -14,6 +14,8 @@ spec:
         - remote-node
       toPorts:
         - ports:
+            - port: "443"
+              protocol: TCP
             - port: "25"
               protocol: TCP
             - port: "465"
@@ -48,8 +50,8 @@ spec:
               protocol: TCP
             - port: "993"
               protocol: TCP
-    # ManageSieve stays LAN + NetBird VPN only - rarely used remotely and
-    # has a smaller battle-tested surface than IMAP/SMTP.
+    # WebUI/JMAP (443) and ManageSieve (4190) stay LAN + NetBird VPN only -
+    # admin stays off the public internet.
     - fromCIDR:
         - 10.0.186.0/24
         - fd7a:115c:a1e0:186::/64
@@ -58,6 +60,8 @@ spec:
         - 100.102.0.0/16
       toPorts:
         - ports:
+            - port: "443"
+              protocol: TCP
             - port: "4190"
               protocol: TCP
     # Uptime-kuma monitoring (TCP probes on all listeners)

@@ -12,6 +12,9 @@ spec:
     - name: http
       port: 8080
       targetPort: http
+    - name: https
+      port: 443
+      targetPort: https
     - name: smtp
       port: 25
       targetPort: smtp
@@ -45,6 +48,9 @@ spec:
   selector:
     app: stalwart
   ports:
+    - name: https
+      port: 443
+      targetPort: https
     - name: smtp
       port: 25
       targetPort: smtp
