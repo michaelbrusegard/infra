@@ -27,6 +27,8 @@ in {
     kubectl
     kubernetes-helm
     etcd
+    protonmail-desktop
+    proton-pass
     nextcloud-client
     nextcloud-talk-desktop
     ;
