@@ -60,6 +60,10 @@
       workspace = 2;
     }
     {
+      class = "^(thunderbird)$";
+      workspace = 3;
+    }
+    {
       class = "^(proton-mail)$";
       workspace = 3;
     }
