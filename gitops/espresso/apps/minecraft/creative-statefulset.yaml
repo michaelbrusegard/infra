@@ -80,6 +80,10 @@ spec:
               value: "UYQbPj,f6EcuB,VcM0CD"
             # Server-side mods only: players join with vanilla, no client
             # install required. itzg resolves the newest 26.1.2 fabric build.
+            # Accept alpha/beta builds: this early after 26.1.2, several perf
+            # mods (c2me, vmp, fsit) only ship pre-release builds.
+            - name: MODRINTH_DEFAULT_VERSION_TYPE
+              value: "alpha"
             - name: MODRINTH_PROJECTS
               value: |
                 fabric-api
