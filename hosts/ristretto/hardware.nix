@@ -47,8 +47,6 @@
         AVERAGE=hwmon2/pwm1=1 hwmon2/pwm2=1 hwmon2/pwm3=1
       '';
     };
-
-    wooting.enable = true;
   };
   local.hyprland.monitors = [
     {

@@ -30,7 +30,6 @@
           davinci-resolve
           betaflight-configurator
           qgis
-          wootility
           ungoogled-chromium
           nextcloud-client
           nextcloud-talk-desktop

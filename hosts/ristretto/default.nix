@@ -41,6 +41,7 @@
       inputs.self.nixosModules.pipewire
       inputs.self.nixosModules.plymouth
       inputs.self.nixosModules.udisks2
+      inputs.self.nixosModules.wooting
       inputs.self.nixosModules.xdg-portal
       ./disko.nix
       ./hardware.nix
