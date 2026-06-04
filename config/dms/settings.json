@@ -455,10 +455,6 @@
           "enabled": true
         },
         {
-          "id": "notificationButton",
-          "enabled": true
-        },
-        {
           "id": "cpuUsage",
           "enabled": true,
           "minimumWidth": true
@@ -474,6 +470,10 @@
         },
         {
           "id": "controlCenterButton",
+          "enabled": true
+        },
+        {
+          "id": "notificationButton",
           "enabled": true
         }
       ],
