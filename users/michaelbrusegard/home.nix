@@ -10,6 +10,7 @@
     inputs.self.homeManagerModules.dms
     inputs.self.homeManagerModules.freecad
     inputs.self.homeManagerModules.git
+    inputs.self.homeManagerModules.gnome-keyring
     inputs.self.homeManagerModules.helix
     inputs.self.homeManagerModules.hyprland
     inputs.self.homeManagerModules.launchd
