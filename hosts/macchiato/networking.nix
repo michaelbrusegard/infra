@@ -432,6 +432,10 @@ in {
         "${routerDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         # mail + WebUI listeners are on the stalwart LB, not the HTTP gateway
         "mail.${baseDomain}" = "10.0.188.12,fd7a:115c:a1e0:188::12";
+        # Minecraft: LAN clients reach mc-router's LB VIP directly.
+        "vanilla.eldians.com" = "10.0.188.50,fd7a:115c:a1e0:188::50";
+        "creative.eldians.com" = "10.0.188.50,fd7a:115c:a1e0:188::50";
+        "revelation.eldians.com" = "10.0.188.50,fd7a:115c:a1e0:188::50";
       };
     };
 
