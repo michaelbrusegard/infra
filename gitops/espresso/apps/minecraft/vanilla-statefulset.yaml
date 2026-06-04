@@ -87,6 +87,12 @@ spec:
                 lithium
                 ferrite-core
                 krypton
+                c2me-fabric
+                vmp-fabric
+                servercore
+                alternate-current
+                clumps
+                chunky
                 no-chat-reports
                 servux
                 collective
