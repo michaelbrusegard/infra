@@ -6,7 +6,7 @@
 
 (defsrc
   caps a s d f j k l ;
-  lalt lmet
+  lalt lmet ralt rmet
 )
 
 (defvar
@@ -26,5 +26,5 @@
 
 (deflayer base
   esc @a @s @d @f @j @k @l @;
-  lmet lalt
+  lmet lalt rmet ralt
 )
