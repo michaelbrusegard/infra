@@ -29,17 +29,14 @@
     cpu.amd.updateMicrocode = true;
     bluetooth.enable = true;
 
-    graphics = {
-      enable = true;
-      enable32Bit = true;
-    };
+    graphics.enable = true;
 
     nvidia = {
       modesetting.enable = true;
       open = true;
       nvidiaSettings = true;
       powerManagement.enable = true;
-      package = config.boot.kernelPackages.nvidiaPackages.beta;
+      package = config.boot.kernelPackages.nvidiaPackages.production;
       prime = {
         offload = {
           enable = true;
@@ -142,10 +139,5 @@
   zramSwap = {
     enable = true;
     memoryPercent = 25;
-  };
-
-  services.kanata.keyboards.internal = {
-    devices = ["/dev/input/by-path/pci-0000:67:00.0-usb-0:4:1.0-event-mouse"];
-    configFile = inputs.self + "/config/kanata/linux-internal.kbd";
   };
 }
