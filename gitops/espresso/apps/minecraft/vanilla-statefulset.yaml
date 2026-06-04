@@ -81,8 +81,10 @@ spec:
             # Server-side mods only: players join with vanilla, no client
             # install required. itzg resolves the newest 26.1.2 fabric build.
             # Accept alpha/beta builds: this early after 26.1.2, several perf
-            # mods (c2me, vmp, fsit) only ship pre-release builds.
-            - name: MODRINTH_DEFAULT_VERSION_TYPE
+            # mods (c2me, vmp, fsit) only ship pre-release builds. Mods that
+            # lag behind Minecraft updates are marked optional (?) so a missing
+            # build warns instead of aborting startup.
+            - name: MODRINTH_PROJECTS_DEFAULT_VERSION_TYPE
               value: "alpha"
             - name: MODRINTH_PROJECTS
               value: |
@@ -91,20 +93,20 @@ spec:
                 lithium
                 ferrite-core
                 krypton
-                c2me-fabric
-                vmp-fabric
-                servercore
-                alternate-current
-                clumps
-                chunky
-                no-chat-reports
-                servux
-                collective
-                quick-right-click
-                better-than-mending
-                fsit
-                worldedit
-                beacon-flight-2
+                c2me-fabric?
+                vmp-fabric?
+                servercore?
+                alternate-current?
+                clumps?
+                chunky?
+                no-chat-reports?
+                servux?
+                collective?
+                quick-right-click?
+                better-than-mending?
+                fsit?
+                worldedit?
+                beacon-flight-2?
             # Carpet has no 26.1.2 release build yet; force-load the closest
             # snapshot beta (26.1-beta-1) directly. Remove once a release build
             # lands on Modrinth/CurseForge. carpet-extra has no 26.x build.
