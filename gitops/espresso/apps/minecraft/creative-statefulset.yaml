@@ -108,9 +108,9 @@ spec:
                 worldedit?
                 beacon-flight-2?
             # Carpet has no 26.1.2 release build yet; force-load the closest
-            # snapshot beta (26.1-beta-1) directly. Remove once a release build
-            # lands on Modrinth/CurseForge. carpet-extra has no 26.x build.
-            - name: MODRINTH_DOWNLOADS
+            # snapshot beta (26.1-beta-1) by direct jar URL. Remove once a
+            # release build lands on Modrinth. carpet-extra has no 26.x build.
+            - name: MODS
               value: "https://cdn.modrinth.com/data/TQTTVgYE/versions/6FpFtZPE/fabric-carpet-26.1-beta-1%2Bv251217.jar"
           startupProbe:
             tcpSocket:
