@@ -9,6 +9,7 @@
     inputs.self.homeManagerModules.dev
     inputs.self.homeManagerModules.dms
     inputs.self.homeManagerModules.freecad
+    inputs.self.homeManagerModules.gaming
     inputs.self.homeManagerModules.git
     inputs.self.homeManagerModules.gnome-keyring
     inputs.self.homeManagerModules.helix
