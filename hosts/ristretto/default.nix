@@ -22,6 +22,7 @@
     ]
     ++ inputs.nixpkgs.lib.optionals (!isWsl) [
       inputs.self.nixosModules.avahi
+      inputs.self.nixosModules.binfmt
       inputs.self.nixosModules.console
       inputs.self.nixosModules.disko
       inputs.self.nixosModules.dms-greeter

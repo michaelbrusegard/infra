@@ -11,10 +11,6 @@
     kernelParams = ["quiet"];
     consoleLogLevel = 3;
 
-    binfmt.emulatedSystems = [
-      "aarch64-linux"
-    ];
-
     initrd.luks.devices = {
       crypted1.crypttabExtraOpts = ["tpm2-device=auto"];
       crypted2.crypttabExtraOpts = ["tpm2-device=auto"];

@@ -1,6 +1,7 @@
 {inputs, ...}: {
   imports = [
     inputs.self.nixosModules.avahi
+    inputs.self.nixosModules.binfmt
     inputs.self.nixosModules.boot
     inputs.self.nixosModules.catppuccin
     inputs.self.nixosModules.console
