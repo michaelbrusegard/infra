@@ -104,4 +104,4 @@ spec:
         resources:
           requests:
             storage: 20Gi
-        storageClassName: nvme-ha
+        storageClassName: ssd-ha
