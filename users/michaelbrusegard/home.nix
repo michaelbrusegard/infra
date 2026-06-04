@@ -24,6 +24,7 @@
     inputs.self.homeManagerModules.shell
     inputs.self.homeManagerModules.slicer
     inputs.self.homeManagerModules.ssh
+    inputs.self.homeManagerModules.thunderbird
     inputs.self.homeManagerModules.wezterm
     inputs.self.homeManagerModules.xdg
     inputs.self.homeManagerModules.yazi
