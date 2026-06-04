@@ -1,6 +1,7 @@
 {
   inputs,
   options,
+  config,
   users,
   isWsl,
   ...
@@ -25,6 +26,10 @@
       if options.environment ? persistence
       then "/persistent"
       else null;
+    # Wrap user-level game launchers to render on the NVIDIA dGPU (forte).
+    nvidiaOffload = config.local.gaming.nvidiaOffload or false;
+    # Run launchers under gamemoderun so games trigger GameMode automatically.
+    gamemodeRun = config.programs.gamemode.enable or false;
   };
 
   home-manager.users = builtins.listToAttrs (

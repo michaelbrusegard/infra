@@ -31,7 +31,11 @@
       modesetting.enable = true;
       open = true;
       nvidiaSettings = true;
-      powerManagement.enable = true;
+      powerManagement = {
+        enable = true;
+        finegrained = true;
+      };
+      dynamicBoost.enable = true;
       package = config.boot.kernelPackages.nvidiaPackages.production;
       prime = {
         offload = {
@@ -42,6 +46,13 @@
         nvidiaBusId = "PCI:100:0:0";
       };
     };
+  };
+
+  # Render games on the RTX 5080 instead of the AMD iGPU (offload default),
+  # and lift touchpad disable-while-typing while a game runs.
+  local.gaming = {
+    nvidiaOffload = true;
+    touchpadDwtToggle = true;
   };
 
   services = {
