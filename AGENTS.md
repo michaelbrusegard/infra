@@ -36,6 +36,20 @@ deploying — only push when the change is meant to roll out.
 - `config/` — static app configs consumed by Home Manager
 - `windows/` — Windows-side dotfiles
 
+### Cloudflare DNS
+
+Two declarative systems, split by record type — keep new records on the right
+side:
+
+- **OpenTofu** (`gitops/espresso/tofu/dns`, cloudflare provider) — static
+  infrastructure records: MX, TXT, DKIM, MTA-STS, and anything external-dns
+  can't express. Reconciled by tofu-controller.
+- **external-dns** (`DNSEndpoint` CRDs, `managedRecordTypes: [CNAME]`) — dynamic
+  per-service CNAMEs that point at `router.asgard.michaelbrusegard.com` (the
+  macchiato WAN dyndns A record). Zones it manages are listed in
+  `infrastructure/controllers/external-dns` `domainFilters`; add the zone there
+  before adding records for a new domain.
+
 ## Commands
 
 ### Tooling

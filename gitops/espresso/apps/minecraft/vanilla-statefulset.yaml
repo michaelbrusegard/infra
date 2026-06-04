@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vanilla
+  namespace: minecraft
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vanilla
+  serviceName: vanilla
+  template:
+    metadata:
+      labels:
+        app: vanilla
+        mc-server: "true"
+    spec:
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: minecraft
+          image: itzg/minecraft-server:2025.12.1-java25@sha256:a8541ced5cd5ef37b07c0daed4a3e590c71455099f2384cdf9f0d59906de1e1e
+          tty: true
+          stdin: true
+          ports:
+            - containerPort: 25565
+              name: minecraft
+          env:
+            - name: EULA
+              value: "true"
+            - name: TYPE
+              value: "FABRIC"
+            - name: VERSION
+              value: "LATEST"
+            - name: MAX_MEMORY
+              value: "8g"
+            - name: ENABLE_ROLLING_LOGS
+              value: "true"
+            - name: ENABLE_RCON
+              value: "false"
+            - name: TZ
+              value: "Europe/Oslo"
+            - name: MOTD
+              value: "§aEldians §7| §fVanilla"
+            - name: SEED
+              value: "3671431547008281909"
+            - name: ENABLE_COMMAND_BLOCK
+              value: "true"
+            - name: GAMEMODE
+              value: "survival"
+            - name: FORCE_GAMEMODE
+              value: "true"
+            - name: DIFFICULTY
+              value: "hard"
+            - name: MAX_BUILD_HEIGHT
+              value: "320"
+            - name: SPAWN_PROTECTION
+              value: "0"
+            - name: VIEW_DISTANCE
+              value: "16"
+            - name: SNOOPER_ENABLED
+              value: "false"
+            - name: RESOURCE_PACK
+              value: "https://www.dropbox.com/scl/fi/ubdihzo3s0rq98xjimbp9/VanillaTweaks_5ac0ac1.zip?rlkey=hzvmvmgx0nbuskbiwn89lfu6h&st=i9zc87z6&dl=1"
+            - name: RESOURCE_PACK_SHA1
+              value: "ce53e346107a50c3e8390f1b0b2612ab632a4ca3"
+            - name: RESOURCE_PACK_ENFORCE
+              value: "true"
+            - name: ENABLE_WHITELIST
+              value: "true"
+            - name: WHITELIST
+              value: |
+                Ker4lis
+                Eccon
+            - name: BROADCAST_CONSOLE_TO_OPS
+              value: "false"
+            - name: OPS
+              value: |
+                Ker4lis
+            - name: VANILLATWEAKS_SHARECODE
+              value: "UYQbPj,f6EcuB,VcM0CD"
+            # Auto-resolve latest compatible builds for VERSION=LATEST.
+            - name: MODRINTH_PROJECTS
+              value: |
+                fabric-api
+                lithium
+                ferrite-core
+                modernfix
+                krypton
+                noisium
+                no-chat-reports
+                servux
+                carpet
+                carpet-extra
+                collective
+                quick-right-click
+                weather-watch
+                better-than-mending
+                itemswapper
+                fabric-language-kotlin
+                fsit
+                worldedit
+                cloth-config
+                architectury-api
+                rei
+          startupProbe:
+            tcpSocket:
+              port: minecraft
+            periodSeconds: 15
+            failureThreshold: 60
+          livenessProbe:
+            tcpSocket:
+              port: minecraft
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            tcpSocket:
+              port: minecraft
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "1"
+              memory: 9Gi
+            limits:
+              memory: 10Gi
+          volumeMounts:
+            - mountPath: /data
+              name: data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+        storageClassName: nvme-ha

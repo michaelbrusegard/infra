@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: revelation
+  namespace: minecraft
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: revelation
+  serviceName: revelation
+  template:
+    metadata:
+      labels:
+        app: revelation
+        mc-server: "true"
+    spec:
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: minecraft
+          image: itzg/minecraft-server:2025.12.1-java8@sha256:0b8f28408f207b8ef2acb2b264ca7047a3969ad1b568f636b48dc93b35b2ee28
+          tty: true
+          stdin: true
+          ports:
+            - containerPort: 25565
+              name: minecraft
+          env:
+            - name: EULA
+              value: "true"
+            - name: TYPE
+              value: "FTBA"
+            # FTB Revelation, pack id 35. Version 12180 (3.7.0) is the latest
+            # published release; the pack is permanently Minecraft 1.12.2.
+            - name: FTB_MODPACK_ID
+              value: "35"
+            - name: FTB_MODPACK_VERSION_ID
+              value: "12180"
+            - name: MAX_MEMORY
+              value: "8g"
+            - name: ENABLE_ROLLING_LOGS
+              value: "true"
+            - name: ENABLE_RCON
+              value: "false"
+            - name: TZ
+              value: "Europe/Oslo"
+            - name: MOTD
+              value: "§cEldians §7| §fRevelation"
+            - name: SEED
+              value: "3671431547008281909"
+            - name: ENABLE_COMMAND_BLOCK
+              value: "true"
+            - name: GAMEMODE
+              value: "survival"
+            - name: FORCE_GAMEMODE
+              value: "true"
+            - name: DIFFICULTY
+              value: "hard"
+            - name: SPAWN_PROTECTION
+              value: "0"
+            - name: VIEW_DISTANCE
+              value: "16"
+            - name: SNOOPER_ENABLED
+              value: "false"
+            - name: ENABLE_WHITELIST
+              value: "true"
+            - name: WHITELIST
+              value: |
+                Ker4lis
+                Eccon
+            - name: BROADCAST_CONSOLE_TO_OPS
+              value: "false"
+            - name: OPS
+              value: |
+                Ker4lis
+          startupProbe:
+            tcpSocket:
+              port: minecraft
+            periodSeconds: 20
+            failureThreshold: 90
+          livenessProbe:
+            tcpSocket:
+              port: minecraft
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            tcpSocket:
+              port: minecraft
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "1"
+              memory: 9Gi
+            limits:
+              memory: 10Gi
+          volumeMounts:
+            - mountPath: /data
+              name: data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+        storageClassName: nvme-ha

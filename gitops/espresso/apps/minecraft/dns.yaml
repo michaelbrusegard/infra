@@ -1,0 +1,23 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: minecraft-records
+  namespace: minecraft
+spec:
+  endpoints:
+    # All three servers share the single mc-router VIP behind the macchiato
+    # WAN port-forward (25565). mc-router fans out by Minecraft handshake
+    # hostname. router.asgard.michaelbrusegard.com is the dyndns A record for
+    # the WAN address, so these stay correct across ISP IP changes.
+    - dnsName: vanilla.eldians.com
+      recordType: CNAME
+      targets:
+        - router.asgard.michaelbrusegard.com
+    - dnsName: creative.eldians.com
+      recordType: CNAME
+      targets:
+        - router.asgard.michaelbrusegard.com
+    - dnsName: revelation.eldians.com
+      recordType: CNAME
+      targets:
+        - router.asgard.michaelbrusegard.com

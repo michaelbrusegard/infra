@@ -1,0 +1,99 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mc-router
+  namespace: minecraft
+spec:
+  endpointSelector:
+    matchLabels:
+      app: mc-router
+  ingress:
+    # Kubelet TCP probes and node-forwarded LB traffic.
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "25565"
+              protocol: TCP
+    # Public internet (DNAT'd from macchiato WAN) and LAN clients.
+    - fromCIDR:
+        - 0.0.0.0/0
+        - ::/0
+      toPorts:
+        - ports:
+            - port: "25565"
+              protocol: TCP
+  egress:
+    # DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # Forward to the backend Minecraft servers.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: minecraft
+            k8s:mc-server: "true"
+      toPorts:
+        - ports:
+            - port: "25565"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mc-server
+  namespace: minecraft
+spec:
+  endpointSelector:
+    matchLabels:
+      mc-server: "true"
+  ingress:
+    # Kubelet TCP probes.
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "25565"
+              protocol: TCP
+    # Player traffic arrives only via mc-router.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:app: mc-router
+      toPorts:
+        - ports:
+            - port: "25565"
+              protocol: TCP
+  egress:
+    # DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # Mod / modpack / resource-pack downloads (Modrinth, FTB, Mojang, Dropbox).
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP

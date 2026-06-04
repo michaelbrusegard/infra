@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vanilla
+  namespace: minecraft
+spec:
+  clusterIP: None
+  selector:
+    app: vanilla
+  ports:
+    - name: minecraft
+      port: 25565
+      targetPort: minecraft
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: creative
+  namespace: minecraft
+spec:
+  clusterIP: None
+  selector:
+    app: creative
+  ports:
+    - name: minecraft
+      port: 25565
+      targetPort: minecraft
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: revelation
+  namespace: minecraft
+spec:
+  clusterIP: None
+  selector:
+    app: revelation
+  ports:
+    - name: minecraft
+      port: 25565
+      targetPort: minecraft

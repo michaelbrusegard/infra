@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mc-router
+  namespace: minecraft
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mc-router
+  template:
+    metadata:
+      labels:
+        app: mc-router
+    spec:
+      containers:
+        - name: mc-router
+          image: itzg/mc-router:1.42.1@sha256:bab38fed93b8b54bb36fcded3310e83d92fb65b4df89989f5bcdb4b559e286a3
+          args:
+            - --port=25565
+            - --mapping=vanilla.eldians.com=vanilla.minecraft.svc.cluster.local:25565,creative.eldians.com=creative.minecraft.svc.cluster.local:25565,revelation.eldians.com=revelation.minecraft.svc.cluster.local:25565
+          ports:
+            - containerPort: 25565
+              name: minecraft
+          startupProbe:
+            tcpSocket:
+              port: minecraft
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            tcpSocket:
+              port: minecraft
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: minecraft
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mc-router
+  namespace: minecraft
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.50,fd7a:115c:a1e0:188::50
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: mc-router
+  ports:
+    - name: minecraft
+      port: 25565
+      targetPort: minecraft

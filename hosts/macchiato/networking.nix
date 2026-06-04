@@ -173,6 +173,13 @@ in {
           sourcePort = 3478;
         }
         {
+          # Minecraft: mc-router VIP fans out to vanilla/creative/revelation
+          # by handshake hostname (*.eldians.com).
+          destination = "10.0.188.50:25565";
+          proto = "tcp";
+          sourcePort = 25565;
+        }
+        {
           destination = "10.0.187.3:5349";
           proto = "udp";
           sourcePort = 5349;

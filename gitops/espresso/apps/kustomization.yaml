@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - hermes-agent
   - media
+  - minecraft
   - netbird
   - ollama
   - pocket-id
