@@ -1,8 +1,4 @@
-{
-  inputs,
-  config,
-  ...
-}: {
+{config, ...}: {
   boot = {
     initrd.availableKernelModules = [
       "nvme"
