@@ -33,11 +33,7 @@ in {
   hardware = {
     enableRedistributableFirmware = true;
     cpu.amd.updateMicrocode = true;
-
-    graphics = {
-      enable = true;
-      enable32Bit = true;
-    };
+    graphics.enable = true;
     nvidia = lib.mkIf hasNvidia {
       modesetting.enable = true;
       powerManagement.enable = false;
