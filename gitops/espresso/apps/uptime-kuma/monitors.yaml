@@ -324,6 +324,68 @@ data:
         "active": true
       }
     ]
+  minecraft.json: |
+    [
+      {
+        "name": "Minecraft",
+        "type": "group"
+      },
+      {
+        "name": "MC Router",
+        "type": "port",
+        "parent_name": "minecraft[0]",
+        "hostname": "mc-router.minecraft.svc.cluster.local",
+        "port": 25565,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Vanilla",
+        "type": "port",
+        "parent_name": "minecraft[0]",
+        "hostname": "vanilla.minecraft.svc.cluster.local",
+        "port": 25565,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Creative",
+        "type": "port",
+        "parent_name": "minecraft[0]",
+        "hostname": "creative.minecraft.svc.cluster.local",
+        "port": 25565,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Revelation",
+        "type": "port",
+        "parent_name": "minecraft[0]",
+        "hostname": "revelation.minecraft.svc.cluster.local",
+        "port": 25565,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Resource Pack Server",
+        "type": "port",
+        "parent_name": "minecraft[0]",
+        "hostname": "pack-server.minecraft.svc.cluster.local",
+        "port": 80,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      }
+    ]
   mail.json: |
     [
       {
