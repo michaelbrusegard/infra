@@ -66,9 +66,9 @@ spec:
             # pod (itzg re-zips with its own VanillaTweaks_<hash>.zip name, which
             # differs from the vanillatweaks.net download) and set them here.
             - name: RESOURCE_PACK
-              value: "https://packs.eldians.com/VanillaTweaks_b3bb4b9.zip"
+              value: "https://packs.eldians.com/VanillaTweaks_f051f33.zip"
             - name: RESOURCE_PACK_SHA1
-              value: "29702bf4bc90f2948fa5137d7b994cad53d71b53"
+              value: "9af07c7ce3880caee9a5dc3585628c7c6d23c4cf"
             - name: RESOURCE_PACK_ENFORCE
               value: "true"
             - name: ENABLE_WHITELIST
