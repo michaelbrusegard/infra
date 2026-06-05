@@ -31,7 +31,7 @@ spec:
             k8s:app: uptime-kuma
       toPorts:
         - ports:
-            - port: "9091"
+            - port: http
               protocol: TCP
   egress:
     - toEndpoints:
