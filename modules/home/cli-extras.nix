@@ -27,6 +27,9 @@
       ]
       ++ lib.optionals pkgs.stdenv.isDarwin [
         iproute2mac
+      ]
+      ++ lib.optionals pkgs.stdenv.isLinux [
+        parted
       ];
 
     shellAliases = {

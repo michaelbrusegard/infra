@@ -7,7 +7,6 @@
     presenterm
     yt-dlp
     testdisk
-    parted
     qmk
     cmatrix
   ];
