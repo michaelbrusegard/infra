@@ -83,7 +83,7 @@ spec:
               value: |
                 Ker4lis
             - name: VANILLATWEAKS_SHARECODE
-              value: "iHZjYt,IeVAYl,m1dmpn"
+              value: "iHZjYt,IeVAYl,dTFJcr"
             # Server-side mods only: players join with vanilla, no client
             # install required. itzg resolves the newest 26.1.2 fabric build.
             # Accept alpha/beta builds: this early after 26.1.2, several perf
