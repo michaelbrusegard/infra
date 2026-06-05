@@ -43,7 +43,7 @@ spec:
         failureThreshold: 10
       persistence:
         enabled: true
-        storageClass: nvme-single
+        storageClass: ssd-ha
         size: 20Gi
     backend:
       replicas: 0
