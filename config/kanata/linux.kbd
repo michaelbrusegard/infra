@@ -26,3 +26,11 @@
   esc @a @s @d @f @j @k @l @;
   lmet lalt rmet ralt
 )
+
+;; Plain layer with no home-row mods, for gaming (so holding WASD etc. repeats
+;; the key instead of acting as a modifier). The game-mode watcher switches to
+;; this via the TCP server while a game window is focused.
+(deflayer nomods
+  esc a s d f j k l ;
+  lmet lalt rmet ralt
+)

@@ -1,6 +1,7 @@
 {
   pkgs,
   lib,
+  config,
   isWsl,
   homePersistenceRoot ? null,
   nvidiaOffload ? false,
@@ -80,6 +81,20 @@
     toggle_hud=Shift_R+F12
     toggle_fps_limit=Shift_R+F11
   '';
+  # Prism keeps its settings in a runtime-mutable cfg, so seed just the two
+  # keys we care about (idempotently) rather than managing the whole file.
+  # Feral GameMode makes Prism run *Minecraft itself* under GameMode (perf +
+  # the touchpad DWT toggle); MangoHud enables the overlay for the game.
+  prismCfg = "${config.home.homeDirectory}/.local/share/PrismLauncher/prismlauncher.cfg";
+  setPrismKey = key: ''
+    if [ -f "${prismCfg}" ]; then
+      if grep -q '^${key}=' "${prismCfg}"; then
+        $DRY_RUN_CMD sed -i 's/^${key}=.*/${key}=true/' "${prismCfg}"
+      else
+        $DRY_RUN_CMD printf '${key}=true\n' >> "${prismCfg}"
+      fi
+    fi
+  '';
 in {
   home =
     {
@@ -87,6 +102,11 @@ in {
     }
     // lib.optionalAttrs enable {
       file.".config/MangoHud/MangoHud.conf".text = mangohudConf;
+
+      activation.prismGamingTweaks = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        ${setPrismKey "EnableFeralGamemode"}
+        ${setPrismKey "EnableMangoHud"}
+      '';
     }
     // lib.optionalAttrs (enable && homePersistenceRoot != null) {
       persistence = {

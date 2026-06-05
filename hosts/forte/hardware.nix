@@ -48,12 +48,8 @@
     };
   };
 
-  # Render games on the RTX 5080 instead of the AMD iGPU (offload default),
-  # and lift touchpad disable-while-typing while a game runs.
-  local.gaming = {
-    nvidiaOffload = true;
-    touchpadDwtToggle = true;
-  };
+  # Render games on the RTX 5080 instead of the AMD iGPU (offload default).
+  local.gaming.nvidiaOffload = true;
 
   services = {
     xserver.videoDrivers = ["nvidia"];

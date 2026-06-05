@@ -5,23 +5,10 @@
   ...
 }: let
   cfg = config.local.gaming;
-
-  # Toggle Hyprland's touchpad disable-while-typing so it doesn't suppress the
-  # touchpad while holding movement keys during a game. Runs in the user
-  # session GameMode is started from; harmless on hosts without a touchpad.
-  hyprctl = "${pkgs.hyprland}/bin/hyprctl";
-  dwtToggle = state: "${hyprctl} keyword input:touchpad:disable_while_typing ${state} || true";
 in {
-  options.local.gaming = {
-    nvidiaOffload = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-    };
-
-    touchpadDwtToggle = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-    };
+  options.local.gaming.nvidiaOffload = lib.mkOption {
+    type = lib.types.bool;
+    default = false;
   };
 
   config = {
@@ -42,15 +29,7 @@ in {
         enable = true;
         capSysNice = true;
       };
-      gamemode = {
-        enable = true;
-        settings = lib.mkIf cfg.touchpadDwtToggle {
-          custom = {
-            start = dwtToggle "false";
-            end = dwtToggle "true";
-          };
-        };
-      };
+      gamemode.enable = true;
     };
 
     # Steam launches games in their own environment, so set this once as a

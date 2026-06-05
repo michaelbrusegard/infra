@@ -12,6 +12,29 @@
   yazi = lib.getExe pkgs.yazi;
   systemctl = lib.getExe' pkgs.systemd "systemctl";
 
+  # Manual gaming-mode toggle (SUPER + G): flips touchpad disable-while-typing
+  # and the kanata home-row-mods layer together, so holding WASD works in games.
+  # State is derived from the current DWT value, so the two stay in sync.
+  gamingModeToggle = lib.getExe (pkgs.writeShellApplication {
+    name = "gaming-mode-toggle";
+    runtimeInputs = [pkgs.hyprland pkgs.netcat-openbsd];
+    text = ''
+      kanata_port=5829
+      cur=$(hyprctl -i 0 getoption input:touchpad:disable_while_typing 2>/dev/null | awk '/^bool:/{print $2}')
+      if [ "$cur" = "true" ]; then
+        # enable gaming mode
+        hyprctl -i 0 dispatch 'hl.config({input={touchpad={disable_while_typing=false}}})' >/dev/null 2>&1 || true
+        printf '{"ChangeLayer":{"new":"nomods"}}' | nc -N -w1 127.0.0.1 "$kanata_port" >/dev/null 2>&1 || true
+        hyprctl -i 0 notify -1 2000 "rgb(00ff00)" "Gaming mode ON" >/dev/null 2>&1 || true
+      else
+        # back to normal
+        hyprctl -i 0 dispatch 'hl.config({input={touchpad={disable_while_typing=true}}})' >/dev/null 2>&1 || true
+        printf '{"ChangeLayer":{"new":"base"}}' | nc -N -w1 127.0.0.1 "$kanata_port" >/dev/null 2>&1 || true
+        hyprctl -i 0 notify -1 2000 "rgb(ff8800)" "Gaming mode OFF" >/dev/null 2>&1 || true
+      fi
+    '';
+  });
+
   exec = cmd: mkLuaInline ''hl.dsp.exec_cmd("${cmd}")'';
   execRaw = cmd: mkLuaInline "hl.dsp.exec_cmd([[${cmd}]])";
   movefocus = dir: mkLuaInline ''hl.dsp.focus({ direction = "${dir}" })'';
@@ -256,6 +279,7 @@ in
             (bind "SUPER + CTRL + Q" (exec "dms ipc call lock lock"))
             (bind "SUPER + CTRL + S" (exec "dms ipc call lock lock && ${systemctl} suspend"))
             (bind "SUPER + CTRL + F" fullscreenToggle)
+            (bind "SUPER + G" (exec gamingModeToggle))
             (bind "SUPER + SHIFT + 3" (exec "dms screenshot full -d ~/Pictures/screenshots"))
             (bind "SUPER + SHIFT + 4" (exec "dms screenshot -d ~/Pictures/screenshots"))
 
