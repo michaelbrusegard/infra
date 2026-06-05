@@ -61,12 +61,14 @@ spec:
               value: "false"
             # Self-hosted: itzg downloads this VanillaTweaks pack (via the
             # sharecodes below) into /data/resourcepacks, and the pack-server
-            # sidecar serves it at packs.eldians.com. Update the filename + SHA1
-            # here when the pack content changes.
+            # sidecar serves it at packs.eldians.com. After changing a sharecode,
+            # read the resulting filename + SHA1 from /data/resourcepacks in the
+            # pod (itzg re-zips with its own VanillaTweaks_<hash>.zip name, which
+            # differs from the vanillatweaks.net download) and set them here.
             - name: RESOURCE_PACK
-              value: "https://packs.eldians.com/VanillaTweaks_r775386_MC26.1.x.zip"
+              value: "https://packs.eldians.com/VanillaTweaks_b3bb4b9.zip"
             - name: RESOURCE_PACK_SHA1
-              value: "33d553c6267bf39b9c057edade944cdda92fe77d"
+              value: "29702bf4bc90f2948fa5137d7b994cad53d71b53"
             - name: RESOURCE_PACK_ENFORCE
               value: "true"
             - name: ENABLE_WHITELIST

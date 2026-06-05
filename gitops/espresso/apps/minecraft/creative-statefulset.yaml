@@ -59,13 +59,14 @@ spec:
               value: "16"
             - name: SNOOPER_ENABLED
               value: "false"
-            # Self-hosted via the pack-server sidecar in the vanilla pod,
-            # served at packs.eldians.com. Update filename + SHA1 here when the
-            # pack content changes.
+            # Self-hosted via the pack-server sidecar in the vanilla pod, served
+            # at packs.eldians.com. After changing a sharecode, read the
+            # resulting VanillaTweaks_<hash>.zip filename + SHA1 from
+            # /data/resourcepacks in the pod and set them here.
             - name: RESOURCE_PACK
-              value: "https://packs.eldians.com/VanillaTweaks_r775386_MC26.1.x.zip"
+              value: "https://packs.eldians.com/VanillaTweaks_b3bb4b9.zip"
             - name: RESOURCE_PACK_SHA1
-              value: "33d553c6267bf39b9c057edade944cdda92fe77d"
+              value: "29702bf4bc90f2948fa5137d7b994cad53d71b53"
             - name: RESOURCE_PACK_ENFORCE
               value: "true"
             - name: ENABLE_WHITELIST
