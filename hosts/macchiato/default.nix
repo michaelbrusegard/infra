@@ -48,6 +48,16 @@
     };
   };
 
+  # Bound the netconsole log; a crash-looping node could otherwise grow it
+  # unbounded since it is a plain file, not journald-managed.
+  services.logrotate.settings."/var/log/netconsole.log" = {
+    frequency = "weekly";
+    rotate = 4;
+    compress = true;
+    missingok = true;
+    notifempty = true;
+  };
+
   environment.etc."alloy/config.alloy".text = ''
     loki.source.journal "macchiato" {
       forward_to = [loki.process.journal.receiver]
