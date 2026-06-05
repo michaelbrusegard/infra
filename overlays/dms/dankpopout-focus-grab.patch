@@ -1,0 +1,27 @@
+--- a/Widgets/DankPopout.qml
++++ b/Widgets/DankPopout.qml
+@@ -1,6 +1,7 @@
+ import QtQuick
+ import QtQuick.Effects
+ import Quickshell
++import Quickshell.Hyprland
+ import Quickshell.Wayland
+ import qs.Common
+ import qs.Services
+@@ -8,6 +9,16 @@
+ Item {
+     id: root
+ 
++    // Bar popouts request OnDemand keyboard focus but ship no focus grab, so on
++    // Hyprland with follow_mouse=0 the keyboard never returns to the previously
++    // focused window after the popout closes (until a workspace switch forces a
++    // refocus). Mirror the DankModal focus-grab wiring so releasing the grab
++    // restores window focus. Patched downstream in infra/overlays.
++    HyprlandFocusGrab {
++        windows: [contentWindow]
++        active: CompositorService.useHyprlandFocusGrab && root.shouldBeVisible
++    }
++
+     property string layerNamespace: "dms:popout"
+     property alias content: contentLoader.sourceComponent
+     property alias contentLoader: contentLoader
