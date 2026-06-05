@@ -5,6 +5,7 @@ metadata:
   namespace: openebs
   labels:
     openebs.io/disk-type: nvme
+    openebs.io/disk-slot: main
 spec:
   node: espresso-0
   disks:
@@ -12,6 +13,7 @@ spec:
   topology:
     labelled:
       openebs.io/disk-type: nvme
+      openebs.io/disk-slot: main
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -20,6 +22,7 @@ metadata:
   namespace: openebs
   labels:
     openebs.io/disk-type: nvme
+    openebs.io/disk-slot: main
 spec:
   node: espresso-1
   disks:
@@ -27,6 +30,7 @@ spec:
   topology:
     labelled:
       openebs.io/disk-type: nvme
+      openebs.io/disk-slot: main
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -35,6 +39,7 @@ metadata:
   namespace: openebs
   labels:
     openebs.io/disk-type: sata
+    openebs.io/disk-slot: data1
 spec:
   node: espresso-1
   disks:
@@ -42,6 +47,7 @@ spec:
   topology:
     labelled:
       openebs.io/disk-type: sata
+      openebs.io/disk-slot: data1
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -50,6 +56,7 @@ metadata:
   namespace: openebs
   labels:
     openebs.io/disk-type: sata
+    openebs.io/disk-slot: data2
 spec:
   node: espresso-1
   disks:
@@ -57,6 +64,7 @@ spec:
   topology:
     labelled:
       openebs.io/disk-type: sata
+      openebs.io/disk-slot: data2
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -65,6 +73,7 @@ metadata:
   namespace: openebs
   labels:
     openebs.io/disk-type: nvme
+    openebs.io/disk-slot: main
 spec:
   node: espresso-2
   disks:
@@ -72,6 +81,7 @@ spec:
   topology:
     labelled:
       openebs.io/disk-type: nvme
+      openebs.io/disk-slot: main
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -80,6 +90,7 @@ metadata:
   namespace: openebs
   labels:
     openebs.io/disk-type: sata
+    openebs.io/disk-slot: data1
 spec:
   node: espresso-2
   disks:
@@ -87,6 +98,7 @@ spec:
   topology:
     labelled:
       openebs.io/disk-type: sata
+      openebs.io/disk-slot: data1
 ---
 apiVersion: openebs.io/v1beta3
 kind: DiskPool
@@ -95,6 +107,7 @@ metadata:
   namespace: openebs
   labels:
     openebs.io/disk-type: sata
+    openebs.io/disk-slot: data2
 spec:
   node: espresso-2
   disks:
@@ -102,3 +115,4 @@ spec:
   topology:
     labelled:
       openebs.io/disk-type: sata
+      openebs.io/disk-slot: data2
