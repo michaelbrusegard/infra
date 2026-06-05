@@ -60,7 +60,8 @@
     pkgs.vkbasalt # Vulkan post-processing (sharpening, etc.)
   ];
 
-  # Sane default overlay: perf + thermals, toggled in-game with Shift_R+F12.
+  # Perf + thermals overlay. Loaded but hidden by default (no_display);
+  # press Shift_R+F12 in-game to show/hide it.
   mangohudConf = ''
     fps
     frametime
@@ -78,13 +79,14 @@
     position=top-left
     font_size=20
     background_alpha=0.4
+    no_display=1
     toggle_hud=Shift_R+F12
     toggle_fps_limit=Shift_R+F11
   '';
-  # Prism keeps its settings in a runtime-mutable cfg, so seed just the two
-  # keys we care about (idempotently) rather than managing the whole file.
-  # Feral GameMode makes Prism run *Minecraft itself* under GameMode (perf +
-  # the touchpad DWT toggle); MangoHud enables the overlay for the game.
+  # Prism keeps its settings in a runtime-mutable cfg, so seed just the keys we
+  # care about (idempotently) rather than managing the whole file. Feral
+  # GameMode makes Prism run Minecraft itself under GameMode (perf); MangoHud
+  # enables the overlay for the game (toggle it in-game with Shift_R+F12).
   prismCfg = "${config.home.homeDirectory}/.local/share/PrismLauncher/prismlauncher.cfg";
   setPrismKey = key: ''
     if [ -f "${prismCfg}" ]; then
