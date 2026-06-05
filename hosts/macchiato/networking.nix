@@ -427,18 +427,12 @@ in {
       conditional.mapping = {
         "${baseDomain}" = "10.0.188.5,fd7a:115c:a1e0:188::5";
         "manafishrov.com" = "10.0.188.5,fd7a:115c:a1e0:188::5";
+        "eldians.com" = "10.0.188.5,fd7a:115c:a1e0:188::5";
       };
       customDNS.mapping = {
         "${routerDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
         # mail + WebUI listeners are on the stalwart LB, not the HTTP gateway
         "mail.${baseDomain}" = "10.0.188.12,fd7a:115c:a1e0:188::12";
-        # Minecraft: LAN clients reach mc-router's LB VIP directly.
-        "vanilla.eldians.com" = "10.0.188.50,fd7a:115c:a1e0:188::50";
-        "creative.eldians.com" = "10.0.188.50,fd7a:115c:a1e0:188::50";
-        "revelation.eldians.com" = "10.0.188.50,fd7a:115c:a1e0:188::50";
-        # Resource pack is served by the public HTTP gateway VIP, so LAN
-        # clients (and the MC servers themselves) reach it without hairpin.
-        "packs.eldians.com" = "10.0.188.2,fd7a:115c:a1e0:188::2";
       };
     };
 

@@ -49,6 +49,7 @@ metadata:
   namespace: minecraft
   annotations:
     lbipam.cilium.io/ips: 10.0.188.50,fd7a:115c:a1e0:188::50
+    coredns.io/hostname: vanilla.eldians.com,creative.eldians.com,revelation.eldians.com
 spec:
   type: LoadBalancer
   ipFamilyPolicy: PreferDualStack
