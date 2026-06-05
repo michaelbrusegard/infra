@@ -436,6 +436,9 @@ in {
         "vanilla.eldians.com" = "10.0.188.50,fd7a:115c:a1e0:188::50";
         "creative.eldians.com" = "10.0.188.50,fd7a:115c:a1e0:188::50";
         "revelation.eldians.com" = "10.0.188.50,fd7a:115c:a1e0:188::50";
+        # Resource pack is served by the public HTTP gateway VIP, so LAN
+        # clients (and the MC servers themselves) reach it without hairpin.
+        "packs.eldians.com" = "10.0.188.2,fd7a:115c:a1e0:188::2";
       };
     };
 
