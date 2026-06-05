@@ -27,18 +27,4 @@ parameters:
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 reclaimPolicy: Retain
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: nvme-single
-provisioner: io.openebs.csi-mayastor
-parameters:
-  protocol: nvmf
-  repl: "1"
-  ioTimeout: "60"
-  poolAffinityTopologyLabel: |
-    openebs.io/disk-type: nvme
-volumeBindingMode: WaitForFirstConsumer
-allowVolumeExpansion: true
 reclaimPolicy: Retain
