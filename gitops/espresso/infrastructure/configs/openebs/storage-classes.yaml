@@ -27,4 +27,3 @@ parameters:
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 reclaimPolicy: Retain
-reclaimPolicy: Retain
