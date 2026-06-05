@@ -183,5 +183,11 @@ _: {
       Value = "en-GB";
       Status = "locked";
     };
+
+    # Translations
+    "browser.translations.neverTranslateLanguages" = {
+      Value = "en,no";
+      Status = "locked";
+    };
   };
 }
