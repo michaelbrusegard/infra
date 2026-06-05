@@ -37,16 +37,16 @@ _: {
           type = "gradient";
           colors = [
             {
-              red = 148;
-              green = 226;
-              blue = 213;
+              red = 250;
+              green = 179;
+              blue = 135;
               algorithm = "floating";
               type = "explicit-lightness";
             }
             {
-              red = 116;
-              green = 199;
-              blue = 236;
+              red = 203;
+              green = 166;
+              blue = 247;
               algorithm = "floating";
               type = "explicit-lightness";
             }
