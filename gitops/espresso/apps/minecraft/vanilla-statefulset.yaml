@@ -64,9 +64,9 @@ spec:
             # sidecar serves it at packs.eldians.com. Update the filename + SHA1
             # here when the pack content changes.
             - name: RESOURCE_PACK
-              value: "https://packs.eldians.com/VanillaTweaks_5ac0ac1.zip"
+              value: "https://packs.eldians.com/VanillaTweaks_r775386_MC26.1.x.zip"
             - name: RESOURCE_PACK_SHA1
-              value: "d0ca30cbf6d828fc14b1d6fb8556a31887f0852b"
+              value: "33d553c6267bf39b9c057edade944cdda92fe77d"
             - name: RESOURCE_PACK_ENFORCE
               value: "true"
             - name: ENABLE_WHITELIST
@@ -81,7 +81,7 @@ spec:
               value: |
                 Ker4lis
             - name: VANILLATWEAKS_SHARECODE
-              value: "UYQbPj,f6EcuB,VcM0CD"
+              value: "iHZjYt,IeVAYl,m1dmpn"
             # Server-side mods only: players join with vanilla, no client
             # install required. itzg resolves the newest 26.1.2 fabric build.
             # Accept alpha/beta builds: this early after 26.1.2, several perf
