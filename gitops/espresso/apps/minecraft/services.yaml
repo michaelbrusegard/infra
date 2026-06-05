@@ -39,3 +39,18 @@ spec:
     - name: minecraft
       port: 25565
       targetPort: minecraft
+---
+# Resource-pack HTTP server (sidecar in the vanilla pod). Both vanilla and
+# creative point RESOURCE_PACK at this via packs.eldians.com.
+apiVersion: v1
+kind: Service
+metadata:
+  name: pack-server
+  namespace: minecraft
+spec:
+  selector:
+    app: vanilla
+  ports:
+    - name: http
+      port: 80
+      targetPort: packs

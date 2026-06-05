@@ -8,4 +8,5 @@ resources:
   - services.yaml
   - mc-router.yaml
   - dns.yaml
+  - httproute.yaml
   - network-policy.yaml

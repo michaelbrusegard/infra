@@ -59,10 +59,13 @@ spec:
               value: "16"
             - name: SNOOPER_ENABLED
               value: "false"
+            # Self-hosted via the pack-server sidecar in the vanilla pod,
+            # served at packs.eldians.com. Update filename + SHA1 here when the
+            # pack content changes.
             - name: RESOURCE_PACK
-              value: "https://www.dropbox.com/scl/fi/ubdihzo3s0rq98xjimbp9/VanillaTweaks_5ac0ac1.zip?rlkey=hzvmvmgx0nbuskbiwn89lfu6h&st=i9zc87z6&dl=1"
+              value: "https://packs.eldians.com/VanillaTweaks_5ac0ac1.zip"
             - name: RESOURCE_PACK_SHA1
-              value: "ce53e346107a50c3e8390f1b0b2612ab632a4ca3"
+              value: "d0ca30cbf6d828fc14b1d6fb8556a31887f0852b"
             - name: RESOURCE_PACK_ENFORCE
               value: "true"
             - name: ENABLE_WHITELIST

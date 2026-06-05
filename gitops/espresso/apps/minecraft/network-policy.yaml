@@ -24,6 +24,15 @@ spec:
         - ports:
             - port: "25565"
               protocol: TCP
+    # uptime-kuma health probe.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "25565"
+              protocol: TCP
   egress:
     # DNS
     - toEndpoints:
@@ -73,6 +82,26 @@ spec:
       toPorts:
         - ports:
             - port: "25565"
+              protocol: TCP
+    # uptime-kuma health probes (TCP 25565 + pack-server 8080).
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "25565"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
+    # Resource-pack HTTP sidecar: gateway traffic + kubelet probes on 8080.
+    - fromEntities:
+        - ingress
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "8080"
               protocol: TCP
   egress:
     # DNS

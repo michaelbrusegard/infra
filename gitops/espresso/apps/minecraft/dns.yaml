@@ -21,3 +21,8 @@ spec:
       recordType: CNAME
       targets:
         - router.asgard.michaelbrusegard.com
+    # Resource-pack HTTP server, served via the public gateway (HTTPS).
+    - dnsName: packs.eldians.com
+      recordType: CNAME
+      targets:
+        - router.asgard.michaelbrusegard.com
