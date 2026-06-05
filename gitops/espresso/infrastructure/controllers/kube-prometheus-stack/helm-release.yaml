@@ -43,7 +43,7 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: nvme-ha
+              storageClassName: ssd-ha
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
