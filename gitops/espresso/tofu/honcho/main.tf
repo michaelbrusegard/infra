@@ -2,7 +2,7 @@ resource "postgresql_role" "honcho" {
   name                = "honcho_app"
   login               = true
   password_wo         = var.honcho_db_password
-  password_wo_version = "1"
+  password_wo_version = 1
 }
 
 resource "postgresql_database" "honcho" {
