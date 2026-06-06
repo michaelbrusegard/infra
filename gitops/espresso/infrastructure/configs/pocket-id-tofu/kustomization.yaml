@@ -1,4 +1,27 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - terraform.yaml
+  - ../tofu-base
+patches:
+  - target:
+      kind: Terraform
+      name: tofu-base
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: pocket-id-infra
+  - target:
+      kind: Terraform
+      name: pocket-id-infra
+    patch: |
+      apiVersion: infra.contrib.fluxcd.io/v1alpha2
+      kind: Terraform
+      metadata:
+        name: pocket-id-infra
+      spec:
+        path: ./gitops/espresso/tofu/pocket-id
+        backendConfig:
+          secretSuffix: pocket-id-infra
+        varsFrom:
+          - kind: Secret
+            name: pocket-id-credentials

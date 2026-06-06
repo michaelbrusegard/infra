@@ -1,4 +1,35 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - terraform.yaml
+  - ../tofu-base
+patches:
+  - target:
+      kind: Terraform
+      name: tofu-base
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: dns-infra
+  - target:
+      kind: Terraform
+      name: dns-infra
+    patch: |
+      apiVersion: infra.contrib.fluxcd.io/v1alpha2
+      kind: Terraform
+      metadata:
+        name: dns-infra
+      spec:
+        path: ./gitops/espresso/tofu/dns
+        backendConfig:
+          secretSuffix: dns-infra
+        varsFrom:
+          - kind: Secret
+            name: dns-records
+        runnerPodTemplate:
+          spec:
+            env:
+              - name: CLOUDFLARE_API_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: cloudflare-api-token
+                    key: api-token
