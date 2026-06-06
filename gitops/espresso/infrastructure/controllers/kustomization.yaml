@@ -13,6 +13,7 @@ resources:
   - postgres
   - reflector
   - reloader
+  - descheduler
   - tofu-controller
   - k8s-gateway
   - external-dns

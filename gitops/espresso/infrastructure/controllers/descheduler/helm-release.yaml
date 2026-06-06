@@ -1,0 +1,60 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: descheduler
+  namespace: flux-system
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: descheduler
+      version: "0.36.0"
+      sourceRef:
+        kind: HelmRepository
+        name: descheduler
+        namespace: flux-system
+      interval: 1h
+  # Deploy into kube-system so the descheduler pod is a critical pod and is
+  # not a candidate for its own eviction.
+  targetNamespace: kube-system
+  values:
+    # Run as a CronJob: a short pod every 10 minutes, no always-on Deployment.
+    kind: CronJob
+    schedule: "*/10 * * * *"
+    successfulJobsHistoryLimit: 1
+    failedJobsHistoryLimit: 1
+    # Tiny footprint; it only lists pods and issues evictions.
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+    deschedulerPolicyAPIVersion: "descheduler/v1alpha2"
+    deschedulerPolicy:
+      profiles:
+        - name: reap-failed-pods
+          pluginConfig:
+            # Only ever touch pods already in a terminal Failed phase. Keep the
+            # default protections for system-critical, DaemonSet and local-
+            # storage pods; nodeFit is irrelevant since we are deleting dead
+            # pods, not relocating live ones.
+            - name: DefaultEvictor
+              args:
+                nodeFit: false
+            - name: RemoveFailedPods
+              args:
+                # Reap node-orphaned tombstones left after ungraceful node
+                # loss (e.g. the espresso wipe-and-rejoin rebuilds): these are
+                # in Failed phase with reason NodeShutdown / NodeAffinity /
+                # status Unknown. Give them 5 minutes first so genuinely
+                # transient failures are left to their controllers.
+                includingInitContainers: true
+                minPodLifetimeSeconds: 300
+                excludeOwnerKinds:
+                  - Job
+          plugins:
+            deschedule:
+              enabled:
+                - RemoveFailedPods
