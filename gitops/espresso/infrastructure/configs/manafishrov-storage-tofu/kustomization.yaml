@@ -22,6 +22,20 @@ patches:
         path: ./tofu/storage
         backendConfig:
           secretSuffix: manafishrov-storage
+        # The minio provider is large; `tofu init` unpacking it OOM-kills the
+        # runner at the shared 1Gi base limit (exit 137), which surfaces to the
+        # controller as "terraform session error: instance id is empty" (the
+        # runner dies before registering its session). 2Gi still OOM'd, so give
+        # this stack's runner 4Gi; the nodes have ample headroom.
+        runnerPodTemplate:
+          spec:
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                cpu: "1"
+                memory: 4Gi
         varsFrom:
           - kind: Secret
             name: rustfs-secret
