@@ -24,7 +24,11 @@ spec:
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: media
-    # Uptime-kuma monitoring
+    # Uptime-kuma monitoring. The arr apps expose their HTTP port as the
+    # named `http` port on their main container. Transmission's 9091 lives on
+    # its `transmission` sidecar (a restartPolicy: Always init container)
+    # whose named ports Cilium does not resolve, so the numeric 9091 is needed
+    # in addition to cover the transmission monitor.
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: uptime-kuma
@@ -32,6 +36,8 @@ spec:
       toPorts:
         - ports:
             - port: http
+              protocol: TCP
+            - port: "9091"
               protocol: TCP
   egress:
     - toEndpoints:
