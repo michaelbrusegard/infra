@@ -66,15 +66,11 @@
     if lidSwitch != null
     then lib.lists.findFirst (m: m.output == lidSwitch.output) null osConfig.local.hyprland.monitors
     else null;
-  encodeLua = v: lib.generators.toLua {} v;
   lidBinds = lib.optionals (lidSwitch != null && lidMonitor != null) [
     (bindLocked "switch:on:${lidSwitch.name}"
-      (mkLuaInline ''function() hl.dsp.exec_cmd("dms ipc call lock lock"); hl.monitor(${encodeLua {
-          inherit (lidSwitch) output;
-          disabled = true;
-        }}) end''))
+      (exec "dms ipc call lock lock; hyprctl dispatch dpms off ${lidSwitch.output}"))
     (bindLocked "switch:off:${lidSwitch.name}"
-      (mkLuaInline "function() hl.monitor(${encodeLua lidMonitor}) end"))
+      (exec "hyprctl dispatch dpms on ${lidSwitch.output}"))
   ];
 
   workspaceRules = [
