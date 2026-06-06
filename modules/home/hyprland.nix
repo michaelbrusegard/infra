@@ -69,10 +69,10 @@
   encodeLua = v: lib.generators.toLua {} v;
   lidBinds = lib.optionals (lidSwitch != null && lidMonitor != null) [
     (bindLocked "switch:on:${lidSwitch.name}"
-      (mkLuaInline "function() hl.monitor(${encodeLua {
-        inherit (lidSwitch) output;
-        disabled = true;
-      }}) end"))
+      (mkLuaInline ''function() hl.dsp.exec_cmd("dms ipc call lock lock"); hl.monitor(${encodeLua {
+          inherit (lidSwitch) output;
+          disabled = true;
+        }}) end''))
     (bindLocked "switch:off:${lidSwitch.name}"
       (mkLuaInline "function() hl.monitor(${encodeLua lidMonitor}) end"))
   ];

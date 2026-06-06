@@ -48,8 +48,33 @@
     };
   };
 
-  # Render games on the RTX 5080 instead of the AMD iGPU (offload default).
-  local.gaming.nvidiaOffload = true;
+  local = {
+    # Render games on the RTX 5080 instead of the AMD iGPU (offload default).
+    gaming.nvidiaOffload = true;
+
+    hyprland = {
+      lidSwitch.output = "eDP-1";
+
+      monitors = [
+        {
+          output = "eDP-1";
+          mode = "3840x2400@120";
+          position = "0x0";
+          scale = 2;
+          bitdepth = 10;
+          # The factory panel ICC drives color and overrides any `cm` preset, so
+          # there is no `cm` here on purpose.
+          icc = "${../../config/color-profiles/H7606WW_1002_834C420E_CMDEF.icm}";
+        }
+        {
+          output = "";
+          mode = "preferred";
+          position = "auto";
+          scale = 1;
+        }
+      ];
+    };
+  };
 
   services = {
     xserver.videoDrivers = ["nvidia"];
@@ -118,26 +143,16 @@
     power-profiles-daemon.enable = true;
     upower.enable = true;
     fwupd.enable = true;
-  };
 
-  local.hyprland.monitors = [
-    {
-      output = "eDP-1";
-      mode = "3840x2400@120";
-      position = "0x0";
-      scale = 2;
-      bitdepth = 10;
-      # The factory panel ICC drives color and overrides any `cm` preset, so
-      # there is no `cm` here on purpose.
-      icc = "${../../config/color-profiles/H7606WW_1002_834C420E_CMDEF.icm}";
-    }
-    {
-      output = "";
-      mode = "preferred";
-      position = "auto";
-      scale = 1;
-    }
-  ];
+    # Closing the lid locks + blanks the internal panel (handled in Hyprland
+    # via local.hyprland.lidSwitch) but must never suspend: suspend drops wifi
+    # and freezes background agents.
+    logind.settings.Login = {
+      HandleLidSwitch = "ignore";
+      HandleLidSwitchExternalPower = "ignore";
+      HandleLidSwitchDocked = "ignore";
+    };
+  };
 
   zramSwap = {
     enable = true;
