@@ -18,6 +18,8 @@
     initrd.luks.devices = {
       crypted1.crypttabExtraOpts = ["tpm2-device=auto"];
     };
+
+    loader.systemd-boot.consoleMode = "2";
   };
 
   hardware = {
