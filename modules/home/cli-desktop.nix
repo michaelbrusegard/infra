@@ -3,6 +3,7 @@
     ffmpeg
     imagemagick
     p7zip
+    unrar
     chafa
     presenterm
     yt-dlp
