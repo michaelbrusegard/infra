@@ -27,7 +27,8 @@ in {
       };
       gamescope = {
         enable = true;
-        capSysNice = true;
+        # TODO: re-enable once nixos-26.05 backports the setuid bwrap wrapper removal (breaks Steam)
+        capSysNice = false;
       };
       gamemode.enable = true;
     };
