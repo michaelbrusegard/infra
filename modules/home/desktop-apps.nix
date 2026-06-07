@@ -20,6 +20,7 @@
         ++ lib.optionals pkgs.stdenv.isLinux [
           imv
           legcord
+          jellyfin-media-player
 
           transmission_4
           proton-pass
@@ -40,6 +41,7 @@
 
           brewCasks.linearmouse
           brewCasks.legcord
+          brewCasks.jellyfin-media-player
 
           brewCasks.transmission
           brewCasks.proton-pass
@@ -68,6 +70,7 @@
           ".config/Proton Pass"
           ".config/libreoffice"
           ".config/blender"
+          ".local/share/Jellyfin Media Player"
         ];
       };
     };
