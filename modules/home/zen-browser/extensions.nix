@@ -13,6 +13,12 @@ _: {
         installation_mode = "force_installed";
         default_area = "menupanel";
       };
+      # DeArrow - crowdsourced YouTube titles/thumbnails
+      "dearrow@ajay.app" = {
+        install_url = "https://addons.mozilla.org/firefox/downloads/latest/dearrow/latest.xpi";
+        installation_mode = "force_installed";
+        default_area = "menupanel";
+      };
       # YouTube Shorts Block
       "{34daeb50-c2d2-4f14-886a-7160b24d66a4}" = {
         install_url = "https://addons.mozilla.org/firefox/downloads/latest/youtube-shorts-block/latest.xpi";
@@ -82,30 +88,6 @@ _: {
       # Steam Database
       "firefox-extension@steamdb.info" = {
         install_url = "https://addons.mozilla.org/firefox/downloads/latest/steam-database/latest.xpi";
-        installation_mode = "force_installed";
-        default_area = "menupanel";
-      };
-      # Search Engine Ad Remover
-      "@searchengineadremover" = {
-        install_url = "https://addons.mozilla.org/firefox/downloads/latest/searchengineadremover/latest.xpi";
-        installation_mode = "force_installed";
-        default_area = "menupanel";
-      };
-      # Decentraleyes - local CDN emulation
-      "jid1-BoFifL9Vbdl2zQ@jetpack" = {
-        install_url = "https://addons.mozilla.org/firefox/downloads/latest/decentraleyes/latest.xpi";
-        installation_mode = "force_installed";
-        default_area = "menupanel";
-      };
-      # TrackMeNot - search privacy
-      "trackmenot@mrl.nyu.edu" = {
-        install_url = "https://addons.mozilla.org/firefox/downloads/latest/trackmenot/latest.xpi";
-        installation_mode = "force_installed";
-        default_area = "menupanel";
-      };
-      # Custom User Agent Revived
-      "{861a3982-bb3b-49c6-bc17-4f50de104da1}" = {
-        install_url = "https://addons.mozilla.org/firefox/downloads/latest/custom-user-agent-revived/latest.xpi";
         installation_mode = "force_installed";
         default_area = "menupanel";
       };
