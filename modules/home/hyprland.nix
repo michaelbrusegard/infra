@@ -68,9 +68,7 @@
     else null;
   lidBinds = lib.optionals (lidSwitch != null && lidMonitor != null) [
     (bindLocked "switch:on:${lidSwitch.name}"
-      (exec "dms ipc call lock lock; hyprctl dispatch dpms off ${lidSwitch.output}"))
-    (bindLocked "switch:off:${lidSwitch.name}"
-      (exec "hyprctl dispatch dpms on ${lidSwitch.output}"))
+      (exec "dms ipc call lock lock"))
   ];
 
   workspaceRules = [
