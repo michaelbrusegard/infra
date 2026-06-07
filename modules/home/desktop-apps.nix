@@ -22,7 +22,7 @@
           legcord
           jellyfin-media-player
 
-          transmission_4
+          transmission_4-gtk
           proton-pass
           libreoffice-fresh
           scribus
@@ -71,6 +71,7 @@
           ".config/libreoffice"
           ".config/blender"
           ".local/share/Jellyfin Media Player"
+          ".config/transmission"
         ];
       };
     };
