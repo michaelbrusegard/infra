@@ -4,7 +4,8 @@
 
 (defsrc
   caps a s d f j k l ;
-  lalt lmet ralt rmet
+  102d
+  lctl lmet lalt ralt rmet rctl f23
 )
 
 (defvar
@@ -12,25 +13,24 @@
 )
 
 (defalias
-  a (tap-hold-release $tapping_term $tapping_term a lctl)
+  a (tap-hold-release $tapping_term $tapping_term a lmet)
   s (tap-hold-release $tapping_term $tapping_term s lalt)
   d (tap-hold-release $tapping_term $tapping_term d lsft)
-  f (tap-hold-release $tapping_term $tapping_term f lmet)
-  j (tap-hold-release $tapping_term $tapping_term j rmet)
+  f (tap-hold-release $tapping_term $tapping_term f lctl)
+  j (tap-hold-release $tapping_term $tapping_term j rctl)
   k (tap-hold-release $tapping_term $tapping_term k rsft)
   l (tap-hold-release $tapping_term $tapping_term l ralt)
-  ; (tap-hold-release $tapping_term $tapping_term ; rctl)
+  ; (tap-hold-release $tapping_term $tapping_term ; rmet)
 )
 
 (deflayer base
   esc @a @s @d @f @j @k @l @;
-  lmet lalt rmet ralt
+  lsft
+  lmet lalt lctl rctl ralt rmet ralt
 )
 
-;; Plain layer with no home-row mods, for gaming (so holding WASD etc. repeats
-;; the key instead of acting as a modifier). The game-mode watcher switches to
-;; this via the TCP server while a game window is focused.
 (deflayer nomods
   esc a s d f j k l ;
-  lmet lalt rmet ralt
+  lsft
+  lctl lmet lalt ralt rmet rctl ralt
 )
