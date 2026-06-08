@@ -1,11 +1,12 @@
 (defcfg
   process-unmapped-keys yes
+  concurrent-tap-hold yes
 )
 
 (defsrc
   caps a s d f j k l ;
   102d
-  lctl lmet lalt ralt rmet rctl f23
+  lsft lctl lmet lalt ralt rmet rctl f23
 )
 
 (defvar
@@ -21,16 +22,23 @@
   k (tap-hold-release $tapping_term $tapping_term k rsft)
   l (tap-hold-release $tapping_term $tapping_term l ralt)
   ; (tap-hold-release $tapping_term $tapping_term ; rmet)
+  ;; The Copilot key emits lsft+lmet+f23 as one chord. Map it to AltGr; the
+  ;; fork re-adds Shift so a manually held Shift survives (Shift+AltGr).
+  cplt (fork ralt (multi lsft ralt) (lsft))
+)
+
+(defchordsv2
+  (lsft lmet f23) @cplt 5 first-release ()
 )
 
 (deflayer base
   esc @a @s @d @f @j @k @l @;
   lsft
-  lmet lalt lctl rctl ralt rmet ralt
+  lsft lmet lalt lctl rctl ralt rmet ralt
 )
 
 (deflayer nomods
   esc a s d f j k l ;
   lsft
-  lctl lmet lalt ralt rmet rctl ralt
+  lsft lctl lmet lalt ralt rmet rctl ralt
 )
