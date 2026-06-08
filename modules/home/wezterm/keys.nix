@@ -1,214 +1,219 @@
-_: {
+{pkgs, ...}: let
+  super =
+    if pkgs.stdenv.isDarwin
+    then "SUPER"
+    else "CTRL";
+
+  ctrl =
+    if pkgs.stdenv.isDarwin
+    then "CTRL"
+    else "SUPER";
+in {
   programs.wezterm.spec = {
     keys = [
       {
         key = "c";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.CopyTo('Clipboard')";
       }
       {
         key = "v";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.PasteFrom('Clipboard')";
       }
       {
         key = "=";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.IncreaseFontSize";
       }
       {
         key = "-";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.DecreaseFontSize";
       }
       {
         key = "0";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ResetFontSize";
       }
       {
         key = "q";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.QuitApplication";
       }
       {
         key = "n";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.SpawnWindow";
       }
       {
         key = "t";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.SpawnTab('CurrentPaneDomain')";
       }
       {
-        key = "t";
-        mods = "SHIFT|SUPER";
-        action = "wezterm.action.SpawnCommandInNewTab({ args = { 'nvim' } })";
-      }
-      {
         key = "d";
-        mods = "SHIFT|SUPER";
+        mods = "SHIFT|${super}";
         action = "wezterm.action.ShowDebugOverlay";
       }
       {
         key = "w";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.CloseCurrentPane({ confirm = true })";
       }
       {
         key = "w";
-        mods = "SHIFT|SUPER";
+        mods = "SHIFT|${super}";
         action = "wezterm.action.CloseCurrentTab({ confirm = true })";
       }
       {
         key = "\\";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.SplitHorizontal({ domain = 'CurrentPaneDomain' })";
       }
       {
         key = "|";
-        mods = "SHIFT|SUPER";
+        mods = "SHIFT|${super}";
         action = "wezterm.action.SplitVertical({ domain = 'CurrentPaneDomain' })";
       }
       {
         key = "h";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivatePaneDirection('Left')";
       }
       {
         key = "j";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivatePaneDirection('Down')";
       }
       {
         key = "k";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivatePaneDirection('Up')";
       }
       {
         key = "l";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivatePaneDirection('Right')";
       }
       {
         key = "LeftArrow";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.AdjustPaneSize({ 'Left', 2 })";
       }
       {
         key = "DownArrow";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.AdjustPaneSize({ 'Down', 2 })";
       }
       {
         key = "UpArrow";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.AdjustPaneSize({ 'Up', 2 })";
       }
       {
         key = "RightArrow";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.AdjustPaneSize({ 'Right', 2 })";
       }
       {
         key = "Tab";
-        mods = "CTRL";
+        mods = ctrl;
         action = "wezterm.action.ActivateTabRelative(1)";
       }
       {
         key = "Tab";
-        mods = "SHIFT|CTRL";
+        mods = "SHIFT|${ctrl}";
         action = "wezterm.action.ActivateTabRelative(-1)";
       }
       {
         key = "{";
-        mods = "SHIFT|SUPER";
+        mods = "SHIFT|${super}";
         action = "wezterm.action.ActivateTabRelative(-1)";
       }
       {
         key = "}";
-        mods = "SHIFT|SUPER";
+        mods = "SHIFT|${super}";
         action = "wezterm.action.ActivateTabRelative(1)";
       }
       {
         key = "1";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivateTab(0)";
       }
       {
         key = "2";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivateTab(1)";
       }
       {
         key = "3";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivateTab(2)";
       }
       {
         key = "4";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivateTab(3)";
       }
       {
         key = "5";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivateTab(4)";
       }
       {
         key = "6";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivateTab(5)";
       }
       {
         key = "7";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivateTab(6)";
       }
       {
         key = "8";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivateTab(7)";
       }
       {
         key = "9";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivateTab(-1)";
       }
       {
         key = "p";
-        mods = "SHIFT|SUPER";
+        mods = "SHIFT|${super}";
         action = "wezterm.action.MoveTabRelative(-1)";
       }
       {
         key = "n";
-        mods = "SHIFT|SUPER";
+        mods = "SHIFT|${super}";
         action = "wezterm.action.MoveTabRelative(1)";
       }
       {
         key = "f";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.Search('CurrentSelectionOrEmptyString')";
       }
       {
         key = "y";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ActivateCopyMode";
       }
       {
         key = "z";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.TogglePaneZoomState";
       }
       {
         key = "r";
-        mods = "SUPER";
+        mods = super;
         action = "wezterm.action.ReloadConfiguration";
       }
       {
         key = "r";
-        mods = "SHIFT|SUPER";
+        mods = "SHIFT|${super}";
         action = "wezterm.action_callback(function(w, p) wezterm.plugin.update_all() w:perform_action(wezterm.action.ReloadConfiguration(), p) end)";
       }
     ];
@@ -367,17 +372,17 @@ _: {
         }
         {
           key = "b";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode('PageUp')";
         }
         {
           key = "c";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode('Close')";
         }
         {
           key = "d";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode({ MoveByPage = 0.5 })";
         }
         {
@@ -397,7 +402,7 @@ _: {
         }
         {
           key = "f";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode('PageDown')";
         }
         {
@@ -407,7 +412,7 @@ _: {
         }
         {
           key = "g";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode('Close')";
         }
         {
@@ -452,7 +457,7 @@ _: {
         }
         {
           key = "u";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode({ MoveByPage = -0.5 })";
         }
         {
@@ -462,7 +467,7 @@ _: {
         }
         {
           key = "v";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode({ SetSelectionMode = 'Block' })";
         }
         {
@@ -477,7 +482,7 @@ _: {
         }
         {
           key = "c";
-          mods = "SUPER";
+          mods = super;
           action = "wezterm.action.Multiple({ { CopyTo = 'ClipboardAndPrimarySelection' }, { CopyMode = 'Close' } })";
         }
       ];
@@ -494,22 +499,22 @@ _: {
         }
         {
           key = "n";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode('NextMatch')";
         }
         {
           key = "p";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode('PriorMatch')";
         }
         {
           key = "r";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode('CycleMatchType')";
         }
         {
           key = "u";
-          mods = "CTRL";
+          mods = ctrl;
           action = "wezterm.action.CopyMode('ClearPattern')";
         }
       ];

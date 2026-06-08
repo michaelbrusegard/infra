@@ -2,14 +2,24 @@
   pkgs,
   lib,
   ...
-}: {
+}: let
+  super =
+    if pkgs.stdenv.isDarwin
+    then "SUPER"
+    else "CTRL";
+
+  ctrl =
+    if pkgs.stdenv.isDarwin
+    then "CTRL"
+    else "SUPER";
+in {
   programs.wezterm.spec.plugins = {
     "smart_workspace_switcher" = {
       url = "https://github.com/MLFlexer/smart_workspace_switcher.wezterm";
       keys = [
         {
           key = "Enter";
-          mods = "SUPER";
+          mods = super;
           action = ''smart_workspace_switcher.switch_workspace({ extra_args = [[ | grep -E "^$(echo ~/Projects | sed 's:/*$::')/" | awk -F'/' 'NF<=5']] })'';
         }
       ];
@@ -31,17 +41,17 @@
         keys = {
           attach = {
             key = "d";
-            mods = "SUPER";
+            mods = super;
             tbl = "";
           };
           vsplit = {
             key = "F12";
-            mods = "SHIFT|CTRL";
+            mods = "SHIFT|${ctrl}";
             tbl = "";
           };
           hsplit = {
             key = "F12";
-            mods = "SHIFT|CTRL";
+            mods = "SHIFT|${ctrl}";
             tbl = "";
           };
         };

@@ -7,6 +7,7 @@
     ./spec
     ./options.nix
     ./keys.nix
+    ./swap.nix
     ./ui.nix
     ./util.nix
   ];
