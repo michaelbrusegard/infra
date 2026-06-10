@@ -6,6 +6,7 @@
     inputs.self.darwinModules.homebrew
     inputs.self.darwinModules.jankyborders
     inputs.self.darwinModules.kanata
+    inputs.self.darwinModules.localsend
     inputs.self.darwinModules.netbird
     inputs.self.darwinModules.networking
     inputs.self.darwinModules.nh
