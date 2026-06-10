@@ -14,7 +14,7 @@ _: {
         default_area = "menupanel";
       };
       # DeArrow - crowdsourced YouTube titles/thumbnails
-      "dearrow@ajay.app" = {
+      "deArrow@ajay.app" = {
         install_url = "https://addons.mozilla.org/firefox/downloads/latest/dearrow/latest.xpi";
         installation_mode = "force_installed";
         default_area = "menupanel";
