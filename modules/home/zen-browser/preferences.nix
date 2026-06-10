@@ -176,7 +176,7 @@ _: {
 
     # Locale settings
     "intl.accept_languages" = {
-      Value = "en,no";
+      Value = "en,nb,nn";
       Status = "locked";
     };
     "intl.locale.requested" = {
@@ -186,7 +186,7 @@ _: {
 
     # Translations
     "browser.translations.neverTranslateLanguages" = {
-      Value = "en,no";
+      Value = "en,nb,nn";
       Status = "locked";
     };
   };
