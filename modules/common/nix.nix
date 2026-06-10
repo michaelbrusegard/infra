@@ -18,6 +18,7 @@
     };
 
     settings = {
+      accept-flake-config = true;
       builders-use-substitutes = true;
       extra-experimental-features = ["nix-command" "flakes"];
 
