@@ -89,6 +89,10 @@
       workspace = 3;
     }
     {
+      class = "^(opencode-ai-desktop)$";
+      workspace = 3;
+    }
+    {
       class = "^(libreoffice-.*)$";
       workspace = 4;
     }
