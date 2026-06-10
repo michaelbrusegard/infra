@@ -7,6 +7,7 @@
   ...
 }: let
   dmsConfig = "${config.home.homeDirectory}/Projects/infra/config/dms";
+  wallpaper = ../../wallpapers/twilight-peaks.png;
 in {
   home =
     {
@@ -23,6 +24,12 @@ in {
         x11.enable = true;
         hyprcursor.enable = true;
       };
+
+      activation.dmsWallpaper =
+        lib.mkIf (pkgs.stdenv.isLinux && !isWsl)
+        (lib.hm.dag.entryAfter ["writeBoundary"] ''
+          run ${lib.getExe pkgs.dms-shell} ipc wallpaper set '${wallpaper}' || true
+        '');
     }
     // lib.optionalAttrs (homePersistenceRoot != null) {
       persistence.${homePersistenceRoot}.directories = [
