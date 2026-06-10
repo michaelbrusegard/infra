@@ -20,11 +20,29 @@ _: {
                 mountOptions = ["umask=0077"];
               };
             };
+            swap = {
+              priority = 2;
+              name = "swap";
+              size = "68G";
+              content = {
+                type = "luks";
+                name = "crypted-swap";
+                settings = {
+                  allowDiscards = true;
+                  bypassWorkqueues = true;
+                };
+                passwordFile = "/tmp/secret.key";
+                content = {
+                  type = "swap";
+                  resumeDevice = true;
+                };
+              };
+            };
             root = {
               size = "100%";
               content = {
                 type = "luks";
-                name = "crypted1";
+                name = "crypted";
                 settings = {
                   allowDiscards = true;
                   bypassWorkqueues = true;

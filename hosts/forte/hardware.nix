@@ -1,4 +1,10 @@
-{config, ...}: {
+{
+  config,
+  lib,
+  ...
+}: {
+  security.protectKernelImage = lib.mkForce false;
+
   boot = {
     initrd.availableKernelModules = [
       "nvme"
@@ -16,7 +22,8 @@
     consoleLogLevel = 3;
 
     initrd.luks.devices = {
-      crypted1.crypttabExtraOpts = ["tpm2-device=auto"];
+      crypted.crypttabExtraOpts = ["tpm2-device=auto"];
+      crypted-swap.crypttabExtraOpts = ["tpm2-device=auto"];
     };
 
     loader.systemd-boot.consoleMode = "2";
@@ -147,8 +154,7 @@
     fwupd.enable = true;
 
     # Closing the lid locks + blanks the internal panel (handled in Hyprland
-    # via local.hyprland.lidSwitch) but must never suspend: suspend drops wifi
-    # and freezes background agents.
+    # via local.hyprland.lidSwitch)
     logind.settings.Login = {
       HandleLidSwitch = "ignore";
       HandleLidSwitchExternalPower = "ignore";

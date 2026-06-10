@@ -304,6 +304,7 @@ You can run `ip a` to find the IP address.
 
      ```sh
       sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-id/nvme-MTFDKBA2T0QGN-1BN1AABGA_25194FF55405-part2
+      sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-id/nvme-MTFDKBA2T0QGN-1BN1AABGA_25194FF55405-part3
      ```
 
 ## Macchiato (NixOS Router)
