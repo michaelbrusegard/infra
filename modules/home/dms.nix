@@ -24,12 +24,6 @@ in {
         x11.enable = true;
         hyprcursor.enable = true;
       };
-
-      activation.dmsWallpaper =
-        lib.mkIf (pkgs.stdenv.isLinux && !isWsl)
-        (lib.hm.dag.entryAfter ["writeBoundary"] ''
-          run ${lib.getExe pkgs.dms-shell} ipc wallpaper set '${wallpaper}' || true
-        '');
     }
     // lib.optionalAttrs (homePersistenceRoot != null) {
       persistence.${homePersistenceRoot}.directories = [
@@ -86,5 +80,18 @@ in {
 
   xdg.configFile = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
     "DankMaterialShell".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
+  };
+
+  systemd.user.services.dms-wallpaper = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+    Unit = {
+      PartOf = ["dms.service"];
+      After = ["dms.service"];
+      Requisite = ["dms.service"];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${lib.getExe pkgs.dms-shell} ipc wallpaper set ${wallpaper}";
+    };
+    Install.WantedBy = ["dms.service"];
   };
 }
