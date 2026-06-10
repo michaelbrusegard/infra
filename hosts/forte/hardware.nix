@@ -1,8 +1,13 @@
 {
   config,
   lib,
+  pkgs,
   ...
-}: {
+}: let
+  setKbdBacklightLow = pkgs.writeShellScript "set-kbd-backlight-low" ''
+    echo 1 > /sys/class/leds/asus::kbd_backlight/brightness
+  '';
+in {
   security.protectKernelImage = lib.mkForce false;
 
   boot = {
@@ -110,43 +115,6 @@
             armoury_settings: {},
         )
       '';
-      auraConfigs."19b6".text = ''
-        (
-            config_name: "aura_19b6.ron",
-            brightness: Low,
-            current_mode: Static,
-            builtins: {
-                Static: (
-                    mode: Static,
-                    zone: r#None,
-                    colour1: (
-                        r: 255,
-                        g: 255,
-                        b: 255,
-                    ),
-                    colour2: (
-                        r: 0,
-                        g: 0,
-                        b: 0,
-                    ),
-                    speed: Med,
-                    direction: Right,
-                ),
-            },
-            multizone_on: false,
-            enabled: (
-                states: [
-                    (
-                        zone: Keyboard,
-                        boot: true,
-                        awake: true,
-                        sleep: true,
-                        shutdown: true,
-                    ),
-                ],
-            ),
-        )
-      '';
     };
 
     power-profiles-daemon.enable = true;
@@ -160,6 +128,15 @@
       HandleLidSwitchExternalPower = "ignore";
       HandleLidSwitchDocked = "ignore";
     };
+  };
+
+  # Keyboard backlight on the H7606WW is a plain white LED (no RGB / aura), so
+  # `asusctl aura` does not apply here. systemd-backlight normally restores the
+  # last brightness saved at shutdown — pin it to Low (1 of 3) at every boot
+  # and skip the save step so the value cannot drift.
+  systemd.services."systemd-backlight@leds:asus::kbd_backlight".serviceConfig = {
+    ExecStart = lib.mkForce ["" "${setKbdBacklightLow}"];
+    ExecStop = lib.mkForce (lib.getExe' pkgs.coreutils "true");
   };
 
   zramSwap = {
