@@ -3,7 +3,7 @@ FROM postgres:18-bookworm@sha256:501c9112cb737119b90618d7c09ad4eaab243e4b370050e
 # renovate: suite=bookworm-pgdg depName=postgresql-18-cron
 ARG POSTGRESQL_18_CRON_VERSION=1.6.7-2.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-hll
-ARG POSTGRESQL_18_HLL_VERSION=2.20-1.pgdg12+1
+ARG POSTGRESQL_18_HLL_VERSION=2.21-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-hypopg
 ARG POSTGRESQL_18_HYPOPG_VERSION=1.4.2-2.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-partman
