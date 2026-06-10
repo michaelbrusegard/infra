@@ -30,11 +30,11 @@ _: {
             run = "move-node-to-workspace 2";
           }
           {
-            "if".app-name-regex-substring = "^(Thunderbird|Proton Mail|Proton Pass|OpenCode)$";
+            "if".app-name-regex-substring = "^(Proton Pass|OpenCode)$";
             run = "move-node-to-workspace 3";
           }
           {
-            "if".app-name-regex-substring = "^(Notes|LibreOffice)$";
+            "if".app-name-regex-substring = "^(Proton Mail|Thunderbird|LibreOffice)$";
             run = "move-node-to-workspace 4";
           }
           {

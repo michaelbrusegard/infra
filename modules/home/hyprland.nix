@@ -77,14 +77,6 @@
       workspace = 2;
     }
     {
-      class = "^(thunderbird)$";
-      workspace = 3;
-    }
-    {
-      class = "^(proton-mail)$";
-      workspace = 3;
-    }
-    {
       class = "^(proton-pass)$";
       workspace = 3;
     }
@@ -93,11 +85,19 @@
       workspace = 3;
     }
     {
+      class = "^(thunderbird)$";
+      workspace = 4;
+    }
+    {
+      class = "^(proton-mail)$";
+      workspace = 4;
+    }
+    {
       class = "^(libreoffice-.*)$";
       workspace = 4;
     }
     {
-      class = "^([Ll]egcord)$";
+      class = "^(legcord)$";
       workspace = 5;
     }
     {
@@ -117,7 +117,7 @@
       workspace = 6;
     }
     {
-      class = "^([Oo]rca-?[Ss]licer)$";
+      class = "^(OrcaSlicer)$";
       workspace = 6;
     }
     {
