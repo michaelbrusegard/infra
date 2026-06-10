@@ -237,6 +237,7 @@ in
             mouse_move_enables_dpms = true;
             key_press_enables_dpms = true;
             middle_click_paste = false;
+            focus_on_activate = true;
           };
 
           cursor.no_warps = true;
