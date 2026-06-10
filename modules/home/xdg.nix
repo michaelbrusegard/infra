@@ -12,7 +12,7 @@
       documents = "$HOME/Documents";
       download = "$HOME/Downloads";
       pictures = "$HOME/Pictures";
-      videos = "$HOME/Movies";
+      videos = "$HOME/Videos";
       projects = "$HOME/Projects";
 
       extraConfig = {
