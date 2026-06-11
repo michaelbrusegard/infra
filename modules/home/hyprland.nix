@@ -112,7 +112,7 @@
       workspace = 5;
     }
     {
-      class = "^(Slack)$";
+      class = "^(slack)$";
       workspace = 5;
     }
     {
