@@ -368,7 +368,7 @@
     "hibernate",
     "restart"
   ],
-  "powerMenuDefaultAction": "hibernate",
+  "powerMenuDefaultAction": "",
   "powerMenuGridLayout": false,
   "customPowerActionLock": "",
   "customPowerActionLogout": "",

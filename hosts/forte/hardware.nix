@@ -7,6 +7,16 @@
   setKbdBacklightLow = pkgs.writeShellScript "set-kbd-backlight-low" ''
     echo 1 > /sys/class/leds/asus::kbd_backlight/brightness
   '';
+
+  hibernateWakeupFix = pkgs.writeShellScript "forte-hibernate-wakeup-fix" ''
+    [ "$2" = hibernate ] || exit 0
+    case "$1" in
+      pre) state=disabled ;;
+      post) state=enabled ;;
+      *) exit 0 ;;
+    esac
+    echo "$state" > /sys/bus/i2c/devices/i2c-ASCF1A01:00/power/wakeup 2>/dev/null || :
+  '';
 in {
   security.protectKernelImage = lib.mkForce false;
 
@@ -94,6 +104,43 @@ in {
     xserver.videoDrivers = ["nvidia"];
     asusd = {
       enable = true;
+      auraConfigs."19b6".text = ''
+        (
+            config_name: "aura_19b6.ron",
+            brightness: Low,
+            current_mode: Static,
+            builtins: {
+                Static: (
+                    mode: Static,
+                    zone: r#None,
+                    colour1: (
+                        r: 255,
+                        g: 255,
+                        b: 255,
+                    ),
+                    colour2: (
+                        r: 0,
+                        g: 0,
+                        b: 0,
+                    ),
+                    speed: Med,
+                    direction: Right,
+                ),
+            },
+            multizone_on: false,
+            enabled: (
+                states: [
+                    (
+                        zone: Keyboard,
+                        boot: true,
+                        awake: true,
+                        sleep: false,
+                        shutdown: false,
+                    ),
+                ],
+            ),
+        )
+      '';
       asusdConfig.text = ''
         (
             charge_control_end_threshold: 80,
@@ -130,14 +177,12 @@ in {
     };
   };
 
-  # Keyboard backlight on the H7606WW is a plain white LED (no RGB / aura), so
-  # `asusctl aura` does not apply here. systemd-backlight normally restores the
-  # last brightness saved at shutdown — pin it to Low (1 of 3) at every boot
-  # and skip the save step so the value cannot drift.
   systemd.services."systemd-backlight@leds:asus::kbd_backlight".serviceConfig = {
     ExecStart = lib.mkForce ["" "${setKbdBacklightLow}"];
     ExecStop = lib.mkForce (lib.getExe' pkgs.coreutils "true");
   };
+
+  environment.etc."systemd/system-sleep/00-forte-hibernate-wakeup-fix".source = hibernateWakeupFix;
 
   zramSwap = {
     enable = true;
