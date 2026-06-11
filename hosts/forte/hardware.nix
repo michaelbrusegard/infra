@@ -8,14 +8,27 @@
     echo 1 > /sys/class/leds/asus::kbd_backlight/brightness
   '';
 
+  # Hibernate quirks: the touchpad (AMD GPIO 8) storms while wake-armed and
+  # aborts S4 entry, and the ITE aura controller keeps its sleep breathing
+  # animation after resume until a USB re-attach re-initialises it.
   hibernateWakeupFix = pkgs.writeShellScript "forte-hibernate-wakeup-fix" ''
     [ "$2" = hibernate ] || exit 0
+    touchpad=/sys/bus/i2c/devices/i2c-ASCF1A01:00/power/wakeup
     case "$1" in
-      pre) state=disabled ;;
-      post) state=enabled ;;
-      *) exit 0 ;;
+      pre)
+        echo disabled > "$touchpad" 2>/dev/null || :
+        ;;
+      post)
+        echo enabled > "$touchpad" 2>/dev/null || :
+        for d in /sys/bus/usb/devices/*; do
+          [ "$(cat "$d/idVendor" 2>/dev/null)" = 0b05 ] || continue
+          [ "$(cat "$d/idProduct" 2>/dev/null)" = 19b6 ] || continue
+          echo 0 > "$d/authorized" 2>/dev/null || :
+          sleep 1
+          echo 1 > "$d/authorized" 2>/dev/null || :
+        done
+        ;;
     esac
-    echo "$state" > /sys/bus/i2c/devices/i2c-ASCF1A01:00/power/wakeup 2>/dev/null || :
   '';
 in {
   security.protectKernelImage = lib.mkForce false;

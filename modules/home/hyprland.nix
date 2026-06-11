@@ -11,6 +11,13 @@
   sh = lib.getExe' pkgs.bash "sh";
   yazi = lib.getExe pkgs.yazi;
   systemctl = lib.getExe' pkgs.systemd "systemctl";
+  brightnessctl = lib.getExe pkgs.brightnessctl;
+  kbdBacklightCycle = pkgs.writeShellScript "kbd-backlight-cycle" ''
+    d='asus::kbd_backlight'
+    b=$(${brightnessctl} -d "$d" g) || exit 0
+    m=$(${brightnessctl} -d "$d" m)
+    ${brightnessctl} -d "$d" s $(((b + 1) % (m + 1)))
+  '';
 
   # Manual gaming-mode toggle (SUPER + G): flips touchpad disable-while-typing
   # and the kanata home-row-mods layer together, so holding WASD works in games.
@@ -293,6 +300,7 @@ in
             (bindLockedRepeat "XF86AudioLowerVolume" (exec "dms ipc call audio decrement 3"))
             (bindLockedRepeat "XF86MonBrightnessUp" (execRaw ''dms ipc call brightness increment 5 ""''))
             (bindLockedRepeat "XF86MonBrightnessDown" (execRaw ''dms ipc call brightness decrement 5 ""''))
+            (bindLocked "XF86KbdLightOnOff" (exec "${kbdBacklightCycle}"))
             (bindLocked "XF86AudioMute" (exec "dms ipc call audio mute"))
             (bindLocked "XF86AudioMicMute" (exec "dms ipc call audio micmute"))
             (bindLocked "XF86AudioPlay" (exec "dms ipc call mpris playPause"))
