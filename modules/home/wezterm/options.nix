@@ -14,7 +14,7 @@
     colors = lib.generators.mkLuaInline "wezterm.color.get_builtin_schemes()['Catppuccin Mocha']";
     font = lib.generators.mkLuaInline ''
       wezterm.font_with_fallback({
-        { family = "IosevkaTerm Nerd Font", harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' } }
+        { family = "GeistMono Nerd Font", harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' } }
       })
     '';
     default_prog = lib.generators.mkLuaInline ''

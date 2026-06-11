@@ -5,12 +5,12 @@
       corefonts
       inter
       source-serif
-      nerd-fonts.iosevka-term
+      nerd-fonts.geist-mono
     ];
     fontconfig.defaultFonts = {
       sansSerif = ["Inter"];
       serif = ["Source Serif 4"];
-      monospace = ["IosevkaTerm Nerd Font"];
+      monospace = ["GeistMono Nerd Font"];
       emoji = ["Noto Color Emoji"];
     };
   };

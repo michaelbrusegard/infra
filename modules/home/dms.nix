@@ -45,7 +45,7 @@ in {
 
       Fonts = {
         general = "Inter,11";
-        fixed = "IosevkaTerm Nerd Font,11";
+        fixed = "GeistMono Nerd Font,11";
       };
     })));
 

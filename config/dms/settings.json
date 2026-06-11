@@ -217,7 +217,7 @@
   "launcherLogoContrast": 1,
   "launcherLogoSizeOffset": 0,
   "fontFamily": "Inter",
-  "monoFontFamily": "IosevkaTerm Nerd Font",
+  "monoFontFamily": "GeistMono Nerd Font",
   "fontWeight": 400,
   "fontScale": 1,
   "notepadUseMonospace": true,
@@ -378,7 +378,7 @@
   "customPowerActionPowerOff": "",
   "updaterHideWidget": false,
   "updaterUseCustomCommand": true,
-  "updaterCustomCommand": "nrs",
+  "updaterCustomCommand": "nh os switch",
   "updaterTerminalAdditionalParams": "",
   "displayNameMode": "model",
   "screenPreferences": {

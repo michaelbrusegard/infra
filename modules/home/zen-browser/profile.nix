@@ -28,7 +28,7 @@ _: {
       # Font settings
       "font.name.serif.x-western" = "Source Serif 4";
       "font.name.sans-serif.x-western" = "Inter";
-      "font.name.monospace.x-western" = "IosevkaTerm Nerd Font";
+      "font.name.monospace.x-western" = "GeistMono Nerd Font";
     };
     userChrome = ''
       :root {

@@ -2,6 +2,6 @@
   fonts.packages = with pkgs; [
     inter
     source-serif
-    nerd-fonts.iosevka-term
+    nerd-fonts.geist-mono
   ];
 }
