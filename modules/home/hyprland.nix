@@ -301,6 +301,7 @@ in
             (bindLockedRepeat "XF86MonBrightnessUp" (execRaw ''dms ipc call brightness increment 5 ""''))
             (bindLockedRepeat "XF86MonBrightnessDown" (execRaw ''dms ipc call brightness decrement 5 ""''))
             (bindLocked "XF86KbdLightOnOff" (exec "${kbdBacklightCycle}"))
+            (bindLocked "XF86Launch1" (exec "dms ipc call color-picker toggle"))
             (bindLocked "XF86AudioMute" (exec "dms ipc call audio mute"))
             (bindLocked "XF86AudioMicMute" (exec "dms ipc call audio micmute"))
             (bindLocked "XF86AudioPlay" (exec "dms ipc call mpris playPause"))
