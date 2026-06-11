@@ -4,14 +4,13 @@
       noto-fonts-color-emoji
       corefonts
       inter
-      roboto-serif
-      google-sans-flex
-      google-sans-code
+      source-serif
+      nerd-fonts.iosevka-term
     ];
     fontconfig.defaultFonts = {
-      sansSerif = ["Google Sans Flex"];
-      serif = ["Roboto Serif"];
-      monospace = ["GoogleSansCode Nerd Font"];
+      sansSerif = ["Inter"];
+      serif = ["Source Serif 4"];
+      monospace = ["IosevkaTerm Nerd Font"];
       emoji = ["Noto Color Emoji"];
     };
   };

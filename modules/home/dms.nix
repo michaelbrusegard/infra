@@ -44,8 +44,8 @@ in {
       };
 
       Fonts = {
-        general = "Google Sans Flex,11";
-        fixed = "GoogleSansCode Nerd Font,11";
+        general = "Inter,11";
+        fixed = "IosevkaTerm Nerd Font,11";
       };
     })));
 
@@ -72,9 +72,9 @@ in {
     };
 
     font = {
-      name = "Google Sans Flex";
+      name = "Inter";
       size = 11;
-      package = pkgs.google-sans-flex;
+      package = pkgs.inter;
     };
   };
 
