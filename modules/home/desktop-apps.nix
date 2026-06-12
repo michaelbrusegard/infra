@@ -19,6 +19,7 @@
         ]
         ++ lib.optionals pkgs.stdenv.isLinux [
           imv
+          gthumb
           legcord
           jellyfin-media-player
 
