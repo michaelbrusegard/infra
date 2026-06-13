@@ -197,7 +197,7 @@ Invoke-Section "Installing Applications with Winget" {
     "VB-Audio.Voicemeeter.Banana",
     "FocusriteAudioEngineeringLtd.FocusriteControl",
     "Microsoft.PowerToys",
-    "wez.wezterm",
+    "Microsoft.WindowsTerminal",
     "Zen-Team.Zen-Browser",
     "smartfrigde.Legcord",
     "OBSProject.OBSStudio",
@@ -259,6 +259,16 @@ Invoke-Section "Linking config files from WSL" {
   Set-Symlink `
     -LinkPath   (Join-Path $env:APPDATA "FanControl\Configurations\userConfig.json") `
     -TargetPath (Join-Path $wslRepoUnc "windows\programs\fancontrol\userConfig.json")
+
+  # Windows Terminal settings
+  $wtLocalState = Join-Path $env:LOCALAPPDATA "Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
+  if (Test-Path $wtLocalState) {
+    Set-Symlink `
+      -LinkPath   (Join-Path $wtLocalState "settings.json") `
+      -TargetPath (Join-Path $wslRepoUnc "windows\programs\windows-terminal\settings.json")
+  } else {
+    Write-Warning "Windows Terminal LocalState not found at $wtLocalState. Launch Windows Terminal once, then re-run to link settings."
+  }
 }
 
 # =============================================================================
@@ -380,12 +390,18 @@ Invoke-Section "Configuring Miscellaneous Settings" {
 }
 
 # =============================================================================
-# ENVIRONMENT VARIABLES
+# DEFAULT TERMINAL
 # =============================================================================
-Invoke-Section "Setting Environment Variables" {
-  $weztermConfigPath = Join-Path $wslHome ".config\wezterm\wezterm.lua"
-  [Environment]::SetEnvironmentVariable("WEZTERM_CONFIG_FILE", $weztermConfigPath, "User")
-  Write-Host "Set WEZTERM_CONFIG_FILE to $weztermConfigPath"
+Invoke-Section "Setting Windows Terminal as default" {
+  # Make Windows Terminal the default terminal so console apps (and WSL) launch
+  # inside it. The two keys take DIFFERENT CLSIDs from the stable
+  # Microsoft.WindowsTerminal package manifest: DelegationConsole = OpenConsole
+  # host, DelegationTerminal = WindowsTerminal host.
+  $consoleClsid  = "{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}"
+  $terminalClsid = "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}"
+  Set-RegistryValue -Path "HKCU:\Console\%%Startup" -Name "DelegationConsole" -Value $consoleClsid -Type "String"
+  Set-RegistryValue -Path "HKCU:\Console\%%Startup" -Name "DelegationTerminal" -Value $terminalClsid -Type "String"
+  Write-Host "Set Windows Terminal as the default terminal application."
 }
 
 # =============================================================================

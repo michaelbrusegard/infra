@@ -1,0 +1,100 @@
+{
+    "$help": "https://aka.ms/terminal-documentation",
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+    "copyOnSelect": true,
+    "copyFormatting": "none",
+    "defaultProfile": "{c397f356-5e7b-55bc-956b-8cb4b9762c26}",
+    "startOnUserLogin": true,
+    "launchMode": "default",
+    "initialCols": 120,
+    "initialRows": 30,
+    "theme": "dark",
+    "useAcrylicInTabRow": false,
+    "alwaysShowTabs": true,
+    "showTabsInTitlebar": true,
+    "tabWidthMode": "equal",
+    "profiles": {
+        "defaults": {
+            "colorScheme": "Catppuccin Mocha",
+            "font": {
+                "face": "GeistMono Nerd Font",
+                "size": 11,
+                "features": {
+                    "calt": 0,
+                    "clig": 0,
+                    "liga": 0
+                }
+            },
+            "padding": "0",
+            "cursorShape": "bar",
+            "antialiasingMode": "grayscale",
+            "scrollbarState": "hidden",
+            "useAcrylic": false,
+            "opacity": 100,
+            "snapOnInput": true,
+            "historySize": 10000
+        },
+        "list": [
+            {
+                "guid": "{c397f356-5e7b-55bc-956b-8cb4b9762c26}",
+                "name": "NixOS",
+                "source": "Windows.Terminal.Wsl",
+                "hidden": false,
+                "startingDirectory": "//wsl.localhost/NixOS/home/michaelbrusegard"
+            },
+            {
+                "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "name": "PowerShell",
+                "source": "Windows.Terminal.PowershellCore",
+                "commandline": "pwsh.exe -NoLogo",
+                "hidden": false
+            },
+            {
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "name": "Windows PowerShell",
+                "commandline": "powershell.exe",
+                "hidden": true
+            },
+            {
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "name": "Command Prompt",
+                "commandline": "cmd.exe",
+                "hidden": true
+            }
+        ]
+    },
+    "schemes": [
+        {
+            "name": "Catppuccin Mocha",
+            "background": "#1E1E2E",
+            "foreground": "#CDD6F4",
+            "cursorColor": "#F5E0DC",
+            "selectionBackground": "#585B70",
+            "black": "#45475A",
+            "red": "#F38BA8",
+            "green": "#A6E3A1",
+            "yellow": "#F9E2AF",
+            "blue": "#89B4FA",
+            "purple": "#F5C2E7",
+            "cyan": "#94E2D5",
+            "white": "#BAC2DE",
+            "brightBlack": "#585B70",
+            "brightRed": "#F38BA8",
+            "brightGreen": "#A6E3A1",
+            "brightYellow": "#F9E2AF",
+            "brightBlue": "#89B4FA",
+            "brightPurple": "#F5C2E7",
+            "brightCyan": "#94E2D5",
+            "brightWhite": "#A6ADC8"
+        }
+    ],
+    "keybindings": [
+        { "id": "Terminal.CopyToClipboard", "keys": "ctrl+shift+c" },
+        { "id": "Terminal.PasteFromClipboard", "keys": "ctrl+shift+v" },
+        { "id": "Terminal.DuplicateTab", "keys": "ctrl+shift+t" },
+        { "id": "Terminal.CloseTab", "keys": "ctrl+shift+w" },
+        { "id": "Terminal.FindText", "keys": "ctrl+shift+f" },
+        { "id": "Terminal.SplitPaneRight", "keys": "alt+shift+plus" },
+        { "id": "Terminal.SplitPaneDown", "keys": "alt+shift+minus" }
+    ]
+}

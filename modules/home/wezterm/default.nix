@@ -1,5 +1,6 @@
 {
   lib,
+  isWsl,
   homePersistenceRoot ? null,
   ...
 }: {
@@ -15,11 +16,11 @@
   config =
     {
       programs.wezterm = {
-        enable = true;
-        enableZshIntegration = true;
+        enable = !isWsl;
+        enableZshIntegration = !isWsl;
       };
     }
-    // lib.optionalAttrs (homePersistenceRoot != null) {
+    // lib.optionalAttrs (!isWsl && homePersistenceRoot != null) {
       home.persistence.${homePersistenceRoot}.directories = [
         ".local/share/wezterm"
       ];
