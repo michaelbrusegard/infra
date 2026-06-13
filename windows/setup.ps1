@@ -245,6 +245,78 @@ Invoke-Section "Installing PowerShell 7 Modules" {
 }
 
 # =============================================================================
+# NERD FONT INSTALLATION
+# =============================================================================
+Invoke-Section "Installing GeistMono Nerd Font" {
+  # Windows Terminal renders with GDI and needs the font installed on the
+  # Windows side (the WSL-side nerd-fonts.geist-mono package is invisible to
+  # it). Pin v3.4.0 to match nerdFontsVersion = "3" used in the flake.
+  $fontVersion = "v3.4.0"
+  $fontUrl     = "https://github.com/ryanoasis/nerd-fonts/releases/download/$fontVersion/GeistMono.zip"
+  $fontFamily  = "GeistMono Nerd Font"
+  $fontsRegPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
+
+  # Skip if any GeistMono Nerd Font face is already registered.
+  try {
+    $existing = Get-ItemProperty -Path $fontsRegPath -ErrorAction Stop
+    if (($existing.PSObject.Properties.Name | Where-Object { $_ -like "GeistMono*Nerd Font*" })) {
+      Write-Host "$fontFamily already installed. Skipping."
+      return
+    }
+  } catch {}
+
+  $zipPath    = Join-Path $env:TEMP "GeistMono-NerdFont.zip"
+  $extractDir = Join-Path $env:TEMP "GeistMono-NerdFont"
+
+  Write-Host "Downloading $fontFamily $fontVersion..."
+  Invoke-WebRequest -Uri $fontUrl -OutFile $zipPath -UseBasicParsing
+
+  if (Test-Path $extractDir) { Remove-Item $extractDir -Recurse -Force }
+  Expand-Archive -Path $zipPath -DestinationPath $extractDir -Force
+
+  # GeistMono ships OpenType (.otf), not .ttf. Use the standard-width faces
+  # (family "GeistMono Nerd Font"), skipping the "Propo" (proportional) and
+  # "Mono" (single-width) variants which register under different family names
+  # we don't reference.
+  $fontFiles = Get-ChildItem -Path $extractDir -Recurse -Filter "*.otf" |
+    Where-Object { $_.Name -notmatch "Propo" -and $_.Name -notmatch "NerdFontMono" }
+
+  if (-not $fontFiles) {
+    Write-Warning "No matching .otf files found in $extractDir. Skipping."
+    return
+  }
+
+  # GDI font install: AddFontResource activates the font for the current
+  # session; the registry entry persists it across reboots; WM_FONTCHANGE
+  # tells running apps to refresh their font list.
+  Add-Type -Namespace Win32 -Name Gdi -MemberDefinition @"
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+    public static extern int AddFontResource(string lpFileName);
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    public static extern int SendMessage(int hWnd, int Msg, int wParam, int lParam);
+"@
+  $HWND_BROADCAST = 0xffff
+  $WM_FONTCHANGE  = 0x001D
+
+  $systemFontsDir = Join-Path $env:WINDIR "Fonts"
+  $installed = 0
+  foreach ($file in $fontFiles) {
+    $dest = Join-Path $systemFontsDir $file.Name
+    Copy-Item -Path $file.FullName -Destination $dest -Force
+
+    [void][Win32.Gdi]::AddFontResource($dest)
+    $registryName = "$($file.BaseName) (OpenType)"
+    Set-RegistryValue -Path $fontsRegPath -Name $registryName -Value $file.Name -Type "String"
+    $installed++
+  }
+
+  [void][Win32.Gdi]::SendMessage($HWND_BROADCAST, $WM_FONTCHANGE, 0, 0)
+
+  Write-Host "Installed $installed $fontFamily face(s)."
+  Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
+}
+
+# =============================================================================
 # CONFIG SYMLINKS (PowerShell profile, FanControl)
 # =============================================================================
 Invoke-Section "Linking config files from WSL" {
