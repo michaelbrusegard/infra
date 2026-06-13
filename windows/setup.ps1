@@ -377,12 +377,18 @@ Invoke-Section "Installing custom keyboard layout" {
   }
 
   # Skip if the layout is already registered. The MSKLC installer (setup.exe)
-  # errors out when run against an existing install, so guard on the layout's
-  # "Layout Text" (KBD name "US - MacAlt") under the keyboard layouts key.
+  # errors out (access denied on the locked layout DLL) when run against an
+  # existing install, so guard on the layout's "Layout Text" (KBD name
+  # "US - MacAlt") under the keyboard layouts key.
   $layoutText  = "US - MacAlt"
   $layoutsKey  = "HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layouts"
-  $alreadyInstalled = Get-ChildItem -Path $layoutsKey -ErrorAction SilentlyContinue | Where-Object {
-    (Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue)."Layout Text" -eq $layoutText
+  $alreadyInstalled = $false
+  foreach ($sub in (Get-ChildItem -Path $layoutsKey -ErrorAction SilentlyContinue)) {
+    $text = (Get-ItemProperty -Path $sub.PSPath -ErrorAction SilentlyContinue).'Layout Text'
+    if ($text -eq $layoutText) {
+      $alreadyInstalled = $true
+      break
+    }
   }
   if ($alreadyInstalled) {
     Write-Host "Keyboard layout '$layoutText' already installed. Skipping."
@@ -400,8 +406,12 @@ Invoke-Section "Installing custom keyboard layout" {
   }
 
   Write-Host "Launching $($setupExe.FullName) (UAC prompt will appear)..."
-  Start-Process -FilePath $setupExe.FullName -Wait
-  Write-Host "Keyboard layout installer finished. Add it via Settings -> Time & Language -> Language."
+  try {
+    Start-Process -FilePath $setupExe.FullName -Verb RunAs -Wait -ErrorAction Stop
+    Write-Host "Keyboard layout installer finished. Add it via Settings -> Time & Language -> Language."
+  } catch {
+    Write-Warning "Keyboard installer failed ($_). If 'US - MacAlt' is already present in Settings -> Time & Language, this is safe to ignore; otherwise remove the existing layout and re-run."
+  }
 }
 
 # =============================================================================
