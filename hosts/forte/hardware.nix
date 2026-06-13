@@ -8,21 +8,8 @@
     echo 1 > /sys/class/leds/asus::kbd_backlight/brightness
   '';
 
-  # The ASUS firmware occasionally corrupts its own EC AML mid-session
-  # ("ACPI BIOS Error: Could not resolve symbol EC0.DBEA", battery methods
-  # abort) and hibernating in that state hangs the machine at the S4
-  # handshake with the image half-written. A failed battery read is the
-  # cheap tell — refuse hibernate instead of hanging; a cold power-off
-  # resets the EC.
-  ecHealthCheck = pkgs.writeShellScript "forte-ec-health-check" ''
-    if ! ${lib.getExe' pkgs.coreutils "timeout"} 3 ${lib.getExe' pkgs.coreutils "cat"} /sys/class/power_supply/BAT1/status >/dev/null 2>&1; then
-      echo "EC unhealthy (battery status unreadable), refusing to hibernate; cold power-off to reset the EC" >&2
-      exit 1
-    fi
-  '';
-
   # Hibernate quirks: the touchpad (AMD GPIO 8) storms while wake-armed and
-  # aborts S4 entry, and the ITE aura controller keeps its sleep breathing
+  # can abort hibernation, and the ITE aura controller keeps its sleep breathing
   # animation after resume until a USB re-attach re-initialises it.
   hibernateWakeupFix = pkgs.writeShellScript "forte-hibernate-wakeup-fix" ''
     [ "$2" = hibernate ] || exit 0
@@ -203,14 +190,16 @@ in {
     };
   };
 
-  systemd.services."systemd-backlight@leds:asus::kbd_backlight".serviceConfig = {
-    ExecStart = lib.mkForce ["" "${setKbdBacklightLow}"];
-    ExecStop = lib.mkForce (lib.getExe' pkgs.coreutils "true");
+  systemd = {
+    sleep.settings.Sleep.HibernateMode = "shutdown";
+
+    services."systemd-backlight@leds:asus::kbd_backlight".serviceConfig = {
+      ExecStart = lib.mkForce ["" "${setKbdBacklightLow}"];
+      ExecStop = lib.mkForce (lib.getExe' pkgs.coreutils "true");
+    };
   };
 
   environment.etc."systemd/system-sleep/00-forte-hibernate-wakeup-fix".source = hibernateWakeupFix;
-
-  systemd.services.systemd-hibernate.serviceConfig.ExecCondition = "${ecHealthCheck}";
 
   zramSwap = {
     enable = true;
