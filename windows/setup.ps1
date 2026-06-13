@@ -232,15 +232,38 @@ Invoke-Section "Installing Applications with Winget" {
 # POWERSHELL 7 MODULE INSTALLATION
 # =============================================================================
 Invoke-Section "Installing PowerShell 7 Modules" {
-  $pwshExePath = Join-Path $env:ProgramFiles "PowerShell\7\pwsh.exe"
+  # pwsh was just installed by winget in this same run, so it may not be on the
+  # current process PATH yet and its location varies (per-machine ProgramFiles,
+  # per-user, or the MSIX WindowsApps alias). Resolve it from several known
+  # locations instead of assuming a single hardcoded path.
+  $pwshExePath = $null
 
-  if (Test-Path $pwshExePath) {
-    Write-Host "PowerShell 7 found. Installing 'pure-pwsh' module for it..."
+  $candidates = @(
+    (Get-Command pwsh.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1),
+    (Join-Path $env:ProgramFiles "PowerShell\7\pwsh.exe"),
+    (Join-Path ${env:ProgramFiles(x86)} "PowerShell\7\pwsh.exe"),
+    (Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps\pwsh.exe")
+  )
+  foreach ($candidate in $candidates) {
+    if ($candidate -and (Test-Path $candidate)) {
+      $pwshExePath = $candidate
+      break
+    }
+  }
+
+  # Last resort: glob versioned install dirs (e.g. PowerShell\7-preview).
+  if (-not $pwshExePath) {
+    $pwshExePath = Get-ChildItem -Path (Join-Path $env:ProgramFiles "PowerShell") -Filter "pwsh.exe" -Recurse -ErrorAction SilentlyContinue |
+      Select-Object -ExpandProperty FullName -First 1
+  }
+
+  if ($pwshExePath -and (Test-Path $pwshExePath)) {
+    Write-Host "PowerShell 7 found at '$pwshExePath'. Installing 'pure-pwsh' module for it..."
     $command = "Install-Module -Name pure-pwsh -Scope AllUsers -Force -ErrorAction Stop"
     Start-Process -FilePath $pwshExePath -ArgumentList "-Command", $command -Wait -NoNewWindow -ErrorAction Stop
     Write-Host "Successfully installed 'pure-pwsh' module for PowerShell 7."
   } else {
-    Write-Warning "PowerShell 7 executable not found at '$pwshExePath'. Skipping 'pure-pwsh' module installation."
+    Write-Warning "PowerShell 7 executable not found in any known location. It may have been installed in this same run but is not yet visible; re-run setup.ps1 (or open a new shell first) to install the 'pure-pwsh' module."
   }
 }
 
