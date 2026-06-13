@@ -38,9 +38,8 @@
             {
                 "guid": "{c397f356-5e7b-55bc-956b-8cb4b9762c26}",
                 "name": "NixOS",
-                "source": "Windows.Terminal.Wsl",
-                "hidden": false,
-                "startingDirectory": "//wsl.localhost/NixOS/home/michaelbrusegard"
+                "commandline": "wsl.exe -d NixOS --cd ~",
+                "hidden": false
             },
             {
                 "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
