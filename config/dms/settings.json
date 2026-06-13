@@ -576,7 +576,7 @@
       "trigger": "?"
     }
   },
-  "clipboardEnterToPaste": false,
+  "clipboardEnterToPaste": true,
   "launcherPluginVisibility": {},
   "launcherPluginOrder": [],
   "configVersion": 5
