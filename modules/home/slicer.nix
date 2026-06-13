@@ -28,6 +28,11 @@
     export LD_LIBRARY_PATH="/usr/lib64:/run/opengl-driver/lib:$LD_LIBRARY_PATH"
     export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
     export GIO_MODULE_DIR="${pkgs.glib-networking}/lib/gio/modules/"
+    # WebKitGTK's DMABUF renderer fails on NVIDIA (GBM EGL init returns
+    # EGL_NOT_INITIALIZED), leaving the embedded webview (setup wizard,
+    # login, store) blank; disable it so the webview renders while the main
+    # 3D viewport keeps GPU acceleration.
+    export WEBKIT_DISABLE_DMABUF_RENDERER=1
   '';
 
   desktopItem = name: src: ''
