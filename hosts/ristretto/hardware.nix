@@ -1,8 +1,13 @@
 {
   pkgs,
   config,
+  lib,
   ...
 }: {
+  # protectKernelImage (set globally in modules/nixos/security.nix) disables
+  # hibernation; relax it here so resume-from-disk works.
+  security.protectKernelImage = lib.mkForce false;
+
   boot = {
     initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
     kernelModules = ["kvm-amd" "nct6775" "ddcci_backlight"];
@@ -14,8 +19,11 @@
     initrd.luks.devices = {
       crypted1.crypttabExtraOpts = ["tpm2-device=auto"];
       crypted2.crypttabExtraOpts = ["tpm2-device=auto"];
+      crypted-swap.crypttabExtraOpts = ["tpm2-device=auto"];
     };
   };
+
+  systemd.sleep.settings.Sleep.HibernateMode = "shutdown";
 
   hardware = {
     enableRedistributableFirmware = true;

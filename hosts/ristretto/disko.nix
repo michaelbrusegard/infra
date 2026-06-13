@@ -11,13 +11,31 @@ _: {
               priority = 1;
               name = "ESP";
               start = "1M";
-              end = "1G";
+              end = "2G";
               type = "EF00";
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
                 mountOptions = ["umask=0077"];
+              };
+            };
+            swap = {
+              priority = 2;
+              name = "swap";
+              size = "36G";
+              content = {
+                type = "luks";
+                name = "crypted-swap";
+                settings = {
+                  allowDiscards = true;
+                  bypassWorkqueues = true;
+                };
+                passwordFile = "/tmp/secret.key";
+                content = {
+                  type = "swap";
+                  resumeDevice = true;
+                };
               };
             };
             root = {
@@ -59,7 +77,7 @@ _: {
                     "-L"
                     "ristretto"
                     "-d"
-                    "raid0"
+                    "single"
                     "-m"
                     "raid1"
                     "/dev/mapper/crypted1"
