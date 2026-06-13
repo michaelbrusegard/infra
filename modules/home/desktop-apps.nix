@@ -67,6 +67,7 @@
           ".config/scribus"
           ".config/inkscape"
           ".config/Signal"
+          ".config/Slack"
           ".config/Proton Mail"
           ".config/Proton Pass"
           ".config/libreoffice"
