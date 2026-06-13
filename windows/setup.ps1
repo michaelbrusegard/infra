@@ -355,27 +355,14 @@ Invoke-Section "Linking config files from WSL" {
     -LinkPath   (Join-Path $env:APPDATA "FanControl\Configurations\userConfig.json") `
     -TargetPath (Join-Path $wslRepoUnc "windows\programs\fancontrol\userConfig.json")
 
-  # Windows Terminal settings.
-  # WT does not tolerate settings.json being a symlink: on launch it rewrites
-  # the file in place, which clobbers the link and reverts to its generated
-  # defaults (cmd). So copy the repo file instead and re-sync on each run.
-  $wtLocalState   = Join-Path $env:LOCALAPPDATA "Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
-  $wtSettingsSrc  = Join-Path $wslRepoUnc "windows\programs\windows-terminal\settings.json"
+  # Windows Terminal settings
+  $wtLocalState = Join-Path $env:LOCALAPPDATA "Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
   if (Test-Path $wtLocalState) {
-    if (Test-Path $wtSettingsSrc) {
-      $wtSettingsDest = Join-Path $wtLocalState "settings.json"
-      # If a previous run left a symlink here, remove it before copying.
-      $existing = Get-Item -LiteralPath $wtSettingsDest -Force -ErrorAction SilentlyContinue
-      if ($existing -and $existing.LinkType) {
-        Remove-Item -LiteralPath $wtSettingsDest -Force
-      }
-      Copy-Item -Path $wtSettingsSrc -Destination $wtSettingsDest -Force
-      Write-Host "Copied Windows Terminal settings to $wtSettingsDest"
-    } else {
-      Write-Warning "Windows Terminal settings source not found at $wtSettingsSrc. Skipping."
-    }
+    Set-Symlink `
+      -LinkPath   (Join-Path $wtLocalState "settings.json") `
+      -TargetPath (Join-Path $wslRepoUnc "windows\programs\windows-terminal\settings.json")
   } else {
-    Write-Warning "Windows Terminal LocalState not found at $wtLocalState. Launch Windows Terminal once, then re-run to copy settings."
+    Write-Warning "Windows Terminal LocalState not found at $wtLocalState. Launch Windows Terminal once, then re-run to link settings."
   }
 }
 
