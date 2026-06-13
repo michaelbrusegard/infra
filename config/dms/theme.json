@@ -1,8 +1,8 @@
 {
   "name": "Catppuccin Mocha",
   "primary": "#89B4FA",
-  "primaryText": "#CDD6F4",
-  "primaryContainer": "#B4BEFE",
+  "primaryText": "#11111B",
+  "primaryContainer": "#45475A",
   "secondary": "#94E2D5",
   "surface": "#1E1E2E",
   "surfaceText": "#CDD6F4",
