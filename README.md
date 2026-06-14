@@ -257,11 +257,17 @@ In Voicemeeter use **Menu → Load Settings** and point at that file.
 
 Do this **after** Windows is installed and fully updated — Windows mutates
 Secure Boot state, shifting PCR 7 and breaking earlier enrollments. Run
-`lsblk` to map containers (`disk1` has ESP + LUKS `crypted1`, `disk2` has only LUKS `crypted2`).
+`lsblk` to map containers. `disk1` (24072T) holds three partitions —
+`part1` ESP, `part2` LUKS `crypted-swap`, `part3` LUKS `crypted1` (root);
+`disk2` (24057W) holds `part1` LUKS `crypted2`. All three LUKS volumes must
+be enrolled — missing `crypted1` (root) is what leaves you typing the
+passphrase even after enrolling the others.
 
 ```sh
 sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 \
   /dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24072T-part2
+sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24072T-part3
 sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 \
   /dev/disk/by-id/nvme-Samsung_SSD_980_PRO_1TB_S5GXNF0NC24057W-part1
 ```
