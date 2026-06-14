@@ -38,7 +38,7 @@ _: {
             run = "move-node-to-workspace 4";
           }
           {
-            "if".app-name-regex-substring = "^(Messages|FaceTime|Element|Legcord|Slack|Signal)$";
+            "if".app-name-regex-substring = "^(Messages|FaceTime|Element|Legcord|Slack|Signal|Supersonic)$";
             run = "move-node-to-workspace 5";
           }
           {

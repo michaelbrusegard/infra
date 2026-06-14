@@ -200,6 +200,7 @@ Invoke-Section "Installing Applications with Winget" {
     "Microsoft.WindowsTerminal",
     "Zen-Team.Zen-Browser",
     "smartfrigde.Legcord",
+    "Dweymouth.Supersonic",
     "OBSProject.OBSStudio",
     "RiotGames.Valorant.EU",
     "RiotGames.LeagueOfLegends.EUW",

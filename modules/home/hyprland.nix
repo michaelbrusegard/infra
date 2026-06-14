@@ -120,6 +120,10 @@
       workspace = 5;
     }
     {
+      title = "^(.*Supersonic.*)$";
+      workspace = 5;
+    }
+    {
       class = "^(zenity)$";
       workspace = 6;
     }
@@ -317,7 +321,10 @@ in
 
         window_rule =
           map (r: {
-            match.class = r.class;
+            match =
+              if r ? title
+              then {inherit (r) title;}
+              else {inherit (r) class;};
             inherit (r) workspace;
           })
           workspaceRules;
