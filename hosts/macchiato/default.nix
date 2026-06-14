@@ -23,6 +23,7 @@
     inputs.self.nixosModules.openssh
     inputs.self.nixosModules.security
     inputs.self.nixosModules.unifi
+    inputs.self.nixosModules.wake-on-lan
     inputs.self.nixosModules.watchdog
     ./disko.nix
     ./hardware.nix

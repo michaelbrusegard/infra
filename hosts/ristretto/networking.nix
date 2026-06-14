@@ -4,9 +4,9 @@
     networkmanager = {
       enable = true;
       wifi.backend = "iwd";
+      connectionConfig."ethernet.wake-on-lan" = 64;
     };
     dhcpcd.enable = false;
-    interfaces.enp6s0.wakeOnLan.enable = true;
   };
 
   environment.persistence."/persistent".directories = [
