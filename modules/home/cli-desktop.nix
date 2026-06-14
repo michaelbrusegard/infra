@@ -8,6 +8,8 @@
     presenterm
     yt-dlp
     testdisk
+    cryptsetup
+    e2fsprogs
     qmk
     cmatrix
   ];
