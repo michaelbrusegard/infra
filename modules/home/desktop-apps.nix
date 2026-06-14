@@ -70,6 +70,7 @@
           ".config/Slack"
           ".config/Proton Mail"
           ".config/Proton Pass"
+          ".config/legcord"
           ".config/libreoffice"
           ".config/blender"
           ".local/share/Jellyfin Media Player"
