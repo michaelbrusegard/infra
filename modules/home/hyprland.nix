@@ -245,8 +245,8 @@ in
             disable_splash_rendering = true;
             disable_watchdog_warning = true;
             font_family = "GeistMono Nerd Font";
-            mouse_move_enables_dpms = true;
-            key_press_enables_dpms = true;
+            mouse_move_enables_dpms = false;
+            key_press_enables_dpms = false;
             middle_click_paste = false;
             focus_on_activate = true;
           };
