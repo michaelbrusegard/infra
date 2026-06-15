@@ -120,10 +120,6 @@
       workspace = 5;
     }
     {
-      title = "^(.*Supersonic.*)$";
-      workspace = 5;
-    }
-    {
       class = "^(zenity)$";
       workspace = 6;
     }
@@ -150,6 +146,10 @@
     {
       class = "^(org.freecad.FreeCAD)$";
       workspace = 6;
+    }
+    {
+      title = "^(.*Supersonic.*)$";
+      workspace = 7;
     }
   ];
 in
