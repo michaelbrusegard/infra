@@ -289,7 +289,7 @@ in
             (bind "CTRL + SUPER + Q" (exec "dms ipc call lock lock"))
             (bind "CTRL + SUPER + S" (exec "dms ipc call lock lock && ${systemctl} suspend"))
             (bind "CTRL + SUPER + F" fullscreenToggle)
-            (bind "CTRL + G" (exec gamingModeToggle))
+            (bind "CTRL + SHIFT + G" (exec gamingModeToggle))
             (bind "CTRL + SHIFT + 3" (exec "dms screenshot full -d ~/Pictures/screenshots"))
             (bind "CTRL + SHIFT + 4" (exec "dms screenshot -d ~/Pictures/screenshots"))
 
