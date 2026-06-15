@@ -14,6 +14,7 @@ in {
     vimPlugins
     opencode
     opencode-desktop
+    claude-code
     codex
     uv
     ty
