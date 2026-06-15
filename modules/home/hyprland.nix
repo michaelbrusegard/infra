@@ -154,6 +154,9 @@
   ];
 in
   lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+    # Wayland clipboard CLI: `cmd | wl-copy`, `wl-paste` to read back.
+    home.packages = [pkgs.wl-clipboard];
+
     # Upstream netbird.desktop ships `Exec=netbird-ui`, but the NixOS module
     # only renames Name/Icon, leaving Exec pointing at a binary that isn't on
     # PATH. The per-client wrapper `netbird-ui-default` carries the

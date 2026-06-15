@@ -3,6 +3,7 @@
   lib,
   config,
   inputs,
+  isWsl,
   homePersistenceRoot ? null,
   ...
 }: {
@@ -62,22 +63,27 @@
 
   home =
     {
-      shellAliases = {
-        dl = "cd $HOME/Downloads";
-        dt = "cd $HOME/Desktop";
-        dc = "cd $HOME/Documents";
-        dp = "cd $HOME/Projects";
+      shellAliases =
+        {
+          dl = "cd $HOME/Downloads";
+          dt = "cd $HOME/Desktop";
+          dc = "cd $HOME/Documents";
+          dp = "cd $HOME/Projects";
 
-        ".." = "cd ..";
-        "..." = "cd ../..";
-        "...." = "cd ../../..";
-        "....." = "cd ../../../..";
-        "......" = "cd ../../../../..";
-        "-" = "cd -";
+          ".." = "cd ..";
+          "..." = "cd ../..";
+          "...." = "cd ../../..";
+          "....." = "cd ../../../..";
+          "......" = "cd ../../../../..";
+          "-" = "cd -";
 
-        vim = "nvim";
-        vi = "nvim";
-      };
+          vim = "nvim";
+          vi = "nvim";
+        }
+        // lib.optionalAttrs (pkgs.stdenv.isLinux && !isWsl) {
+          pbcopy = "wl-copy";
+          pbpaste = "wl-paste";
+        };
 
       sessionVariables = {
         SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
