@@ -480,14 +480,14 @@ Manata (two 1TB drives):
 ```sh
 sudo cryptsetup luksFormat --label manata-d1-crypt \
   --pbkdf argon2id --pbkdf-memory 256000 --iter-time 2000 \
-  /dev/disk/by-id/XXX ./secret.key
-sudo cryptsetup open --key-file ./secret.key /dev/disk/by-id/XXX manata-d1
+  /dev/disk/by-id/usb-WD_Elements_25A2_5758353141353841454B5956-0:0 ./secret.key
+sudo cryptsetup open --key-file ./secret.key /dev/disk/by-id/usb-WD_Elements_25A2_5758353141353841454B5956-0:0 manata-d1
 sudo mkfs.ext4 /dev/mapper/manata-d1
 
 sudo cryptsetup luksFormat --label manata-d2-crypt \
   --pbkdf argon2id --pbkdf-memory 256000 --iter-time 2000 \
-  /dev/disk/by-id/YYY ./secret.key
-sudo cryptsetup open --key-file ./secret.key /dev/disk/by-id/YYY manata-d2
+  /dev/disk/by-id/usb-WD_Elements_25A2_575836314135383250313754-0:0 ./secret.key
+sudo cryptsetup open --key-file ./secret.key /dev/disk/by-id/usb-WD_Elements_25A2_575836314135383250313754-0:0 manata-d2
 sudo mkfs.ext4 /dev/mapper/manata-d2
 ```
 
