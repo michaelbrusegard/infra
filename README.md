@@ -352,6 +352,12 @@ sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
   /dev/disk/by-id/ata-INTEL_SSDSCKKW120H6_CVLY630102UX120H-part2
 ```
 
+Then deploy with colmena:
+
+```sh
+colmena apply --on macchiato
+```
+
 ## Espresso (NixOS K3S Cluster)
 
 The Espresso setup consists of the nodes espresso-0, espresso-1 and espresso-2
@@ -387,8 +393,12 @@ nixos-anywhere --extra-files ./keys --flake .#espresso-NODE --disk-encryption-ke
 
 ### Post install
 
-Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt user secrets. Then
-rebuild the configuration using colmena.
+Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt
+user secrets, then deploy the node with colmena (substitute the node name):
+
+```sh
+colmena apply --on espresso-0
+```
 
 Setup TPM auto unlock for all the applicable disks.
 
@@ -426,6 +436,132 @@ sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
 sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
   /dev/disk/by-id/ata-MZ7LM3T8HMLP0D3_S37MNX0J600844-part1
 ```
+
+## Freddo and Manata (NixOS Raspberry Pi Backup Servers)
+
+`freddo` (one 2TB drive) and `manata` (two 1TB drives) are Raspberry Pi 4
+hosts running a restic `rest-server` as LAN backup targets. Both pool their
+drives with mergerfs under `/srv/backup`, with numbered LUKS labels (`dN`), so
+adding a drive later is mechanical. They are flashed from a prebuilt SD image,
+not `nixos-anywhere`. The Pi has no TPM, so the external drives unlock from a
+LUKS keyfile stored as a sops secret — headless, but offers no protection if
+the whole Pi is stolen. Do each step per host, substituting the name.
+
+### Format the external drives
+
+Extract the LUKS key from `secrets.yaml` into `./secret.key` **byte-identically**
+— it must match what the host mounts with at `/run/secrets/luks/key`. Use
+`sops --extract` without adding a trailing newline (a stray `\n` makes the key
+48 bytes here but 47 at runtime, so the drive won't unlock):
+
+```sh
+sops --decrypt --extract '["luks"]["key"]' \
+  ~/Projects/infra-secrets/hosts/freddo/secrets.yaml \
+  | tr -d '\n' > ./secret.key
+# sanity-check: this must equal the on-host keyfile length
+wc -c ./secret.key
+```
+
+Then LUKS-format each drive with the label its crypttab entry expects,
+addressing the drive by its stable `/dev/disk/by-id/` path.
+
+Freddo (single 2TB drive):
+
+```sh
+sudo cryptsetup luksFormat --label freddo-d1-crypt \
+  --pbkdf argon2id --pbkdf-memory 256000 --iter-time 2000 \
+  /dev/disk/by-id/usb-Seagate_Ultra_Slim_PL_NA7V527Y-0:0 ./secret.key
+sudo cryptsetup open --key-file ./secret.key /dev/disk/by-id/usb-Seagate_Ultra_Slim_PL_NA7V527Y-0:0 freddo-d1
+sudo mkfs.ext4 /dev/mapper/freddo-d1
+```
+
+Manata (two 1TB drives):
+
+```sh
+sudo cryptsetup luksFormat --label manata-d1-crypt \
+  --pbkdf argon2id --pbkdf-memory 256000 --iter-time 2000 \
+  /dev/disk/by-id/XXX ./secret.key
+sudo cryptsetup open --key-file ./secret.key /dev/disk/by-id/XXX manata-d1
+sudo mkfs.ext4 /dev/mapper/manata-d1
+
+sudo cryptsetup luksFormat --label manata-d2-crypt \
+  --pbkdf argon2id --pbkdf-memory 256000 --iter-time 2000 \
+  /dev/disk/by-id/YYY ./secret.key
+sudo cryptsetup open --key-file ./secret.key /dev/disk/by-id/YYY manata-d2
+sudo mkfs.ext4 /dev/mapper/manata-d2
+```
+
+To add a drive to a host later, format it with the next number (e.g.
+`freddo-d2-crypt` → `freddo-d2`, same `--pbkdf` flags), then in the host's
+`hardware.nix` add its `crypttab` line, a `/mnt/diskN` mount, and append
+`/mnt/diskN` to the `/srv/backup` mergerfs device string and its
+`requires-mounts-for`.
+
+### Build, inject the host key, and flash
+
+Build on `ristretto`/`forte` (aarch64 binfmt), not `lungo`. The image is
+keyless; the host key is injected afterwards via a loopback mount so it never
+touches the nix store.
+
+1. **Prepare the host key**: place it at the same path nixos-anywhere uses —
+   `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and
+   `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`. Ensure the private key
+   is `0600`, or `ssh-keygen`/sshd reject it:
+
+   ```sh
+   chmod 600 ./keys/persistent/etc/ssh/ssh_host_ed25519_key
+   ```
+
+2. **Build the image** (substitute the host name). Decompress to a temp file
+   so it is kept out of the repo and easy to clean up:
+
+   ```sh
+   nix build .#nixosConfigurations.freddo.config.system.build.sdImage
+   img="$(mktemp --suffix=.img)"
+   zstd -dc result/sd-image/*.img.zst > "$img"
+   ```
+
+3. **Mount the root partition** of the built image:
+
+   ```sh
+   loop="$(sudo losetup --find --partscan --show "$img")"
+   mnt="$(mktemp -d)"
+   sudo mount "${loop}p2" "$mnt"
+   ```
+
+4. **Inject the host key.** The NIXOS_SD partition (`p2`) mounts directly as
+   `/persistent` at runtime, so a file at `$mnt/etc/ssh/...` becomes
+   `/persistent/etc/ssh/...` on the booted system — do **not** add a
+   `persistent/` level (that would land at `/persistent/persistent/...` and the
+   key would never be found). The private key **must** be `0600 root:root`, or
+   sshd rejects it and generates a different key, breaking sops decryption. Use
+   `install` (a plain `cp` preserves the source's `0644`), then `sync`:
+
+   ```sh
+   sudo install -d -m 755 "$mnt/etc/ssh"
+   sudo install -m 600 ./keys/persistent/etc/ssh/ssh_host_ed25519_key "$mnt/etc/ssh/ssh_host_ed25519_key"
+   sudo install -m 644 ./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub "$mnt/etc/ssh/ssh_host_ed25519_key.pub"
+   sudo sync
+   ```
+
+   Verify the injected key parses and its key material matches the `.pub` (a
+   truncated key is silently rejected and regenerated at boot). Compare only the
+   key field (field 2) since `ssh-keygen -y` and the `.pub` differ in trailing
+   comment:
+
+   ```sh
+   [ "$(sudo ssh-keygen -y -f "$mnt/etc/ssh/ssh_host_ed25519_key" | cut -d' ' -f2)" \
+     = "$(cut -d' ' -f2 "$mnt/etc/ssh/ssh_host_ed25519_key.pub")" ] \
+     && echo "host key OK" || echo "HOST KEY MISMATCH - do not flash"
+   ```
+
+5. **Unmount, flash, and clean up** (`/dev/XXX` is the card):
+
+   ```sh
+   sudo umount "$mnt" && rmdir "$mnt" && sudo losetup -d "$loop"
+   sudo dd if="$img" of=/dev/XXX bs=4M status=progress conv=fsync
+   rm "$img"
+   ```
 
 ## Inspiration…
 

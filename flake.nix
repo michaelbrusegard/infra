@@ -278,6 +278,20 @@
         platform = "raspberrypi";
       })
 
+      (lib.mkSystem {
+        name = "freddo";
+        system = "aarch64-linux";
+        users = ["admin" "deploy"];
+        platform = "raspberrypi";
+      })
+
+      (lib.mkSystem {
+        name = "manata";
+        system = "aarch64-linux";
+        users = ["admin" "deploy"];
+        platform = "raspberrypi";
+      })
+
       (lib.mkCluster {
         names = ["espresso-0" "espresso-1" "espresso-2"];
         system = "x86_64-linux";
@@ -321,6 +335,17 @@
       {
         name = "leggero";
         system = "aarch64-linux";
+        platform = "raspberrypi";
+      }
+      {
+        name = "freddo";
+        system = "aarch64-linux";
+        platform = "raspberrypi";
+      }
+      {
+        name = "manata";
+        system = "aarch64-linux";
+        platform = "raspberrypi";
       }
     ];
   };
