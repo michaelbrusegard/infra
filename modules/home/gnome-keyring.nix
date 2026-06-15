@@ -4,13 +4,20 @@
   isWsl,
   homePersistenceRoot ? null,
   ...
-}: {
-  # Secret Service provider for the graphical session. The dms/greetd
-  # greeter does not run pam_gnome_keyring, so the login keyring relies
-  # on an empty password for unattended unlock.
-  services.gnome-keyring = lib.mkIf (!isWsl && pkgs.stdenv.isLinux) {
+}: let
+  enable = !isWsl && pkgs.stdenv.isLinux;
+  unlockWrapper = pkgs.writeShellScript "gnome-keyring-empty-unlock" ''
+    printf '\n' | exec ${pkgs.gnome-keyring}/bin/gnome-keyring-daemon \
+      --start --foreground --unlock --components=secrets
+  '';
+in {
+  services.gnome-keyring = lib.mkIf enable {
     enable = true;
     components = ["secrets"];
+  };
+
+  systemd.user.services.gnome-keyring = lib.mkIf enable {
+    Service.ExecStart = lib.mkForce "${unlockWrapper}";
   };
 
   home = lib.optionalAttrs (homePersistenceRoot != null) {
