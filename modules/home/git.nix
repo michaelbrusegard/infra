@@ -132,8 +132,14 @@
     };
   };
 
-  home.packages = with pkgs; [
-    git-filter-repo
-    git-lfs
-  ];
+  home = {
+    packages = with pkgs; [
+      git-filter-repo
+      git-lfs
+    ];
+
+    sessionVariables = lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? githubTokenFile) {
+      GH_TOKEN = "$( [ -f ${config.secrets.keys.githubTokenFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.githubTokenFile} )";
+    };
+  };
 }
