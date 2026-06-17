@@ -74,8 +74,16 @@ spec:
         - ports:
             - port: "3003"
               protocol: TCP
-    # OIDC discovery/token requests reach Pocket ID through the Gateway.
-    # Keep this narrow instead of relying only on broad internet egress.
+    # OIDC discovery/token requests use Pocket ID directly instead of the
+    # Gateway, avoiding public/internal route auth policy on server-side calls.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: pocket-id
+            k8s:app: pocket-id
+      toPorts:
+        - ports:
+            - port: "1411"
+              protocol: TCP
     - toEntities:
         - ingress
       toPorts:
