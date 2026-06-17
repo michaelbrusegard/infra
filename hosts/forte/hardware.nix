@@ -34,13 +34,23 @@ in {
   security.protectKernelImage = lib.mkForce false;
 
   boot = {
-    initrd.availableKernelModules = [
-      "nvme"
-      "xhci_pci"
-      "usbhid"
-      "usb_storage"
-      "sd_mod"
-    ];
+    initrd = {
+      availableKernelModules = [
+        "nvme"
+        "xhci_pci"
+        "usbhid"
+        "usb_storage"
+        "sd_mod"
+      ];
+      # The internal panel is on the AMD iGPU. Load it in initrd so Plymouth has
+      # a real KMS device instead of briefly drawing on simpledrm and going black.
+      kernelModules = ["amdgpu"];
+
+      luks.devices = {
+        crypted.crypttabExtraOpts = ["tpm2-device=auto"];
+        crypted-swap.crypttabExtraOpts = ["tpm2-device=auto"];
+      };
+    };
     kernelModules = ["kvm-amd"];
 
     kernelParams = [
@@ -48,11 +58,6 @@ in {
       "nvidia-drm.modeset=1"
     ];
     consoleLogLevel = 3;
-
-    initrd.luks.devices = {
-      crypted.crypttabExtraOpts = ["tpm2-device=auto"];
-      crypted-swap.crypttabExtraOpts = ["tpm2-device=auto"];
-    };
 
     loader.systemd-boot.consoleMode = "2";
   };
@@ -68,11 +73,7 @@ in {
       modesetting.enable = true;
       open = true;
       nvidiaSettings = true;
-      powerManagement = {
-        enable = true;
-        finegrained = true;
-      };
-      dynamicBoost.enable = true;
+      powerManagement.finegrained = true;
       package = config.boot.kernelPackages.nvidiaPackages.production;
       prime = {
         offload = {
