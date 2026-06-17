@@ -129,7 +129,12 @@ spec:
               while [ ! -x "$BIN" ]; do
                 sleep 10
               done
-              exec "$BIN" /var/www/html/config/config.php
+              exec "$BIN" \
+                --redis-url redis://valkey:6379 \
+                --nextcloud-url http://localhost \
+                --port 7867 \
+                --metrics-port 7868 \
+                /var/www/html/config/config.php
           env:
             - name: NEXTCLOUD_URL
               value: http://localhost
