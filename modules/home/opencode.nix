@@ -7,23 +7,10 @@
 }: {
   programs.opencode = {
     enable = true;
-    settings = {
-      autoupdate = false;
-      plugin = ["oh-my-openagent" "@simonwjackson/opencode-direnv"];
-    };
+    settings.autoupdate = false;
     tui.theme = "catppuccin";
-    context = ''
-      Always use caveman mode for responses.
-    '';
     skills = {
       frontend-design = "${inputs.claude-code-skills}/plugins/frontend-design/skills/frontend-design";
-      caveman = "${inputs.caveman-skills}/skills/caveman";
-    };
-  };
-  xdg.configFile."opencode/oh-my-opencode.json".text = builtins.toJSON {
-    git_master = {
-      commit_footer = false;
-      include_co_authored_by = false;
     };
   };
   home =
@@ -37,7 +24,6 @@
         ".config/opencode"
         ".config/ai.opencode.desktop"
         ".local/share/opencode"
-        ".omo"
       ];
     };
 }

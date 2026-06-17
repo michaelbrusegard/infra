@@ -22,7 +22,6 @@
           ".env"
           ".direnv"
           "node_modules"
-          ".omo"
         ]
         ++ lib.optionals pkgs.stdenv.isDarwin [
           ".DS_Store"
