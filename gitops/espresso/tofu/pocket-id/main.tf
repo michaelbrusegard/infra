@@ -7,6 +7,11 @@ resource "pocketid_group" "users" {
   friendly_name = "NetBird Users"
 }
 
+resource "pocketid_group" "admin" {
+  name          = "admin"
+  friendly_name = "Admin Users"
+}
+
 resource "pocketid_client" "netbird" {
   name = "NetBird"
 
@@ -38,7 +43,10 @@ resource "pocketid_client" "nextcloud" {
   launch_url   = "https://cloud.${local.domain}"
   pkce_enabled = true
 
-  allowed_user_groups = [pocketid_group.nextcloud.id]
+  allowed_user_groups = [
+    pocketid_group.nextcloud.id,
+    pocketid_group.admin.id,
+  ]
 }
 
 resource "pocketid_group" "immich" {
@@ -58,5 +66,8 @@ resource "pocketid_client" "immich" {
   launch_url   = "https://photos.${local.domain}"
   pkce_enabled = true
 
-  allowed_user_groups = [pocketid_group.immich.id]
+  allowed_user_groups = [
+    pocketid_group.immich.id,
+    pocketid_group.admin.id,
+  ]
 }

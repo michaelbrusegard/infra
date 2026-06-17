@@ -32,6 +32,7 @@ output "immich_config_json" {
       mobileOverrideEnabled   = true
       mobileRedirectUri       = "https://photos.asgard.michaelbrusegard.com/api/oauth/mobile-redirect"
       scope                   = "openid email profile"
+      roleClaim               = "immich_role"
       storageLabelClaim       = "preferred_username"
       tokenEndpointAuthMethod = "client_secret_post"
     }
