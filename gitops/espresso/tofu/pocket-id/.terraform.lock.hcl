@@ -6,6 +6,7 @@ provider "registry.opentofu.org/trozz/pocketid" {
   constraints = "0.1.7"
   hashes = [
     "h1:141RqUpOpQBttchwQBY4znkWzT4sKe+1wVQWA4VMNjM=",
+    "h1:gvQt/VKT+yIYdJAorOSFyQAC+TOpDmHlKJBBbC3Th28=",
     "zh:0ab428bdd9194c5bd2800747855173af64492c3a221b69b42fb02a9632d2a19f",
     "zh:21037b7c655566ab6460d4d41f1de74a05cc689a967bb6491a02ea4dad58d434",
     "zh:23156269f8dc14b101bd024bd9f248c5a5e7453873aa8b0cc74532762582006d",

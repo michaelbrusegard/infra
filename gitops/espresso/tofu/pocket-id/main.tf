@@ -22,3 +22,41 @@ resource "pocketid_client" "netbird" {
 
   allowed_user_groups = [pocketid_group.users.id]
 }
+
+resource "pocketid_group" "nextcloud" {
+  name          = "nextcloud"
+  friendly_name = "Nextcloud Users"
+}
+
+resource "pocketid_client" "nextcloud" {
+  name = "Nextcloud"
+
+  callback_urls = [
+    "https://cloud.${local.domain}/apps/user_oidc/code",
+  ]
+
+  launch_url   = "https://cloud.${local.domain}"
+  pkce_enabled = true
+
+  allowed_user_groups = [pocketid_group.nextcloud.id]
+}
+
+resource "pocketid_group" "immich" {
+  name          = "immich"
+  friendly_name = "Immich Users"
+}
+
+resource "pocketid_client" "immich" {
+  name = "Immich"
+
+  callback_urls = [
+    "https://photos.${local.domain}/auth/login",
+    "https://photos.${local.domain}/user-settings",
+    "https://photos.${local.domain}/api/oauth/mobile-redirect",
+  ]
+
+  launch_url   = "https://photos.${local.domain}"
+  pkce_enabled = true
+
+  allowed_user_groups = [pocketid_group.immich.id]
+}

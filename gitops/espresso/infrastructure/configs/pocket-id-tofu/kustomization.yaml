@@ -25,3 +25,11 @@ patches:
         varsFrom:
           - kind: Secret
             name: pocket-id-credentials
+        writeOutputsToSecret:
+          name: pocket-id-outputs
+          outputs:
+            - nextcloud_pocketid_client_id
+            - nextcloud_pocketid_client_secret
+            - immich_pocketid_client_id
+            - immich_pocketid_client_secret
+            - immich_config_json
