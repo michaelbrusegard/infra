@@ -122,6 +122,49 @@ data:
 
       retry occ config:app:set user_oidc allow_multiple_user_backends --value=0
 
+      retry occ config:app:set dav enableDefaultContact --type=boolean --value=false
+      runuser -u www-data -- php <<'PHP'
+    <?php
+    require_once '/var/www/html/lib/base.php';
+
+    $db = \OC::$server->getDatabaseConnection();
+    $sampleCards = $db->executeQuery(
+        "SELECT c.id, c.addressbookid
+           FROM *PREFIX*cards c
+           JOIN *PREFIX*addressbooks a ON a.id = c.addressbookid
+          WHERE c.uri = ?
+            AND a.uri = ?
+            AND a.principaluri IN (?, ?)
+            AND convert_from(c.carddata, 'UTF8') LIKE ?
+            AND convert_from(c.carddata, 'UTF8') LIKE ?
+            AND convert_from(c.carddata, 'UTF8') LIKE ?",
+        [
+            'default',
+            'contacts',
+            'principals/users/michaelbrusegard',
+            'principals/users/nextcloud_admin',
+            '%FN:Leon Green%',
+            '%EMAIL;TYPE=HOME:leon@example.com%',
+            '%TEL;TYPE=HOME,VOICE:+999999999999%',
+        ],
+    )->fetchAll();
+
+    foreach ($sampleCards as $card) {
+        $db->executeStatement(
+            'DELETE FROM *PREFIX*cards_properties WHERE cardid = ?',
+            [(int)$card['id']],
+        );
+        $db->executeStatement(
+            'DELETE FROM *PREFIX*cards WHERE id = ?',
+            [(int)$card['id']],
+        );
+        $db->executeStatement(
+            'UPDATE *PREFIX*addressbooks SET synctoken = synctoken + 1 WHERE id = ?',
+            [(int)$card['addressbookid']],
+        );
+    }
+    PHP
+
       retry occ theming:config name 'Asgard Cloud'
       retry occ theming:config primary_color '#f46800'
       retry occ theming:config background_color '#000000'
