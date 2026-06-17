@@ -16,7 +16,7 @@ data:
         'host' => 'valkey',
         'port' => 6379,
       ],
-      'trusted_proxies' => ['10.0.0.0/8'],
+      'trusted_proxies' => ['10.0.0.0/8', '127.0.0.1', '::1'],
       'overwriteprotocol' => 'https',
       'overwrite.cli.url' => 'https://cloud.asgard.michaelbrusegard.com',
       'log_type' => 'errorlog',
@@ -122,7 +122,9 @@ data:
 
       retry occ config:app:set user_oidc allow_multiple_user_backends --value=0
 
-      retry occ notify_push:setup 'https://cloud.asgard.michaelbrusegard.com/push'
+      retry occ notify_push:setup 'http://notify-push.nextcloud.svc.cluster.local:7867'
+      retry occ config:app:set notify_push base_endpoint \
+        --value='https://cloud.asgard.michaelbrusegard.com/push'
       retry occ config:system:set maintenance_window_start --value=2 --type=integer
 
       version=$(occ status --output=json 2>/dev/null | php -r '$d = json_decode(stream_get_contents(STDIN), true); echo $d["versionstring"] ?? "";')

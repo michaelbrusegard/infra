@@ -57,7 +57,7 @@ spec:
             - name: NEXTCLOUD_TRUSTED_DOMAINS
               value: cloud.asgard.michaelbrusegard.com
             - name: TRUSTED_PROXIES
-              value: 10.0.0.0/8
+              value: 10.0.0.0/8 127.0.0.1 ::1
             - name: OVERWRITEPROTOCOL
               value: https
             - name: OVERWRITECLIURL

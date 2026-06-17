@@ -69,6 +69,13 @@ spec:
   hostnames:
     - cloud.asgard.michaelbrusegard.com
   rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /push
+      backendRefs:
+        - name: notify-push
+          port: 7867
     - backendRefs:
         - name: nextcloud
           port: 80
