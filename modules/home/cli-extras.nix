@@ -42,14 +42,8 @@
       {
         PAGER = "moor";
       }
-      // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? googleGenerativeAiApiKeyFile) {
-        GOOGLE_GENERATIVE_AI_API_KEY = "$( [ -f ${config.secrets.keys.googleGenerativeAiApiKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.googleGenerativeAiApiKeyFile} )";
-      }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? zaiCodingApiKeyFile) {
         ZAI_CODING_API_KEY = "$( [ -f ${config.secrets.keys.zaiCodingApiKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.zaiCodingApiKeyFile} )";
-      }
-      // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? anthropicApiKeyFile) {
-        ANTHROPIC_API_KEY = "$( [ -f ${config.secrets.keys.anthropicApiKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.anthropicApiKeyFile} )";
       }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? tauriSigningPrivateKeyFile) {
         TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.keys.tauriSigningPrivateKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.tauriSigningPrivateKeyFile} )";
