@@ -4,8 +4,6 @@ metadata:
   name: nextcloud-config
   namespace: nextcloud
 data:
-  transparent.svg: |
-    <svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"/>
   additional.config.php: |
     <?php
     $CONFIG = [
@@ -128,10 +126,13 @@ data:
       retry occ theming:config primary_color '#f46800'
       retry occ theming:config background_color '#000000'
       retry occ theming:config background backgroundColor
-      retry occ theming:config logo /etc/nextcloud-extras/transparent.svg
-      retry occ theming:config logoheader /etc/nextcloud-extras/transparent.svg
-      retry occ theming:config favicon /etc/nextcloud-extras/transparent.svg
       retry occ theming:config disable-user-theming true
+      occ config:app:delete theming logoMime >/dev/null 2>&1 || true
+      occ config:app:delete theming logoheaderMime >/dev/null 2>&1 || true
+      occ config:app:delete theming faviconMime >/dev/null 2>&1 || true
+      occ config:app:delete theming logoDimensions >/dev/null 2>&1 || true
+      cachebuster=$(occ config:app:get theming cachebuster 2>/dev/null || echo 0)
+      retry occ config:app:set theming cachebuster --value=$((cachebuster + 1))
 
       retry occ notify_push:setup 'http://notify-push.nextcloud.svc.cluster.local:7867'
       retry occ config:app:set notify_push base_endpoint \
