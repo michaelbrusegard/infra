@@ -1,3 +1,4 @@
+FROM tensorchord/vchord-scratch:pg18-v1.1.1 AS vchord
 FROM postgres:18-bookworm@sha256:efef99e1558f86089bc84bece29208c0777a185ff717ec7fa288a652ce2d0adf
 
 # renovate: suite=bookworm-pgdg depName=postgresql-18-cron
@@ -53,3 +54,5 @@ RUN set -eux; \
       postgresql-18-timescaledb="${POSTGRESQL_18_TIMESCALEDB_VERSION}" \
       postgresql-18-wal2json="${POSTGRESQL_18_WAL2JSON_VERSION}"; \
     rm -rf /var/lib/apt/lists/*
+
+COPY --from=vchord / /
