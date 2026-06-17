@@ -64,9 +64,16 @@ resource "postgresql_extension" "immich_vchord" {
   depends_on = [postgresql_extension.immich_vector]
 }
 
+resource "postgresql_extension" "immich_cube" {
+  name     = "cube"
+  database = postgresql_database.immich.name
+
+  depends_on = [postgresql_extension.immich_vchord]
+}
+
 resource "postgresql_extension" "immich_earthdistance" {
   name     = "earthdistance"
   database = postgresql_database.immich.name
 
-  depends_on = [postgresql_extension.immich_vchord]
+  depends_on = [postgresql_extension.immich_cube]
 }
