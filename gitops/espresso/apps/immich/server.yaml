@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: immich
+  namespace: immich
+  annotations:
+    secret.reloader.stakater.com/reload: database-outputs,pocket-id-outputs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich
+  serviceName: immich-internal
+  template:
+    metadata:
+      labels:
+        app: immich
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: immich
+          image: ghcr.io/immich-app/immich-server:v3.0.0-rc.0@sha256:29297c128512f586cdcf83ba12375f8f338f236c3cbca52d6cfcad83e1258edb
+          env:
+            - name: DB_HOSTNAME
+              value: postgres.postgres.svc.cluster.local
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USERNAME
+              value: immich_app
+            - name: DB_DATABASE_NAME
+              value: immich
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-outputs
+                  key: immich_db_password
+            - name: REDIS_HOSTNAME
+              value: valkey
+            - name: IMMICH_MACHINE_LEARNING_URL
+              value: http://machine-learning:3003
+            - name: UPLOAD_LOCATION
+              value: /usr/src/app/upload
+            - name: IMMICH_CONFIG_FILE
+              value: /etc/immich-config/immich.json
+          ports:
+            - containerPort: 2283
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: http
+            periodSeconds: 10
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          startupProbe:
+            httpGet:
+              path: /api/server/ping
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: uploads
+              mountPath: /usr/src/app/upload
+            - name: config
+              mountPath: /etc/immich-config
+              readOnly: true
+      volumes:
+        - name: config
+          secret:
+            secretName: pocket-id-outputs
+            items:
+              - key: immich_config_json
+                path: immich.json
+  volumeClaimTemplates:
+    - metadata:
+        name: uploads
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 500Gi
+        storageClassName: ssd-ha
