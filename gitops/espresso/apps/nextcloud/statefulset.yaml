@@ -1,0 +1,165 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+  annotations:
+    configmap.reloader.stakater.com/reload: nextcloud-config
+    secret.reloader.stakater.com/reload: nextcloud-env,database-outputs,pocket-id-outputs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud
+  serviceName: nextcloud-internal
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: nextcloud
+          image: nextcloud:33.0.5-apache@sha256:613dd7b0f01f860c503571f3ce22b057cbd23b7e0ecea261ed606c6f4f52d9f7
+          env:
+            - name: POSTGRES_HOST
+              value: postgres.postgres.svc.cluster.local
+            - name: POSTGRES_DB
+              value: nextcloud
+            - name: POSTGRES_USER
+              value: nextcloud_app
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-outputs
+                  key: nextcloud_db_password
+            - name: OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: pocket-id-outputs
+                  key: nextcloud_pocketid_client_id
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pocket-id-outputs
+                  key: nextcloud_pocketid_client_secret
+            - name: NEXTCLOUD_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-env
+                  key: NEXTCLOUD_ADMIN_USER
+            - name: NEXTCLOUD_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-env
+                  key: NEXTCLOUD_ADMIN_PASSWORD
+            - name: NEXTCLOUD_TRUSTED_DOMAINS
+              value: cloud.asgard.michaelbrusegard.com
+            - name: TRUSTED_PROXIES
+              value: 10.0.0.0/8
+            - name: OVERWRITEPROTOCOL
+              value: https
+            - name: OVERWRITECLIURL
+              value: https://cloud.asgard.michaelbrusegard.com
+          ports:
+            - containerPort: 80
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /status.php
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: cloud.asgard.michaelbrusegard.com
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /status.php
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: cloud.asgard.michaelbrusegard.com
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /status.php
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: cloud.asgard.michaelbrusegard.com
+            periodSeconds: 10
+            failureThreshold: 60
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - nohup /bin/sh /etc/nextcloud-extras/bootstrap.sh >/proc/1/fd/1 2>/proc/1/fd/2 &
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/html
+            - name: extras
+              mountPath: /etc/nextcloud-extras
+              readOnly: true
+        - name: cron
+          image: nextcloud:33.0.5-apache@sha256:613dd7b0f01f860c503571f3ce22b057cbd23b7e0ecea261ed606c6f4f52d9f7
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while ! su -s /bin/sh www-data -c 'php -f /var/www/html/occ status --output=json' 2>/dev/null | grep -q '"installed":true'; do
+                sleep 10
+              done
+              while true; do
+                su -s /bin/sh www-data -c 'php -f /var/www/html/cron.php' || true
+                sleep 300
+              done
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/html
+        - name: notify-push
+          image: nextcloud:33.0.5-apache@sha256:613dd7b0f01f860c503571f3ce22b057cbd23b7e0ecea261ed606c6f4f52d9f7
+          command:
+            - /bin/sh
+            - -c
+            - |
+              BIN=/var/www/html/custom_apps/notify_push/bin/x86_64/notify_push
+              while [ ! -x "$BIN" ]; do
+                sleep 10
+              done
+              exec "$BIN" /var/www/html/config/config.php
+          env:
+            - name: NEXTCLOUD_URL
+              value: http://localhost
+            - name: PORT
+              value: "7867"
+            - name: METRICS_PORT
+              value: "7868"
+          ports:
+            - containerPort: 7867
+              name: push
+          readinessProbe:
+            tcpSocket:
+              port: push
+            periodSeconds: 10
+            failureThreshold: 60
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/html
+      volumes:
+        - name: extras
+          configMap:
+            name: nextcloud-config
+            defaultMode: 0555
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 200Gi
+        storageClassName: ssd-ha

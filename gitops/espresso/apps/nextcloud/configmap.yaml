@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-config
+  namespace: nextcloud
+data:
+  additional.config.php: |
+    <?php
+    $CONFIG = [
+      'default_phone_region' => 'NO',
+      'maintenance_window_start' => 2,
+      'memcache.local' => '\\OC\\Memcache\\APCu',
+      'memcache.distributed' => '\\OC\\Memcache\\Redis',
+      'memcache.locking' => '\\OC\\Memcache\\Redis',
+      'redis' => [
+        'host' => 'valkey',
+        'port' => 6379,
+      ],
+      'trusted_proxies' => ['10.0.0.0/8'],
+      'overwriteprotocol' => 'https',
+      'overwrite.cli.url' => 'https://cloud.asgard.michaelbrusegard.com',
+      'log_type' => 'errorlog',
+      'loglevel' => 2,
+      'upgrade.disable-web' => true,
+      'auth.bruteforce.protection.enabled' => true,
+      'simpleSignUpLink.shown' => false,
+      'skeletondirectory' => '',
+      'allow_local_remote_servers' => true,
+      'default_quota' => '100 GB',
+      'shareapi_enabled' => true,
+      'shareapi_allow_links' => true,
+      'shareapi_allow_public_upload' => false,
+      'shareapi_enforce_links_password' => true,
+      'shareapi_default_expire_date' => true,
+      'shareapi_enforce_expire_date' => true,
+      'shareapi_expire_after_n_days' => 30,
+      'shareapi_allow_mail_notification' => false,
+      'shareapi_allow_resharing' => false,
+      'files_external_allow_create_new_local' => false,
+      'trashbin_retention_obligation' => 'auto, 30',
+      'versions_retention_obligation' => 'auto, 90',
+    ];
+  bootstrap.sh: |
+    #!/bin/sh
+    set -u
+
+    log() { printf '[bootstrap] %s\n' "$*"; }
+
+    occ() {
+      runuser -u www-data -- php -f /var/www/html/occ "$@"
+    }
+
+    retry() {
+      n=0
+      desc="$1${2:+ $2}"
+      until [ "$n" -ge 5 ]; do
+        if "$@"; then
+          return 0
+        fi
+        n=$((n + 1))
+        log "retry $n/5 for: $desc"
+        sleep $((n * 5))
+      done
+      log "giving up on: $desc"
+      return 1
+    }
+
+    wait_for_quiescent() {
+      i=0
+      while [ "$i" -lt 360 ]; do
+        status=$(runuser -u www-data -- php -f /var/www/html/occ status --output=json 2>/dev/null || echo '{}')
+        if echo "$status" | grep -q '"installed":true' \
+          && echo "$status" | grep -q '"needsDbUpgrade":false' \
+          && echo "$status" | grep -q '"maintenance":false'; then
+          return 0
+        fi
+        sleep 5
+        i=$((i + 1))
+      done
+      log "quiescent wait exceeded 30m; last status: $status"
+      return 1
+    }
+
+    converge() {
+      install -o www-data -g www-data -m 0640 \
+        /etc/nextcloud-extras/additional.config.php \
+        /var/www/html/config/additional.config.php
+
+      APPS_ENABLE="activity admin_audit calendar contacts mail notify_push tasks user_oidc"
+      APPS_DISABLE="dashboard federatedfilesharing federation firstrunwizard \
+                    lookup_server_connector nextcloud_announcements notes photos \
+                    recommendations support survey_client updatenotification \
+                    user_status weather_status"
+
+      for app in $APPS_ENABLE; do
+        if [ ! -d "/var/www/html/custom_apps/$app" ] && [ ! -d "/var/www/html/apps/$app" ]; then
+          retry occ app:install "$app"
+        fi
+        retry occ app:enable "$app"
+      done
+      for app in $APPS_DISABLE; do
+        if [ -d "/var/www/html/custom_apps/$app" ] || [ -d "/var/www/html/apps/$app" ]; then
+          occ app:enable "$app" >/dev/null 2>&1 || true
+          occ app:remove "$app" >/dev/null 2>&1 || occ app:disable "$app" >/dev/null 2>&1 || true
+        else
+          occ app:disable "$app" >/dev/null 2>&1 || true
+        fi
+      done
+
+      retry occ user_oidc:provider 'pocket-id' \
+        --clientid="${OIDC_CLIENT_ID}" \
+        --clientsecret="${OIDC_CLIENT_SECRET}" \
+        --discoveryuri='https://id.asgard.michaelbrusegard.com/.well-known/openid-configuration' \
+        --scope='openid profile email groups' \
+        --mapping-uid='preferred_username' \
+        --mapping-email='email' \
+        --mapping-display-name='name' \
+        --mapping-groups='groups' \
+        --group-provisioning=1 \
+        --unique-uid=0
+
+      retry occ notify_push:setup 'https://cloud.asgard.michaelbrusegard.com/push'
+      retry occ config:system:set maintenance_window_start --value=2 --type=integer
+
+      version=$(occ status --output=json 2>/dev/null | php -r '$d = json_decode(stream_get_contents(STDIN), true); echo $d["versionstring"] ?? "";')
+      indices_marker="/var/www/html/data/.db-indices-${version}"
+      if [ ! -f "$indices_marker" ]; then
+        log "running one-time db:add-missing-indices for $(basename "$indices_marker")"
+        retry occ db:add-missing-indices && touch "$indices_marker"
+      fi
+    }
+
+    while true; do
+      log "waiting for nextcloud to be quiescent..."
+      if wait_for_quiescent; then
+        log "running convergence"
+        converge
+      fi
+      sleep 300
+    done
