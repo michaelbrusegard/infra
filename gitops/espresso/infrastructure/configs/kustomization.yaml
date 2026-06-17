@@ -18,6 +18,7 @@ resources:
   - netbird-tofu
   - openebs
   - openebs-monitoring
+  - database-tofu
   - pocket-id-tofu
   - postgres
   - public-dns
