@@ -28,7 +28,7 @@ output "immich_config_json" {
       clientId                = pocketid_client.immich.id
       clientSecret            = pocketid_client.immich.client_secret
       enabled                 = true
-      issuerUrl               = "http://pocket-id-internal.pocket-id.svc.cluster.local:1411"
+      issuerUrl               = "https://id.asgard.michaelbrusegard.com"
       mobileOverrideEnabled   = true
       mobileRedirectUri       = "https://photos.asgard.michaelbrusegard.com/api/oauth/mobile-redirect"
       scope                   = "openid email profile"
