@@ -24,6 +24,7 @@ data:
       'upgrade.disable-web' => true,
       'auth.bruteforce.protection.enabled' => true,
       'simpleSignUpLink.shown' => false,
+      'lost_password_link' => 'disabled',
       'skeletondirectory' => '',
       'allow_local_remote_servers' => true,
       'default_quota' => '100 GB',
@@ -118,6 +119,8 @@ data:
         --mapping-groups='groups' \
         --group-provisioning=1 \
         --unique-uid=0
+
+      retry occ config:app:set user_oidc allow_multiple_user_backends --value=0
 
       retry occ notify_push:setup 'https://cloud.asgard.michaelbrusegard.com/push'
       retry occ config:system:set maintenance_window_start --value=2 --type=integer
