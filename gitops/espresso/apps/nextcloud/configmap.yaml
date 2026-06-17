@@ -111,7 +111,7 @@ data:
       retry occ user_oidc:provider 'pocket-id' \
         --clientid="${OIDC_CLIENT_ID}" \
         --clientsecret="${OIDC_CLIENT_SECRET}" \
-        --discoveryuri='https://id.asgard.michaelbrusegard.com/.well-known/openid-configuration' \
+        --discoveryuri='http://pocket-id-internal.pocket-id.svc.cluster.local:1411/.well-known/openid-configuration' \
         --scope='openid profile email groups' \
         --mapping-uid='preferred_username' \
         --mapping-email='email' \
