@@ -122,6 +122,14 @@ data:
 
       retry occ config:app:set user_oidc allow_multiple_user_backends --value=0
 
+      retry occ theming:config name 'Asgard Cloud'
+      retry occ theming:config primary_color '#f46800'
+      retry occ theming:config background_color '#000000'
+      retry occ theming:config disable-user-theming true
+      occ config:app:delete theming logoMime >/dev/null 2>&1 || true
+      occ config:app:delete theming logoheaderMime >/dev/null 2>&1 || true
+      occ config:app:delete theming logoDimensions >/dev/null 2>&1 || true
+
       retry occ notify_push:setup 'http://notify-push.nextcloud.svc.cluster.local:7867'
       retry occ config:app:set notify_push base_endpoint \
         --value='https://cloud.asgard.michaelbrusegard.com/push'
