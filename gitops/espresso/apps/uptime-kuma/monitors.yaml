@@ -314,6 +314,26 @@ data:
         "active": true
       },
       {
+        "name": "Nextcloud",
+        "type": "http",
+        "parent_name": "apps[0]",
+        "url": "https://cloud.asgard.michaelbrusegard.com/status.php",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Immich",
+        "type": "http",
+        "parent_name": "apps[0]",
+        "url": "https://photos.asgard.michaelbrusegard.com/api/server/ping",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
         "name": "Hermes Agent Gateway",
         "type": "http",
         "parent_name": "apps[0]",
