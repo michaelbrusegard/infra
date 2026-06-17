@@ -7,6 +7,11 @@ locals {
       address = "bazarr.${local.domain}"
       group   = "media_admin"
     }
+    cloud = {
+      name    = "Nextcloud"
+      address = "cloud.${local.domain}"
+      group   = "public"
+    }
     cubeman = {
       name    = "Cubeman"
       address = "10.0.189.21/32"
@@ -111,6 +116,11 @@ locals {
       name    = "Pgweb"
       address = "pgweb.${local.domain}"
       group   = "infra"
+    }
+    photos = {
+      name    = "Immich"
+      address = "photos.${local.domain}"
+      group   = "public"
     }
     pocket_id = {
       name    = "Pocket ID"

@@ -5,6 +5,7 @@ provider "registry.opentofu.org/netbirdio/netbird" {
   version     = "0.0.9"
   constraints = "0.0.9"
   hashes = [
+    "h1:0Vi0MLMk+K1CEuBZB+ByU55wXx87eGd5j0fGACekCDQ=",
     "h1:H8GG0MZqAAXqnrMCw0Q3vcE3gGFEqYmDF9YY2RnD18Y=",
     "zh:1f34fba3ecfe0efa36d4b4bddf5714c69124e705d1e371e65abd291887d43385",
     "zh:203f671af4d1f5376f4e20fb8d82cc8dc6c4fd136d9abffe8eb7b7f34e27197b",
