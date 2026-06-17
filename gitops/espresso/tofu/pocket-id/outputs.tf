@@ -36,8 +36,22 @@ output "immich_config_json" {
       storageLabelClaim       = "preferred_username"
       tokenEndpointAuthMethod = "client_secret_post"
     }
+    passwordLogin = {
+      enabled = false
+    }
+    newVersionCheck = {
+      enabled = false
+    }
     server = {
       externalDomain = "https://photos.asgard.michaelbrusegard.com"
+      publicUsers    = true
+    }
+    trash = {
+      days    = 30
+      enabled = true
+    }
+    user = {
+      deleteDelay = 7
     }
   })
   sensitive = true

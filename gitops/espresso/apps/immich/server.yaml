@@ -19,6 +19,21 @@ spec:
       enableServiceLinks: false
       nodeSelector:
         kubernetes.io/arch: amd64
+      initContainers:
+        - name: upload-markers
+          image: ghcr.io/immich-app/immich-server:v3.0.0-rc.0@sha256:29297c128512f586cdcf83ba12375f8f338f236c3cbca52d6cfcad83e1258edb
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              for dir in thumbs upload backups library profile encoded-video; do
+                mkdir -p "/usr/src/app/upload/$dir"
+                touch "/usr/src/app/upload/$dir/.immich"
+              done
+          volumeMounts:
+            - name: uploads
+              mountPath: /usr/src/app/upload
       containers:
         - name: immich
           image: ghcr.io/immich-app/immich-server:v3.0.0-rc.0@sha256:29297c128512f586cdcf83ba12375f8f338f236c3cbca52d6cfcad83e1258edb
