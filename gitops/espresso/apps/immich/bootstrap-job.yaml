@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: immich-bootstrap-admin
+  namespace: immich
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: immich-bootstrap
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: curlimages/curl:8.16.0@sha256:463eaf6072688fe96ac64fa623fe73e1dbe25d8ad6c34404a669ad3ce1f104b6
+          env:
+            - name: IMMICH_ADMIN_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-bootstrap
+                  key: IMMICH_ADMIN_NAME
+            - name: IMMICH_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: immich-bootstrap
+                  key: IMMICH_ADMIN_EMAIL
+            - name: IMMICH_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-bootstrap
+                  key: IMMICH_ADMIN_PASSWORD
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              until curl -fsS http://immich/api/server/ping >/dev/null; do
+                sleep 5
+              done
+
+              body=$(printf '{"email":"%s","password":"%s","name":"%s"}' \
+                "$IMMICH_ADMIN_EMAIL" "$IMMICH_ADMIN_PASSWORD" "$IMMICH_ADMIN_NAME")
+              status=$(curl -sS -o /tmp/immich-admin-sign-up.out -w '%{http_code}' \
+                -H 'Content-Type: application/json' \
+                -X POST \
+                -d "$body" \
+                http://immich/api/auth/admin-sign-up)
+
+              case "$status" in
+                200|201)
+                  exit 0
+                  ;;
+                400)
+                  if grep -qi 'already has an admin' /tmp/immich-admin-sign-up.out; then
+                    exit 0
+                  fi
+                  ;;
+              esac
+
+              cat /tmp/immich-admin-sign-up.out >&2
+              exit 1

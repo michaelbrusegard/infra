@@ -6,6 +6,7 @@ resources:
   - machine-learning-pvc.yaml
   - machine-learning.yaml
   - server.yaml
+  - bootstrap-job.yaml
   - services.yaml
   - httproute.yaml
   - network-policy.yaml

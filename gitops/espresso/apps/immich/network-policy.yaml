@@ -29,6 +29,14 @@ spec:
         - ports:
             - port: "2283"
               protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: immich
+            k8s:app: immich-bootstrap
+      toPorts:
+        - ports:
+            - port: "2283"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
