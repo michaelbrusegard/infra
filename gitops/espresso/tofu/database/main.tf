@@ -50,11 +50,18 @@ resource "postgresql_grant" "immich_connect" {
   privileges  = ["CONNECT", "CREATE", "TEMPORARY"]
 }
 
+resource "postgresql_extension" "immich_vector" {
+  name     = "vector"
+  database = postgresql_database.immich.name
+
+  depends_on = [postgresql_grant.immich_connect]
+}
+
 resource "postgresql_extension" "immich_vchord" {
   name     = "vchord"
   database = postgresql_database.immich.name
 
-  depends_on = [postgresql_grant.immich_connect]
+  depends_on = [postgresql_extension.immich_vector]
 }
 
 resource "postgresql_extension" "immich_earthdistance" {
