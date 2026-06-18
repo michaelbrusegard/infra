@@ -327,7 +327,7 @@ data:
         "name": "Immich",
         "type": "http",
         "parent_name": "apps[0]",
-        "url": "https://photos.asgard.michaelbrusegard.com/api/server/ping",
+        "url": "http://immich.immich.svc.cluster.local/api/server/ping",
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
