@@ -115,6 +115,8 @@ spec:
                 max_alerts: 0
 
     grafana:
+      deploymentStrategy:
+        type: Recreate
       admin:
         existingSecret: grafana-credentials
         userKey: admin-user
