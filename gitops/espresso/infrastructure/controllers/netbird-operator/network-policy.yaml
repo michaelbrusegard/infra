@@ -11,5 +11,5 @@ spec:
     - Ingress
   ingress:
     - ports:
-        - port: 443
+        - port: 9443
           protocol: TCP
