@@ -3,6 +3,8 @@ kind: Job
 metadata:
   name: immich-bootstrap-admin
   namespace: immich
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
 spec:
   backoffLimit: 6
   template:
