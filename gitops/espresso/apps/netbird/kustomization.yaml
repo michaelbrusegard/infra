@@ -8,5 +8,4 @@ resources:
   - dashboard-deployment.yaml
   - services.yaml
   - httproute.yaml
-  - cluster-proxy.yaml
   - network-policy.yaml

@@ -9,6 +9,7 @@ resources:
   - infrastructure-configs.yaml
   - infrastructure-secrets.yaml
   - netbird-operator.yaml
+  - netbird-cluster-proxy.yaml
   - apps.yaml
   - apps-secrets.yaml
   - manafishrov.yaml

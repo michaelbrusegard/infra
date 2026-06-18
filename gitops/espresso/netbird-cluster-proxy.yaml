@@ -1,0 +1,14 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: netbird-cluster-proxy
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: netbird-operator
+  interval: 10m
+  path: ./gitops/espresso/infrastructure/configs/netbird-cluster-proxy
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
