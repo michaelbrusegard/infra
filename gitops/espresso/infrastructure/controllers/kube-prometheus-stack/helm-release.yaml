@@ -116,7 +116,10 @@ spec:
 
     grafana:
       deploymentStrategy:
-        type: Recreate
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 1
       admin:
         existingSecret: grafana-credentials
         userKey: admin-user
