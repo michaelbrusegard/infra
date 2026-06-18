@@ -17,6 +17,11 @@ spec:
   values:
     image:
       repository: ghcr.io/emberstack/kubernetes-reflector
+    extraEnv:
+      - name: DOTNET_GCConserveMemory
+        value: "7"
+      - name: DOTNET_GCHeapHardLimitPercent
+        value: "0x32"
     resources:
       requests:
         cpu: 25m
