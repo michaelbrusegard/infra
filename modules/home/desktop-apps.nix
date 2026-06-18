@@ -26,6 +26,7 @@
           transmission_4-gtk
           proton-pass
           libreoffice-fresh
+          pdfarranger
           scribus
           gimp-with-plugins
           blender
