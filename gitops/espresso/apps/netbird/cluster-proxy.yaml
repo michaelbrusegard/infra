@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: clusterproxy-espresso
+  namespace: netbird
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: clusterproxy-espresso
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - users
+      - groups
+    verbs:
+      - impersonate
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - userextras/*
+      - uids
+    verbs:
+      - impersonate
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: clusterproxy-espresso
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: clusterproxy-espresso
+subjects:
+  - kind: ServiceAccount
+    name: clusterproxy-espresso
+    namespace: netbird
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: netbird-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: Group
+    name: Admins
+    apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: netbird.io/v1alpha1
+kind: ClusterProxy
+metadata:
+  name: espresso
+  namespace: netbird
+spec:
+  clusterName: espresso
+  serviceAccountName: clusterproxy-espresso
+  groups:
+    - name: Infra

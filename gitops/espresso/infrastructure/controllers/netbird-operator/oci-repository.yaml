@@ -1,0 +1,10 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: netbird-operator
+  namespace: netbird
+spec:
+  interval: 1h0m0s
+  url: oci://ghcr.io/netbirdio/helm-charts/netbird-operator
+  ref:
+    tag: "0.7.0"

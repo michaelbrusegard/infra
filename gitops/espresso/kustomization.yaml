@@ -8,6 +8,7 @@ resources:
   - infrastructure-controllers.yaml
   - infrastructure-configs.yaml
   - infrastructure-secrets.yaml
+  - netbird-operator.yaml
   - apps.yaml
   - apps-secrets.yaml
   - manafishrov.yaml

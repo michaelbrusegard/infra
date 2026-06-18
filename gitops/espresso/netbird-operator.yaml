@@ -1,14 +1,13 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: apps
+  name: netbird-operator
   namespace: flux-system
 spec:
   dependsOn:
-    - name: infrastructure-configs
-    - name: netbird-operator
+    - name: infrastructure-secrets
   interval: 10m
-  path: ./gitops/espresso/apps
+  path: ./gitops/espresso/infrastructure/controllers/netbird-operator
   prune: true
   sourceRef:
     kind: GitRepository
