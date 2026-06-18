@@ -30,7 +30,7 @@
       settings = {
         user = {
           name = "Michael Brusegard";
-          email = "56915010+michaelbrusegard@users.noreply.github.com";
+          email = config.secrets.git.email;
         };
 
         init.defaultBranch = "main";
@@ -58,6 +58,10 @@
         mergetool.prompt = false;
 
         diff.colorMoved = "default";
+
+        "gpg \"ssh\"" = {
+          allowedSignersFile = "${config.home.homeDirectory}/.config/git/allowed_signers";
+        };
 
         rerere.enabled = true;
       };
@@ -90,7 +94,6 @@
         };
 
         git = {
-          overrideGpg = true;
           pagers = [
             {
               pager = "delta --dark --paging=never";
@@ -132,6 +135,10 @@
   };
 
   home = {
+    file.".config/git/allowed_signers".text = ''
+      ${config.secrets.git.email} namespaces="git" ${config.secrets.ssh.gitPublicKey}
+    '';
+
     packages = with pkgs; [
       git-filter-repo
       git-lfs
