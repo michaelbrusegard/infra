@@ -61,6 +61,7 @@ spec:
       io_engine:
         interruptMode:
           enabled: true
+          nvmeIoQueuePollPeriod: 1000us
       obs:
         callhome:
           enabled: false
