@@ -5,6 +5,9 @@ locals {
 resource "pocketid_group" "users" {
   name          = "Users"
   friendly_name = "NetBird Users"
+  custom_claims = {
+    netbird_groups = jsonencode(["Users"])
+  }
 }
 
 resource "pocketid_group" "admin" {

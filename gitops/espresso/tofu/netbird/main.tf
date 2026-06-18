@@ -243,7 +243,7 @@ resource "netbird_account_settings" "main" {
   user_approval_required              = false
   groups_propagation_enabled          = true
   jwt_groups_enabled                  = true
-  jwt_groups_claim_name               = "groups"
+  jwt_groups_claim_name               = "netbird_groups"
   jwt_allow_groups                    = ["Users"]
   routing_peer_dns_resolution_enabled = true
   peer_login_expiration_enabled       = true
