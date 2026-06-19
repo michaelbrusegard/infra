@@ -88,7 +88,7 @@
       workspace = 3;
     }
     {
-      class = "^(opencode-ai-desktop)$";
+      class = "^(ai.opencode.desktop)$";
       workspace = 3;
     }
     {
