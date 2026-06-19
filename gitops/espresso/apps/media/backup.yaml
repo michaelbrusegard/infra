@@ -1,0 +1,143 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: transmission-config-backup
+  namespace: media
+spec:
+  sourcePVC: config-transmission-0
+  trigger:
+    schedule: "40 2 * * 0"
+  restic:
+    repository: freddo-restic-media-transmission
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: prowlarr-config-backup
+  namespace: media
+spec:
+  sourcePVC: config-prowlarr-0
+  trigger:
+    schedule: "42 2 * * 0"
+  restic:
+    repository: freddo-restic-media-prowlarr
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: radarr-config-backup
+  namespace: media
+spec:
+  sourcePVC: config-radarr-0
+  trigger:
+    schedule: "44 2 * * 0"
+  restic:
+    repository: freddo-restic-media-radarr
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: sonarr-config-backup
+  namespace: media
+spec:
+  sourcePVC: config-sonarr-0
+  trigger:
+    schedule: "46 2 * * 0"
+  restic:
+    repository: freddo-restic-media-sonarr
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: bazarr-config-backup
+  namespace: media
+spec:
+  sourcePVC: config-bazarr-0
+  trigger:
+    schedule: "48 2 * * 0"
+  restic:
+    repository: freddo-restic-media-bazarr
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: lidarr-config-backup
+  namespace: media
+spec:
+  sourcePVC: config-lidarr-0
+  trigger:
+    schedule: "50 2 * * 0"
+  restic:
+    repository: freddo-restic-media-lidarr
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: navidrome-data-backup
+  namespace: media
+spec:
+  sourcePVC: data-navidrome-0
+  trigger:
+    schedule: "52 2 * * 0"
+  restic:
+    repository: freddo-restic-media-navidrome
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: jellyfin-config-backup
+  namespace: media
+spec:
+  sourcePVC: config-jellyfin-0
+  trigger:
+    schedule: "54 2 * * 0"
+  restic:
+    repository: freddo-restic-media-jellyfin
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: jellyseerr-config-backup
+  namespace: media
+spec:
+  sourcePVC: config-jellyseerr-0
+  trigger:
+    schedule: "56 2 * * 0"
+  restic:
+    repository: freddo-restic-media-jellyseerr
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi

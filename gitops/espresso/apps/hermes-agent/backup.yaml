@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: hermes-agent-data-backup
+  namespace: hermes-agent
+spec:
+  sourcePVC: data-hermes-agent-0
+  trigger:
+    schedule: "30 2 * * *"
+  restic:
+    repository: freddo-restic-hermes-agent-data
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi

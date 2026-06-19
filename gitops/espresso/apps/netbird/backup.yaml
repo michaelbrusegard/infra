@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: netbird-data-backup
+  namespace: netbird
+spec:
+  sourcePVC: data-netbird-server-0
+  trigger:
+    schedule: "20 2 * * *"
+  restic:
+    repository: freddo-restic-netbird-data
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi

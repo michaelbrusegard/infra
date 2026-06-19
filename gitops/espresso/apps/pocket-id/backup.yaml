@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: pocket-id-data-backup
+  namespace: pocket-id
+spec:
+  sourcePVC: data-pocket-id-0
+  trigger:
+    schedule: "10 2 * * *"
+  restic:
+    repository: freddo-restic-pocket-id-data
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi

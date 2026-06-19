@@ -1,0 +1,14 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: immich-uploads-backup
+  namespace: immich
+spec:
+  sourcePVC: uploads-immich-0
+  trigger: {}
+  restic:
+    repository: freddo-restic-immich-uploads
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 5Gi

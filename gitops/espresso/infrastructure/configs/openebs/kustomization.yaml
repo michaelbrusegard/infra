@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - disk-pools.yaml
   - storage-classes.yaml
+  - volume-snapshot-classes.yaml

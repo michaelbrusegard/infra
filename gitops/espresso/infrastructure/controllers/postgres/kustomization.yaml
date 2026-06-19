@@ -3,6 +3,8 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - statefulset.yaml
+  - backup-cronjob.yaml
+  - app-backup-orchestrator.yaml
   - service.yaml
   - pgweb-entrypoint.yaml
   - pgweb-deployment.yaml

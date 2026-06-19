@@ -1,0 +1,14 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: nextcloud-data-backup
+  namespace: nextcloud
+spec:
+  sourcePVC: data-nextcloud-0
+  trigger: {}
+  restic:
+    repository: freddo-restic-nextcloud-data
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 5Gi

@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - cilium
   - openebs
+  - volsync
   - metrics-server
   - gateway-api
   - coredns

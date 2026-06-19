@@ -1,0 +1,379 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: minecraft-backup
+  namespace: minecraft
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: minecraft-backup
+  namespace: minecraft
+rules:
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - get
+      - patch
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+  - apiGroups: [""]
+    resources:
+      - pods/log
+    verbs:
+      - get
+  - apiGroups: ["apps"]
+    resources:
+      - statefulsets
+    verbs:
+      - get
+  - apiGroups: ["apps"]
+    resources:
+      - statefulsets/scale
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups: ["volsync.backube"]
+    resources:
+      - replicationsources
+    verbs:
+      - get
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: minecraft-backup
+  namespace: minecraft
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: minecraft-backup
+subjects:
+  - kind: ServiceAccount
+    name: minecraft-backup
+    namespace: minecraft
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minecraft-backup-orchestrator
+  namespace: minecraft
+data:
+  backup.py: |
+    #!/usr/bin/env python3
+    import json
+    import os
+    import pathlib
+    import ssl
+    import time
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+    from datetime import datetime, timezone
+
+    NAMESPACE = os.environ.get("POD_NAMESPACE", "minecraft")
+    STATE_CONFIGMAP = "minecraft-backup-state"
+    ACTIVITY_MARKERS = ("joined the game", "logged in with entity id")
+    SERVERS = (
+        {"name": "vanilla", "source": "vanilla-world-backup"},
+        {"name": "creative", "source": "creative-world-backup"},
+        {"name": "revelation", "source": "revelation-world-backup"},
+    )
+    TOKEN = pathlib.Path(
+        "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    ).read_text()
+    CA_CERT = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+    API = "https://{}:{}".format(
+        os.environ["KUBERNETES_SERVICE_HOST"],
+        os.environ.get("KUBERNETES_SERVICE_PORT_HTTPS", "443"),
+    )
+    SSL_CONTEXT = ssl.create_default_context(cafile=CA_CERT)
+
+
+    class NotFound(Exception):
+        pass
+
+
+    def now() -> str:
+        return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
+            "+00:00", "Z"
+        )
+
+
+    def parse_timestamp(value: str) -> datetime:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+    def request(method: str, path: str, body: dict | None = None) -> dict | str:
+        data = None
+        headers = {
+            "Authorization": f"Bearer {TOKEN}",
+            "Accept": "application/json",
+        }
+        if body is not None:
+            data = json.dumps(body).encode()
+            headers["Content-Type"] = (
+                "application/merge-patch+json"
+                if method == "PATCH"
+                else "application/json"
+            )
+        req = urllib.request.Request(
+            API + path,
+            data=data,
+            headers=headers,
+            method=method,
+        )
+        try:
+            with urllib.request.urlopen(req, context=SSL_CONTEXT, timeout=30) as res:
+                payload = res.read().decode()
+                if not payload:
+                    return {}
+                content_type = res.headers.get("Content-Type", "")
+                if "application/json" in content_type:
+                    return json.loads(payload)
+                return payload
+        except urllib.error.HTTPError as exc:
+            payload = exc.read().decode()
+            if exc.code == 404:
+                raise NotFound(payload) from exc
+            raise RuntimeError(f"{method} {path} failed: {exc.code} {payload}") from exc
+
+
+    def namespaced(path: str) -> str:
+        return f"/api/v1/namespaces/{NAMESPACE}/{path}"
+
+
+    def apps(path: str) -> str:
+        return f"/apis/apps/v1/namespaces/{NAMESPACE}/{path}"
+
+
+    def volsync(path: str) -> str:
+        return f"/apis/volsync.backube/v1alpha1/namespaces/{NAMESPACE}/{path}"
+
+
+    def get_state() -> dict[str, str]:
+        try:
+            cm = request("GET", namespaced(f"configmaps/{STATE_CONFIGMAP}"))
+            return cm.get("data") or {}
+        except NotFound:
+            return {}
+
+
+    def patch_state(updates: dict[str, str]) -> None:
+        data = get_state()
+        data.update(updates)
+        body = {"metadata": {"name": STATE_CONFIGMAP}, "data": data}
+        try:
+            request("PATCH", namespaced(f"configmaps/{STATE_CONFIGMAP}"), body)
+        except NotFound:
+            request(
+                "POST",
+                namespaced("configmaps"),
+                {"metadata": {"name": STATE_CONFIGMAP}, "data": data},
+            )
+
+
+    def pod_logs_since(server: str, since: str) -> str:
+        query = urllib.parse.urlencode(
+            {"container": "minecraft", "sinceTime": since, "timestamps": "true"}
+        )
+        return request("GET", namespaced(f"pods/{server}-0/log?{query}"))
+
+
+    def pod_started_after(server: str, marker: str) -> bool:
+        pod = request("GET", namespaced(f"pods/{server}-0"))
+        started_at = pod.get("status", {}).get("startTime") or pod.get("metadata", {}).get(
+            "creationTimestamp"
+        )
+        if started_at is None:
+            print(f"{server}: pod start time unavailable, backing up conservatively")
+            return True
+        return parse_timestamp(started_at) > parse_timestamp(marker)
+
+
+    def should_backup(server: dict[str, str], state: dict[str, str]) -> bool:
+        marker = state.get(f"{server['name']}.lastSuccess")
+        if marker is None:
+            print(f"{server['name']}: no previous successful backup, taking baseline")
+            return True
+        try:
+            if pod_started_after(server["name"], marker):
+                print(f"{server['name']}: pod restarted since last backup")
+                return True
+        except NotFound:
+            print(f"{server['name']}: pod unavailable, backing up conservatively")
+            return True
+        try:
+            logs = pod_logs_since(server["name"], marker)
+        except NotFound:
+            print(f"{server['name']}: pod logs unavailable, backing up conservatively")
+            return True
+        active = any(marker in logs for marker in ACTIVITY_MARKERS)
+        print(f"{server['name']}: {'activity found' if active else 'no activity'}")
+        return active
+
+
+    def scale(server: str, replicas: int) -> None:
+        request(
+            "PATCH",
+            apps(f"statefulsets/{server}/scale"),
+            {"spec": {"replicas": replicas}},
+        )
+
+
+    def scale_replicas(server: str) -> int:
+        obj = request("GET", apps(f"statefulsets/{server}/scale"))
+        return obj.get("spec", {}).get("replicas", 1)
+
+
+    def statefulset_ready(server: str) -> int:
+        obj = request("GET", apps(f"statefulsets/{server}"))
+        return obj.get("status", {}).get("readyReplicas", 0)
+
+
+    def pod_count(server: str) -> int:
+        query = urllib.parse.urlencode({"labelSelector": f"app={server}"})
+        obj = request("GET", namespaced(f"pods?{query}"))
+        return len(obj.get("items", []))
+
+
+    def wait_stopped(server: str) -> None:
+        deadline = time.monotonic() + 900
+        while time.monotonic() < deadline:
+            scale(server, 0)
+            if pod_count(server) == 0:
+                print(f"{server}: stopped")
+                return
+            time.sleep(10)
+        raise TimeoutError(f"timed out waiting for {server} to stop")
+
+
+    def wait_ready(server: str, replicas: int) -> None:
+        if replicas == 0:
+            return
+        deadline = time.monotonic() + 1800
+        while time.monotonic() < deadline:
+            if statefulset_ready(server) >= replicas:
+                print(f"{server}: ready")
+                return
+            time.sleep(15)
+        raise TimeoutError(f"timed out waiting for {server} to become ready")
+
+
+    def trigger_source(source: str, token: str) -> None:
+        request(
+            "PATCH",
+            volsync(f"replicationsources/{source}"),
+            {"spec": {"trigger": {"manual": token}}},
+        )
+
+
+    def wait_source(source: str, token: str, targets: list[dict[str, str]]) -> None:
+        deadline = time.monotonic() + 7200
+        while time.monotonic() < deadline:
+            for target in targets:
+                scale(target["name"], 0)
+            obj = request("GET", volsync(f"replicationsources/{source}"))
+            current = obj.get("spec", {}).get("trigger", {}).get("manual")
+            if current != token:
+                trigger_source(source, token)
+            if obj.get("status", {}).get("lastManualSync") == token:
+                print(f"{source}: manual sync complete")
+                return
+            time.sleep(15)
+        raise TimeoutError(f"timed out waiting for {source} manual sync")
+
+
+    def main() -> int:
+        state = get_state()
+        targets = [server for server in SERVERS if should_backup(server, state)]
+        if not targets:
+            print("No Minecraft worlds changed since the last successful backup")
+            return 0
+
+        originals = {server["name"]: scale_replicas(server["name"]) for server in targets}
+        sync_token = now()
+        try:
+            for server in targets:
+                print(f"{server['name']}: scaling down before backup")
+                scale(server["name"], 0)
+            for server in targets:
+                wait_stopped(server["name"])
+
+            for server in targets:
+                print(f"{server['source']}: triggering manual backup {sync_token}")
+                trigger_source(server["source"], sync_token)
+            for server in targets:
+                wait_source(server["source"], sync_token, targets)
+
+            completed = now()
+            patch_state({f"{server['name']}.lastSuccess": completed for server in targets})
+            print("Minecraft backup completed successfully")
+        finally:
+            for server in targets:
+                replicas = originals[server["name"]]
+                print(f"{server['name']}: restoring replicas to {replicas}")
+                scale(server["name"], replicas)
+            for server in targets:
+                wait_ready(server["name"], originals[server["name"]])
+        return 0
+
+
+    if __name__ == "__main__":
+        raise SystemExit(main())
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: minecraft-backup
+  namespace: minecraft
+spec:
+  schedule: "30 3 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 10800
+      template:
+        metadata:
+          labels:
+            app: minecraft-backup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: minecraft-backup
+          containers:
+            - name: backup
+              image: docker.io/library/python:3.14-slim@sha256:5794ead25f5a65ad55054d8cf2227fa3e0ac6f202a9003e0cf2338dfeb735c0a
+              command:
+                - python
+                - /scripts/backup.py
+              env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: script
+              configMap:
+                name: minecraft-backup-orchestrator
+                defaultMode: 0755

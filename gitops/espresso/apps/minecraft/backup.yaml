@@ -1,0 +1,44 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: vanilla-world-backup
+  namespace: minecraft
+spec:
+  sourcePVC: data-vanilla-0
+  trigger: {}
+  restic:
+    repository: freddo-restic-minecraft-vanilla
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: creative-world-backup
+  namespace: minecraft
+spec:
+  sourcePVC: data-creative-0
+  trigger: {}
+  restic:
+    repository: freddo-restic-minecraft-creative
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: revelation-world-backup
+  namespace: minecraft
+spec:
+  sourcePVC: data-revelation-0
+  trigger: {}
+  restic:
+    repository: freddo-restic-minecraft-revelation
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 1Gi

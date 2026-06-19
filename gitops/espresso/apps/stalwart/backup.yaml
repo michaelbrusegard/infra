@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: stalwart-data-backup
+  namespace: stalwart
+spec:
+  sourcePVC: data-stalwart-0
+  trigger:
+    schedule: "10 3 * * *"
+  restic:
+    repository: freddo-restic-stalwart-data
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: nvme-ha
+    cacheCapacity: 2Gi
