@@ -19,7 +19,7 @@
     ${brightnessctl} -d "$d" s $(((b + 1) % (m + 1)))
   '';
 
-  # Manual gaming-mode toggle (SUPER + G): flips touchpad disable-while-typing
+  # Manual gaming-mode toggle: flips touchpad disable-while-typing
   # and the kanata home-row-mods layer together, so holding WASD works in games.
   # State is derived from the current DWT value, so the two stay in sync.
   gamingModeToggle = lib.getExe (pkgs.writeShellApplication {
