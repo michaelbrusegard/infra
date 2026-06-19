@@ -19,5 +19,32 @@
     ./networking.nix
   ];
 
+  services.restic.server.initializeRepositories = {
+    hermes-agent = ["pvc"];
+    immich = ["uploads"];
+    media = [
+      "bazarr"
+      "jellyfin"
+      "jellyseerr"
+      "lidarr"
+      "navidrome"
+      "prowlarr"
+      "radarr"
+      "sonarr"
+      "transmission"
+    ];
+    minecraft = [
+      "creative"
+      "revelation"
+      "vanilla"
+    ];
+    netbird = ["pvc"];
+    nextcloud = ["pvc"];
+    pocket-id = ["pvc"];
+    postgres = ["dumps"];
+    rustfs = ["pvc"];
+    stalwart = ["pvc"];
+  };
+
   system.stateVersion = "26.05";
 }

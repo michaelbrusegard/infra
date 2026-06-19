@@ -8,6 +8,9 @@ spec:
   trigger: {}
   restic:
     repository: freddo-restic-nextcloud-data
+    moverSecurityContext:
+      runAsUser: 33
+      runAsGroup: 33
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha

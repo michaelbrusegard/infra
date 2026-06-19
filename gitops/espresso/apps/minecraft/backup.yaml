@@ -8,6 +8,9 @@ spec:
   trigger: {}
   restic:
     repository: freddo-restic-minecraft-vanilla
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
@@ -23,6 +26,9 @@ spec:
   trigger: {}
   restic:
     repository: freddo-restic-minecraft-creative
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
@@ -38,6 +44,9 @@ spec:
   trigger: {}
   restic:
     repository: freddo-restic-minecraft-revelation
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha

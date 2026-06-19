@@ -9,6 +9,9 @@ spec:
     schedule: "10 2 * * *"
   restic:
     repository: freddo-restic-pocket-id-data
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha

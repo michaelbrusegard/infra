@@ -9,6 +9,9 @@ spec:
     schedule: "40 2 * * 0"
   restic:
     repository: freddo-restic-media-transmission
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
@@ -25,6 +28,9 @@ spec:
     schedule: "42 2 * * 0"
   restic:
     repository: freddo-restic-media-prowlarr
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
@@ -41,6 +47,9 @@ spec:
     schedule: "44 2 * * 0"
   restic:
     repository: freddo-restic-media-radarr
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
@@ -57,6 +66,9 @@ spec:
     schedule: "46 2 * * 0"
   restic:
     repository: freddo-restic-media-sonarr
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
@@ -73,6 +85,9 @@ spec:
     schedule: "48 2 * * 0"
   restic:
     repository: freddo-restic-media-bazarr
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
@@ -89,6 +104,9 @@ spec:
     schedule: "50 2 * * 0"
   restic:
     repository: freddo-restic-media-lidarr
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
@@ -105,6 +123,9 @@ spec:
     schedule: "52 2 * * 0"
   restic:
     repository: freddo-restic-media-navidrome
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
@@ -121,6 +142,9 @@ spec:
     schedule: "54 2 * * 0"
   restic:
     repository: freddo-restic-media-jellyfin
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
@@ -137,6 +161,9 @@ spec:
     schedule: "56 2 * * 0"
   restic:
     repository: freddo-restic-media-jellyseerr
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha

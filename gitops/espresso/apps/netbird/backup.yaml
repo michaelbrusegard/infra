@@ -9,6 +9,9 @@ spec:
     schedule: "20 2 * * *"
   restic:
     repository: freddo-restic-netbird-data
+    moverSecurityContext:
+      runAsUser: 0
+      runAsGroup: 0
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: nvme-ha
