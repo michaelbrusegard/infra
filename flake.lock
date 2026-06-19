@@ -148,22 +148,6 @@
         "type": "github"
       }
     },
-    "caveman-skills": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1779273824,
-        "narHash": "sha256-BydREt/vai3j7kO5+e1OxsjXf6Vy+jSY1yA/yyxjHbI=",
-        "owner": "JuliusBrussee",
-        "repo": "caveman",
-        "rev": "655b7d9c5431f822264b7732e9901c5578ac84cf",
-        "type": "github"
-      },
-      "original": {
-        "owner": "JuliusBrussee",
-        "repo": "caveman",
-        "type": "github"
-      }
-    },
     "claude-code-skills": {
       "flake": false,
       "locked": {
@@ -1129,11 +1113,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1779560665,
-        "narHash": "sha256-tpyBcxPpcQb8ukyNF7DoCwfSY3VPsxHoYwj00Cayv5o=",
+        "lastModified": 1781577229,
+        "narHash": "sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H+CNW1Ck8B+8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+        "rev": "567a49d1913ce81ac6e9582e3553dd90a955875f",
         "type": "github"
       },
       "original": {
@@ -1269,7 +1253,6 @@
         "brew-api": "brew-api",
         "brew-nix": "brew-nix",
         "catppuccin": "catppuccin",
-        "caveman-skills": "caveman-skills",
         "claude-code-skills": "claude-code-skills",
         "disko": "disko",
         "dms": "dms",
@@ -1474,11 +1457,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1778829327,
-        "narHash": "sha256-q4vOZ9Sqabddl7PjAFTiLzk9g+0uJbBe0OfyktN6v2o=",
+        "lastModified": 1781175922,
+        "narHash": "sha256-EzGyZprYK6NXyAboMVK4RHQqR3n+y8O3zGJUtQmy1nE=",
         "owner": "omarcresp",
         "repo": "t3code-flake",
-        "rev": "42153fd4d7152e378d064c8297a8da5d3ea41abb",
+        "rev": "adae9a32db562ed59c7910dca1603f4a04e4f8a1",
         "type": "github"
       },
       "original": {

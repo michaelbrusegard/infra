@@ -126,10 +126,6 @@
       url = "github:anthropics/claude-code";
       flake = false;
     };
-    caveman-skills = {
-      url = "github:JuliusBrussee/caveman";
-      flake = false;
-    };
     secrets = {
       url = "git+ssh://git@github.com/michaelbrusegard/infra-secrets.git";
       inputs = {
