@@ -5,15 +5,15 @@ metadata:
   namespace: minecraft
 spec:
   sourcePVC: data-vanilla-0
+  paused: true
   trigger: {}
   restic:
     repository: freddo-restic-minecraft-vanilla
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Snapshot
-    volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: nvme-ha
+    copyMethod: Direct
+    cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
 apiVersion: volsync.backube/v1alpha1
@@ -23,15 +23,15 @@ metadata:
   namespace: minecraft
 spec:
   sourcePVC: data-creative-0
+  paused: true
   trigger: {}
   restic:
     repository: freddo-restic-minecraft-creative
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Snapshot
-    volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: nvme-ha
+    copyMethod: Direct
+    cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
 apiVersion: volsync.backube/v1alpha1
@@ -41,13 +41,13 @@ metadata:
   namespace: minecraft
 spec:
   sourcePVC: data-revelation-0
+  paused: true
   trigger: {}
   restic:
     repository: freddo-restic-minecraft-revelation
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Snapshot
-    volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: nvme-ha
+    copyMethod: Direct
+    cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi

@@ -272,8 +272,12 @@ data:
         request(
             "PATCH",
             volsync(f"replicationsources/{source}"),
-            {"spec": {"trigger": {"manual": token}}},
+            {"spec": {"paused": False, "trigger": {"manual": token}}},
         )
+
+
+    def pause_source(source: str) -> None:
+        request("PATCH", volsync(f"replicationsources/{source}"), {"spec": {"paused": True}})
 
 
     def wait_source(source: str, token: str, targets: list[dict[str, str]]) -> None:
@@ -318,6 +322,8 @@ data:
             patch_state({f"{server['name']}.lastSuccess": completed for server in targets})
             print("Minecraft backup completed successfully")
         finally:
+            for server in targets:
+                pause_source(server["source"])
             for server in targets:
                 replicas = originals[server["name"]]
                 print(f"{server['name']}: restoring replicas to {replicas}")

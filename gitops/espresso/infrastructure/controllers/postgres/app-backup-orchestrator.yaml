@@ -81,13 +81,19 @@ data:
             headers=headers,
             method=method,
         )
-        try:
-            with urllib.request.urlopen(req, context=SSL_CONTEXT, timeout=30) as res:
-                payload = res.read().decode()
-                return json.loads(payload) if payload else {}
-        except urllib.error.HTTPError as exc:
-            payload = exc.read().decode()
-            raise RuntimeError(f"{method} {path} failed: {exc.code} {payload}") from exc
+        for attempt in range(1, 6):
+            try:
+                with urllib.request.urlopen(req, context=SSL_CONTEXT, timeout=30) as res:
+                    payload = res.read().decode()
+                    return json.loads(payload) if payload else {}
+            except urllib.error.HTTPError as exc:
+                payload = exc.read().decode()
+                raise RuntimeError(f"{method} {path} failed: {exc.code} {payload}") from exc
+            except urllib.error.URLError:
+                if attempt == 5:
+                    raise
+                time.sleep(5 * attempt)
+        raise RuntimeError(f"{method} {path} failed unexpectedly")
 
 
     def source_path(namespace: str, source: str) -> str:
@@ -252,15 +258,7 @@ spec:
                   readOnly: true
           volumes:
             - name: backup
-              ephemeral:
-                volumeClaimTemplate:
-                  spec:
-                    accessModes:
-                      - ReadWriteOnce
-                    resources:
-                      requests:
-                        storage: 10Gi
-                    storageClassName: nvme-ha
+              emptyDir: {}
             - name: cache
               emptyDir: {}
             - name: script
@@ -388,15 +386,7 @@ spec:
                   readOnly: true
           volumes:
             - name: backup
-              ephemeral:
-                volumeClaimTemplate:
-                  spec:
-                    accessModes:
-                      - ReadWriteOnce
-                    resources:
-                      requests:
-                        storage: 10Gi
-                    storageClassName: nvme-ha
+              emptyDir: {}
             - name: cache
               emptyDir: {}
             - name: script

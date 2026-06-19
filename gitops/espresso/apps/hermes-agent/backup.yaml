@@ -12,7 +12,6 @@ spec:
     moverSecurityContext:
       runAsUser: 10000
       runAsGroup: 10000
-    copyMethod: Snapshot
-    volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: nvme-ha
+    copyMethod: Direct
+    cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi

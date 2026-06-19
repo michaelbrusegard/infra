@@ -97,14 +97,6 @@ spec:
                   mountPath: /cache
           volumes:
             - name: backup
-              ephemeral:
-                volumeClaimTemplate:
-                  spec:
-                    accessModes:
-                      - ReadWriteOnce
-                    resources:
-                      requests:
-                        storage: 50Gi
-                    storageClassName: nvme-ha
+              emptyDir: {}
             - name: cache
               emptyDir: {}
