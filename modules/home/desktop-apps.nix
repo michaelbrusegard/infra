@@ -71,6 +71,7 @@
           ".config/inkscape"
           ".config/Signal"
           ".config/Slack"
+          ".config/t3code"
           ".config/Proton Mail"
           ".config/Proton Pass"
           ".config/legcord"

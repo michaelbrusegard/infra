@@ -92,6 +92,10 @@
       workspace = 3;
     }
     {
+      class = "^(t3code)$";
+      workspace = 3;
+    }
+    {
       class = "^(thunderbird)$";
       workspace = 4;
     }
