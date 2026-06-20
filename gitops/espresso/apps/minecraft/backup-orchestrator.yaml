@@ -44,6 +44,8 @@ rules:
     resources:
       - replicationsources
     verbs:
+      - create
+      - delete
       - get
       - patch
 ---
@@ -83,9 +85,24 @@ data:
     STATE_CONFIGMAP = "minecraft-backup-state"
     ACTIVITY_MARKERS = ("joined the game", "logged in with entity id")
     SERVERS = (
-        {"name": "vanilla", "source": "vanilla-world-backup"},
-        {"name": "creative", "source": "creative-world-backup"},
-        {"name": "revelation", "source": "revelation-world-backup"},
+        {
+            "name": "vanilla",
+            "source": "vanilla-world-backup",
+            "pvc": "data-vanilla-0",
+            "repository": "freddo-restic-minecraft-vanilla",
+        },
+        {
+            "name": "creative",
+            "source": "creative-world-backup",
+            "pvc": "data-creative-0",
+            "repository": "freddo-restic-minecraft-creative",
+        },
+        {
+            "name": "revelation",
+            "source": "revelation-world-backup",
+            "pvc": "data-revelation-0",
+            "repository": "freddo-restic-minecraft-revelation",
+        },
     )
     TOKEN = pathlib.Path(
         "/var/run/secrets/kubernetes.io/serviceaccount/token"
@@ -268,16 +285,54 @@ data:
         raise TimeoutError(f"timed out waiting for {server} to become ready")
 
 
+    def source_body(server: dict[str, str], token: str) -> dict:
+        return {
+            "apiVersion": "volsync.backube/v1alpha1",
+            "kind": "ReplicationSource",
+            "metadata": {"name": server["source"], "namespace": NAMESPACE},
+            "spec": {
+                "sourcePVC": server["pvc"],
+                "trigger": {"manual": token},
+                "restic": {
+                    "repository": server["repository"],
+                    "moverSecurityContext": {"runAsUser": 1000, "runAsGroup": 1000},
+                    "copyMethod": "Direct",
+                    "cacheStorageClassName": "openebs-hostpath",
+                    "cacheCapacity": "1Gi",
+                },
+            },
+        }
+
+
+    def create_source(server: dict[str, str], token: str) -> None:
+        request("POST", volsync("replicationsources"), source_body(server, token))
+
+
+    def delete_source(source: str) -> None:
+        try:
+            request("DELETE", volsync(f"replicationsources/{source}"))
+        except NotFound:
+            return
+
+
+    def wait_source_deleted(source: str) -> None:
+        deadline = time.monotonic() + 300
+        while time.monotonic() < deadline:
+            try:
+                request("GET", volsync(f"replicationsources/{source}"))
+            except NotFound:
+                return
+            delete_source(source)
+            time.sleep(5)
+        raise TimeoutError(f"timed out waiting for {source} to be deleted")
+
+
     def trigger_source(source: str, token: str) -> None:
         request(
             "PATCH",
             volsync(f"replicationsources/{source}"),
-            {"spec": {"paused": False, "trigger": {"manual": token}}},
+            {"spec": {"trigger": {"manual": token}}},
         )
-
-
-    def pause_source(source: str) -> None:
-        request("PATCH", volsync(f"replicationsources/{source}"), {"spec": {"paused": True}})
 
 
     def wait_source(source: str, token: str, targets: list[dict[str, str]]) -> None:
@@ -313,8 +368,12 @@ data:
                 wait_stopped(server["name"])
 
             for server in targets:
+                delete_source(server["source"])
+            for server in targets:
+                wait_source_deleted(server["source"])
+            for server in targets:
                 print(f"{server['source']}: triggering manual backup {sync_token}")
-                trigger_source(server["source"], sync_token)
+                create_source(server, sync_token)
             for server in targets:
                 wait_source(server["source"], sync_token, targets)
 
@@ -323,7 +382,7 @@ data:
             print("Minecraft backup completed successfully")
         finally:
             for server in targets:
-                pause_source(server["source"])
+                delete_source(server["source"])
             for server in targets:
                 replicas = originals[server["name"]]
                 print(f"{server['name']}: restoring replicas to {replicas}")

@@ -12,7 +12,8 @@ spec:
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Direct
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
@@ -30,7 +31,8 @@ spec:
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Direct
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
@@ -48,7 +50,8 @@ spec:
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Direct
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
@@ -66,7 +69,8 @@ spec:
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Direct
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
@@ -84,7 +88,8 @@ spec:
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Direct
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
@@ -102,7 +107,8 @@ spec:
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Direct
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
@@ -120,7 +126,8 @@ spec:
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Direct
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
@@ -138,7 +145,8 @@ spec:
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Direct
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
@@ -156,6 +164,7 @@ spec:
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
-    copyMethod: Direct
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
