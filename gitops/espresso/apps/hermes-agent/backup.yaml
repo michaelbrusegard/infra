@@ -9,6 +9,8 @@ spec:
     schedule: "30 2 * * *"
   restic:
     repository: freddo-restic-hermes-agent-data
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 10000
       runAsGroup: 10000

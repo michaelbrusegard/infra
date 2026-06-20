@@ -8,6 +8,8 @@ spec:
   trigger: {}
   restic:
     repository: freddo-restic-immich-uploads
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 0
       runAsGroup: 0

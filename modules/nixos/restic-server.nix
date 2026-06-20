@@ -197,6 +197,20 @@ in {
             IOSchedulingClass = "idle";
           };
         };
+
+        restic-unlock = {
+          unitConfig.RequiresMountsFor = [dataDir];
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = "${maintenance}/bin/restic-maintenance unlock";
+            User = "restic";
+            Group = "restic";
+            RuntimeDirectory = "restic-maintenance";
+            CacheDirectory = "restic-maintenance";
+            Nice = 10;
+            IOSchedulingClass = "idle";
+          };
+        };
       };
 
       timers = {

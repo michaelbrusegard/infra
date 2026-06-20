@@ -9,6 +9,8 @@ spec:
     schedule: "20 2 * * *"
   restic:
     repository: freddo-restic-netbird-data
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 0
       runAsGroup: 0

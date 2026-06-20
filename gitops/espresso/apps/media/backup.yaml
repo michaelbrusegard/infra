@@ -9,6 +9,8 @@ spec:
     schedule: "40 2 * * 0"
   restic:
     repository: freddo-restic-media-transmission
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
@@ -28,6 +30,8 @@ spec:
     schedule: "42 2 * * 0"
   restic:
     repository: freddo-restic-media-prowlarr
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
@@ -47,6 +51,8 @@ spec:
     schedule: "44 2 * * 0"
   restic:
     repository: freddo-restic-media-radarr
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
@@ -66,6 +72,8 @@ spec:
     schedule: "46 2 * * 0"
   restic:
     repository: freddo-restic-media-sonarr
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
@@ -85,6 +93,8 @@ spec:
     schedule: "48 2 * * 0"
   restic:
     repository: freddo-restic-media-bazarr
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
@@ -104,6 +114,8 @@ spec:
     schedule: "50 2 * * 0"
   restic:
     repository: freddo-restic-media-lidarr
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
@@ -123,6 +135,8 @@ spec:
     schedule: "52 2 * * 0"
   restic:
     repository: freddo-restic-media-navidrome
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
@@ -142,6 +156,8 @@ spec:
     schedule: "54 2 * * 0"
   restic:
     repository: freddo-restic-media-jellyfin
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
@@ -161,6 +177,8 @@ spec:
     schedule: "56 2 * * 0"
   restic:
     repository: freddo-restic-media-jellyseerr
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000

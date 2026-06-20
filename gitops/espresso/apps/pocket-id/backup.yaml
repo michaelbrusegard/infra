@@ -9,6 +9,8 @@ spec:
     schedule: "10 2 * * *"
   restic:
     repository: freddo-restic-pocket-id-data
+    retain:
+      within: 100y
     moverSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000

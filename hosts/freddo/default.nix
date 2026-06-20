@@ -42,7 +42,6 @@
     nextcloud = ["pvc"];
     pocket-id = ["pvc"];
     postgres = ["dumps"];
-    rustfs = ["pvc"];
     stalwart = ["pvc"];
   };
 

@@ -295,8 +295,10 @@ data:
                 "trigger": {"manual": token},
                 "restic": {
                     "repository": server["repository"],
+                    "retain": {"within": "100y"},
                     "moverSecurityContext": {"runAsUser": 1000, "runAsGroup": 1000},
-                    "copyMethod": "Direct",
+                    "copyMethod": "Snapshot",
+                    "volumeSnapshotClassName": "mayastor-snapshot",
                     "cacheStorageClassName": "openebs-hostpath",
                     "cacheCapacity": "1Gi",
                 },
