@@ -335,20 +335,42 @@ data:
         )
 
 
-    def wait_source(source: str, token: str, targets: list[dict[str, str]]) -> None:
+    def source_finished(obj: dict, token: str) -> bool:
+        status = obj.get("status", {})
+        result = status.get("latestMoverStatus", {}).get("result")
+        started = status.get("lastSyncStartTime") or status.get("lastSyncTime")
+        if result == "Failed":
+            raise RuntimeError(f"{obj['metadata']['name']}: mover failed")
+        return (
+            result == "Successful"
+            and started is not None
+            and parse_timestamp(started) >= parse_timestamp(token)
+        )
+
+
+    def wait_sources(targets: list[dict[str, str]], token: str) -> None:
+        pending = {target["source"]: target for target in targets}
         deadline = time.monotonic() + 7200
         while time.monotonic() < deadline:
             for target in targets:
                 scale(target["name"], 0)
-            obj = request("GET", volsync(f"replicationsources/{source}"))
-            current = obj.get("spec", {}).get("trigger", {}).get("manual")
-            if current != token:
-                trigger_source(source, token)
-            if obj.get("status", {}).get("lastManualSync") == token:
-                print(f"{source}: manual sync complete")
+
+            for source in list(pending):
+                obj = request("GET", volsync(f"replicationsources/{source}"))
+                current = obj.get("spec", {}).get("trigger", {}).get("manual")
+                if current != token:
+                    trigger_source(source, token)
+                if source_finished(obj, token):
+                    print(f"{source}: manual sync complete")
+                    delete_source(source)
+                    del pending[source]
+
+            if not pending:
                 return
             time.sleep(15)
-        raise TimeoutError(f"timed out waiting for {source} manual sync")
+        raise TimeoutError(
+            "timed out waiting for manual sync: " + ", ".join(sorted(pending))
+        )
 
 
     def main() -> int:
@@ -374,8 +396,7 @@ data:
             for server in targets:
                 print(f"{server['source']}: triggering manual backup {sync_token}")
                 create_source(server, sync_token)
-            for server in targets:
-                wait_source(server["source"], sync_token, targets)
+            wait_sources(targets, sync_token)
 
             completed = now()
             patch_state({f"{server['name']}.lastSuccess": completed for server in targets})
