@@ -221,7 +221,7 @@ spec:
                   value: /cache
               envFrom:
                 - secretRef:
-                    name: freddo-restic-postgres-dumps
+                    name: freddo-restic-nextcloud-postgres
               resources:
                 requests:
                   cpu: 100m
@@ -349,7 +349,7 @@ spec:
                   value: /cache
               envFrom:
                 - secretRef:
-                    name: freddo-restic-postgres-dumps
+                    name: freddo-restic-immich-postgres
               resources:
                 requests:
                   cpu: 100m

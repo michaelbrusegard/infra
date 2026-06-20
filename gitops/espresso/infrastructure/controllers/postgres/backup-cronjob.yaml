@@ -81,7 +81,7 @@ spec:
                   value: /cache
               envFrom:
                 - secretRef:
-                    name: freddo-restic-postgres-dumps
+                    name: freddo-restic-honcho-postgres
               resources:
                 requests:
                   cpu: 100m

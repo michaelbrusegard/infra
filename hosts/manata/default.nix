@@ -19,5 +19,14 @@
     ./networking.nix
   ];
 
+  services.restic.server.initializeRepositories = {
+    n8n = ["postgres"];
+    nextcloud = [
+      "postgres"
+      "rustfs"
+    ];
+    vaultwarden = ["postgres"];
+  };
+
   system.stateVersion = "26.05";
 }

@@ -21,7 +21,10 @@
 
   services.restic.server.initializeRepositories = {
     hermes-agent = ["pvc"];
-    immich = ["uploads"];
+    immich = [
+      "postgres"
+      "uploads"
+    ];
     media = [
       "bazarr"
       "jellyfin"
@@ -38,10 +41,13 @@
       "revelation"
       "vanilla"
     ];
+    honcho = ["postgres"];
     netbird = ["pvc"];
-    nextcloud = ["pvc"];
+    nextcloud = [
+      "postgres"
+      "pvc"
+    ];
     pocket-id = ["pvc"];
-    postgres = ["dumps"];
     stalwart = ["pvc"];
   };
 
