@@ -1372,11 +1372,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1782062815,
-        "narHash": "sha256-sI+rvtNSFqqpUuXFsGmAL3OQRwCReqXnm0eaai5dAjc=",
+        "lastModified": 1782068311,
+        "narHash": "sha256-sqZRZFKNq6xlbU3pFN1bsKUj3AYx2MTd1Fl4ricb1nI=",
         "ref": "refs/heads/main",
-        "rev": "fb09f4f33782168eaf337d48f48a21ca13f20b65",
-        "revCount": 350,
+        "rev": "7678adba4e6b3205adb523c14c1ddb2a97348962",
+        "revCount": 351,
         "type": "git",
         "url": "ssh://git@github.com/michaelbrusegard/infra-secrets.git"
       },

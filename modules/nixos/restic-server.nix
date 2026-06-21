@@ -109,7 +109,7 @@
 
         while IFS= read -r -d "" repo; do
           maintain_repo "$group" "$password_file" "$repo"
-        done < <(find "$base" -mindepth 2 -maxdepth 2 -name config -printf '%h\0')
+        done < <(find "$base" -mindepth 2 -type f -name config -printf '%h\0')
       }
 
       if [ "$mode" = "init" ]; then
@@ -117,6 +117,7 @@
           [ -n "$group" ] || continue
           [ -n "$repo" ] || continue
           mkdir -p "${dataDir}/$group/$repo"
+          chmod 700 "${dataDir}/$group"
         done <<'REPOS'
       ${repoEntries}
       REPOS
