@@ -15,6 +15,149 @@
   };
   groupEntries = lib.concatStringsSep "\n" (lib.mapAttrsToList (name: passwordFile: "${name}:${passwordFile}") passwordFiles);
   repoEntries = lib.concatStringsSep "\n" (lib.flatten (lib.mapAttrsToList (group: repos: map (repo: "${group}:${repo}") repos) repositories));
+  resticToolCommon = ''
+    data_dir="${dataDir}"
+    export RESTIC_CACHE_DIR="''${RESTIC_CACHE_DIR:-/tmp/restic-tools-cache-$(id -u)}"
+    mkdir -p "$RESTIC_CACHE_DIR"
+
+    die() {
+      echo "$*" >&2
+      exit 1
+    }
+
+    use_repo() {
+      if [ "$#" -lt 1 ]; then
+        die "missing repository path, expected service/repo"
+      fi
+
+      repo_arg="$1"
+      case "$repo_arg" in
+        /*|*..*|""|*/*/*)
+          die "invalid repository path: $repo_arg"
+          ;;
+      esac
+
+      service="''${repo_arg%%/*}"
+      repo_name="''${repo_arg#*/}"
+      if [ "$service" = "$repo_name" ]; then
+        die "invalid repository path: $repo_arg"
+      fi
+
+      repo="$data_dir/$repo_arg"
+      password_file="/run/secrets/restic/passwords/$service"
+
+      [ -f "$repo/config" ] || die "restic repository not found: $repo"
+      [ -r "$password_file" ] || die "cannot read $password_file; run with sudo"
+
+      export RESTIC_PASSWORD_FILE="$password_file"
+    }
+
+    list_repos() {
+      find "$data_dir" -mindepth 2 -maxdepth 3 -type f -name config -printf '%h\n' \
+        | sort \
+        | while IFS= read -r repo_path; do
+          printf '%s\n' "''${repo_path#"$data_dir"/}"
+        done
+    }
+  '';
+  resticRepos = pkgs.writeShellApplication {
+    name = "restic-repos";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.jq
+      pkgs.restic
+    ];
+    text = ''
+      set -euo pipefail
+      ${resticToolCommon}
+
+      printf '%-36s %9s %10s %s\n' repository snapshots disk latest
+      printf '%-36s %9s %10s %s\n' ---------- --------- ---- ------
+
+      while IFS= read -r repo_arg; do
+        use_repo "$repo_arg"
+        disk_usage=$(du -sh "$repo" | cut -f1)
+        snapshots_json=$(restic -r "$repo" snapshots --json)
+        snapshot_count=$(printf '%s' "$snapshots_json" | jq 'length')
+        latest_snapshot=$(printf '%s' "$snapshots_json" | jq -r 'if length == 0 then "-" else max_by(.time).time end')
+        printf '%-36s %9s %10s %s\n' "$repo_arg" "$snapshot_count" "$disk_usage" "$latest_snapshot"
+      done < <(list_repos)
+    '';
+  };
+  resticSnapshots = pkgs.writeShellApplication {
+    name = "restic-snapshots";
+    runtimeInputs = [pkgs.coreutils pkgs.restic];
+    text = ''
+      set -euo pipefail
+      ${resticToolCommon}
+
+      use_repo "''${1:-}"
+      shift
+      restic -r "$repo" snapshots --compact "$@"
+    '';
+  };
+  resticLs = pkgs.writeShellApplication {
+    name = "restic-ls";
+    runtimeInputs = [pkgs.coreutils pkgs.restic];
+    text = ''
+      set -euo pipefail
+      ${resticToolCommon}
+
+      use_repo "''${1:-}"
+      shift
+      snapshot="''${1:-latest}"
+      if [ "$#" -gt 0 ]; then
+        shift
+      fi
+      restic -r "$repo" ls "$snapshot" "$@"
+    '';
+  };
+  resticStats = pkgs.writeShellApplication {
+    name = "restic-stats";
+    runtimeInputs = [pkgs.coreutils pkgs.restic];
+    text = ''
+      set -euo pipefail
+      ${resticToolCommon}
+
+      use_repo "''${1:-}"
+      echo "repository: $repo_arg"
+      du -sh "$repo"
+      echo
+      restic -r "$repo" snapshots --compact
+      echo
+      restic -r "$repo" stats latest
+      echo
+      restic -r "$repo" stats --mode raw-data
+    '';
+  };
+  resticCheckOne = pkgs.writeShellApplication {
+    name = "restic-check-one";
+    runtimeInputs = [pkgs.coreutils pkgs.restic];
+    text = ''
+      set -euo pipefail
+      ${resticToolCommon}
+
+      use_repo "''${1:-}"
+      restic -r "$repo" check
+    '';
+  };
+  resticRestoreTo = pkgs.writeShellApplication {
+    name = "restic-restore-to";
+    runtimeInputs = [pkgs.coreutils pkgs.restic];
+    text = ''
+      set -euo pipefail
+      ${resticToolCommon}
+
+      use_repo "''${1:-}"
+      target="''${2:-}"
+      snapshot="''${3:-latest}"
+
+      [ -n "$target" ] || die "usage: restic-restore-to service/repo target-dir [snapshot]"
+      mkdir -p "$target"
+      restic -r "$repo" restore "$snapshot" --target "$target"
+    '';
+  };
   maintenance = pkgs.writeShellApplication {
     name = "restic-maintenance";
     runtimeInputs = [
@@ -161,6 +304,16 @@ in {
   };
 
   config = {
+    environment.systemPackages = [
+      pkgs.restic
+      resticCheckOne
+      resticLs
+      resticRepos
+      resticRestoreTo
+      resticSnapshots
+      resticStats
+    ];
+
     services.restic.server = {
       enable = true;
       inherit dataDir;
