@@ -23,7 +23,7 @@
     n8n = ["postgres"];
     nextcloud = [
       "postgres"
-      "rustfs"
+      "pvc"
     ];
     vaultwarden = ["postgres"];
   };
