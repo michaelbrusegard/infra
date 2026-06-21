@@ -5,7 +5,7 @@ metadata:
   namespace: nextcloud
   annotations:
     configmap.reloader.stakater.com/reload: nextcloud-config
-    secret.reloader.stakater.com/reload: nextcloud-env,database-outputs,pocket-id-outputs
+    secret.reloader.stakater.com/reload: nextcloud-env,postgres-outputs,pocket-id-outputs
 spec:
   replicas: 1
   selector:
@@ -32,7 +32,7 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: database-outputs
+                  name: postgres-outputs
                   key: nextcloud_db_password
             - name: OIDC_CLIENT_ID
               valueFrom:

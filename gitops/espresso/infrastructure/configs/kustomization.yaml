@@ -9,17 +9,17 @@ resources:
   - grafana
   - honcho-tofu
   - hubble-ui
-  - manafishrov-database-tofu
+  - manafishrov-pocket-id-tofu
   - manafishrov-dns-tofu
-  - manafishrov-identity-tofu
-  - manafishrov-storage-tofu
+  - manafishrov-postgres-tofu
+  - manafishrov-rustfs-tofu
   - manafishrov-tenant
   - netbird
   - netbird-tofu
   - openebs
   - openebs-monitoring
-  - database-tofu
   - pocket-id-tofu
+  - postgres-tofu
   - postgres
   - public-dns
   - rustfs

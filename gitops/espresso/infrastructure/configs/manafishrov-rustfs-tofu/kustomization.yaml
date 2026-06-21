@@ -9,19 +9,19 @@ patches:
     patch: |
       - op: replace
         path: /metadata/name
-        value: manafishrov-storage
+        value: manafishrov-rustfs
   - target:
       kind: Terraform
-      name: manafishrov-storage
+      name: manafishrov-rustfs
     patch: |
       apiVersion: infra.contrib.fluxcd.io/v1alpha2
       kind: Terraform
       metadata:
-        name: manafishrov-storage
+        name: manafishrov-rustfs
       spec:
-        path: ./tofu/storage
+        path: ./tofu/rustfs
         backendConfig:
-          secretSuffix: manafishrov-storage
+          secretSuffix: manafishrov-rustfs
         # The minio provider is large; `tofu init` unpacking it OOM-kills the
         # runner at the shared 1Gi base limit (exit 137), which surfaces to the
         # controller as "terraform session error: instance id is empty" (the
@@ -42,10 +42,10 @@ patches:
             varsKeys:
               - RUSTFS_ACCESS_KEY:rustfs_access_key
               - RUSTFS_SECRET_KEY:rustfs_secret_key
-              - firmware_ci_secret_key
-              - twenty_app_secret_key
+              - manafishrov_firmware_ci_secret_key
+              - manafishrov_twenty_app_secret_key
         writeOutputsToSecret:
-          name: manafishrov-storage-outputs
+          name: manafishrov-rustfs-outputs
           outputs:
-            - twenty_storage_access_key_id
-            - twenty_storage_secret_access_key
+            - manafishrov_twenty_rustfs_access_key_id
+            - manafishrov_twenty_rustfs_secret_access_key

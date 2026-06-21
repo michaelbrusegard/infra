@@ -1,27 +1,27 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../tofu-base
+  - ../manafishrov-tofu-base
 patches:
   - target:
       kind: Terraform
-      name: tofu-base
+      name: manafishrov-base
     patch: |
       - op: replace
         path: /metadata/name
-        value: database
+        value: manafishrov-postgres
   - target:
       kind: Terraform
-      name: database
+      name: manafishrov-postgres
     patch: |
       apiVersion: infra.contrib.fluxcd.io/v1alpha2
       kind: Terraform
       metadata:
-        name: database
+        name: manafishrov-postgres
       spec:
-        path: ./gitops/espresso/tofu/database
+        path: ./tofu/postgres
         backendConfig:
-          secretSuffix: database
+          secretSuffix: manafishrov-postgres
         varsFrom:
           - kind: Secret
             name: postgres-admin
@@ -29,12 +29,15 @@ patches:
               - POSTGRES_USER:pg_admin_user
               - POSTGRES_PASSWORD:pg_admin_password
           - kind: Secret
-            name: database-passwords
+            name: manafishrov-nextcloud-db
             varsKeys:
-              - nextcloud_db_password
-              - immich_db_password
+              - manafishrov_nextcloud_db_password
+          - kind: Secret
+            name: manafishrov-twenty-db
+            varsKeys:
+              - manafishrov_twenty_db_password
         writeOutputsToSecret:
-          name: database-outputs
+          name: manafishrov-postgres-outputs
           outputs:
-            - nextcloud_db_password
-            - immich_db_password
+            - manafishrov_nextcloud_db_password
+            - manafishrov_twenty_db_password
