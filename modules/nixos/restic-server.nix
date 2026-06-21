@@ -116,11 +116,31 @@
         while IFS=: read -r group repo; do
           [ -n "$group" ] || continue
           [ -n "$repo" ] || continue
+
+          password_file=""
+          while IFS=: read -r candidate candidate_password_file; do
+            if [ "$candidate" = "$group" ]; then
+              password_file="$candidate_password_file"
+              break
+            fi
+          done <<'GROUPS'
+      ${groupEntries}
+      GROUPS
+
+          if [ -z "$password_file" ]; then
+            echo "missing password file for restic group $group" >&2
+            status=1
+            continue
+          fi
+
           mkdir -p "${dataDir}/$group/$repo"
           chmod 700 "${dataDir}/$group"
+          maintain_repo "$group" "$password_file" "${dataDir}/$group/$repo"
         done <<'REPOS'
       ${repoEntries}
       REPOS
+
+        exit "$status"
       fi
 
       while IFS=: read -r group password_file; do
