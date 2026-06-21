@@ -7,7 +7,7 @@ spec:
   sourcePVC: data-nextcloud-0
   trigger: {}
   restic:
-    repository: freddo-restic-nextcloud-data
+    repository: freddo-restic-nextcloud-pvc
     retain:
       within: 100y
     moverSecurityContext:

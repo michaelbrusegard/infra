@@ -89,19 +89,19 @@ data:
             "name": "vanilla",
             "source": "vanilla-world-backup",
             "pvc": "data-vanilla-0",
-            "repository": "freddo-restic-minecraft-vanilla",
+            "repository": "freddo-restic-minecraft-vanilla-world",
         },
         {
             "name": "creative",
             "source": "creative-world-backup",
             "pvc": "data-creative-0",
-            "repository": "freddo-restic-minecraft-creative",
+            "repository": "freddo-restic-minecraft-creative-world",
         },
         {
             "name": "revelation",
             "source": "revelation-world-backup",
             "pvc": "data-revelation-0",
-            "repository": "freddo-restic-minecraft-revelation",
+            "repository": "freddo-restic-minecraft-revelation-world",
         },
     )
     TOKEN = pathlib.Path(

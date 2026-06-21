@@ -8,7 +8,7 @@ spec:
   trigger:
     schedule: "40 2 * * 0"
   restic:
-    repository: freddo-restic-media-transmission
+    repository: freddo-restic-transmission-config
     retain:
       within: 100y
     moverSecurityContext:
@@ -29,7 +29,7 @@ spec:
   trigger:
     schedule: "42 2 * * 0"
   restic:
-    repository: freddo-restic-media-prowlarr
+    repository: freddo-restic-prowlarr-config
     retain:
       within: 100y
     moverSecurityContext:
@@ -50,7 +50,7 @@ spec:
   trigger:
     schedule: "44 2 * * 0"
   restic:
-    repository: freddo-restic-media-radarr
+    repository: freddo-restic-radarr-config
     retain:
       within: 100y
     moverSecurityContext:
@@ -71,7 +71,7 @@ spec:
   trigger:
     schedule: "46 2 * * 0"
   restic:
-    repository: freddo-restic-media-sonarr
+    repository: freddo-restic-sonarr-config
     retain:
       within: 100y
     moverSecurityContext:
@@ -92,7 +92,7 @@ spec:
   trigger:
     schedule: "48 2 * * 0"
   restic:
-    repository: freddo-restic-media-bazarr
+    repository: freddo-restic-bazarr-config
     retain:
       within: 100y
     moverSecurityContext:
@@ -113,7 +113,7 @@ spec:
   trigger:
     schedule: "50 2 * * 0"
   restic:
-    repository: freddo-restic-media-lidarr
+    repository: freddo-restic-lidarr-config
     retain:
       within: 100y
     moverSecurityContext:
@@ -134,7 +134,7 @@ spec:
   trigger:
     schedule: "52 2 * * 0"
   restic:
-    repository: freddo-restic-media-navidrome
+    repository: freddo-restic-navidrome-data
     retain:
       within: 100y
     moverSecurityContext:
@@ -155,7 +155,7 @@ spec:
   trigger:
     schedule: "54 2 * * 0"
   restic:
-    repository: freddo-restic-media-jellyfin
+    repository: freddo-restic-jellyfin-config
     retain:
       within: 100y
     moverSecurityContext:
@@ -176,7 +176,7 @@ spec:
   trigger:
     schedule: "56 2 * * 0"
   restic:
-    repository: freddo-restic-media-jellyseerr
+    repository: freddo-restic-jellyseerr-config
     retain:
       within: 100y
     moverSecurityContext:

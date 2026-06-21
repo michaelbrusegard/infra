@@ -8,7 +8,7 @@ spec:
   trigger:
     schedule: "10 3 * * *"
   restic:
-    repository: freddo-restic-stalwart-data
+    repository: freddo-restic-stalwart-pvc
     retain:
       within: 100y
     moverSecurityContext:

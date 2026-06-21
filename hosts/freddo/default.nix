@@ -20,35 +20,31 @@
   ];
 
   services.restic.server.initializeRepositories = {
+    bazarr = ["config"];
     hermes-agent = ["pvc"];
+    honcho = ["postgres"];
     immich = [
       "postgres"
       "uploads"
     ];
-    media = [
-      "bazarr"
-      "jellyfin"
-      "jellyseerr"
-      "lidarr"
-      "navidrome"
-      "prowlarr"
-      "radarr"
-      "sonarr"
-      "transmission"
-    ];
-    minecraft = [
-      "creative"
-      "revelation"
-      "vanilla"
-    ];
-    honcho = ["postgres"];
+    jellyfin = ["config"];
+    jellyseerr = ["config"];
+    lidarr = ["config"];
+    minecraft-creative = ["world"];
+    minecraft-revelation = ["world"];
+    minecraft-vanilla = ["world"];
+    navidrome = ["data"];
     netbird = ["pvc"];
     nextcloud = [
       "postgres"
       "pvc"
     ];
     pocket-id = ["pvc"];
+    prowlarr = ["config"];
+    radarr = ["config"];
+    sonarr = ["config"];
     stalwart = ["pvc"];
+    transmission = ["config"];
   };
 
   system.stateVersion = "26.05";

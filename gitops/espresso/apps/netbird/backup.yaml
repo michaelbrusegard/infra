@@ -8,7 +8,7 @@ spec:
   trigger:
     schedule: "20 2 * * *"
   restic:
-    repository: freddo-restic-netbird-data
+    repository: freddo-restic-netbird-pvc
     retain:
       within: 100y
     moverSecurityContext:
