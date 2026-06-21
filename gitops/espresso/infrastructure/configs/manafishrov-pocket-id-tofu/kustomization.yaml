@@ -26,7 +26,7 @@ patches:
           - kind: Secret
             name: manafishrov-pocket-id-credentials
             varsKeys:
-              - manafishrov_pocketid_api_token
+              - pocketid_api_token:manafishrov_pocketid_api_token
         writeOutputsToSecret:
           name: manafishrov-pocket-id-outputs
           outputs:
