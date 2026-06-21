@@ -29,8 +29,6 @@ spec:
               value: "5432"
             - name: PGSSLMODE
               value: disable
-            - name: PGWEB_DATABASES
-              value: immich nextcloud
             - name: PGUSER
               value: $(POSTGRES_USER)
             - name: PGPASSWORD
