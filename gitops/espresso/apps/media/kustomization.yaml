@@ -12,7 +12,7 @@ resources:
   - lidarr-statefulset.yaml
   - navidrome-statefulset.yaml
   - jellyfin-statefulset.yaml
-  - jellyseerr-statefulset.yaml
+  - seerr-statefulset.yaml
   - flaresolverr-deployment.yaml
   - services.yaml
   - httproutes.yaml

@@ -69,12 +69,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: jellyseerr-internal
+  name: seerr-internal
   namespace: media
 spec:
   clusterIP: None
   selector:
-    app: jellyseerr
+    app: seerr
   ports:
     - name: http
       port: 5055
@@ -83,7 +83,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: jellyseerr
+  name: seerr
   namespace: media
   annotations:
     lbipam.cilium.io/ips: 10.0.188.41,fd7a:115c:a1e0:188::41
@@ -94,7 +94,7 @@ spec:
     - IPv4
     - IPv6
   selector:
-    app: jellyseerr
+    app: seerr
   ports:
     - name: http
       port: 80

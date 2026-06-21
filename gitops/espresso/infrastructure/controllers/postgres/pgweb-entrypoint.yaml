@@ -18,6 +18,18 @@ data:
     mkdir -p /tmp/bookmarks
     rm -f /tmp/bookmarks/*.toml
 
+    for db in ${PGWEB_DATABASES}; do
+      [ -z "$db" ] && continue
+      cat > "/tmp/bookmarks/${db}.toml" <<EOF
+    host = "${PGHOST}"
+    port = ${PGPORT}
+    user = "${PGUSER}"
+    password = "${PGPASSWORD}"
+    database = "${db}"
+    sslmode = "${PGSSLMODE}"
+    EOF
+    done
+
     psql "$DSN" -tAc "
       SELECT datname
       FROM pg_database
@@ -26,6 +38,7 @@ data:
       ORDER BY 1
     " | while IFS= read -r db; do
       [ -z "$db" ] && continue
+      [ -e "/tmp/bookmarks/${db}.toml" ] && continue
       cat > "/tmp/bookmarks/${db}.toml" <<EOF
     host = "${PGHOST}"
     port = ${PGPORT}

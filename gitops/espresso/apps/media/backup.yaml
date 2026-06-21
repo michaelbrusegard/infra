@@ -169,14 +169,14 @@ spec:
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
-  name: jellyseerr-config-backup
+  name: seerr-config-backup
   namespace: media
 spec:
-  sourcePVC: config-jellyseerr-0
+  sourcePVC: config-seerr-0
   trigger:
     schedule: "56 2 * * 0"
   restic:
-    repository: freddo-restic-jellyseerr-config
+    repository: freddo-restic-seerr-config
     retain:
       within: 100y
     moverSecurityContext:

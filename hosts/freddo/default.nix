@@ -28,7 +28,6 @@
       "uploads"
     ];
     jellyfin = ["config"];
-    jellyseerr = ["config"];
     lidarr = ["config"];
     minecraft-creative = ["world"];
     minecraft-revelation = ["world"];
@@ -42,6 +41,7 @@
     pocket-id = ["pvc"];
     prowlarr = ["config"];
     radarr = ["config"];
+    seerr = ["config"];
     sonarr = ["config"];
     stalwart = ["pvc"];
     transmission = ["config"];

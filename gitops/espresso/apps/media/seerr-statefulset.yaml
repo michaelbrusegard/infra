@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: jellyseerr
+  name: seerr
   namespace: media
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: jellyseerr
-  serviceName: jellyseerr-internal
+      app: seerr
+  serviceName: seerr-internal
   template:
     metadata:
       labels:
-        app: jellyseerr
+        app: seerr
     spec:
       nodeSelector:
         kubernetes.io/hostname: espresso-1
