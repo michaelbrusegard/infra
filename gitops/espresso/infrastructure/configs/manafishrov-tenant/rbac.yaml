@@ -57,6 +57,45 @@ roleRef:
   name: manafishrov
   apiGroup: rbac.authorization.k8s.io
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manafishrov-rbac
+rules:
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+      - roles
+      - rolebindings
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-rbac
+  namespace: manafishrov-nextcloud
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: ClusterRole
+  name: manafishrov-rbac
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-rbac
+  namespace: manafishrov-twenty
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: ClusterRole
+  name: manafishrov-rbac
+  apiGroup: rbac.authorization.k8s.io
+---
 # Secrets access is split out of the cluster-wide grant so the manafishrov
 # SA cannot read Secrets in foreign namespaces (e.g. flux-system/sops-age).
 # The ClusterRole below is bound per-namespace via RoleBindings; reads and
