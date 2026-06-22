@@ -20,12 +20,19 @@
   ];
 
   services.restic.server.initializeRepositories = {
-    n8n = ["postgres"];
+    n8n = ["pvc"];
     nextcloud = [
       "postgres"
       "pvc"
     ];
-    vaultwarden = ["postgres"];
+    pocket-id = ["pvc"];
+    roundcube = ["pvc"];
+    twenty = [
+      "postgres"
+      "pvc"
+      "s3"
+    ];
+    vaultwarden = ["pvc"];
   };
 
   system.stateVersion = "26.05";
