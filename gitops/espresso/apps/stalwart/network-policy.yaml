@@ -95,6 +95,17 @@ spec:
               protocol: TCP
             - port: "465"
               protocol: TCP
+    # Roundcube webmail in the manafishrov tenant: IMAPS + Submissions.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: manafishrov-roundcube
+            k8s:app: roundcube
+      toPorts:
+        - ports:
+            - port: "993"
+              protocol: TCP
+            - port: "465"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
