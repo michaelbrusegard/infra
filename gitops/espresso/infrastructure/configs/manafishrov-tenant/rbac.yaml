@@ -62,6 +62,10 @@ kind: ClusterRole
 metadata:
   name: manafishrov-rbac
 rules:
+  - apiGroups: [""]
+    resources:
+      - serviceaccounts
+    verbs: ["*"]
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources:
       - roles
