@@ -27,7 +27,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: stalwart
-          image: stalwartlabs/stalwart:v0.16.9@sha256:d86c4cf303b91c41ce27a6667cc795ecf9ab174aecb3f88132451c3c58beeb59
+          image: stalwartlabs/stalwart:v0.16.10@sha256:39fa0c8caec580ecf35d58b0b750c5cf0fc8142617124e1013883dfe86e472c7
           command:
             - /entrypoint/entrypoint.sh
           env:

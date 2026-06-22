@@ -6,13 +6,13 @@ ARG POSTGRESQL_18_CRON_VERSION=1.6.7-2.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-hll
 ARG POSTGRESQL_18_HLL_VERSION=2.21-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-hypopg
-ARG POSTGRESQL_18_HYPOPG_VERSION=1.4.2-2.pgdg12+1
+ARG POSTGRESQL_18_HYPOPG_VERSION=1.4.3-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-partman
 ARG POSTGRESQL_18_PARTMAN_VERSION=5.4.3-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pgaudit
 ARG POSTGRESQL_18_PGAUDIT_VERSION=18.0-3.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pg-stat-kcache
-ARG POSTGRESQL_18_PG_STAT_KCACHE_VERSION=2.3.1-1.pgdg12+1
+ARG POSTGRESQL_18_PG_STAT_KCACHE_VERSION=2.3.2-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pg-wait-sampling
 ARG POSTGRESQL_18_PG_WAIT_SAMPLING_VERSION=1.1.9-2.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pglogical
@@ -22,11 +22,11 @@ ARG POSTGRESQL_18_PGROUTING_VERSION=4.0.1-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pgrouting-scripts
 ARG POSTGRESQL_18_PGROUTING_SCRIPTS_VERSION=4.0.1-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pgvector
-ARG POSTGRESQL_18_PGVECTOR_VERSION=0.8.2-1.pgdg12+1
+ARG POSTGRESQL_18_PGVECTOR_VERSION=0.8.3-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-postgis-3
-ARG POSTGRESQL_18_POSTGIS_3_VERSION=3.6.3+dfsg-1.pgdg12+1
+ARG POSTGRESQL_18_POSTGIS_3_VERSION=3.6.4+dfsg-2.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-postgis-3-scripts
-ARG POSTGRESQL_18_POSTGIS_3_SCRIPTS_VERSION=3.6.3+dfsg-1.pgdg12+1
+ARG POSTGRESQL_18_POSTGIS_3_SCRIPTS_VERSION=3.6.4+dfsg-2.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-repack
 ARG POSTGRESQL_18_REPACK_VERSION=1.5.3-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-timescaledb
