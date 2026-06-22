@@ -4,3 +4,11 @@ metadata:
   name: manafishrov
   labels:
     pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: manafishrov-roundcube
+  labels:
+    gateway-access: public
+    pod-security.kubernetes.io/enforce: baseline
