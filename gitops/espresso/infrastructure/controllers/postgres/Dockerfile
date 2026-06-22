@@ -30,7 +30,7 @@ ARG POSTGRESQL_18_POSTGIS_3_SCRIPTS_VERSION=3.6.3+dfsg-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-repack
 ARG POSTGRESQL_18_REPACK_VERSION=1.5.3-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-timescaledb
-ARG POSTGRESQL_18_TIMESCALEDB_VERSION=2.27.2+dfsg-1.pgdg12+1
+ARG POSTGRESQL_18_TIMESCALEDB_VERSION=2.28.0+dfsg-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-wal2json
 ARG POSTGRESQL_18_WAL2JSON_VERSION=2.6-3.pgdg12+1
 
