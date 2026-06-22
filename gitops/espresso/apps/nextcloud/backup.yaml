@@ -17,3 +17,268 @@ spec:
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 5Gi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nextcloud-backup
+  namespace: nextcloud
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nextcloud-backup-volsync
+  namespace: nextcloud
+rules:
+  - apiGroups: ["volsync.backube"]
+    resources:
+      - replicationsources
+    resourceNames:
+      - nextcloud-data-backup
+    verbs:
+      - get
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nextcloud-backup-volsync
+  namespace: nextcloud
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: nextcloud-backup-volsync
+subjects:
+  - kind: ServiceAccount
+    name: nextcloud-backup
+    namespace: nextcloud
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-backup-orchestrator
+  namespace: nextcloud
+data:
+  trigger-volsync.py: |
+    #!/usr/bin/env python3
+    import json
+    import os
+    import pathlib
+    import ssl
+    import time
+    import urllib.error
+    import urllib.request
+    from datetime import datetime, timezone
+
+    TOKEN = pathlib.Path(
+        "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    ).read_text()
+    CA_CERT = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+    API = "https://{}:{}".format(
+        os.environ["KUBERNETES_SERVICE_HOST"],
+        os.environ.get("KUBERNETES_SERVICE_PORT_HTTPS", "443"),
+    )
+    SSL_CONTEXT = ssl.create_default_context(cafile=CA_CERT)
+
+
+    def now() -> str:
+        return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
+            "+00:00", "Z"
+        )
+
+
+    def request(method: str, path: str, body: dict | None = None) -> dict:
+        data = None
+        headers = {
+            "Authorization": f"Bearer {TOKEN}",
+            "Accept": "application/json",
+        }
+        if body is not None:
+            data = json.dumps(body).encode()
+            headers["Content-Type"] = "application/merge-patch+json"
+        req = urllib.request.Request(
+            API + path,
+            data=data,
+            headers=headers,
+            method=method,
+        )
+        for attempt in range(1, 6):
+            try:
+                with urllib.request.urlopen(req, context=SSL_CONTEXT, timeout=30) as res:
+                    payload = res.read().decode()
+                    return json.loads(payload) if payload else {}
+            except urllib.error.HTTPError as exc:
+                payload = exc.read().decode()
+                raise RuntimeError(f"{method} {path} failed: {exc.code} {payload}") from exc
+            except urllib.error.URLError:
+                if attempt == 5:
+                    raise
+                time.sleep(5 * attempt)
+        raise RuntimeError(f"{method} {path} failed unexpectedly")
+
+
+    def source_path(namespace: str, source: str) -> str:
+        return (
+            "/apis/volsync.backube/v1alpha1/namespaces/"
+            f"{namespace}/replicationsources/{source}"
+        )
+
+
+    def trigger_source(namespace: str, source: str, token: str) -> None:
+        request(
+            "PATCH",
+            source_path(namespace, source),
+            {"spec": {"trigger": {"manual": token}}},
+        )
+
+
+    def wait_source(namespace: str, source: str, token: str) -> None:
+        deadline = time.monotonic() + int(os.environ.get("VOLSYNC_TIMEOUT_SECONDS", "43200"))
+        while time.monotonic() < deadline:
+            obj = request("GET", source_path(namespace, source))
+            current = obj.get("spec", {}).get("trigger", {}).get("manual")
+            if current != token:
+                trigger_source(namespace, source, token)
+            if obj.get("status", {}).get("lastManualSync") == token:
+                print(f"{namespace}/{source}: manual sync complete")
+                return
+            time.sleep(15)
+        raise TimeoutError(f"timed out waiting for {namespace}/{source} manual sync")
+
+
+    def main() -> int:
+        namespace = os.environ["VOLSYNC_NAMESPACE"]
+        source = os.environ["VOLSYNC_SOURCE"]
+        token = now()
+        print(f"{namespace}/{source}: triggering manual sync {token}")
+        trigger_source(namespace, source, token)
+        wait_source(namespace, source, token)
+        return 0
+
+
+    if __name__ == "__main__":
+        raise SystemExit(main())
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-backup
+  namespace: nextcloud
+spec:
+  schedule: "15 4 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 43200
+      template:
+        metadata:
+          labels:
+            app: nextcloud-backup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: nextcloud-backup
+          initContainers:
+            - name: dump-postgres
+              image: ghcr.io/michaelbrusegard/postgres:sha-d5a65c76cfe6e2f02522d94347067f4408da9a2c@sha256:df8cc436376b921838549a1f35d9bd35a867ff87478f142fb37e7acc7b7c4ac1
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  ts="$(date -u +%Y%m%dT%H%M%SZ)"
+                  pg_dump \
+                    --format=custom \
+                    --compress=9 \
+                    --clean \
+                    --if-exists \
+                    --no-owner \
+                    --no-acl \
+                    --dbname=nextcloud \
+                    --file="/backup/nextcloud-${ts}.dump"
+              env:
+                - name: PGHOST
+                  value: postgres.postgres.svc.cluster.local
+                - name: PGPORT
+                  value: "5432"
+                - name: PGUSER
+                  value: nextcloud_app
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-outputs
+                      key: nextcloud_db_password
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+            - name: restic-postgres
+              image: docker.io/restic/restic:0.18.1@sha256:39d9072fb5651c80d75c7a811612eb60b4c06b32ffe87c2e9f3c7222e1797e76
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  restic backup \
+                    --host espresso-postgres \
+                    --tag espresso \
+                    --tag nextcloud \
+                    --tag postgres \
+                    /backup
+              env:
+                - name: RESTIC_CACHE_DIR
+                  value: /cache
+              envFrom:
+                - secretRef:
+                    name: freddo-restic-nextcloud-postgres
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                  readOnly: true
+                - name: cache
+                  mountPath: /cache
+          containers:
+            - name: trigger-volsync
+              image: docker.io/library/python:3.14-slim@sha256:5794ead25f5a65ad55054d8cf2227fa3e0ac6f202a9003e0cf2338dfeb735c0a
+              command:
+                - python
+                - /scripts/trigger-volsync.py
+              env:
+                - name: VOLSYNC_NAMESPACE
+                  value: nextcloud
+                - name: VOLSYNC_SOURCE
+                  value: nextcloud-data-backup
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: backup
+              emptyDir: {}
+            - name: cache
+              emptyDir: {}
+            - name: script
+              configMap:
+                name: nextcloud-backup-orchestrator
+                defaultMode: 0755

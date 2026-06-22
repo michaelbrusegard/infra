@@ -28,6 +28,9 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: hermes-agent
             k8s:app: honcho
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: hermes-agent
+            k8s:app: honcho-backup
       toPorts:
         - ports:
             - port: "5432"
@@ -47,6 +50,9 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: nextcloud
             k8s:app: nextcloud
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: nextcloud
+            k8s:app: nextcloud-backup
       toPorts:
         - ports:
             - port: "5432"
@@ -55,6 +61,9 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: immich
             k8s:app: immich
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: immich
+            k8s:app: immich-backup
       toPorts:
         - ports:
             - port: "5432"
@@ -87,13 +96,6 @@ spec:
         - ports:
             - port: "5432"
               protocol: TCP
-    - fromEndpoints:
-        - matchLabels:
-            k8s:app: postgres-backup
-      toPorts:
-        - ports:
-            - port: "5432"
-              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
@@ -107,55 +109,6 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: postgres-backup
-  namespace: postgres
-spec:
-  endpointSelector:
-    matchLabels:
-      app: postgres-backup
-  egress:
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: kube-system
-      toPorts:
-        - ports:
-            - port: "53"
-              protocol: UDP
-            - port: "53"
-              protocol: TCP
-          rules:
-            dns:
-              - matchPattern: "*"
-    - toEndpoints:
-        - matchLabels:
-            k8s:app: postgres
-      toPorts:
-        - ports:
-            - port: "5432"
-              protocol: TCP
-    - toCIDRSet:
-        - cidr: 10.0.186.17/32
-      toPorts:
-        - ports:
-            - port: "8000"
-              protocol: TCP
-    - toEntities:
-        - kube-apiserver
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-    - toEntities:
-        - host
-        - remote-node
-      toPorts:
-        - ports:
-            - port: "6443"
-              protocol: TCP
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
