@@ -1,4 +1,4 @@
-FROM tensorchord/vchord-scratch:pg18-v1.1.1 AS vchord
+FROM tensorchord/vchord-scratch:pg18-v1.1.1@sha256:bdea43bed2a414e21bbf71767bf6f0739747ac480b267b51772dc214ac28dcb3 AS vchord
 FROM postgres:18-bookworm@sha256:efef99e1558f86089bc84bece29208c0777a185ff717ec7fa288a652ce2d0adf
 
 # renovate: suite=bookworm-pgdg depName=postgresql-18-cron
