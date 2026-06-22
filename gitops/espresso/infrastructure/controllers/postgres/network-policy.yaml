@@ -36,6 +36,9 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: manafishrov-nextcloud
             k8s:app: nextcloud
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: manafishrov-nextcloud
+            k8s:app: nextcloud-backup
       toPorts:
         - ports:
             - port: "5432"
@@ -63,6 +66,9 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: manafishrov-twenty
             k8s:app: twenty-worker
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: manafishrov-twenty
+            k8s:app: twenty-backup
       toPorts:
         - ports:
             - port: "5432"
