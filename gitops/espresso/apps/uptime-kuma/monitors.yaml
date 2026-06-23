@@ -263,7 +263,7 @@ data:
         "name": "MusicGrabber",
         "type": "http",
         "parent_name": "media[0]",
-        "url": "https://musicgrabber.asgard.michaelbrusegard.com",
+        "url": "http://musicgrabber-gateway.media.svc.cluster.local",
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
