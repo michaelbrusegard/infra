@@ -10,6 +10,7 @@ resources:
   - sonarr-statefulset.yaml
   - bazarr-statefulset.yaml
   - lidarr-statefulset.yaml
+  - musicgrabber-statefulset.yaml
   - navidrome-statefulset.yaml
   - jellyfin-statefulset.yaml
   - seerr-statefulset.yaml

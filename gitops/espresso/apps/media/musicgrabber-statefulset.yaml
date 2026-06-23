@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: musicgrabber
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: musicgrabber
+  serviceName: musicgrabber-internal
+  template:
+    metadata:
+      labels:
+        app: musicgrabber
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: espresso-1
+      containers:
+        - name: musicgrabber
+          image: g33kphr33k/musicgrabber:latest@sha256:67a8bb7badd03f0ccdfcaaf587247afa96e3ed7235280d2a4e1257d3175baca2
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Oslo"
+            - name: MUSIC_DIR
+              value: "/music"
+            - name: DB_PATH
+              value: "/data/music_grabber.db"
+            - name: ENABLE_MUSICBRAINZ
+              value: "true"
+            - name: DEFAULT_CONVERT_TO_FLAC
+              value: "true"
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+          volumeMounts:
+            - mountPath: /data
+              name: data
+            - mountPath: /music
+              name: media-data
+              subPath: media/music
+            - mountPath: /dev/shm
+              name: shm
+      volumes:
+        - name: media-data
+          persistentVolumeClaim:
+            claimName: media-data
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+        storageClassName: nvme-ha

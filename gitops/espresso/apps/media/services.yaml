@@ -273,6 +273,40 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: musicgrabber-internal
+  namespace: media
+spec:
+  clusterIP: None
+  selector:
+    app: musicgrabber
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: musicgrabber
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.49,fd7a:115c:a1e0:188::49
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: musicgrabber
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: navidrome-internal
   namespace: media
 spec:
