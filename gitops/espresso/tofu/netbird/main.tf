@@ -47,6 +47,11 @@ locals {
       address = "lidarr.${local.domain}"
       group   = "media_admin"
     }
+    musicgrabber = {
+      name    = "MusicGrabber"
+      address = "musicgrabber.${local.domain}"
+      group   = "media_admin"
+    }
     navidrome = {
       name    = "Navidrome"
       address = "navidrome.${local.domain}"
