@@ -52,7 +52,6 @@ data:
             {"name": "Sonarr"},
             {"name": "Radarr"},
             {"name": "Bazarr"},
-            {"name": "Lidarr"},
             {"name": "MusicGrabber"},
             {"name": "Transmission"}
           ]

@@ -22,10 +22,16 @@ spec:
           command:
             - sh
             - -c
-            - mkdir -p /shared/media/music/Singles /shared/media/music/Albums /shared/media/music/Playlists /shared/appdata/musicgrabber && chown 1000:1000 /shared/media/music /shared/media/music/Singles /shared/media/music/Albums /shared/media/music/Playlists /shared/appdata/musicgrabber
+            - |
+              set -eu
+              mkdir -p /shared/media/music/Singles /shared/media/music/Albums /shared/media/music/Playlists /data
+              chown 1000:1000 /shared/media/music /shared/media/music/Singles /shared/media/music/Albums /shared/media/music/Playlists
+              chown -R 1000:1000 /data
           volumeMounts:
             - mountPath: /shared
               name: media-data
+            - mountPath: /data
+              name: config
       containers:
         - name: musicgrabber
           image: g33kphr33k/musicgrabber:latest@sha256:67a8bb7badd03f0ccdfcaaf587247afa96e3ed7235280d2a4e1257d3175baca2
@@ -65,8 +71,7 @@ spec:
             periodSeconds: 10
           volumeMounts:
             - mountPath: /data
-              name: media-data
-              subPath: appdata/musicgrabber
+              name: config
             - mountPath: /music
               name: media-data
               subPath: media/music
@@ -80,3 +85,13 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 2Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: config
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+        storageClassName: nvme-ha

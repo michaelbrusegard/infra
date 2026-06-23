@@ -42,11 +42,6 @@ locals {
       address = "jellyfin.${local.domain}"
       group   = "media"
     }
-    lidarr = {
-      name    = "Lidarr"
-      address = "lidarr.${local.domain}"
-      group   = "media_admin"
-    }
     musicgrabber = {
       name    = "MusicGrabber"
       address = "musicgrabber.${local.domain}"

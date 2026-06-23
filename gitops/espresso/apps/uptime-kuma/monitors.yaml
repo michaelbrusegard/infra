@@ -250,16 +250,6 @@ data:
         "active": true
       },
       {
-        "name": "Lidarr",
-        "type": "http",
-        "parent_name": "media[0]",
-        "url": "https://lidarr.asgard.michaelbrusegard.com",
-        "interval": 60,
-        "max_retries": 3,
-        "retry_interval": 30,
-        "active": true
-      },
-      {
         "name": "MusicGrabber",
         "type": "http",
         "parent_name": "media[0]",

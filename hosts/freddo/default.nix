@@ -28,10 +28,10 @@
       "uploads"
     ];
     jellyfin = ["repo-config"];
-    lidarr = ["repo-config"];
     minecraft-creative = ["world"];
     minecraft-revelation = ["world"];
     minecraft-vanilla = ["world"];
+    musicgrabber = ["repo-config"];
     navidrome = ["repo-data"];
     netbird = ["pvc"];
     nextcloud = [

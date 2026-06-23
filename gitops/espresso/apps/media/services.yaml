@@ -239,40 +239,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: lidarr-internal
-  namespace: media
-spec:
-  clusterIP: None
-  selector:
-    app: lidarr
-  ports:
-    - name: http
-      port: 8686
-      targetPort: http
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: lidarr
-  namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.47,fd7a:115c:a1e0:188::47
-spec:
-  type: LoadBalancer
-  ipFamilyPolicy: PreferDualStack
-  ipFamilies:
-    - IPv4
-    - IPv6
-  selector:
-    app: lidarr
-  ports:
-    - name: http
-      port: 80
-      targetPort: http
----
-apiVersion: v1
-kind: Service
-metadata:
   name: musicgrabber-internal
   namespace: media
 spec:

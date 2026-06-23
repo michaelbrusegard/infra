@@ -106,14 +106,14 @@ spec:
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
-  name: lidarr-config-backup
+  name: musicgrabber-config-backup
   namespace: media
 spec:
-  sourcePVC: config-lidarr-0
+  sourcePVC: config-musicgrabber-0
   trigger:
-    schedule: "50 2 * * 0"
+    schedule: "50 2 * * *"
   restic:
-    repository: freddo-restic-lidarr-config
+    repository: freddo-restic-musicgrabber-config
     retain:
       within: 100y
     moverSecurityContext:
