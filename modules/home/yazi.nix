@@ -131,6 +131,11 @@ in {
           desc = "Show Git file changes";
         }
         {
+          on = "Y";
+          run = "copy filename";
+          desc = "Copy filename";
+        }
+        {
           on = "<c-d>";
           run = "plugin diff";
           desc = "Diff selected with hovered";
