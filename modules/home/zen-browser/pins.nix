@@ -21,5 +21,19 @@ _: {
       position = 2;
       isEssential = true;
     };
+    "Messenger" = {
+      id = "fdb92a64-ed74-48bd-8904-407a6c5129f2";
+      url = "https://www.messenger.com/";
+      workspace = "540f99e5-b487-46f8-9b1a-a91796f0908e";
+      position = 3;
+      isEssential = true;
+    };
+    "WhatsApp" = {
+      id = "88437416-b86b-45af-a724-a4338e897ac8";
+      url = "https://web.whatsapp.com/";
+      workspace = "540f99e5-b487-46f8-9b1a-a91796f0908e";
+      position = 4;
+      isEssential = true;
+    };
   };
 }
