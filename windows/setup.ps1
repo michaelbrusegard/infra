@@ -192,6 +192,7 @@ Invoke-Section "Installing Applications with Winget" {
     "Microsoft.PowerShell",
     "7zip.7zip",
     "Rufus.Rufus",
+    "IDRIX.VeraCrypt",
     "Rem0o.FanControl",
     "Notepad++.Notepad++",
     "VB-Audio.Voicemeeter.Banana",
