@@ -20,7 +20,7 @@ spec:
         kubernetes.io/arch: amd64
       containers:
         - name: machine-learning
-          image: ghcr.io/immich-app/immich-machine-learning:v3.0.0-rc.0@sha256:a0cde56d3d97caa442fd8cf9721d999ab3e5e793fc52bced70f3d8840b6111e9
+          image: ghcr.io/immich-app/immich-machine-learning:v3.0.0-rc.2@sha256:d0080c1e6bc1966616bbfbea14d85dddc6808704bb79f11cf5a637cf5d84a711
           env:
             - name: TRANSFORMERS_CACHE
               value: /cache

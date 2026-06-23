@@ -70,6 +70,16 @@
   ],
   "packageRules": [
     {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/immich-app/immich-server",
+        "ghcr.io/immich-app/immich-machine-learning"
+      ],
+      "versioning": "semver"
+    },
+    {
       "matchUpdateTypes": [
         "digest",
         "pinDigest"
