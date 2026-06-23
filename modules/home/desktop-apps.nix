@@ -72,6 +72,7 @@
           ".config/Signal"
           ".config/Slack"
           ".config/t3code"
+          ".t3"
           ".config/Proton Mail"
           ".config/Proton Pass"
           ".config/legcord"
