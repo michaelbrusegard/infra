@@ -103,26 +103,67 @@ spec:
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 1Gi
 ---
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
+apiVersion: batch/v1
+kind: CronJob
 metadata:
   name: musicgrabber-config-backup
   namespace: media
 spec:
-  sourcePVC: config-musicgrabber-0
-  trigger:
-    schedule: "50 2 * * *"
-  restic:
-    repository: freddo-restic-musicgrabber-config
-    retain:
-      within: 100y
-    moverSecurityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-    copyMethod: Snapshot
-    volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: openebs-hostpath
-    cacheCapacity: 1Gi
+  schedule: "50 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: musicgrabber-config-backup
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: espresso-1
+          containers:
+            - name: restic
+              image: docker.io/restic/restic:0.19.0@sha256:7f44e0057b82348597568ea209360762d0b38f8e1dbc8ad859661ac1055e45f2
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  restic backup \
+                    --host espresso-media \
+                    --tag espresso \
+                    --tag media \
+                    --tag musicgrabber \
+                    --tag config \
+                    /config
+              env:
+                - name: RESTIC_CACHE_DIR
+                  value: /cache
+              envFrom:
+                - secretRef:
+                    name: freddo-restic-musicgrabber-config
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: cache
+                  mountPath: /cache
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                claimName: config-musicgrabber-0
+            - name: cache
+              emptyDir: {}
 ---
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
