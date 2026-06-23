@@ -36,6 +36,9 @@ spec:
       enabled: false
     alloy:
       enabled: false
+    localpv-provisioner:
+      localpv:
+        basePath: /var/local/openebs/local
     mayastor:
       base:
         metrics:
