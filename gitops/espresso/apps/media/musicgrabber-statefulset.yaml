@@ -16,6 +16,19 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: espresso-1
+      initContainers:
+        - name: init-dirs
+          image: busybox:1.38.0@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8
+          command:
+            - sh
+            - -c
+            - mkdir -p /music/Singles /music/Albums /music/Playlists /data && chown 1000:1000 /music /music/Singles /music/Albums /music/Playlists /data
+          volumeMounts:
+            - mountPath: /data
+              name: data
+            - mountPath: /music
+              name: media-data
+              subPath: media/music
       containers:
         - name: musicgrabber
           image: g33kphr33k/musicgrabber:latest@sha256:67a8bb7badd03f0ccdfcaaf587247afa96e3ed7235280d2a4e1257d3175baca2
@@ -38,16 +51,19 @@ spec:
             - name: DEFAULT_CONVERT_TO_FLAC
               value: "true"
           startupProbe:
-            tcpSocket:
+            httpGet:
+              path: /
               port: http
             periodSeconds: 10
             failureThreshold: 30
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /
               port: http
             periodSeconds: 30
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /
               port: http
             periodSeconds: 10
           volumeMounts:
