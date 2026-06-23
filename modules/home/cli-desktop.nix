@@ -15,5 +15,6 @@
     ]
     ++ lib.optionals pkgs.stdenv.isLinux [
       cryptsetup
+      exfatprogs
     ];
 }

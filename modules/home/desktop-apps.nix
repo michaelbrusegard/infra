@@ -22,6 +22,7 @@
           gthumb
           legcord
           jellyfin-media-player
+          veracrypt
 
           transmission_4-gtk
           proton-pass
@@ -45,6 +46,7 @@
           brewCasks.linearmouse
           brewCasks.legcord
           brewCasks.jellyfin-media-player
+          brewCasks.veracrypt
 
           brewCasks.transmission
           brewCasks.proton-pass
