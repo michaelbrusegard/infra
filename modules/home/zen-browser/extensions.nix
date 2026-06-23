@@ -79,6 +79,12 @@ _: {
         installation_mode = "force_installed";
         default_area = "menupanel";
       };
+      # Get cookies.txt LOCALLY
+      "{ac87cfd8-47b1-4401-b32e-f033af5ed96b}" = {
+        install_url = "https://addons.mozilla.org/firefox/downloads/latest/get-cookies-txt-locally/latest.xpi";
+        installation_mode = "force_installed";
+        default_area = "menupanel";
+      };
       # Return YouTube Dislikes
       "{762f9885-5a13-4abd-9c77-433dcd38b8fd}" = {
         install_url = "https://addons.mozilla.org/firefox/downloads/latest/return-youtube-dislikes/latest.xpi";
