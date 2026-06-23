@@ -287,6 +287,23 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: musicgrabber-gateway
+  namespace: media
+spec:
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+    - IPv4
+  selector:
+    app: musicgrabber
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: musicgrabber
   namespace: media
   annotations:
