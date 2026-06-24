@@ -263,7 +263,7 @@ data:
         "name": "Feishin",
         "type": "http",
         "parent_name": "media[0]",
-        "url": "https://feishin.asgard.michaelbrusegard.com",
+        "url": "http://feishin.media.svc.cluster.local",
         "interval": 60,
         "max_retries": 3,
         "retry_interval": 30,
