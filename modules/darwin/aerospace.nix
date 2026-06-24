@@ -34,7 +34,7 @@ _: {
             run = "move-node-to-workspace 3";
           }
           {
-            "if".app-name-regex-substring = "^(Proton Mail|Thunderbird|LibreOffice)$";
+            "if".app-name-regex-substring = "^(Proton Mail|Betterbird|LibreOffice)$";
             run = "move-node-to-workspace 4";
           }
           {

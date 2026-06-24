@@ -96,7 +96,7 @@
       workspace = 3;
     }
     {
-      class = "^(thunderbird)$";
+      class = "^(Betterbird)$";
       workspace = 4;
     }
     {
