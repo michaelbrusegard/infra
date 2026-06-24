@@ -112,7 +112,7 @@
       workspace = 5;
     }
     {
-      class = "^(Element)$";
+      class = "^(fluffychat)$";
       workspace = 5;
     }
     {

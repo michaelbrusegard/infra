@@ -9,7 +9,7 @@
     {
       packages = lib.mkIf (!isWsl) (with pkgs;
         [
-          element-desktop
+          fluffychat
           signal-desktop
           slack
           protonmail-desktop

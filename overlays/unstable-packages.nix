@@ -32,7 +32,7 @@ in {
     postgresql
     lazysql
     colima
-    element-desktop
+    fluffychat
     flux
     kubectl
     kubernetes-helm
