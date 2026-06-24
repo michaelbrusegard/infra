@@ -26,7 +26,7 @@ data:
       auto: yes
 
     match:
-      strong_rec_thresh: 0.10
+      strong_rec_thresh: 0.12
       medium_rec_thresh: 0.25
   tagger.py: |
     #!/usr/bin/env python3
