@@ -1,0 +1,281 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: config-music-tagger
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: openebs-hostpath
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: music-tagger-dry-run
+  namespace: media
+spec:
+  schedule: "0 0 1 1 *"
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: music-tagger
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: espresso-1
+          containers:
+            - name: tagger
+              image: lscr.io/linuxserver/beets:2.4.0@sha256:4cce2967154e849ca5466469d934a4bb9d8d83c3acf2a5279da47bccd16518f1
+              command:
+                - python3
+                - /scripts/tagger.py
+              env:
+                - name: TAGGER_MODE
+                  value: dry-run
+                - name: MUSIC_ROOT
+                  value: /music
+                - name: BEETS_CONFIG
+                  value: /config/config.yaml
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 512Mi
+                limits:
+                  cpu: "2"
+                  memory: 2Gi
+              volumeMounts:
+                - name: media-data
+                  mountPath: /music
+                  subPath: media/music
+                  readOnly: true
+                - name: config
+                  mountPath: /config
+                - name: config-map
+                  mountPath: /config/config.yaml
+                  subPath: config.yaml
+                - name: config-map
+                  mountPath: /scripts/tagger.py
+                  subPath: tagger.py
+          volumes:
+            - name: media-data
+              persistentVolumeClaim:
+                claimName: media-data
+                readOnly: true
+            - name: config
+              persistentVolumeClaim:
+                claimName: config-music-tagger
+            - name: config-map
+              configMap:
+                name: music-tagger-config
+                defaultMode: 0755
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: music-tagger-sample-write
+  namespace: media
+spec:
+  schedule: "0 0 1 1 *"
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: music-tagger
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: espresso-1
+          containers:
+            - name: tagger
+              image: lscr.io/linuxserver/beets:2.4.0@sha256:4cce2967154e849ca5466469d934a4bb9d8d83c3acf2a5279da47bccd16518f1
+              command:
+                - python3
+                - /scripts/tagger.py
+              env:
+                - name: TAGGER_MODE
+                  value: sample-write
+                - name: MUSIC_ROOT
+                  value: /music
+                - name: BEETS_CONFIG
+                  value: /config/config.yaml
+                - name: SAMPLE_LIMIT
+                  value: "25"
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 512Mi
+                limits:
+                  cpu: "2"
+                  memory: 2Gi
+              volumeMounts:
+                - name: media-data
+                  mountPath: /music
+                  subPath: media/music
+                - name: config
+                  mountPath: /config
+                - name: config-map
+                  mountPath: /config/config.yaml
+                  subPath: config.yaml
+                - name: config-map
+                  mountPath: /scripts/tagger.py
+                  subPath: tagger.py
+          volumes:
+            - name: media-data
+              persistentVolumeClaim:
+                claimName: media-data
+            - name: config
+              persistentVolumeClaim:
+                claimName: config-music-tagger
+            - name: config-map
+              configMap:
+                name: music-tagger-config
+                defaultMode: 0755
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: music-tagger-backfill
+  namespace: media
+spec:
+  schedule: "0 0 1 1 *"
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: music-tagger
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: espresso-1
+          containers:
+            - name: tagger
+              image: lscr.io/linuxserver/beets:2.4.0@sha256:4cce2967154e849ca5466469d934a4bb9d8d83c3acf2a5279da47bccd16518f1
+              command:
+                - python3
+                - /scripts/tagger.py
+              env:
+                - name: TAGGER_MODE
+                  value: backfill
+                - name: MUSIC_ROOT
+                  value: /music
+                - name: BEETS_CONFIG
+                  value: /config/config.yaml
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 512Mi
+                limits:
+                  cpu: "2"
+                  memory: 2Gi
+              volumeMounts:
+                - name: media-data
+                  mountPath: /music
+                  subPath: media/music
+                - name: config
+                  mountPath: /config
+                - name: config-map
+                  mountPath: /config/config.yaml
+                  subPath: config.yaml
+                - name: config-map
+                  mountPath: /scripts/tagger.py
+                  subPath: tagger.py
+          volumes:
+            - name: media-data
+              persistentVolumeClaim:
+                claimName: media-data
+            - name: config
+              persistentVolumeClaim:
+                claimName: config-music-tagger
+            - name: config-map
+              configMap:
+                name: music-tagger-config
+                defaultMode: 0755
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: music-tagger-recent
+  namespace: media
+spec:
+  schedule: "20 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: music-tagger
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: espresso-1
+          containers:
+            - name: tagger
+              image: lscr.io/linuxserver/beets:2.4.0@sha256:4cce2967154e849ca5466469d934a4bb9d8d83c3acf2a5279da47bccd16518f1
+              command:
+                - python3
+                - /scripts/tagger.py
+              env:
+                - name: TAGGER_MODE
+                  value: recent
+                - name: MUSIC_ROOT
+                  value: /music
+                - name: BEETS_CONFIG
+                  value: /config/config.yaml
+                - name: RECENT_DAYS
+                  value: "14"
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 512Mi
+                limits:
+                  cpu: "2"
+                  memory: 2Gi
+              volumeMounts:
+                - name: media-data
+                  mountPath: /music
+                  subPath: media/music
+                - name: config
+                  mountPath: /config
+                - name: config-map
+                  mountPath: /config/config.yaml
+                  subPath: config.yaml
+                - name: config-map
+                  mountPath: /scripts/tagger.py
+                  subPath: tagger.py
+          volumes:
+            - name: media-data
+              persistentVolumeClaim:
+                claimName: media-data
+            - name: config
+              persistentVolumeClaim:
+                claimName: config-music-tagger
+            - name: config-map
+              configMap:
+                name: music-tagger-config
+                defaultMode: 0755

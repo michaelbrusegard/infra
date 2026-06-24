@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: config-listenbrainz-bridge
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: openebs-hostpath
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: listenbrainz-bridge
+  namespace: media
+spec:
+  schedule: "35 4 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: listenbrainz-bridge
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: espresso-1
+          containers:
+            - name: bridge
+              image: docker.io/library/python:3.14-slim@sha256:5794ead25f5a65ad55054d8cf2227fa3e0ac6f202a9003e0cf2338dfeb735c0a
+              command:
+                - python
+                - /scripts/bridge.py
+              env:
+                - name: LISTENBRAINZ_API_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: LISTENBRAINZ_API_URL
+                - name: LISTENBRAINZ_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: listenbrainz-bridge
+                      key: LISTENBRAINZ_USERNAME
+                      optional: true
+                - name: LISTENBRAINZ_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: listenbrainz-bridge
+                      key: LISTENBRAINZ_TOKEN
+                      optional: true
+                - name: MUSICGRABBER_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: MUSICGRABBER_URL
+                - name: MUSIC_ROOT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: MUSIC_ROOT
+                - name: STATE_DB
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: STATE_DB
+                - name: MAX_TRACKS_PER_RUN
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: MAX_TRACKS_PER_RUN
+                - name: PRIORITY_SOURCE
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: PRIORITY_SOURCE
+                - name: PREFERRED_SOURCES
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: PREFERRED_SOURCES
+                - name: CONVERT_TO_FLAC
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: CONVERT_TO_FLAC
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 512Mi
+              volumeMounts:
+                - name: media-data
+                  mountPath: /music
+                  subPath: media/music
+                - name: state
+                  mountPath: /state
+                - name: scripts
+                  mountPath: /scripts/bridge.py
+                  subPath: bridge.py
+          volumes:
+            - name: media-data
+              persistentVolumeClaim:
+                claimName: media-data
+            - name: state
+              persistentVolumeClaim:
+                claimName: config-listenbrainz-bridge
+            - name: scripts
+              configMap:
+                name: listenbrainz-bridge-config
+                defaultMode: 0755

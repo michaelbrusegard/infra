@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: recommendation-cleanup
+  namespace: media
+spec:
+  schedule: "10 5 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: recommendation-cleanup
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: espresso-1
+          containers:
+            - name: cleanup
+              image: docker.io/library/python:3.14-slim@sha256:5794ead25f5a65ad55054d8cf2227fa3e0ac6f202a9003e0cf2338dfeb735c0a
+              command:
+                - python
+                - /scripts/cleanup.py
+              env:
+                - name: MUSIC_ROOT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: MUSIC_ROOT
+                - name: STATE_DB
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: STATE_DB
+                - name: CLEANUP_AFTER_DAYS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: CLEANUP_AFTER_DAYS
+                - name: NAVIDROME_DB
+                  value: /navidrome/navidrome.db
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 512Mi
+              volumeMounts:
+                - name: media-data
+                  mountPath: /music
+                  subPath: media/music
+                - name: state
+                  mountPath: /state
+                - name: navidrome-data
+                  mountPath: /navidrome
+                  readOnly: true
+                - name: scripts
+                  mountPath: /scripts/cleanup.py
+                  subPath: cleanup.py
+          volumes:
+            - name: media-data
+              persistentVolumeClaim:
+                claimName: media-data
+            - name: state
+              persistentVolumeClaim:
+                claimName: config-listenbrainz-bridge
+            - name: navidrome-data
+              persistentVolumeClaim:
+                claimName: data-navidrome-0
+                readOnly: true
+            - name: scripts
+              configMap:
+                name: listenbrainz-bridge-config
+                defaultMode: 0755

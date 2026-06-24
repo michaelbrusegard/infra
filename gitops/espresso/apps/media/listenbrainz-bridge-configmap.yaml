@@ -1,0 +1,687 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: listenbrainz-bridge-config
+  namespace: media
+data:
+  LISTENBRAINZ_API_URL: "https://api.listenbrainz.org"
+  LISTENBRAINZ_USERNAME: "michaelbrusegard"
+  MUSICGRABBER_URL: "http://musicgrabber-internal.media.svc.cluster.local:8080"
+  MUSIC_ROOT: "/music"
+  STATE_DB: "/state/listenbrainz-bridge.db"
+  MAX_TRACKS_PER_RUN: "25"
+  PRIORITY_SOURCE: "monochrome"
+  PREFERRED_SOURCES: "all"
+  CONVERT_TO_FLAC: "true"
+  CLEANUP_AFTER_DAYS: "30"
+  bridge.py: |
+    #!/usr/bin/env python3
+    import json
+    import os
+    import re
+    import sqlite3
+    import sys
+    import time
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    API_URL = os.environ.get("LISTENBRAINZ_API_URL", "https://api.listenbrainz.org").rstrip("/")
+    USERNAME = os.environ.get("LISTENBRAINZ_USERNAME", "").strip()
+    TOKEN = os.environ.get("LISTENBRAINZ_TOKEN", "").strip()
+    MUSICGRABBER_URL = os.environ.get("MUSICGRABBER_URL", "").rstrip("/")
+    MUSIC_ROOT = Path(os.environ.get("MUSIC_ROOT", "/music"))
+    STATE_DB = Path(os.environ.get("STATE_DB", "/state/listenbrainz-bridge.db"))
+    MAX_TRACKS_PER_RUN = int(os.environ.get("MAX_TRACKS_PER_RUN", "25"))
+    PRIORITY_SOURCE = os.environ.get("PRIORITY_SOURCE", "monochrome")
+    PREFERRED_SOURCES = os.environ.get("PREFERRED_SOURCES", "all")
+    CONVERT_TO_FLAC = os.environ.get("CONVERT_TO_FLAC", "true").lower() == "true"
+
+    PLAYLISTS = {
+        "daily_jams": {
+            "title": "ListenBrainz Daily Jams",
+            "matches": ("daily jams",),
+            "path": MUSIC_ROOT / "Playlists" / "ListenBrainz Daily Jams.m3u",
+        },
+        "weekly_jams": {
+            "title": "ListenBrainz Weekly Jams",
+            "matches": ("weekly jams",),
+            "path": MUSIC_ROOT / "Playlists" / "ListenBrainz Weekly Jams.m3u",
+        },
+        "weekly_exploration": {
+            "title": "ListenBrainz Weekly Exploration",
+            "matches": ("weekly exploration",),
+            "path": MUSIC_ROOT / "Playlists" / "ListenBrainz Weekly Exploration.m3u",
+        },
+    }
+
+
+    def now():
+        return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+    def log(message):
+        print(message, flush=True)
+
+
+    def normalize(value):
+        value = value or ""
+        value = value.lower()
+        value = re.sub(r"\[[^\]]+\]|\([^\)]*(remaster|remix|live|edit|version)[^\)]*\)", " ", value)
+        value = re.sub(r"^[0-9]+[ ._-]+", "", value)
+        value = re.sub(r"[^a-z0-9]+", " ", value)
+        return re.sub(r"\s+", " ", value).strip()
+
+
+    def track_key(artist, title):
+        return f"{normalize(artist)}::{normalize(title)}"
+
+
+    def db():
+        STATE_DB.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(STATE_DB)
+        conn.row_factory = sqlite3.Row
+        conn.executescript(
+            """
+            create table if not exists recommendation_seen(
+              id text primary key,
+              playlist_type text not null,
+              recording_mbid text,
+              artist text not null,
+              title text not null,
+              status text not null,
+              import_id text,
+              local_path text,
+              first_seen text not null,
+              last_seen text not null,
+              queued_at text,
+              downloaded_at text,
+              last_error text
+            );
+            create table if not exists runs(
+              id integer primary key autoincrement,
+              kind text not null,
+              started_at text not null,
+              finished_at text,
+              fetched integer default 0,
+              queued integer default 0,
+              skipped integer default 0,
+              failed integer default 0,
+              deleted integer default 0
+            );
+            """
+        )
+        return conn
+
+
+    def http_json(method, url, payload=None, timeout=30):
+        headers = {"User-Agent": "asgard-listenbrainz-bridge/1.0"}
+        if TOKEN:
+            headers["Authorization"] = f"Token {TOKEN}"
+        data = None
+        if payload is not None:
+            data = json.dumps(payload).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(url, data=data, headers=headers, method=method)
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            body = response.read()
+        return json.loads(body.decode("utf-8")) if body else {}
+
+
+    def musicgrabber_json(method, path, payload=None):
+        if not MUSICGRABBER_URL:
+            raise RuntimeError("MUSICGRABBER_URL is not configured")
+        return http_json(method, f"{MUSICGRABBER_URL}{path}", payload=payload, timeout=60)
+
+
+    def createdfor_playlists():
+        if not USERNAME:
+            raise RuntimeError("LISTENBRAINZ_USERNAME is not configured")
+        encoded = urllib.parse.quote(USERNAME)
+        payload = http_json("GET", f"{API_URL}/1/user/{encoded}/playlists/createdfor")
+        return payload.get("playlists") or payload.get("playlist") or []
+
+
+    def unwrap_playlist(entry):
+        return entry.get("playlist", entry) if isinstance(entry, dict) else {}
+
+
+    def playlist_title(entry):
+        playlist = unwrap_playlist(entry)
+        return str(playlist.get("title") or playlist.get("name") or "")
+
+
+    def playlist_identifier(entry):
+        playlist = unwrap_playlist(entry)
+        identifier = playlist.get("identifier") or playlist.get("id") or playlist.get("playlist_mbid")
+        if isinstance(identifier, list):
+            identifier = identifier[0] if identifier else None
+        if not identifier:
+            return None
+        identifier = str(identifier).rstrip("/")
+        return identifier.split("/")[-1]
+
+
+    def find_recommendation_playlists():
+        found = {}
+        for entry in createdfor_playlists():
+            title = playlist_title(entry).lower()
+            for playlist_type, spec in PLAYLISTS.items():
+                if playlist_type not in found and any(match in title for match in spec["matches"]):
+                    identifier = playlist_identifier(entry)
+                    if identifier:
+                        found[playlist_type] = identifier
+                        log(f"matched {playlist_type}: {playlist_title(entry)} ({identifier})")
+        return found
+
+
+    def extract_recording_mbid(track):
+        identifiers = track.get("identifier") or []
+        if isinstance(identifiers, str):
+            identifiers = [identifiers]
+        for identifier in identifiers:
+            identifier = str(identifier)
+            if "musicbrainz.org/recording/" in identifier:
+                return identifier.rstrip("/").split("/")[-1]
+        extension = track.get("extension") or {}
+        candidates = [
+            extension.get("https://musicbrainz.org/doc/jspf#track", {}).get("additional_metadata", {}),
+            extension.get("additional_metadata", {}),
+            extension,
+        ]
+        for candidate in candidates:
+            for key in ("recording_mbid", "recording_msid", "musicbrainz_recordingid"):
+                value = candidate.get(key) if isinstance(candidate, dict) else None
+                if value:
+                    return str(value)
+        return None
+
+
+    def extract_track(track):
+        title = track.get("title") or track.get("track_name")
+        artist = track.get("creator") or track.get("artist") or track.get("artist_name")
+        extension = track.get("extension") or {}
+        for candidate in (
+            extension.get("https://musicbrainz.org/doc/jspf#track", {}).get("additional_metadata", {}),
+            extension.get("additional_metadata", {}),
+            extension,
+        ):
+            if not isinstance(candidate, dict):
+                continue
+            title = title or candidate.get("track_name") or candidate.get("title")
+            artist = artist or candidate.get("artist_name") or candidate.get("artist")
+        if not title or not artist:
+            return None
+        return {
+            "artist": str(artist).strip(),
+            "title": str(title).strip(),
+            "recording_mbid": extract_recording_mbid(track),
+        }
+
+
+    def fetch_playlist_tracks(playlist_mbid):
+        payload = http_json("GET", f"{API_URL}/1/playlist/{playlist_mbid}?fetch_metadata=true")
+        playlist = payload.get("playlist", payload)
+        tracks = playlist.get("track") or playlist.get("tracks") or []
+        result = []
+        for track in tracks:
+            extracted = extract_track(track)
+            if extracted:
+                result.append(extracted)
+        return result
+
+
+    def clean_title_from_file(path):
+        stem = path.stem
+        stem = re.sub(r"^[0-9]+[ ._-]+", "", stem)
+        return stem.strip()
+
+
+    def local_index():
+        index = {}
+        for root_name in ("Albums", "Singles"):
+            root = MUSIC_ROOT / root_name
+            if not root.exists():
+                continue
+            for path in root.rglob("*.flac"):
+                try:
+                    rel = path.relative_to(root)
+                except ValueError:
+                    continue
+                parts = rel.parts
+                if root_name == "Albums" and len(parts) >= 3:
+                    artist = parts[0]
+                    title = clean_title_from_file(path)
+                elif root_name == "Singles" and len(parts) >= 2:
+                    artist = parts[0]
+                    title = clean_title_from_file(path)
+                else:
+                    continue
+                index.setdefault(track_key(artist, title), path)
+        return index
+
+
+    def upsert_seen(conn, playlist_type, rec, status, local_path=None):
+        timestamp = now()
+        rec_id = rec["recording_mbid"] or f"{playlist_type}:{track_key(rec['artist'], rec['title'])}"
+        existing = conn.execute(
+            "select * from recommendation_seen where id = ?",
+            (rec_id,),
+        ).fetchone()
+        if existing:
+            conn.execute(
+                """
+                update recommendation_seen
+                   set last_seen = ?,
+                       local_path = coalesce(?, local_path),
+                       status = case when status = 'deleted' then status else ? end
+                 where id = ?
+                """,
+                (timestamp, str(local_path) if local_path else None, status, rec_id),
+            )
+        else:
+            conn.execute(
+                """
+                insert into recommendation_seen(
+                  id, playlist_type, recording_mbid, artist, title, status,
+                  local_path, first_seen, last_seen
+                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    rec_id,
+                    playlist_type,
+                    rec["recording_mbid"],
+                    rec["artist"],
+                    rec["title"],
+                    status,
+                    str(local_path) if local_path else None,
+                    timestamp,
+                    timestamp,
+                ),
+            )
+        return rec_id
+
+
+    def mark_queued(conn, ids, import_id):
+        timestamp = now()
+        for rec_id in ids:
+            conn.execute(
+                """
+                update recommendation_seen
+                   set status = 'queued', import_id = ?, queued_at = ?, last_error = null
+                 where id = ?
+                """,
+                (import_id, timestamp, rec_id),
+            )
+
+
+    def mark_failed(conn, ids, error):
+        for rec_id in ids:
+            conn.execute(
+                "update recommendation_seen set status = 'failed', last_error = ? where id = ?",
+                (error[:500], rec_id),
+            )
+
+
+    def find_local(index, artist, title):
+        return index.get(track_key(artist, title))
+
+
+    def playlist_line(path):
+        playlist_dir = MUSIC_ROOT / "Playlists"
+        try:
+            return os.path.relpath(path, playlist_dir)
+        except ValueError:
+            return str(path)
+
+
+    def write_playlist(path, title, paths):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        unique = []
+        seen = set()
+        for item in paths:
+            line = playlist_line(item)
+            if line not in seen:
+                seen.add(line)
+                unique.append(line)
+        with path.open("w", encoding="utf-8") as handle:
+            handle.write("#EXTM3U\n")
+            handle.write(f"#PLAYLIST:{title}\n")
+            for line in unique:
+                handle.write(f"{line}\n")
+        log(f"wrote playlist {path} tracks={len(unique)}")
+
+
+    def refresh_musicgrabber_status(conn):
+        local = local_index()
+        try:
+            jobs = musicgrabber_json("GET", "/api/jobs?limit=500").get("jobs", [])
+        except Exception as exc:
+            log(f"musicgrabber status refresh failed: {exc}")
+            return
+        queued = conn.execute(
+            "select id, artist, title from recommendation_seen where status = 'queued'"
+        ).fetchall()
+        by_key = {track_key(row["artist"], row["title"]): row for row in queued}
+        timestamp = now()
+        for job in jobs:
+            key = track_key(job.get("artist"), job.get("title"))
+            row = by_key.get(key)
+            if not row:
+                continue
+            status = job.get("status")
+            if status == "completed":
+                quality = job.get("audio_quality") or ""
+                next_status = "lossy_fallback" if "from AAC" in quality or "from OPUS" in quality or "from MP3" in quality else "downloaded"
+                local_path = find_local(local, row["artist"], row["title"])
+                conn.execute(
+                    """
+                    update recommendation_seen
+                       set status = ?, downloaded_at = ?, local_path = coalesce(?, local_path), last_error = ?
+                     where id = ?
+                    """,
+                    (next_status, timestamp, str(local_path) if local_path else None, quality, row["id"]),
+                )
+            elif status == "failed":
+                conn.execute(
+                    "update recommendation_seen set status = 'failed', last_error = ? where id = ?",
+                    ((job.get("error") or "musicgrabber job failed")[:500], row["id"]),
+                )
+
+
+    def queue_missing(conn, queue):
+        if not queue:
+            return 0
+        songs = "\n".join(f"{rec['artist']} - {rec['title']}" for _, rec in queue)
+        payload = {
+            "songs": songs,
+            "create_playlist": False,
+            "convert_to_flac": CONVERT_TO_FLAC,
+            "use_playlists_dir": False,
+            "preferred_sources": PREFERRED_SOURCES,
+            "priority_source": PRIORITY_SOURCE,
+        }
+        ids = [rec_id for rec_id, _ in queue]
+        try:
+            response = musicgrabber_json("POST", "/api/bulk-import-async", payload)
+            import_id = response.get("import_id") or ""
+            mark_queued(conn, ids, import_id)
+            log(f"queued tracks={len(ids)} import_id={import_id}")
+            return len(ids)
+        except Exception as exc:
+            mark_failed(conn, ids, str(exc))
+            raise
+
+
+    def main():
+        conn = db()
+        started = now()
+        run_id = conn.execute(
+            "insert into runs(kind, started_at) values ('bridge', ?) returning id",
+            (started,),
+        ).fetchone()[0]
+        fetched = queued = skipped = failed = 0
+        playlist_paths = {key: [] for key in PLAYLISTS}
+        queue = []
+        try:
+            refresh_musicgrabber_status(conn)
+            local = local_index()
+            matched = find_recommendation_playlists()
+            for playlist_type, spec in PLAYLISTS.items():
+                playlist_mbid = matched.get(playlist_type)
+                if not playlist_mbid:
+                    log(f"no ListenBrainz playlist found for {playlist_type}")
+                    continue
+                tracks = fetch_playlist_tracks(playlist_mbid)
+                fetched += len(tracks)
+                for rec in tracks:
+                    local_path = find_local(local, rec["artist"], rec["title"])
+                    if local_path:
+                        rec_id = upsert_seen(conn, playlist_type, rec, "downloaded", local_path)
+                        playlist_paths[playlist_type].append(local_path)
+                        skipped += 1
+                        continue
+                    rec_id = upsert_seen(conn, playlist_type, rec, "seen")
+                    row = conn.execute(
+                        "select status from recommendation_seen where id = ?",
+                        (rec_id,),
+                    ).fetchone()
+                    if row and row["status"] in {"queued", "downloaded", "lossy_fallback", "deleted"}:
+                        skipped += 1
+                        continue
+                    if len(queue) < MAX_TRACKS_PER_RUN:
+                        queue.append((rec_id, rec))
+                    else:
+                        skipped += 1
+
+            queued = queue_missing(conn, queue)
+            conn.commit()
+            refresh_musicgrabber_status(conn)
+            conn.commit()
+
+            current_local = local_index()
+            for playlist_type, spec in PLAYLISTS.items():
+                rows = conn.execute(
+                    """
+                    select artist, title, local_path
+                      from recommendation_seen
+                     where playlist_type = ?
+                       and status in ('downloaded', 'lossy_fallback')
+                    """,
+                    (playlist_type,),
+                ).fetchall()
+                paths = []
+                for row in rows:
+                    path = Path(row["local_path"]) if row["local_path"] else find_local(current_local, row["artist"], row["title"])
+                    if path and path.exists():
+                        paths.append(path)
+                write_playlist(spec["path"], spec["title"], paths)
+        except Exception as exc:
+            failed += 1
+            conn.execute(
+                "update runs set finished_at = ?, fetched = ?, queued = ?, skipped = ?, failed = ? where id = ?",
+                (now(), fetched, queued, skipped, failed, run_id),
+            )
+            conn.commit()
+            raise
+        conn.execute(
+            "update runs set finished_at = ?, fetched = ?, queued = ?, skipped = ?, failed = ? where id = ?",
+            (now(), fetched, queued, skipped, failed, run_id),
+        )
+        conn.commit()
+        log(f"complete fetched={fetched} queued={queued} skipped={skipped} failed={failed}")
+        return 0
+
+
+    if __name__ == "__main__":
+        raise SystemExit(main())
+  cleanup.py: |
+    #!/usr/bin/env python3
+    import os
+    import sqlite3
+    from datetime import datetime, timedelta, timezone
+    from pathlib import Path
+
+    MUSIC_ROOT = Path(os.environ.get("MUSIC_ROOT", "/music"))
+    STATE_DB = Path(os.environ.get("STATE_DB", "/state/listenbrainz-bridge.db"))
+    NAVIDROME_DB = Path(os.environ.get("NAVIDROME_DB", "/navidrome/navidrome.db"))
+    CLEANUP_AFTER_DAYS = int(os.environ.get("CLEANUP_AFTER_DAYS", "30"))
+
+
+    def now():
+        return datetime.now(timezone.utc).replace(microsecond=0)
+
+
+    def parse_time(value):
+        if not value:
+            return None
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+    def log(message):
+        print(message, flush=True)
+
+
+    def bridge_db():
+        conn = sqlite3.connect(STATE_DB)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+
+    def navidrome_db():
+        conn = sqlite3.connect(f"file:{NAVIDROME_DB}?mode=ro", uri=True)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+
+    def relative_music_path(path):
+        return str(path.relative_to(MUSIC_ROOT))
+
+
+    def safe_music_path(path):
+        try:
+            real = path.resolve()
+            real.relative_to((MUSIC_ROOT / "Albums").resolve())
+            return True
+        except ValueError:
+            pass
+        try:
+            real = path.resolve()
+            real.relative_to((MUSIC_ROOT / "Singles").resolve())
+            return True
+        except ValueError:
+            return False
+
+
+    def protected_by_playlist(path):
+        rel = relative_music_path(path)
+        absolute = str(path)
+        playlist_root = MUSIC_ROOT / "Playlists"
+        if not playlist_root.exists():
+            return False
+        for playlist in playlist_root.glob("*.m3u"):
+            if playlist.name.startswith("ListenBrainz "):
+                continue
+            try:
+                text = playlist.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            if rel in text or absolute in text or f"../{rel}" in text:
+                return True
+        return False
+
+
+    def play_state(nav_conn, path):
+        rel = relative_music_path(path)
+        row = nav_conn.execute(
+            """
+            select coalesce(a.play_count, 0) as play_count,
+                   coalesce(a.starred, 0) as starred
+              from media_file mf
+              left join annotation a
+                on a.item_id = mf.id and a.item_type = 'media_file'
+             where mf.path = ?
+             limit 1
+            """,
+            (rel,),
+        ).fetchone()
+        return row
+
+
+    def prune_empty_dirs(path):
+        stop_roots = {(MUSIC_ROOT / "Albums").resolve(), (MUSIC_ROOT / "Singles").resolve()}
+        current = path.parent
+        while current.exists() and current.resolve() not in stop_roots:
+            try:
+                current.rmdir()
+            except OSError:
+                break
+            current = current.parent
+
+
+    def main():
+        if not STATE_DB.exists():
+            log("state DB does not exist; nothing to clean")
+            return 0
+        bridge = bridge_db()
+        nav = navidrome_db()
+        run_id = bridge.execute(
+            "insert into runs(kind, started_at) values ('cleanup', ?) returning id",
+            (now().isoformat(),),
+        ).fetchone()[0]
+        cutoff = now() - timedelta(days=CLEANUP_AFTER_DAYS)
+        deleted = failed = skipped = 0
+        rows = bridge.execute(
+            """
+            select *
+              from recommendation_seen
+             where status in ('downloaded', 'lossy_fallback')
+               and queued_at is not null
+               and downloaded_at is not null
+               and local_path is not null
+            """
+        ).fetchall()
+        for row in rows:
+            path = Path(row["local_path"])
+            downloaded_at = parse_time(row["downloaded_at"])
+            if not downloaded_at or downloaded_at > cutoff:
+                skipped += 1
+                continue
+            if not path.exists():
+                bridge.execute(
+                    "update recommendation_seen set status = 'deleted', last_error = 'file already missing' where id = ?",
+                    (row["id"],),
+                )
+                deleted += 1
+                continue
+            if not safe_music_path(path):
+                skipped += 1
+                continue
+            state = play_state(nav, path)
+            if state is None or state["play_count"] != 0 or state["starred"]:
+                skipped += 1
+                continue
+            if protected_by_playlist(path):
+                skipped += 1
+                continue
+            shared = bridge.execute(
+                """
+                select count(*) as count
+                  from recommendation_seen
+                 where local_path = ?
+                   and id <> ?
+                   and status <> 'deleted'
+                """,
+                (str(path), row["id"]),
+            ).fetchone()["count"]
+            if shared:
+                skipped += 1
+                continue
+            try:
+                path.unlink()
+                prune_empty_dirs(path)
+                bridge.execute(
+                    "update recommendation_seen set status = 'deleted', last_error = null where id = ?",
+                    (row["id"],),
+                )
+                deleted += 1
+                log(f"deleted {path}")
+            except OSError as exc:
+                failed += 1
+                bridge.execute(
+                    "update recommendation_seen set last_error = ? where id = ?",
+                    (str(exc)[:500], row["id"]),
+                )
+        bridge.execute(
+            "update runs set finished_at = ?, skipped = ?, failed = ?, deleted = ? where id = ?",
+            (now().isoformat(), skipped, failed, deleted, run_id),
+        )
+        bridge.commit()
+        log(f"complete deleted={deleted} skipped={skipped} failed={failed}")
+        return 1 if failed else 0
+
+
+    if __name__ == "__main__":
+        raise SystemExit(main())

@@ -11,6 +11,11 @@ resources:
   - bazarr-statefulset.yaml
   - musicgrabber-statefulset.yaml
   - navidrome-statefulset.yaml
+  - music-tagger-configmap.yaml
+  - music-tagger.yaml
+  - listenbrainz-bridge-configmap.yaml
+  - listenbrainz-bridge.yaml
+  - recommendation-cleanup.yaml
   - feishin-deployment.yaml
   - jellyfin-statefulset.yaml
   - seerr-statefulset.yaml
