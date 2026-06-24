@@ -58,6 +58,15 @@ in {
     src = netbirdSrc;
     vendorHash = netbirdVendorHash;
   });
+  feishin = prev.feishin.overrideAttrs (old: {
+    postFixup =
+      (old.postFixup or "")
+      + ''
+        substituteInPlace $out/bin/feishin \
+          --replace-fail 'exec -a "$0" ' 'unset ELECTRON_RUN_AS_NODE
+        exec -a "$0" '
+      '';
+  });
 
   ruff-unstable = pkgs-unstable.ruff;
   eslint = pkgs-unstable.eslint.overrideAttrs (old: {

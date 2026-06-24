@@ -81,7 +81,7 @@
           ".config/blender"
           ".local/share/Jellyfin Media Player"
           ".config/transmission"
-          ".config/Feishin"
+          ".config/feishin"
         ];
       };
     };

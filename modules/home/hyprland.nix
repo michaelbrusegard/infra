@@ -152,7 +152,7 @@
       workspace = 6;
     }
     {
-      class = "^(feishin|Feishin)$";
+      class = "^(feishin)$";
       workspace = 7;
     }
   ];
