@@ -46,7 +46,7 @@ _: {
             run = "move-node-to-workspace 6";
           }
           {
-            "if".app-name-regex-substring = "^(Music|Photos|Supersonic)$";
+            "if".app-name-regex-substring = "^(Music|Photos|Feishin)$";
             run = "move-node-to-workspace 7";
           }
         ];

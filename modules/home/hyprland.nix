@@ -152,7 +152,7 @@
       workspace = 6;
     }
     {
-      title = "^(.*Supersonic.*)$";
+      class = "^(feishin|Feishin)$";
       workspace = 7;
     }
   ];

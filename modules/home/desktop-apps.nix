@@ -15,6 +15,7 @@
           protonmail-desktop
           inkscape-with-extensions
           audacity
+          feishin
           t3code
         ]
         ++ lib.optionals pkgs.stdenv.isLinux [
@@ -37,7 +38,6 @@
           ungoogled-chromium
           nextcloud-client
           nextcloud-talk-desktop
-          supersonic-wayland
         ]
         ++ lib.optionals pkgs.stdenv.isDarwin [
           ice-bar
@@ -62,7 +62,6 @@
           brewCasks.ungoogled-chromium
           brewCasks.nextcloud
           brewCasks.nextcloud-talk
-          supersonic
         ]);
     }
     // lib.optionalAttrs (homePersistenceRoot != null) {
@@ -82,7 +81,7 @@
           ".config/blender"
           ".local/share/Jellyfin Media Player"
           ".config/transmission"
-          ".config/supersonic"
+          ".config/Feishin"
         ];
       };
     };
