@@ -20,6 +20,7 @@ data:
       incremental: no
       incremental_skip_later: yes
       from_scratch: no
+      duplicate_action: keep
       log: /config/import.log
 
     chroma:
