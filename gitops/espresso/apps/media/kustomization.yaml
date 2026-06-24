@@ -11,6 +11,7 @@ resources:
   - bazarr-statefulset.yaml
   - musicgrabber-statefulset.yaml
   - navidrome-statefulset.yaml
+  - feishin-deployment.yaml
   - jellyfin-statefulset.yaml
   - seerr-statefulset.yaml
   - flaresolverr-deployment.yaml

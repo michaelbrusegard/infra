@@ -47,6 +47,7 @@ data:
           "monitorList": [
             {"name": "Jellyfin"},
             {"name": "Seerr"},
+            {"name": "Feishin"},
             {"name": "Navidrome"},
             {"name": "Prowlarr"},
             {"name": "Sonarr"},

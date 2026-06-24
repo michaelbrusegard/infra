@@ -324,6 +324,26 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: feishin
+  namespace: media
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.47,fd7a:115c:a1e0:188::47
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  selector:
+    app: feishin
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: flaresolverr-internal
   namespace: media
 spec:

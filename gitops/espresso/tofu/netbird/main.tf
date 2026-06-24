@@ -17,6 +17,11 @@ locals {
       address = "10.0.189.21/32"
       group   = "home"
     }
+    feishin = {
+      name    = "Feishin"
+      address = "feishin.${local.domain}"
+      group   = "media"
+    }
     grafana = {
       name    = "Grafana"
       address = "grafana.${local.domain}"

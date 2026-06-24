@@ -260,6 +260,16 @@ data:
         "active": true
       },
       {
+        "name": "Feishin",
+        "type": "http",
+        "parent_name": "media[0]",
+        "url": "https://feishin.asgard.michaelbrusegard.com",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
         "name": "Navidrome",
         "type": "http",
         "parent_name": "media[0]",

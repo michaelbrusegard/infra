@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feishin
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: feishin
+  template:
+    metadata:
+      labels:
+        app: feishin
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: espresso-1
+      containers:
+        - name: feishin
+          image: ghcr.io/jeffvli/feishin:1.11.0@sha256:e305809df5289694c32d359b0da4989fe805323aee3cf0c06a26a7fa476e1be1
+          ports:
+            - containerPort: 9180
+              name: http
+          env:
+            - name: SERVER_NAME
+              value: "Navidrome"
+            - name: SERVER_LOCK
+              value: "true"
+            - name: SERVER_TYPE
+              value: "navidrome"
+            - name: SERVER_URL
+              value: "https://navidrome.asgard.michaelbrusegard.com"
+            - name: ANALYTICS_DISABLED
+              value: "true"
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
