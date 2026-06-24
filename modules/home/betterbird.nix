@@ -15,7 +15,9 @@
 
   home =
     {
-      packages = lib.mkIf pkgs.stdenv.isDarwin [pkgs.brewCasks.betterbird];
+      packages = lib.optionals (pkgs.stdenv.isDarwin && pkgs.brewCasks ? betterbird) [
+        pkgs.brewCasks.betterbird
+      ];
     }
     // lib.optionalAttrs (pkgs.stdenv.isLinux && !isWsl && homePersistenceRoot != null) {
       persistence.${homePersistenceRoot}.directories = [

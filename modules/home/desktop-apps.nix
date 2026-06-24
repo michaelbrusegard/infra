@@ -9,7 +9,6 @@
     {
       packages = lib.mkIf (!isWsl) (with pkgs;
         [
-          fluffychat
           signal-desktop
           slack
           protonmail-desktop
@@ -19,6 +18,7 @@
           t3code
         ]
         ++ lib.optionals pkgs.stdenv.isLinux [
+          fluffychat
           imv
           gthumb
           legcord
