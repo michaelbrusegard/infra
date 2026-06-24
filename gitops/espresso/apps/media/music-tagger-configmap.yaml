@@ -97,32 +97,8 @@ data:
         return sorted(files)
 
 
-    def album_dir_for(path):
-        albums_root = MUSIC_ROOT / "Albums"
-        singles_root = MUSIC_ROOT / "Singles"
-        try:
-            rel = path.relative_to(albums_root)
-            if len(rel.parts) >= 3:
-                return albums_root / rel.parts[0] / rel.parts[1]
-        except ValueError:
-            pass
-        try:
-            rel = path.relative_to(singles_root)
-            if len(rel.parts) >= 2:
-                return singles_root / rel.parts[0]
-        except ValueError:
-            pass
-        return path.parent
-
-
     def candidate_targets():
-        targets = []
-        seen = set()
-        for path in candidate_files():
-            target = album_dir_for(path)
-            if target not in seen:
-                seen.add(target)
-                targets.append(target)
+        targets = candidate_files()
         if MODE == "sample-write":
             targets = targets[:SAMPLE_LIMIT]
         return targets
@@ -162,7 +138,7 @@ data:
         for target in targets:
             if not target.exists():
                 continue
-            cmd = ["beet", "-c", str(config), "import", "-q", *extra_args, str(target)]
+            cmd = ["beet", "-c", str(config), "import", "-q", "-s", *extra_args, str(target)]
             result = run(cmd)
             if result.returncode != 0:
                 failures += 1
