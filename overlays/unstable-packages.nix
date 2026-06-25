@@ -41,6 +41,7 @@ in {
     proton-pass
     nextcloud-client
     nextcloud-talk-desktop
+    signal-desktop
     ;
 
   netbird = pkgs-unstable.netbird.overrideAttrs (_: {
