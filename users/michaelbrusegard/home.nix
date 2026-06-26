@@ -5,6 +5,7 @@
     inputs.self.homeManagerModules.cli-extras
     inputs.self.homeManagerModules.cli-desktop
     inputs.self.homeManagerModules.claude-code
+    inputs.self.homeManagerModules.cloud-credentials
     inputs.self.homeManagerModules.codex
     inputs.self.homeManagerModules.desktop-apps
     inputs.self.homeManagerModules.dev
