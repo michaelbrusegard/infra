@@ -4,7 +4,18 @@
   isWsl,
   homePersistenceRoot ? null,
   ...
-}: {
+}: let
+  nextcloudClient = pkgs.symlinkJoin {
+    name = "${pkgs.nextcloud-client.pname}-xcb";
+    paths = [pkgs.nextcloud-client];
+    nativeBuildInputs = [pkgs.makeWrapper];
+    postBuild = ''
+      target=$(readlink -f "$out/bin/nextcloud")
+      rm "$out/bin/nextcloud"
+      makeWrapper "$target" "$out/bin/nextcloud" --set QT_QPA_PLATFORM xcb
+    '';
+  };
+in {
   home =
     {
       packages = lib.mkIf (!isWsl) (with pkgs;
@@ -36,7 +47,7 @@
           betaflight-configurator
           qgis
           ungoogled-chromium
-          nextcloud-client
+          nextcloudClient
           nextcloud-talk-desktop
         ]
         ++ lib.optionals pkgs.stdenv.isDarwin [
