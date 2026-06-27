@@ -39,6 +39,7 @@ in {
     etcd
     protonmail-desktop
     proton-pass
+    nextcloud-client
     nextcloud-talk-desktop
     signal-desktop
     ;
