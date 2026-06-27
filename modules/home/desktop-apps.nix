@@ -76,12 +76,14 @@
           ".t3"
           ".config/Proton Mail"
           ".config/Proton Pass"
+          ".config/Nextcloud"
           ".config/legcord"
           ".config/libreoffice"
           ".config/blender"
           ".local/share/Jellyfin Media Player"
           ".config/transmission"
           ".config/feishin"
+          "Manafish"
         ];
       };
     };
