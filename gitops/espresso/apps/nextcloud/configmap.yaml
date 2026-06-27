@@ -87,7 +87,7 @@ data:
         /etc/nextcloud-extras/additional.config.php \
         /var/www/html/config/additional.config.php
 
-      APPS_ENABLE="activity admin_audit calendar contacts cookbook notify_push tasks user_oidc extract"
+      APPS_ENABLE="activity admin_audit calendar contacts cookbook notify_push tasks user_oidc"
       APPS_DISABLE="dashboard federatedfilesharing federation firstrunwizard \
                     lookup_server_connector mail nextcloud_announcements notes photos \
                     recommendations support survey_client updatenotification \
