@@ -165,6 +165,74 @@ spec:
             - name: cache
               emptyDir: {}
 ---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: music-library-backup
+  namespace: media
+spec:
+  schedule: "10 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: music-library-backup
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: espresso-1
+          containers:
+            - name: restic
+              image: docker.io/restic/restic:0.19.0@sha256:7f44e0057b82348597568ea209360762d0b38f8e1dbc8ad859661ac1055e45f2
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+
+                  if [ ! -d /data/media/music ]; then
+                    echo "missing /data/media/music"
+                    exit 1
+                  fi
+
+                  restic backup \
+                    --host espresso-media \
+                    --tag espresso \
+                    --tag media \
+                    --tag music \
+                    --tag library \
+                    /data/media/music
+              env:
+                - name: RESTIC_CACHE_DIR
+                  value: /cache
+              envFrom:
+                - secretRef:
+                    name: freddo-restic-media-music
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 2Gi
+              volumeMounts:
+                - name: media-data
+                  mountPath: /data
+                  readOnly: true
+                - name: cache
+                  mountPath: /cache
+          volumes:
+            - name: media-data
+              persistentVolumeClaim:
+                claimName: media-data
+            - name: cache
+              emptyDir: {}
+---
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:

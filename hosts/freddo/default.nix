@@ -31,6 +31,7 @@
     minecraft-creative = ["world"];
     minecraft-revelation = ["world"];
     minecraft-vanilla = ["world"];
+    media-music = ["repo-library"];
     musicgrabber = ["repo-config"];
     navidrome = ["repo-data"];
     netbird = ["pvc"];
