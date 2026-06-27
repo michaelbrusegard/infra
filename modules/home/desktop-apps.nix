@@ -64,6 +64,24 @@
           brewCasks.nextcloud-talk
         ]);
     }
+    // lib.optionalAttrs (pkgs.stdenv.isLinux && !isWsl) {
+      activation.enableNextcloudExperimentalOptions = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        nextcloudCfg="$HOME/.config/Nextcloud/nextcloud.cfg"
+        $DRY_RUN_CMD mkdir -p "$HOME/.config/Nextcloud"
+
+        if [ -f "$nextcloudCfg" ]; then
+          if grep -q '^showExperimentalOptions=' "$nextcloudCfg"; then
+            $DRY_RUN_CMD sed -i 's/^showExperimentalOptions=.*/showExperimentalOptions=true/' "$nextcloudCfg"
+          elif grep -q '^\[General\]$' "$nextcloudCfg"; then
+            $DRY_RUN_CMD sed -i '/^\[General\]$/a showExperimentalOptions=true' "$nextcloudCfg"
+          else
+            $DRY_RUN_CMD printf '\n[General]\nshowExperimentalOptions=true\n' >> "$nextcloudCfg"
+          fi
+        else
+          $DRY_RUN_CMD printf '[General]\nshowExperimentalOptions=true\n' > "$nextcloudCfg"
+        fi
+      '';
+    }
     // lib.optionalAttrs (homePersistenceRoot != null) {
       persistence = {
         ${homePersistenceRoot}.directories = [
