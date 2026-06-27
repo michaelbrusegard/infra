@@ -13,6 +13,7 @@
     monthly = 12;
     yearly = 3;
   };
+  keepTagArgs = lib.concatMapStringsSep " " (tag: "--keep-tag ${lib.escapeShellArg tag}") config.services.restic.server.maintenance.keepTags;
   groupEntries = lib.concatStringsSep "\n" (lib.mapAttrsToList (name: passwordFile: "${name}:${passwordFile}") passwordFiles);
   repoEntries = lib.concatStringsSep "\n" (lib.flatten (lib.mapAttrsToList (group: repos: map (repo: "${group}:${repo}") repos) repositories));
   resticToolCommon = ''
@@ -185,6 +186,7 @@
       mkdir -p "$RESTIC_CACHE_DIR"
 
       status=0
+      keep_tag_args=(${keepTagArgs})
 
       maintain_repo() {
         local group="$1"
@@ -217,6 +219,7 @@
             --keep-weekly ${toString retention.weekly} \
             --keep-monthly ${toString retention.monthly} \
             --keep-yearly ${toString retention.yearly} \
+            "''${keep_tag_args[@]}" \
             --prune; then
             echo "restic forget failed for $repo" >&2
             status=1
@@ -297,10 +300,18 @@
     '';
   };
 in {
-  options.services.restic.server.initializeRepositories = lib.mkOption {
-    type = lib.types.attrsOf (lib.types.listOf lib.types.str);
-    default = {};
-    description = "Restic REST repository directories to create and initialize locally.";
+  options.services.restic.server = {
+    initializeRepositories = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+      default = {};
+      description = "Restic REST repository directories to create and initialize locally.";
+    };
+
+    maintenance.keepTags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "Restic snapshot tags to always keep during repository maintenance.";
+    };
   };
 
   config = {

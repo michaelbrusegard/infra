@@ -48,5 +48,7 @@
     transmission = ["repo-config"];
   };
 
+  services.restic.server.maintenance.keepTags = ["legacy-minecraft"];
+
   system.stateVersion = "26.05";
 }
