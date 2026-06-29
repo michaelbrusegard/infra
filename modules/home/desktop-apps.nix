@@ -16,6 +16,17 @@
         --set QT_QPA_PLATFORMTHEME xdgdesktopportal
     '';
   };
+  jellyfinDesktop = pkgs.symlinkJoin {
+    name = "${pkgs.jellyfin-media-player.pname}-no-chromium-gpu";
+    paths = [pkgs.jellyfin-media-player];
+    nativeBuildInputs = [pkgs.makeWrapper];
+    postBuild = ''
+      target=$(readlink -f "$out/bin/jellyfin-desktop")
+      rm "$out/bin/jellyfin-desktop"
+      makeWrapper "$target" "$out/bin/jellyfin-desktop" \
+        --add-flags --disable-gpu
+    '';
+  };
 in {
   home =
     {
@@ -34,7 +45,7 @@ in {
           imv
           gthumb
           legcord
-          jellyfin-media-player
+          jellyfinDesktop
           veracrypt
 
           transmission_4-gtk
@@ -110,6 +121,8 @@ in {
           ".config/legcord"
           ".config/libreoffice"
           ".config/blender"
+          ".config/jellyfin-desktop"
+          ".local/share/jellyfin-desktop"
           ".local/share/Jellyfin Media Player"
           ".config/transmission"
           ".config/feishin"
