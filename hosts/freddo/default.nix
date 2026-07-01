@@ -19,6 +19,8 @@
     ./networking.nix
   ];
 
+  time.timeZone = "Europe/Oslo";
+
   services.restic.server.initializeRepositories = {
     bazarr = ["repo-config"];
     hermes-agent = ["pvc"];

@@ -30,6 +30,7 @@
     nvidiaOffload = config.local.gaming.nvidiaOffload or false;
     # Run launchers under gamemoderun so games trigger GameMode automatically.
     gamemodeRun = config.programs.gamemode.enable or false;
+    localTimeZone = config.time.timeZone;
   };
 
   home-manager.users = builtins.listToAttrs (

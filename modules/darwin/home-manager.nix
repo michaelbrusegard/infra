@@ -1,5 +1,6 @@
 {
   inputs,
+  config,
   users,
   isWsl,
   ...
@@ -19,6 +20,7 @@
   home-manager.extraSpecialArgs = {
     inherit inputs isWsl;
     homePersistenceRoot = null;
+    localTimeZone = config.time.timeZone;
   };
 
   home-manager.users = builtins.listToAttrs (

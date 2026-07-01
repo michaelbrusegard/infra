@@ -22,5 +22,7 @@
     ./networking.nix
   ];
 
+  time.timeZone = "Europe/Oslo";
+
   system.stateVersion = "25.11";
 }

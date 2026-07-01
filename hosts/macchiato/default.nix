@@ -30,6 +30,8 @@
     ./networking.nix
   ];
 
+  time.timeZone = "Europe/Oslo";
+
   system.stateVersion = "25.11";
 
   services.prometheus.exporters.node = {

@@ -18,5 +18,7 @@
     inputs.self.darwinModules.wallpaper
   ];
 
+  time.timeZone = "America/Los_Angeles";
+
   system.stateVersion = 5;
 }

@@ -41,5 +41,7 @@
     ./networking.nix
   ];
 
+  time.timeZone = "America/Los_Angeles";
+
   system.stateVersion = "26.05";
 }
