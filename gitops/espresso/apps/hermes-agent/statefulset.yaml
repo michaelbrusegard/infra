@@ -100,7 +100,6 @@ spec:
             - dashboard
             - --host
             - 0.0.0.0
-            - --insecure
           ports:
             - containerPort: 9119
               name: dashboard
