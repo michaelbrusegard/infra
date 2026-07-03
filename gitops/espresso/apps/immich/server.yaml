@@ -19,7 +19,7 @@ spec:
         kubernetes.io/arch: amd64
       initContainers:
         - name: upload-markers
-          image: ghcr.io/immich-app/immich-server:v3.0.0-rc.2@sha256:fe1d8aa37c0484cade3dd91ed2baaa01eddc72ad5834da4b52f4385aa80ade85
+          image: ghcr.io/immich-app/immich-server:v3.0.1@sha256:46dedfc5848f7313bd6b584ea9f2648057430307aad6de56de968f6710a72cae
           command:
             - sh
             - -c
@@ -34,7 +34,7 @@ spec:
               mountPath: /usr/src/app/upload
       containers:
         - name: immich
-          image: ghcr.io/immich-app/immich-server:v3.0.0-rc.2@sha256:fe1d8aa37c0484cade3dd91ed2baaa01eddc72ad5834da4b52f4385aa80ade85
+          image: ghcr.io/immich-app/immich-server:v3.0.1@sha256:46dedfc5848f7313bd6b584ea9f2648057430307aad6de56de968f6710a72cae
           env:
             - name: DB_HOSTNAME
               value: postgres.postgres.svc.cluster.local
