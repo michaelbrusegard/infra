@@ -4,10 +4,6 @@ inputs: _: prev: let
     inherit system;
     config.allowUnfree = true;
   };
-  pkgs-jellyfin = import inputs.nixpkgs-jellyfin {
-    inherit system;
-    config.allowUnfree = true;
-  };
   # TODO: Remove these NetBird version overrides once nixpkgs has 0.72.4 or newer.
   netbirdVersion = "0.72.4";
   netbirdSrc = prev.fetchFromGitHub {
@@ -72,10 +68,6 @@ in {
         exec -a "$0" '
       '';
   });
-  # Jellyfin Desktop 2.0's embedded mpv renderer regressed with the 26.05
-  # Qt stack, causing playback to fall back to the flashing HTML video player.
-  inherit (pkgs-jellyfin) jellyfin-media-player;
-
   ruff-unstable = pkgs-unstable.ruff;
   eslint = pkgs-unstable.eslint.overrideAttrs (old: {
     meta = (old.meta or {}) // {mainProgram = "eslint";};
