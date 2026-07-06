@@ -37,7 +37,6 @@ in {
           protonmail-desktop
           inkscape-with-extensions
           audacity
-          feishin
           t3code
         ]
         ++ lib.optionals pkgs.stdenv.isLinux [
@@ -47,6 +46,7 @@ in {
           legcord
           jellyfinDesktop
           veracrypt
+          feishin
 
           transmission_4-gtk
           proton-pass
