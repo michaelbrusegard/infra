@@ -69,7 +69,6 @@ in {
           brewCasks.linearmouse
           brewCasks.legcord
           brewCasks.jellyfin-media-player
-          brewCasks.veracrypt
 
           brewCasks.transmission
           brewCasks.proton-pass
