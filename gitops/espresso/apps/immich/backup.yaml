@@ -8,6 +8,7 @@ spec:
   trigger: {}
   restic:
     repository: freddo-restic-immich-uploads
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:

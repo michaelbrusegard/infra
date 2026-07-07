@@ -295,6 +295,7 @@ data:
                 "trigger": {"manual": token},
                 "restic": {
                     "repository": server["repository"],
+                    "pruneIntervalDays": 36500,
                     "retain": {"within": "100y"},
                     "moverSecurityContext": {"runAsUser": 1000, "runAsGroup": 1000},
                     "copyMethod": "Snapshot",

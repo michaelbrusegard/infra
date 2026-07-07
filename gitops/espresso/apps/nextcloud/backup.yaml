@@ -8,6 +8,7 @@ spec:
   trigger: {}
   restic:
     repository: freddo-restic-nextcloud-pvc
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:

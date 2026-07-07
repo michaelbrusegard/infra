@@ -9,6 +9,7 @@ spec:
     schedule: "10 2 * * *"
   restic:
     repository: freddo-restic-pocket-id-pvc
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:

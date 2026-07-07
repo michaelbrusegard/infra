@@ -9,6 +9,7 @@ spec:
     schedule: "20 2 * * *"
   restic:
     repository: freddo-restic-netbird-pvc
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:

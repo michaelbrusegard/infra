@@ -9,6 +9,7 @@ spec:
     schedule: "30 2 * * *"
   restic:
     repository: freddo-restic-hermes-agent-pvc
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:

@@ -9,6 +9,7 @@ spec:
     schedule: "40 2 * * 0"
   restic:
     repository: freddo-restic-transmission-config
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:
@@ -30,6 +31,7 @@ spec:
     schedule: "42 2 * * 0"
   restic:
     repository: freddo-restic-prowlarr-config
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:
@@ -51,6 +53,7 @@ spec:
     schedule: "44 2 * * 0"
   restic:
     repository: freddo-restic-radarr-config
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:
@@ -72,6 +75,7 @@ spec:
     schedule: "46 2 * * 0"
   restic:
     repository: freddo-restic-sonarr-config
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:
@@ -93,6 +97,7 @@ spec:
     schedule: "48 2 * * 0"
   restic:
     repository: freddo-restic-bazarr-config
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:
@@ -244,6 +249,7 @@ spec:
     schedule: "52 2 * * 0"
   restic:
     repository: freddo-restic-navidrome-data
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:
@@ -265,6 +271,7 @@ spec:
     schedule: "54 2 * * 0"
   restic:
     repository: freddo-restic-jellyfin-config
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:
@@ -286,6 +293,7 @@ spec:
     schedule: "56 2 * * 0"
   restic:
     repository: freddo-restic-seerr-config
+    pruneIntervalDays: 36500
     retain:
       within: 100y
     moverSecurityContext:
