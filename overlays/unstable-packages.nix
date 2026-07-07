@@ -19,7 +19,7 @@ in {
     aerospace
     dgop
     jankyborders
-    neovim
+    neovim-unwrapped
     vimPlugins
     opencode
     opencode-desktop
