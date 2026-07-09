@@ -10,6 +10,9 @@
     send_composed_key_when_right_alt_is_pressed = true;
     max_fps = 120;
     animation_fps = 120;
+    front_end = lib.generators.mkLuaInline ''
+      wezterm.target_triple:find('linux') and 'WebGpu' or nil
+    '';
     color_scheme = "Catppuccin Mocha";
     colors = lib.generators.mkLuaInline "wezterm.color.get_builtin_schemes()['Catppuccin Mocha']";
     font = lib.generators.mkLuaInline ''
