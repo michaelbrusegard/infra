@@ -82,18 +82,25 @@ Later rebuilds can use the `nrs` alias.
 ### Keyboard daemon for kanata
 
 Download the
-[Karabiner-DriverKit-VirtualHIDDevice](https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/tree/main/dist)
-manually and install the package. Afterwards make sure it is enabled in System
-Settings, General -> Login Items & Extensions -> Driver Extensions (At the
-bottom).
+[Karabiner-DriverKit-VirtualHIDDevice 6.2.0 package](https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/tag/v6.2.0)
+manually and install it. Kanata's macOS driver integration is built against
+that version's IPC; newer Karabiner DriverKit releases are not guaranteed to
+work. Afterwards make sure it is enabled in System Settings, General -> Login
+Items & Extensions -> Driver Extensions (At the bottom).
 
 Also make sure that `/run/current-system/sw/bin/kanata` is added as an
-allowed application under Privacy & Security -> Input Monitoring. If `kanata`
-is already added, remove it and try again. This may have to be redone if
-Kanata is updated since the Nix Store path would change.
+allowed application under Privacy & Security -> Input Monitoring. If Kanata
+logs `IOHIDDeviceOpen error: (iokit/common) not permitted`, remove any existing
+Kanata entries, re-add `/run/current-system/sw/bin/kanata` with Cmd+Shift+G in
+the file picker, and also allow it under Privacy & Security -> Accessibility.
+If macOS still denies access, add the resolved store path from
+`readlink /run/current-system/sw/bin/kanata` as well. This may have to be
+redone after Kanata updates since the Nix Store path changes.
 
-Lastly, go to Keyboard -> Keyboard Shortcuts... -> Modifier Keys, and make
-sure the Karabiner DriverKit VirtualHIDDevice is selected as the keyboard.
+After Kanata is running, go to Keyboard -> Keyboard Shortcuts... -> Modifier
+Keys. If the Karabiner DriverKit VirtualHIDDevice appears there, select it as
+the keyboard. It may not appear immediately after driver activation alone; the
+virtual device is created when a root client such as Kanata requests it.
 
 ## Ristretto (NixOS/Windows Desktop)
 

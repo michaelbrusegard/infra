@@ -1,13 +1,45 @@
 {
+  config,
   pkgs,
   lib,
   inputs,
   ...
-}: {
+}: let
+  inherit (config.system) primaryUser;
+  karabinerVhidManager = "/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager";
+  kanataConfig = inputs.self + "/config/kanata/darwin.kbd";
+  forceActivateKarabiner = ''
+    primary_uid=$(/usr/bin/id -u ${primaryUser})
+    launchctl asuser "$primary_uid" sudo -u ${primaryUser} \
+      ${lib.escapeShellArg karabinerVhidManager} forceActivate || true
+  '';
+  kanataWrapper = pkgs.writeShellScript "kanata-darwin" ''
+    ${forceActivateKarabiner}
+    sleep 2
+    exec /run/current-system/sw/bin/kanata -c ${kanataConfig}
+  '';
+  ensureLaunchDaemon = label: ''
+    if ! launchctl print system/org.nixos.${label} >/dev/null 2>&1; then
+      echo "loading ${label} launch daemon..." >&2
+      launchctl bootout system /Library/LaunchDaemons/org.nixos.${label}.plist >/dev/null 2>&1 || true
+      launchctl bootstrap system /Library/LaunchDaemons/org.nixos.${label}.plist
+      launchctl enable system/org.nixos.${label}
+    fi
+  '';
+in {
   environment.systemPackages = [pkgs.kanata];
+  system.activationScripts.postActivation.text = ''
+    chmod 755 /Library/Logs/Kanata
+
+    ${ensureLaunchDaemon "karabiner-vhiddaemon"}
+    ${ensureLaunchDaemon "karabiner-vhidmanager"}
+    ${forceActivateKarabiner}
+    ${ensureLaunchDaemon "kanata"}
+  '';
+
   launchd.daemons = {
     kanata = {
-      command = "${lib.getExe pkgs.kanata} -c ${inputs.self + "/config/kanata/darwin.kbd"}";
+      command = "${kanataWrapper}";
       serviceConfig = {
         RunAtLoad = true;
         KeepAlive = true;
