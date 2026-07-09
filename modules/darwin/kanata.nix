@@ -7,6 +7,7 @@
 }: let
   inherit (config.system) primaryUser;
   karabinerVhidManager = "/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager";
+  stableKanata = "/usr/local/libexec/kanata/kanata";
   kanataConfig = inputs.self + "/config/kanata/darwin.kbd";
   forceActivateKarabiner = ''
     primary_uid=$(/usr/bin/id -u ${primaryUser})
@@ -16,7 +17,7 @@
   kanataWrapper = pkgs.writeShellScript "kanata-darwin" ''
     ${forceActivateKarabiner}
     sleep 2
-    exec /run/current-system/sw/bin/kanata -c ${kanataConfig}
+    exec ${lib.escapeShellArg stableKanata} --no-wait -c ${kanataConfig}
   '';
   ensureLaunchDaemon = label: ''
     if ! launchctl print system/org.nixos.${label} >/dev/null 2>&1; then
@@ -27,8 +28,11 @@
     fi
   '';
 in {
-  environment.systemPackages = [pkgs.kanata];
+  environment.systemPackages = [pkgs.kanata-with-cmd];
   system.activationScripts.postActivation.text = ''
+    install -d -m 755 /usr/local/libexec/kanata
+    install -m 755 ${pkgs.kanata-with-cmd}/bin/kanata ${stableKanata}
+
     chmod 755 /Library/Logs/Kanata
 
     ${ensureLaunchDaemon "karabiner-vhiddaemon"}
