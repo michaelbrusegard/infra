@@ -47,10 +47,7 @@
           (lib.generators.mkLuaInline ''{ "process", icons_only = true, padding = 0 }'')
         ];
         tabline_x = [];
-        tabline_y = [
-          (lib.generators.mkLuaInline ''{ "ram", use_pwsh = true }'')
-          (lib.generators.mkLuaInline ''{ "cpu", use_pwsh = true }'')
-        ];
+        tabline_y = [];
       };
       extensions = ["smart_workspace_switcher" "quick_domains"];
     };
