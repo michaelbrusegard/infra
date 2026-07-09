@@ -15,11 +15,6 @@
     launchctl asuser "$primary_uid" sudo -u ${primaryUser} \
       ${lib.escapeShellArg karabinerVhidManager} forceActivate || true
   '';
-  kanataWrapper = pkgs.writeShellScript "kanata-darwin" ''
-    ${forceActivateKarabiner}
-    sleep 2
-    exec ${lib.escapeShellArg stableKanata} --no-wait -c ${kanataConfig}
-  '';
   ensureLaunchDaemon = label: ''
     if ! launchctl print system/org.nixos.${label} >/dev/null 2>&1; then
       echo "loading ${label} launch daemon..." >&2
@@ -67,8 +62,13 @@ in {
 
   launchd.daemons = {
     kanata = {
-      command = "${kanataWrapper}";
       serviceConfig = {
+        ProgramArguments = [
+          stableKanata
+          "--no-wait"
+          "-c"
+          "${kanataConfig}"
+        ];
         RunAtLoad = true;
         KeepAlive = true;
         StandardErrorPath = "/Library/Logs/Kanata/kanata.err.log";
