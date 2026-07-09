@@ -88,13 +88,13 @@ that version's IPC; newer Karabiner DriverKit releases are not guaranteed to
 work. Afterwards make sure it is enabled in System Settings, General -> Login
 Items & Extensions -> Driver Extensions (At the bottom).
 
-The Darwin module copies Kanata to `/usr/local/libexec/kanata/kanata` so macOS
-Privacy grants are attached to a stable path instead of a changing Nix Store
-path. Add that binary as an allowed application under Privacy & Security ->
-Input Monitoring. If Kanata logs
+The Darwin module copies Kanata into `/Applications/Kanata.app` so macOS Privacy
+grants are attached to a stable app bundle instead of a changing Nix Store path.
+Add that app as an allowed application under Privacy & Security -> Input
+Monitoring. If Kanata logs
 `IOHIDDeviceOpen error: (iokit/common) not permitted`, remove any existing
-Kanata entries, re-add `/usr/local/libexec/kanata/kanata` with Cmd+Shift+G in
-the file picker, and also allow it under Privacy & Security -> Accessibility.
+Kanata entries, re-add `/Applications/Kanata.app` with Cmd+Shift+G in the file
+picker, and also allow it under Privacy & Security -> Accessibility.
 
 After Kanata is running, go to Keyboard -> Keyboard Shortcuts... -> Modifier
 Keys. If the Karabiner DriverKit VirtualHIDDevice appears there, select it as
