@@ -23,6 +23,45 @@
       launchctl enable system/org.nixos.${label}
     fi
   '';
+  # Kanata only grabs keyboards that are connected when it starts; a keyboard
+  # plugged in later is never seized. Restart kanata when the set of external
+  # keyboards changes so it re-grabs everything currently connected.
+  #
+  # Restarting kanata re-fires the launch event (its Karabiner virtual
+  # keyboard reappears and the seized devices' event services are re-created),
+  # so the state file must only change when a device genuinely comes or goes:
+  # fingerprint by vendor/product/location only — hidutil row order, registry
+  # IDs, and event-service rows all flap with kanata's seize/release cycle.
+  # The kanata pid is tracked alongside so a keyboard replugged after kanata
+  # itself crashed and respawned still triggers a re-grab.
+  kanataKeyboardWatcher = pkgs.writeShellScript "kanata-keyboard-watcher" ''
+    sleep 1
+    state=/var/run/org.nixos.kanata.keyboards
+    kanata_pid() {
+      /bin/launchctl print system/org.nixos.kanata 2>/dev/null \
+        | /usr/bin/grep -m1 '[[:space:]]pid = ' | /usr/bin/awk '{print $3}'
+    }
+    current=$(/usr/bin/hidutil list --matching '{"DeviceUsagePage":1,"DeviceUsage":6}' \
+      | /usr/bin/grep '^0x' \
+      | /usr/bin/grep -v 'Apple Internal Keyboard' \
+      | /usr/bin/grep -v 'Karabiner' \
+      | /usr/bin/awk '{print $1, $2, $3}' | /usr/bin/sort -u || true)
+    [ -n "$current" ] || exit 0
+    hash=$(printf '%s' "$current" | /sbin/md5 -q)
+    new="$hash $(kanata_pid)"
+    old=$(/bin/cat "$state" 2>/dev/null || true)
+    if [ "$new" != "$old" ]; then
+      echo "$(date '+%F %T') keyboard set or kanata pid changed, restarting kanata"
+      /bin/launchctl kickstart -k system/org.nixos.kanata
+      pid=""
+      for _ in 1 2 3 4 5 6 7 8 9 10; do
+        sleep 1
+        pid=$(kanata_pid)
+        [ -n "$pid" ] && break
+      done
+      printf '%s %s' "$hash" "$pid" > "$state"
+    fi
+  '';
 in {
   environment.systemPackages = [pkgs.kanata-with-cmd];
   system.activationScripts.postActivation.text = ''
@@ -58,6 +97,7 @@ in {
     ${ensureLaunchDaemon "karabiner-vhidmanager"}
     ${forceActivateKarabiner}
     ${ensureLaunchDaemon "kanata"}
+    ${ensureLaunchDaemon "kanata-keyboard-watcher"}
   '';
 
   launchd.daemons = {
@@ -91,6 +131,25 @@ in {
           "activate"
         ];
         RunAtLoad = true;
+      };
+    };
+    kanata-keyboard-watcher = {
+      serviceConfig = {
+        ProgramArguments = ["${kanataKeyboardWatcher}"];
+        LaunchEvents = {
+          "com.apple.iokit.matching" = {
+            "keyboard-attached" = {
+              IOMatchLaunchStream = true;
+              IOProviderClass = "IOHIDDevice";
+              IOPropertyMatch = {
+                PrimaryUsagePage = 1;
+                PrimaryUsage = 6;
+              };
+            };
+          };
+        };
+        StandardErrorPath = "/Library/Logs/Kanata/keyboard-watcher.err.log";
+        StandardOutPath = "/Library/Logs/Kanata/keyboard-watcher.out.log";
       };
     };
   };
