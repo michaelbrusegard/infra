@@ -31,7 +31,6 @@ in {
     vtsls
     postgresql
     lazysql
-    colima
     fluffychat
     flux
     kubectl
