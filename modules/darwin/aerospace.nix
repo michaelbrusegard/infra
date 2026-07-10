@@ -30,7 +30,7 @@ _: {
             run = "move-node-to-workspace 2";
           }
           {
-            "if".app-name-regex-substring = "^(Proton Pass|OpenCode|T3 Code.*)$";
+            "if".app-name-regex-substring = "^(Paseo|Proton Pass|OpenCode|T3 Code.*)$";
             run = "move-node-to-workspace 3";
           }
           {

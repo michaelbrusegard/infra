@@ -92,6 +92,11 @@
       workspace = 3;
     }
     {
+      class = "^(electron)$";
+      initial_title = "^Paseo$";
+      workspace = 3;
+    }
+    {
       class = "^(t3code)$";
       workspace = 3;
     }
@@ -328,10 +333,7 @@ in
 
         window_rule =
           map (r: {
-            match =
-              if r ? title
-              then {inherit (r) title;}
-              else {inherit (r) class;};
+            match = removeAttrs r ["workspace"];
             inherit (r) workspace;
           })
           workspaceRules;
