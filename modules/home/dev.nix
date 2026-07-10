@@ -36,6 +36,7 @@
       packages = with pkgs; [
         postgresql
         vite-plus
+        deno
       ];
 
       file.".npmrc" = lib.mkIf (config.secrets ? keys && config.secrets.keys ? githubTokenFile) {
