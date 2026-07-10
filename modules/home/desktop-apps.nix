@@ -35,13 +35,13 @@ in {
           signal-desktop
           slack
           protonmail-desktop
-          paseo
           inkscape-with-extensions
           audacity
           t3code
         ]
         ++ lib.optionals pkgs.stdenv.isLinux [
           fluffychat
+          paseo
           paseo-desktop
           imv
           gthumb
