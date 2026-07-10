@@ -103,6 +103,10 @@
       url = "github:omarcresp/t3code-flake";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+    paseo = {
+      url = "github:getpaseo/paseo";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
     zen-browser = {
       url = "github:0xc000022070/zen-browser-flake";
       inputs = {
