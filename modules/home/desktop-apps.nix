@@ -35,12 +35,14 @@ in {
           signal-desktop
           slack
           protonmail-desktop
+          paseo
           inkscape-with-extensions
           audacity
           t3code
         ]
         ++ lib.optionals pkgs.stdenv.isLinux [
           fluffychat
+          paseo-desktop
           imv
           gthumb
           legcord
@@ -65,6 +67,7 @@ in {
         ++ lib.optionals pkgs.stdenv.isDarwin [
           ice-bar
           brewCasks.raycast
+          brewCasks.paseo
 
           brewCasks.linearmouse
           brewCasks.legcord
