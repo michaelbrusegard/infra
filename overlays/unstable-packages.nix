@@ -24,7 +24,6 @@ in {
     opencode
     opencode-desktop
     claude-code
-    codex
     uv
     ty
     oxlint
