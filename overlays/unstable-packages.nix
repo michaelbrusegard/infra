@@ -42,6 +42,10 @@ in {
     signal-desktop
     ;
 
+  codex = pkgs-unstable.codex.override {
+    inherit (prev) livekit-libwebrtc;
+  };
+
   netbird = pkgs-unstable.netbird.overrideAttrs (_: {
     version = netbirdVersion;
     src = netbirdSrc;
