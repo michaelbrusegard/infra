@@ -4,7 +4,16 @@
   lib,
   homePersistenceRoot ? null,
   ...
-}: {
+}: let
+  direnvWrapped = package: executable:
+    pkgs.writeShellApplication {
+      name = executable;
+      runtimeInputs = [pkgs.direnv];
+      text = ''
+        exec direnv exec "$PWD" ${lib.getExe' package executable} "$@"
+      '';
+    };
+in {
   programs = {
     direnv = {
       enable = true;
@@ -29,6 +38,10 @@
         };
       };
     };
+
+    codex.package = direnvWrapped pkgs.codex "codex";
+    claude-code.package = direnvWrapped pkgs.claude-code "claude";
+    opencode.package = direnvWrapped pkgs.opencode "opencode";
   };
   home =
     {
