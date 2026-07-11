@@ -1,12 +1,11 @@
 {inputs, ...}: {
   imports = [
     inputs.self.homeManagerModules.catppuccin
+    inputs.self.homeManagerModules.ai-tools
     inputs.self.homeManagerModules.cli-core
     inputs.self.homeManagerModules.cli-extras
     inputs.self.homeManagerModules.cli-desktop
-    inputs.self.homeManagerModules.claude-code
     inputs.self.homeManagerModules.cloud-credentials
-    inputs.self.homeManagerModules.codex
     inputs.self.homeManagerModules.desktop-apps
     inputs.self.homeManagerModules.dev
     inputs.self.homeManagerModules.dms
@@ -22,7 +21,6 @@
     inputs.self.homeManagerModules.mpv
     inputs.self.homeManagerModules.neovim
     inputs.self.homeManagerModules.nix-tools
-    inputs.self.homeManagerModules.opencode
     inputs.self.homeManagerModules.pentest
     inputs.self.homeManagerModules.scripts
     inputs.self.homeManagerModules.shell

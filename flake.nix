@@ -107,6 +107,7 @@
       url = "github:getpaseo/paseo";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+    pi.url = "github:lukasl-dev/pi.nix";
     zen-browser = {
       url = "github:0xc000022070/zen-browser-flake";
       inputs = {

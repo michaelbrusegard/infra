@@ -6,6 +6,7 @@ in
     inputs.yazi.overlays.default
     inputs.brew-nix.overlays.default
     inputs.asus-dialpad-driver.overlays.default
+    inputs.pi.overlays.default
     (import ./dialpad)
     (import ./flake-packages.nix inputs)
     (import ./dms)

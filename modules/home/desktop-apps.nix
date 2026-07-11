@@ -35,14 +35,11 @@ in {
           signal-desktop
           slack
           protonmail-desktop
-          paseo
           inkscape-with-extensions
           audacity
-          t3code
         ]
         ++ lib.optionals pkgs.stdenv.isLinux [
           fluffychat
-          paseo-desktop
           imv
           gthumb
           legcord
@@ -114,10 +111,6 @@ in {
           ".config/inkscape"
           ".config/Signal"
           ".config/Slack"
-          ".config/Paseo"
-          ".paseo"
-          ".config/t3code"
-          ".t3"
           ".config/Proton Mail"
           ".config/Proton Pass"
           ".config/Nextcloud"
