@@ -45,6 +45,45 @@
       export KEYTIMEOUT=1
       bindkey '^Y' autosuggest-accept
       bindkey '^E' autosuggest-clear
+
+      typeset -gA __direnv_zsh_completions
+
+      _direnv_load_zsh_completions() {
+        emulate -L zsh
+
+        (( $+functions[compdef] )) || return 0
+
+        local -A desired_completions
+        local spec command completion_file loaded_command
+
+        for spec in ''${(z)DIRENV_ZSH_COMPLETIONS}; do
+          command="''${spec%%=*}"
+          completion_file="''${spec#*=}"
+
+          if [[ -z "$command" || "$command" == "$spec" || -z "$completion_file" || ! -r "$completion_file" ]]; then
+            continue
+          fi
+
+          desired_completions[$command]="$completion_file"
+
+          if [[ "''${__direnv_zsh_completions[$command]-}" != "$completion_file" ]]; then
+            compdef -d "$command" 2>/dev/null || true
+            source "$completion_file"
+            __direnv_zsh_completions[$command]="$completion_file"
+          fi
+        done
+
+        for loaded_command in ''${(k)__direnv_zsh_completions}; do
+          if [[ -z "''${desired_completions[$loaded_command]-}" ]]; then
+            compdef -d "$loaded_command" 2>/dev/null || true
+            unset "__direnv_zsh_completions[$loaded_command]"
+          fi
+        done
+      }
+
+      autoload -Uz add-zsh-hook
+      add-zsh-hook precmd _direnv_load_zsh_completions
+      _direnv_load_zsh_completions
     '';
     antidote = {
       enable = true;
