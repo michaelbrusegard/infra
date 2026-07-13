@@ -26,6 +26,10 @@ _: {
             run = "layout floating";
           }
           {
+            "if".app-name-regex-substring = "^Simulator$";
+            run = "layout floating";
+          }
+          {
             "if".app-name-regex-substring = "^Zen$";
             run = "move-node-to-workspace 2";
           }
