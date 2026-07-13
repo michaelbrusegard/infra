@@ -1,7 +1,7 @@
 {inputs, ...}: {
   imports = [
     inputs.self.homeManagerModules.catppuccin
-    inputs.self.homeManagerModules.ai-tools
+    inputs.self.homeManagerModules.ai
     inputs.self.homeManagerModules.cli-core
     inputs.self.homeManagerModules.cli-extras
     inputs.self.homeManagerModules.cli-desktop
