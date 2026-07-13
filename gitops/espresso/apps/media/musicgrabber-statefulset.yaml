@@ -34,7 +34,7 @@ spec:
               name: config
       containers:
         - name: musicgrabber
-          image: g33kphr33k/musicgrabber:latest@sha256:ea0151b1ce8ea0461ff441038c76a0ba64ba1c95149746cac875252b03ae1f7d
+          image: g33kphr33k/musicgrabber:latest@sha256:cf00cf6ccd7f8133954c79dbff41682b04e22479d2c16cc8a4404a431d1e4de5
           ports:
             - containerPort: 8080
               name: http
