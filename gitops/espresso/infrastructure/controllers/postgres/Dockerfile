@@ -14,7 +14,7 @@ ARG POSTGRESQL_18_PGAUDIT_VERSION=18.0-3.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pg-stat-kcache
 ARG POSTGRESQL_18_PG_STAT_KCACHE_VERSION=2.3.2-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pg-wait-sampling
-ARG POSTGRESQL_18_PG_WAIT_SAMPLING_VERSION=1.1.9-2.pgdg12+1
+ARG POSTGRESQL_18_PG_WAIT_SAMPLING_VERSION=1.1.10-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pglogical
 ARG POSTGRESQL_18_PGLOGICAL_VERSION=2.4.7-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pgrouting
@@ -22,7 +22,7 @@ ARG POSTGRESQL_18_PGROUTING_VERSION=4.0.1-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pgrouting-scripts
 ARG POSTGRESQL_18_PGROUTING_SCRIPTS_VERSION=4.0.1-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pgvector
-ARG POSTGRESQL_18_PGVECTOR_VERSION=0.8.4-1.pgdg12+1
+ARG POSTGRESQL_18_PGVECTOR_VERSION=0.8.5-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-postgis-3
 ARG POSTGRESQL_18_POSTGIS_3_VERSION=3.6.4+dfsg-2.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-postgis-3-scripts
