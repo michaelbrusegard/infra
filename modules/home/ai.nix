@@ -25,27 +25,56 @@
         pkgs.iproute2
       ];
     text = ''
-      while true; do
+      get_netbird_ip() {
         if command -v ip >/dev/null 2>&1; then
-          netbird_ip=$(ip -o -4 addr show scope global | awk '
+          ip -o -4 addr show scope global | awk '
             $4 ~ /^100\./ { split($4, parts, "/"); print parts[1]; exit }
-          ')
+          '
         else
-          netbird_ip=$(/sbin/ifconfig | awk '
+          /sbin/ifconfig | awk '
             /^utun[0-9]+:/ { iface = $1; sub(":", "", iface) }
             iface != "" && $1 == "inet" && $2 ~ /^100\./ { print $2; exit }
-          ')
+          '
+        fi
+      }
+
+      forward_pid=""
+
+      stop_forwarder() {
+        if [ -n "$forward_pid" ] && kill -0 "$forward_pid" 2>/dev/null; then
+          kill "$forward_pid"
+          wait "$forward_pid" || true
+        fi
+        forward_pid=""
+      }
+
+      trap stop_forwarder EXIT
+      trap 'exit 0' INT TERM
+
+      while true; do
+        netbird_ip=$(get_netbird_ip)
+
+        if [ -z "$netbird_ip" ]; then
+          sleep 5
+          continue
         fi
 
-        if [ -n "$netbird_ip" ]; then
-          break
-        fi
+        echo "Forwarding $netbird_ip:6767 to 127.0.0.1:6767"
+        ncat -4 --listen --keep-open "$netbird_ip" 6767 \
+          --sh-exec "ncat -4 127.0.0.1 6767" &
+        forward_pid=$!
 
-        sleep 5
+        while kill -0 "$forward_pid" 2>/dev/null; do
+          sleep 5
+          current_ip=$(get_netbird_ip)
+          if [ "$current_ip" != "$netbird_ip" ]; then
+            echo "NetBird address changed from $netbird_ip to ''${current_ip:-unavailable}"
+            break
+          fi
+        done
+
+        stop_forwarder
       done
-
-      exec ncat -4 --listen --keep-open "$netbird_ip" 6767 \
-        --sh-exec "ncat -4 127.0.0.1 6767"
     '';
   };
 in {
