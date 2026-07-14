@@ -13,6 +13,9 @@ resource "pocketid_group" "users" {
 resource "pocketid_group" "admin" {
   name          = "admin"
   friendly_name = "Admin Users"
+  custom_claims = {
+    netbird_groups = jsonencode(["Admins", "Personal Devices"])
+  }
 }
 
 resource "pocketid_client" "netbird" {
@@ -28,7 +31,10 @@ resource "pocketid_client" "netbird" {
   pkce_enabled = true
   launch_url   = "https://netbird-admin.${local.domain}/"
 
-  allowed_user_groups = [pocketid_group.users.id]
+  allowed_user_groups = [
+    pocketid_group.users.id,
+    pocketid_group.admin.id,
+  ]
 }
 
 resource "pocketid_group" "nextcloud" {

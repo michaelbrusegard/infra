@@ -144,6 +144,10 @@ resource "netbird_group" "admins" {
   name = "Admins"
 }
 
+resource "netbird_group" "personal_devices" {
+  name = "Personal Devices"
+}
+
 resource "netbird_group" "users" {
   name = "Users"
 }
@@ -249,7 +253,7 @@ resource "netbird_account_settings" "main" {
   groups_propagation_enabled          = true
   jwt_groups_enabled                  = true
   jwt_groups_claim_name               = "netbird_groups"
-  jwt_allow_groups                    = ["Users"]
+  jwt_allow_groups                    = ["Users", "Admins", "Personal Devices"]
   routing_peer_dns_resolution_enabled = true
   peer_login_expiration_enabled       = true
   peer_login_expiration               = 604800
@@ -318,6 +322,22 @@ resource "netbird_policy" "home_access" {
     protocol      = "all"
     sources       = [netbird_group.admins.id]
     destinations  = [netbird_group.home.id]
+  }
+}
+
+resource "netbird_policy" "personal_device_mesh" {
+  name        = "Personal Device Mesh"
+  description = "Allow personal admin devices to communicate with each other over NetBird"
+  enabled     = true
+
+  rule {
+    name          = "Personal devices full mesh"
+    action        = "accept"
+    bidirectional = true
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.personal_devices.id]
+    destinations  = [netbird_group.personal_devices.id]
   }
 }
 
