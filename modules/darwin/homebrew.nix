@@ -49,6 +49,7 @@
       "Proton Pass for Safari" = 6502835663;
       "Wipr" = 1662217862;
       "Developer" = 640199958;
+      "TestFlight" = 899247664;
       "Xcode" = 497799835;
       "DaVinci Resolve" = 571213070;
     };
