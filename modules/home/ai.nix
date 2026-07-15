@@ -4,6 +4,7 @@
   lib,
   isWsl,
   homePersistenceRoot ? null,
+  paseoHostnames,
   ...
 }: let
   direnvWrapped = package: executable:
@@ -124,6 +125,30 @@ in {
           brewCasks.codex-app
           brewCasks.paseo
         ]);
+
+      activation.paseoHostnames = lib.mkIf (paseoHostnames != []) (lib.hm.dag.entryAfter ["writeBoundary"] ''
+        config_file="$HOME/.paseo/config.json"
+        config_dir=$(dirname "$config_file")
+        temp_file=$(mktemp)
+
+        if [ -f "$config_file" ]; then
+          ${lib.getExe pkgs.jq} --argjson hostnames '${builtins.toJSON paseoHostnames}' '
+            .daemon = ((.daemon // {}) + {
+              hostnames: (((.daemon.hostnames // []) + $hostnames) | unique)
+            })
+          ' "$config_file" > "$temp_file"
+        else
+          ${lib.getExe pkgs.jq} --argjson hostnames '${builtins.toJSON paseoHostnames}' \
+            '{version: 1, daemon: {hostnames: $hostnames}}' > "$temp_file"
+        fi
+
+        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
+          $DRY_RUN_CMD mkdir -p "$config_dir"
+          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
+        fi
+
+        rm -f "$temp_file"
+      '');
     }
     // lib.optionalAttrs (homePersistenceRoot != null) {
       persistence.${homePersistenceRoot} = {
