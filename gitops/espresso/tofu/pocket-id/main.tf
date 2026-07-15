@@ -14,7 +14,7 @@ resource "pocketid_group" "admin" {
   name          = "admin"
   friendly_name = "Admin Users"
   custom_claims = {
-    netbird_groups = jsonencode(["Admins"])
+    netbird_groups = jsonencode(["Admins", "Personal Devices"])
   }
 }
 

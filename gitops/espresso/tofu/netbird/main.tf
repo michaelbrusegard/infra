@@ -180,26 +180,6 @@ resource "netbird_group" "manafish" {
   name = "Manafish"
 }
 
-resource "netbird_user" "michael" {
-  is_service_user = false
-  auto_groups = [
-    netbird_group.admins.id,
-    netbird_group.personal_devices.id,
-    netbird_group.users.id,
-  ]
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-# Adopt the existing owner so Terraform can manage peer auto-groups without
-# replacing the identity that owns the account.
-import {
-  to = netbird_user.michael
-  id = "00bc4a6c-2e05-4472-b139-e2f87949bf8d"
-}
-
 resource "netbird_setup_key" "macchiato" {
   name                   = "macchiato"
   type                   = "reusable"
@@ -273,7 +253,7 @@ resource "netbird_account_settings" "main" {
   groups_propagation_enabled          = true
   jwt_groups_enabled                  = true
   jwt_groups_claim_name               = "netbird_groups"
-  jwt_allow_groups                    = ["Users", "Admins"]
+  jwt_allow_groups                    = ["Users", "Admins", "Personal Devices"]
   routing_peer_dns_resolution_enabled = true
   peer_login_expiration_enabled       = true
   peer_login_expiration               = 604800
