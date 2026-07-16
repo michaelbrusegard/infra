@@ -27,6 +27,14 @@
         --add-flags --disable-gpu
     '';
   };
+  blenderDarwin = pkgs.brewCasks.blender.overrideAttrs (old: {
+    # download.blender.org challenges non-browser fetchers with Cloudflare.
+    # Keep the cask-provided hash while fetching the same artifact from a mirror.
+    src = pkgs.fetchurl {
+      url = "https://mirrors.ocf.berkeley.edu/blender/release/Blender${lib.versions.majorMinor old.version}/${old.src.name}";
+      sha256 = old.src.outputHash;
+    };
+  });
 in {
   home =
     {
@@ -74,7 +82,7 @@ in {
           brewCasks.protonvpn
           libreoffice-bin
           brewCasks.gimp
-          brewCasks.blender
+          blenderDarwin
           brewCasks.betaflight-configurator
           brewCasks.qgis
           brewCasks.wootility
