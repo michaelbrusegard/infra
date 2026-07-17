@@ -92,6 +92,11 @@ in {
     claude-code = {
       enable = true;
       package = direnvWrapped pkgs.claude-code "claude";
+      settings.attribution = {
+        commit = "";
+        pr = "";
+        sessionUrl = false;
+      };
     };
 
     opencode = {
