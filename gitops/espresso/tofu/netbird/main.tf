@@ -378,3 +378,13 @@ resource "netbird_nameserver_group" "macchiato_blocky_dns" {
 
   search_domains_enabled = true
 }
+
+# The provider authenticates as this user, so NetBird rejects destroying it
+# ("self deletion is not allowed"). Forget it from state without deleting.
+removed {
+  from = netbird_user.michael
+
+  lifecycle {
+    destroy = false
+  }
+}
