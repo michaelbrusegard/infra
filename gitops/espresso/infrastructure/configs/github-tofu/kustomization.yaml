@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../tofu-base
+patches:
+  - target:
+      kind: Terraform
+      name: tofu-base
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: github-infra
+  - target:
+      kind: Terraform
+      name: github-infra
+    patch: |
+      apiVersion: infra.contrib.fluxcd.io/v1alpha2
+      kind: Terraform
+      metadata:
+        name: github-infra
+      spec:
+        path: ./gitops/espresso/tofu/github
+        backendConfig:
+          secretSuffix: github-infra
+        runnerPodTemplate:
+          spec:
+            env:
+              - name: GITHUB_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: github-token
+                    key: token

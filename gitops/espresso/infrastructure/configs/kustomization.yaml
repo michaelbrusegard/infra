@@ -6,6 +6,7 @@ resources:
   - dns-tofu
   - flux
   - gateway
+  - github-tofu
   - grafana
   - honcho-tofu
   - hubble-ui
