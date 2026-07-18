@@ -8,6 +8,9 @@ spec:
   trigger: {}
   restic:
     repository: freddo-restic-nextcloud-pvc
+    # Bump to clear a stale repository lock before the next sync (a mover
+    # crash on 2026-07-08 left the repo locked and every backup failing).
+    unlock: "2026-07-18"
     pruneIntervalDays: 36500
     retain:
       within: 100y
