@@ -350,6 +350,45 @@ resource "netbird_policy" "personal_device_mesh" {
   }
 }
 
+# Transitional: clients that have not yet received the LAN-address
+# nameserver config still query the routing peer's NetBird IP, and some
+# resolve the management hostname through that DNS — dropping this path
+# before they migrate locks them out entirely. Remove once all peers
+# report the 10.0.186.1 nameserver.
+resource "netbird_policy" "routing_peer_dns_udp" {
+  name        = "Routing Peer DNS UDP"
+  description = "Transitional DNS access via the routing peer's NetBird IP"
+  enabled     = true
+
+  rule {
+    name          = "Peers to routing peer DNS (udp)"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "udp"
+    ports         = ["53"]
+    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    destinations  = [netbird_group.routing_peers.id]
+  }
+}
+
+resource "netbird_policy" "routing_peer_dns_tcp" {
+  name        = "Routing Peer DNS TCP"
+  description = "Transitional DNS access via the routing peer's NetBird IP"
+  enabled     = true
+
+  rule {
+    name          = "Peers to routing peer DNS (tcp)"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "tcp"
+    ports         = ["53"]
+    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    destinations  = [netbird_group.routing_peers.id]
+  }
+}
+
 # The Macchiato Blocky DNS nameserver group targets the Blocky DNS network
 # resource (macchiato's stable LAN address routed via the routing peer);
 # NetBird ACLs are default-deny, so DNS needs its own policies.
