@@ -7,6 +7,11 @@ locals {
       address = "bazarr.${local.domain}"
       group   = "media_admin"
     }
+    blocky = {
+      name    = "Blocky DNS"
+      address = "${var.macchiato_blocky_dns_ip}/32"
+      group   = "dns"
+    }
     cloud = {
       name    = "Nextcloud"
       address = "cloud.${local.domain}"
@@ -180,6 +185,10 @@ resource "netbird_group" "manafish" {
   name = "Manafish"
 }
 
+resource "netbird_group" "dns" {
+  name = "DNS"
+}
+
 resource "netbird_setup_key" "macchiato" {
   name                   = "macchiato"
   type                   = "reusable"
@@ -211,7 +220,7 @@ resource "netbird_network_resource" "resources" {
   description = "${each.value.name} at Asgard"
   address     = each.value.address
   groups = [
-    each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "media" ? netbird_group.media.id : each.value.group == "public" ? netbird_group.public.id : each.value.group == "manafish" ? netbird_group.manafish.id : netbird_group.media_admin.id,
+    each.value.group == "dns" ? netbird_group.dns.id : each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "media" ? netbird_group.media.id : each.value.group == "public" ? netbird_group.public.id : each.value.group == "manafish" ? netbird_group.manafish.id : netbird_group.media_admin.id,
   ]
   enabled = true
 }
@@ -341,39 +350,40 @@ resource "netbird_policy" "personal_device_mesh" {
   }
 }
 
-# NetBird ACLs are default-deny toward the routing peer itself, so the
-# Macchiato Blocky DNS nameserver group is unreachable without this.
-resource "netbird_policy" "routing_peer_dns_udp" {
-  name        = "Routing Peer DNS UDP"
-  description = "Allow peers to query Blocky DNS on the macchiato routing peer"
+# The Macchiato Blocky DNS nameserver group targets the Blocky DNS network
+# resource (macchiato's stable LAN address routed via the routing peer);
+# NetBird ACLs are default-deny, so DNS needs its own policies.
+resource "netbird_policy" "dns_access_udp" {
+  name        = "DNS Access UDP"
+  description = "Allow peers to query Blocky DNS"
   enabled     = true
 
   rule {
-    name          = "Peers to routing peer DNS (udp)"
+    name          = "Peers to Blocky DNS (udp)"
     action        = "accept"
     bidirectional = false
     enabled       = true
     protocol      = "udp"
     ports         = ["53"]
     sources       = [netbird_group.admins.id, netbird_group.users.id]
-    destinations  = [netbird_group.routing_peers.id]
+    destinations  = [netbird_group.dns.id]
   }
 }
 
-resource "netbird_policy" "routing_peer_dns_tcp" {
-  name        = "Routing Peer DNS TCP"
-  description = "Allow truncated DNS retries over TCP to the macchiato routing peer"
+resource "netbird_policy" "dns_access_tcp" {
+  name        = "DNS Access TCP"
+  description = "Allow truncated DNS retries over TCP to Blocky DNS"
   enabled     = true
 
   rule {
-    name          = "Peers to routing peer DNS (tcp)"
+    name          = "Peers to Blocky DNS (tcp)"
     action        = "accept"
     bidirectional = false
     enabled       = true
     protocol      = "tcp"
     ports         = ["53"]
     sources       = [netbird_group.admins.id, netbird_group.users.id]
-    destinations  = [netbird_group.routing_peers.id]
+    destinations  = [netbird_group.dns.id]
   }
 }
 
