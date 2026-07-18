@@ -341,6 +341,42 @@ resource "netbird_policy" "personal_device_mesh" {
   }
 }
 
+# NetBird ACLs are default-deny toward the routing peer itself, so the
+# Macchiato Blocky DNS nameserver group is unreachable without this.
+resource "netbird_policy" "routing_peer_dns_udp" {
+  name        = "Routing Peer DNS UDP"
+  description = "Allow peers to query Blocky DNS on the macchiato routing peer"
+  enabled     = true
+
+  rule {
+    name          = "Peers to routing peer DNS (udp)"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "udp"
+    ports         = ["53"]
+    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    destinations  = [netbird_group.routing_peers.id]
+  }
+}
+
+resource "netbird_policy" "routing_peer_dns_tcp" {
+  name        = "Routing Peer DNS TCP"
+  description = "Allow truncated DNS retries over TCP to the macchiato routing peer"
+  enabled     = true
+
+  rule {
+    name          = "Peers to routing peer DNS (tcp)"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "tcp"
+    ports         = ["53"]
+    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    destinations  = [netbird_group.routing_peers.id]
+  }
+}
+
 resource "netbird_nameserver_group" "router_public_dns" {
   name        = "Router Public DNS"
   description = "Public DNS for router domain to bypass hairpin routing through NetBird tunnel"
