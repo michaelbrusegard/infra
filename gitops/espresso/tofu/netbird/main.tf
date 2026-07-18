@@ -350,6 +350,44 @@ resource "netbird_policy" "personal_device_mesh" {
   }
 }
 
+# Blocky's LAN address lives on the routing peer itself, so queries are
+# local delivery on macchiato and NetBird evaluates them against
+# peer-directed ACLs — the Blocky DNS network resource only provides the
+# client-side route. Both these policies and the resource are required.
+resource "netbird_policy" "routing_peer_dns_udp" {
+  name        = "Routing Peer DNS UDP"
+  description = "Allow DNS to Blocky, which is hosted on the routing peer"
+  enabled     = true
+
+  rule {
+    name          = "Peers to routing peer DNS (udp)"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "udp"
+    ports         = ["53"]
+    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    destinations  = [netbird_group.routing_peers.id]
+  }
+}
+
+resource "netbird_policy" "routing_peer_dns_tcp" {
+  name        = "Routing Peer DNS TCP"
+  description = "Allow truncated DNS retries over TCP to Blocky on the routing peer"
+  enabled     = true
+
+  rule {
+    name          = "Peers to routing peer DNS (tcp)"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "tcp"
+    ports         = ["53"]
+    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    destinations  = [netbird_group.routing_peers.id]
+  }
+}
+
 # The Macchiato Blocky DNS nameserver group targets the Blocky DNS network
 # resource (macchiato's stable LAN address routed via the routing peer);
 # NetBird ACLs are default-deny, so DNS needs its own policies.
