@@ -5,6 +5,7 @@ resources:
   - public-gateway.yaml
   - internal-gateway.yaml
   - public-redirects.yaml
+  - internal-redirects.yaml
   - macchiato-dns.yaml
   - homebridge.yaml
   - unifi.yaml
