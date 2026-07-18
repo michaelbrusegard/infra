@@ -63,6 +63,10 @@ spec:
           envFrom:
             - secretRef:
                 name: media-vpn-env
+            # USER/PASS for the port-forward up command: transmission requires
+            # RPC auth, so pushing the forwarded peer port needs credentials.
+            - secretRef:
+                name: media-transmission-env
           env:
             - name: VPN_SERVICE_PROVIDER
               value: "protonvpn"
@@ -74,11 +78,22 @@ spec:
               value: "on"
             - name: VPN_PORT_FORWARDING_PROVIDER
               value: "protonvpn"
+            # Authenticate (RPC auth is required) and retry for up to 5m:
+            # gluetun gets the forwarded port before transmission's RPC is
+            # listening, so a single unauthenticated attempt silently fails
+            # and the peer port stays on the unreachable default.
             - name: VPN_PORT_FORWARDING_UP_COMMAND
               value: >-
                 /bin/sh -c '
-                SID=$(wget -qS --spider http://127.0.0.1:9091/transmission/rpc 2>&1 | grep -i x-transmission-session-id | tr -d "[:space:]");
-                wget -qO- --header="Content-Type: application/json" --header="$SID" --post-data="{\"method\":\"session-set\",\"arguments\":{\"peer-port\":{{PORT}}}}" http://127.0.0.1:9091/transmission/rpc 2>/dev/null || true
+                AUTH="Authorization: Basic $(printf "%s" "$USER:$PASS" | base64 | tr -d "\n")";
+                i=0;
+                while [ $i -lt 60 ]; do
+                SID=$(wget -qS --spider --header="$AUTH" http://127.0.0.1:9091/transmission/rpc 2>&1 | grep -i x-transmission-session-id | tr -d "[:space:]");
+                [ -n "$SID" ] && wget -qO- --header="Content-Type: application/json" --header="$AUTH" --header="$SID" --post-data="{\"method\":\"session-set\",\"arguments\":{\"peer-port\":{{PORT}}}}" http://127.0.0.1:9091/transmission/rpc 2>/dev/null && exit 0;
+                i=$((i+1));
+                sleep 5;
+                done;
+                exit 0
                 '
             - name: FIREWALL_OUTBOUND_SUBNETS
               value: "10.42.0.0/16,10.43.0.0/16,10.0.186.0/24,10.0.187.0/24,10.0.188.0/24"
