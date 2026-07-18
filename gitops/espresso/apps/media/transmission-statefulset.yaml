@@ -88,16 +88,21 @@ spec:
               value: "on"
             - name: DOT_PROVIDERS
               value: "cloudflare,quad9"
+            - name: UPDATER_PERIOD
+              value: "24h"
             - name: HEALTH_VPN_DURATION_INITIAL
               value: "30s"
             - name: HEALTH_SUCCESS_WAIT_DURATION
               value: "10s"
+          # Probe the health server (9999), which only returns 200 while the
+          # tunnel actually passes traffic. /v1/vpn/status reports "running"
+          # even when every healthcheck fails, so it cannot detect a dead VPN.
           startupProbe:
             exec:
               command:
                 - sh
                 - -c
-                - wget -qO- http://127.0.0.1:8000/v1/vpn/status 2>/dev/null | grep -q running
+                - wget -qO- http://127.0.0.1:9999 2>/dev/null
             periodSeconds: 5
             failureThreshold: 60
           livenessProbe:
@@ -105,8 +110,9 @@ spec:
               command:
                 - sh
                 - -c
-                - wget -qO- http://127.0.0.1:8000/v1/vpn/status 2>/dev/null | grep -q running
+                - wget -qO- http://127.0.0.1:9999 2>/dev/null
             periodSeconds: 30
+            failureThreshold: 10
         - name: transmission
           restartPolicy: Always
           image: lscr.io/linuxserver/transmission:4.1.1-r1-ls338@sha256:653e7394633786ef76b3ad7987299dabf730b68646c7fc27826dbb86d20986d4
