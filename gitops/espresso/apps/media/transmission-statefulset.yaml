@@ -81,14 +81,16 @@ spec:
             # Authenticate (RPC auth is required) and retry for up to 5m:
             # gluetun gets the forwarded port before transmission's RPC is
             # listening, so a single unauthenticated attempt silently fails
-            # and the peer port stays on the unreachable default.
+            # and the peer port stays on the unreachable default. The session
+            # id grep must anchor on the header name: transmission also sends
+            # Access-Control-Expose-Headers containing the same substring.
             - name: VPN_PORT_FORWARDING_UP_COMMAND
               value: >-
                 /bin/sh -c '
                 AUTH="Authorization: Basic $(printf "%s" "$USER:$PASS" | base64 | tr -d "\n")";
                 i=0;
                 while [ $i -lt 60 ]; do
-                SID=$(wget -qS --spider --header="$AUTH" http://127.0.0.1:9091/transmission/rpc 2>&1 | grep -i x-transmission-session-id | tr -d "[:space:]");
+                SID=$(wget -qS --spider --header="$AUTH" http://127.0.0.1:9091/transmission/rpc 2>&1 | grep -im1 "^ *x-transmission-session-id:" | tr -d " \r");
                 [ -n "$SID" ] && wget -qO- --header="Content-Type: application/json" --header="$AUTH" --header="$SID" --post-data="{\"method\":\"session-set\",\"arguments\":{\"peer-port\":{{PORT}}}}" http://127.0.0.1:9091/transmission/rpc 2>/dev/null && exit 0;
                 i=$((i+1));
                 sleep 5;
