@@ -122,12 +122,16 @@ spec:
                 - wget -qO- http://127.0.0.1:9999 2>/dev/null
             periodSeconds: 5
             failureThreshold: 60
+          # Fails on a dead tunnel OR a lost forwarded port: Proton NAT-PMP
+          # renewals can get refused and wedge gluetun's port-forward loop
+          # while the tunnel stays healthy (port 0, no inbound peers). The
+          # 5m of failures tolerated covers lease negotiation on startup.
           livenessProbe:
             exec:
               command:
                 - sh
                 - -c
-                - wget -qO- http://127.0.0.1:9999 2>/dev/null
+                - wget -qO- http://127.0.0.1:9999 2>/dev/null && wget -qO- http://127.0.0.1:8000/v1/openvpn/portforwarded 2>/dev/null | grep -qv '"port":0'
             periodSeconds: 30
             failureThreshold: 10
         - name: transmission
