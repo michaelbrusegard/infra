@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: mc-router
-          image: itzg/mc-router:1.44.0@sha256:74c0f682cb45a1ac7ac25082c63f236bd6b04395508ad41d5825fd8cc8828b8f
+          image: itzg/mc-router:1.44.1@sha256:d7caacfe1976e25e542a4c40811af6ab684f85d678f1b8e31494e73073f8d676
           args:
             - --port=25565
             - --mapping=vanilla.eldians.com=vanilla.minecraft.svc.cluster.local:25565,creative.eldians.com=creative.minecraft.svc.cluster.local:25565,revelation.eldians.com=revelation.minecraft.svc.cluster.local:25565
