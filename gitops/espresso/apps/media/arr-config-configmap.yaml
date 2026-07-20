@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: arr-config
+  namespace: media
+data:
+  sync.py: |
+    #!/usr/bin/env python3
+    """Enforce declarative sonarr/radarr settings via their APIs.
+
+    The arr apps keep settings in their own databases, so this job is the
+    declarative source of truth for the pieces we care about. Currently:
+    delay profiles (wait before grabbing torrents so pre-air fakes and
+    bad rips get nuked or superseded before we ever download them).
+    """
+    import json
+    import os
+    import urllib.request
+
+    APPS = {
+        "sonarr": (
+            "http://sonarr-internal.media.svc.cluster.local:8989",
+            os.environ["SONARR_API_KEY"],
+        ),
+        "radarr": (
+            "http://radarr-internal.media.svc.cluster.local:7878",
+            os.environ["RADARR_API_KEY"],
+        ),
+    }
+
+    DELAY_PROFILE = {
+        "enableUsenet": True,
+        "enableTorrent": True,
+        "preferredProtocol": "torrent",
+        "usenetDelay": 0,
+        "torrentDelay": 120,
+        "bypassIfHighestQuality": False,
+        "bypassIfAboveCustomFormatScore": False,
+        "minimumCustomFormatScore": 0,
+    }
+
+
+    def request(method: str, url: str, key: str, body: dict | None = None):
+        data = json.dumps(body).encode() if body is not None else None
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={"X-Api-Key": key, "Content-Type": "application/json"},
+            method=method,
+        )
+        with urllib.request.urlopen(req, timeout=30) as res:
+            payload = res.read().decode()
+            return json.loads(payload) if payload else {}
+
+
+    def main() -> int:
+        for app, (base, key) in APPS.items():
+            profiles = request("GET", f"{base}/api/v3/delayprofile", key)
+            default = next(p for p in profiles if not p["tags"])
+            desired = {**default, **DELAY_PROFILE}
+            if desired == default:
+                print(f"{app}: delay profile in sync")
+                continue
+            request(
+                "PUT", f"{base}/api/v3/delayprofile/{default['id']}", key, desired
+            )
+            print(f"{app}: delay profile updated")
+        return 0
+
+
+    if __name__ == "__main__":
+        raise SystemExit(main())

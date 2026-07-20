@@ -29,6 +29,13 @@ spec:
               value: "1000"
             - name: TZ
               value: "Europe/Oslo"
+            # Pin the API key so the arr-config job (and other integrations)
+            # can authenticate declaratively instead of scraping config.xml.
+            - name: RADARR__AUTH__APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: media-arr-env
+                  key: RADARR_API_KEY
           startupProbe:
             httpGet:
               path: /

@@ -8,6 +8,8 @@ resources:
   - prowlarr-statefulset.yaml
   - radarr-statefulset.yaml
   - sonarr-statefulset.yaml
+  - arr-config-configmap.yaml
+  - arr-config.yaml
   - bazarr-statefulset.yaml
   - musicgrabber-statefulset.yaml
   - navidrome-statefulset.yaml
