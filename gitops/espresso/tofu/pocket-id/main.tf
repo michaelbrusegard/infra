@@ -22,6 +22,8 @@ resource "pocketid_client" "netbird" {
   name = "NetBird"
 
   callback_urls = [
+    "https://netbird-admin.${local.domain}/auth",
+    "https://netbird-admin.${local.domain}/silent-auth",
     "https://netbird-admin.${local.domain}/#callback",
     "https://netbird-admin.${local.domain}/#silent-callback",
     "http://localhost:53000/",
