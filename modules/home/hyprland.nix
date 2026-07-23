@@ -245,6 +245,8 @@ in
               natural_scroll = true;
               scroll_factor = 0.3;
               disable_while_typing = true;
+              clickfinger_behavior = true;
+              tap_to_click = true;
             };
           };
 
