@@ -1,5 +1,8 @@
 inputs: _: prev: let
   inherit (prev.stdenv.hostPlatform) system;
+  paseoPackage = inputs.paseo.packages.${system}.paseo.override {
+    npmDepsHash = "sha256-DL1LamUyFzJOkPYR7eeIefGhzP/mcWGO5oxld/Bt8n0=";
+  };
   t3codePackage = inputs.t3code.packages.${system}.t3-code;
 in
   {
@@ -10,7 +13,7 @@ in
     dms-greeter = inputs.dms.packages.${system}.default;
     dsearch = inputs.dsearch.packages.${system}.default;
     wezterm = inputs.wezterm.packages.${system}.default;
-    paseo = inputs.paseo.packages.${system}.paseo;
+    paseo = paseoPackage;
     t3code =
       if prev.stdenv.hostPlatform.isLinux
       then
@@ -24,5 +27,7 @@ in
       else t3codePackage;
   }
   // prev.lib.optionalAttrs prev.stdenv.hostPlatform.isLinux {
-    paseo-desktop = inputs.paseo.packages.${system}.desktop;
+    paseo-desktop = inputs.paseo.packages.${system}.desktop.override {
+      paseo = paseoPackage;
+    };
   }
