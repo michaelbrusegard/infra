@@ -35,7 +35,7 @@ spec:
             kubernetes.io/hostname: espresso-1
           containers:
             - name: tagger
-              image: lscr.io/linuxserver/beets:2.12.0@sha256:bc7971dca6454c1cf50c1b19549498c4b7552ca6c9dad634834be5d973a2c386
+              image: lscr.io/linuxserver/beets:2.12.0@sha256:4f36ec21003d985e43ba52572038dd5ff3651d870d484c6b35a5715c44b93f9a
               command:
                 - python3
                 - /scripts/tagger.py
@@ -103,7 +103,7 @@ spec:
             kubernetes.io/hostname: espresso-1
           containers:
             - name: tagger
-              image: lscr.io/linuxserver/beets:2.12.0@sha256:bc7971dca6454c1cf50c1b19549498c4b7552ca6c9dad634834be5d973a2c386
+              image: lscr.io/linuxserver/beets:2.12.0@sha256:4f36ec21003d985e43ba52572038dd5ff3651d870d484c6b35a5715c44b93f9a
               command:
                 - python3
                 - /scripts/tagger.py
@@ -171,7 +171,7 @@ spec:
             kubernetes.io/hostname: espresso-1
           containers:
             - name: tagger
-              image: lscr.io/linuxserver/beets:2.12.0@sha256:bc7971dca6454c1cf50c1b19549498c4b7552ca6c9dad634834be5d973a2c386
+              image: lscr.io/linuxserver/beets:2.12.0@sha256:4f36ec21003d985e43ba52572038dd5ff3651d870d484c6b35a5715c44b93f9a
               command:
                 - python3
                 - /scripts/tagger.py
@@ -236,7 +236,7 @@ spec:
             kubernetes.io/hostname: espresso-1
           containers:
             - name: tagger
-              image: lscr.io/linuxserver/beets:2.12.0@sha256:bc7971dca6454c1cf50c1b19549498c4b7552ca6c9dad634834be5d973a2c386
+              image: lscr.io/linuxserver/beets:2.12.0@sha256:4f36ec21003d985e43ba52572038dd5ff3651d870d484c6b35a5715c44b93f9a
               command:
                 - python3
                 - /scripts/tagger.py
