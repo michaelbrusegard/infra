@@ -24,12 +24,14 @@
     fi
   '';
   # Kanata only grabs keyboards that are connected when it starts; a keyboard
-  # plugged in later is never seized. Restart kanata when the set of external
-  # keyboards changes so it re-grabs everything currently connected.
+  # plugged in later is never seized. Poll the set of external keyboards and
+  # restart kanata when it changes so it re-grabs everything currently
+  # connected. A launchd IOKit LaunchEvent was unreliable after reboot and left
+  # this job in EX_CONFIG without running.
   #
-  # Restarting kanata re-fires the launch event (its Karabiner virtual
-  # keyboard reappears and the seized devices' event services are re-created),
-  # so the state file must only change when a device genuinely comes or goes:
+  # Restarting kanata recreates its Karabiner virtual keyboard and the seized
+  # devices' event services, so the state file must only change when a device
+  # genuinely comes or goes:
   # fingerprint by vendor/product/location only — hidutil row order, registry
   # IDs, and event-service rows all flap with kanata's seize/release cycle.
   # The kanata pid is tracked alongside so a keyboard replugged after kanata
@@ -46,7 +48,6 @@
       | /usr/bin/grep -v 'Apple Internal Keyboard' \
       | /usr/bin/grep -v 'Karabiner' \
       | /usr/bin/awk '{print $1, $2, $3}' | /usr/bin/sort -u || true)
-    [ -n "$current" ] || exit 0
     hash=$(printf '%s' "$current" | /sbin/md5 -q)
     new="$hash $(kanata_pid)"
     old=$(/bin/cat "$state" 2>/dev/null || true)
@@ -136,18 +137,8 @@ in {
     kanata-keyboard-watcher = {
       serviceConfig = {
         ProgramArguments = ["${kanataKeyboardWatcher}"];
-        LaunchEvents = {
-          "com.apple.iokit.matching" = {
-            "keyboard-attached" = {
-              IOMatchLaunchStream = true;
-              IOProviderClass = "IOHIDDevice";
-              IOPropertyMatch = {
-                PrimaryUsagePage = 1;
-                PrimaryUsage = 6;
-              };
-            };
-          };
-        };
+        RunAtLoad = true;
+        StartInterval = 5;
         StandardErrorPath = "/Library/Logs/Kanata/keyboard-watcher.err.log";
         StandardOutPath = "/Library/Logs/Kanata/keyboard-watcher.out.log";
       };
