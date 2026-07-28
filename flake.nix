@@ -104,7 +104,7 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     paseo = {
-      url = "github:getpaseo/paseo/v0.1.110";
+      url = "github:getpaseo/paseo/v0.2.3";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     pi = {

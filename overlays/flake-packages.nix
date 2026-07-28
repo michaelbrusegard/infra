@@ -1,7 +1,7 @@
 inputs: _: prev: let
   inherit (prev.stdenv.hostPlatform) system;
   paseoPackage = inputs.paseo.packages.${system}.paseo.override {
-    npmDepsHash = "sha256-DL1LamUyFzJOkPYR7eeIefGhzP/mcWGO5oxld/Bt8n0=";
+    npmDepsHash = "sha256-n7k3zQ1NOm7dGmpqKE6RaEkl50/M2eFek6XIQJbYCEc=";
   };
   t3codePackage = inputs.t3code.packages.${system}.t3-code;
 in
