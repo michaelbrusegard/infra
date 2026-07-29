@@ -161,6 +161,13 @@
       workspace = 7;
     }
   ];
+  simulatorRules = [
+    {
+      match.class = "^(Emulator|Simulator)$";
+      float = true;
+      pin = true;
+    }
+  ];
 in
   lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
     # Wayland clipboard CLI: `cmd | wl-copy`, `wl-paste` to read back.
@@ -334,11 +341,12 @@ in
           ++ lidBinds;
 
         window_rule =
-          map (r: {
-            match = removeAttrs r ["workspace"];
-            inherit (r) workspace;
-          })
-          workspaceRules;
+          (map (r: {
+              match = removeAttrs r ["workspace"];
+              inherit (r) workspace;
+            })
+            workspaceRules)
+          ++ simulatorRules;
       };
     };
   }

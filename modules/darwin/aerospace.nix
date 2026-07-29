@@ -26,7 +26,11 @@ _: {
             run = "layout floating";
           }
           {
-            "if".app-name-regex-substring = "^Simulator$";
+            "if".app-id = "com.apple.iphonesimulator";
+            run = "layout floating";
+          }
+          {
+            "if".app-name-regex-substring = "^qemu-system-aarch64$";
             run = "layout floating";
           }
           {

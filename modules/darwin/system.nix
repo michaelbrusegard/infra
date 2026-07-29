@@ -175,6 +175,7 @@
         };
       };
       CustomUserPreferences = {
+        "com.android.Emulator"."set.alwaysOnTop" = true;
         "com.apple.symbolichotkeys" = {
           AppleSymbolicHotKeys = {
             "64" = {enabled = false;};
