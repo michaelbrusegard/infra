@@ -1,0 +1,75 @@
+diff --git a/packages/app/src/keyboard/keyboard-shortcuts.ts b/packages/app/src/keyboard/keyboard-shortcuts.ts
+index 5b49de5..acdcaae 100644
+--- a/packages/app/src/keyboard/keyboard-shortcuts.ts
++++ b/packages/app/src/keyboard/keyboard-shortcuts.ts
+@@ -353,14 +353,14 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+   {
+     id: "workspace-navigate-index-cmd-digit-mac",
+     action: "workspace.navigate.index",
+-    combo: "Cmd+Digit",
++    combo: "Ctrl+Digit",
+     when: { mac: true, desktop: true, commandCenter: false },
+     payload: { type: "index" },
+     help: {
+       id: "workspace-jump-index",
+       section: "navigation",
+       label: "Jump to workspace",
+-      keys: ["mod", "1-9"],
++      keys: ["ctrl", "1-9"],
+     },
+   },
+   {
+@@ -366,14 +366,14 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+   {
+     id: "workspace-navigate-index-ctrl-digit-non-mac",
+     action: "workspace.navigate.index",
+-    combo: "Ctrl+Digit",
++    combo: "Cmd+Digit",
+     when: { mac: false, desktop: true, commandCenter: false, terminal: false },
+     payload: { type: "index" },
+     help: {
+       id: "workspace-jump-index",
+       section: "navigation",
+       label: "Jump to workspace",
+-      keys: ["mod", "1-9"],
++      keys: ["meta", "1-9"],
+     },
+   },
+   {
+@@ -394,14 +394,14 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+   {
+     id: "workspace-tab-navigate-index-cmd-alt-digit-mac-desktop",
+     action: "workspace.tab.navigate.index",
+-    combo: "Cmd+Alt+Digit",
++    combo: "Cmd+Digit",
+     when: { mac: true, desktop: true, commandCenter: false },
+     payload: { type: "index" },
+     help: {
+       id: "workspace-tab-jump-index",
+       section: "navigation",
+       label: "Jump to tab",
+-      keys: ["mod", "alt", "1-9"],
++      keys: ["mod", "1-9"],
+     },
+   },
+   {
+@@ -407,14 +407,14 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+   {
+     id: "workspace-tab-navigate-index-alt-digit-desktop",
+     action: "workspace.tab.navigate.index",
+-    combo: "Alt+Digit",
++    combo: "Ctrl+Digit",
+     when: { mac: false, desktop: true, commandCenter: false },
+     payload: { type: "index" },
+     help: {
+       id: "workspace-tab-jump-index",
+       section: "navigation",
+       label: "Jump to tab",
+-      keys: ["alt", "1-9"],
++      keys: ["ctrl", "1-9"],
+     },
+   },
+   {
+@@ -1394 +1394 @@ export function getWorkspaceIndexJumpModifierKey(platform: {
+-  return platform.isMac ? "Meta" : "Control";
++  return platform.isMac ? "Control" : "Meta";

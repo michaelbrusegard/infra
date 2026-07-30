@@ -3,6 +3,12 @@ inputs: _: prev: let
   paseoPackage = inputs.paseo.packages.${system}.paseo.override {
     npmDepsHash = "sha256-n7k3zQ1NOm7dGmpqKE6RaEkl50/M2eFek6XIQJbYCEc=";
   };
+  paseoDesktopPackage =
+    (inputs.paseo.packages.${system}.desktop.override {
+      paseo = paseoPackage;
+    }).overrideAttrs (old: {
+      patches = (old.patches or []) ++ [../patches/paseo-keybinds.patch];
+    });
   t3codePackage = inputs.t3code.packages.${system}.t3-code;
 in
   {
@@ -27,7 +33,5 @@ in
       else t3codePackage;
   }
   // prev.lib.optionalAttrs prev.stdenv.hostPlatform.isLinux {
-    paseo-desktop = inputs.paseo.packages.${system}.desktop.override {
-      paseo = paseoPackage;
-    };
+    paseo-desktop = paseoDesktopPackage;
   }
