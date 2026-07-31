@@ -23,6 +23,13 @@
   };
   openComputerUseSkill = "${openComputerUseSource}/skills/open-computer-use";
   openComputerUseCommand = lib.getExe pkgs.open-computer-use;
+  ompManagedConfig = (pkgs.formats.yaml {}).generate "omp-managed-config.yml" {
+    disabledProviders = [
+      "claude"
+      "codex"
+    ];
+    tools.approvalMode = "yolo";
+  };
   direnvWrapped = package: executable:
     (pkgs.writeShellApplication {
       name = executable;
@@ -178,13 +185,6 @@ in {
           ]);
 
       file = {
-        ".omp/agent/config.yml".source = (pkgs.formats.yaml {}).generate "omp-config.yml" {
-          disabledProviders = [
-            "claude"
-            "codex"
-          ];
-          tools.approvalMode = "yolo";
-        };
         ".omp/agent/mcp.json".text = builtins.toJSON {
           "$schema" = "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json";
           mcpServers = {
@@ -213,6 +213,30 @@ in {
           recursive = true;
         };
       };
+
+      activation.ompConfig = lib.hm.dag.entryAfter ["linkGeneration"] ''
+        config_file="$HOME/.omp/agent/config.yml"
+        config_dir=$(dirname "$config_file")
+        temp_file=$(mktemp)
+
+        if [ -f "$config_file" ]; then
+          ${lib.getExe pkgs.yq-go} eval-all \
+            'select(fileIndex == 0) * select(fileIndex == 1)' \
+            "$config_file" ${ompManagedConfig} > "$temp_file"
+        else
+          ${pkgs.coreutils}/bin/cp ${ompManagedConfig} "$temp_file"
+        fi
+
+        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
+          $DRY_RUN_CMD mkdir -p "$config_dir"
+          if [ -L "$config_file" ]; then
+            $DRY_RUN_CMD rm -f "$config_file"
+          fi
+          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
+        fi
+
+        rm -f "$temp_file"
+      '';
 
       activation.paseoHostnames = lib.mkIf (paseoHostnames != []) (lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.paseo/config.json"
