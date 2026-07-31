@@ -41,12 +41,19 @@
     rev = "8646fcc9f74f38539c6cdb4c969723336a96ddcd";
     hash = "sha256-X0GEwn/1n6jxmnaF0YMMBWpEOaQ8XOy3yigLXkBDi/w=";
   };
+  remotionSkillsSource = pkgs.fetchFromGitHub {
+    owner = "remotion-dev";
+    repo = "skills";
+    rev = "4951f6aca2a236f2f2a2bff4734566963fe12707";
+    hash = "sha256-5wHRpXGMbIWGuVH3TuHsQBJv4sfrjprX+poo6niqb2o=";
+  };
   sharedAgentSkills = {
     open-browser-use = openBrowserUseSkill;
     open-computer-use = openComputerUseSkill;
     frontend-design = "${frontendDesignSource}/plugins/frontend-design/skills/frontend-design";
     code-reviewer = "${codeReviewerSource}/cli-tool/components/skills/development/code-reviewer";
     excalidraw-diagram = "${excalidrawDiagramSource}";
+    remotion-best-practices = "${remotionSkillsSource}/skills/remotion-best-practices";
   };
   ompSkillFiles = lib.mapAttrs' (name: source:
     lib.nameValuePair ".omp/agent/skills/${name}" {
