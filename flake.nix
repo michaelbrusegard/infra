@@ -107,10 +107,6 @@
       url = "github:getpaseo/paseo/v0.2.3";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
-    pi = {
-      url = "github:lukasl-dev/pi.nix";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
     zen-browser = {
       url = "github:0xc000022070/zen-browser-flake";
       inputs = {
@@ -129,10 +125,6 @@
     fenix = {
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-    claude-code-skills = {
-      url = "github:anthropics/claude-code";
-      flake = false;
     };
     secrets = {
       url = "git+ssh://git@github.com/michaelbrusegard/infra-secrets.git";

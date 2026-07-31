@@ -21,8 +21,6 @@ in {
     jankyborders
     neovim-unwrapped
     vimPlugins
-    opencode
-    opencode-desktop
     claude-code
     uv
     ty
