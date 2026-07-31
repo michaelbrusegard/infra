@@ -87,7 +87,10 @@ in {
       font_size = 15;
       disable_ligatures = "always";
       window_padding_width = 0;
-      hide_window_decorations = true;
+      hide_window_decorations =
+        if pkgs.stdenv.isDarwin
+        then "titlebar-only"
+        else true;
       enabled_layouts = "splits";
       tab_bar_style = "separator";
       tab_title_template = "{index}: {title}";
