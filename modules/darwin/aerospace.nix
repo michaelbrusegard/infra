@@ -1,8 +1,10 @@
 {
+  config,
   lib,
   pkgs,
   ...
 }: let
+  home = config.users.users.${config.system.primaryUser}.home;
   kitty = lib.getExe pkgs.kitty;
   sh = lib.getExe' pkgs.bash "sh";
   yazi = lib.getExe pkgs.yazi;
@@ -112,8 +114,8 @@ in {
           alt-0 = "layout floating tiling";
 
           # Open Kitty
-          alt-enter = "exec-and-forget ${kitty}";
-          alt-shift-enter = "exec-and-forget ${kitty} ${sh} -c '${yazi}'";
+          alt-enter = "exec-and-forget ${kitty} --working-directory ${home}";
+          alt-shift-enter = "exec-and-forget ${kitty} --working-directory ${home} ${sh} -c '${yazi}'";
         };
       };
     };
