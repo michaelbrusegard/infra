@@ -65,7 +65,6 @@ in {
           davinci-resolve
           betaflight-configurator
           qgis
-          ungoogled-chromium
           nextcloudClient
           nextcloud-talk-desktop
         ]

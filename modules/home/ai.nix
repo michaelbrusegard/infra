@@ -6,6 +6,15 @@
   paseoHostnames,
   ...
 }: let
+  openBrowserUseVersion = "0.1.41";
+  openBrowserUseSource = pkgs.fetchFromGitHub {
+    owner = "iFurySt";
+    repo = "open-browser-use";
+    rev = "v${openBrowserUseVersion}";
+    hash = "sha256-126y3P32bqa0tH1+3l/HfZbxItrKOCA/S66AFjueivs=";
+  };
+  openBrowserUseSkill = "${openBrowserUseSource}/skills/open-browser-use";
+  openBrowserUseCommand = lib.getExe pkgs.open-browser-use;
   openComputerUseSource = pkgs.fetchFromGitHub {
     owner = "iFurySt";
     repo = "open-codex-computer-use";
@@ -92,21 +101,36 @@ in {
     codex = {
       enable = true;
       package = direnvWrapped pkgs.codex "codex";
-      settings.mcp_servers.open_computer_use = {
-        command = openComputerUseCommand;
-        args = ["mcp"];
+      settings.mcp_servers = {
+        open_browser_use = {
+          command = openBrowserUseCommand;
+          args = ["mcp"];
+        };
+        open_computer_use = {
+          command = openComputerUseCommand;
+          args = ["mcp"];
+        };
       };
+      skills.open-browser-use = openBrowserUseSkill;
       skills.open-computer-use = openComputerUseSkill;
     };
 
     claude-code = {
       enable = true;
       package = direnvWrapped pkgs.claude-code "claude";
-      mcpServers.open-computer-use = {
-        type = "stdio";
-        command = openComputerUseCommand;
-        args = ["mcp"];
+      mcpServers = {
+        open-browser-use = {
+          type = "stdio";
+          command = openBrowserUseCommand;
+          args = ["mcp"];
+        };
+        open-computer-use = {
+          type = "stdio";
+          command = openComputerUseCommand;
+          args = ["mcp"];
+        };
       };
+      skills.open-browser-use = openBrowserUseSkill;
       skills.open-computer-use = openComputerUseSkill;
       settings.attribution = {
         commit = "";
@@ -121,6 +145,7 @@ in {
       packages =
         [
           (direnvWrapped pkgs.omp "omp")
+          pkgs.open-browser-use
           pkgs.open-computer-use
         ]
         ++ lib.optionals (!isWsl) (with pkgs;
@@ -139,11 +164,22 @@ in {
       file = {
         ".omp/agent/mcp.json".text = builtins.toJSON {
           "$schema" = "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json";
-          mcpServers.open-computer-use = {
-            type = "stdio";
-            command = openComputerUseCommand;
-            args = ["mcp"];
+          mcpServers = {
+            open-browser-use = {
+              type = "stdio";
+              command = openBrowserUseCommand;
+              args = ["mcp"];
+            };
+            open-computer-use = {
+              type = "stdio";
+              command = openComputerUseCommand;
+              args = ["mcp"];
+            };
           };
+        };
+        ".omp/agent/skills/open-browser-use" = {
+          source = openBrowserUseSkill;
+          recursive = true;
         };
         ".omp/agent/skills/open-computer-use" = {
           source = openComputerUseSkill;
@@ -194,6 +230,22 @@ in {
         ];
       };
     };
+
+  programs.chromium = lib.mkIf (!isWsl) {
+    enable = true;
+    package =
+      if pkgs.stdenv.isDarwin
+      then null
+      else pkgs.ungoogled-chromium;
+    extensions = [
+      {
+        id = "bgjoihaepiejlfjinojjfgokghnodnhd";
+        crxPath = pkgs.open-browser-use.chromeExtension;
+        version = openBrowserUseVersion;
+      }
+    ];
+    nativeMessagingHosts = [pkgs.open-browser-use];
+  };
 
   launchd.agents.paseo-netbird-forward = lib.mkIf pkgs.stdenv.isDarwin {
     enable = true;
