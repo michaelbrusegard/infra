@@ -15,6 +15,10 @@
   };
   openBrowserUseSkill = "${openBrowserUseSource}/skills/open-browser-use";
   openBrowserUseCommand = lib.getExe pkgs.open-browser-use;
+  openBrowserUseExtensionDirectory =
+    if pkgs.stdenv.isDarwin
+    then "Library/Application Support/OpenBrowserUse/chrome-extension/release"
+    else ".local/share/open-browser-use/chrome-extension/release";
   openComputerUseSource = pkgs.fetchFromGitHub {
     owner = "iFurySt";
     repo = "open-codex-computer-use";
@@ -237,9 +241,10 @@ in {
               };
             };
           };
-          "Library/Application Support/Open Browser Use/Chrome Extension" = lib.mkIf pkgs.stdenv.isDarwin {
+          "${openBrowserUseExtensionDirectory}" = lib.mkIf (!isWsl) {
             source = pkgs.open-browser-use.chromeExtensionUnpacked;
             recursive = true;
+            force = true;
           };
         }
         // ompSkillFiles;
@@ -318,13 +323,6 @@ in {
       if pkgs.stdenv.isDarwin
       then pkgs.brewCasks.ungoogled-chromium
       else pkgs.ungoogled-chromium;
-    extensions = lib.optionals pkgs.stdenv.isLinux [
-      {
-        id = "bgjoihaepiejlfjinojjfgokghnodnhd";
-        crxPath = pkgs.open-browser-use.chromeExtension;
-        version = openBrowserUseVersion;
-      }
-    ];
     nativeMessagingHosts = [pkgs.open-browser-use];
   };
 
