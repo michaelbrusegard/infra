@@ -1,10 +1,28 @@
 {
   fetchurl,
+  fetchzip,
+  jq,
   lib,
+  runCommand,
   stdenvNoCC,
 }: let
   version = "0.1.41";
   extensionId = "bgjoihaepiejlfjinojjfgokghnodnhd";
+  betaExtensionId = "pnbmoicbkopffjjgfgfglopechaiemkp";
+  betaExtensionPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnBLT95WWVnHYH0pOBRH/eP+BWtlKVmLE/RHkERUTI2+PGDSQrbWVabmTw4CZ3yhjko04dijSX2Az8cnp65xh23Dh5mP5TCtiP9LexRFJokd8EsyeFdtKamMYr0hF1ZUc1/8ZpLnetAU65ZMB9VzHQBqpJWeUwuIvecgfRtGklDgJMjnvcq5J6pttZrzWrI/2B0BNufwsTQfEt7qLtDFPHXmUdtZfQbc2EfYFvkXLDAXicYviiocedrsAGIKUxpyQegobhUFL+tNLOuXKBpZlLFQn3xgm5CyGZwN6bueiV/S7reigVTKAMQ8BX0eacT22e8r0UzjsjkugeHOIonIvtQIDAQAB";
+  chromeExtensionSource = fetchzip {
+    url = "https://github.com/iFurySt/open-browser-use/releases/download/v${version}/open-browser-use-chrome-extension-${version}.zip";
+    hash = "sha256-X5fwUYJ/dLe4BH4wvXUJj8zRyzHSmz1Qp5RuarmEkfU=";
+    stripRoot = false;
+  };
+  keyedChromeExtension = runCommand "open-browser-use-chrome-extension-${version}" {nativeBuildInputs = [jq];} ''
+    mkdir -p "$out"
+    cp -R ${chromeExtensionSource}/. "$out/"
+    chmod u+w "$out/manifest.json"
+    jq --arg key ${lib.escapeShellArg betaExtensionPublicKey} \
+      '.key = $key' "$out/manifest.json" > "$out/manifest.json.tmp"
+    mv "$out/manifest.json.tmp" "$out/manifest.json"
+  '';
   system = stdenvNoCC.hostPlatform.system;
   sources = {
     x86_64-linux = {
@@ -52,7 +70,8 @@ in
         "path": "$out/bin/open-browser-use",
         "type": "stdio",
         "allowed_origins": [
-          "chrome-extension://${extensionId}/"
+          "chrome-extension://${extensionId}/",
+          "chrome-extension://${betaExtensionId}/"
         ]
       }
       EOF
@@ -60,9 +79,12 @@ in
       runHook postInstall
     '';
 
-    passthru.chromeExtension = fetchurl {
-      url = "https://github.com/iFurySt/open-browser-use/releases/download/v${version}/open-browser-use-chrome-extension-${version}.crx";
-      hash = "sha256-E9aZBv/a4HWQG51y2EilNAGlN8hm0o9+qwjfhUc7/fk=";
+    passthru = {
+      chromeExtension = fetchurl {
+        url = "https://github.com/iFurySt/open-browser-use/releases/download/v${version}/open-browser-use-chrome-extension-${version}.crx";
+        hash = "sha256-E9aZBv/a4HWQG51y2EilNAGlN8hm0o9+qwjfhUc7/fk=";
+      };
+      chromeExtensionUnpacked = keyedChromeExtension;
     };
 
     meta = {

@@ -185,6 +185,10 @@ in {
           source = openComputerUseSkill;
           recursive = true;
         };
+        "Library/Application Support/Open Browser Use/Chrome Extension" = lib.mkIf pkgs.stdenv.isDarwin {
+          source = pkgs.open-browser-use.chromeExtensionUnpacked;
+          recursive = true;
+        };
       };
 
       activation.paseoHostnames = lib.mkIf (paseoHostnames != []) (lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -237,7 +241,7 @@ in {
       if pkgs.stdenv.isDarwin
       then null
       else pkgs.ungoogled-chromium;
-    extensions = [
+    extensions = lib.optionals pkgs.stdenv.isLinux [
       {
         id = "bgjoihaepiejlfjinojjfgokghnodnhd";
         crxPath = pkgs.open-browser-use.chromeExtension;
