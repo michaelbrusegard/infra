@@ -104,6 +104,10 @@
 
   home =
     {
+      file.".hushlogin" = lib.mkIf pkgs.stdenv.isDarwin {
+        text = "";
+      };
+
       shellAliases =
         {
           dl = "cd $HOME/Downloads";
