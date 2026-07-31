@@ -7,7 +7,12 @@ inputs: _: prev: let
     (inputs.paseo.packages.${system}.desktop.override {
       paseo = paseoPackage;
     }).overrideAttrs (old: {
-      patches = (old.patches or []) ++ [../patches/paseo-keybinds.patch];
+      patches =
+        (old.patches or [])
+        ++ [
+          ../patches/paseo-keybinds.patch
+          ../patches/paseo-fonts.patch
+        ];
     });
   t3codePackage = inputs.t3code.packages.${system}.t3-code;
 in
