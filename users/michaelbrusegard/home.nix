@@ -28,7 +28,6 @@
     inputs.self.homeManagerModules.slicer
     inputs.self.homeManagerModules.ssh
     inputs.self.homeManagerModules.betterbird
-    inputs.self.homeManagerModules.wezterm
     inputs.self.homeManagerModules.xdg
     inputs.self.homeManagerModules.yazi
     inputs.self.homeManagerModules.zathura

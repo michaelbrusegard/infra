@@ -1,16 +1,4 @@
-{pkgs, ...}: let
-  wezterm-types = pkgs.vimUtils.buildVimPlugin {
-    name = "wezterm-types";
-    src = pkgs.fetchFromGitHub {
-      owner = "DrKJeff16";
-      repo = "wezterm-types";
-      rev = "6eb30925cca3bc776d5ed796c40aa5aeb6daefac";
-      hash = "sha256-IS0iDyXQzhLvy0B4tjk8HQxWQ4NrX6uriDpOlydOi/Q=";
-    };
-  };
-in {
-  programs.neovim.plugins = [wezterm-types];
-
+{pkgs, ...}: {
   programs.neovim.spec = {
     treesitter.grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
       lua
@@ -77,10 +65,6 @@ in {
             {
               path = "\${3rd}/luv/library";
               words = ["vim%.uv"];
-            }
-            {
-              path = "wezterm-types";
-              mods = ["wezterm"];
             }
             "snacks.nvim"
           ];

@@ -279,7 +279,6 @@
   "matugenTemplateFoot": false,
   "matugenTemplateAlacritty": false,
   "matugenTemplateNeovim": false,
-  "matugenTemplateWezterm": false,
   "matugenTemplateDgop": false,
   "matugenTemplateKcolorscheme": false,
   "matugenTemplateVscode": false,

@@ -6,7 +6,6 @@
     inputs.self.homeManagerModules.k8s
     inputs.self.homeManagerModules.neovim
     inputs.self.homeManagerModules.shell
-    inputs.self.homeManagerModules.wezterm
     inputs.self.homeManagerModules.yazi
   ];
 

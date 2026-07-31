@@ -23,7 +23,6 @@ in
     dms-shell = inputs.dms.packages.${system}.default;
     dms-greeter = inputs.dms.packages.${system}.default;
     dsearch = inputs.dsearch.packages.${system}.default;
-    wezterm = inputs.wezterm.packages.${system}.default;
     paseo = paseoPackage;
     t3code =
       if prev.stdenv.hostPlatform.isLinux

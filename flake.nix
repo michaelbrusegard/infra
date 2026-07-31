@@ -114,10 +114,6 @@
         home-manager.follows = "home-manager";
       };
     };
-    wezterm = {
-      url = "github:wez/wezterm?dir=nix";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
     asus-dialpad-driver = {
       url = "github:asus-linux-drivers/asus-dialpad-driver";
       inputs.nixpkgs.follows = "nixpkgs";
