@@ -101,14 +101,21 @@ in {
     codex = {
       enable = true;
       package = direnvWrapped pkgs.codex "codex";
-      settings.mcp_servers = {
-        open_browser_use = {
-          command = openBrowserUseCommand;
-          args = ["mcp"];
-        };
-        open_computer_use = {
-          command = openComputerUseCommand;
-          args = ["mcp"];
+      settings = {
+        approval_policy = "never";
+        sandbox_mode = "danger-full-access";
+        apps._default.enabled = false;
+        mcp_servers = {
+          open_browser_use = {
+            command = openBrowserUseCommand;
+            args = ["mcp"];
+            default_tools_approval_mode = "approve";
+          };
+          open_computer_use = {
+            command = openComputerUseCommand;
+            args = ["mcp"];
+            default_tools_approval_mode = "approve";
+          };
         };
       };
       skills.open-browser-use = openBrowserUseSkill;
@@ -132,10 +139,19 @@ in {
       };
       skills.open-browser-use = openBrowserUseSkill;
       skills.open-computer-use = openComputerUseSkill;
-      settings.attribution = {
-        commit = "";
-        pr = "";
-        sessionUrl = false;
+      settings = {
+        disableRemoteControl = true;
+        enableAllProjectMcpServers = true;
+        enableArtifact = false;
+        env.ENABLE_CLAUDEAI_MCP_SERVERS = "false";
+        permissions.defaultMode = "bypassPermissions";
+        sandbox.enabled = false;
+        skipDangerousModePermissionPrompt = true;
+        attribution = {
+          commit = "";
+          pr = "";
+          sessionUrl = false;
+        };
       };
     };
   };
@@ -162,6 +178,13 @@ in {
           ]);
 
       file = {
+        ".omp/agent/config.yml".source = (pkgs.formats.yaml {}).generate "omp-config.yml" {
+          disabledProviders = [
+            "claude"
+            "codex"
+          ];
+          tools.approvalMode = "yolo";
+        };
         ".omp/agent/mcp.json".text = builtins.toJSON {
           "$schema" = "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json";
           mcpServers = {
