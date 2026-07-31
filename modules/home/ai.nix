@@ -1,5 +1,4 @@
 {
-  inputs,
   pkgs,
   lib,
   isWsl,
@@ -7,14 +6,33 @@
   paseoHostnames,
   ...
 }: let
+  openBrowserUseVersion = "0.1.41";
+  openBrowserUseSource = pkgs.fetchFromGitHub {
+    owner = "iFurySt";
+    repo = "open-browser-use";
+    rev = "v${openBrowserUseVersion}";
+    hash = "sha256-126y3P32bqa0tH1+3l/HfZbxItrKOCA/S66AFjueivs=";
+  };
+  openBrowserUseSkill = "${openBrowserUseSource}/skills/open-browser-use";
+  openBrowserUseCommand = lib.getExe pkgs.open-browser-use;
+  openComputerUseSource = pkgs.fetchFromGitHub {
+    owner = "iFurySt";
+    repo = "open-codex-computer-use";
+    rev = "v0.3.1";
+    hash = "sha256-e3JUiCNFl5nCQph4exBf+BH/6UdRgVTwUJzZE/eGY2s=";
+  };
+  openComputerUseSkill = "${openComputerUseSource}/skills/open-computer-use";
+  openComputerUseCommand = lib.getExe pkgs.open-computer-use;
   direnvWrapped = package: executable:
-    pkgs.writeShellApplication {
+    (pkgs.writeShellApplication {
       name = executable;
       runtimeInputs = [pkgs.direnv];
       text = ''
         exec direnv exec "$PWD" ${lib.getExe' package executable} "$@"
       '';
-    };
+    }).overrideAttrs (_: {
+      inherit (package) version;
+    });
   paseoNetbirdForward = pkgs.writeShellApplication {
     name = "paseo-netbird-forward";
     runtimeInputs =
@@ -79,57 +97,99 @@
     '';
   };
 in {
-  imports = [
-    inputs.pi.homeManagerModules.default
-  ];
-
   programs = {
     codex = {
       enable = true;
       package = direnvWrapped pkgs.codex "codex";
+      settings.mcp_servers = {
+        open_browser_use = {
+          command = openBrowserUseCommand;
+          args = ["mcp"];
+        };
+        open_computer_use = {
+          command = openComputerUseCommand;
+          args = ["mcp"];
+        };
+      };
+      skills.open-browser-use = openBrowserUseSkill;
+      skills.open-computer-use = openComputerUseSkill;
     };
 
     claude-code = {
       enable = true;
       package = direnvWrapped pkgs.claude-code "claude";
+      mcpServers = {
+        open-browser-use = {
+          type = "stdio";
+          command = openBrowserUseCommand;
+          args = ["mcp"];
+        };
+        open-computer-use = {
+          type = "stdio";
+          command = openComputerUseCommand;
+          args = ["mcp"];
+        };
+      };
+      skills.open-browser-use = openBrowserUseSkill;
+      skills.open-computer-use = openComputerUseSkill;
       settings.attribution = {
         commit = "";
         pr = "";
         sessionUrl = false;
       };
     };
-
-    opencode = {
-      enable = true;
-      package = direnvWrapped pkgs.opencode "opencode";
-      settings.autoupdate = false;
-      tui.theme = "catppuccin";
-      skills = {
-        frontend-design = "${inputs.claude-code-skills}/plugins/frontend-design/skills/frontend-design";
-      };
-    };
-
-    pi.coding-agent = {
-      enable = true;
-      package = direnvWrapped pkgs.pi-coding-agent "pi";
-    };
   };
 
   home =
     {
-      packages = lib.mkIf (!isWsl) (with pkgs;
+      packages =
         [
-          opencode-desktop
-          t3code
+          (direnvWrapped pkgs.omp "omp")
+          pkgs.open-browser-use
+          pkgs.open-computer-use
         ]
-        ++ lib.optionals pkgs.stdenv.isLinux [
-          paseo
-          paseo-desktop
-        ]
-        ++ lib.optionals pkgs.stdenv.isDarwin [
-          brewCasks.codex-app
-          brewCasks.paseo
-        ]);
+        ++ lib.optionals (!isWsl) (with pkgs;
+          [
+            t3code
+          ]
+          ++ lib.optionals pkgs.stdenv.isLinux [
+            paseo
+            paseo-desktop
+          ]
+          ++ lib.optionals pkgs.stdenv.isDarwin [
+            brewCasks.codex-app
+            brewCasks.paseo
+          ]);
+
+      file = {
+        ".omp/agent/mcp.json".text = builtins.toJSON {
+          "$schema" = "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json";
+          mcpServers = {
+            open-browser-use = {
+              type = "stdio";
+              command = openBrowserUseCommand;
+              args = ["mcp"];
+            };
+            open-computer-use = {
+              type = "stdio";
+              command = openComputerUseCommand;
+              args = ["mcp"];
+            };
+          };
+        };
+        ".omp/agent/skills/open-browser-use" = {
+          source = openBrowserUseSkill;
+          recursive = true;
+        };
+        ".omp/agent/skills/open-computer-use" = {
+          source = openComputerUseSkill;
+          recursive = true;
+        };
+        "Library/Application Support/Open Browser Use/Chrome Extension" = lib.mkIf pkgs.stdenv.isDarwin {
+          source = pkgs.open-browser-use.chromeExtensionUnpacked;
+          recursive = true;
+        };
+      };
 
       activation.paseoHostnames = lib.mkIf (paseoHostnames != []) (lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.paseo/config.json"
@@ -161,10 +221,7 @@ in {
           [
             ".claude"
             ".codex"
-            ".config/ai.opencode.desktop"
-            ".config/opencode"
-            ".local/share/opencode"
-            ".pi"
+            ".omp"
           ]
           ++ lib.optionals (!isWsl) [
             ".config/Paseo"
@@ -177,6 +234,22 @@ in {
         ];
       };
     };
+
+  programs.chromium = lib.mkIf (!isWsl) {
+    enable = true;
+    package =
+      if pkgs.stdenv.isDarwin
+      then pkgs.brewCasks.ungoogled-chromium
+      else pkgs.ungoogled-chromium;
+    extensions = lib.optionals pkgs.stdenv.isLinux [
+      {
+        id = "bgjoihaepiejlfjinojjfgokghnodnhd";
+        crxPath = pkgs.open-browser-use.chromeExtension;
+        version = openBrowserUseVersion;
+      }
+    ];
+    nativeMessagingHosts = [pkgs.open-browser-use];
+  };
 
   launchd.agents.paseo-netbird-forward = lib.mkIf pkgs.stdenv.isDarwin {
     enable = true;

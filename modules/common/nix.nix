@@ -30,7 +30,6 @@
         "https://wezterm.cachix.org?priority=50"
         "https://yazi.cachix.org?priority=60"
         "https://cache.garnix.io?priority=70"
-        "https://pi.cachix.org?priority=80"
       ];
 
       trusted-public-keys = [
@@ -41,7 +40,6 @@
         "wezterm.cachix.org-1:kAbhjYUC9qvblTE+s7S+kl5XM1zVa4skO+E/1IDWdH0="
         "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
         "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
-        "pi.cachix.org-1:lGeoGJaZ5ZDabuRzkcD5EBTNnDM4HJ1vqeOxlWk1Flk="
       ];
     };
   };

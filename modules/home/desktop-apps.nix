@@ -65,7 +65,6 @@ in {
           davinci-resolve
           betaflight-configurator
           qgis
-          ungoogled-chromium
           nextcloudClient
           nextcloud-talk-desktop
         ]
@@ -88,7 +87,6 @@ in {
           brewCasks.wootility
           utm
           brewCasks.crystalfetch
-          brewCasks.ungoogled-chromium
           brewCasks.nextcloud
           brewCasks.nextcloud-talk
         ]);

@@ -17,7 +17,6 @@ _: {
     ./formatting.nix
     ./dap.nix
     ./test.nix
-    ./ai.nix
     ./lang/nix.nix
     ./lang/python.nix
     ./lang/typescript.nix

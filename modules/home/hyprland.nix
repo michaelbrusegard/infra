@@ -88,10 +88,6 @@
       workspace = 3;
     }
     {
-      class = "^(ai.opencode.desktop)$";
-      workspace = 3;
-    }
-    {
       class = "^(electron)$";
       initial_title = "^Paseo$";
       workspace = 3;
