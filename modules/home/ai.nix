@@ -23,6 +23,37 @@
   };
   openComputerUseSkill = "${openComputerUseSource}/skills/open-computer-use";
   openComputerUseCommand = lib.getExe pkgs.open-computer-use;
+  frontendDesignSource = pkgs.fetchFromGitHub {
+    owner = "anthropics";
+    repo = "claude-code";
+    rev = "7ef6eec9d9ba84ea6f233f26c45f1df5c5991843";
+    hash = "sha256-E18pPkdErB133CIShgLBhdHBiyPALuRl30uOqhy21v0=";
+  };
+  codeReviewerSource = pkgs.fetchFromGitHub {
+    owner = "davila7";
+    repo = "claude-code-templates";
+    rev = "f2ba9f42ce5c958e1588859fdbbb96eab40db3ee";
+    hash = "sha256-K3FKutnKROzvHRqihVXPgzAb2tb8AmewCMrtvdUMAL0=";
+  };
+  excalidrawDiagramSource = pkgs.fetchFromGitHub {
+    owner = "coleam00";
+    repo = "excalidraw-diagram-skill";
+    rev = "8646fcc9f74f38539c6cdb4c969723336a96ddcd";
+    hash = "sha256-X0GEwn/1n6jxmnaF0YMMBWpEOaQ8XOy3yigLXkBDi/w=";
+  };
+  sharedAgentSkills = {
+    open-browser-use = openBrowserUseSkill;
+    open-computer-use = openComputerUseSkill;
+    frontend-design = "${frontendDesignSource}/plugins/frontend-design/skills/frontend-design";
+    code-reviewer = "${codeReviewerSource}/cli-tool/components/skills/development/code-reviewer";
+    excalidraw-diagram = "${excalidrawDiagramSource}";
+  };
+  ompSkillFiles = lib.mapAttrs' (name: source:
+    lib.nameValuePair ".omp/agent/skills/${name}" {
+      inherit source;
+      recursive = true;
+    })
+  sharedAgentSkills;
   ompManagedConfig = (pkgs.formats.yaml {}).generate "omp-managed-config.yml" {
     disabledProviders = [
       "claude"
@@ -125,8 +156,7 @@ in {
           };
         };
       };
-      skills.open-browser-use = openBrowserUseSkill;
-      skills.open-computer-use = openComputerUseSkill;
+      skills = sharedAgentSkills;
     };
 
     claude-code = {
@@ -144,8 +174,7 @@ in {
           args = ["mcp"];
         };
       };
-      skills.open-browser-use = openBrowserUseSkill;
-      skills.open-computer-use = openComputerUseSkill;
+      skills = sharedAgentSkills;
       settings = {
         disableRemoteControl = true;
         enableAllProjectMcpServers = true;
@@ -184,35 +213,29 @@ in {
             brewCasks.paseo
           ]);
 
-      file = {
-        ".omp/agent/mcp.json".text = builtins.toJSON {
-          "$schema" = "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json";
-          mcpServers = {
-            open-browser-use = {
-              type = "stdio";
-              command = openBrowserUseCommand;
-              args = ["mcp"];
-            };
-            open-computer-use = {
-              type = "stdio";
-              command = openComputerUseCommand;
-              args = ["mcp"];
+      file =
+        {
+          ".omp/agent/mcp.json".text = builtins.toJSON {
+            "$schema" = "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json";
+            mcpServers = {
+              open-browser-use = {
+                type = "stdio";
+                command = openBrowserUseCommand;
+                args = ["mcp"];
+              };
+              open-computer-use = {
+                type = "stdio";
+                command = openComputerUseCommand;
+                args = ["mcp"];
+              };
             };
           };
-        };
-        ".omp/agent/skills/open-browser-use" = {
-          source = openBrowserUseSkill;
-          recursive = true;
-        };
-        ".omp/agent/skills/open-computer-use" = {
-          source = openComputerUseSkill;
-          recursive = true;
-        };
-        "Library/Application Support/Open Browser Use/Chrome Extension" = lib.mkIf pkgs.stdenv.isDarwin {
-          source = pkgs.open-browser-use.chromeExtensionUnpacked;
-          recursive = true;
-        };
-      };
+          "Library/Application Support/Open Browser Use/Chrome Extension" = lib.mkIf pkgs.stdenv.isDarwin {
+            source = pkgs.open-browser-use.chromeExtensionUnpacked;
+            recursive = true;
+          };
+        }
+        // ompSkillFiles;
 
       activation.ompConfig = lib.hm.dag.entryAfter ["linkGeneration"] ''
         config_file="$HOME/.omp/agent/config.yml"
