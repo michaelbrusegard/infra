@@ -12,7 +12,7 @@
     dotDir = "${config.xdg.configHome}/zsh";
     enableVteIntegration = true;
     autocd = true;
-    enableCompletion = true;
+    enableCompletion = false;
     autosuggestion = {
       enable = true;
       highlight = "fg=#6c7086";
@@ -35,63 +35,65 @@
       searchUpKey = "^P";
       searchDownKey = "^N";
     };
-    initContent = ''
-      if [[ -r "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+    initContent = lib.mkMerge [
+      (lib.mkOrder 500 ''
+        if [[ -r "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
           source "${config.xdg.cacheHome}/p10k-instant-prompt-''${(%):-%n}.zsh"
-      fi
+        fi
+      '')
+      (lib.mkOrder 1000 ''
+        source ${inputs.self}/config/shell/p10k.zsh
+        bindkey -v
+        export KEYTIMEOUT=1
+        bindkey '^Y' autosuggest-accept
+        bindkey '^E' autosuggest-clear
 
-      source ${inputs.self}/config/shell/p10k.zsh
-      bindkey -v
-      export KEYTIMEOUT=1
-      bindkey '^Y' autosuggest-accept
-      bindkey '^E' autosuggest-clear
+        typeset -gA __direnv_zsh_completions
 
-      typeset -gA __direnv_zsh_completions
+        _direnv_load_zsh_completions() {
+          emulate -L zsh
 
-      _direnv_load_zsh_completions() {
-        emulate -L zsh
+          (( $+functions[compdef] )) || return 0
 
-        (( $+functions[compdef] )) || return 0
+          local -A desired_completions
+          local spec command completion_file loaded_command
 
-        local -A desired_completions
-        local spec command completion_file loaded_command
+          for spec in ''${(z)DIRENV_ZSH_COMPLETIONS}; do
+            command="''${spec%%=*}"
+            completion_file="''${spec#*=}"
 
-        for spec in ''${(z)DIRENV_ZSH_COMPLETIONS}; do
-          command="''${spec%%=*}"
-          completion_file="''${spec#*=}"
+            if [[ -z "$command" || "$command" == "$spec" || -z "$completion_file" || ! -r "$completion_file" ]]; then
+              continue
+            fi
 
-          if [[ -z "$command" || "$command" == "$spec" || -z "$completion_file" || ! -r "$completion_file" ]]; then
-            continue
-          fi
+            desired_completions[$command]="$completion_file"
 
-          desired_completions[$command]="$completion_file"
+            if [[ "''${__direnv_zsh_completions[$command]-}" != "$completion_file" ]]; then
+              compdef -d "$command" 2>/dev/null || true
+              source "$completion_file"
+              __direnv_zsh_completions[$command]="$completion_file"
+            fi
+          done
 
-          if [[ "''${__direnv_zsh_completions[$command]-}" != "$completion_file" ]]; then
-            compdef -d "$command" 2>/dev/null || true
-            source "$completion_file"
-            __direnv_zsh_completions[$command]="$completion_file"
-          fi
-        done
+          for loaded_command in ''${(k)__direnv_zsh_completions}; do
+            if [[ -z "''${desired_completions[$loaded_command]-}" ]]; then
+              compdef -d "$loaded_command" 2>/dev/null || true
+              unset "__direnv_zsh_completions[$loaded_command]"
+            fi
+          done
+        }
 
-        for loaded_command in ''${(k)__direnv_zsh_completions}; do
-          if [[ -z "''${desired_completions[$loaded_command]-}" ]]; then
-            compdef -d "$loaded_command" 2>/dev/null || true
-            unset "__direnv_zsh_completions[$loaded_command]"
-          fi
-        done
-      }
-
-      autoload -Uz add-zsh-hook
-      add-zsh-hook precmd _direnv_load_zsh_completions
-      _direnv_load_zsh_completions
-    '';
+        autoload -Uz add-zsh-hook
+        add-zsh-hook precmd _direnv_load_zsh_completions
+        _direnv_load_zsh_completions
+      '')
+    ];
     antidote = {
       enable = true;
       useFriendlyNames = true;
       plugins = [
-        "romkatv/powerlevel10k"
         "getantidote/use-omz"
-        "ohmyzsh/ohmyzsh path:lib"
+        "romkatv/powerlevel10k path:powerlevel10k.zsh-theme"
         "ohmyzsh/ohmyzsh path:plugins/git"
         "ohmyzsh/ohmyzsh path:plugins/docker"
         "ohmyzsh/ohmyzsh path:plugins/docker-compose"
