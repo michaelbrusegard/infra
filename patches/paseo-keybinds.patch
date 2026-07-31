@@ -375,3 +375,59 @@ index 5b49de5..acdcaae 100644
 @@ -1394 +1520 @@ export function getWorkspaceIndexJumpModifierKey(platform: {
 -  return platform.isMac ? "Meta" : "Control";
 +  return platform.isMac ? "Control" : "Meta";
+diff --git a/packages/app/src/terminal/runtime/terminal-emulator-runtime.ts b/packages/app/src/terminal/runtime/terminal-emulator-runtime.ts
+index 46f5bc8..d081487 100644
+--- a/packages/app/src/terminal/runtime/terminal-emulator-runtime.ts
++++ b/packages/app/src/terminal/runtime/terminal-emulator-runtime.ts
+@@ -100,2 +100,31 @@ const isMac =
+   (/Macintosh|Mac OS/i.test(navigator.userAgent ?? "") ||
+     /Mac/i.test((navigator as Navigator & { platform?: string }).platform ?? ""));
++
++const metaToCtrlKeys = new Set([
++  ..."abcdefghijklmnopqrstuvwxyz0123456789",
++  " ",
++  "[",
++  "]",
++  "\\",
++  "-",
++  "/",
++  "_",
++  "^",
++  "ArrowLeft",
++  "ArrowRight",
++  "ArrowUp",
++  "ArrowDown",
++  "Backspace",
++  "Delete",
++  "Enter",
++]);
++
++function shouldTranslateMetaToCtrl(event: KeyboardEvent, key: string): boolean {
++  if (isMac || !event.metaKey || event.ctrlKey || event.altKey) {
++    return false;
++  }
++  if (event.shiftKey) {
++    return key === "_" || key === "^";
++  }
++  return metaToCtrlKeys.has(key);
++}
+@@ -437,5 +466,18 @@ export class TerminalEmulatorRuntime {
+       if (!normalizedKey || isTerminalModifierDomKey(event.key)) {
+         return true;
+       }
+-
++
++      if (shouldTranslateMetaToCtrl(event, normalizedKey)) {
++        this.callbacks.onTerminalKey?.({
++          key: normalizeTerminalTransportKey(normalizedKey),
++          ctrl: true,
++          shift: false,
++          alt: false,
++          meta: false,
++        });
++        event.preventDefault();
++        event.stopPropagation();
++        return false;
++      }
++
+       if (

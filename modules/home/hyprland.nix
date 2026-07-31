@@ -7,7 +7,7 @@
 }: let
   inherit (lib.generators) mkLuaInline;
 
-  wezterm = lib.getExe pkgs.wezterm;
+  kitty = lib.getExe pkgs.kitty;
   sh = lib.getExe' pkgs.bash "sh";
   yazi = lib.getExe pkgs.yazi;
   systemctl = lib.getExe' pkgs.systemd "systemctl";
@@ -296,9 +296,9 @@ in
             (bind "MOD5 + 0" togglefloating)
 
             # System
-            (bind "MOD5 + RETURN" (exec "${wezterm} start --always-new-process"))
+            (bind "MOD5 + RETURN" (exec kitty))
             (bind "MOD5 + SHIFT + RETURN"
-              (execRaw "${wezterm} start --always-new-process -e ${sh} -c '${yazi}'"))
+              (execRaw "${kitty} ${sh} -c '${yazi}'"))
             (bind "CTRL + SPACE" (exec "dms ipc call spotlight toggle"))
             (bind "CTRL + SHIFT + V" (exec "dms ipc call clipboard toggle"))
             (bind "CTRL + Q" closewindow)

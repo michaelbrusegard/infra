@@ -1,4 +1,12 @@
-_: {
+{
+  lib,
+  pkgs,
+  ...
+}: let
+  kitty = lib.getExe pkgs.kitty;
+  sh = lib.getExe' pkgs.bash "sh";
+  yazi = lib.getExe pkgs.yazi;
+in {
   services = {
     aerospace = {
       enable = true;
@@ -103,9 +111,9 @@ _: {
           # Toggle floating window
           alt-0 = "layout floating tiling";
 
-          # Open WezTerm
-          alt-enter = "exec-and-forget open -na WezTerm --args start --always-new-process";
-          alt-shift-enter = "exec-and-forget open -na WezTerm --args start --always-new-process -e sh -c 'yazi'";
+          # Open Kitty
+          alt-enter = "exec-and-forget ${kitty}";
+          alt-shift-enter = "exec-and-forget ${kitty} ${sh} -c '${yazi}'";
         };
       };
     };
