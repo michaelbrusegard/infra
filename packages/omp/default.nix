@@ -1,4 +1,5 @@
 {
+  autoPatchelfHook,
   fetchurl,
   lib,
   stdenvNoCC,
@@ -36,6 +37,8 @@ in
 
     dontUnpack = true;
     dontStrip = true;
+
+    nativeBuildInputs = lib.optionals stdenvNoCC.hostPlatform.isLinux [autoPatchelfHook];
 
     installPhase = ''
       runHook preInstall
