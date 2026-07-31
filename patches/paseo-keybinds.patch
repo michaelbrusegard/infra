@@ -70,6 +70,308 @@ index 5b49de5..acdcaae 100644
      },
    },
    {
-@@ -1394 +1394 @@ export function getWorkspaceIndexJumpModifierKey(platform: {
+@@ -436,14 +436,14 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+   {
+     id: "workspace-navigate-relative-cmd-left-mac",
+     action: "workspace.navigate.relative",
+-    combo: "Cmd+[",
++    combo: "Ctrl+[",
+     when: { mac: true, desktop: true, commandCenter: false },
+     payload: { type: "delta", delta: -1 },
+     help: {
+       id: "workspace-prev",
+       section: "navigation",
+       label: "Previous workspace",
+-      keys: ["mod", "["],
++      keys: ["ctrl", "["],
+     },
+   },
+   {
+@@ -450,14 +450,14 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+   {
+     id: "workspace-navigate-relative-ctrl-left-non-mac",
+     action: "workspace.navigate.relative",
+-    combo: "Ctrl+[",
++    combo: "Cmd+[",
+     when: { mac: false, desktop: true, commandCenter: false, terminal: false },
+     payload: { type: "delta", delta: -1 },
+     help: {
+       id: "workspace-prev",
+       section: "navigation",
+       label: "Previous workspace",
+-      keys: ["mod", "["],
++      keys: ["meta", "["],
+     },
+   },
+   {
+@@ -464,14 +464,14 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+   {
+     id: "workspace-navigate-relative-cmd-right-mac",
+     action: "workspace.navigate.relative",
+-    combo: "Cmd+]",
++    combo: "Ctrl+]",
+     when: { mac: true, desktop: true, commandCenter: false },
+     payload: { type: "delta", delta: 1 },
+     help: {
+       id: "workspace-next",
+       section: "navigation",
+       label: "Next workspace",
+-      keys: ["mod", "]"],
++      keys: ["ctrl", "]"],
+     },
+   },
+   {
+@@ -478,14 +478,14 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+   {
+     id: "workspace-navigate-relative-ctrl-right-non-mac",
+     action: "workspace.navigate.relative",
+-    combo: "Ctrl+]",
++    combo: "Cmd+]",
+     when: { mac: false, desktop: true, commandCenter: false, terminal: false },
+     payload: { type: "delta", delta: 1 },
+     help: {
+       id: "workspace-next",
+       section: "navigation",
+       label: "Next workspace",
+-      keys: ["mod", "]"],
++      keys: ["meta", "]"],
+     },
+   },
+   {
+@@ -518,34 +518,86 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+   },
+-
++
+   // --- Tab relative navigation ---
++  {
++    id: "workspace-tab-navigate-relative-cmd-shift-left-mac-desktop",
++    action: "workspace.tab.navigate.relative",
++    combo: "Cmd+Shift+[",
++    when: { mac: true, desktop: true, commandCenter: false },
++    payload: { type: "delta", delta: -1 },
++    help: {
++      id: "workspace-tab-prev",
++      section: "navigation",
++      label: "Previous tab",
++      keys: ["mod", "shift", "["],
++    },
++  },
++  {
++    id: "workspace-tab-navigate-relative-ctrl-shift-left-non-mac-desktop",
++    action: "workspace.tab.navigate.relative",
++    combo: "Ctrl+Shift+[",
++    when: { mac: false, desktop: true, commandCenter: false },
++    payload: { type: "delta", delta: -1 },
++    help: {
++      id: "workspace-tab-prev",
++      section: "navigation",
++      label: "Previous tab",
++      keys: ["ctrl", "shift", "["],
++    },
++  },
+   {
+     id: "workspace-tab-navigate-relative-alt-shift-left",
+     action: "workspace.tab.navigate.relative",
+     combo: "Alt+Shift+[",
+-    when: { commandCenter: false },
++    when: { desktop: false, commandCenter: false },
+     payload: { type: "delta", delta: -1 },
+     help: {
+       id: "workspace-tab-prev",
+       section: "navigation",
+       label: "Previous tab",
+       keys: ["alt", "shift", "["],
+     },
+   },
++  {
++    id: "workspace-tab-navigate-relative-cmd-shift-right-mac-desktop",
++    action: "workspace.tab.navigate.relative",
++    combo: "Cmd+Shift+]",
++    when: { mac: true, desktop: true, commandCenter: false },
++    payload: { type: "delta", delta: 1 },
++    help: {
++      id: "workspace-tab-next",
++      section: "navigation",
++      label: "Next tab",
++      keys: ["mod", "shift", "]"],
++    },
++  },
++  {
++    id: "workspace-tab-navigate-relative-ctrl-shift-right-non-mac-desktop",
++    action: "workspace.tab.navigate.relative",
++    combo: "Ctrl+Shift+]",
++    when: { mac: false, desktop: true, commandCenter: false },
++    payload: { type: "delta", delta: 1 },
++    help: {
++      id: "workspace-tab-next",
++      section: "navigation",
++      label: "Next tab",
++      keys: ["ctrl", "shift", "]"],
++    },
++  },
+   {
+     id: "workspace-tab-navigate-relative-alt-shift-right",
+     action: "workspace.tab.navigate.relative",
+     combo: "Alt+Shift+]",
+-    when: { commandCenter: false },
++    when: { desktop: false, commandCenter: false },
+     payload: { type: "delta", delta: 1 },
+     help: {
+       id: "workspace-tab-next",
+       section: "navigation",
+       label: "Next tab",
+       keys: ["alt", "shift", "]"],
+     },
+   },
+-
++
+-  // --- Pane management (mac only) ---
++  // --- Pane management ---
+   {
+     id: "workspace-pane-split-right-cmd-backslash",
+     action: "workspace.pane.split.right",
+@@ -552,6 +604,18 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+       keys: ["mod", "\\"],
+     },
+   },
++  {
++    id: "workspace-pane-split-right-ctrl-backslash-non-mac",
++    action: "workspace.pane.split.right",
++    combo: "Ctrl+\\",
++    when: { mac: false, commandCenter: false },
++    help: {
++      id: "workspace-pane-split-right",
++      section: "tabs-panes",
++      label: "Split pane right",
++      keys: ["ctrl", "\\"],
++    },
++  },
+   {
+     id: "workspace-pane-split-down-cmd-shift-backslash",
+     action: "workspace.pane.split.down",
+@@ -564,52 +628,114 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+       keys: ["mod", "shift", "\\"],
+     },
+   },
++  {
++    id: "workspace-pane-split-down-ctrl-shift-backslash-non-mac",
++    action: "workspace.pane.split.down",
++    combo: "Ctrl+Shift+\\",
++    when: { mac: false, commandCenter: false },
++    help: {
++      id: "workspace-pane-split-down",
++      section: "tabs-panes",
++      label: "Split pane down",
++      keys: ["ctrl", "shift", "\\"],
++    },
++  },
++  // Cmd+H is reserved by Electron's standard macOS Hide application role.
++  // Use the same Alt+H/J/K/L pane navigation family as the window managers.
+   {
+     id: "workspace-pane-focus-left-cmd-shift-left",
+     action: "workspace.pane.focus.left",
+-    combo: "Cmd+Shift+ArrowLeft",
++    combo: "Alt+H",
+     when: { mac: true, commandCenter: false, editable: false },
+     help: {
+       id: "workspace-pane-focus-left",
+       section: "tabs-panes",
+       label: "Focus pane left",
+-      keys: ["mod", "shift", "Left"],
++      keys: ["alt", "H"],
+     },
+   },
++  {
++    id: "workspace-pane-focus-left-alt-h-non-mac",
++    action: "workspace.pane.focus.left",
++    combo: "Alt+H",
++    when: { mac: false, commandCenter: false, editable: false },
++    help: {
++      id: "workspace-pane-focus-left",
++      section: "tabs-panes",
++      label: "Focus pane left",
++      keys: ["alt", "H"],
++    },
++  },
+   {
+     id: "workspace-pane-focus-right-cmd-shift-right",
+     action: "workspace.pane.focus.right",
+-    combo: "Cmd+Shift+ArrowRight",
++    combo: "Alt+L",
+     when: { mac: true, commandCenter: false, editable: false },
+     help: {
+       id: "workspace-pane-focus-right",
+       section: "tabs-panes",
+       label: "Focus pane right",
+-      keys: ["mod", "shift", "Right"],
++      keys: ["alt", "L"],
+     },
+   },
++  {
++    id: "workspace-pane-focus-right-alt-l-non-mac",
++    action: "workspace.pane.focus.right",
++    combo: "Alt+L",
++    when: { mac: false, commandCenter: false, editable: false },
++    help: {
++      id: "workspace-pane-focus-right",
++      section: "tabs-panes",
++      label: "Focus pane right",
++      keys: ["alt", "L"],
++    },
++  },
+   {
+     id: "workspace-pane-focus-up-cmd-shift-up",
+     action: "workspace.pane.focus.up",
+-    combo: "Cmd+Shift+ArrowUp",
++    combo: "Alt+K",
+     when: { mac: true, commandCenter: false, editable: false },
+     help: {
+       id: "workspace-pane-focus-up",
+       section: "tabs-panes",
+       label: "Focus pane up",
+-      keys: ["mod", "shift", "Up"],
++      keys: ["alt", "K"],
+     },
+   },
++  {
++    id: "workspace-pane-focus-up-alt-k-non-mac",
++    action: "workspace.pane.focus.up",
++    combo: "Alt+K",
++    when: { mac: false, commandCenter: false, editable: false },
++    help: {
++      id: "workspace-pane-focus-up",
++      section: "tabs-panes",
++      label: "Focus pane up",
++      keys: ["alt", "K"],
++    },
++  },
+   {
+     id: "workspace-pane-focus-down-cmd-shift-down",
+     action: "workspace.pane.focus.down",
+-    combo: "Cmd+Shift+ArrowDown",
++    combo: "Alt+J",
+     when: { mac: true, commandCenter: false, editable: false },
+     help: {
+       id: "workspace-pane-focus-down",
+       section: "tabs-panes",
+       label: "Focus pane down",
+-      keys: ["mod", "shift", "Down"],
++      keys: ["alt", "J"],
++    },
++  },
++  {
++    id: "workspace-pane-focus-down-alt-j-non-mac",
++    action: "workspace.pane.focus.down",
++    combo: "Alt+J",
++    when: { mac: false, commandCenter: false, editable: false },
++    help: {
++      id: "workspace-pane-focus-down",
++      section: "tabs-panes",
++      label: "Focus pane down",
++      keys: ["alt", "J"],
+     },
+   },
+   {
+@@ -1394 +1520 @@ export function getWorkspaceIndexJumpModifierKey(platform: {
 -  return platform.isMac ? "Meta" : "Control";
 +  return platform.isMac ? "Control" : "Meta";
