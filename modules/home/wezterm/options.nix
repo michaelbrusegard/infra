@@ -24,6 +24,7 @@
       wezterm.target_triple == 'x86_64-pc-windows-msvc' and { 'pwsh', '-NoLogo' } or nil
     '';
     font_size = 15;
+    default_cursor_style = "BlinkingBar";
     window_padding = {
       left = 0;
       right = 0;
