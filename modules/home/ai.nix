@@ -239,7 +239,7 @@ in {
     enable = true;
     package =
       if pkgs.stdenv.isDarwin
-      then null
+      then pkgs.brewCasks.ungoogled-chromium
       else pkgs.ungoogled-chromium;
     extensions = lib.optionals pkgs.stdenv.isLinux [
       {

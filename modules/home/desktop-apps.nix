@@ -87,7 +87,6 @@ in {
           brewCasks.wootility
           utm
           brewCasks.crystalfetch
-          brewCasks.ungoogled-chromium
           brewCasks.nextcloud
           brewCasks.nextcloud-talk
         ]);
