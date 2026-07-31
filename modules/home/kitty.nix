@@ -85,8 +85,6 @@ in {
     settings = {
       font_family = "GeistMono Nerd Font";
       font_size = 15;
-      cursor_shape = "block";
-      shell_integration = "no-rc no-cursor";
       disable_ligatures = "always";
       window_padding_width = 0;
       enabled_layouts = "splits";
