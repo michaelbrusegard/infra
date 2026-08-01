@@ -3,9 +3,10 @@
 in {
   programs.zen-browser.profiles."default".search = {
     force = true;
-    default = "ddg";
-    privateDefault = "ddg";
+    default = "SearXNG";
+    privateDefault = "SearXNG";
     order = [
+      "SearXNG"
       "ddg"
       "ChatGPT"
       "Nix Packages"
@@ -16,6 +17,21 @@ in {
       "Printables"
     ];
     engines = {
+      "SearXNG" = {
+        urls = [
+          {
+            template = "https://search.asgard.michaelbrusegard.com/search";
+            params = [
+              {
+                name = "q";
+                value = "{searchTerms}";
+              }
+            ];
+          }
+        ];
+        icon = "https://search.asgard.michaelbrusegard.com/favicon.ico";
+        definedAliases = ["@sx" "@searx" "@searxng"];
+      };
       "ddg" = {
         urls = [
           {

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng-config
+  namespace: searxng
+data:
+  settings.yml: |
+    use_default_settings: true
+
+    general:
+      instance_name: Espresso Search
+
+    search:
+      formats:
+        - html
+        - json
+
+    server:
+      image_proxy: true
+      method: GET
+
+    ui:
+      query_in_title: false

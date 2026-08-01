@@ -12,7 +12,7 @@ _: {
     OfferToSaveLogins = false;
 
     SearchEngines = {
-      Default = "DuckDuckGo";
+      Default = "SearXNG";
       PreventInstalls = true;
       Remove = [
         "Google"

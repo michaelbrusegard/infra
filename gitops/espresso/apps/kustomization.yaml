@@ -9,6 +9,7 @@ resources:
   - nextcloud
   - ollama
   - pocket-id
+  - searxng
   - signal
   - stalwart
   - uptime-kuma

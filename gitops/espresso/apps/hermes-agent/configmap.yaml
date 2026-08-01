@@ -42,7 +42,7 @@ data:
       mode: never
 
     web:
-      backend: exa
+      backend: searxng
 
     skills:
       disabled:

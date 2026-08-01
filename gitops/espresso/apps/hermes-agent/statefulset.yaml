@@ -59,6 +59,8 @@ spec:
           env:
             - name: HERMES_HOME
               value: /opt/data
+            - name: SEARXNG_URL
+              value: http://searxng.searxng.svc.cluster.local:8080
             - name: API_SERVER_ENABLED
               value: "true"
             - name: API_SERVER_HOST

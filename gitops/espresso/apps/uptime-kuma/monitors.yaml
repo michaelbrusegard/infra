@@ -32,6 +32,16 @@ data:
         "active": true
       },
       {
+        "name": "SearXNG",
+        "type": "http",
+        "parent_name": "infrastructure[0]",
+        "url": "http://searxng.searxng.svc.cluster.local:8080/healthz",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
         "name": "RustFS S3 API",
         "type": "port",
         "parent_name": "infrastructure[0]",
