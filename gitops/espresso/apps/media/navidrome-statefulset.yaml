@@ -29,8 +29,8 @@ spec:
               value: "/data"
             - name: ND_LOGLEVEL
               value: "info"
-            - name: ND_SCANINTERVAL
-              value: "5m"
+            - name: ND_SCANNER_SCHEDULE
+              value: "@every 5m"
             - name: TZ
               value: "Europe/Oslo"
           startupProbe:
