@@ -17,6 +17,7 @@ resources:
   - music-tagger.yaml
   - listenbrainz-bridge-configmap.yaml
   - listenbrainz-bridge.yaml
+  - listenbrainz-bridge-monitoring.yaml
   - recommendation-cleanup.yaml
   - feishin-deployment.yaml
   - jellyfin-statefulset.yaml

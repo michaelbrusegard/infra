@@ -17,7 +17,7 @@ metadata:
   name: listenbrainz-bridge
   namespace: media
 spec:
-  schedule: "35 4 * * *"
+  schedule: "35 4,16 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -71,6 +71,11 @@ spec:
                     configMapKeyRef:
                       name: listenbrainz-bridge-config
                       key: STATE_DB
+                - name: METRICS_PATH
+                  valueFrom:
+                    configMapKeyRef:
+                      name: listenbrainz-bridge-config
+                      key: METRICS_PATH
                 - name: MAX_TRACKS_PER_RUN
                   valueFrom:
                     configMapKeyRef:

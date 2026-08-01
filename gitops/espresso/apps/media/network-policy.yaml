@@ -39,6 +39,14 @@ spec:
               protocol: TCP
             - port: "9091"
               protocol: TCP
+    # Prometheus scraping for the ListenBrainz bridge metrics exporter
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: metrics
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:

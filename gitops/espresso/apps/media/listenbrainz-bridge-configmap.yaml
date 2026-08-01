@@ -5,10 +5,10 @@ metadata:
   namespace: media
 data:
   LISTENBRAINZ_API_URL: "https://api.listenbrainz.org"
-  LISTENBRAINZ_USERNAME: "michaelbrusegard"
   MUSICGRABBER_URL: "http://musicgrabber-internal.media.svc.cluster.local:8080"
   MUSIC_ROOT: "/music"
   STATE_DB: "/state/listenbrainz-bridge.db"
+  METRICS_PATH: "/state/metrics/listenbrainz.prom"
   MAX_TRACKS_PER_RUN: "25"
   PRIORITY_SOURCE: "monochrome"
   PREFERRED_SOURCES: "all"
@@ -20,7 +20,6 @@ data:
     import os
     import re
     import sqlite3
-    import sys
     import time
     import urllib.error
     import urllib.parse
@@ -34,6 +33,7 @@ data:
     MUSICGRABBER_URL = os.environ.get("MUSICGRABBER_URL", "").rstrip("/")
     MUSIC_ROOT = Path(os.environ.get("MUSIC_ROOT", "/music"))
     STATE_DB = Path(os.environ.get("STATE_DB", "/state/listenbrainz-bridge.db"))
+    METRICS_PATH = Path(os.environ.get("METRICS_PATH", "/state/metrics/listenbrainz.prom"))
     MAX_TRACKS_PER_RUN = int(os.environ.get("MAX_TRACKS_PER_RUN", "25"))
     PRIORITY_SOURCE = os.environ.get("PRIORITY_SOURCE", "monochrome")
     PREFERRED_SOURCES = os.environ.get("PREFERRED_SOURCES", "all")
@@ -111,6 +111,21 @@ data:
               failed integer default 0,
               deleted integer default 0
             );
+            create table if not exists playlist_snapshot(
+              playlist_type text primary key,
+              playlist_mbid text not null,
+              source_title text not null,
+              source_date text,
+              fetched_at text not null
+            );
+            create table if not exists playlist_membership(
+              playlist_type text not null,
+              recommendation_id text not null,
+              position integer not null,
+              primary key(playlist_type, recommendation_id)
+            );
+            create index if not exists playlist_membership_order
+              on playlist_membership(playlist_type, position);
             """
         )
         return conn
@@ -136,11 +151,14 @@ data:
         return http_json(method, f"{MUSICGRABBER_URL}{path}", payload=payload, timeout=60)
 
 
-    def createdfor_playlists():
+    def recommendation_playlists():
         if not USERNAME:
             raise RuntimeError("LISTENBRAINZ_USERNAME is not configured")
         encoded = urllib.parse.quote(USERNAME)
-        payload = http_json("GET", f"{API_URL}/1/user/{encoded}/playlists/createdfor")
+        payload = http_json(
+            "GET",
+            f"{API_URL}/1/user/{encoded}/playlists/recommendations?count=100",
+        )
         return payload.get("playlists") or payload.get("playlist") or []
 
 
@@ -164,16 +182,32 @@ data:
         return identifier.split("/")[-1]
 
 
+    def playlist_date(entry):
+        playlist = unwrap_playlist(entry)
+        return str(playlist.get("date") or "")
+
+
     def find_recommendation_playlists():
-        found = {}
-        for entry in createdfor_playlists():
+        candidates = {key: [] for key in PLAYLISTS}
+        for entry in recommendation_playlists():
             title = playlist_title(entry).lower()
             for playlist_type, spec in PLAYLISTS.items():
-                if playlist_type not in found and any(match in title for match in spec["matches"]):
+                if any(match in title for match in spec["matches"]):
                     identifier = playlist_identifier(entry)
                     if identifier:
-                        found[playlist_type] = identifier
-                        log(f"matched {playlist_type}: {playlist_title(entry)} ({identifier})")
+                        candidates[playlist_type].append(entry)
+        found = {}
+        for playlist_type, entries in candidates.items():
+            if not entries:
+                continue
+            entry = max(entries, key=playlist_date)
+            identifier = playlist_identifier(entry)
+            found[playlist_type] = {
+                "identifier": identifier,
+                "title": playlist_title(entry),
+                "date": playlist_date(entry),
+            }
+            log(f"matched {playlist_type}: {playlist_title(entry)} ({identifier})")
         return found
 
 
@@ -276,10 +310,21 @@ data:
                 update recommendation_seen
                    set last_seen = ?,
                        local_path = coalesce(?, local_path),
-                       status = case when status = 'deleted' then status else ? end
+                       status = case
+                         when status = 'deleted' then status
+                         when ? = 'downloaded' then 'downloaded'
+                         when status in ('queued', 'downloaded', 'lossy_fallback') then status
+                         else ?
+                       end
                  where id = ?
                 """,
-                (timestamp, str(local_path) if local_path else None, status, rec_id),
+                (
+                    timestamp,
+                    str(local_path) if local_path else None,
+                    status,
+                    status,
+                    rec_id,
+                ),
             )
         else:
             conn.execute(
@@ -302,6 +347,50 @@ data:
                 ),
             )
         return rec_id
+
+
+    def replace_playlist_snapshot(conn, playlist_type, source, recommendation_ids):
+        conn.execute(
+            """
+            insert into playlist_snapshot(
+              playlist_type, playlist_mbid, source_title, source_date, fetched_at
+            ) values (?, ?, ?, ?, ?)
+            on conflict(playlist_type) do update set
+              playlist_mbid = excluded.playlist_mbid,
+              source_title = excluded.source_title,
+              source_date = excluded.source_date,
+              fetched_at = excluded.fetched_at
+            """,
+            (
+                playlist_type,
+                source["identifier"],
+                source["title"],
+                source["date"],
+                now(),
+            ),
+        )
+        conn.execute(
+            "delete from playlist_membership where playlist_type = ?",
+            (playlist_type,),
+        )
+        for position, rec_id in enumerate(recommendation_ids):
+            conn.execute(
+                """
+                insert into playlist_membership(
+                  playlist_type, recommendation_id, position
+                ) values (?, ?, ?)
+                on conflict(playlist_type, recommendation_id) do update set
+                  position = min(position, excluded.position)
+                """,
+                (playlist_type, rec_id, position),
+            )
+
+
+    def has_playlist_snapshot(conn, playlist_type):
+        return conn.execute(
+            "select 1 from playlist_snapshot where playlist_type = ?",
+            (playlist_type,),
+        ).fetchone() is not None
 
 
     def mark_queued(conn, ids, import_id):
@@ -415,6 +504,125 @@ data:
             raise
 
 
+    def fair_queue(candidates, limit):
+        selected = []
+        selected_ids = set()
+        offsets = {playlist_type: 0 for playlist_type in PLAYLISTS}
+        while len(selected) < limit:
+            added = False
+            for playlist_type in PLAYLISTS:
+                entries = candidates[playlist_type]
+                while offsets[playlist_type] < len(entries):
+                    item = entries[offsets[playlist_type]]
+                    offsets[playlist_type] += 1
+                    if item[0] in selected_ids:
+                        continue
+                    selected.append((playlist_type, *item))
+                    selected_ids.add(item[0])
+                    added = True
+                    break
+                if len(selected) >= limit:
+                    break
+            if not added:
+                break
+        return selected
+
+
+    def current_playlist_paths(conn, playlist_type, local):
+        rows = conn.execute(
+            """
+            select r.artist, r.title, r.local_path
+              from playlist_membership m
+              join recommendation_seen r on r.id = m.recommendation_id
+             where m.playlist_type = ?
+               and r.status in ('downloaded', 'lossy_fallback')
+             order by m.position
+            """,
+            (playlist_type,),
+        ).fetchall()
+        paths = []
+        for row in rows:
+            path = (
+                Path(row["local_path"])
+                if row["local_path"]
+                else find_local(local, row["artist"], row["title"])
+            )
+            if path and path.exists():
+                paths.append(path)
+        return paths
+
+
+    def refresh_playlist_status_counts(conn, stats):
+        for playlist_type in PLAYLISTS:
+            counts = conn.execute(
+                """
+                select r.status, count(*) as count
+                  from playlist_membership m
+                  join recommendation_seen r on r.id = m.recommendation_id
+                 where m.playlist_type = ?
+                 group by r.status
+                """,
+                (playlist_type,),
+            ).fetchall()
+            by_status = {row["status"]: row["count"] for row in counts}
+            stats[playlist_type]["downloaded"] = (
+                by_status.get("downloaded", 0)
+                + by_status.get("lossy_fallback", 0)
+            )
+            stats[playlist_type]["failed"] = by_status.get("failed", 0)
+
+
+    def previous_success_timestamp():
+        try:
+            text = METRICS_PATH.read_text(encoding="utf-8")
+        except OSError:
+            return 0
+        match = re.search(
+            r"^listenbrainz_bridge_last_success_timestamp_seconds ([0-9]+)$",
+            text,
+            flags=re.MULTILINE,
+        )
+        return int(match.group(1)) if match else 0
+
+
+    def write_metrics(stats, success):
+        timestamp = int(time.time())
+        last_success = timestamp if success else previous_success_timestamp()
+        lines = [
+            "# HELP listenbrainz_bridge_last_run_success Whether the latest bridge run succeeded.",
+            "# TYPE listenbrainz_bridge_last_run_success gauge",
+            f"listenbrainz_bridge_last_run_success {1 if success else 0}",
+            "# HELP listenbrainz_bridge_last_run_timestamp_seconds Unix timestamp of the latest bridge run.",
+            "# TYPE listenbrainz_bridge_last_run_timestamp_seconds gauge",
+            f"listenbrainz_bridge_last_run_timestamp_seconds {timestamp}",
+            "# HELP listenbrainz_bridge_last_success_timestamp_seconds Unix timestamp of the latest successful bridge run.",
+            "# TYPE listenbrainz_bridge_last_success_timestamp_seconds gauge",
+            f"listenbrainz_bridge_last_success_timestamp_seconds {last_success}",
+        ]
+        metric_help = {
+            "source_available": "Whether ListenBrainz returned a current source playlist.",
+            "upstream": "Tracks in the current upstream playlist.",
+            "local": "Current upstream tracks already found locally.",
+            "candidates": "Missing current tracks eligible for download.",
+            "queued": "Tracks queued for download by the latest run.",
+            "downloaded": "Current playlist tracks downloaded or found locally.",
+            "failed": "Current playlist tracks with a failed download.",
+            "rendered": "Playable tracks written to the local M3U playlist.",
+        }
+        for key, help_text in metric_help.items():
+            name = f"listenbrainz_bridge_playlist_{key}"
+            lines.extend([f"# HELP {name} {help_text}", f"# TYPE {name} gauge"])
+            for playlist_type in PLAYLISTS:
+                lines.append(
+                    f'{name}{{playlist_type="{playlist_type}"}} '
+                    f'{stats[playlist_type][key]}'
+                )
+        METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        temporary = METRICS_PATH.with_suffix(".tmp")
+        temporary.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        temporary.replace(METRICS_PATH)
+
+
     def main():
         conn = db()
         started = now()
@@ -423,27 +631,53 @@ data:
             (started,),
         ).fetchone()[0]
         fetched = queued = skipped = failed = 0
-        playlist_paths = {key: [] for key in PLAYLISTS}
-        queue = []
+        stats = {
+            playlist_type: {
+                "source_available": 0,
+                "upstream": 0,
+                "local": 0,
+                "candidates": 0,
+                "queued": 0,
+                "downloaded": 0,
+                "failed": 0,
+                "rendered": 0,
+            }
+            for playlist_type in PLAYLISTS
+        }
+        candidates = {key: [] for key in PLAYLISTS}
         try:
             refresh_musicgrabber_status(conn)
             local = local_index()
             matched = find_recommendation_playlists()
             for playlist_type, spec in PLAYLISTS.items():
-                playlist_mbid = matched.get(playlist_type)
-                if not playlist_mbid:
-                    log(f"no ListenBrainz playlist found for {playlist_type}")
+                source = matched.get(playlist_type)
+                if not source:
+                    log(
+                        f"no ListenBrainz playlist found for {playlist_type}; "
+                        "preserving last snapshot"
+                    )
                     continue
-                tracks = fetch_playlist_tracks(playlist_mbid)
+                stats[playlist_type]["source_available"] = 1
+                tracks = fetch_playlist_tracks(source["identifier"])
+                stats[playlist_type]["upstream"] = len(tracks)
+                if not tracks:
+                    log(
+                        f"empty ListenBrainz playlist for {playlist_type}; "
+                        "preserving last snapshot"
+                    )
+                    continue
                 fetched += len(tracks)
+                recommendation_ids = []
                 for rec in tracks:
                     local_path = find_local(local, rec["artist"], rec["title"])
                     if local_path:
                         rec_id = upsert_seen(conn, playlist_type, rec, "downloaded", local_path)
-                        playlist_paths[playlist_type].append(local_path)
+                        recommendation_ids.append(rec_id)
+                        stats[playlist_type]["local"] += 1
                         skipped += 1
                         continue
                     rec_id = upsert_seen(conn, playlist_type, rec, "seen")
+                    recommendation_ids.append(rec_id)
                     row = conn.execute(
                         "select status from recommendation_seen where id = ?",
                         (rec_id,),
@@ -451,11 +685,20 @@ data:
                     if row and row["status"] in {"queued", "downloaded", "lossy_fallback", "deleted"}:
                         skipped += 1
                         continue
-                    if len(queue) < MAX_TRACKS_PER_RUN:
-                        queue.append((rec_id, rec))
-                    else:
-                        skipped += 1
+                    candidates[playlist_type].append((rec_id, rec))
+                    stats[playlist_type]["candidates"] += 1
+                replace_playlist_snapshot(
+                    conn,
+                    playlist_type,
+                    source,
+                    recommendation_ids,
+                )
 
+            selected = fair_queue(candidates, MAX_TRACKS_PER_RUN)
+            for playlist_type, _, _ in selected:
+                stats[playlist_type]["queued"] += 1
+            skipped += sum(len(items) for items in candidates.values()) - len(selected)
+            queue = [(rec_id, rec) for _, rec_id, rec in selected]
             queued = queue_missing(conn, queue)
             conn.commit()
             refresh_musicgrabber_status(conn)
@@ -463,34 +706,36 @@ data:
 
             current_local = local_index()
             for playlist_type, spec in PLAYLISTS.items():
-                rows = conn.execute(
-                    """
-                    select artist, title, local_path
-                      from recommendation_seen
-                     where playlist_type = ?
-                       and status in ('downloaded', 'lossy_fallback')
-                    """,
-                    (playlist_type,),
-                ).fetchall()
-                paths = []
-                for row in rows:
-                    path = Path(row["local_path"]) if row["local_path"] else find_local(current_local, row["artist"], row["title"])
-                    if path and path.exists():
-                        paths.append(path)
+                if not has_playlist_snapshot(conn, playlist_type):
+                    log(
+                        f"no stored snapshot for {playlist_type}; "
+                        f"preserving playlist {spec['path']}"
+                    )
+                    continue
+                paths = current_playlist_paths(conn, playlist_type, current_local)
                 write_playlist(spec["path"], spec["title"], paths)
-        except Exception as exc:
+                stats[playlist_type]["rendered"] = len(paths)
+            refresh_playlist_status_counts(conn, stats)
+            write_metrics(stats, success=True)
+        except Exception:
             failed += 1
             conn.execute(
                 "update runs set finished_at = ?, fetched = ?, queued = ?, skipped = ?, failed = ? where id = ?",
                 (now(), fetched, queued, skipped, failed, run_id),
             )
             conn.commit()
+            try:
+                refresh_playlist_status_counts(conn, stats)
+                write_metrics(stats, success=False)
+            except Exception as metrics_exc:
+                log(f"failed to write failure metrics: {metrics_exc}")
             raise
         conn.execute(
             "update runs set finished_at = ?, fetched = ?, queued = ?, skipped = ?, failed = ? where id = ?",
             (now(), fetched, queued, skipped, failed, run_id),
         )
         conn.commit()
+        log("playlist_stats=" + json.dumps(stats, sort_keys=True))
         log(f"complete fetched={fetched} queued={queued} skipped={skipped} failed={failed}")
         return 0
 

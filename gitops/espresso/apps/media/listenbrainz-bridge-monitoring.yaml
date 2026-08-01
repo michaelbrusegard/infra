@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listenbrainz-bridge-metrics
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: listenbrainz-bridge-metrics
+  template:
+    metadata:
+      labels:
+        app: listenbrainz-bridge-metrics
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: espresso-1
+      initContainers:
+        - name: init-metrics
+          image: busybox:1.38.0@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8
+          command:
+            - sh
+            - -c
+            - mkdir -p /state/metrics
+          volumeMounts:
+            - name: state
+              mountPath: /state
+      containers:
+        - name: metrics
+          image: busybox:1.38.0@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8
+          command:
+            - httpd
+            - -f
+            - -p
+            - "9100"
+            - -h
+            - /metrics
+          ports:
+            - name: metrics
+              containerPort: 9100
+          resources:
+            requests:
+              cpu: 5m
+              memory: 8Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          volumeMounts:
+            - name: state
+              mountPath: /metrics
+              subPath: metrics
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: config-listenbrainz-bridge
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: listenbrainz-bridge-metrics
+  namespace: media
+spec:
+  selector:
+    app: listenbrainz-bridge-metrics
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: listenbrainz-bridge
+  namespace: media
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: listenbrainz-bridge-metrics
+  podMetricsEndpoints:
+    - port: metrics
+      path: /listenbrainz.prom
+      interval: 1m
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: listenbrainz-bridge
+  namespace: media
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: listenbrainz-bridge
+      rules:
+        - alert: ListenBrainzBridgeRunFailed
+          expr: listenbrainz_bridge_last_run_success{namespace="media"} == 0
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: ListenBrainz bridge run failed
+            description: The latest ListenBrainz bridge CronJob run did not complete successfully.
+        - alert: ListenBrainzBridgeStale
+          expr: time() - listenbrainz_bridge_last_success_timestamp_seconds{namespace="media"} > 108000
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: ListenBrainz bridge has not succeeded recently
+            description: The ListenBrainz bridge has not completed successfully in more than 30 hours.
