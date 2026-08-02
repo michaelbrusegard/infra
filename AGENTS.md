@@ -142,7 +142,7 @@ Format:
 - **Scope**: prefer one whenever the change is local to a slice. Common scopes:
   - Platform: `darwin`, `nixos`, `home`, `common`
   - Host/cluster: `lungo`, `ristretto`, `forte`, `macchiato`, `leggero`, `espresso`
-  - Area: `flake`, `lib`, `gitops`, `tofu`, `cli`, `neovim`, `wezterm`, `hyprland`
+  - Area: `flake`, `lib`, `gitops`, `tofu`, `cli`, `neovim`, `hyprland`
 
 Good:
 

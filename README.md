@@ -245,8 +245,6 @@ The script:
 
 - Installs winget packages (browsers, terminals, dev tools, games launchers).
 - Symlinks the PowerShell 7 profile and FanControl config from WSL.
-- Sets `WEZTERM_CONFIG_FILE` to the home-manager-generated `wezterm.lua`
-  in WSL.
 - Extracts `windows/keyboard.zip` and runs the MSKLC `setup.exe` to install
   the custom AltGr-on-US keyboard layout (edit `keyboard.klc` in MSKLC to
   modify).
