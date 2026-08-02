@@ -87,6 +87,11 @@ locals {
       address = "s3.manafishrov.com"
       group   = "manafish"
     }
+    searxng = {
+      name    = "SearXNG"
+      address = "search.${local.domain}"
+      group   = "infra"
+    }
     seerr = {
       name    = "Seerr"
       address = "seerr.${local.domain}"
