@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cliproxyapi
+  namespace: cliproxyapi
+spec:
+  replicas: 1
+  serviceName: cliproxyapi-internal
+  selector:
+    matchLabels:
+      app: cliproxyapi
+  template:
+    metadata:
+      labels:
+        app: cliproxyapi
+      annotations:
+        secret.reloader.stakater.com/reload: cliproxyapi
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 10000
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: render-config
+          image: busybox:1.38.0@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              api_key="$(cat /secret/API_KEY)"
+              sed "s|__API_KEY__|$api_key|g" /template/config.yaml > /config/config.yaml
+              mkdir -p /data/auths
+              chown -R 10000:10000 /config /data
+              chmod 0600 /config/config.yaml
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: config-template
+              mountPath: /template
+              readOnly: true
+            - name: secret
+              mountPath: /secret
+              readOnly: true
+            - name: config
+              mountPath: /config
+            - name: auth
+              mountPath: /data
+      containers:
+        - name: cliproxyapi
+          image: docker.io/eceasy/cli-proxy-api:v7.2.104
+          command:
+            - /CLIProxyAPI/CLIProxyAPI
+          args:
+            - -config
+            - /config/config.yaml
+          ports:
+            - name: http
+              containerPort: 8317
+            - name: oauth-8085
+              containerPort: 8085
+            - name: oauth-1455
+              containerPort: 1455
+            - name: oauth-54545
+              containerPort: 54545
+            - name: oauth-51121
+              containerPort: 51121
+            - name: oauth-11451
+              containerPort: 11451
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: auth
+              mountPath: /data
+      volumes:
+        - name: config-template
+          configMap:
+            name: cliproxyapi
+        - name: secret
+          secret:
+            secretName: cliproxyapi
+        - name: config
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: auth
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: nvme-ha
+        resources:
+          requests:
+            storage: 2Gi

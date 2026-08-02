@@ -65,11 +65,35 @@ spec:
             k8s:io.kubernetes.pod.namespace: hermes-agent
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: signal
-            k8s:app: signal-cli
+            k8s:io.kubernetes.pod.namespace: cliproxyapi
+            k8s:app: cliproxyapi
       toPorts:
         - ports:
-            - port: "3000"
+            - port: "8317"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: hindsight
+            k8s:app: hindsight
+      toPorts:
+        - ports:
+            - port: "8888"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mattermost
+            k8s:app: mattermost
+      toPorts:
+        - ports:
+            - port: "8065"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mealie
+            k8s:app: mealie
+      toPorts:
+        - ports:
+            - port: "9000"
               protocol: TCP
     - toCIDRSet:
         - cidr: 10.42.0.0/16

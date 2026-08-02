@@ -23,8 +23,9 @@
 
   services.restic.server.initializeRepositories = {
     bazarr = ["repo-config"];
+    cliproxyapi = ["pvc"];
     hermes-agent = ["pvc"];
-    honcho = ["postgres"];
+    hindsight = ["postgres"];
     immich = [
       "postgres"
       "uploads"
@@ -34,6 +35,14 @@
     minecraft-revelation = ["world"];
     minecraft-vanilla = ["world"];
     media-music = ["repo-library"];
+    mattermost = [
+      "postgres"
+      "pvc"
+    ];
+    mealie = [
+      "postgres"
+      "pvc"
+    ];
     musicgrabber = ["repo-config"];
     navidrome = ["repo-data"];
     netbird = ["pvc"];

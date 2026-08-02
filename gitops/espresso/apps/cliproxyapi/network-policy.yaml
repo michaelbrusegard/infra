@@ -1,43 +1,50 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: ollama
-  namespace: ollama
+  name: cliproxyapi
+  namespace: cliproxyapi
 spec:
   endpointSelector:
     matchLabels:
-      app: ollama
+      app: cliproxyapi
   ingress:
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "8317"
+              protocol: TCP
     - fromEntities:
         - host
         - remote-node
+        - kube-apiserver
       toPorts:
         - ports:
-            - port: "11434"
+            - port: "8317"
+              protocol: TCP
+            - port: "8085"
+              protocol: TCP
+            - port: "1455"
+              protocol: TCP
+            - port: "54545"
+              protocol: TCP
+            - port: "51121"
+              protocol: TCP
+            - port: "11451"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: hermes-agent
             k8s:app: hermes-agent
-      toPorts:
-        - ports:
-            - port: "11434"
-              protocol: TCP
-    - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: hindsight
             k8s:app: hindsight
-      toPorts:
-        - ports:
-            - port: "11434"
-              protocol: TCP
-    - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: uptime-kuma
             k8s:app: uptime-kuma
       toPorts:
         - ports:
-            - port: "11434"
+            - port: "8317"
               protocol: TCP
   egress:
     - toEndpoints:

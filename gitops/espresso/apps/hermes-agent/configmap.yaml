@@ -6,12 +6,12 @@ metadata:
 data:
   config.yaml: |
     model:
-      provider: zai
-      default: glm-5.1
+      provider: openai-api
+      default: kimi-k3
 
     delegation:
-      provider: zai
-      model: glm-4.5
+      provider: openai-api
+      model: kimi-k3
 
     compression:
       enabled: true
@@ -21,19 +21,24 @@ data:
 
     auxiliary:
       compression:
-        provider: zai
-        model: glm-4.5
+        provider: openai-api
+        model: kimi-k3
       web_extract:
-        provider: zai
-        model: glm-4.5
+        provider: openai-api
+        model: kimi-k3
       vision:
-        provider: zai
-        model: glm-4.5v
+        provider: openai-api
+        model: kimi-k3
 
     memory:
-      provider: honcho
+      provider: hindsight
       memory_enabled: true
       user_profile_enabled: true
+
+    security:
+      allow_lazy_installs: false
+
+    group_sessions_per_user: true
 
     agent:
       reasoning_effort: high
@@ -88,8 +93,28 @@ data:
     terminal:
       backend: local
       cwd: /opt/data/workspace
-  honcho.json: |
+  hindsight.json: |
     {
-      "workspace": "hermes-agent",
-      "baseUrl": "http://honcho.hermes-agent.svc.cluster.local:8000"
+      "mode": "local_external",
+      "api_url": "http://hindsight.hindsight.svc.cluster.local:8888",
+      "bank_id": "hermes",
+      "memory_mode": "hybrid",
+      "recall_budget": "mid",
+      "recall_prefetch_method": "recall",
+      "recall_types": "observation,world,experience",
+      "auto_recall": true,
+      "auto_retain": true,
+      "retain_async": true
     }
+  mealie-skill.md: |
+    ---
+    name: mealie
+    description: Manage recipes, meal plans, and shopping lists in the private Mealie instance.
+    ---
+
+    Use `MEALIE_URL` and `MEALIE_API_TOKEN` with Mealie's REST API. Authenticate
+    every request with `Authorization: Bearer $MEALIE_API_TOKEN`. The account is
+    intentionally non-admin and may read, create, update, and import recipes;
+    manage meal plans; and manage shopping lists. Never attempt administration,
+    user management, or permission changes. Discover endpoint schemas from
+    `$MEALIE_URL/docs` when needed and use `curl` plus `jq` for requests.

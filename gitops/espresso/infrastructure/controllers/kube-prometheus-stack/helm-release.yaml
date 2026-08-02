@@ -65,6 +65,8 @@ spec:
 
     alertmanager:
       alertmanagerSpec:
+        secrets:
+          - mattermost-integrations
         storage:
           volumeClaimTemplate:
             spec:
@@ -87,9 +89,8 @@ spec:
                 - alertname = "Watchdog"
               receiver: "null"
             - matchers:
-                - severity = "critical"
-              receiver: signal
-              continue: true
+                - severity =~ "warning|critical"
+              receiver: mattermost
         inhibit_rules:
           - source_matchers:
               - severity = "critical"
@@ -108,11 +109,12 @@ spec:
             equal: ["namespace"]
         receivers:
           - name: "null"
-          - name: signal
-            webhook_configs:
-              - url: http://alertmanager-signal-bridge.signal.svc.cluster.local:8080/alert
+          - name: mattermost
+            mattermost_configs:
+              - api_url_file: /etc/alertmanager/secrets/mattermost-integrations/ALERTMANAGER_WEBHOOK_URL
+                channel: cluster-alerts
+                username: Alertmanager
                 send_resolved: true
-                max_alerts: 0
 
     grafana:
       deploymentStrategy:

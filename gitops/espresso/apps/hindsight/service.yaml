@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hindsight
+  namespace: hindsight
+spec:
+  selector:
+    app: hindsight
+  ports:
+    - name: api
+      port: 8888
+      targetPort: api
+    - name: control-plane
+      port: 9999
+      targetPort: control-plane

@@ -42,9 +42,6 @@
       {
         PAGER = "moor";
       }
-      // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? zaiCodingApiKeyFile) {
-        ZAI_CODING_API_KEY = "$( [ -f ${config.secrets.keys.zaiCodingApiKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.zaiCodingApiKeyFile} )";
-      }
       // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? tauriSigningPrivateKeyFile) {
         TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.keys.tauriSigningPrivateKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.tauriSigningPrivateKeyFile} )";
       };

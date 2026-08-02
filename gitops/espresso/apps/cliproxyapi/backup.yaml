@@ -1,14 +1,14 @@
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
-  name: hermes-agent-data-backup
-  namespace: hermes-agent
+  name: cliproxyapi-auth-backup
+  namespace: cliproxyapi
 spec:
-  sourcePVC: data-hermes-agent-0
+  sourcePVC: auth-cliproxyapi-0
   trigger:
-    schedule: "30 2 * * *"
+    schedule: "20 2 * * *"
   restic:
-    repository: freddo-restic-hermes-agent-pvc
+    repository: freddo-restic-cliproxyapi-pvc
     pruneIntervalDays: 36500
     retain:
       within: 100y

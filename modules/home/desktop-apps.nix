@@ -47,6 +47,7 @@ in {
           audacity
         ]
         ++ lib.optionals pkgs.stdenv.isLinux [
+          mattermost-desktop
           fluffychat
           imv
           gthumb
@@ -71,6 +72,7 @@ in {
         ++ lib.optionals pkgs.stdenv.isDarwin [
           ice-bar
           brewCasks.raycast
+          brewCasks.mattermost
 
           brewCasks.linearmouse
           brewCasks.legcord
@@ -116,6 +118,7 @@ in {
           ".config/scribus"
           ".config/inkscape"
           ".config/Signal"
+          ".config/Mattermost"
           ".config/Slack"
           ".config/Proton Mail"
           ".config/Proton Pass"

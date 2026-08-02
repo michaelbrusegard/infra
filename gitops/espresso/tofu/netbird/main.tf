@@ -37,6 +37,26 @@ locals {
       address = "hermes.${local.domain}"
       group   = "infra"
     }
+    cliproxyapi = {
+      name    = "CLIProxyAPI"
+      address = "llm.${local.domain}"
+      group   = "infra"
+    }
+    hindsight = {
+      name    = "Hindsight"
+      address = "hindsight.${local.domain}"
+      group   = "infra"
+    }
+    mattermost = {
+      name    = "Mattermost"
+      address = "mattermost.${local.domain}"
+      group   = "infra"
+    }
+    mealie = {
+      name    = "Mealie"
+      address = "mealie.${local.domain}"
+      group   = "infra"
+    }
     homebridge = {
       name    = "Homebridge"
       address = "homebridge.${local.domain}"

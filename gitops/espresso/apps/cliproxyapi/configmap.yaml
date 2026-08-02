@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cliproxyapi
+  namespace: cliproxyapi
+data:
+  config.yaml: |
+    host: ""
+    port: 8317
+    auth-dir: /data/auths
+    api-keys:
+      - __API_KEY__
+    remote-management:
+      allow-remote: false
+      secret-key: ""
+      disable-control-panel: true
+    debug: false
+    logging-to-file: false
+    usage-statistics-enabled: true
+    quota-exceeded:
+      switch-project: true
+      switch-preview-model: true

@@ -1,0 +1,105 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: mealie-data-backup
+  namespace: mealie
+spec:
+  sourcePVC: data-mealie-0
+  trigger:
+    schedule: "10 3 * * *"
+  restic:
+    repository: freddo-restic-mealie-pvc
+    pruneIntervalDays: 36500
+    retain:
+      within: 100y
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: openebs-hostpath
+    cacheCapacity: 1Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mealie-postgres-backup
+  namespace: mealie
+spec:
+  schedule: "5 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 7200
+      template:
+        metadata:
+          labels:
+            app: mealie-backup
+        spec:
+          restartPolicy: Never
+          initContainers:
+            - name: dump-postgres
+              image: postgres:18-bookworm@sha256:1961f96e6029a02c3812d7cb329a3b03a3ac2bb067058dec17b0f5596aca9296
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  ts="$(date -u +%Y%m%dT%H%M%SZ)"
+                  pg_dump --format=custom --compress=9 --clean --if-exists \
+                    --no-owner --no-acl --dbname=mealie \
+                    --file="/backup/mealie-${ts}.dump"
+              env:
+                - name: PGHOST
+                  value: postgres.postgres.svc.cluster.local
+                - name: PGUSER
+                  value: mealie_app
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-outputs
+                      key: mealie_db_password
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          containers:
+            - name: restic
+              image: docker.io/restic/restic:0.19.1@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
+              command:
+                - sh
+                - -c
+                - restic backup --host espresso-postgres --tag espresso --tag mealie --tag postgres /backup
+              env:
+                - name: RESTIC_CACHE_DIR
+                  value: /cache
+              envFrom:
+                - secretRef:
+                    name: freddo-restic-mealie-postgres
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                  readOnly: true
+                - name: cache
+                  mountPath: /cache
+          volumes:
+            - name: backup
+              emptyDir: {}
+            - name: cache
+              emptyDir: {}

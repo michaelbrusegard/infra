@@ -1,36 +1,39 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: honcho
-  namespace: hermes-agent
+  name: hindsight
+  namespace: hindsight
 spec:
   endpointSelector:
     matchLabels:
-      app: honcho
+      app: hindsight
   ingress:
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "9999"
+              protocol: TCP
     - fromEntities:
         - host
         - remote-node
         - kube-apiserver
       toPorts:
         - ports:
-            - port: "8000"
+            - port: "8888"
+              protocol: TCP
+            - port: "9999"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: hermes-agent
             k8s:app: hermes-agent
-      toPorts:
-        - ports:
-            - port: "8000"
-              protocol: TCP
-    - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: hermes-agent
-            k8s:app: honcho
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
       toPorts:
         - ports:
-            - port: "8000"
+            - port: "8888"
               protocol: TCP
   egress:
     - toEndpoints:
@@ -55,25 +58,23 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
+            k8s:io.kubernetes.pod.namespace: cliproxyapi
+            k8s:app: cliproxyapi
+      toPorts:
+        - ports:
+            - port: "8317"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
             k8s:io.kubernetes.pod.namespace: ollama
             k8s:app: ollama
       toPorts:
         - ports:
             - port: "11434"
               protocol: TCP
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: hermes-agent
-            k8s:app: honcho
-      toPorts:
-        - ports:
-            - port: "8000"
-              protocol: TCP
     - toEntities:
         - world
       toPorts:
         - ports:
             - port: "443"
-              protocol: TCP
-            - port: "80"
               protocol: TCP

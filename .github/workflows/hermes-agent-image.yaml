@@ -5,11 +5,11 @@ name: Hermes Agent Image
     branches:
       - main
     paths:
-      - gitops/espresso/apps/hermes-agent/Dockerfile
+      - packages/hermes-agent-image/**
       - .github/workflows/hermes-agent-image.yaml
   pull_request:
     paths:
-      - gitops/espresso/apps/hermes-agent/Dockerfile
+      - packages/hermes-agent-image/**
       - .github/workflows/hermes-agent-image.yaml
 
 concurrency:
@@ -18,7 +18,6 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: michaelbrusegard/hermes-agent
   IMAGE_REF: ghcr.io/michaelbrusegard/hermes-agent
 
 jobs:
@@ -33,7 +32,16 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.IMAGE_BUMP_DEPLOY_KEY }}
 
-      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          repository: NousResearch/hermes-agent
+          ref: 3ef6bbd201263d354fd83ec55b3c306ded2eb72a
+          path: .upstream/hermes-agent
+          persist-credentials: false
+
+      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
 
       - uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4
         if: github.event_name == 'push'
@@ -42,20 +50,49 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build image
-        id: build
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
-        with:
-          context: gitops/espresso/apps/hermes-agent
-          file: gitops/espresso/apps/hermes-agent/Dockerfile
-          platforms: linux/amd64
-          push: ${{ github.event_name == 'push' }}
-          tags: |
-            ${{ env.IMAGE_REF }}:main
-            ${{ env.IMAGE_REF }}:sha-${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
+      - name: Build declarative image
+        run: |
+          nix build --impure --expr '
+            let
+              upstream = builtins.getFlake (toString ./.upstream/hermes-agent);
+              system = builtins.currentSystem;
+              pkgs = upstream.inputs.nixpkgs.legacyPackages.${system};
+              hermes-agent = upstream.packages.${system}.minimal.override {
+                extraDependencyGroups = [ "hindsight" "messaging" "web" ];
+              };
+            in
+            pkgs.callPackage ./packages/hermes-agent-image {
+              inherit hermes-agent;
+            }
+          '
+
+      - name: Smoke test image
+        run: |
+          docker load < result
+          docker run --rm "$IMAGE_REF:nix" --help
+          for binary in flux gh helm himalaya jq jupyter kubectl opencode stern tofu yq; do
+            docker run --rm --entrypoint "$binary" "$IMAGE_REF:nix" --version
+          done
+          docker run --rm --entrypoint bash "$IMAGE_REF:nix" -c '
+            for binary in apk apt-get nix-env npm pip uv; do
+              if command -v "$binary" >/dev/null; then
+                echo "unexpected runtime package manager: $binary" >&2
+                exit 1
+              fi
+            done
+          '
+
+      - name: Publish image
+        id: publish
+        if: github.event_name == 'push'
+        env:
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          nix profile install nixpkgs#skopeo
+          skopeo copy "docker-archive:result" "docker://$IMAGE_REF:sha-$GIT_SHA"
+          skopeo copy "docker-archive:result" "docker://$IMAGE_REF:main"
+          digest=$(skopeo inspect "docker://$IMAGE_REF:sha-$GIT_SHA" | jq -r .Digest)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
       - name: Sync main before digest update
         if: github.event_name == 'push'
@@ -64,9 +101,8 @@ jobs:
       - name: Update Hermes Agent image reference
         if: github.event_name == 'push'
         env:
-          DIGEST: ${{ steps.build.outputs.digest }}
+          DIGEST: ${{ steps.publish.outputs.digest }}
           GIT_SHA: ${{ github.sha }}
-          IMAGE_REF: ${{ env.IMAGE_REF }}
         run: |
           python3 - <<'PY'
           from pathlib import Path

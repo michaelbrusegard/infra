@@ -1,27 +1,26 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: signal-cli-internal
-  namespace: signal
+  name: mattermost-internal
+  namespace: mattermost
 spec:
   clusterIP: None
-  publishNotReadyAddresses: true
   selector:
-    app: signal-cli
+    app: mattermost
   ports:
     - name: http
-      port: 3000
+      port: 8065
       targetPort: http
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: signal-cli
-  namespace: signal
+  name: mattermost
+  namespace: mattermost
 spec:
   selector:
-    app: signal-cli
+    app: mattermost
   ports:
     - name: http
-      port: 3000
+      port: 8065
       targetPort: http

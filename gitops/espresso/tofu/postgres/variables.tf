@@ -21,3 +21,21 @@ variable "immich_db_password" {
   type        = string
   sensitive   = true
 }
+
+variable "hindsight_db_password" {
+  description = "Hindsight application role password"
+  type        = string
+  sensitive   = true
+}
+
+variable "mattermost_db_password" {
+  description = "Mattermost application role password"
+  type        = string
+  sensitive   = true
+}
+
+variable "mealie_db_password" {
+  description = "Mealie application role password"
+  type        = string
+  sensitive   = true
+}

@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hindsight
+  namespace: hindsight
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: hindsight
+  template:
+    metadata:
+      labels:
+        app: hindsight
+      annotations:
+        secret.reloader.stakater.com/reload: hindsight,postgres-outputs,cliproxyapi
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hindsight
+          image: ghcr.io/vectorize-io/hindsight:0.8.6
+          env:
+            - name: HINDSIGHT_ENABLE_API
+              value: "true"
+            - name: HINDSIGHT_ENABLE_CP
+              value: "true"
+            - name: HINDSIGHT_API_HOST
+              value: 0.0.0.0
+            - name: HINDSIGHT_API_PORT
+              value: "8888"
+            - name: HINDSIGHT_CP_DATAPLANE_API_URL
+              value: http://127.0.0.1:8888
+            - name: HINDSIGHT_CP_DATAPLANE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hindsight
+                  key: API_KEY
+            - name: HINDSIGHT_CP_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hindsight
+                  key: API_KEY
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-outputs
+                  key: hindsight_db_password
+            - name: HINDSIGHT_API_DATABASE_URL
+              value: postgresql://hindsight_app:$(DB_PASSWORD)@postgres.postgres.svc.cluster.local:5432/hindsight
+            - name: HINDSIGHT_API_TENANT_EXTENSION
+              value: hindsight_api.extensions.builtin.tenant:ApiKeyTenantExtension
+            - name: HINDSIGHT_API_TENANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hindsight
+                  key: API_KEY
+            - name: HINDSIGHT_API_LLM_PROVIDER
+              value: openai
+            - name: HINDSIGHT_API_LLM_BASE_URL
+              value: http://cliproxyapi.cliproxyapi.svc.cluster.local:8317/v1
+            - name: HINDSIGHT_API_LLM_MODEL
+              value: kimi-k3
+            - name: HINDSIGHT_API_LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cliproxyapi
+                  key: API_KEY
+            - name: HINDSIGHT_API_EMBEDDINGS_PROVIDER
+              value: openai
+            - name: HINDSIGHT_API_EMBEDDINGS_OPENAI_BASE_URL
+              value: http://ollama.ollama.svc.cluster.local:11434/v1
+            - name: HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL
+              value: nomic-embed-text
+            - name: HINDSIGHT_API_EMBEDDINGS_OPENAI_API_KEY
+              value: ollama
+          ports:
+            - name: api
+              containerPort: 8888
+            - name: control-plane
+              containerPort: 9999
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          startupProbe:
+            tcpSocket:
+              port: api
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: api
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: api
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

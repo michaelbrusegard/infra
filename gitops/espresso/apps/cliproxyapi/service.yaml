@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cliproxyapi-internal
+  namespace: cliproxyapi
+spec:
+  clusterIP: None
+  selector:
+    app: cliproxyapi
+  ports:
+    - name: http
+      port: 8317
+      targetPort: http
+    - name: oauth-8085
+      port: 8085
+    - name: oauth-1455
+      port: 1455
+    - name: oauth-54545
+      port: 54545
+    - name: oauth-51121
+      port: 51121
+    - name: oauth-11451
+      port: 11451
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cliproxyapi
+  namespace: cliproxyapi
+spec:
+  selector:
+    app: cliproxyapi
+  ports:
+    - name: http
+      port: 8317
+      targetPort: http

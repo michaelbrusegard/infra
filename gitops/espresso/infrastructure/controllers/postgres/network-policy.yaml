@@ -26,11 +26,23 @@ spec:
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: hermes-agent
-            k8s:app: honcho
+            k8s:io.kubernetes.pod.namespace: hindsight
+            k8s:app: hindsight
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: hermes-agent
-            k8s:app: honcho-backup
+            k8s:io.kubernetes.pod.namespace: hindsight
+            k8s:app: hindsight-backup
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mattermost
+            k8s:app: mattermost
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mattermost
+            k8s:app: mattermost-backup
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mealie
+            k8s:app: mealie
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mealie
+            k8s:app: mealie-backup
       toPorts:
         - ports:
             - port: "5432"

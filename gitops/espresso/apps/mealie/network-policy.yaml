@@ -1,28 +1,32 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: alertmanager-signal-bridge
-  namespace: signal
+  name: mealie
+  namespace: mealie
 spec:
   endpointSelector:
     matchLabels:
-      app: alertmanager-signal-bridge
+      app: mealie
   ingress:
     - fromEntities:
+        - ingress
         - host
         - remote-node
         - kube-apiserver
       toPorts:
         - ports:
-            - port: "8080"
+            - port: "9000"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: monitoring
-            k8s:app.kubernetes.io/name: alertmanager
+            k8s:io.kubernetes.pod.namespace: hermes-agent
+            k8s:app: hermes-agent
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
       toPorts:
         - ports:
-            - port: "8080"
+            - port: "9000"
               protocol: TCP
   egress:
     - toEndpoints:
@@ -39,9 +43,15 @@ spec:
               - matchPattern: "*"
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: signal
-            k8s:app: signal-cli
+            k8s:io.kubernetes.pod.namespace: postgres
+            k8s:app: postgres
       toPorts:
         - ports:
-            - port: "3000"
+            - port: "5432"
+              protocol: TCP
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
               protocol: TCP

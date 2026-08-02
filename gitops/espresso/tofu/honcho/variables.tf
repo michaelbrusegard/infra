@@ -9,9 +9,3 @@ variable "pg_admin_password" {
   type        = string
   sensitive   = true
 }
-
-variable "honcho_db_password" {
-  description = "Honcho database password"
-  type        = string
-  sensitive   = true
-}

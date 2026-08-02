@@ -27,10 +27,15 @@ spec:
             - -c
             - |
               mkdir -p /opt/data/workspace
+              mkdir -p /opt/data/hindsight /opt/data/skills/mealie
               for file in /bootstrap-config/*; do
                 [ -f "$file" ] || continue
+                [ "$(basename "$file")" = hindsight.json ] && continue
+                [ "$(basename "$file")" = mealie-skill.md ] && continue
                 install -m 0644 "$file" "/opt/data/$(basename "$file")"
               done
+              install -m 0644 /bootstrap-config/hindsight.json /opt/data/hindsight/config.json
+              install -m 0644 /bootstrap-config/mealie-skill.md /opt/data/skills/mealie/SKILL.md
               install -m 0640 /bootstrap-secret/.env /opt/data/.env
               chown -R 10000:10000 /opt/data
           resources:
@@ -59,6 +64,45 @@ spec:
           env:
             - name: HERMES_HOME
               value: /opt/data
+            - name: HOME
+              value: /opt/data
+            - name: OPENAI_BASE_URL
+              value: http://cliproxyapi.cliproxyapi.svc.cluster.local:8317/v1
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cliproxyapi
+                  key: API_KEY
+            - name: HINDSIGHT_API_URL
+              value: http://hindsight.hindsight.svc.cluster.local:8888
+            - name: HINDSIGHT_MODE
+              value: local_external
+            - name: HINDSIGHT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hindsight
+                  key: API_KEY
+            - name: MATTERMOST_URL
+              value: http://mattermost.mattermost.svc.cluster.local:8065
+            - name: MATTERMOST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-integrations
+                  key: HERMES_BOT_TOKEN
+            - name: MATTERMOST_ALLOWED_USERS
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-integrations
+                  key: HERMES_ALLOWED_USERS
+            - name: MATTERMOST_REPLY_MODE
+              value: thread
+            - name: MEALIE_URL
+              value: http://mealie.mealie.svc.cluster.local:9000
+            - name: MEALIE_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: mealie-api
+                  key: API_TOKEN
             - name: SEARXNG_URL
               value: http://searxng.searxng.svc.cluster.local:8080
             - name: API_SERVER_ENABLED
@@ -96,6 +140,17 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/data
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
         - name: dashboard
           image: ghcr.io/michaelbrusegard/hermes-agent:sha-ae796df9beb4f18b71af499ab6417fac6ec4bd67@sha256:58a5c9ba90a696dbae909729c4fa9152d56e6346ab38e587b3e11a860804a44a
           args:
@@ -107,6 +162,8 @@ spec:
               name: dashboard
           env:
             - name: HERMES_HOME
+              value: /opt/data
+            - name: HOME
               value: /opt/data
             - name: GATEWAY_HEALTH_URL
               value: http://127.0.0.1:8642
@@ -133,6 +190,17 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/data
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: bootstrap-config
           configMap:
@@ -143,6 +211,8 @@ spec:
             items:
               - key: .env
                 path: .env
+        - name: tmp
+          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: data

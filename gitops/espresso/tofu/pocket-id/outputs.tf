@@ -56,3 +56,12 @@ output "immich_config_json" {
   })
   sensitive = true
 }
+
+output "mealie_pocketid_client_id" {
+  value = pocketid_client.mealie.id
+}
+
+output "mealie_pocketid_client_secret" {
+  value     = pocketid_client.mealie.client_secret
+  sensitive = true
+}

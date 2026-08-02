@@ -80,3 +80,21 @@ resource "pocketid_client" "immich" {
     pocketid_group.admin.id,
   ]
 }
+
+resource "pocketid_client" "mealie" {
+  name = "Mealie"
+
+  callback_urls = [
+    "https://mealie.${local.domain}/login",
+    "https://mealie.${local.domain}/login?direct=1",
+  ]
+
+  is_public    = false
+  pkce_enabled = true
+  launch_url   = "https://mealie.${local.domain}"
+
+  allowed_user_groups = [
+    pocketid_group.users.id,
+    pocketid_group.admin.id,
+  ]
+}

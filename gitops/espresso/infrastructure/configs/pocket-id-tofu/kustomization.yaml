@@ -33,3 +33,5 @@ patches:
             - immich_pocketid_client_id
             - immich_pocketid_client_secret
             - immich_config_json
+            - mealie_pocketid_client_id
+            - mealie_pocketid_client_secret

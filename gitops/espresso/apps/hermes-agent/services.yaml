@@ -19,20 +19,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: honcho
-  namespace: hermes-agent
-spec:
-  selector:
-    app: honcho
-    component: api
-  ports:
-    - name: http
-      port: 8000
-      targetPort: http
----
-apiVersion: v1
-kind: Service
-metadata:
   name: hermes-agent-gateway
   namespace: hermes-agent
 spec:

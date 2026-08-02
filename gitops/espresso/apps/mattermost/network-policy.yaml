@@ -1,31 +1,35 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: signal-cli
-  namespace: signal
+  name: mattermost
+  namespace: mattermost
 spec:
   endpointSelector:
     matchLabels:
-      app: signal-cli
+      app: mattermost
   ingress:
     - fromEntities:
+        - ingress
         - host
         - remote-node
         - kube-apiserver
       toPorts:
         - ports:
-            - port: "3000"
+            - port: "8065"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: hermes-agent
             k8s:app: hermes-agent
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: signal
-            k8s:app: alertmanager-signal-bridge
+            k8s:io.kubernetes.pod.namespace: monitoring
+            k8s:app.kubernetes.io/name: alertmanager
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
       toPorts:
         - ports:
-            - port: "3000"
+            - port: "8065"
               protocol: TCP
   egress:
     - toEndpoints:
@@ -40,19 +44,17 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: postgres
+            k8s:app: postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
     - toEntities:
         - world
       toPorts:
         - ports:
             - port: "443"
-              protocol: TCP
-            - port: "80"
-              protocol: TCP
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: hermes-agent
-            k8s:app: hermes-agent
-      toPorts:
-        - ports:
-            - port: "8642"
               protocol: TCP

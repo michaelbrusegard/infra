@@ -21,11 +21,13 @@ spec:
             - sh
             - -c
             - |
+              set -eu
               ollama serve &
               PID=$!
+              trap 'kill "$PID" 2>/dev/null || true' EXIT
               until ollama list >/dev/null 2>&1; do sleep 2; done
               ollama pull nomic-embed-text
-              kill $PID 2>/dev/null || true
+              ollama show nomic-embed-text >/dev/null
           resources:
             requests:
               cpu: 250m

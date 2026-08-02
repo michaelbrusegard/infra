@@ -33,8 +33,14 @@ patches:
             varsKeys:
               - nextcloud_db_password
               - immich_db_password
+              - hindsight_db_password
+              - mattermost_db_password
+              - mealie_db_password
         writeOutputsToSecret:
           name: postgres-outputs
           outputs:
             - nextcloud_db_password
             - immich_db_password
+            - hindsight_db_password
+            - mattermost_db_password
+            - mealie_db_password

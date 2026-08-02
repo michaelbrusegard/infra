@@ -1,0 +1,105 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: mattermost-data-backup
+  namespace: mattermost
+spec:
+  sourcePVC: data-mattermost-0
+  trigger:
+    schedule: "50 2 * * *"
+  restic:
+    repository: freddo-restic-mattermost-pvc
+    pruneIntervalDays: 36500
+    retain:
+      within: 100y
+    moverSecurityContext:
+      runAsUser: 2000
+      runAsGroup: 2000
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: openebs-hostpath
+    cacheCapacity: 2Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mattermost-postgres-backup
+  namespace: mattermost
+spec:
+  schedule: "45 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 7200
+      template:
+        metadata:
+          labels:
+            app: mattermost-backup
+        spec:
+          restartPolicy: Never
+          initContainers:
+            - name: dump-postgres
+              image: postgres:18-bookworm@sha256:1961f96e6029a02c3812d7cb329a3b03a3ac2bb067058dec17b0f5596aca9296
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  ts="$(date -u +%Y%m%dT%H%M%SZ)"
+                  pg_dump --format=custom --compress=9 --clean --if-exists \
+                    --no-owner --no-acl --dbname=mattermost \
+                    --file="/backup/mattermost-${ts}.dump"
+              env:
+                - name: PGHOST
+                  value: postgres.postgres.svc.cluster.local
+                - name: PGUSER
+                  value: mattermost_app
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-outputs
+                      key: mattermost_db_password
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          containers:
+            - name: restic
+              image: docker.io/restic/restic:0.19.1@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
+              command:
+                - sh
+                - -c
+                - restic backup --host espresso-postgres --tag espresso --tag mattermost --tag postgres /backup
+              env:
+                - name: RESTIC_CACHE_DIR
+                  value: /cache
+              envFrom:
+                - secretRef:
+                    name: freddo-restic-mattermost-postgres
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                  readOnly: true
+                - name: cache
+                  mountPath: /cache
+          volumes:
+            - name: backup
+              emptyDir: {}
+            - name: cache
+              emptyDir: {}

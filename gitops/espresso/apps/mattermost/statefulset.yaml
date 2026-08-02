@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mattermost
+  namespace: mattermost
+spec:
+  replicas: 1
+  serviceName: mattermost-internal
+  selector:
+    matchLabels:
+      app: mattermost
+  template:
+    metadata:
+      labels:
+        app: mattermost
+      annotations:
+        secret.reloader.stakater.com/reload: postgres-outputs
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 2000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: prepare-data
+          image: busybox:1.38.0@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              mkdir -p /persistent/config /persistent/data /persistent/logs \
+                /persistent/plugins /persistent/client-plugins
+              chown -R 2000:2000 /persistent
+          volumeMounts:
+            - name: data
+              mountPath: /persistent
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+      containers:
+        - name: mattermost
+          image: docker.io/mattermost/mattermost-team-edition:11.7.2
+          env:
+            - name: MM_SQLSETTINGS_DRIVERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-outputs
+                  key: mattermost_db_password
+            - name: MM_SQLSETTINGS_DATASOURCE
+              value: postgres://mattermost_app:$(DB_PASSWORD)@postgres.postgres.svc.cluster.local:5432/mattermost?sslmode=disable&connect_timeout=10
+            - name: MM_SERVICESETTINGS_SITEURL
+              value: https://mattermost.asgard.michaelbrusegard.com
+            - name: MM_SERVICESETTINGS_ENABLELOCALMODE
+              value: "true"
+            - name: MM_SERVICESETTINGS_ENABLEUSERACCESSTOKENS
+              value: "true"
+            - name: MM_SERVICESETTINGS_ENABLEINCOMINGWEBHOOKS
+              value: "true"
+            - name: MM_SERVICESETTINGS_ENABLEOUTGOINGWEBHOOKS
+              value: "false"
+            - name: MM_SERVICESETTINGS_ENABLECOMMANDS
+              value: "false"
+            - name: MM_LOGSETTINGS_CONSOLELEVEL
+              value: INFO
+          ports:
+            - name: http
+              containerPort: 8065
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 3Gi
+          startupProbe:
+            httpGet:
+              path: /api/v4/system/ping
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /api/v4/system/ping
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/v4/system/ping
+              port: http
+            periodSeconds: 30
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 2000
+            runAsGroup: 2000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /mattermost/config
+              subPath: config
+            - name: data
+              mountPath: /mattermost/data
+              subPath: data
+            - name: data
+              mountPath: /mattermost/logs
+              subPath: logs
+            - name: data
+              mountPath: /mattermost/plugins
+              subPath: plugins
+            - name: data
+              mountPath: /mattermost/client/plugins
+              subPath: client-plugins
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: nvme-ha
+        resources:
+          requests:
+            storage: 20Gi
