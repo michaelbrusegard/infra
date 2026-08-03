@@ -86,7 +86,7 @@ in {
     install -d -m 755 ${lib.escapeShellArg "${kanataApp}/Contents/Resources"}
     install -d -m 755 ${lib.escapeShellArg stableKeyboardWatcherDir}
     install -m 755 ${pkgs.kanata-with-cmd}/bin/kanata ${stableKanata}
-    install -m 755 ${kanataKeyboardWatcher} ${stableKeyboardWatcher}
+    install -m 755 ${kanataKeyboardWatcher} ${lib.escapeShellArg stableKeyboardWatcher}
     rm -f ${lib.escapeShellArg "${kanataApp}/Contents/MacOS/keyboard-watcher"}
     cat > ${lib.escapeShellArg "${kanataApp}/Contents/Info.plist"} <<'EOF'
     <?xml version="1.0" encoding="UTF-8"?>
