@@ -64,9 +64,13 @@ spec:
               value: "true"
             - name: MM_SERVICESETTINGS_ENABLEINCOMINGWEBHOOKS
               value: "true"
+            - name: MM_SERVICESETTINGS_ENFORCEINCOMINGWEBHOOKCHANNELLOCKING
+              value: "true"
             - name: MM_SERVICESETTINGS_ENABLEOUTGOINGWEBHOOKS
               value: "false"
             - name: MM_SERVICESETTINGS_ENABLECOMMANDS
+              value: "false"
+            - name: MM_TEAMSETTINGS_ENABLEAPITEAMDELETION
               value: "false"
             - name: MM_LOGSETTINGS_CONSOLELEVEL
               value: INFO

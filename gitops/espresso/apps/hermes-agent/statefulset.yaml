@@ -94,6 +94,21 @@ spec:
                 secretKeyRef:
                   name: mattermost-integrations
                   key: HERMES_ALLOWED_USERS
+            - name: MATTERMOST_HOME_CHANNEL
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-outputs
+                  key: hermes_home_channel_id
+            - name: MATTERMOST_ALLOWED_CHANNELS
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-outputs
+                  key: hermes_allowed_channel_ids
+            - name: MATTERMOST_FREE_RESPONSE_CHANNELS
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-outputs
+                  key: hermes_free_response_channel_ids
             - name: MATTERMOST_REPLY_MODE
               value: thread
             - name: MEALIE_URL

@@ -66,7 +66,7 @@ spec:
     alertmanager:
       alertmanagerSpec:
         secrets:
-          - mattermost-integrations
+          - mattermost-outputs
         storage:
           volumeClaimTemplate:
             spec:
@@ -111,7 +111,7 @@ spec:
           - name: "null"
           - name: mattermost
             mattermost_configs:
-              - api_url_file: /etc/alertmanager/secrets/mattermost-integrations/ALERTMANAGER_WEBHOOK_URL
+              - api_url_file: /etc/alertmanager/secrets/mattermost-outputs/alertmanager_webhook_url
                 channel: alerts
                 username: Alertmanager
                 send_resolved: true

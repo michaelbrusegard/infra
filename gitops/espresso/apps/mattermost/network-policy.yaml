@@ -27,6 +27,8 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: uptime-kuma
             k8s:app: uptime-kuma
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: flux-system
       toPorts:
         - ports:
             - port: "8065"

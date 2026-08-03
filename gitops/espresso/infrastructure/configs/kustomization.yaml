@@ -15,6 +15,7 @@ resources:
   - manafishrov-postgres-tofu
   - manafishrov-rustfs-tofu
   - manafishrov-tenant
+  - mattermost-tofu
   - netbird
   - netbird-tofu
   - openebs

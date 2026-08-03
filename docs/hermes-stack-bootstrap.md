@@ -36,25 +36,46 @@ authenticated account exposes a different canonical model ID.
 
 ## 2. Bootstrap Mattermost
 
-Open `https://mattermost.asgard.michaelbrusegard.com`, create the first local
-system administrator, then create:
+Mattermost Team Edition does not provide generic OIDC, so this instance uses a
+local login instead of adding a second proxy/login prompt in front of it. Create
+the first local system administrator in the web UI, but do not create a team.
 
-- team: `Hermes` (URL name: `hermes`)
-- channels: `assistant`, `meals`, `shopping`, `finance`, `homelab`, and `alerts`
-- member bot: `hermes`, added to all six channels
-- incoming webhook: `Alertmanager`, locked to `alerts`
+With local mode enabled, create an administrator token and the Hermes bot from
+inside the running pod:
 
-Record the Hermes bot token, your 26-character Mattermost user ID, and the full
-incoming-webhook URL. Replace the three `SET_AFTER_FIRST_LOGIN` values in
-`../infra-secrets/gitops/espresso/apps/mattermost/secrets.yaml` with `sops`:
+```sh
+kubectl -n mattermost exec -it mattermost-0 -- \
+  mmctl token generate <admin-username> opentofu --local
+kubectl -n mattermost exec -it mattermost-0 -- \
+  mmctl bot create hermes --display-name Hermes \
+  --description "Hermes Agent" --with-token --local
+kubectl -n mattermost exec mattermost-0 -- \
+  mmctl user search <admin-username> --json --local
+```
 
-- `HERMES_BOT_TOKEN`
-- `HERMES_ALLOWED_USERS`
-- `ALERTMANAGER_WEBHOOK_URL`
+Using `sops`, replace the placeholders in the secrets repository:
 
-Reconcile the secrets, restart Hermes, and restart Alertmanager. Mattermost Team
-Edition does not provide generic OIDC, so this instance intentionally uses a
-local login instead of adding a second proxy/login prompt in front of it.
+- `gitops/espresso/infrastructure/mattermost-tofu/secrets.yaml`:
+  `mattermost_admin_username` and `mattermost_admin_token`;
+- `gitops/espresso/apps/mattermost/secrets.yaml`: `HERMES_BOT_TOKEN` and
+  `HERMES_ALLOWED_USERS`, where the allowed value is the administrator's
+  26-character user ID.
+
+The pinned OpenTofu provider then creates the private `Hermes` team, the
+`assistant`, `meals`, `shopping`, `finance`, `homelab`, and `alerts` channels,
+adds both accounts, and creates the channel-locked Alertmanager webhook. The
+generated webhook URL is written to `mattermost-outputs` and reflected only to
+the monitoring and Hermes namespaces. The same output secret configures
+`assistant` as Hermes' home channel, limits Hermes to the six managed channels,
+and enables mention-free responses everywhere except `alerts`. Team, channel,
+and webhook resources all use `prevent_destroy` because the provider otherwise
+calls Mattermost's permanent deletion APIs. Unlike the other OpenTofu stacks,
+Mattermost plans require explicit approval so a plan that removes messaging
+history cannot be applied automatically.
+
+Mattermost also creates its mandatory `Town Square` and default `Off-Topic`
+channels with every new team. Decide how to present those two channels before
+the initial OpenTofu apply; they are not currently managed by the provider.
 
 ## 3. Bootstrap Mealie API access
 

@@ -1,0 +1,26 @@
+output "alertmanager_webhook_url" {
+  description = "Internal Mattermost incoming webhook URL for Alertmanager"
+  value       = "http://mattermost.mattermost.svc.cluster.local:8065/hooks/${mattermost_incoming_webhook.alertmanager.id}"
+  sensitive   = true
+}
+
+output "hermes_home_channel_id" {
+  description = "Mattermost channel ID used as the Hermes home channel"
+  value       = mattermost_channel.channels["assistant"].id
+}
+
+output "hermes_allowed_channel_ids" {
+  description = "Mattermost channel IDs in which Hermes may respond"
+  value       = join(",", [for name in sort(keys(local.channels)) : mattermost_channel.channels[name].id])
+}
+
+output "hermes_free_response_channel_ids" {
+  description = "Mattermost channel IDs where Hermes responds without a mention"
+  value = join(",", [for name in [
+    "assistant",
+    "meals",
+    "shopping",
+    "finance",
+    "homelab",
+  ] : mattermost_channel.channels[name].id])
+}
