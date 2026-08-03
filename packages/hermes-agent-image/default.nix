@@ -26,7 +26,6 @@
       kubectl
       kubernetes-helm
       netcat
-      opencode
       openssh
       opentofu
       ripgrep

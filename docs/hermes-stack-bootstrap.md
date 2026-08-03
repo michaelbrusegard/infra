@@ -39,11 +39,10 @@ authenticated account exposes a different canonical model ID.
 Open `https://mattermost.asgard.michaelbrusegard.com`, create the first local
 system administrator, then create:
 
-- team: `home`
-- channel: `hermes`
-- channel: `cluster-alerts`
-- member bot: `hermes`, added to `hermes`
-- incoming webhook: `Alertmanager`, locked to `cluster-alerts`
+- team: `Hermes` (URL name: `hermes`)
+- channels: `assistant`, `meals`, `shopping`, `finance`, `homelab`, and `alerts`
+- member bot: `hermes`, added to all six channels
+- incoming webhook: `Alertmanager`, locked to `alerts`
 
 Record the Hermes bot token, your 26-character Mattermost user ID, and the full
 incoming-webhook URL. Replace the three `SET_AFTER_FIRST_LOGIN` values in

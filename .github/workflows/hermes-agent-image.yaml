@@ -70,7 +70,7 @@ jobs:
         run: |
           docker load < result
           docker run --rm "$IMAGE_REF:nix" --help
-          for binary in flux gh helm himalaya jq jupyter kubectl opencode stern tofu yq; do
+          for binary in flux gh helm himalaya jq jupyter kubectl stern tofu yq; do
             docker run --rm --entrypoint "$binary" "$IMAGE_REF:nix" --version
           done
           docker run --rm --entrypoint bash "$IMAGE_REF:nix" -c '
@@ -80,6 +80,10 @@ jobs:
                 exit 1
               fi
             done
+            if command -v opencode >/dev/null; then
+              echo "unexpected excluded tool: opencode" >&2
+              exit 1
+            fi
           '
 
       - name: Publish image

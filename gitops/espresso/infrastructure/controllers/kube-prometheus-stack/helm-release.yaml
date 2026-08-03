@@ -112,7 +112,7 @@ spec:
           - name: mattermost
             mattermost_configs:
               - api_url_file: /etc/alertmanager/secrets/mattermost-integrations/ALERTMANAGER_WEBHOOK_URL
-                channel: cluster-alerts
+                channel: alerts
                 username: Alertmanager
                 send_resolved: true
 
