@@ -9,7 +9,8 @@
   karabinerVhidManager = "/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager";
   kanataApp = "/Applications/Kanata.app";
   stableKanata = "${kanataApp}/Contents/MacOS/kanata";
-  stableKeyboardWatcher = "${kanataApp}/Contents/MacOS/keyboard-watcher";
+  stableKeyboardWatcherDir = "/Library/Application Support/Kanata";
+  stableKeyboardWatcher = "${stableKeyboardWatcherDir}/keyboard-watcher";
   kanataConfig = inputs.self + "/config/kanata/darwin.kbd";
   forceActivateKarabiner = ''
     primary_uid=$(/usr/bin/id -u ${primaryUser})
@@ -42,8 +43,10 @@
   # IDs, and event-service rows all flap with kanata's seize/release cycle.
   # The kanata pid is tracked alongside so a keyboard replugged after kanata
   # itself crashed and respawned still triggers a re-grab.
-  # Keep the launchd executable outside the Nix store. At early boot the store
-  # may not be mounted yet, which leaves the interval job stuck in EX_CONFIG.
+  # Keep the launchd executable outside both the Nix store and Kanata.app. At
+  # early boot the store may not be mounted yet, which leaves the interval job
+  # stuck in EX_CONFIG. Adding it to the app bundle would change Kanata's ad-hoc
+  # code signature and invalidate its Input Monitoring permission.
   kanataKeyboardWatcher = pkgs.writeTextFile {
     name = "kanata-keyboard-watcher";
     executable = true;
@@ -81,8 +84,10 @@ in {
   system.activationScripts.postActivation.text = ''
     install -d -m 755 ${lib.escapeShellArg "${kanataApp}/Contents/MacOS"}
     install -d -m 755 ${lib.escapeShellArg "${kanataApp}/Contents/Resources"}
+    install -d -m 755 ${lib.escapeShellArg stableKeyboardWatcherDir}
     install -m 755 ${pkgs.kanata-with-cmd}/bin/kanata ${stableKanata}
     install -m 755 ${kanataKeyboardWatcher} ${stableKeyboardWatcher}
+    rm -f ${lib.escapeShellArg "${kanataApp}/Contents/MacOS/keyboard-watcher"}
     cat > ${lib.escapeShellArg "${kanataApp}/Contents/Info.plist"} <<'EOF'
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
