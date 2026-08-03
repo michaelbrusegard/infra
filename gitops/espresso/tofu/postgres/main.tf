@@ -82,7 +82,7 @@ resource "postgresql_role" "hindsight" {
   name                = "hindsight_app"
   login               = true
   password_wo         = var.hindsight_db_password
-  password_wo_version = 1
+  password_wo_version = 2
 }
 
 resource "postgresql_database" "hindsight" {
@@ -115,7 +115,7 @@ resource "postgresql_role" "mattermost" {
   name                = "mattermost_app"
   login               = true
   password_wo         = var.mattermost_db_password
-  password_wo_version = 1
+  password_wo_version = 2
 }
 
 resource "postgresql_database" "mattermost" {
@@ -141,7 +141,7 @@ resource "postgresql_role" "mealie" {
   name                = "mealie_app"
   login               = true
   password_wo         = var.mealie_db_password
-  password_wo_version = 1
+  password_wo_version = 2
 }
 
 resource "postgresql_database" "mealie" {
