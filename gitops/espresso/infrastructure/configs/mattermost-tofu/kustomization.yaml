@@ -19,7 +19,6 @@ patches:
       metadata:
         name: mattermost
       spec:
-        suspend: true
         approvePlan: ""
         path: ./gitops/espresso/tofu/mattermost
         backendConfig:
