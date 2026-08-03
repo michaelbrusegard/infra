@@ -19,6 +19,7 @@ patches:
       metadata:
         name: mattermost
       spec:
+        suspend: true
         approvePlan: ""
         path: ./gitops/espresso/tofu/mattermost
         backendConfig:
@@ -29,11 +30,15 @@ patches:
             varsKeys:
               - mattermost_admin_token
               - mattermost_admin_username
+              - mattermost_team_id
+              - mattermost_town_square_channel_id
+              - mattermost_off_topic_channel_id
         writeOutputsToSecret:
           name: mattermost-outputs
           outputs:
             - alertmanager_webhook_url
             - hermes_home_channel_id
             - hermes_alerts_channel_id
+            - hermes_stateless_channel_ids
             - hermes_allowed_channel_ids
             - hermes_free_response_channel_ids

@@ -118,6 +118,11 @@ spec:
                 secretKeyRef:
                   name: mattermost-outputs
                   key: hermes_free_response_channel_ids
+            - name: MATTERMOST_STATELESS_CHANNELS
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-outputs
+                  key: hermes_stateless_channel_ids
             - name: MATTERMOST_REPLY_MODE
               value: thread
             - name: MEALIE_URL

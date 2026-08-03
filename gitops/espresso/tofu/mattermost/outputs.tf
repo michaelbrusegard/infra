@@ -14,6 +14,11 @@ output "hermes_alerts_channel_id" {
   value       = mattermost_channel.channels["alerts"].id
 }
 
+output "hermes_stateless_channel_ids" {
+  description = "Mattermost channel IDs where every post starts a memory-free session"
+  value       = mattermost_channel.channels["scratchpad"].id
+}
+
 output "hermes_allowed_channel_ids" {
   description = "Mattermost channel IDs in which Hermes may respond"
   value       = join(",", [for name in sort(keys(local.channels)) : mattermost_channel.channels[name].id])
@@ -23,6 +28,7 @@ output "hermes_free_response_channel_ids" {
   description = "Mattermost channel IDs where Hermes responds without a mention"
   value = join(",", [for name in [
     "assistant",
+    "scratchpad",
     "meals",
     "shopping",
     "finance",

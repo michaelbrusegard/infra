@@ -38,9 +38,10 @@ authenticated account exposes a different canonical model ID.
 
 Mattermost Team Edition does not provide generic OIDC, so this instance uses a
 local login instead of adding a second proxy/login prompt in front of it. Create
-the first local system administrator in the web UI with username
-`mattermost_admin` and email `infra@michaelbrusegard.com`, but do not create a
-team.
+the first local system administrator with username `mattermost_admin` and email
+`infra@michaelbrusegard.com`, then create the private `Hermes` team. The initial
+rollout keeps the Mattermost OpenTofu object suspended until this bootstrap is
+complete so it cannot create duplicate default channels.
 
 With local mode enabled, create an administrator token and the Hermes bot from
 inside the running pod:
@@ -53,31 +54,43 @@ kubectl -n mattermost exec -it mattermost-0 -- \
   --description "Hermes Agent" --with-token --local
 kubectl -n mattermost exec mattermost-0 -- \
   mmctl user search mattermost_admin --json --local
+kubectl -n mattermost exec mattermost-0 -- \
+  mmctl team search hermes --json --local
+kubectl -n mattermost exec mattermost-0 -- \
+  mmctl channel search town-square --team hermes --json --local
+kubectl -n mattermost exec mattermost-0 -- \
+  mmctl channel search off-topic --team hermes --json --local
 ```
 
 Using `sops`, replace the placeholders in the secrets repository:
 
 - `gitops/espresso/infrastructure/mattermost-tofu/secrets.yaml`:
-  `mattermost_admin_username` and `mattermost_admin_token`;
+  `mattermost_admin_username`, `mattermost_admin_token`,
+  `mattermost_team_id`, `mattermost_town_square_channel_id`, and
+  `mattermost_off_topic_channel_id`;
 - `gitops/espresso/apps/mattermost/secrets.yaml`: `HERMES_BOT_TOKEN` and
   `HERMES_ALLOWED_USERS`, where the allowed value is the administrator's
   26-character user ID.
 
-The pinned OpenTofu provider then creates the private `Hermes` team, the
-`assistant`, `meals`, `shopping`, `finance`, `homelab`, and `alerts` channels,
+Remove `spec.suspend: true` from the Mattermost Terraform object after replacing
+all placeholders. The pinned OpenTofu provider adopts the existing team and its
+two default channels, renames Town Square to `assistant` and Off-Topic to
+`scratchpad`, creates `meals`, `shopping`, `finance`, `homelab`, and `alerts`,
 adds both accounts, and creates the channel-locked Alertmanager webhook. The
 generated webhook URL is written to `mattermost-outputs` and reflected only to
 the monitoring and Hermes namespaces. The same output secret configures
-`assistant` as Hermes' home channel, limits Hermes to the six managed channels,
+`assistant` as Hermes' home channel, limits Hermes to the seven managed channels,
 and enables mention-free responses everywhere except `alerts`. Team, channel,
 and webhook resources all use `prevent_destroy` because the provider otherwise
 calls Mattermost's permanent deletion APIs. Unlike the other OpenTofu stacks,
 Mattermost plans require explicit approval so a plan that removes messaging
 history cannot be applied automatically.
 
-Mattermost also creates its mandatory `Town Square` and default `Off-Topic`
-channels with every new team. Decide how to present those two channels before
-the initial OpenTofu apply; they are not currently managed by the provider.
+Every post in `scratchpad`, including a reply, receives a unique Hermes session.
+The image patch also disables Hindsight, built-in memory, and session search for
+that channel, so scratchpad turns neither read nor write persistent conversational
+memory. Mattermost still retains the posts and Hermes still retains its session
+transcripts for audit; the isolation concerns model context, not message deletion.
 
 Alertmanager posts warning and critical notifications directly to `alerts` and
 also calls the authenticated, cluster-internal Hermes webhook for firing alerts.

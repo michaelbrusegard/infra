@@ -43,6 +43,10 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
 
+      - name: Apply local Hermes patches
+        working-directory: .upstream/hermes-agent
+        run: git apply --check --unidiff-zero ../../packages/hermes-agent-image/stateless-mattermost.patch && git apply --unidiff-zero ../../packages/hermes-agent-image/stateless-mattermost.patch
+
       - uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4
         if: github.event_name == 'push'
         with:
@@ -71,7 +75,7 @@ jobs:
           docker load < result
           docker run --rm "$IMAGE_REF:nix" --help
           for binary in flux gh helm himalaya jq jupyter kubectl stern tofu yq; do
-            docker run --rm --entrypoint "$binary" "$IMAGE_REF:nix" --version
+            docker run --rm --entrypoint "$binary" "$IMAGE_REF:nix" --help >/dev/null
           done
           docker run --rm --entrypoint bash "$IMAGE_REF:nix" -c '
             for binary in apk apt-get nix-env npm pip uv; do
