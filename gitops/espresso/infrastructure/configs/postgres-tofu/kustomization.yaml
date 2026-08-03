@@ -42,5 +42,7 @@ patches:
             - nextcloud_db_password
             - immich_db_password
             - hindsight_db_password
+            - hindsight_db_password_urlencoded
             - mattermost_db_password
+            - mattermost_db_password_urlencoded
             - mealie_db_password

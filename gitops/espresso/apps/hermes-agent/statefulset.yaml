@@ -45,6 +45,7 @@ spec:
                 secretKeyRef:
                   name: mattermost-outputs
                   key: hermes_alerts_channel_id
+                  optional: true
           resources:
             requests:
               memory: 16Mi
@@ -108,21 +109,25 @@ spec:
                 secretKeyRef:
                   name: mattermost-outputs
                   key: hermes_home_channel_id
+                  optional: true
             - name: MATTERMOST_ALLOWED_CHANNELS
               valueFrom:
                 secretKeyRef:
                   name: mattermost-outputs
                   key: hermes_allowed_channel_ids
+                  optional: true
             - name: MATTERMOST_FREE_RESPONSE_CHANNELS
               valueFrom:
                 secretKeyRef:
                   name: mattermost-outputs
                   key: hermes_free_response_channel_ids
+                  optional: true
             - name: MATTERMOST_STATELESS_CHANNELS
               valueFrom:
                 secretKeyRef:
                   name: mattermost-outputs
                   key: hermes_stateless_channel_ids
+                  optional: true
             - name: MATTERMOST_REPLY_MODE
               value: thread
             - name: MEALIE_URL

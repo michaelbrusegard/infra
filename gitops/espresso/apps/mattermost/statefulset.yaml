@@ -53,7 +53,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: postgres-outputs
-                  key: mattermost_db_password
+                  key: mattermost_db_password_urlencoded
             - name: MM_SQLSETTINGS_DATASOURCE
               value: postgres://mattermost_app:$(DB_PASSWORD)@postgres.postgres.svc.cluster.local:5432/mattermost?sslmode=disable&connect_timeout=10
             - name: MM_SERVICESETTINGS_SITEURL

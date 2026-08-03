@@ -13,8 +13,18 @@ output "hindsight_db_password" {
   sensitive = true
 }
 
+output "hindsight_db_password_urlencoded" {
+  value     = urlencode(var.hindsight_db_password)
+  sensitive = true
+}
+
 output "mattermost_db_password" {
   value     = var.mattermost_db_password
+  sensitive = true
+}
+
+output "mattermost_db_password_urlencoded" {
+  value     = urlencode(var.mattermost_db_password)
   sensitive = true
 }
 
