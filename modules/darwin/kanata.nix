@@ -9,6 +9,7 @@
   karabinerVhidManager = "/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager";
   kanataApp = "/Applications/Kanata.app";
   stableKanata = "${kanataApp}/Contents/MacOS/kanata";
+  stableKeyboardWatcher = "${kanataApp}/Contents/MacOS/keyboard-watcher";
   kanataConfig = inputs.self + "/config/kanata/darwin.kbd";
   forceActivateKarabiner = ''
     primary_uid=$(/usr/bin/id -u ${primaryUser})
@@ -23,6 +24,11 @@
       launchctl enable system/org.nixos.${label}
     fi
   '';
+  reloadLaunchDaemon = label: ''
+    launchctl bootout system/org.nixos.${label} >/dev/null 2>&1 || true
+    launchctl bootstrap system /Library/LaunchDaemons/org.nixos.${label}.plist
+    launchctl enable system/org.nixos.${label}
+  '';
   # Kanata only grabs keyboards that are connected when it starts; a keyboard
   # plugged in later is never seized. Poll the set of external keyboards and
   # restart kanata when it changes so it re-grabs everything currently
@@ -36,7 +42,13 @@
   # IDs, and event-service rows all flap with kanata's seize/release cycle.
   # The kanata pid is tracked alongside so a keyboard replugged after kanata
   # itself crashed and respawned still triggers a re-grab.
-  kanataKeyboardWatcher = pkgs.writeShellScript "kanata-keyboard-watcher" ''
+  # Keep the launchd executable outside the Nix store. At early boot the store
+  # may not be mounted yet, which leaves the interval job stuck in EX_CONFIG.
+  kanataKeyboardWatcher = pkgs.writeTextFile {
+    name = "kanata-keyboard-watcher";
+    executable = true;
+    text = ''
+    #!/bin/bash
     sleep 1
     state=/var/run/org.nixos.kanata.keyboards
     kanata_pid() {
@@ -62,13 +74,15 @@
       done
       printf '%s %s' "$hash" "$pid" > "$state"
     fi
-  '';
+    '';
+  };
 in {
   environment.systemPackages = [pkgs.kanata-with-cmd];
   system.activationScripts.postActivation.text = ''
     install -d -m 755 ${lib.escapeShellArg "${kanataApp}/Contents/MacOS"}
     install -d -m 755 ${lib.escapeShellArg "${kanataApp}/Contents/Resources"}
     install -m 755 ${pkgs.kanata-with-cmd}/bin/kanata ${stableKanata}
+    install -m 755 ${kanataKeyboardWatcher} ${stableKeyboardWatcher}
     cat > ${lib.escapeShellArg "${kanataApp}/Contents/Info.plist"} <<'EOF'
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
@@ -98,7 +112,7 @@ in {
     ${ensureLaunchDaemon "karabiner-vhidmanager"}
     ${forceActivateKarabiner}
     ${ensureLaunchDaemon "kanata"}
-    ${ensureLaunchDaemon "kanata-keyboard-watcher"}
+    ${reloadLaunchDaemon "kanata-keyboard-watcher"}
   '';
 
   launchd.daemons = {
@@ -136,7 +150,7 @@ in {
     };
     kanata-keyboard-watcher = {
       serviceConfig = {
-        ProgramArguments = ["${kanataKeyboardWatcher}"];
+        ProgramArguments = [stableKeyboardWatcher];
         RunAtLoad = true;
         StartInterval = 5;
         StandardErrorPath = "/Library/Logs/Kanata/keyboard-watcher.err.log";
