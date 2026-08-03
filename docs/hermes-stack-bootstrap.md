@@ -113,10 +113,14 @@ request before allowing recipe writes.
 
 ## 4. Finish Honcho retirement
 
-The `honcho-infra` Terraform object is deliberately retained with an empty
-configuration for one Flux reconciliation. This lets tofu-controller destroy
-the database and role from its existing Terraform state instead of orphaning
-them. After its empty plan has applied successfully:
+The first rollout retains the `honcho-infra` resources while recording
+`drop_cascade = true` for its vector extension. This lets the application
+rollout remove every Honcho workload before database destruction begins. After
+Honcho pods and jobs are gone, remove the resources from
+`gitops/espresso/tofu/honcho/main.tf` for one Flux reconciliation; the cascade
+setting lets tofu-controller remove vector-dependent tables, then the database
+and role, without orphaning its state. After that empty plan has applied
+successfully:
 
 1. remove `gitops/espresso/tofu/honcho/`;
 2. remove `gitops/espresso/infrastructure/configs/honcho-tofu/` and its entry

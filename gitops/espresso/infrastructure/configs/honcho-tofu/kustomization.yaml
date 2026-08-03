@@ -28,3 +28,7 @@ patches:
             varsKeys:
               - POSTGRES_USER:pg_admin_user
               - POSTGRES_PASSWORD:pg_admin_password
+          - kind: Secret
+            name: honcho-db
+            varsKeys:
+              - HONCHO_DB_PASSWORD:honcho_db_password
