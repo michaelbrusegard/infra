@@ -364,6 +364,16 @@ data:
         "active": true
       },
       {
+        "name": "Hermes Alert Webhook",
+        "type": "http",
+        "parent_name": "apps[0]",
+        "url": "http://hermes-agent-gateway.hermes-agent.svc.cluster.local:8644/health",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
         "name": "CLIProxyAPI",
         "type": "port",
         "parent_name": "apps[0]",

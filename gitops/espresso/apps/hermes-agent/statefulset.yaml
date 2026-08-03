@@ -36,8 +36,15 @@ spec:
               done
               install -m 0644 /bootstrap-config/hindsight.json /opt/data/hindsight/config.json
               install -m 0644 /bootstrap-config/mealie-skill.md /opt/data/skills/mealie/SKILL.md
+              sed -i "s/__MATTERMOST_ALERTS_CHANNEL_ID__/$MATTERMOST_ALERTS_CHANNEL_ID/g" /opt/data/config.yaml
               install -m 0640 /bootstrap-secret/.env /opt/data/.env
               chown -R 10000:10000 /opt/data
+          env:
+            - name: MATTERMOST_ALERTS_CHANNEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-outputs
+                  key: hermes_alerts_channel_id
           resources:
             requests:
               memory: 16Mi
@@ -61,6 +68,8 @@ spec:
           ports:
             - containerPort: 8642
               name: gateway
+            - containerPort: 8644
+              name: webhook
           env:
             - name: HERMES_HOME
               value: /opt/data
@@ -126,6 +135,15 @@ spec:
               value: 0.0.0.0
             - name: API_SERVER_PORT
               value: "8642"
+            - name: WEBHOOK_ENABLED
+              value: "true"
+            - name: WEBHOOK_PORT
+              value: "8644"
+            - name: WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-alert-webhook
+                  key: WEBHOOK_SECRET
           resources:
             requests:
               memory: 512Mi

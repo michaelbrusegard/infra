@@ -38,19 +38,21 @@ authenticated account exposes a different canonical model ID.
 
 Mattermost Team Edition does not provide generic OIDC, so this instance uses a
 local login instead of adding a second proxy/login prompt in front of it. Create
-the first local system administrator in the web UI, but do not create a team.
+the first local system administrator in the web UI with username
+`mattermost_admin` and email `infra@michaelbrusegard.com`, but do not create a
+team.
 
 With local mode enabled, create an administrator token and the Hermes bot from
 inside the running pod:
 
 ```sh
 kubectl -n mattermost exec -it mattermost-0 -- \
-  mmctl token generate <admin-username> opentofu --local
+  mmctl token generate mattermost_admin opentofu --local
 kubectl -n mattermost exec -it mattermost-0 -- \
   mmctl bot create hermes --display-name Hermes \
   --description "Hermes Agent" --with-token --local
 kubectl -n mattermost exec mattermost-0 -- \
-  mmctl user search <admin-username> --json --local
+  mmctl user search mattermost_admin --json --local
 ```
 
 Using `sops`, replace the placeholders in the secrets repository:
@@ -76,6 +78,14 @@ history cannot be applied automatically.
 Mattermost also creates its mandatory `Town Square` and default `Off-Topic`
 channels with every new team. Decide how to present those two channels before
 the initial OpenTofu apply; they are not currently managed by the provider.
+
+Alertmanager posts warning and critical notifications directly to `alerts` and
+also calls the authenticated, cluster-internal Hermes webhook for firing alerts.
+This triggers the main Hermes instance to perform a read-only-first
+investigation and post its findings to `alerts`. It does not create a second
+Hermes deployment. Because the main agent has broader cluster permissions and
+approvals are disabled, its alert prompt explicitly prohibits automatic
+remediation; request any resulting change interactively in Mattermost.
 
 ## 3. Bootstrap Mealie API access
 

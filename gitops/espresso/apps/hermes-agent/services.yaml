@@ -28,6 +28,9 @@ spec:
     - name: http
       port: 8642
       targetPort: gateway
+    - name: webhook
+      port: 8644
+      targetPort: webhook
 ---
 apiVersion: v1
 kind: Service

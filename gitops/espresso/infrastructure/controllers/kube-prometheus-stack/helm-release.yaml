@@ -67,6 +67,7 @@ spec:
       alertmanagerSpec:
         secrets:
           - mattermost-outputs
+          - hermes-alert-webhook
         storage:
           volumeClaimTemplate:
             spec:
@@ -111,10 +112,18 @@ spec:
           - name: "null"
           - name: mattermost
             mattermost_configs:
-              - api_url_file: /etc/alertmanager/secrets/mattermost-outputs/alertmanager_webhook_url
+              - webhook_url_file: /etc/alertmanager/secrets/mattermost-outputs/alertmanager_webhook_url
                 channel: alerts
                 username: Alertmanager
                 send_resolved: true
+            webhook_configs:
+              - url: http://hermes-agent-gateway.hermes-agent.svc.cluster.local:8644/webhooks/alertmanager
+                send_resolved: false
+                http_config:
+                  http_headers:
+                    X-Gitlab-Token:
+                      files:
+                        - /etc/alertmanager/secrets/hermes-alert-webhook/WEBHOOK_SECRET
 
     grafana:
       deploymentStrategy:

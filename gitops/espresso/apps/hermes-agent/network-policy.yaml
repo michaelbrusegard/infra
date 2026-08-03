@@ -34,12 +34,22 @@ spec:
         - ports:
             - port: "8642"
               protocol: TCP
+            - port: "8644"
+              protocol: TCP
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: hermes-agent
       toPorts:
         - ports:
             - port: "8642"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            k8s:app.kubernetes.io/name: alertmanager
+      toPorts:
+        - ports:
+            - port: "8644"
               protocol: TCP
     - fromEntities:
         - ingress

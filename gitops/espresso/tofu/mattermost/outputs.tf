@@ -9,6 +9,11 @@ output "hermes_home_channel_id" {
   value       = mattermost_channel.channels["assistant"].id
 }
 
+output "hermes_alerts_channel_id" {
+  description = "Mattermost channel ID used for alert notifications and investigations"
+  value       = mattermost_channel.channels["alerts"].id
+}
+
 output "hermes_allowed_channel_ids" {
   description = "Mattermost channel IDs in which Hermes may respond"
   value       = join(",", [for name in sort(keys(local.channels)) : mattermost_channel.channels[name].id])
