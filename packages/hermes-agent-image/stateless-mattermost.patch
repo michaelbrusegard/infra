@@ -2,15 +2,16 @@ diff --git a/gateway/run.py b/gateway/run.py
 index f59e006f6..aef39bf6b 100644
 --- a/gateway/run.py
 +++ b/gateway/run.py
-@@ -18938 +18938,16 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+@@ -18938 +18938,17 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
          disabled_toolsets = agent_cfg_local.get("disabled_toolsets") or None
++        from gateway.config import Platform as GatewayPlatform
 +        stateless_channel_ids = {
 +            channel_id.strip()
 +            for channel_id in os.getenv("MATTERMOST_STATELESS_CHANNELS", "").split(",")
 +            if channel_id.strip()
 +        }
 +        stateless_session = (
-+            source.platform == Platform.MATTERMOST
++            source.platform == GatewayPlatform.MATTERMOST
 +            and source.chat_id in stateless_channel_ids
 +        )
 +        if stateless_session:
