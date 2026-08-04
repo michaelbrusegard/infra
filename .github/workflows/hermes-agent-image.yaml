@@ -74,7 +74,7 @@ jobs:
         run: |
           docker load < result
           docker run --rm "$IMAGE_REF:nix" --help
-          for binary in flux gh helm himalaya jq jupyter kubectl stern tofu yq; do
+          for binary in flux gh helm himalaya jq jupyter kubectl sed stern tofu yq; do
             docker run --rm --entrypoint "$binary" "$IMAGE_REF:nix" --help >/dev/null
           done
           docker run --rm --entrypoint bash "$IMAGE_REF:nix" -c '
