@@ -99,10 +99,6 @@
       url = "github:AvengeMedia/danksearch";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
-    t3code = {
-      url = "github:omarcresp/t3code-flake";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
     paseo = {
       url = "github:getpaseo/paseo/v0.2.3";
       inputs.nixpkgs.follows = "nixpkgs-unstable";

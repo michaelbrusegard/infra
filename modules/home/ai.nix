@@ -212,10 +212,7 @@ in {
           pkgs.open-computer-use
         ]
         ++ lib.optionals (!isWsl) (with pkgs;
-          [
-            t3code
-          ]
-          ++ lib.optionals pkgs.stdenv.isLinux [
+          lib.optionals pkgs.stdenv.isLinux [
             paseo
             paseo-desktop
           ]
@@ -307,9 +304,7 @@ in {
           ]
           ++ lib.optionals (!isWsl) [
             ".config/Paseo"
-            ".config/t3code"
             ".paseo"
-            ".t3"
           ];
         files = [
           ".claude.json"

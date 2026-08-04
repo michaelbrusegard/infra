@@ -14,7 +14,6 @@ inputs: _: prev: let
           ../patches/paseo-fonts.patch
         ];
     });
-  t3codePackage = inputs.t3code.packages.${system}.t3-code;
 in
   {
     inherit (inputs.hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
@@ -24,17 +23,6 @@ in
     dms-greeter = inputs.dms.packages.${system}.default;
     dsearch = inputs.dsearch.packages.${system}.default;
     paseo = paseoPackage;
-    t3code =
-      if prev.stdenv.hostPlatform.isLinux
-      then
-        t3codePackage.overrideAttrs (old: {
-          postFixup =
-            (old.postFixup or "")
-            + ''
-              wrapProgram $out/bin/t3-code --add-flags --no-sandbox
-            '';
-        })
-      else t3codePackage;
   }
   // prev.lib.optionalAttrs prev.stdenv.hostPlatform.isLinux {
     paseo-desktop = paseoDesktopPackage;
