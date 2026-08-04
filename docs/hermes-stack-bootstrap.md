@@ -31,8 +31,9 @@ curl -fsS -H "Authorization: Bearer $proxy_key" \
 unset proxy_key
 ```
 
-Hermes and Hindsight currently use `kimi-k3`. Adjust both manifests if the
-authenticated account exposes a different canonical model ID.
+Hermes and Hindsight currently use `gpt-5.4` through the OpenAI Codex login.
+Kimi can be added later with the login command above, then enabled by changing
+the model in both manifests.
 
 ## 2. Bootstrap Mattermost
 

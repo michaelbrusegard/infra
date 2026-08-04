@@ -7,11 +7,11 @@ data:
   config.yaml: |
     model:
       provider: openai-api
-      default: kimi-k3
+      default: gpt-5.4
 
     delegation:
       provider: openai-api
-      model: kimi-k3
+      model: gpt-5.4
 
     compression:
       enabled: true
@@ -22,13 +22,13 @@ data:
     auxiliary:
       compression:
         provider: openai-api
-        model: kimi-k3
+        model: gpt-5.4
       web_extract:
         provider: openai-api
-        model: kimi-k3
+        model: gpt-5.4
       vision:
         provider: openai-api
-        model: kimi-k3
+        model: gpt-5.4
 
     memory:
       provider: hindsight
