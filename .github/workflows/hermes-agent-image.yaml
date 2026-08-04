@@ -97,9 +97,14 @@ jobs:
           GIT_SHA: ${{ github.sha }}
         run: |
           nix profile install nixpkgs#skopeo
-          skopeo copy "docker-archive:result" "docker://$IMAGE_REF:sha-$GIT_SHA"
-          skopeo copy "docker-archive:result" "docker://$IMAGE_REF:main"
-          digest=$(skopeo inspect "docker://$IMAGE_REF:sha-$GIT_SHA" | jq -r .Digest)
+          registries_conf="$RUNNER_TEMP/registries.conf"
+          printf '%s\n' 'unqualified-search-registries = ["docker.io"]' > "$registries_conf"
+          skopeo --registries-conf "$registries_conf" copy \
+            "docker-archive:result" "docker://$IMAGE_REF:sha-$GIT_SHA"
+          skopeo --registries-conf "$registries_conf" copy \
+            "docker-archive:result" "docker://$IMAGE_REF:main"
+          digest=$(skopeo --registries-conf "$registries_conf" inspect \
+            "docker://$IMAGE_REF:sha-$GIT_SHA" | jq -r .Digest)
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
       - name: Sync main before digest update
