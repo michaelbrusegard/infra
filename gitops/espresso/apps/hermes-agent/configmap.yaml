@@ -38,6 +38,10 @@ data:
     security:
       allow_lazy_installs: false
 
+    platform_toolsets:
+      webhook:
+        - terminal
+
     group_sessions_per_user: true
 
     platforms:
