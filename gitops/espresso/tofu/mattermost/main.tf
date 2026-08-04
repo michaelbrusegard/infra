@@ -132,7 +132,6 @@ resource "mattermost_incoming_webhook" "alertmanager" {
   channel_id  = mattermost_channel.channels["alerts"].id
   name        = "Alertmanager"
   description = "Warning and critical alerts from the espresso cluster."
-  username    = "Alertmanager"
 
   lifecycle {
     prevent_destroy = true
