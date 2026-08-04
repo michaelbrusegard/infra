@@ -451,12 +451,15 @@ resource "netbird_policy" "dns_access_tcp" {
 }
 
 resource "netbird_nameserver_group" "router_public_dns" {
-  name        = "Router Public DNS"
-  description = "Public DNS for router domain to bypass hairpin routing through NetBird tunnel"
+  name        = "Bootstrap Public DNS"
+  description = "Public DNS for router and NetBird control-plane domains to avoid tunnel bootstrap and hairpin loops"
   enabled     = true
   primary     = false
-  domains     = ["router.${local.domain}"]
-  groups      = [netbird_group.admins.id, netbird_group.users.id]
+  domains = [
+    "router.${local.domain}",
+    "netbird.${local.domain}",
+  ]
+  groups = [netbird_group.admins.id, netbird_group.users.id]
 
   nameservers = [
     {
