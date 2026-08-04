@@ -9,7 +9,6 @@ metadata:
     kustomize.toolkit.fluxcd.io/ssa: Merge
 spec:
   sourcePVC: data-nextcloud-0
-  trigger: {}
   restic:
     repository: freddo-restic-nextcloud-pvc
     # Bump to clear a stale repository lock before the next sync (a mover
