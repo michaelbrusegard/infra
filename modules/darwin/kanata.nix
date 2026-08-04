@@ -51,32 +51,32 @@
     name = "kanata-keyboard-watcher";
     executable = true;
     text = ''
-    #!/bin/bash
-    sleep 1
-    state=/var/run/org.nixos.kanata.keyboards
-    kanata_pid() {
-      /bin/launchctl print system/org.nixos.kanata 2>/dev/null \
-        | /usr/bin/grep -m1 '[[:space:]]pid = ' | /usr/bin/awk '{print $3}'
-    }
-    current=$(/usr/bin/hidutil list --matching '{"DeviceUsagePage":1,"DeviceUsage":6}' \
-      | /usr/bin/grep '^0x' \
-      | /usr/bin/grep -v 'Apple Internal Keyboard' \
-      | /usr/bin/grep -v 'Karabiner' \
-      | /usr/bin/awk '{print $1, $2, $3}' | /usr/bin/sort -u || true)
-    hash=$(printf '%s' "$current" | /sbin/md5 -q)
-    new="$hash $(kanata_pid)"
-    old=$(/bin/cat "$state" 2>/dev/null || true)
-    if [ "$new" != "$old" ]; then
-      echo "$(date '+%F %T') keyboard set or kanata pid changed, restarting kanata"
-      /bin/launchctl kickstart -k system/org.nixos.kanata
-      pid=""
-      for _ in 1 2 3 4 5 6 7 8 9 10; do
-        sleep 1
-        pid=$(kanata_pid)
-        [ -n "$pid" ] && break
-      done
-      printf '%s %s' "$hash" "$pid" > "$state"
-    fi
+      #!/bin/bash
+      sleep 1
+      state=/var/run/org.nixos.kanata.keyboards
+      kanata_pid() {
+        /bin/launchctl print system/org.nixos.kanata 2>/dev/null \
+          | /usr/bin/grep -m1 '[[:space:]]pid = ' | /usr/bin/awk '{print $3}'
+      }
+      current=$(/usr/bin/hidutil list --matching '{"DeviceUsagePage":1,"DeviceUsage":6}' \
+        | /usr/bin/grep '^0x' \
+        | /usr/bin/grep -v 'Apple Internal Keyboard' \
+        | /usr/bin/grep -v 'Karabiner' \
+        | /usr/bin/awk '{print $1, $2, $3}' | /usr/bin/sort -u || true)
+      hash=$(printf '%s' "$current" | /sbin/md5 -q)
+      new="$hash $(kanata_pid)"
+      old=$(/bin/cat "$state" 2>/dev/null || true)
+      if [ "$new" != "$old" ]; then
+        echo "$(date '+%F %T') keyboard set or kanata pid changed, restarting kanata"
+        /bin/launchctl kickstart -k system/org.nixos.kanata
+        pid=""
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+          sleep 1
+          pid=$(kanata_pid)
+          [ -n "$pid" ] && break
+        done
+        printf '%s %s' "$hash" "$pid" > "$state"
+      fi
     '';
   };
 in {
