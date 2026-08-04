@@ -94,7 +94,12 @@ data:
         )
 
 
-    def request(method: str, path: str, body: dict | None = None) -> dict:
+    def request(
+        method: str,
+        path: str,
+        body: dict | None = None,
+        content_type: str = "application/merge-patch+json",
+    ) -> dict:
         data = None
         headers = {
             "Authorization": f"Bearer {TOKEN}",
@@ -102,7 +107,7 @@ data:
         }
         if body is not None:
             data = json.dumps(body).encode()
-            headers["Content-Type"] = "application/merge-patch+json"
+            headers["Content-Type"] = content_type
         req = urllib.request.Request(
             API + path,
             data=data,
@@ -134,8 +139,15 @@ data:
     def trigger_source(namespace: str, source: str, token: str) -> None:
         request(
             "PATCH",
-            source_path(namespace, source),
-            {"spec": {"trigger": {"manual": token}}},
+            source_path(namespace, source)
+            + "?fieldManager=nextcloud-backup-orchestrator&force=true",
+            {
+                "apiVersion": "volsync.backube/v1alpha1",
+                "kind": "ReplicationSource",
+                "metadata": {"name": source, "namespace": namespace},
+                "spec": {"trigger": {"manual": token}},
+            },
+            "application/apply-patch+yaml",
         )
 
 
