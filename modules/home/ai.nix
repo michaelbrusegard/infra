@@ -165,6 +165,9 @@ in {
             args = ["mcp"];
             default_tools_approval_mode = "approve";
           };
+          slack = {
+            url = "https://mcp.slack.com/mcp";
+          };
         };
       };
       skills = sharedAgentSkills;
@@ -183,6 +186,10 @@ in {
           type = "stdio";
           command = openComputerUseCommand;
           args = ["mcp"];
+        };
+        slack = {
+          type = "http";
+          url = "https://mcp.slack.com/mcp";
         };
       };
       skills = sharedAgentSkills;
@@ -235,6 +242,14 @@ in {
                 type = "stdio";
                 command = openComputerUseCommand;
                 args = ["mcp"];
+              };
+              slack = {
+                url = "https://mcp.slack.com/mcp";
+                auth = "oauth";
+                oauth = {
+                  clientId = "1601185624273.8899143856786";
+                  redirectUri = "http://localhost:3118/callback";
+                };
               };
             };
           };
