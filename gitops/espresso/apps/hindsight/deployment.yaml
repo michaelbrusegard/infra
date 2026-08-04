@@ -33,6 +33,8 @@ spec:
               value: 0.0.0.0
             - name: HINDSIGHT_API_PORT
               value: "8888"
+            - name: HINDSIGHT_API_WORKER_ID
+              value: hindsight
             - name: HINDSIGHT_CP_DATAPLANE_API_URL
               value: http://127.0.0.1:8888
             - name: HINDSIGHT_CP_DATAPLANE_API_KEY
