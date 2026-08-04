@@ -6,7 +6,7 @@ locals {
       header       = "General conversations and requests for Hermes."
     }
     scratchpad = {
-      name         = "off-topic"
+      name         = "scratchpad"
       display_name = "Scratchpad"
       header       = "One-shot Hermes requests with no prior session or persistent memory context."
     }
