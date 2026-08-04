@@ -1,30 +1,37 @@
 locals {
   channels = {
     assistant = {
+      name         = "town-square"
       display_name = "Assistant"
       header       = "General conversations and requests for Hermes."
     }
     scratchpad = {
+      name         = "off-topic"
       display_name = "Scratchpad"
       header       = "One-shot Hermes requests with no prior session or persistent memory context."
     }
     meals = {
+      name         = "meals"
       display_name = "Meals"
       header       = "Meal planning, recipes, and Mealie activity."
     }
     shopping = {
+      name         = "shopping"
       display_name = "Shopping"
       header       = "Shopping lists, purchases, and errands."
     }
     finance = {
+      name         = "finance"
       display_name = "Finance"
       header       = "Personal finance planning and tracking."
     }
     homelab = {
+      name         = "homelab"
       display_name = "Homelab"
       header       = "Infrastructure operations and cluster discussions."
     }
     alerts = {
+      name         = "alerts"
       display_name = "Alerts"
       header       = "Monitoring alerts and Hermes investigations."
     }
@@ -50,8 +57,11 @@ resource "mattermost_team" "hermes" {
 resource "mattermost_channel" "channels" {
   for_each = local.channels
 
-  team_id      = mattermost_team.hermes.id
-  name         = each.key
+  team_id = mattermost_team.hermes.id
+  # Mattermost does not allow changing the canonical names of its two
+  # protected default channels. Their UI display names are still managed as
+  # Assistant and Scratchpad.
+  name         = each.value.name
   display_name = each.value.display_name
   header       = each.value.header
   type         = "O"
