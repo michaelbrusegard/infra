@@ -68,6 +68,8 @@ spec:
             - name: OIDC_PROVIDER_NAME
               value: Pocket ID
             - name: OIDC_AUTO_REDIRECT
+              value: "true"
+            - name: ALLOW_PASSWORD_LOGIN
               value: "false"
             - name: OIDC_ADMIN_GROUP
               value: admin
