@@ -11,9 +11,9 @@ data:
     api-keys:
       - __API_KEY__
     remote-management:
-      allow-remote: false
-      secret-key: ""
-      disable-control-panel: true
+      allow-remote: true
+      secret-key: __MANAGEMENT_KEY__
+      disable-control-panel: false
     debug: false
     logging-to-file: false
     usage-statistics-enabled: true

@@ -14,7 +14,8 @@ spec:
       labels:
         app: cliproxyapi
       annotations:
-        secret.reloader.stakater.com/reload: cliproxyapi
+        configmap.reloader.stakater.com/reload: cliproxyapi
+        secret.reloader.stakater.com/reload: cliproxyapi,cliproxyapi-management
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -29,7 +30,11 @@ spec:
             - |
               set -eu
               api_key="$(cat /secret/API_KEY)"
-              sed "s|__API_KEY__|$api_key|g" /template/config.yaml > /config/config.yaml
+              management_key="$(cat /management-secret/MANAGEMENT_KEY)"
+              sed \
+                -e "s|__API_KEY__|$api_key|g" \
+                -e "s|__MANAGEMENT_KEY__|$management_key|g" \
+                /template/config.yaml > /config/config.yaml
               mkdir -p /data/auths
               chown -R 10000:10000 /config /data
               chmod 0600 /config/config.yaml
@@ -46,6 +51,9 @@ spec:
               readOnly: true
             - name: secret
               mountPath: /secret
+              readOnly: true
+            - name: management-secret
+              mountPath: /management-secret
               readOnly: true
             - name: config
               mountPath: /config
@@ -103,7 +111,6 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-              readOnly: true
             - name: auth
               mountPath: /data
       volumes:
@@ -113,6 +120,9 @@ spec:
         - name: secret
           secret:
             secretName: cliproxyapi
+        - name: management-secret
+          secret:
+            secretName: cliproxyapi-management
         - name: config
           emptyDir: {}
   volumeClaimTemplates:
