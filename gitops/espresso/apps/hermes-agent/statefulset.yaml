@@ -11,6 +11,9 @@ spec:
   serviceName: hermes-agent-internal
   template:
     metadata:
+      annotations:
+        configmap.reloader.stakater.com/reload: hermes-agent-bootstrap
+        secret.reloader.stakater.com/reload: cliproxyapi,hermes-agent-env,hermes-alert-webhook,hindsight,mattermost-integrations,mattermost-outputs,mealie-api
       labels:
         app: hermes-agent
     spec:

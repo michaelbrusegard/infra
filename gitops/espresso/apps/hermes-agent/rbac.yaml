@@ -55,8 +55,37 @@ rules:
     verbs: ["get", "list", "watch"]
   - apiGroups: ["source.toolkit.fluxcd.io"]
     resources:
+      - buckets
+      - externalartifacts
       - gitrepositories
+      - helmcharts
       - helmrepositories
+      - ocirepositories
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["notification.toolkit.fluxcd.io"]
+    resources:
+      - alerts
+      - providers
+      - receivers
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["image.toolkit.fluxcd.io"]
+    resources:
+      - imagepolicies
+      - imagerepositories
+      - imageupdateautomations
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["monitoring.coreos.com"]
+    resources:
+      - alertmanagerconfigs
+      - alertmanagers
+      - podmonitors
+      - probes
+      - prometheusagents
+      - prometheuses
+      - prometheusrules
+      - scrapeconfigs
+      - servicemonitors
+      - thanosrulers
     verbs: ["get", "list", "watch"]
   - apiGroups: ["cilium.io"]
     resources:

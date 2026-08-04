@@ -21,6 +21,7 @@
       fluxcd
       gh
       git
+      gnused
       himalaya
       jq
       kubectl
