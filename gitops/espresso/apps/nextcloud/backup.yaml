@@ -3,6 +3,10 @@ kind: ReplicationSource
 metadata:
   name: nextcloud-data-backup
   namespace: nextcloud
+  annotations:
+    # The orchestrator owns spec.trigger.manual; preserve that field when
+    # Flux reconciles the otherwise declarative ReplicationSource.
+    kustomize.toolkit.fluxcd.io/ssa: Merge
 spec:
   sourcePVC: data-nextcloud-0
   trigger: {}
