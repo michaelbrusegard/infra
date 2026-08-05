@@ -69,6 +69,8 @@ spec:
               value: Pocket ID
             - name: OIDC_AUTO_REDIRECT
               value: "true"
+            - name: OIDC_REQUIRES_EMAIL_VERIFICATION
+              value: "false"
             - name: ALLOW_PASSWORD_LOGIN
               value: "false"
             - name: OIDC_ADMIN_GROUP
