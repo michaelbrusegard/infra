@@ -58,6 +58,7 @@
     code-reviewer = "${codeReviewerSource}/cli-tool/components/skills/development/code-reviewer";
     excalidraw-diagram = "${excalidrawDiagramSource}";
     remotion-best-practices = "${remotionSkillsSource}/skills/remotion-best-practices";
+    slack = "${../../config/skills/slack}";
   };
   ompSkillFiles = lib.mapAttrs' (name: source:
     lib.nameValuePair ".omp/agent/skills/${name}" {
@@ -210,6 +211,7 @@ in {
           (direnvWrapped pkgs.omp "omp")
           pkgs.open-browser-use
           pkgs.open-computer-use
+          pkgs.slack-cli
         ]
         ++ lib.optionals (!isWsl) (with pkgs;
           lib.optionals pkgs.stdenv.isLinux [
@@ -301,6 +303,8 @@ in {
             ".claude"
             ".codex"
             ".omp"
+            ".cache/slack-cli"
+            ".config/slack-cli"
           ]
           ++ lib.optionals (!isWsl) [
             ".config/Paseo"
