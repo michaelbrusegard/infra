@@ -23,7 +23,7 @@ Messages print as `[ts] author: text  <permalink>`. Use `ts` for `--thread` repl
 
 ## Sending rules
 
-- Show the user the draft and destination and get confirmation before `slack send`, unless they dictated the exact message.
+- ALWAYS show the user the exact draft and destination and wait for their explicit confirmation before running `slack send` or `slack react` — no exceptions, even if they dictated the message or approved a previous send in the same conversation.
 - Reply in threads (`--thread <ts>`) when responding to an existing message.
 - Slack mrkdwn only: `*bold*`, `_italic_`, `` `code` ``, `> quote`, `<url|label>`. No headers, no `**double asterisks**`.
 - When asking a specific person for something (a review, an answer), @mention them so they get notified: write `<@USERID>` in the text (find the ID with `slack whois @name`), followed by their saga epithet — e.g. `<@U0B980Z2P9V> Fjord-Born, your eyes are needed…`. Plain "@name" text does not notify.
