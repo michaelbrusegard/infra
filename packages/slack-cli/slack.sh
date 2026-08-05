@@ -1,7 +1,6 @@
 # Minimal Slack CLI for humans and coding agents.
-# Auth: SLACK_TOKEN env var, or token file at ~/.config/slack-cli/token (xoxp user token).
+# Auth: sops-nix decrypted xoxp user token; no env vars, no other locations.
 
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/slack-cli"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/slack-cli"
 CACHE_TTL_SECONDS=86400
 mkdir -p "$CACHE_DIR"
@@ -22,7 +21,7 @@ Usage:
   slack file <url_private> [outfile]       Download a file attachment
 
 Output: one message per line as "[ts] author: text  <permalink>".
-All commands honor SLACK_TOKEN; otherwise read ~/.config/slack-cli/token.
+Auth: reads the sops-nix secret at ~/.config/sops-nix/secrets/keys/slack-token.
 EOF
   exit "${1:-0}"
 }
@@ -32,18 +31,11 @@ die() {
   exit 1
 }
 
-SOPS_TOKEN_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/sops-nix/secrets/keys/slack-token"
+TOKEN_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/sops-nix/secrets/keys/slack-token"
 
 get_token() {
-  if [ -n "${SLACK_TOKEN:-}" ]; then
-    printf '%s' "$SLACK_TOKEN"
-  elif [ -f "$CONFIG_DIR/token" ]; then
-    tr -d '[:space:]' <"$CONFIG_DIR/token"
-  elif [ -f "$SOPS_TOKEN_FILE" ]; then
-    tr -d '[:space:]' <"$SOPS_TOKEN_FILE"
-  else
-    die "no token: set SLACK_TOKEN, or provide an xoxp user token at $CONFIG_DIR/token or $SOPS_TOKEN_FILE"
-  fi
+  [ -f "$TOKEN_FILE" ] || die "no token at $TOKEN_FILE (sops-nix secret keys/slack-token)"
+  tr -d '[:space:]' <"$TOKEN_FILE"
 }
 
 TOKEN=""
@@ -282,12 +274,6 @@ cmd_send() {
   { [ -n "$target" ] && [ -n "$text" ]; } || usage 1
   local channel
   channel="$(resolve_channel "$target")"
-  if [ -n "${SLACK_SEND_CHANNELS:-}" ]; then
-    case ",$SLACK_SEND_CHANNELS," in
-      *",$channel,"* | *",$target,"*) ;;
-      *) die "sending to $target blocked: not in SLACK_SEND_CHANNELS allowlist" ;;
-    esac
-  fi
   local extra=()
   [ -n "$thread" ] && extra=(--data-urlencode "thread_ts=$thread")
   api chat.postMessage \
