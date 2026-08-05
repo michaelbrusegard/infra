@@ -32,13 +32,17 @@ die() {
   exit 1
 }
 
+SOPS_TOKEN_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/sops-nix/secrets/keys/slack-token"
+
 get_token() {
   if [ -n "${SLACK_TOKEN:-}" ]; then
     printf '%s' "$SLACK_TOKEN"
   elif [ -f "$CONFIG_DIR/token" ]; then
     tr -d '[:space:]' <"$CONFIG_DIR/token"
+  elif [ -f "$SOPS_TOKEN_FILE" ]; then
+    tr -d '[:space:]' <"$SOPS_TOKEN_FILE"
   else
-    die "no token: set SLACK_TOKEN or write an xoxp user token to $CONFIG_DIR/token"
+    die "no token: set SLACK_TOKEN, or provide an xoxp user token at $CONFIG_DIR/token or $SOPS_TOKEN_FILE"
   fi
 }
 

@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  config,
   isWsl,
   homePersistenceRoot ? null,
   paseoHostnames,
@@ -207,10 +206,6 @@ in {
 
   home =
     {
-      sessionVariables = lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? slackTokenFile) {
-        SLACK_TOKEN = "$( [ -f ${config.secrets.keys.slackTokenFile} ] && uutils-cat ${config.secrets.keys.slackTokenFile} )";
-      };
-
       packages =
         [
           (direnvWrapped pkgs.omp "omp")
