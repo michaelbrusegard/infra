@@ -17,7 +17,7 @@ spec:
         kubernetes.io/hostname: espresso-1
       containers:
         - name: feishin
-          image: ghcr.io/jeffvli/feishin:1.14.0@sha256:752230eccbd2327981bafbf095d8103b751e1a99170ed58262d330dae74aa4c5
+          image: ghcr.io/jeffvli/feishin:1.15.1@sha256:2b87c97cf44e8604d084b20f531f3ed6cf5c22d19fbca42c58c5a84c38dafe8e
           ports:
             - containerPort: 9180
               name: http
