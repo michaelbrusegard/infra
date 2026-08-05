@@ -119,11 +119,11 @@ resolve_user() {
 resolve_channel() {
   local query="$1" id user
   case "$query" in
-    C* | D* | G*) printf '%s' "$query"; return ;;
+    C* | D* | G* | U* | W*) printf '%s' "$query"; return ;;
     "@"*)
       user="$(resolve_user "$query")"
       id="$(jq -r --arg u "$user" '.[] | select(.is_im == true and .user == $u) | .id' "$(channels_file)" | head -n1)"
-      [ -n "$id" ] || die "no DM found with $query"
+      [ -n "$id" ] || { printf '%s' "$user"; return; }
       printf '%s' "$id"
       return
       ;;
