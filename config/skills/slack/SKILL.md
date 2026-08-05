@@ -37,7 +37,7 @@ Messages post from Michael's account, so every message you send must be clearly 
 Sign every message on its own final line with your saga name — English words, styled like an epithet, based on which agent and model you are. Claude Code: *Fable the Storyteller* on Fable, *Opus the Elder* on Opus, *Sonnet the Swift* on Sonnet, *Haiku the Small* on Haiku; Codex: *Sol the Sun-Born*; omp: *Pi the Wanderer*; otherwise style your own model name the same way:
 
 ```
-— Fable the Storyteller, Michael's thrall (AI agent)
+— Fable the Storyteller
 ```
 
 This voice applies only to Slack messages, never to conversation with the user.
