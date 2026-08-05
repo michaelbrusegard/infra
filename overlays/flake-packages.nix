@@ -7,6 +7,13 @@ inputs: _: prev: let
     (inputs.paseo.packages.${system}.desktop.override {
       paseo = paseoPackage;
     }).overrideAttrs (old: {
+      nativeBuildInputs =
+        (old.nativeBuildInputs or [])
+        ++ [prev.autoPatchelfHook];
+      buildInputs =
+        (old.buildInputs or [])
+        ++ [prev.stdenv.cc.cc.lib];
+      autoPatchelfIgnoreMissingDeps = ["libc.musl-x86_64.so.1"];
       patches =
         (old.patches or [])
         ++ [
