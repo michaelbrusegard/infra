@@ -8,7 +8,7 @@ data:
   MUSICGRABBER_URL: "http://musicgrabber-internal.media.svc.cluster.local:8080"
   MUSIC_ROOT: "/music"
   STATE_DB: "/state/listenbrainz-bridge.db"
-  METRICS_PATH: "/state/metrics/listenbrainz.prom"
+  METRICS_PATH: "/state/metrics/listenbrainz.txt"
   MAX_TRACKS_PER_RUN: "25"
   PRIORITY_SOURCE: "monochrome"
   PREFERRED_SOURCES: "all"
@@ -33,7 +33,7 @@ data:
     MUSICGRABBER_URL = os.environ.get("MUSICGRABBER_URL", "").rstrip("/")
     MUSIC_ROOT = Path(os.environ.get("MUSIC_ROOT", "/music"))
     STATE_DB = Path(os.environ.get("STATE_DB", "/state/listenbrainz-bridge.db"))
-    METRICS_PATH = Path(os.environ.get("METRICS_PATH", "/state/metrics/listenbrainz.prom"))
+    METRICS_PATH = Path(os.environ.get("METRICS_PATH", "/state/metrics/listenbrainz.txt"))
     MAX_TRACKS_PER_RUN = int(os.environ.get("MAX_TRACKS_PER_RUN", "25"))
     PRIORITY_SOURCE = os.environ.get("PRIORITY_SOURCE", "monochrome")
     PREFERRED_SOURCES = os.environ.get("PREFERRED_SOURCES", "all")

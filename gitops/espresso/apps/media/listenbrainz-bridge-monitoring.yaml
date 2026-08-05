@@ -81,9 +81,8 @@ spec:
       app: listenbrainz-bridge-metrics
   podMetricsEndpoints:
     - port: metrics
-      path: /listenbrainz.prom
+      path: /listenbrainz.txt
       interval: 1m
-      fallbackScrapeProtocol: PrometheusText0.0.4
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
