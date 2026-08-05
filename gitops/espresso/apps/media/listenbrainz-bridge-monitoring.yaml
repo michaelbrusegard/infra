@@ -83,6 +83,7 @@ spec:
     - port: metrics
       path: /listenbrainz.prom
       interval: 1m
+      fallbackScrapeProtocol: PrometheusText0.0.4
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
