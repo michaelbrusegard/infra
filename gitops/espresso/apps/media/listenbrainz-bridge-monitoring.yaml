@@ -21,7 +21,11 @@ spec:
           command:
             - sh
             - -c
-            - mkdir -p /state/metrics
+            - |
+              mkdir -p /state/metrics
+              if [ -f /state/metrics/listenbrainz.prom ] && [ ! -f /state/metrics/listenbrainz.txt ]; then
+                cp /state/metrics/listenbrainz.prom /state/metrics/listenbrainz.txt
+              fi
           volumeMounts:
             - name: state
               mountPath: /state
