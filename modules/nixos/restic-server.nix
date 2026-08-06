@@ -315,6 +315,11 @@ in {
   };
 
   config = {
+    # Repository pruning can briefly exceed the physical memory available on
+    # the Raspberry Pi backup servers. Compressed swap prevents an interrupted
+    # prune from leaving repositories locked.
+    zramSwap.enable = true;
+
     environment.systemPackages = [
       pkgs.restic
       resticCheckOne
@@ -402,9 +407,10 @@ in {
         restic-maintenance = {
           wantedBy = ["timers.target"];
           timerConfig = {
-            OnCalendar = "daily";
+            # Cluster backups run overnight; keep pruning out of their window.
+            OnCalendar = "*-*-* 12:00";
             Persistent = true;
-            RandomizedDelaySec = "2h";
+            RandomizedDelaySec = "1h";
           };
         };
 
