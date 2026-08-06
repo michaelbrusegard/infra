@@ -39,7 +39,8 @@ spec:
 
     prometheus:
       prometheusSpec:
-        retention: 30d
+        retention: 21d
+        retentionSize: 40GB
         storageSpec:
           volumeClaimTemplate:
             spec:
