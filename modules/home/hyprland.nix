@@ -296,6 +296,7 @@ in
             (bind "MOD5 + SHIFT + RETURN"
               (execRaw "${kitty} ${sh} -c '${yazi}'"))
             (bind "CTRL + SPACE" (exec "dms ipc call spotlight toggle"))
+            (bind "CTRL + SHIFT + SPACE" (exec "handy --toggle-transcription"))
             (bind "CTRL + SHIFT + V" (exec "dms ipc call clipboard toggle"))
             (bind "CTRL + Q" closewindow)
             (bind "CTRL + SHIFT + Q" killwindow)
