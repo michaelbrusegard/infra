@@ -33,10 +33,6 @@
       platform = "linux-arm64";
       hash = "sha256-hFWjdG2gH77hg3XmbosQ0Hhvx3VexXrmNYaoOx74sUU=";
     };
-    x86_64-darwin = {
-      platform = "darwin-amd64";
-      hash = "sha256-WryE1X4a4+bj1VilyqVR5w5LARByjB3fe8jIQEkBT4Q=";
-    };
     aarch64-darwin = {
       platform = "darwin-arm64";
       hash = "sha256-nz4PH9NJ97bnGju6WeUNYcf8ABcvUGT7uoF2TL2mXVY=";

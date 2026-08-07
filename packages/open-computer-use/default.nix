@@ -8,7 +8,6 @@
   runtimes = {
     x86_64-linux = "dist/linux/amd64/open-computer-use";
     aarch64-linux = "dist/linux/arm64/open-computer-use";
-    x86_64-darwin = "dist/Open Computer Use.app/Contents/MacOS/OpenComputerUse";
     aarch64-darwin = "dist/Open Computer Use.app/Contents/MacOS/OpenComputerUse";
   };
   runtime = runtimes.${system} or (throw "open-computer-use: unsupported system ${system}");
