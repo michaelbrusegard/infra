@@ -4,6 +4,7 @@ pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
   handy = pkgs.callPackage ./handy {};
 }
 // {
+  kimi-code = pkgs.callPackage ./kimi-code {};
   omp = pkgs.callPackage ./omp {};
   open-browser-use = pkgs.callPackage ./open-browser-use {};
   open-computer-use = pkgs.callPackage ./open-computer-use {};

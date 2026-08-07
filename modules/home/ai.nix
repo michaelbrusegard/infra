@@ -209,6 +209,7 @@ in {
       packages =
         [
           (direnvWrapped pkgs.omp "omp")
+          pkgs.kimi-code
           pkgs.open-browser-use
           pkgs.open-computer-use
           pkgs.slack-cli
@@ -272,20 +273,41 @@ in {
         rm -f "$temp_file"
       '';
 
-      activation.paseoHostnames = lib.mkIf (paseoHostnames != []) (lib.hm.dag.entryAfter ["writeBoundary"] ''
+      activation.paseoConfig = lib.mkIf (paseoHostnames != []) (lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.paseo/config.json"
         config_dir=$(dirname "$config_file")
         temp_file=$(mktemp)
+        kimi_provider='${builtins.toJSON {
+          extends = "acp";
+          label = "Kimi Code CLI";
+          command = [
+            (lib.getExe pkgs.kimi-code)
+            "acp"
+          ];
+        }}'
 
         if [ -f "$config_file" ]; then
-          ${lib.getExe pkgs.jq} --argjson hostnames '${builtins.toJSON paseoHostnames}' '
+          ${lib.getExe pkgs.jq} \
+            --argjson hostnames '${builtins.toJSON paseoHostnames}' \
+            --argjson kimi_provider "$kimi_provider" '
             .daemon = ((.daemon // {}) + {
               hostnames: (((.daemon.hostnames // []) + $hostnames) | unique)
             })
+            | .agents = ((.agents // {}) + {
+              providers: ((.agents.providers // {}) + {
+                kimi: $kimi_provider
+              })
+            })
           ' "$config_file" > "$temp_file"
         else
-          ${lib.getExe pkgs.jq} --argjson hostnames '${builtins.toJSON paseoHostnames}' \
-            '{version: 1, daemon: {hostnames: $hostnames}}' > "$temp_file"
+          ${lib.getExe pkgs.jq} \
+            --argjson hostnames '${builtins.toJSON paseoHostnames}' \
+            --argjson kimi_provider "$kimi_provider" \
+            '{
+              version: 1,
+              daemon: {hostnames: $hostnames},
+              agents: {providers: {kimi: $kimi_provider}}
+            }' > "$temp_file"
         fi
 
         if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
@@ -302,6 +324,7 @@ in {
           [
             ".claude"
             ".codex"
+            ".kimi-code"
             ".omp"
             ".cache/slack-cli"
           ]
