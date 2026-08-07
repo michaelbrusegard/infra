@@ -66,5 +66,17 @@ lib.mkIf pkgs.stdenv.isDarwin {
         LimitLoadToSessionType = "Aqua";
       };
     };
+
+    handy = {
+      enable = true;
+      config = {
+        ProgramArguments = [
+          "/Applications/Handy.app/Contents/MacOS/Handy"
+          "--start-hidden"
+        ];
+        RunAtLoad = true;
+        LimitLoadToSessionType = "Aqua";
+      };
+    };
   };
 }

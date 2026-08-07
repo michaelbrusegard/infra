@@ -116,6 +116,9 @@ in {
           # Open Kitty
           alt-enter = "exec-and-forget ${kitty} --working-directory ${home}";
           alt-shift-enter = "exec-and-forget ${kitty} --working-directory ${home} ${sh} -c '${yazi}'";
+
+          # Toggle voice transcription
+          ctrl-shift-space = "exec-and-forget /Applications/Handy.app/Contents/MacOS/Handy --toggle-transcription";
         };
       };
     };
