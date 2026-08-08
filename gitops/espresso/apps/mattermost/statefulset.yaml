@@ -72,6 +72,10 @@ spec:
               value: "false"
             - name: MM_SERVICESETTINGS_ENABLECOMMANDS
               value: "false"
+            - name: MM_EMAILSETTINGS_SENDPUSHNOTIFICATIONS
+              value: "true"
+            - name: MM_EMAILSETTINGS_PUSHNOTIFICATIONSERVER
+              value: https://push-test.mattermost.com
             - name: MM_TEAMSETTINGS_ENABLEAPITEAMDELETION
               value: "false"
             - name: MM_LOGSETTINGS_CONSOLELEVEL
