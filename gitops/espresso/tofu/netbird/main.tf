@@ -55,7 +55,7 @@ locals {
     mealie = {
       name    = "Mealie"
       address = "mealie.${local.domain}"
-      group   = "infra"
+      group   = "mealie"
     }
     homebridge = {
       name    = "Homebridge"
@@ -198,6 +198,10 @@ resource "netbird_group" "media" {
   name = "Media"
 }
 
+resource "netbird_group" "mealie" {
+  name = "Mealie"
+}
+
 resource "netbird_group" "media_admin" {
   name = "Media Admin"
 }
@@ -245,7 +249,7 @@ resource "netbird_network_resource" "resources" {
   description = "${each.value.name} at Asgard"
   address     = each.value.address
   groups = [
-    each.value.group == "dns" ? netbird_group.dns.id : each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "media" ? netbird_group.media.id : each.value.group == "public" ? netbird_group.public.id : each.value.group == "manafish" ? netbird_group.manafish.id : netbird_group.media_admin.id,
+    each.value.group == "dns" ? netbird_group.dns.id : each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "mealie" ? netbird_group.mealie.id : each.value.group == "media" ? netbird_group.media.id : each.value.group == "public" ? netbird_group.public.id : each.value.group == "manafish" ? netbird_group.manafish.id : netbird_group.media_admin.id,
   ]
   enabled = true
 }
@@ -279,6 +283,22 @@ resource "netbird_policy" "media_access" {
     protocol      = "all"
     sources       = [netbird_group.users.id]
     destinations  = [netbird_group.media.id]
+  }
+}
+
+resource "netbird_policy" "mealie_access" {
+  name        = "Mealie Access"
+  description = "Allow all NetBird users to access Mealie"
+  enabled     = true
+
+  rule {
+    name          = "Users and admins to Mealie"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    destinations  = [netbird_group.mealie.id]
   }
 }
 
