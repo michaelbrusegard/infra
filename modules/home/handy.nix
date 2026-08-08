@@ -1,8 +1,15 @@
 {
   lib,
   pkgs,
+  homePersistenceRoot ? null,
   ...
 }: {
+  home = lib.optionalAttrs (homePersistenceRoot != null) {
+    persistence.${homePersistenceRoot}.directories = [
+      ".local/share/com.pais.handy"
+    ];
+  };
+
   systemd.user.services.handy = {
     Unit = {
       Description = "Handy speech-to-text";
