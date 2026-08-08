@@ -218,6 +218,19 @@ resource "netbird_group" "dns" {
   name = "DNS"
 }
 
+locals {
+  resource_group_ids = {
+    dns         = netbird_group.dns.id
+    home        = netbird_group.home.id
+    infra       = netbird_group.infra.id
+    manafish    = netbird_group.manafish.id
+    mealie      = netbird_group.mealie.id
+    media       = netbird_group.media.id
+    media_admin = netbird_group.media_admin.id
+    public      = netbird_group.public.id
+  }
+}
+
 resource "netbird_setup_key" "macchiato" {
   name                   = "macchiato"
   type                   = "reusable"
@@ -248,10 +261,8 @@ resource "netbird_network_resource" "resources" {
   name        = each.value.name
   description = "${each.value.name} at Asgard"
   address     = each.value.address
-  groups = [
-    each.value.group == "dns" ? netbird_group.dns.id : each.value.group == "home" ? netbird_group.home.id : each.value.group == "infra" ? netbird_group.infra.id : each.value.group == "mealie" ? netbird_group.mealie.id : each.value.group == "media" ? netbird_group.media.id : each.value.group == "public" ? netbird_group.public.id : each.value.group == "manafish" ? netbird_group.manafish.id : netbird_group.media_admin.id,
-  ]
-  enabled = true
+  groups      = [local.resource_group_ids[each.value.group]]
+  enabled     = true
 }
 
 resource "netbird_policy" "media_admin_access" {
@@ -288,16 +299,16 @@ resource "netbird_policy" "media_access" {
 
 resource "netbird_policy" "mealie_access" {
   name        = "Mealie Access"
-  description = "Allow all NetBird users to access Mealie"
+  description = "Allow users to access Mealie"
   enabled     = true
 
   rule {
-    name          = "Users and admins to Mealie"
+    name          = "Users to Mealie"
     action        = "accept"
     bidirectional = false
     enabled       = true
     protocol      = "all"
-    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    sources       = [netbird_group.users.id]
     destinations  = [netbird_group.mealie.id]
   }
 }
@@ -411,7 +422,7 @@ resource "netbird_policy" "routing_peer_dns_udp" {
     enabled       = true
     protocol      = "udp"
     ports         = ["53"]
-    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    sources       = [netbird_group.users.id]
     destinations  = [netbird_group.routing_peers.id]
   }
 }
@@ -428,7 +439,7 @@ resource "netbird_policy" "routing_peer_dns_tcp" {
     enabled       = true
     protocol      = "tcp"
     ports         = ["53"]
-    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    sources       = [netbird_group.users.id]
     destinations  = [netbird_group.routing_peers.id]
   }
 }
@@ -448,7 +459,7 @@ resource "netbird_policy" "dns_access_udp" {
     enabled       = true
     protocol      = "udp"
     ports         = ["53"]
-    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    sources       = [netbird_group.users.id]
     destinations  = [netbird_group.dns.id]
   }
 }
@@ -465,7 +476,7 @@ resource "netbird_policy" "dns_access_tcp" {
     enabled       = true
     protocol      = "tcp"
     ports         = ["53"]
-    sources       = [netbird_group.admins.id, netbird_group.users.id]
+    sources       = [netbird_group.users.id]
     destinations  = [netbird_group.dns.id]
   }
 }
@@ -479,7 +490,7 @@ resource "netbird_nameserver_group" "router_public_dns" {
     "router.${local.domain}",
     "netbird.${local.domain}",
   ]
-  groups = [netbird_group.admins.id, netbird_group.users.id]
+  groups = [netbird_group.users.id]
 
   nameservers = [
     {
@@ -498,7 +509,7 @@ resource "netbird_nameserver_group" "macchiato_blocky_dns" {
   enabled     = true
   primary     = false
   domains     = [local.domain]
-  groups      = [netbird_group.admins.id, netbird_group.users.id]
+  groups      = [netbird_group.users.id]
 
   nameservers = [
     {
