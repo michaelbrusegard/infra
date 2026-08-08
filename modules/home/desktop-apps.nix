@@ -41,7 +41,8 @@ in {
       packages = lib.mkIf (!isWsl) (with pkgs;
         [
           signal-desktop
-          slack
+          # Keep the desktop files while allowing slack-cli to own bin/slack.
+          (lib.lowPrio slack)
           protonmail-desktop
           inkscape-with-extensions
           audacity
