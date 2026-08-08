@@ -12,7 +12,7 @@ spec:
   restic:
     repository: freddo-restic-nextcloud-pvc
     # Bump to clear stale repository locks left by interrupted movers.
-    unlock: "2026-08-06"
+    unlock: "2026-08-08-alert-recovery"
     pruneIntervalDays: 36500
     retain:
       within: 100y

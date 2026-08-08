@@ -351,6 +351,9 @@ in {
           serviceConfig = {
             Type = "oneshot";
             ExecStart = "${maintenance}/bin/restic-maintenance forget";
+            # A stopped prune can leave an exclusive repository lock behind.
+            # Clear stale locks after every exit so the next backup can proceed.
+            ExecStopPost = "${maintenance}/bin/restic-maintenance unlock";
             User = "restic";
             Group = "restic";
             RuntimeDirectory = "restic-maintenance";
