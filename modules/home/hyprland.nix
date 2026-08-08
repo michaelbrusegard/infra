@@ -7,6 +7,7 @@
 }: let
   inherit (lib.generators) mkLuaInline;
 
+  handy = lib.getExe pkgs.handy;
   kitty = lib.getExe pkgs.kitty;
   sh = lib.getExe' pkgs.bash "sh";
   yazi = lib.getExe pkgs.yazi;
@@ -58,6 +59,7 @@
 
   bind = key: dsp: {_args = [key dsp];};
   bindFlags = flags: key: dsp: {_args = [key dsp flags];};
+  bindRelease = bindFlags {release = true;};
   bindRepeat = bindFlags {repeating = true;};
   bindLocked = bindFlags {locked = true;};
   bindLockedRepeat = bindFlags {
@@ -296,7 +298,10 @@ in
             (bind "MOD5 + SHIFT + RETURN"
               (execRaw "${kitty} ${sh} -c '${yazi}'"))
             (bind "CTRL + SPACE" (exec "dms ipc call spotlight toggle"))
-            (bind "CTRL + SHIFT + SPACE" (exec "handy --toggle-transcription"))
+            # Handy's own global shortcut does not work under Wayland. Toggle
+            # once on key-down and again on key-up to provide push-to-talk.
+            (bind "CTRL + SHIFT + SPACE" (exec "${handy} --toggle-transcription"))
+            (bindRelease "CTRL + SHIFT + SPACE" (exec "${handy} --toggle-transcription"))
             (bind "CTRL + SHIFT + V" (exec "dms ipc call clipboard toggle"))
             (bind "CTRL + Q" closewindow)
             (bind "CTRL + SHIFT + Q" killwindow)
