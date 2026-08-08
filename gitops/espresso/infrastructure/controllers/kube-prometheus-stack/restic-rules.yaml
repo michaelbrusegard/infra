@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: freddo-restic
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: freddo-restic
+      rules:
+        - alert: ResticMaintenanceFailed
+          expr: node_systemd_unit_state{instance="freddo",name=~"restic-(rest-server|maintenance|prune|check|unlock|metrics)\\.service",state="failed"} == 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Restic maintenance failed on freddo
+            description: "{{ $labels.name }} is in the failed state."
+        - alert: ResticBackupStale
+          expr: time() - restic_repository_latest_snapshot_timestamp_seconds{instance="freddo"} > restic_repository_max_age_seconds{instance="freddo"}
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: Restic backup is stale
+            description: "{{ $labels.repository }} has no snapshot within its configured freshness window."
+        - alert: ResticBackupMetricsMissing
+          expr: absent(restic_repository_latest_snapshot_timestamp_seconds{instance="freddo"})
+          for: 2h
+          labels:
+            severity: warning
+          annotations:
+            summary: Restic backup metrics are missing
+            description: freddo has not published repository freshness metrics.

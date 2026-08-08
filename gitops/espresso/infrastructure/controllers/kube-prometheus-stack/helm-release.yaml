@@ -58,6 +58,9 @@ spec:
               - targets: ["10.0.187.1:9100"]
                 labels:
                   instance: macchiato
+              - targets: ["10.0.186.17:9100"]
+                labels:
+                  instance: freddo
           - job_name: blocky
             static_configs:
               - targets: ["10.0.187.1:4000"]

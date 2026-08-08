@@ -14,6 +14,8 @@
     yearly = 3;
   };
   keepTagArgs = lib.concatMapStringsSep " " (tag: "--keep-tag ${lib.escapeShellArg tag}") config.services.restic.server.maintenance.keepTags;
+  freshness = config.services.restic.server.maintenance.freshness;
+  freshnessEntries = lib.concatStringsSep "\n" (lib.mapAttrsToList (repo: maxAge: "${repo}:${toString maxAge}") freshness.maxAgeSeconds);
   groupEntries = lib.concatStringsSep "\n" (lib.mapAttrsToList (name: passwordFile: "${name}:${passwordFile}") passwordFiles);
   repoEntries = lib.concatStringsSep "\n" (lib.flatten (lib.mapAttrsToList (group: repos: map (repo: "${group}:${repo}") repos) repositories));
   resticToolCommon = ''
@@ -164,6 +166,7 @@
     runtimeInputs = [
       pkgs.coreutils
       pkgs.findutils
+      pkgs.jq
       pkgs.restic
       pkgs.util-linux
     ];
@@ -172,9 +175,9 @@
 
       mode="''${1:-forget}"
       case "$mode" in
-        forget|prune|check|init|unlock) ;;
+        forget|prune|check|init|metrics|unlock) ;;
         *)
-          echo "usage: restic-maintenance [forget|prune|check|init|unlock]" >&2
+          echo "usage: restic-maintenance [forget|prune|check|init|metrics|unlock]" >&2
           exit 64
           ;;
       esac
@@ -190,6 +193,19 @@
 
       status=0
       keep_tag_args=(${keepTagArgs})
+      metrics_tmp=""
+
+      if [ "$mode" = "metrics" ]; then
+        metrics_file="''${RESTIC_METRICS_FILE:?RESTIC_METRICS_FILE is required}"
+        metrics_tmp=$(mktemp "''${metrics_file}.XXXXXX")
+        trap 'rm -f "$metrics_tmp"' EXIT
+        printf '%s\n' \
+          '# HELP restic_repository_latest_snapshot_timestamp_seconds Unix timestamp of the latest snapshot.' \
+          '# TYPE restic_repository_latest_snapshot_timestamp_seconds gauge' \
+          '# HELP restic_repository_max_age_seconds Maximum acceptable snapshot age.' \
+          '# TYPE restic_repository_max_age_seconds gauge' \
+          >"$metrics_tmp"
+      fi
 
       maintain_repo() {
         local group="$1"
@@ -211,7 +227,37 @@
           return
         fi
 
-        if [ "$mode" = "unlock" ]; then
+        if [ "$mode" = "metrics" ]; then
+          repo_arg="''${repo#"${dataDir}/"}"
+          snapshots_json=""
+          if ! snapshots_json=$(restic --retry-lock 15m -r "$repo" snapshots --json); then
+            echo "restic metrics failed for $repo" >&2
+            status=1
+            return
+          fi
+
+          latest_snapshot_time=$(printf '%s' "$snapshots_json" | jq -r 'if length == 0 then empty else max_by(.time).time end')
+          if [ -n "$latest_snapshot_time" ]; then
+            latest_snapshot=$(date --date="$latest_snapshot_time" +%s)
+          else
+            latest_snapshot=0
+          fi
+          max_age=${toString freshness.defaultMaxAgeSeconds}
+          while IFS=: read -r candidate candidate_max_age; do
+            if [ "$candidate" = "$repo_arg" ]; then
+              max_age="$candidate_max_age"
+              break
+            fi
+          done <<'FRESHNESS'
+      ${freshnessEntries}
+      FRESHNESS
+
+          repo_label=$(jq -Rn --arg repository "$repo_arg" '$repository')
+          printf 'restic_repository_latest_snapshot_timestamp_seconds{repository=%s} %s\n' \
+            "$repo_label" "$latest_snapshot" >>"$metrics_tmp"
+          printf 'restic_repository_max_age_seconds{repository=%s} %s\n' \
+            "$repo_label" "$max_age" >>"$metrics_tmp"
+        elif [ "$mode" = "unlock" ]; then
           if ! restic -r "$repo" unlock; then
             echo "restic unlock failed for $repo" >&2
             status=1
@@ -267,7 +313,7 @@
         done < <(find "$base" -mindepth 2 -type f -name config -printf '%h\0')
       }
 
-      if [ "$mode" = "init" ]; then
+      if [ "$mode" = "init" ] || [ "$mode" = "metrics" ]; then
         while IFS=: read -r group repo; do
           [ -n "$group" ] || continue
           [ -n "$repo" ] || continue
@@ -288,12 +334,20 @@
             continue
           fi
 
-          mkdir -p "${dataDir}/$group/$repo"
-          chmod 700 "${dataDir}/$group"
+          if [ "$mode" = "init" ]; then
+            mkdir -p "${dataDir}/$group/$repo"
+            chmod 700 "${dataDir}/$group"
+          fi
           maintain_repo "$group" "$password_file" "${dataDir}/$group/$repo"
         done <<'REPOS'
       ${repoEntries}
       REPOS
+
+        if [ "$mode" = "metrics" ] && [ "$status" -eq 0 ]; then
+          chmod 0644 "$metrics_tmp"
+          mv "$metrics_tmp" "$metrics_file"
+          metrics_tmp=""
+        fi
 
         exit "$status"
       fi
@@ -344,6 +398,20 @@ in {
       default = [];
       description = "Restic snapshot tags to always keep during repository maintenance.";
     };
+
+    maintenance.freshness = {
+      defaultMaxAgeSeconds = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 36 * 60 * 60;
+        description = "Default maximum snapshot age exported for alerting.";
+      };
+
+      maxAgeSeconds = lib.mkOption {
+        type = lib.types.attrsOf lib.types.ints.positive;
+        default = {};
+        description = "Per-repository maximum snapshot ages, keyed by service/repository.";
+      };
+    };
   };
 
   config = {
@@ -374,6 +442,15 @@ in {
       ];
     };
 
+    services.prometheus.exporters.node = {
+      enable = true;
+      enabledCollectors = [
+        "systemd"
+        "textfile"
+      ];
+      extraFlags = ["--collector.textfile.directory=/var/lib/restic-metrics"];
+    };
+
     systemd = {
       services = {
         restic-rest-server.unitConfig.RequiresMountsFor = [dataDir];
@@ -382,6 +459,13 @@ in {
         restic-prune = maintenanceService "prune";
         restic-initialize = maintenanceService "init";
         restic-check = maintenanceService "check";
+        restic-metrics = lib.recursiveUpdate (maintenanceService "metrics") {
+          serviceConfig = {
+            Environment = "RESTIC_METRICS_FILE=/var/lib/restic-metrics/restic.prom";
+            StateDirectory = "restic-metrics";
+            StateDirectoryMode = "0755";
+          };
+        };
         restic-unlock = maintenanceService "unlock";
       };
 
@@ -415,14 +499,21 @@ in {
           };
         };
 
+        restic-metrics = {
+          wantedBy = ["timers.target"];
+          timerConfig = {
+            OnCalendar = "*-*-* *:15:00";
+            Persistent = true;
+          };
+        };
+
         # Recover locks left by power loss or anything that prevents a
         # service's ExecStopPost cleanup from running. Active locks are kept.
         restic-unlock = {
           wantedBy = ["timers.target"];
           timerConfig = {
-            OnCalendar = "hourly";
+            OnCalendar = "*-*-* *:05:00";
             Persistent = true;
-            RandomizedDelaySec = "5m";
           };
         };
       };
