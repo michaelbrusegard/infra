@@ -7,11 +7,12 @@ data:
   config.yaml: |
     model:
       provider: openai-api
-      default: gpt-5.4
+      default: gpt-5.6-sol
 
     delegation:
       provider: openai-api
-      model: gpt-5.4
+      model: gpt-5.6-sol
+      reasoning_effort: xhigh
 
     compression:
       enabled: true
@@ -22,13 +23,16 @@ data:
     auxiliary:
       compression:
         provider: openai-api
-        model: gpt-5.4
+        model: gpt-5.6-luna
+        reasoning_effort: medium
       web_extract:
         provider: openai-api
-        model: gpt-5.4
+        model: gpt-5.6-luna
+        reasoning_effort: medium
       vision:
         provider: openai-api
-        model: gpt-5.4
+        model: kimi-k3-256k
+        reasoning_effort: xhigh
 
     memory:
       provider: hindsight
@@ -45,6 +49,19 @@ data:
     group_sessions_per_user: true
 
     platforms:
+      mattermost:
+        enabled: true
+        channel_overrides:
+          "__MATTERMOST_HOME_CHANNEL_ID__":
+            model: kimi-k2
+          "__MATTERMOST_MEALS_CHANNEL_ID__":
+            model: kimi-k2
+          "__MATTERMOST_SHOPPING_CHANNEL_ID__":
+            model: kimi-k2
+          "__MATTERMOST_SCRATCHPAD_CHANNEL_ID__":
+            model: kimi-k3-256k
+          "__MATTERMOST_CODE_CHANNEL_ID__":
+            model: kimi-k2.7-code-highspeed
       webhook:
         enabled: true
         extra:
@@ -77,7 +94,15 @@ data:
                 chat_id: __MATTERMOST_ALERTS_CHANNEL_ID__
 
     agent:
-      reasoning_effort: medium
+      reasoning_effort: high
+      reasoning_overrides:
+        kimi-k2: none
+        kimi-k2.7-code: high
+        kimi-k2.7-code-highspeed: high
+        kimi-k3: xhigh
+        kimi-k3-256k: xhigh
+        gpt-5.6-luna: medium
+        gpt-5.6-sol: high
 
     approvals:
       mode: off

@@ -40,6 +40,11 @@ spec:
               install -m 0644 /bootstrap-config/hindsight.json /opt/data/hindsight/config.json
               install -m 0644 /bootstrap-config/mealie-skill.md /opt/data/skills/mealie/SKILL.md
               sed -i "s/__MATTERMOST_ALERTS_CHANNEL_ID__/$MATTERMOST_ALERTS_CHANNEL_ID/g" /opt/data/config.yaml
+              sed -i "s/__MATTERMOST_HOME_CHANNEL_ID__/$MATTERMOST_HOME_CHANNEL_ID/g" /opt/data/config.yaml
+              sed -i "s/__MATTERMOST_CODE_CHANNEL_ID__/$MATTERMOST_CODE_CHANNEL_ID/g" /opt/data/config.yaml
+              sed -i "s/__MATTERMOST_MEALS_CHANNEL_ID__/$MATTERMOST_MEALS_CHANNEL_ID/g" /opt/data/config.yaml
+              sed -i "s/__MATTERMOST_SCRATCHPAD_CHANNEL_ID__/$MATTERMOST_SCRATCHPAD_CHANNEL_ID/g" /opt/data/config.yaml
+              sed -i "s/__MATTERMOST_SHOPPING_CHANNEL_ID__/$MATTERMOST_SHOPPING_CHANNEL_ID/g" /opt/data/config.yaml
               install -m 0640 /bootstrap-secret/.env /opt/data/.env
               chown -R 10000:10000 /opt/data
           env:
@@ -48,7 +53,31 @@ spec:
                 secretKeyRef:
                   name: mattermost-outputs
                   key: hermes_alerts_channel_id
-                  optional: true
+            - name: MATTERMOST_HOME_CHANNEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-outputs
+                  key: hermes_home_channel_id
+            - name: MATTERMOST_CODE_CHANNEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-outputs
+                  key: hermes_code_channel_id
+            - name: MATTERMOST_MEALS_CHANNEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-outputs
+                  key: hermes_meals_channel_id
+            - name: MATTERMOST_SCRATCHPAD_CHANNEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-outputs
+                  key: hermes_stateless_channel_ids
+            - name: MATTERMOST_SHOPPING_CHANNEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-outputs
+                  key: hermes_shopping_channel_id
           resources:
             requests:
               memory: 16Mi
