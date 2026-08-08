@@ -5,8 +5,10 @@
   ...
 }: {
   home = lib.optionalAttrs (homePersistenceRoot != null) {
-    persistence.${homePersistenceRoot}.files = [
-      ".ssh/known_hosts"
+    # OpenSSH replaces known_hosts using a hard-linked .old backup. Persist the
+    # directory so both files live on the same filesystem.
+    persistence.${homePersistenceRoot}.directories = [
+      ".ssh"
     ];
   };
 
