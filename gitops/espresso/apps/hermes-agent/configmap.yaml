@@ -51,6 +51,7 @@ data:
     platforms:
       mattermost:
         enabled: true
+        gateway_restart_notification: false
         channel_overrides:
           "__MATTERMOST_HOME_CHANNEL_ID__":
             model: kimi-k2
