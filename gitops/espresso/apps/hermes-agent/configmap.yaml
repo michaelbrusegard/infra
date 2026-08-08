@@ -77,7 +77,7 @@ data:
                 chat_id: __MATTERMOST_ALERTS_CHANNEL_ID__
 
     agent:
-      reasoning_effort: high
+      reasoning_effort: medium
 
     approvals:
       mode: off
