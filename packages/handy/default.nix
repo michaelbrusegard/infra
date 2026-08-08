@@ -11,10 +11,15 @@
   };
   contents = appimageTools.extractType2 {
     inherit pname version src;
+    postExtract = ''
+      substituteInPlace $out/apprun-hooks/linuxdeploy-plugin-gtk.sh \
+        --replace-fail "export GDK_BACKEND=x11" "export GDK_BACKEND=wayland"
+    '';
   };
 in
-  appimageTools.wrapType2 {
-    inherit pname version src;
+  appimageTools.wrapAppImage {
+    inherit pname version;
+    src = contents;
 
     extraInstallCommands = ''
       install -m 444 -D ${contents}/Handy.desktop \
