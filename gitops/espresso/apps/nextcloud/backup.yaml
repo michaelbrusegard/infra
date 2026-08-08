@@ -245,7 +245,7 @@ spec:
                 - -c
                 - |
                   set -eu
-                  restic backup \
+                  restic --retry-lock 15m backup \
                     --host espresso-postgres \
                     --tag espresso \
                     --tag nextcloud \

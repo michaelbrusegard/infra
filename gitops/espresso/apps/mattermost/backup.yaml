@@ -78,7 +78,7 @@ spec:
               command:
                 - sh
                 - -c
-                - restic backup --host espresso-postgres --tag espresso --tag mattermost --tag postgres /backup
+                - restic --retry-lock 15m backup --host espresso-postgres --tag espresso --tag mattermost --tag postgres /backup
               env:
                 - name: RESTIC_CACHE_DIR
                   value: /cache

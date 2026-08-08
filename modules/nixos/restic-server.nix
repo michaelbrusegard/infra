@@ -171,10 +171,13 @@
       set -euo pipefail
 
       mode="''${1:-forget}"
-      if [ "$mode" != "forget" ] && [ "$mode" != "check" ] && [ "$mode" != "init" ] && [ "$mode" != "unlock" ]; then
-        echo "usage: restic-maintenance [forget|check|init|unlock]" >&2
-        exit 64
-      fi
+      case "$mode" in
+        forget|prune|check|init|unlock) ;;
+        *)
+          echo "usage: restic-maintenance [forget|prune|check|init|unlock]" >&2
+          exit 64
+          ;;
+      esac
 
       exec 9>/run/restic-maintenance/lock
       if ! flock -n 9; then
@@ -214,18 +217,24 @@
             status=1
           fi
         elif [ "$mode" = "forget" ]; then
-          if ! restic -r "$repo" forget \
+          if ! restic --retry-lock 15m -r "$repo" forget \
             --keep-daily ${toString retention.daily} \
             --keep-weekly ${toString retention.weekly} \
             --keep-monthly ${toString retention.monthly} \
             --keep-yearly ${toString retention.yearly} \
-            "''${keep_tag_args[@]}" \
-            --prune; then
+            "''${keep_tag_args[@]}"; then
             echo "restic forget failed for $repo" >&2
             status=1
           fi
+        elif [ "$mode" = "prune" ]; then
+          # Bound each repository's repack work so large repositories cannot
+          # exhaust memory on the Raspberry Pi backup servers.
+          if ! restic --retry-lock 15m -r "$repo" prune --max-repack-size 1G; then
+            echo "restic prune failed for $repo" >&2
+            status=1
+          fi
         else
-          if ! restic -r "$repo" check; then
+          if ! restic --retry-lock 15m -r "$repo" check; then
             echo "restic check failed for $repo" >&2
             status=1
           fi
@@ -299,6 +308,29 @@
       exit "$status"
     '';
   };
+  maintenanceService = mode: {
+    # A configuration switch should not interrupt a repository operation.
+    # The new unit definition will be used on its next scheduled invocation.
+    restartIfChanged = false;
+    unitConfig.RequiresMountsFor = [dataDir];
+    serviceConfig =
+      {
+        Type = "oneshot";
+        ExecStart = "${maintenance}/bin/restic-maintenance ${mode}";
+        User = "restic";
+        Group = "restic";
+        RuntimeDirectory = "restic-maintenance";
+        RuntimeDirectoryPreserve = true;
+        CacheDirectory = "restic-maintenance";
+        Nice = 10;
+        IOSchedulingClass = "idle";
+      }
+      // lib.optionalAttrs (mode != "unlock") {
+        # A stopped restic process can leave a repository lock behind. Run a
+        # separate cleanup process after every exit, including failures.
+        ExecStopPost = "${maintenance}/bin/restic-maintenance unlock";
+      };
+  };
 in {
   options.services.restic.server = {
     initializeRepositories = lib.mkOption {
@@ -346,72 +378,29 @@ in {
       services = {
         restic-rest-server.unitConfig.RequiresMountsFor = [dataDir];
 
-        restic-maintenance = {
-          unitConfig.RequiresMountsFor = [dataDir];
-          serviceConfig = {
-            Type = "oneshot";
-            ExecStart = "${maintenance}/bin/restic-maintenance forget";
-            # A stopped prune can leave an exclusive repository lock behind.
-            # Clear stale locks after every exit so the next backup can proceed.
-            ExecStopPost = "${maintenance}/bin/restic-maintenance unlock";
-            User = "restic";
-            Group = "restic";
-            RuntimeDirectory = "restic-maintenance";
-            CacheDirectory = "restic-maintenance";
-            Nice = 10;
-            IOSchedulingClass = "idle";
-          };
-        };
-
-        restic-initialize = {
-          unitConfig.RequiresMountsFor = [dataDir];
-          serviceConfig = {
-            Type = "oneshot";
-            ExecStart = "${maintenance}/bin/restic-maintenance init";
-            User = "restic";
-            Group = "restic";
-            RuntimeDirectory = "restic-maintenance";
-            CacheDirectory = "restic-maintenance";
-            Nice = 10;
-            IOSchedulingClass = "idle";
-          };
-        };
-
-        restic-check = {
-          unitConfig.RequiresMountsFor = [dataDir];
-          serviceConfig = {
-            Type = "oneshot";
-            ExecStart = "${maintenance}/bin/restic-maintenance check";
-            User = "restic";
-            Group = "restic";
-            RuntimeDirectory = "restic-maintenance";
-            CacheDirectory = "restic-maintenance";
-            Nice = 10;
-            IOSchedulingClass = "idle";
-          };
-        };
-
-        restic-unlock = {
-          unitConfig.RequiresMountsFor = [dataDir];
-          serviceConfig = {
-            Type = "oneshot";
-            ExecStart = "${maintenance}/bin/restic-maintenance unlock";
-            User = "restic";
-            Group = "restic";
-            RuntimeDirectory = "restic-maintenance";
-            CacheDirectory = "restic-maintenance";
-            Nice = 10;
-            IOSchedulingClass = "idle";
-          };
-        };
+        restic-maintenance = maintenanceService "forget";
+        restic-prune = maintenanceService "prune";
+        restic-initialize = maintenanceService "init";
+        restic-check = maintenanceService "check";
+        restic-unlock = maintenanceService "unlock";
       };
 
       timers = {
         restic-maintenance = {
           wantedBy = ["timers.target"];
           timerConfig = {
-            # Cluster backups run overnight; keep pruning out of their window.
+            # Apply retention daily without the expensive prune operation.
             OnCalendar = "*-*-* 12:00";
+            Persistent = true;
+            RandomizedDelaySec = "1h";
+          };
+        };
+
+        restic-prune = {
+          wantedBy = ["timers.target"];
+          timerConfig = {
+            # Reclaim space weekly, well outside the overnight backup window.
+            OnCalendar = "Sat 14:00";
             Persistent = true;
             RandomizedDelaySec = "1h";
           };
@@ -423,6 +412,17 @@ in {
             OnCalendar = "Sun 08:00";
             Persistent = true;
             RandomizedDelaySec = "2h";
+          };
+        };
+
+        # Recover locks left by power loss or anything that prevents a
+        # service's ExecStopPost cleanup from running. Active locks are kept.
+        restic-unlock = {
+          wantedBy = ["timers.target"];
+          timerConfig = {
+            OnCalendar = "hourly";
+            Persistent = true;
+            RandomizedDelaySec = "5m";
           };
         };
       };

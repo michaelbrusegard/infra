@@ -137,7 +137,7 @@ spec:
                 - -c
                 - |
                   set -eu
-                  restic backup \
+                  restic --retry-lock 15m backup \
                     --host espresso-media \
                     --tag espresso \
                     --tag media \
@@ -205,7 +205,7 @@ spec:
                     exit 1
                   fi
 
-                  restic backup \
+                  restic --retry-lock 15m backup \
                     --host espresso-media \
                     --tag espresso \
                     --tag media \
