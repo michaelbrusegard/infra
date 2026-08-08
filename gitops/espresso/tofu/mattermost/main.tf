@@ -20,6 +20,11 @@ locals {
       display_name = "Shopping"
       header       = "Shopping lists, purchases, and errands."
     }
+    code = {
+      name         = "code"
+      display_name = "Code"
+      header       = "Coding and software development with Hermes."
+    }
     finance = {
       name         = "finance"
       display_name = "Finance"
