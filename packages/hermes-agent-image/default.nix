@@ -107,12 +107,14 @@
       cacert
       coreutils
       curl
+      ffmpeg
       file
       fluxcd
       gh
       git
       gnused
       himalaya
+      imagemagick
       jupyterLiveKernel
       jq
       kubectl
