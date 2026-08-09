@@ -55,10 +55,6 @@ data:
         channel_overrides:
           "__MATTERMOST_HOME_CHANNEL_ID__":
             model: kimi-k2
-          "__MATTERMOST_MEALS_CHANNEL_ID__":
-            model: kimi-k2
-          "__MATTERMOST_SHOPPING_CHANNEL_ID__":
-            model: kimi-k2
           "__MATTERMOST_SCRATCHPAD_CHANNEL_ID__":
             model: kimi-k3-256k
           "__MATTERMOST_CODE_CHANNEL_ID__":
