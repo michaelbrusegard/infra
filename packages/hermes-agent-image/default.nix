@@ -11,31 +11,6 @@
     ];
   };
 
-  nanoPdf = pkgs.python3Packages.buildPythonApplication rec {
-    pname = "nano-pdf";
-    version = "0.2.1";
-    pyproject = true;
-
-    src = pkgs.fetchPypi {
-      pname = "nano_pdf";
-      inherit version;
-      hash = "sha256-8ajF6r31pn1/KpnnPjxJpSy7x1S4AYFtRqLr7W0+tZI=";
-    };
-
-    build-system = [pkgs.python3Packages.setuptools];
-    dependencies = with pkgs.python3Packages; [
-      google-genai
-      pdf2image
-      pillow
-      pypdf
-      pytesseract
-      python-dotenv
-      typer
-    ];
-
-    pythonImportsCheck = ["nano_pdf"];
-  };
-
   markitdownPptx = pkgs.python3Packages.markitdown.overrideAttrs {
     dependencies = with pkgs.python3Packages; [
       beautifulsoup4
@@ -147,7 +122,6 @@
       kubectl
       kubernetes-helm
       libreoffice-fresh
-      nanoPdf
       netcat
       nodejs-slim
       ocrmypdf

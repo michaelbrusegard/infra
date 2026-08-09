@@ -74,12 +74,12 @@ jobs:
         run: |
           docker load < result
           docker run --rm "$IMAGE_REF:nix" --help
-          for binary in blogwatcher-cli flux gh helm himalaya jq jupyter jupyter-live-kernel kubectl nano-pdf node ocrmypdf pdftoppm sed stern tesseract tofu yq; do
+          for binary in blogwatcher-cli flux gh helm himalaya jq jupyter jupyter-live-kernel kubectl node ocrmypdf pdftoppm sed stern tesseract tofu yq; do
             docker run --rm --entrypoint "$binary" "$IMAGE_REF:nix" --help >/dev/null
           done
           docker run --rm --entrypoint agent-browser "$IMAGE_REF:nix" --version
           docker run --rm --env HOME=/tmp --entrypoint chromium "$IMAGE_REF:nix" --version
-          docker run --rm --env HOME=/tmp --entrypoint soffice "$IMAGE_REF:nix" --version
+          docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp --entrypoint soffice "$IMAGE_REF:nix" --version
           docker run --rm --entrypoint python3 "$IMAGE_REF:nix" -c '
           import defusedxml
           import docx
