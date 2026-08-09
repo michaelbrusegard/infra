@@ -88,7 +88,7 @@ spec:
               mountPath: /bootstrap-skills
       containers:
         - name: gateway
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-99154cd5fd4396b1f58b61cfb098ceb935642399@sha256:45b621a2f3f9cca8a939a4a1b2bd7831dcc9c32881f9064566abc63457bbeaa4
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-7ca52c5e8d4a9748860fae521b6b118691173b6b@sha256:4732dfc55f9cd9de03b5bdf663c803c905516cf872617477d57bb101fa832566
           args:
             - gateway
             - run
@@ -221,7 +221,7 @@ spec:
               drop:
                 - ALL
         - name: dashboard
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-99154cd5fd4396b1f58b61cfb098ceb935642399@sha256:45b621a2f3f9cca8a939a4a1b2bd7831dcc9c32881f9064566abc63457bbeaa4
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-7ca52c5e8d4a9748860fae521b6b118691173b6b@sha256:4732dfc55f9cd9de03b5bdf663c803c905516cf872617477d57bb101fa832566
           args:
             - dashboard
             - --host
