@@ -53,6 +53,10 @@ jobs:
           git apply --unidiff-zero ../../packages/hermes-agent-image/stateless-mattermost.patch
           git apply --check ../../packages/hermes-agent-image/browser-coordinate-click.patch
           git apply ../../packages/hermes-agent-image/browser-coordinate-click.patch
+          git apply --check ../../packages/hermes-agent-image/browser-shared-sessions.patch
+          git apply ../../packages/hermes-agent-image/browser-shared-sessions.patch
+          install -m 0644 ../../packages/hermes-agent-image/browser_session_router.py tools/browser_session_router.py
+          git add -f tools/browser_session_router.py
 
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         if: github.event_name == 'push'
@@ -110,6 +114,10 @@ jobs:
           import websocket
           import youtube_transcript_api
           '
+          docker run --rm --entrypoint bash "$AGENT_IMAGE_REF:nix" -c '
+            hermes_python=$(sed -n "s|^export HERMES_PYTHON='"'"'\(.*\)'"'"'$|\1|p" "$(command -v hermes)")
+            "$hermes_python" -c "from tools.browser_tool import BROWSER_TOOL_SCHEMAS; from tools import browser_session_router; names={s['"'"'name'"'"'] for s in BROWSER_TOOL_SCHEMAS}; assert {'"'"'browser_upload'"'"', '"'"'browser_download'"'"'} <= names"
+          '
           docker run --rm --entrypoint node "$AGENT_IMAGE_REF:nix" -e '
           for (const name of ["pptxgenjs", "react", "react-dom/server", "react-icons/fa", "sharp"]) {
             require(name);
@@ -152,6 +160,13 @@ jobs:
             fi
             sleep 1
           done
+          tab_json=$(docker run --rm \
+            --network "container:$browser_id" \
+            --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
+            --entrypoint agent-browser \
+            "$AGENT_IMAGE_REF:nix" \
+            --cdp http://127.0.0.1:9222 --json tab list)
+          printf '%s' "$tab_json" | jq -e '.data.tabs[0].targetId | length > 0' >/dev/null
           docker stop "$browser_id"
           trap - EXIT
 

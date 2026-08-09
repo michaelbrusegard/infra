@@ -4,6 +4,10 @@
   pkgs,
   runCommand,
 }: let
+  agentBrowser = pkgs.agent-browser.overrideAttrs (old: {
+    patches = (old.patches or []) ++ [./agent-browser-target-id.patch];
+  });
+
   markitdownPptx = pkgs.python3Packages.markitdown.overrideAttrs {
     dependencies = with pkgs.python3Packages; [
       beautifulsoup4
@@ -96,7 +100,7 @@
   tools = pkgs.buildEnv {
     name = "hermes-agent-tools";
     paths = with pkgs; [
-      agent-browser
+      agentBrowser
       bashInteractive
       bind
       blogwatcherCli

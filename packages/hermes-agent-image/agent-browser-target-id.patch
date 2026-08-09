@@ -1,0 +1,12 @@
+diff --git a/src/native/browser.rs b/src/native/browser.rs
+index 21046bc..294c5bd 100644
+--- a/src/native/browser.rs
++++ b/src/native/browser.rs
+@@ -807,6 +807,7 @@ impl BrowserManager {
+             .enumerate()
+             .map(|(i, p)| {
+                 json!({
++                    "targetId": p.target_id,
+                     "index": i,
+                     "title": p.title,
+                     "url": p.url,
