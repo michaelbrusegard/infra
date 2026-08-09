@@ -376,6 +376,7 @@
         RuntimeDirectory = "restic-maintenance";
         RuntimeDirectoryPreserve = true;
         CacheDirectory = "restic-maintenance";
+        CacheDirectoryMode = "0700";
         Nice = 10;
         IOSchedulingClass = "idle";
       }
@@ -419,6 +420,17 @@ in {
     # the Raspberry Pi backup servers. Compressed swap prevents an interrupted
     # prune from leaving repositories locked.
     zramSwap.enable = true;
+
+    # Restic checks can cache several gigabytes of repository indexes. Keep
+    # that cache on persistent storage instead of the hosts' RAM-backed root.
+    environment.persistence."/persistent".directories = [
+      {
+        directory = "/var/cache/restic-maintenance";
+        user = "restic";
+        group = "restic";
+        mode = "0700";
+      }
+    ];
 
     environment.systemPackages = [
       pkgs.restic
