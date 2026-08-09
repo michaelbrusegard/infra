@@ -14,6 +14,7 @@ configMapGenerator:
   - name: hermes-agent-skills
     namespace: hermes-agent
     files:
+      - browser-navigation-skill.md=skills/browser-navigation/SKILL.md
       - cluster-access-skill.md=skills/cluster-access/SKILL.md
       - jupyter-live-kernel-skill.md=skills/jupyter-live-kernel/SKILL.md
 

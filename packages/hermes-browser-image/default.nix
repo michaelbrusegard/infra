@@ -10,12 +10,65 @@
     ];
   };
 
+  browserLauncher = pkgs.writeShellApplication {
+    name = "chromium";
+    runtimeInputs = with pkgs; [
+      coreutils
+      xkbcomp
+      xkeyboard_config
+      xorg-server
+    ];
+    text = ''
+      export DISPLAY=:99
+      export XKB_CONFIG_ROOT=${pkgs.xkeyboard_config}/share/X11/xkb
+      mkdir -p /tmp/.X11-unix
+
+      Xvfb "$DISPLAY" \
+        -screen 0 1440x900x24 \
+        -xkbdir "$XKB_CONFIG_ROOT" \
+        -nolisten tcp \
+        -noreset \
+        -ac &
+      xvfb_pid=$!
+      browser_pid=
+
+      cleanup() {
+        if [ -n "$browser_pid" ]; then
+          kill -TERM "$browser_pid" 2>/dev/null || true
+        fi
+        kill -TERM "$xvfb_pid" 2>/dev/null || true
+      }
+      trap cleanup EXIT INT TERM
+
+      for _ in $(seq 1 50); do
+        if [ -S /tmp/.X11-unix/X99 ]; then
+          break
+        fi
+        if ! kill -0 "$xvfb_pid" 2>/dev/null; then
+          echo "Xvfb exited before display $DISPLAY became ready" >&2
+          exit 1
+        fi
+        sleep 0.1
+      done
+      if [ ! -S /tmp/.X11-unix/X99 ]; then
+        echo "Timed out waiting for display $DISPLAY" >&2
+        exit 1
+      fi
+
+      ${pkgs.chromium}/bin/chromium "$@" &
+      browser_pid=$!
+      wait "$browser_pid"
+    '';
+  };
+
   tools = pkgs.buildEnv {
     name = "hermes-browser-tools";
     paths = with pkgs; [
+      bash
+      browserLauncher
       cacert
-      chromium
       curl
+      tzdata
     ];
     pathsToLink = [
       "/bin"
@@ -46,12 +99,14 @@ in
       root
     ];
     config = {
-      Entrypoint = ["${pkgs.chromium}/bin/chromium"];
+      Entrypoint = ["${browserLauncher}/bin/chromium"];
       Env = [
         "HOME=/opt/browser"
         "PATH=${tools}/bin"
         "FONTCONFIG_FILE=/etc/fonts.conf"
         "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+        "TZ=America/Los_Angeles"
+        "TZDIR=${pkgs.tzdata}/share/zoneinfo"
       ];
       User = "10000:10000";
       WorkingDir = "/opt/browser";

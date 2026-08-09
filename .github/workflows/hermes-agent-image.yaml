@@ -48,7 +48,11 @@ jobs:
 
       - name: Apply local Hermes patches
         working-directory: .upstream/hermes-agent
-        run: git apply --check --unidiff-zero ../../packages/hermes-agent-image/stateless-mattermost.patch && git apply --unidiff-zero ../../packages/hermes-agent-image/stateless-mattermost.patch
+        run: |
+          git apply --check --unidiff-zero ../../packages/hermes-agent-image/stateless-mattermost.patch
+          git apply --unidiff-zero ../../packages/hermes-agent-image/stateless-mattermost.patch
+          git apply --check ../../packages/hermes-agent-image/browser-coordinate-click.patch
+          git apply ../../packages/hermes-agent-image/browser-coordinate-click.patch
 
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         if: github.event_name == 'push'
@@ -129,9 +133,10 @@ jobs:
             --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
             --tmpfs /dev/shm:rw,uid=10000,gid=10000,mode=1777 \
             "$BROWSER_IMAGE_REF:nix" \
-            --headless=new \
             --no-sandbox \
-            --disable-gpu \
+            --window-size=1440,900 \
+            --force-device-scale-factor=1 \
+            --lang=en-US \
             --remote-debugging-port=9222 \
             --remote-allow-origins='*' \
             --user-data-dir=/opt/browser/profile \
