@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - backup.yaml
+  - browser-pvc.yaml
   - rbac.yaml
   - configmap.yaml
   - statefulset.yaml
@@ -15,6 +16,7 @@ configMapGenerator:
     namespace: hermes-agent
     files:
       - cluster-access-skill.md=skills/cluster-access/SKILL.md
+      - jupyter-live-kernel-skill.md=skills/jupyter-live-kernel/SKILL.md
 
 generatorOptions:
   disableNameSuffixHash: true

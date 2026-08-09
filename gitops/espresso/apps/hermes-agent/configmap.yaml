@@ -107,47 +107,98 @@ data:
     web:
       backend: searxng
 
+    browser:
+      cloud_provider: local
+      cdp_url: http://127.0.0.1:9222
+      inactivity_timeout: 300
+      command_timeout: 60
+
     skills:
       disabled:
+        - airtable
+        - ascii-art
         - ascii-video
         - audiocraft-audio-generation
         - axolotl
+        - baoyu-article-illustrator
         - baoyu-comic
         - baoyu-infographic
         - claude-code
+        - claude-design
+        - codebase-inspection
         - codex
+        - comfyui
+        - computer-use
+        - debugging-hermes-tui-commands
+        - design-md
+        - dogfood
         - dspy
         - evaluating-llms-harness
         - excalidraw
         - fine-tuning-with-trl
+        - gif-search
+        - github-auth
+        - github-code-review
+        - github-issues
+        - github-pr-workflow
+        - github-repo-management
         - godmode
         - google-workspace
         - heartmula
+        - hermes-agent
+        - hermes-agent-skill-authoring
+        - hermes-desktop-plugins
+        - hermes-s6-container-supervision
         - himalaya
+        - huggingface-hub
         - ideation
+        - kanban-codex-lane
+        - kanban-orchestrator
         - linear
         - llama-cpp
         - llm-wiki
         - manim-video
         - minecraft-modpack-server
+        - native-mcp
+        - nano-pdf
+        - node-inspect-debugger
         - notion
         - obliteratus
         - obsidian
         - openhue
         - opencode
+        - outlines
         - p5js
+        - petdex
         - pixel-art
+        - plan
         - pokemon-player
         - polymarket
         - popular-web-designs
+        - pretext
+        - python-debugpy
+        - requesting-code-review
         - research-paper-writing
         - segment-anything-model
+        - self-hosted-tooling
         - serving-llms-vllm
+        - simplify-code
+        - sketch
         - songwriting-and-ai-music
         - songsee
+        - spotify
+        - spike
+        - subagent-driven-development
+        - systematic-debugging
+        - teams-meeting-pipeline
+        - test-driven-development
+        - touchdesigner-mcp
         - unsloth
+        - webhook-subscriptions
         - weights-and-biases
+        - writing-plans
         - xurl
+        - yuanbao
 
     terminal:
       backend: local
