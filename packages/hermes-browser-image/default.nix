@@ -22,6 +22,7 @@
       export DISPLAY=:99
       export XKB_CONFIG_ROOT=${pkgs.xkeyboard_config}/share/X11/xkb
       mkdir -p /tmp/.X11-unix
+      rm -f /tmp/.X99-lock /tmp/.X11-unix/X99
 
       Xvfb "$DISPLAY" \
         -screen 0 1440x900x24 \
