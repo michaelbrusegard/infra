@@ -90,6 +90,10 @@
     {
       class = "^(electron)$";
       initial_title = "^Paseo$";
+      workspace = 1;
+    }
+    {
+      class = "^(Mattermost)$";
       workspace = 3;
     }
     {
