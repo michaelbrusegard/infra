@@ -30,6 +30,7 @@ spec:
             - -c
             - |
               mkdir -p /opt/data/workspace
+              mkdir -p /opt/browser-files
               mkdir -p /opt/data/hindsight /opt/data/skills/mealie /opt/data/skills/browser-navigation /opt/data/skills/cluster-access
               mkdir -p /opt/data/skills/data-science/jupyter-live-kernel
               for file in /bootstrap-config/*; do
@@ -52,6 +53,7 @@ spec:
               sed -i "s/__MATTERMOST_SCRATCHPAD_CHANNEL_ID__/$MATTERMOST_SCRATCHPAD_CHANNEL_ID/g" /opt/data/config.yaml
               install -m 0640 /bootstrap-secret/.env /opt/data/.env
               chown -R 10000:10000 /opt/data
+              chown 10000:10000 /opt/browser-files
           env:
             - name: MATTERMOST_ALERTS_CHANNEL_ID
               valueFrom:
@@ -83,6 +85,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/data
+            - name: browser-files
+              mountPath: /opt/browser-files
             - name: bootstrap-config
               mountPath: /bootstrap-config
             - name: bootstrap-secret
@@ -170,6 +174,10 @@ spec:
               value: http://searxng.searxng.svc.cluster.local:8080
             - name: BROWSER_CDP_URL
               value: http://127.0.0.1:9222
+            - name: BROWSER_SHARED_PROFILE_SESSIONS
+              value: "true"
+            - name: BROWSER_FILES_ROOT
+              value: /opt/browser-files
             - name: API_SERVER_ENABLED
               value: "true"
             - name: API_SERVER_HOST
@@ -214,6 +222,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/data
+            - name: browser-files
+              mountPath: /opt/browser-files
             - name: tmp
               mountPath: /tmp
             - name: kube-api-access
@@ -287,6 +297,8 @@ spec:
           volumeMounts:
             - name: browser-profile
               mountPath: /opt/browser
+            - name: browser-files
+              mountPath: /opt/browser-files
             - name: browser-tmp
               mountPath: /tmp
             - name: browser-shm
@@ -324,6 +336,9 @@ spec:
         - name: browser-profile
           persistentVolumeClaim:
             claimName: hermes-browser-profile
+        - name: browser-files
+          persistentVolumeClaim:
+            claimName: hermes-browser-files
         - name: kube-api-access
           projected:
             defaultMode: 420

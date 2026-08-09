@@ -4,6 +4,7 @@ resources:
   - namespace.yaml
   - backup.yaml
   - browser-pvc.yaml
+  - browser-files-pvc.yaml
   - rbac.yaml
   - configmap.yaml
   - statefulset.yaml

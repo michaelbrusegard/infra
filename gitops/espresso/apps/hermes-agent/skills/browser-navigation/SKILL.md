@@ -21,7 +21,9 @@ Do not delegate ordinary `web_search` or `web_extract` requests, transcript
 extraction, or work that does not require interactive browser tools. When
 delegation is unavailable, including inside a leaf child agent, operate the
 browser directly using the guidance below. Avoid splitting one browser workflow
-between parent and child because their browser sessions are isolated.
+between parent and child because their tab groups are isolated. Browser tasks
+share the persistent login profile, but each task owns its own root tab and any
+tabs or popups opened from it.
 
 ## Reliable interaction loop
 
@@ -33,6 +35,8 @@ between parent and child because their browser sessions are isolated.
    continuing. Do not infer success from a tool call alone.
 5. Use `browser_dialog` for native prompts and `browser_console` when page
    behavior is unclear.
+6. A clicked link may make a new tab active. Refresh the snapshot after the
+   click and continue there; the popup remains part of the same task.
 
 Dismiss cookie banners, location prompts, sign-in overlays, and obstructing
 modals before retrying a covered target. Prefer semantic refs over selectors or
@@ -55,6 +59,17 @@ or otherwise absent from the accessibility snapshot:
 Coordinate clicks are viewport CSS pixels with origin `[0, 0]` at the top-left.
 They are a last resort because layout movement can invalidate them.
 
+## Files
+
+- To upload a user attachment or generated file, call `browser_upload` with a
+  current file-input ref and absolute paths under the Hermes workspace or
+  attachment cache. Do not type a path into a file input.
+- To save a link or button download, call `browser_download` with its current
+  ref and the expected filename including extension. Use the returned path for
+  inspection or attach it to the reply with `MEDIA:<path>`.
+- Refresh the snapshot after an upload or download action and verify the page
+  acknowledges the expected file.
+
 ## Verification and challenge recovery
 
 Treat “checking your browser,” CAPTCHA, unusual-traffic, bot-check, and similar
@@ -71,6 +86,9 @@ pages as stateful flows rather than ordinary forms.
 - If a challenge reloads, preserve the existing browser profile and cookies.
   Do not clear storage, rotate identity settings, or repeatedly open new
   sessions unless the current session is irrecoverably broken.
+- Login state is shared across browser tasks and persists across pod restarts.
+  Do not sign out, clear site data, or switch an account unless the user asks;
+  doing so affects every browser task using that site.
 - If an action makes no progress, capture the new state and choose a different
   action. Never repeat the same blind click in a loop.
 - After the challenge clears, take a fresh snapshot before continuing the
