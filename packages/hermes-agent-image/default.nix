@@ -171,7 +171,7 @@
   };
 
   root = runCommand "hermes-agent-root" {} ''
-    mkdir -p "$out/etc" "$out/opt/data" "$out/tmp"
+    mkdir -p "$out/etc" "$out/opt/data/workspace" "$out/tmp"
     ln -s ${fontconfigFile} "$out/etc/fonts.conf"
     cat > "$out/etc/passwd" <<'EOF'
     root:x:0:0:root:/root:/bin/bash
