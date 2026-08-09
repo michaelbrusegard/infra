@@ -4,13 +4,6 @@
   pkgs,
   runCommand,
 }: let
-  fontconfigFile = pkgs.makeFontsConf {
-    fontDirectories = with pkgs; [
-      noto-fonts
-      noto-fonts-color-emoji
-    ];
-  };
-
   markitdownPptx = pkgs.python3Packages.markitdown.overrideAttrs {
     dependencies = with pkgs.python3Packages; [
       beautifulsoup4
@@ -108,7 +101,6 @@
       bind
       blogwatcherCli
       cacert
-      chromium
       coreutils
       curl
       file
@@ -146,7 +138,6 @@
 
   root = runCommand "hermes-agent-root" {} ''
     mkdir -p "$out/etc" "$out/opt/data/workspace" "$out/tmp"
-    ln -s ${fontconfigFile} "$out/etc/fonts.conf"
     cat > "$out/etc/passwd" <<'EOF'
     root:x:0:0:root:/root:/bin/bash
     hermes:x:10000:10000:Hermes Agent:/opt/data:/bin/bash
@@ -174,7 +165,6 @@ in
         "HERMES_HOME=/opt/data"
         "PATH=${tools}/bin:${hermes-agent}/bin"
         "NODE_PATH=${nodeTools}/lib/node_modules"
-        "FONTCONFIG_FILE=/etc/fonts.conf"
         "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
         "PYTHONDONTWRITEBYTECODE=1"
         "PIP_DISABLE_PIP_VERSION_CHECK=1"

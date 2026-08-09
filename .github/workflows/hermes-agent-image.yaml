@@ -1,4 +1,4 @@
-name: Hermes Agent Image
+name: Hermes Agent Images
 
 'on':
   push:
@@ -6,10 +6,12 @@ name: Hermes Agent Image
       - main
     paths:
       - packages/hermes-agent-image/**
+      - packages/hermes-browser-image/**
       - .github/workflows/hermes-agent-image.yaml
   pull_request:
     paths:
       - packages/hermes-agent-image/**
+      - packages/hermes-browser-image/**
       - .github/workflows/hermes-agent-image.yaml
 
 concurrency:
@@ -18,7 +20,8 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_REF: ghcr.io/michaelbrusegard/hermes-agent
+  AGENT_IMAGE_REF: ghcr.io/michaelbrusegard/hermes-agent
+  BROWSER_IMAGE_REF: ghcr.io/michaelbrusegard/hermes-browser
 
 jobs:
   build-and-publish:
@@ -54,9 +57,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build declarative image
+      - name: Build declarative images
         run: |
-          nix build --impure --expr '
+          # shellcheck disable=SC2016
+          nix build --impure --out-link result-agent --expr '
             let
               upstream = builtins.getFlake (toString ./.upstream/hermes-agent);
               system = builtins.currentSystem;
@@ -69,18 +73,27 @@ jobs:
               inherit hermes-agent;
             }
           '
+          # shellcheck disable=SC2016
+          nix build --impure --out-link result-browser --expr '
+            let
+              upstream = builtins.getFlake (toString ./.upstream/hermes-agent);
+              system = builtins.currentSystem;
+              pkgs = upstream.inputs.nixpkgs.legacyPackages.${system};
+            in
+            pkgs.callPackage ./packages/hermes-browser-image {}
+          '
 
-      - name: Smoke test image
+      - name: Smoke test images
         run: |
-          docker load < result
-          docker run --rm "$IMAGE_REF:nix" --help
+          docker load < result-agent
+          docker load < result-browser
+          docker run --rm "$AGENT_IMAGE_REF:nix" --help
           for binary in blogwatcher-cli flux gh helm himalaya jq jupyter jupyter-live-kernel kubectl node ocrmypdf pdftoppm sed stern tesseract tofu yq; do
-            docker run --rm --entrypoint "$binary" "$IMAGE_REF:nix" --help >/dev/null
+            docker run --rm --entrypoint "$binary" "$AGENT_IMAGE_REF:nix" --help >/dev/null
           done
-          docker run --rm --entrypoint agent-browser "$IMAGE_REF:nix" --version
-          docker run --rm --env HOME=/tmp --entrypoint chromium "$IMAGE_REF:nix" --version
-          docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp --entrypoint soffice "$IMAGE_REF:nix" --version
-          docker run --rm --entrypoint python3 "$IMAGE_REF:nix" -c '
+          docker run --rm --entrypoint agent-browser "$AGENT_IMAGE_REF:nix" --version
+          docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp --entrypoint soffice "$AGENT_IMAGE_REF:nix" --version
+          docker run --rm --entrypoint python3 "$AGENT_IMAGE_REF:nix" -c '
           import defusedxml
           import docx
           import markitdown
@@ -93,15 +106,15 @@ jobs:
           import websocket
           import youtube_transcript_api
           '
-          docker run --rm --entrypoint node "$IMAGE_REF:nix" -e '
+          docker run --rm --entrypoint node "$AGENT_IMAGE_REF:nix" -e '
           for (const name of ["pptxgenjs", "react", "react-dom/server", "react-icons/fa", "sharp"]) {
             require(name);
           }
           '
-          docker run --rm --entrypoint bash "$IMAGE_REF:nix" -c '
-            for binary in apk apt-get nix-env npm pip uv; do
+          docker run --rm --entrypoint bash "$AGENT_IMAGE_REF:nix" -c '
+            for binary in apk apt-get chromium nix-env npm pip uv; do
               if command -v "$binary" >/dev/null; then
-                echo "unexpected runtime package manager: $binary" >&2
+                echo "unexpected excluded binary: $binary" >&2
                 exit 1
               fi
             done
@@ -110,8 +123,34 @@ jobs:
               exit 1
             fi
           '
+          docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp "$BROWSER_IMAGE_REF:nix" --version
+          browser_id=$(docker run --detach --rm --read-only \
+            --tmpfs /opt/browser:rw,uid=10000,gid=10000,mode=0700 \
+            --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
+            --tmpfs /dev/shm:rw,uid=10000,gid=10000,mode=1777 \
+            "$BROWSER_IMAGE_REF:nix" \
+            --headless=new \
+            --no-sandbox \
+            --disable-gpu \
+            --remote-debugging-port=9222 \
+            --remote-allow-origins='*' \
+            --user-data-dir=/opt/browser/profile \
+            about:blank)
+          trap 'docker stop "$browser_id" >/dev/null 2>&1 || true' EXIT
+          for attempt in $(seq 1 30); do
+            if docker exec "$browser_id" curl --fail --silent http://127.0.0.1:9222/json/version >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              docker logs "$browser_id"
+              exit 1
+            fi
+            sleep 1
+          done
+          docker stop "$browser_id"
+          trap - EXIT
 
-      - name: Publish image
+      - name: Publish images
         id: publish
         if: github.event_name == 'push'
         env:
@@ -121,21 +160,29 @@ jobs:
           registries_conf="$RUNNER_TEMP/registries.conf"
           printf '%s\n' 'unqualified-search-registries = ["docker.io"]' > "$registries_conf"
           skopeo --registries-conf "$registries_conf" copy \
-            "docker-archive:result" "docker://$IMAGE_REF:sha-$GIT_SHA"
+            "docker-archive:result-agent" "docker://$AGENT_IMAGE_REF:sha-$GIT_SHA"
           skopeo --registries-conf "$registries_conf" copy \
-            "docker-archive:result" "docker://$IMAGE_REF:main"
-          digest=$(skopeo --registries-conf "$registries_conf" inspect \
-            "docker://$IMAGE_REF:sha-$GIT_SHA" | jq -r .Digest)
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+            "docker-archive:result-agent" "docker://$AGENT_IMAGE_REF:main"
+          skopeo --registries-conf "$registries_conf" copy \
+            "docker-archive:result-browser" "docker://$BROWSER_IMAGE_REF:sha-$GIT_SHA"
+          skopeo --registries-conf "$registries_conf" copy \
+            "docker-archive:result-browser" "docker://$BROWSER_IMAGE_REF:main"
+          agent_digest=$(skopeo --registries-conf "$registries_conf" inspect \
+            "docker://$AGENT_IMAGE_REF:sha-$GIT_SHA" | jq -r .Digest)
+          browser_digest=$(skopeo --registries-conf "$registries_conf" inspect \
+            "docker://$BROWSER_IMAGE_REF:sha-$GIT_SHA" | jq -r .Digest)
+          echo "agent_digest=$agent_digest" >> "$GITHUB_OUTPUT"
+          echo "browser_digest=$browser_digest" >> "$GITHUB_OUTPUT"
 
       - name: Sync main before digest update
         if: github.event_name == 'push'
         run: git pull --rebase origin main
 
-      - name: Update Hermes Agent image reference
+      - name: Update Hermes image references
         if: github.event_name == 'push'
         env:
-          DIGEST: ${{ steps.publish.outputs.digest }}
+          AGENT_DIGEST: ${{ steps.publish.outputs.agent_digest }}
+          BROWSER_DIGEST: ${{ steps.publish.outputs.browser_digest }}
           GIT_SHA: ${{ github.sha }}
         run: |
           python3 - <<'PY'
@@ -144,16 +191,27 @@ jobs:
           import re
 
           path = Path("gitops/espresso/apps/hermes-agent/statefulset.yaml")
-          image = f"{os.environ['IMAGE_REF']}:sha-{os.environ['GIT_SHA']}@{os.environ['DIGEST']}"
+          agent_ref = os.environ["AGENT_IMAGE_REF"]
+          browser_ref = os.environ["BROWSER_IMAGE_REF"]
+          git_sha = os.environ["GIT_SHA"]
+          agent_image = f"{agent_ref}:sha-{git_sha}@{os.environ['AGENT_DIGEST']}"
+          browser_image = f"{browser_ref}:sha-{git_sha}@{os.environ['BROWSER_DIGEST']}"
           content = path.read_text()
-          updated, replacements = re.subn(
-              r"(?m)^\s*image:\s*ghcr\.io/michaelbrusegard/hermes-agent:.*$",
-              f"          image: {image}",
+          content, agent_replacements = re.subn(
+              rf"(?m)^(\s*)image:\s*{re.escape(agent_ref)}:.*$",
+              lambda match: f"{match.group(1)}image: {agent_image}",
               content,
           )
-          if replacements not in (2, 3):
+          if agent_replacements not in (1, 2):
               raise SystemExit("Failed to update Hermes Agent image reference")
-          path.write_text(updated)
+          content, browser_replacements = re.subn(
+              r"(?m)^(\s*- name: browser\n\s*image:)\s*.*$",
+              lambda match: f"{match.group(1)} {browser_image}",
+              content,
+          )
+          if browser_replacements != 1:
+              raise SystemExit("Failed to update Hermes Browser image reference")
+          path.write_text(content)
           PY
 
       - name: Commit image digest update
@@ -169,6 +227,6 @@ jobs:
           fi
 
           git add gitops/espresso/apps/hermes-agent/statefulset.yaml
-          git commit -m "chore(hermes-agent): update image digest [skip ci]"
+          git commit -m "chore(hermes-agent): update image digests [skip ci]"
           git pull --rebase origin main
           git push
