@@ -9,3 +9,12 @@ resources:
   - services.yaml
   - network-policy.yaml
   - httproute.yaml
+
+configMapGenerator:
+  - name: hermes-agent-skills
+    namespace: hermes-agent
+    files:
+      - cluster-access-skill.md=skills/cluster-access/SKILL.md
+
+generatorOptions:
+  disableNameSuffixHash: true

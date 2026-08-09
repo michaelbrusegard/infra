@@ -12,7 +12,7 @@ spec:
   template:
     metadata:
       annotations:
-        configmap.reloader.stakater.com/reload: hermes-agent-bootstrap
+        configmap.reloader.stakater.com/reload: hermes-agent-bootstrap,hermes-agent-skills
         secret.reloader.stakater.com/reload: cliproxyapi,hermes-agent-env,hermes-alert-webhook,hindsight,mattermost-integrations,mattermost-outputs,mealie-api
       labels:
         app: hermes-agent
@@ -30,7 +30,7 @@ spec:
             - -c
             - |
               mkdir -p /opt/data/workspace
-              mkdir -p /opt/data/hindsight /opt/data/skills/mealie
+              mkdir -p /opt/data/hindsight /opt/data/skills/mealie /opt/data/skills/cluster-access
               for file in /bootstrap-config/*; do
                 [ -f "$file" ] || continue
                 [ "$(basename "$file")" = hindsight.json ] && continue
@@ -39,6 +39,10 @@ spec:
               done
               install -m 0644 /bootstrap-config/hindsight.json /opt/data/hindsight/config.json
               install -m 0644 /bootstrap-config/mealie-skill.md /opt/data/skills/mealie/SKILL.md
+              install -m 0644 /bootstrap-skills/cluster-access-skill.md /opt/data/skills/cluster-access/SKILL.md
+              if [ -f /opt/data/skills/espresso-cluster/SKILL.md ]; then
+                mv /opt/data/skills/espresso-cluster/SKILL.md /opt/data/skills/espresso-cluster/SKILL.md.pvc-backup
+              fi
               sed -i "s/__MATTERMOST_ALERTS_CHANNEL_ID__/$MATTERMOST_ALERTS_CHANNEL_ID/g" /opt/data/config.yaml
               sed -i "s/__MATTERMOST_HOME_CHANNEL_ID__/$MATTERMOST_HOME_CHANNEL_ID/g" /opt/data/config.yaml
               sed -i "s/__MATTERMOST_CODE_CHANNEL_ID__/$MATTERMOST_CODE_CHANNEL_ID/g" /opt/data/config.yaml
@@ -80,6 +84,8 @@ spec:
               mountPath: /bootstrap-config
             - name: bootstrap-secret
               mountPath: /bootstrap-secret
+            - name: bootstrap-skills
+              mountPath: /bootstrap-skills
       containers:
         - name: gateway
           image: ghcr.io/michaelbrusegard/hermes-agent:sha-99154cd5fd4396b1f58b61cfb098ceb935642399@sha256:45b621a2f3f9cca8a939a4a1b2bd7831dcc9c32881f9064566abc63457bbeaa4
@@ -274,6 +280,9 @@ spec:
             items:
               - key: .env
                 path: .env
+        - name: bootstrap-skills
+          configMap:
+            name: hermes-agent-skills
         - name: tmp
           emptyDir: {}
   volumeClaimTemplates:
