@@ -8,24 +8,6 @@ spec:
     matchLabels:
       app: hermes-agent
   ingress:
-    - fromEntities:
-        - host
-        - remote-node
-        - kube-apiserver
-      toPorts:
-        - ports:
-            - port: "9119"
-              protocol: TCP
-    - fromCIDR:
-        - 10.0.186.0/24
-        - fd7a:115c:a1e0:186::/64
-        - 10.0.187.0/24
-        - fd7a:115c:a1e0:187::/64
-        - 100.102.0.0/16
-      toPorts:
-        - ports:
-            - port: "9119"
-              protocol: TCP
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: uptime-kuma
@@ -50,12 +32,6 @@ spec:
       toPorts:
         - ports:
             - port: "8644"
-              protocol: TCP
-    - fromEntities:
-        - ingress
-      toPorts:
-        - ports:
-            - port: "9119"
               protocol: TCP
   egress:
     - toEndpoints:

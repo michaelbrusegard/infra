@@ -9,7 +9,6 @@ resources:
   - statefulset.yaml
   - services.yaml
   - network-policy.yaml
-  - httproute.yaml
 
 configMapGenerator:
   - name: hermes-agent-skills
