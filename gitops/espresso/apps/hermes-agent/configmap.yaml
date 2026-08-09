@@ -223,8 +223,16 @@ data:
     description: Manage recipes, meal plans, and shopping lists in the private Mealie instance.
     ---
 
-    Use `MEALIE_URL` and `MEALIE_API_TOKEN` with Mealie's REST API. Authenticate
-    every request with `Authorization: Bearer $MEALIE_API_TOKEN`. The account is
+    Use `MEALIE_URL` and `MEALIE_API_TOKEN` with Mealie's REST API. Run every
+    authenticated request with the `terminal` tool so its process inherits those
+    variables, and send `Authorization: Bearer $MEALIE_API_TOKEN`. Do not use
+    `execute_code` for Mealie requests: its isolated sandbox does not inherit the
+    token and will send an empty credential. If Python is useful, invoke it from
+    `terminal` instead.
+
+    Never echo, print, log, transform, or otherwise expose the token. Check
+    authentication using an HTTP status or a harmless endpoint such as
+    `/api/users/self`, without displaying request headers. The account is
     intentionally non-admin and may read, create, update, and import recipes;
     manage meal plans; and manage shopping lists. Never attempt administration,
     user management, or permission changes. Discover endpoint schemas from
