@@ -17,6 +17,8 @@ data:
     debug: false
     logging-to-file: false
     usage-statistics-enabled: true
+    request-retry: 3
+    max-retry-interval: 30
     quota-exceeded:
       switch-project: true
       switch-preview-model: true
