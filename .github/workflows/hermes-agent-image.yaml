@@ -160,13 +160,18 @@ jobs:
             fi
             sleep 1
           done
-          tab_json=$(docker run --rm \
+          agent_id=$(docker run --detach --rm \
             --network "container:$browser_id" \
+            --env AGENT_BROWSER_SOCKET_DIR=/tmp/agent-browser-smoke \
             --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
-            --entrypoint agent-browser \
+            --entrypoint sleep \
             "$AGENT_IMAGE_REF:nix" \
+            60)
+          trap 'docker stop "$agent_id" >/dev/null 2>&1 || true; docker stop "$browser_id" >/dev/null 2>&1 || true' EXIT
+          tab_json=$(docker exec "$agent_id" agent-browser \
             --cdp http://127.0.0.1:9222 --json tab list)
           printf '%s' "$tab_json" | jq -e '.data.tabs[0].targetId | length > 0' >/dev/null
+          docker stop "$agent_id"
           docker stop "$browser_id"
           trap - EXIT
 
