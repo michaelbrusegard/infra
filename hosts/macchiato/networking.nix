@@ -124,8 +124,10 @@ in {
       '';
     };
 
-    # IPv4 NAT (masquerade) for outbound internet access from both VLANs
-    # IPv6 does not need NAT — devices use public GUA addresses from prefix delegation
+    # IPv4 NAT (masquerade) for outbound internet access from both VLANs.
+    # Outbound IPv6 stays native — devices use public GUA addresses from prefix
+    # delegation. Inbound IPv6 DNAT is defined separately below because the
+    # cluster service VIPs use stable ULAs.
     nat = {
       enable = true;
       externalInterface = wanInterface;
@@ -189,12 +191,50 @@ in {
           proto = "tcp";
           sourcePort = 5349;
         }
-        {
-          destination = "10.0.187.3:49152-65535";
-          proto = "udp";
-          sourcePort = "49152:65535";
-        }
       ];
+    };
+
+    # networking.nat renders ranges as anonymous range-to-range maps, which
+    # nftables does not support. Address-only DNAT preserves the relay port.
+    nftables.tables."ipv4-relay-port-forward" = {
+      family = "ip";
+      content = ''
+        chain prerouting {
+          type nat hook prerouting priority dstnat; policy accept;
+
+          iifname "${wanInterface}" udp dport 49152-65535 dnat to 10.0.187.3
+        }
+      '';
+    };
+
+    # Mirror the IPv4 WAN forwards above for IPv6. The public DNS records point
+    # at macchiato's dynamic WAN GUA, while the routed cluster service VIPs use
+    # stable ULAs, so inbound connections need destination NAT. Keeping this in
+    # a dedicated table avoids enabling outbound NAT66 for the LAN bridges.
+    nftables.tables."ipv6-port-forward" = {
+      family = "ip6";
+      content = ''
+        chain prerouting {
+          type nat hook prerouting priority dstnat; policy accept;
+
+          iifname "${wanInterface}" meta l4proto { tcp, udp } dnat meta l4proto . th dport map {
+            tcp . 80 : fd7a:115c:a1e0:188::2 . 80,
+            tcp . 443 : fd7a:115c:a1e0:188::2 . 443,
+            tcp . 25 : fd7a:115c:a1e0:188::12 . 25,
+            tcp . 465 : fd7a:115c:a1e0:188::12 . 465,
+            tcp . 587 : fd7a:115c:a1e0:188::12 . 587,
+            tcp . 993 : fd7a:115c:a1e0:188::12 . 993,
+            udp . 3478 : fd7a:115c:a1e0:188::34 . 3478,
+            tcp . 25565 : fd7a:115c:a1e0:188::50 . 25565,
+            udp . 5349 : fd7a:115c:a1e0:187::3 . 5349,
+            tcp . 5349 : fd7a:115c:a1e0:187::3 . 5349
+          }
+
+          # Address-only DNAT preserves the original relay port. nftables does
+          # not support mapping one anonymous port range to another.
+          iifname "${wanInterface}" udp dport 49152-65535 dnat to fd7a:115c:a1e0:187::3
+        }
+      '';
     };
 
     firewall = {
