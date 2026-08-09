@@ -1,7 +1,6 @@
 {pkgs}:
 pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
   betterbird = pkgs.callPackage ./betterbird {};
-  handy = pkgs.callPackage ./handy {};
 }
 // {
   kimi-code = pkgs.callPackage ./kimi-code {};

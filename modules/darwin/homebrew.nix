@@ -35,7 +35,6 @@
       "mas"
     ];
     casks = [
-      "handy"
       "netbird-ui"
       # TODO: re-enable once the upstream homebrew-cask scribus definition
       # stops declaring conflicting `depends_on macos` (on_arm/on_intel

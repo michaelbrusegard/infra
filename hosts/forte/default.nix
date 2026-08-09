@@ -14,7 +14,6 @@
     inputs.self.nixosModules.flatpak
     inputs.self.nixosModules.gaming
     inputs.self.nixosModules.gtk
-    inputs.self.nixosModules.handy
     inputs.self.nixosModules.home-manager
     inputs.self.nixosModules.hyprland
     inputs.self.nixosModules.impermanence

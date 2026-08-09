@@ -32,7 +32,6 @@
       inputs.self.nixosModules.flatpak
       inputs.self.nixosModules.gaming
       inputs.self.nixosModules.gtk
-      inputs.self.nixosModules.handy
       inputs.self.nixosModules.hyprland
       inputs.self.nixosModules.impermanence
       inputs.self.nixosModules.kanata
