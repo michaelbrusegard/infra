@@ -233,12 +233,13 @@ spec:
           command:
             - chromium
           args:
-            - --headless=new
             - --no-sandbox
-            - --disable-gpu
-            - --disable-background-networking
+            - --enable-unsafe-swiftshader
+            - --ozone-platform=x11
+            - --window-size=1440,900
+            - --force-device-scale-factor=1
+            - --lang=en-US
             - --disable-component-update
-            - --disable-sync
             - --no-first-run
             - --no-default-browser-check
             - --remote-debugging-port=9222
