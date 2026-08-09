@@ -19,6 +19,7 @@ inputs: _: prev: let
         ++ [
           ../patches/paseo-keybinds.patch
           ../patches/paseo-fonts.patch
+          ../patches/paseo-full-access-mcp-elicitations.patch
         ];
     });
 in

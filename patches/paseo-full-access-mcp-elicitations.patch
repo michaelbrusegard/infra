@@ -1,0 +1,17 @@
+diff --git a/packages/server/src/server/agent/providers/codex-app-server-agent.ts b/packages/server/src/server/agent/providers/codex-app-server-agent.ts
+--- a/packages/server/src/server/agent/providers/codex-app-server-agent.ts
++++ b/packages/server/src/server/agent/providers/codex-app-server-agent.ts
+@@ -6175,6 +6175,13 @@ export class CodexAppServerAgentSession implements AgentSession {
+     if (Array.isArray(requiredFields) && requiredFields.length > 0) {
+       return Promise.resolve({ action: "decline", content: null, _meta: null });
+     }
++    if (this.currentMode === "full-access") {
++      return Promise.resolve({
++        action: "accept",
++        content: {},
++        _meta: null,
++      });
++    }
+     const requestId = `permission-${randomUUID()}`;
+     const request: AgentPermissionRequest = {
+       id: requestId,
