@@ -8,6 +8,21 @@ description: Operate interactive websites reliably with Hermes browser snapshots
 Use the browser tools for interactive pages. Prefer `web_search` or
 `web_extract` when no interaction is required.
 
+## Browser task routing
+
+When operating as the user-facing parent and `delegate_task` is available,
+delegate interactive browser workflows before making the first browser call.
+Pass the child the complete objective, target URLs, relevant conversation
+context, constraints, required output, and authorization boundaries. Ask the
+child to perform the browser workflow through completion and return verified
+findings for the parent to present to the user.
+
+Do not delegate ordinary `web_search` or `web_extract` requests, transcript
+extraction, or work that does not require interactive browser tools. When
+delegation is unavailable, including inside a leaf child agent, operate the
+browser directly using the guidance below. Avoid splitting one browser workflow
+between parent and child because their browser sessions are isolated.
+
 ## Reliable interaction loop
 
 1. Start with `browser_navigate`. It returns a compact accessibility snapshot.
