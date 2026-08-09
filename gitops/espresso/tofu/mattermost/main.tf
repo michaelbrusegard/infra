@@ -10,16 +10,6 @@ locals {
       display_name = "Scratchpad"
       header       = "One-shot Hermes requests with no prior session or persistent memory context."
     }
-    meals = {
-      name         = "meals"
-      display_name = "Meals"
-      header       = "Meal planning, recipes, and Mealie activity."
-    }
-    shopping = {
-      name         = "shopping"
-      display_name = "Shopping"
-      header       = "Shopping lists, purchases, and errands."
-    }
     code = {
       name         = "code"
       display_name = "Code"
@@ -72,7 +62,7 @@ resource "mattermost_channel" "channels" {
   type         = "O"
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 

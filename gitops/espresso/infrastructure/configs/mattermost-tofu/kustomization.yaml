@@ -39,8 +39,6 @@ patches:
             - hermes_home_channel_id
             - hermes_alerts_channel_id
             - hermes_code_channel_id
-            - hermes_meals_channel_id
-            - hermes_shopping_channel_id
             - hermes_stateless_channel_ids
             - hermes_allowed_channel_ids
             - hermes_free_response_channel_ids

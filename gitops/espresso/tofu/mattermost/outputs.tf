@@ -19,16 +19,6 @@ output "hermes_code_channel_id" {
   value       = mattermost_channel.channels["code"].id
 }
 
-output "hermes_meals_channel_id" {
-  description = "Mattermost channel ID used for meal planning and recipes"
-  value       = mattermost_channel.channels["meals"].id
-}
-
-output "hermes_shopping_channel_id" {
-  description = "Mattermost channel ID used for shopping lists and errands"
-  value       = mattermost_channel.channels["shopping"].id
-}
-
 output "hermes_stateless_channel_ids" {
   description = "Mattermost channel IDs where every post starts a memory-free session"
   value       = mattermost_channel.channels["scratchpad"].id
@@ -45,8 +35,6 @@ output "hermes_free_response_channel_ids" {
     "assistant",
     "code",
     "scratchpad",
-    "meals",
-    "shopping",
     "finance",
     "homelab",
   ] : mattermost_channel.channels[name].id])
