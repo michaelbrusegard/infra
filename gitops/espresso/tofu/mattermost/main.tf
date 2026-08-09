@@ -62,7 +62,7 @@ resource "mattermost_channel" "channels" {
   type         = "O"
 
   lifecycle {
-    destroy = false
+    prevent_destroy = true
   }
 }
 
@@ -104,10 +104,6 @@ resource "mattermost_channel_member" "hermes_bot" {
 
   channel_id = each.value.id
   user_id    = data.mattermost_user.hermes_bot.id
-
-  lifecycle {
-    destroy = false
-  }
 }
 
 resource "mattermost_channel_member" "admin" {
@@ -115,10 +111,6 @@ resource "mattermost_channel_member" "admin" {
 
   channel_id = each.value.id
   user_id    = data.mattermost_user.admin.id
-
-  lifecycle {
-    destroy = false
-  }
 }
 
 import {
