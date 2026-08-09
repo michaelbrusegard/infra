@@ -91,7 +91,7 @@ spec:
               mountPath: /bootstrap-skills
       containers:
         - name: gateway
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-0ff1e62d7f3033bff6c8792c7f26aeadffd23822@sha256:066edbd97b79cf4b3fa9eb7a46bb6827c2afabc719c2f4a8eb8da65da9a566d4
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-c45d006294d4d38c52eb843c3db45354288cb671@sha256:e38265e0aaa20f7603547a7008ddbf0de0f4cb3fb42d31306bafa06d26d77c0b
           args:
             - gateway
             - run
@@ -229,7 +229,7 @@ spec:
               drop:
                 - ALL
         - name: browser
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-0ff1e62d7f3033bff6c8792c7f26aeadffd23822@sha256:823b290e673deb160479f3b1bd2821d4276c7534f32cd5299079c97d6061aa6f
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-c45d006294d4d38c52eb843c3db45354288cb671@sha256:bcdb4f70596fb7e56f52d15030876d8ec1f8316ba2f7e0de1031b713e7ba31d1
           command:
             - chromium
           args:
