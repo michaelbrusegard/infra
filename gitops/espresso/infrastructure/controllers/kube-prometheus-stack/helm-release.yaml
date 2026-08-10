@@ -44,6 +44,7 @@ spec:
 
     prometheus:
       prometheusSpec:
+        serviceDiscoveryRole: EndpointSlice
         retention: 21d
         retentionSize: 40GB
         storageSpec:
