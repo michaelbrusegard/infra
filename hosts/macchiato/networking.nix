@@ -1,10 +1,69 @@
-{config, ...}: let
+{
+  config,
+  lib,
+  ...
+}: let
   wanInterface = "enp2s0";
   clientInterfaces = ["enp3s0" "enp4s0"];
   serverInterfaces = ["enp5s0" "enp1s0f0" "enp1s0f1"];
   baseDomain = "asgard.michaelbrusegard.com";
   routerDomain = "router.${baseDomain}";
   netbirdPublicDomain = "netbird.${baseDomain}";
+
+  publicGateway = {
+    ipv4 = "10.0.188.2";
+    ipv6 = "fd7a:115c:a1e0:188::2";
+  };
+  stalwart = {
+    ipv4 = "10.0.188.12";
+    ipv6 = "fd7a:115c:a1e0:188::12";
+  };
+  netbirdCoturn = {
+    ipv4 = "10.0.188.34";
+    ipv6 = "fd7a:115c:a1e0:188::34";
+  };
+  minecraftRouter = {
+    ipv4 = "10.0.188.50";
+    ipv6 = "fd7a:115c:a1e0:188::50";
+  };
+  nextcloudEturnal = {
+    ipv4 = "10.0.187.3";
+    ipv6 = "fd7a:115c:a1e0:187::3";
+  };
+  forward = destination: proto: port: destination // {inherit proto port;};
+
+  # Public WAN forwards are declared once and rendered for both address
+  # families. Keep port ranges separate because nftables cannot represent a
+  # range-to-range translation in the anonymous map used for single ports.
+  publicPortForwards = [
+    # Gateway API
+    (forward publicGateway "tcp" 80)
+    (forward publicGateway "tcp" 443)
+    # Stalwart
+    (forward stalwart "tcp" 25)
+    (forward stalwart "tcp" 465)
+    (forward stalwart "tcp" 587)
+    (forward stalwart "tcp" 993)
+    # NetBird coturn
+    (forward netbirdCoturn "udp" 3478)
+    # mc-router fans out by handshake hostname (*.eldians.com).
+    (forward minecraftRouter "tcp" 25565)
+    # Nextcloud Talk eturnal
+    (forward nextcloudEturnal "udp" 5349)
+    (forward nextcloudEturnal "tcp" 5349)
+  ];
+  turnRelayForward =
+    nextcloudEturnal
+    // {
+      proto = "udp";
+      ports = "49152-65535";
+    };
+  mkIPv4Forward = forward: {
+    destination = "${forward.ipv4}:${toString forward.port}";
+    inherit (forward) proto;
+    sourcePort = forward.port;
+  };
+  mkIPv6Forward = forward: "${forward.proto} . ${toString forward.port} : ${forward.ipv6} . ${toString forward.port}";
 in {
   boot.kernel.sysctl = {
     # Required for routing traffic between bridges and to the internet
@@ -138,60 +197,7 @@ in {
         "guest"
         "vpn_clients"
       ];
-      forwardPorts = [
-        {
-          destination = "10.0.188.2:80";
-          proto = "tcp";
-          sourcePort = 80;
-        }
-        {
-          destination = "10.0.188.2:443";
-          proto = "tcp";
-          sourcePort = 443;
-        }
-        {
-          destination = "10.0.188.12:25";
-          proto = "tcp";
-          sourcePort = 25;
-        }
-        {
-          destination = "10.0.188.12:465";
-          proto = "tcp";
-          sourcePort = 465;
-        }
-        {
-          destination = "10.0.188.12:587";
-          proto = "tcp";
-          sourcePort = 587;
-        }
-        {
-          destination = "10.0.188.12:993";
-          proto = "tcp";
-          sourcePort = 993;
-        }
-        {
-          destination = "10.0.188.34:3478";
-          proto = "udp";
-          sourcePort = 3478;
-        }
-        {
-          # Minecraft: mc-router VIP fans out to vanilla/creative/revelation
-          # by handshake hostname (*.eldians.com).
-          destination = "10.0.188.50:25565";
-          proto = "tcp";
-          sourcePort = 25565;
-        }
-        {
-          destination = "10.0.187.3:5349";
-          proto = "udp";
-          sourcePort = 5349;
-        }
-        {
-          destination = "10.0.187.3:5349";
-          proto = "tcp";
-          sourcePort = 5349;
-        }
-      ];
+      forwardPorts = map mkIPv4Forward publicPortForwards;
     };
 
     # networking.nat renders ranges as anonymous range-to-range maps, which
@@ -202,7 +208,7 @@ in {
         chain prerouting {
           type nat hook prerouting priority dstnat; policy accept;
 
-          iifname "${wanInterface}" udp dport 49152-65535 dnat to 10.0.187.3
+          iifname "${wanInterface}" ${turnRelayForward.proto} dport ${turnRelayForward.ports} dnat to ${turnRelayForward.ipv4}
         }
       '';
     };
@@ -217,22 +223,11 @@ in {
         chain prerouting {
           type nat hook prerouting priority dstnat; policy accept;
 
-          iifname "${wanInterface}" meta l4proto { tcp, udp } dnat meta l4proto . th dport map {
-            tcp . 80 : fd7a:115c:a1e0:188::2 . 80,
-            tcp . 443 : fd7a:115c:a1e0:188::2 . 443,
-            tcp . 25 : fd7a:115c:a1e0:188::12 . 25,
-            tcp . 465 : fd7a:115c:a1e0:188::12 . 465,
-            tcp . 587 : fd7a:115c:a1e0:188::12 . 587,
-            tcp . 993 : fd7a:115c:a1e0:188::12 . 993,
-            udp . 3478 : fd7a:115c:a1e0:188::34 . 3478,
-            tcp . 25565 : fd7a:115c:a1e0:188::50 . 25565,
-            udp . 5349 : fd7a:115c:a1e0:187::3 . 5349,
-            tcp . 5349 : fd7a:115c:a1e0:187::3 . 5349
-          }
+          iifname "${wanInterface}" meta l4proto { tcp, udp } dnat meta l4proto . th dport map { ${lib.concatMapStringsSep ", " mkIPv6Forward publicPortForwards} }
 
           # Address-only DNAT preserves the original relay port. nftables does
           # not support mapping one anonymous port range to another.
-          iifname "${wanInterface}" udp dport 49152-65535 dnat to fd7a:115c:a1e0:187::3
+          iifname "${wanInterface}" ${turnRelayForward.proto} dport ${turnRelayForward.ports} dnat to ${turnRelayForward.ipv6}
         }
       '';
     };
