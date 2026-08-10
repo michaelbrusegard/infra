@@ -36,6 +36,11 @@ spec:
     prometheus-node-exporter:
       extraArgs:
         - --no-collector.kernel_hung
+      service:
+        ipDualStack:
+          enabled: true
+          ipFamilies: ["IPv4", "IPv6"]
+          ipFamilyPolicy: RequireDualStack
 
     prometheus:
       prometheusSpec:
