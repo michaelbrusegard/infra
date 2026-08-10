@@ -66,6 +66,20 @@ spec:
               - targets: ["10.0.186.17:9100"]
                 labels:
                   instance: freddo
+          - job_name: node-exporter-ipv6
+            static_configs:
+              - targets: ["[fd7a:115c:a1e0:187::2]:9100"]
+                labels:
+                  instance: espresso-0
+                  ip_family: IPv6
+              - targets: ["[fd7a:115c:a1e0:187::3]:9100"]
+                labels:
+                  instance: espresso-1
+                  ip_family: IPv6
+              - targets: ["[fd7a:115c:a1e0:187::4]:9100"]
+                labels:
+                  instance: espresso-2
+                  ip_family: IPv6
           - job_name: blocky
             static_configs:
               - targets: ["10.0.187.1:4000"]
@@ -159,18 +173,3 @@ spec:
           type: loki
           url: http://loki.monitoring.svc.cluster.local:3100
           access: proxy
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              group: monitoring.coreos.com
-              version: v1
-              kind: ServiceMonitor
-              name: kube-prometheus-stack-prometheus-node-exporter
-            patch: |
-              apiVersion: monitoring.coreos.com/v1
-              kind: ServiceMonitor
-              metadata:
-                name: kube-prometheus-stack-prometheus-node-exporter
-              spec:
-                serviceDiscoveryRole: EndpointSlice
