@@ -21,7 +21,7 @@ spec:
         kubernetes.io/arch: amd64
       containers:
         - name: nextcloud
-          image: nextcloud:34.0.2-apache@sha256:b3fe6a71998202c4b1a130615e8f7aa8d9de075a1cd3c60693dcd291e10d83a1
+          image: nextcloud:34.0.2-apache@sha256:32466d0c4e549c51b7d5175fe96485bd1b7287d81e898fc70d39b4f460ea50f2
           env:
             - name: POSTGRES_HOST
               value: postgres.postgres.svc.cluster.local
@@ -104,7 +104,7 @@ spec:
               mountPath: /etc/nextcloud-extras
               readOnly: true
         - name: cron
-          image: nextcloud:34.0.2-apache@sha256:b3fe6a71998202c4b1a130615e8f7aa8d9de075a1cd3c60693dcd291e10d83a1
+          image: nextcloud:34.0.2-apache@sha256:32466d0c4e549c51b7d5175fe96485bd1b7287d81e898fc70d39b4f460ea50f2
           command:
             - /bin/sh
             - -c
@@ -120,7 +120,7 @@ spec:
             - name: data
               mountPath: /var/www/html
         - name: notify-push
-          image: nextcloud:34.0.2-apache@sha256:b3fe6a71998202c4b1a130615e8f7aa8d9de075a1cd3c60693dcd291e10d83a1
+          image: nextcloud:34.0.2-apache@sha256:32466d0c4e549c51b7d5175fe96485bd1b7287d81e898fc70d39b4f460ea50f2
           command:
             - /bin/sh
             - -c

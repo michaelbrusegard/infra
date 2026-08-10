@@ -21,7 +21,7 @@ spec:
             kubernetes.io/hostname: espresso-1
           containers:
             - name: cleanup
-              image: docker.io/library/python:3.14-slim@sha256:d4fea6e20c09820028eea3f5c17f5b8ebd2ecb9c2bf28e561681a74a96090e4f
+              image: docker.io/library/python:3.14-slim@sha256:d6e0850f13fda0e2305d4c3c1c2f7930fe1042d34ddd958e49bba6ef685d0bb2
               command:
                 - python
                 - /scripts/cleanup.py
