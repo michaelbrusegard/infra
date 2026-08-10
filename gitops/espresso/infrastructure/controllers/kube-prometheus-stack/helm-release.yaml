@@ -44,7 +44,6 @@ spec:
 
     prometheus:
       prometheusSpec:
-        serviceDiscoveryRole: EndpointSlice
         retention: 21d
         retentionSize: 40GB
         storageSpec:
@@ -160,3 +159,18 @@ spec:
           type: loki
           url: http://loki.monitoring.svc.cluster.local:3100
           access: proxy
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              group: monitoring.coreos.com
+              version: v1
+              kind: ServiceMonitor
+              name: kube-prometheus-stack-prometheus-node-exporter
+            patch: |
+              apiVersion: monitoring.coreos.com/v1
+              kind: ServiceMonitor
+              metadata:
+                name: kube-prometheus-stack-prometheus-node-exporter
+              spec:
+                serviceDiscoveryRole: EndpointSlice
