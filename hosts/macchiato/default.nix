@@ -2,7 +2,19 @@
   inputs,
   pkgs,
   ...
-}: {
+}: let
+  mkNetconsoleCollector = node: port: {
+    wantedBy = ["multi-user.target"];
+    after = ["network.target"];
+    serviceConfig = {
+      ExecStart = "${pkgs.socat}/bin/socat -u UDP-RECVFROM:${toString port},fork,reuseaddr OPEN:/var/log/netconsole/${node}.log,creat,append";
+      Restart = "on-failure";
+      RestartSec = 5;
+      DynamicUser = false;
+      LogsDirectory = "netconsole";
+    };
+  };
+in {
   imports = [
     inputs.self.nixosModules.alloy
     inputs.self.nixosModules.boot
@@ -39,21 +51,17 @@
     enabledCollectors = ["systemd"];
   };
 
-  # Receive netconsole UDP from the espresso nodes and tail it into Loki.
-  systemd.services.netconsole-collector = {
-    wantedBy = ["multi-user.target"];
-    after = ["network.target"];
-    serviceConfig = {
-      ExecStart = "${pkgs.socat}/bin/socat -u UDP-RECVFROM:6666,fork,reuseaddr OPEN:/var/log/netconsole.log,creat,append";
-      Restart = "on-failure";
-      RestartSec = 5;
-      DynamicUser = false;
-    };
+  # Separate files retain sender identity because base netconsole payloads do
+  # not include a hostname or source address.
+  systemd.services = {
+    netconsole-collector-espresso-0 = mkNetconsoleCollector "espresso-0" 6666;
+    netconsole-collector-espresso-1 = mkNetconsoleCollector "espresso-1" 6667;
+    netconsole-collector-espresso-2 = mkNetconsoleCollector "espresso-2" 6668;
   };
 
-  # Bound the netconsole log; a crash-looping node could otherwise grow it
-  # unbounded since it is a plain file, not journald-managed.
-  services.logrotate.settings."/var/log/netconsole.log" = {
+  # Bound the logs; a crash-looping node could otherwise grow them unbounded
+  # since they are plain files, not journald-managed.
+  services.logrotate.settings."/var/log/netconsole/*.log" = {
     frequency = "weekly";
     rotate = 4;
     compress = true;
@@ -71,7 +79,7 @@
     }
 
     loki.source.file "netconsole" {
-      targets    = [{ __path__ = "/var/log/netconsole.log" }]
+      targets    = [{ __path__ = "/var/log/netconsole/*.log" }]
       forward_to = [loki.write.default.receiver]
     }
 
