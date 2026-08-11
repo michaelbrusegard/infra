@@ -91,3 +91,5 @@ data:
         disabled: true
       - name: duckduckgo
         disabled: true
+      - name: duckduckgo web
+        disabled: false
