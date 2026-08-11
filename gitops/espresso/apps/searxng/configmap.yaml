@@ -70,10 +70,16 @@ data:
           local_addresses:
             - "__IPV6_RANGE__"
 
-    # Only engines with native IPv6 endpoints can use the rotating network.
-    # DuckDuckGo and Startpage are IPv4-only and retain the default network.
+    # Google CSE has native IPv6 endpoints and uses the rotating range.
+    # Brave, DuckDuckGo, Startpage, and Mojeek are disabled because they
+    # failed the rotation canary, returned CAPTCHAs, or produced no usable
+    # results.
     engines:
-      - name: brave
-        network: rotating_ipv6
       - name: google cse
         network: rotating_ipv6
+      - name: brave
+        disabled: true
+      - name: startpage
+        disabled: true
+      - name: duckduckgo
+        disabled: true
