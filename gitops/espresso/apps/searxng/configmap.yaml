@@ -71,13 +71,26 @@ data:
             - "__IPV6_RANGE__"
 
     # Google CSE has native IPv6 endpoints and uses the rotating range.
-    # Wiby passed isolated canaries and provides an independent free index.
-    # The disabled engines returned CAPTCHAs, access denials, repeated
-    # timeouts, or no usable results.
+    # The other enabled engines each passed repeated isolated canaries with
+    # zero engine errors; luxxle/tiger/heexy/kukei share one backend, so only
+    # luxxle is kept. Disabled engines returned CAPTCHAs, access denials,
+    # repeated timeouts, or no usable results.
     engines:
       - name: google cse
         network: rotating_ipv6
       - name: wiby
+        disabled: false
+      - name: duckduckgo web
+        disabled: false
+      - name: bing
+        disabled: false
+      - name: swisscows
+        disabled: false
+      - name: luxxle
+        disabled: false
+      - name: seznam
+        disabled: false
+      - name: searchmysite
         disabled: false
       - name: mwmbl
         disabled: true
@@ -91,5 +104,3 @@ data:
         disabled: true
       - name: duckduckgo
         disabled: true
-      - name: duckduckgo web
-        disabled: false
