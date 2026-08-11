@@ -81,10 +81,11 @@ spec:
         - ports:
             - port: "9000"
               protocol: TCP
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: searxng
-            k8s:app: searxng
+    # searxng runs with hostNetwork (IPv6 source rotation), so it is reached
+    # through the node IPs instead of a pod endpoint
+    - toEntities:
+        - host
+        - remote-node
       toPorts:
         - ports:
             - port: "8080"

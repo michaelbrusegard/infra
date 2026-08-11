@@ -20,6 +20,7 @@
     inputs.self.nixosModules.watchdog
     ./cluster.nix
     ./networking.nix
+    ./ipv6-rotation.nix
     ./hardware.nix
     ./disko.nix
   ];

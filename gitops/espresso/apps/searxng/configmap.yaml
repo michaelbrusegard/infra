@@ -21,3 +21,28 @@ data:
 
     ui:
       query_in_title: false
+
+    outgoing:
+      networks:
+        # Every request leaves from a different address in a /120 slice of the
+        # ISP-delegated GUA /64, so per-IP rate limits and CAPTCHAs never stick.
+        # The range is rendered by the deployment's initContainer from the
+        # node's /run/searxng/ipv6-range (hosts/espresso/ipv6-rotation.nix);
+        # falls back to the node's default IPv6 address when unavailable.
+        rotating_ipv6:
+          source_ips:
+            - "__IPV6_RANGE__"
+
+    # Only dual-stack engines can use the rotating network: with an IPv6-only
+    # source address list, requests to IPv4-only hosts would fail. All four of
+    # these publish AAAA records and are the engines with aggressive per-IP
+    # bot detection.
+    engines:
+      - name: brave
+        network: rotating_ipv6
+      - name: duckduckgo
+        network: rotating_ipv6
+      - name: google
+        network: rotating_ipv6
+      - name: startpage
+        network: rotating_ipv6
