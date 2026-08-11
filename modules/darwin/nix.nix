@@ -1,4 +1,4 @@
-_: {
+{pkgs, ...}: {
   imports = [
     ../common/nix.nix
   ];
@@ -14,11 +14,15 @@ _: {
     };
     linux-builder = {
       enable = true;
-      systems = [
-        "aarch64-linux"
-        "x86_64-linux"
-      ];
-      maxJobs = 8;
+      package = pkgs.darwin.linux-builder-x86_64;
+      config.virtualisation = {
+        cores = 8;
+        darwin-builder = {
+          diskSize = 64 * 1024;
+          memorySize = 16384;
+        };
+      };
+      systems = ["x86_64-linux"];
       speedFactor = 2;
     };
   };
