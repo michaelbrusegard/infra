@@ -301,19 +301,19 @@
         name = "espresso-0";
         hostConfig = "espresso";
         system = "x86_64-linux";
-        buildOnTarget = false;
+        buildOnTarget = true;
       }
       {
         name = "espresso-1";
         hostConfig = "espresso";
         system = "x86_64-linux";
-        buildOnTarget = false;
+        buildOnTarget = true;
       }
       {
         name = "espresso-2";
         hostConfig = "espresso";
         system = "x86_64-linux";
-        buildOnTarget = false;
+        buildOnTarget = true;
       }
       {
         name = "macchiato";
