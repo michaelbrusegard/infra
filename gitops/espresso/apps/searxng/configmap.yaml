@@ -4,6 +4,43 @@ metadata:
   name: searxng-config
   namespace: searxng
 data:
+  run.sh: |
+    #!/bin/sh
+    set -eu
+
+    range_file=/ipv6-rotation/ipv6-range
+
+    read_range() {
+      range="$(cat "$range_file" 2>/dev/null || true)"
+      printf '%s\n' "${range:-::}"
+    }
+
+    active_range="$(read_range)"
+    sed "s|__IPV6_RANGE__|$active_range|g" \
+      /template/settings.yml > /etc/searxng/settings.yml
+
+    /usr/local/searxng/entrypoint.sh &
+    searxng_pid=$!
+
+    terminate() {
+      kill -TERM "$searxng_pid" 2>/dev/null || true
+      wait "$searxng_pid" 2>/dev/null || true
+      exit 0
+    }
+    trap terminate INT TERM
+
+    while kill -0 "$searxng_pid" 2>/dev/null; do
+      sleep 30 &
+      wait "$!" || true
+      current_range="$(read_range)"
+      if [ "$current_range" != "$active_range" ]; then
+        echo "IPv6 rotation range changed; restarting SearXNG"
+        terminate
+      fi
+    done
+
+    wait "$searxng_pid"
+
   settings.yml: |
     use_default_settings: true
 
@@ -25,24 +62,18 @@ data:
     outgoing:
       networks:
         # Every request leaves from a different address in a /120 slice of the
-        # ISP-delegated GUA /64, so per-IP rate limits and CAPTCHAs never stick.
-        # The range is rendered by the deployment's initContainer from the
-        # node's /run/searxng/ipv6-range (hosts/espresso/ipv6-rotation.nix);
-        # falls back to the node's default IPv6 address when unavailable.
+        # ISP-delegated GUA /64, spreading per-IP rate limits and CAPTCHAs.
+        # The container renders the range from the node's
+        # /run/searxng/ipv6-range (hosts/espresso/ipv6-rotation.nix) and
+        # restarts itself when that range changes.
         rotating_ipv6:
-          source_ips:
+          local_addresses:
             - "__IPV6_RANGE__"
 
-    # Only dual-stack engines can use the rotating network: with an IPv6-only
-    # source address list, requests to IPv4-only hosts would fail. All four of
-    # these publish AAAA records and are the engines with aggressive per-IP
-    # bot detection.
+    # Only engines with native IPv6 endpoints can use the rotating network.
+    # DuckDuckGo and Startpage are IPv4-only and retain the default network.
     engines:
       - name: brave
         network: rotating_ipv6
-      - name: duckduckgo
-        network: rotating_ipv6
-      - name: google
-        network: rotating_ipv6
-      - name: startpage
+      - name: google cse
         network: rotating_ipv6

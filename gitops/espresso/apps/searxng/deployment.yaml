@@ -20,6 +20,13 @@ spec:
       # already allows cluster and remote-node traffic to it.
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: searxng
+              topologyKey: kubernetes.io/hostname
       securityContext:
         fsGroup: 977
         fsGroupChangePolicy: OnRootMismatch
@@ -28,36 +35,12 @@ spec:
         runAsUser: 977
         seccompProfile:
           type: RuntimeDefault
-      initContainers:
-        - name: render-config
-          image: busybox:1.38.0@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8
-          command:
-            - sh
-            - -c
-            - |
-              set -eu
-              range="$(cat /ipv6-rotation/range 2>/dev/null || true)"
-              [ -n "$range" ] || range="::"
-              sed "s|__IPV6_RANGE__|$range|g" /template/settings.yml > /config/settings.yml
-          resources:
-            requests:
-              cpu: 10m
-              memory: 16Mi
-            limits:
-              cpu: 100m
-              memory: 32Mi
-          volumeMounts:
-            - name: config-template
-              mountPath: /template
-              readOnly: true
-            - name: config
-              mountPath: /config
-            - name: ipv6-rotation
-              mountPath: /ipv6-rotation
-              readOnly: true
       containers:
         - name: searxng
           image: docker.io/searxng/searxng:2026.8.1-8892414dc@sha256:ec536bcd1e83577aad4cc07f7ecb9a30858a9a905d2d57c8796abc83f872a036
+          command:
+            - /bin/sh
+            - /template/run.sh
           env:
             - name: FORCE_OWNERSHIP
               value: "false"
@@ -101,10 +84,14 @@ spec:
                 - ALL
             readOnlyRootFilesystem: true
           volumeMounts:
-            - name: config
-              mountPath: /etc/searxng/settings.yml
-              subPath: settings.yml
+            - name: config-template
+              mountPath: /template
               readOnly: true
+            - name: ipv6-rotation
+              mountPath: /ipv6-rotation
+              readOnly: true
+            - name: config
+              mountPath: /etc/searxng
             - name: cache
               mountPath: /var/cache/searxng
             - name: tmp

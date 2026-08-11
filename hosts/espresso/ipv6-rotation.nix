@@ -1,4 +1,8 @@
-{pkgs, ...}: let
+{
+  config,
+  pkgs,
+  ...
+}: let
   # Reserves a /120 slice of the ISP-delegated GUA /64 (announced on br_servers
   # via radvd) for SearXNG per-request source address rotation. Each engine
   # request leaves from a different address, so per-IP rate limits and CAPTCHAs
@@ -9,13 +13,21 @@
   # derived at runtime from the on-link route the kernel installs from router
   # advertisements, and rendered into the searxng pod's settings.yml through a
   # hostPath file (gitops/espresso/apps/searxng/deployment.yaml).
+  nodeIndex =
+    {
+      "espresso-0" = 0;
+      "espresso-1" = 1;
+      "espresso-2" = 2;
+    }.${
+      config.networking.hostName
+    };
+
   rotationScript = pkgs.writeShellApplication {
     name = "searxng-ipv6-rotation";
     runtimeInputs = with pkgs; [
       coreutils
       gnugrep
       iproute2
-      kubectl
     ];
     text = ''
       set -euo pipefail
@@ -35,7 +47,11 @@
         exit 0
       fi
 
-      range="''${prefix%%::*}:5ea7:0:0:0/120"
+      range="''${prefix%%::*}:5ea7:0:${toString nodeIndex}:0/120"
+      previous=$(cat "$range_file" 2>/dev/null || true)
+      if [ -n "$previous" ] && [ "$previous" != "$range" ]; then
+        ip -6 route del local "$previous" dev lo 2>/dev/null || true
+      fi
       ip -6 route replace local "$range" dev lo
 
       # The kernel does not answer neighbour solicitations for local routes,
@@ -43,13 +59,11 @@
       printf 'proxy lan0 {\n  router no\n  rule %s {\n    static\n  }\n}\n' \
         "$range" > "$ndppd_conf"
 
-      previous=$(cat "$range_file" 2>/dev/null || true)
       if [ "$previous" != "$range" ]; then
-        echo "$range" > "$range_file"
+        printf '%s\n' "$range" > "$range_file.tmp"
+        mv "$range_file.tmp" "$range_file"
         echo "rotation range changed: ''${previous:-none} -> $range"
         systemctl restart searxng-ndppd.service
-        # searxng renders the range into settings.yml at pod start
-        KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl rollout restart -n searxng deployment/searxng || true
       fi
     '';
   };
