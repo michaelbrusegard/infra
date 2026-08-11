@@ -71,12 +71,20 @@ data:
             - "__IPV6_RANGE__"
 
     # Google CSE has native IPv6 endpoints and uses the rotating range.
-    # Brave, DuckDuckGo, Startpage, and Mojeek are disabled because they
-    # failed the rotation canary, returned CAPTCHAs, or produced no usable
-    # results.
+    # Wiby passed isolated canaries and provides an independent free index.
+    # The disabled engines returned CAPTCHAs, access denials, repeated
+    # timeouts, or no usable results.
     engines:
       - name: google cse
         network: rotating_ipv6
+      - name: wiby
+        disabled: false
+      - name: mwmbl
+        disabled: true
+      - name: qwant
+        disabled: true
+      - name: yep
+        disabled: true
       - name: brave
         disabled: true
       - name: startpage
