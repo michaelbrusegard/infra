@@ -31,10 +31,10 @@ resource "pocketid_client" "netbird" {
   pkce_enabled = true
   launch_url   = "https://netbird-admin.${local.domain}/"
 
-  allowed_user_groups = [
+  allowed_user_groups = sort([
     pocketid_group.users.id,
     pocketid_group.admin.id,
-  ]
+  ])
 }
 
 resource "pocketid_group" "nextcloud" {
@@ -52,10 +52,10 @@ resource "pocketid_client" "nextcloud" {
   launch_url   = "https://cloud.${local.domain}"
   pkce_enabled = true
 
-  allowed_user_groups = [
+  allowed_user_groups = sort([
     pocketid_group.nextcloud.id,
     pocketid_group.admin.id,
-  ]
+  ])
 }
 
 resource "pocketid_group" "immich" {
@@ -75,10 +75,10 @@ resource "pocketid_client" "immich" {
   launch_url   = "https://photos.${local.domain}"
   pkce_enabled = true
 
-  allowed_user_groups = [
+  allowed_user_groups = sort([
     pocketid_group.immich.id,
     pocketid_group.admin.id,
-  ]
+  ])
 }
 
 resource "pocketid_client" "mealie" {
@@ -93,8 +93,8 @@ resource "pocketid_client" "mealie" {
   pkce_enabled = true
   launch_url   = "https://mealie.${local.domain}"
 
-  allowed_user_groups = [
+  allowed_user_groups = sort([
     pocketid_group.users.id,
     pocketid_group.admin.id,
-  ]
+  ])
 }
