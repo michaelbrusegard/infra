@@ -17,7 +17,7 @@ spec:
       runAsGroup: 2000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: openebs-hostpath
+    cacheStorageClassName: openebs-single-replica
     cacheCapacity: 2Gi
 ---
 apiVersion: batch/v1

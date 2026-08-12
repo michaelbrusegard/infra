@@ -17,7 +17,7 @@ spec:
       runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: openebs-hostpath
+    cacheStorageClassName: openebs-single-replica
     cacheCapacity: 1Gi
 ---
 apiVersion: volsync.backube/v1alpha1
@@ -39,7 +39,7 @@ spec:
       runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: openebs-hostpath
+    cacheStorageClassName: openebs-single-replica
     cacheCapacity: 1Gi
 ---
 apiVersion: volsync.backube/v1alpha1
@@ -61,7 +61,7 @@ spec:
       runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: openebs-hostpath
+    cacheStorageClassName: openebs-single-replica
     cacheCapacity: 1Gi
 ---
 apiVersion: volsync.backube/v1alpha1
@@ -83,7 +83,7 @@ spec:
       runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: openebs-hostpath
+    cacheStorageClassName: openebs-single-replica
     cacheCapacity: 1Gi
 ---
 apiVersion: volsync.backube/v1alpha1
@@ -105,7 +105,7 @@ spec:
       runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: openebs-hostpath
+    cacheStorageClassName: openebs-single-replica
     cacheCapacity: 1Gi
 ---
 apiVersion: batch/v1
@@ -257,7 +257,7 @@ spec:
       runAsGroup: 0
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: openebs-hostpath
+    cacheStorageClassName: openebs-single-replica
     cacheCapacity: 1Gi
 ---
 apiVersion: volsync.backube/v1alpha1
@@ -279,7 +279,7 @@ spec:
       runAsGroup: 0
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: openebs-hostpath
+    cacheStorageClassName: openebs-single-replica
     cacheCapacity: 1Gi
 ---
 apiVersion: volsync.backube/v1alpha1
@@ -301,5 +301,5 @@ spec:
       runAsGroup: 1000
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
-    cacheStorageClassName: openebs-hostpath
+    cacheStorageClassName: openebs-single-replica
     cacheCapacity: 1Gi
