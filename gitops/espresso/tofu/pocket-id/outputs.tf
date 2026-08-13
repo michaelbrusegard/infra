@@ -65,3 +65,12 @@ output "mealie_pocketid_client_secret" {
   value     = pocketid_client.mealie.client_secret
   sensitive = true
 }
+
+output "healthlog_pocketid_client_id" {
+  value = pocketid_client.healthlog.id
+}
+
+output "healthlog_pocketid_client_secret" {
+  value     = pocketid_client.healthlog.client_secret
+  sensitive = true
+}

@@ -98,3 +98,17 @@ resource "pocketid_client" "mealie" {
     pocketid_group.admin.id,
   ])
 }
+
+resource "pocketid_client" "healthlog" {
+  name = "HealthLog"
+
+  callback_urls = [
+    "https://health.${local.domain}/api/auth/oidc/callback",
+  ]
+
+  launch_url = "https://health.${local.domain}"
+
+  allowed_user_groups = [
+    pocketid_group.admin.id,
+  ]
+}

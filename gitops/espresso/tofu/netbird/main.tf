@@ -47,6 +47,11 @@ locals {
       address = "hindsight.${local.domain}"
       group   = "infra"
     }
+    healthlog = {
+      name    = "HealthLog"
+      address = "health.${local.domain}"
+      group   = "health"
+    }
     mattermost = {
       name    = "Mattermost"
       address = "mattermost.${local.domain}"
@@ -190,6 +195,10 @@ resource "netbird_group" "home" {
   name = "Home"
 }
 
+resource "netbird_group" "health" {
+  name = "Health"
+}
+
 resource "netbird_group" "infra" {
   name = "Infra"
 }
@@ -221,6 +230,7 @@ resource "netbird_group" "dns" {
 locals {
   resource_group_ids = {
     dns         = netbird_group.dns.id
+    health      = netbird_group.health.id
     home        = netbird_group.home.id
     infra       = netbird_group.infra.id
     manafish    = netbird_group.manafish.id
@@ -228,6 +238,22 @@ locals {
     media       = netbird_group.media.id
     media_admin = netbird_group.media_admin.id
     public      = netbird_group.public.id
+  }
+}
+
+resource "netbird_policy" "health_access" {
+  name        = "Health Access"
+  description = "Allow admins to access private health resources"
+  enabled     = true
+
+  rule {
+    name          = "Admins to health"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.admins.id]
+    destinations  = [netbird_group.health.id]
   }
 }
 

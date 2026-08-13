@@ -43,6 +43,12 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: mealie
             k8s:app: mealie-backup
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: healthlog
+            k8s:app: healthlog
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: healthlog
+            k8s:app: healthlog-backup
       toPorts:
         - ports:
             - port: "5432"

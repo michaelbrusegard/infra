@@ -32,3 +32,8 @@ output "mealie_db_password" {
   value     = var.mealie_db_password
   sensitive = true
 }
+
+output "healthlog_db_password" {
+  value     = var.healthlog_db_password
+  sensitive = true
+}

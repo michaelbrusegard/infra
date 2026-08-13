@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthlog
+  namespace: healthlog
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: healthlog
+  template:
+    metadata:
+      labels:
+        app: healthlog
+      annotations:
+        secret.reloader.stakater.com/reload: healthlog,postgres-outputs,pocket-id-outputs
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: healthlog
+          image: ghcr.io/mbombeck/healthlog:v1.37.14@sha256:5b961dc3514451281d4c70fbb62a7fe58366f2af7ac55d90f95087ebb1a8f1db
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-outputs
+                  key: healthlog_db_password
+            - name: DATABASE_URL
+              value: postgresql://healthlog_app:$(DB_PASSWORD)@postgres.postgres.svc.cluster.local:5432/healthlog?schema=public&connection_limit=20&pool_timeout=20
+            - name: NEXT_PUBLIC_APP_URL
+              value: https://health.asgard.michaelbrusegard.com
+            - name: APP_URL
+              value: https://health.asgard.michaelbrusegard.com
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: healthlog
+                  key: ENCRYPTION_KEY
+            - name: API_TOKEN_HMAC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: healthlog
+                  key: API_TOKEN_HMAC_KEY
+            - name: HEALTHLOG_PROCESS_TYPE
+              value: all
+            - name: SESSION_COOKIE_SECURE
+              value: "true"
+            - name: IP_GEO_LOOKUP_DISABLED
+              value: "1"
+            - name: OIDC_ISSUER_URL
+              value: https://id.asgard.michaelbrusegard.com
+            - name: OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: pocket-id-outputs
+                  key: healthlog_pocketid_client_id
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pocket-id-outputs
+                  key: healthlog_pocketid_client_secret
+            - name: OIDC_SCOPES
+              value: openid email profile
+            - name: OIDC_BUTTON_LABEL
+              value: Sign in with Pocket ID
+          ports:
+            - name: http
+              containerPort: 3000
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

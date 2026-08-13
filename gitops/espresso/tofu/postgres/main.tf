@@ -162,3 +162,29 @@ resource "postgresql_grant" "mealie_connect" {
   object_type = "database"
   privileges  = ["CONNECT", "CREATE", "TEMPORARY"]
 }
+
+resource "postgresql_role" "healthlog" {
+  name                = "healthlog_app"
+  login               = true
+  password_wo         = var.healthlog_db_password
+  password_wo_version = 1
+}
+
+resource "postgresql_database" "healthlog" {
+  name  = "healthlog"
+  owner = postgresql_role.healthlog.name
+}
+
+resource "postgresql_grant" "healthlog_revoke_public_database_access" {
+  database    = postgresql_database.healthlog.name
+  role        = "public"
+  object_type = "database"
+  privileges  = []
+}
+
+resource "postgresql_grant" "healthlog_connect" {
+  database    = postgresql_database.healthlog.name
+  role        = postgresql_role.healthlog.name
+  object_type = "database"
+  privileges  = ["CONNECT", "CREATE", "TEMPORARY"]
+}

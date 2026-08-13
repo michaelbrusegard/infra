@@ -25,6 +25,7 @@
     bazarr = ["repo-config"];
     cliproxyapi = ["pvc"];
     hermes-agent = ["pvc"];
+    healthlog = ["postgres"];
     hindsight = ["postgres"];
     immich = [
       "postgres"

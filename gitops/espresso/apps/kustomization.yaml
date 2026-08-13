@@ -4,6 +4,7 @@ resources:
   - hermes-agent
   - cliproxyapi
   - hindsight
+  - healthlog
   - immich
   - media
   - minecraft

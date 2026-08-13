@@ -39,3 +39,9 @@ variable "mealie_db_password" {
   type        = string
   sensitive   = true
 }
+
+variable "healthlog_db_password" {
+  description = "HealthLog application role password"
+  type        = string
+  sensitive   = true
+}
