@@ -17,7 +17,11 @@ spec:
           labels:
             app: healthlog-backup
         spec:
+          automountServiceAccountToken: false
           restartPolicy: Never
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
           initContainers:
             - name: dump-postgres
               image: postgres:18-bookworm@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382
@@ -47,6 +51,11 @@ spec:
                 limits:
                   cpu: "1"
                   memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
               volumeMounts:
                 - name: backup
                   mountPath: /backup
@@ -87,6 +96,11 @@ spec:
                 limits:
                   cpu: "1"
                   memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
               volumeMounts:
                 - name: backup
                   mountPath: /backup
