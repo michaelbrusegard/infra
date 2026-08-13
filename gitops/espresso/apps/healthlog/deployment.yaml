@@ -53,7 +53,7 @@ spec:
             - name: IP_GEO_LOOKUP_DISABLED
               value: "1"
             - name: ALLOW_LOCAL_AI_PRIVATE_HOSTS
-              value: llm.asgard.michaelbrusegard.com
+              value: cliproxyapi.cliproxyapi.svc.cluster.local
             - name: OIDC_ISSUER_URL
               value: https://id.asgard.michaelbrusegard.com
             - name: OIDC_CLIENT_ID

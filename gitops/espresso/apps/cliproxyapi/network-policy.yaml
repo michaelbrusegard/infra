@@ -40,6 +40,9 @@ spec:
             k8s:io.kubernetes.pod.namespace: hindsight
             k8s:app: hindsight
         - matchLabels:
+            k8s:io.kubernetes.pod.namespace: healthlog
+            k8s:app: healthlog
+        - matchLabels:
             k8s:io.kubernetes.pod.namespace: uptime-kuma
             k8s:app: uptime-kuma
       toPorts:
