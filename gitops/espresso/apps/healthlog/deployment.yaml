@@ -68,6 +68,8 @@ spec:
               value: openid email profile
             - name: OIDC_BUTTON_LABEL
               value: Sign in with Pocket ID
+            - name: OIDC_ONLY
+              value: "true"
           ports:
             - name: http
               containerPort: 3000
