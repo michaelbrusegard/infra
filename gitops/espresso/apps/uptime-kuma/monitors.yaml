@@ -354,6 +354,16 @@ data:
         "active": true
       },
       {
+        "name": "HealthLog",
+        "type": "http",
+        "parent_name": "apps[0]",
+        "url": "http://healthlog.healthlog.svc.cluster.local:3000/api/health",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
         "name": "Hermes Agent Gateway",
         "type": "http",
         "parent_name": "apps[0]",

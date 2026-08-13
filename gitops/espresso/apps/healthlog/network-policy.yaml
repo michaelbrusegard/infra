@@ -16,6 +16,14 @@ spec:
         - ports:
             - port: "3000"
               protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
