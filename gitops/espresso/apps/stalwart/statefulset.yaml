@@ -106,7 +106,6 @@ spec:
               cpu: 20m
               memory: 64Mi
             limits:
-              cpu: 500m
               memory: 256Mi
           volumeMounts:
             - mountPath: /var/lib/stalwart
