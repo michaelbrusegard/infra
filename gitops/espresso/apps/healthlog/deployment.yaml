@@ -46,6 +46,21 @@ spec:
                 secretKeyRef:
                   name: healthlog
                   key: API_TOKEN_HMAC_KEY
+            - name: VAPID_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: healthlog
+                  key: VAPID_PUBLIC_KEY
+            - name: VAPID_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: healthlog
+                  key: VAPID_PRIVATE_KEY
+            - name: VAPID_SUBJECT
+              valueFrom:
+                secretKeyRef:
+                  name: healthlog
+                  key: VAPID_SUBJECT
             - name: HEALTHLOG_PROCESS_TYPE
               value: all
             - name: SESSION_COOKIE_SECURE
