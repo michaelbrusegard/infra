@@ -25,6 +25,9 @@ configMapGenerator:
       - mealie=scripts/mealie
       - mealie.py=scripts/mealie.py
       - mealie-skill.md=skills/mealie/SKILL.md
+      - media=scripts/media
+      - media.py=scripts/media.py
+      - media-skill.md=skills/media/SKILL.md
 
 generatorOptions:
   disableNameSuffixHash: true

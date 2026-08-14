@@ -11,6 +11,8 @@ spec:
   serviceName: seerr-internal
   template:
     metadata:
+      annotations:
+        secret.reloader.stakater.com/reload: seerr-api
       labels:
         app: seerr
     spec:
@@ -39,6 +41,11 @@ spec:
               value: "info"
             - name: TZ
               value: "Europe/Oslo"
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: seerr-api
+                  key: API_KEY
           startupProbe:
             httpGet:
               path: /api/v1/status

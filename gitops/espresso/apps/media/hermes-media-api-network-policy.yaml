@@ -1,0 +1,51 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hermes-media-api
+  namespace: media
+spec:
+  endpointSelector:
+    matchLabels:
+      app: hermes-media-api
+  ingress:
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: hermes-agent
+            k8s:app: hermes-agent
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+            k8s:app: seerr
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+            k8s:app: musicgrabber
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+            k8s:app: sonarr
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+            k8s:app: radarr

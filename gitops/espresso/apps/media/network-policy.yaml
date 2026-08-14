@@ -4,7 +4,12 @@ metadata:
   name: media
   namespace: media
 spec:
-  endpointSelector: {}
+  endpointSelector:
+    matchExpressions:
+      - key: app
+        operator: NotIn
+        values:
+          - hermes-media-api
   ingress:
     # Kubelet HTTP probes and node-forwarded LB traffic
     - fromEntities:

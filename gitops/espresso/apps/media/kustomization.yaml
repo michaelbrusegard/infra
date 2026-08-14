@@ -23,6 +23,17 @@ resources:
   - jellyfin-statefulset.yaml
   - seerr-statefulset.yaml
   - flaresolverr-deployment.yaml
+  - hermes-media-api.yaml
+  - hermes-media-api-network-policy.yaml
   - services.yaml
   - httproutes.yaml
   - network-policy.yaml
+
+configMapGenerator:
+  - name: hermes-media-api
+    namespace: media
+    files:
+      - hermes-media-api.py=scripts/hermes-media-api.py
+
+generatorOptions:
+  disableNameSuffixHash: true

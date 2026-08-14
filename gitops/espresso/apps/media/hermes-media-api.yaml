@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-media-api
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hermes-media-api
+  template:
+    metadata:
+      annotations:
+        configmap.reloader.stakater.com/reload: hermes-media-api
+        secret.reloader.stakater.com/reload: hermes-media-client,media-arr-env,seerr-api
+      labels:
+        app: hermes-media-api
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: docker.io/library/python:3.14-slim@sha256:d6e0850f13fda0e2305d4c3c1c2f7930fe1042d34ddd958e49bba6ef685d0bb2
+          command:
+            - python
+            - /app/hermes-media-api.py
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: MEDIA_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-media-client
+                  key: MEDIA_API_TOKEN
+            - name: SEERR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: seerr-api
+                  key: API_KEY
+            - name: SEERR_URL
+              value: http://seerr-internal.media.svc.cluster.local:5055/api/v1
+            - name: MUSICGRABBER_URL
+              value: http://musicgrabber-internal.media.svc.cluster.local:8080
+            - name: SONARR_URL
+              value: http://sonarr-internal.media.svc.cluster.local:8989
+            - name: RADARR_URL
+              value: http://radarr-internal.media.svc.cluster.local:7878
+          envFrom:
+            - secretRef:
+                name: media-arr-env
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: script
+              mountPath: /app
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: script
+          configMap:
+            name: hermes-media-api
+            defaultMode: 0555
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-media-api
+  namespace: media
+spec:
+  selector:
+    app: hermes-media-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

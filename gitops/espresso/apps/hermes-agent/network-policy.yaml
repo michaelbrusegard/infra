@@ -89,6 +89,14 @@ spec:
         - ports:
             - port: "3000"
               protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+            k8s:app: hermes-media-api
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
     # searxng runs with hostNetwork (IPv6 source rotation), so it is reached
     # through the node IPs instead of a pod endpoint
     - toEntities:
