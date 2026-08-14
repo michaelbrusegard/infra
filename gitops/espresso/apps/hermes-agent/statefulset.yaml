@@ -36,17 +36,18 @@ spec:
               for file in /bootstrap-config/*; do
                 [ -f "$file" ] || continue
                 [ "$(basename "$file")" = hindsight.json ] && continue
-                [ "$(basename "$file")" = mealie-skill.md ] && continue
                 install -m 0644 "$file" "/opt/data/$(basename "$file")"
               done
               install -m 0644 /bootstrap-config/hindsight.json /opt/data/hindsight/config.json
-              install -m 0644 /bootstrap-config/mealie-skill.md /opt/data/skills/mealie/SKILL.md
               install -m 0644 /bootstrap-skills/browser-navigation-skill.md /opt/data/skills/browser-navigation/SKILL.md
               install -m 0644 /bootstrap-skills/cluster-access-skill.md /opt/data/skills/cluster-access/SKILL.md
               install -m 0755 /bootstrap-skills/daily-digest.py /opt/data/scripts/daily-digest.py
               install -m 0755 /bootstrap-skills/healthlog /opt/data/scripts/healthlog
               install -m 0644 /bootstrap-skills/healthlog.py /opt/data/scripts/healthlog.py
               install -m 0644 /bootstrap-skills/healthlog-skill.md /opt/data/skills/healthlog/SKILL.md
+              install -m 0755 /bootstrap-skills/mealie /opt/data/scripts/mealie
+              install -m 0644 /bootstrap-skills/mealie.py /opt/data/scripts/mealie.py
+              install -m 0644 /bootstrap-skills/mealie-skill.md /opt/data/skills/mealie/SKILL.md
               install -m 0644 /bootstrap-skills/jupyter-live-kernel-skill.md /opt/data/skills/data-science/jupyter-live-kernel/SKILL.md
               if [ -f /opt/data/skills/espresso-cluster/SKILL.md ]; then
                 mv /opt/data/skills/espresso-cluster/SKILL.md /opt/data/skills/espresso-cluster/SKILL.md.pvc-backup

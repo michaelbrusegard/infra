@@ -22,6 +22,9 @@ configMapGenerator:
       - healthlog.py=scripts/healthlog.py
       - healthlog-skill.md=skills/healthlog/SKILL.md
       - jupyter-live-kernel-skill.md=skills/jupyter-live-kernel/SKILL.md
+      - mealie=scripts/mealie
+      - mealie.py=scripts/mealie.py
+      - mealie-skill.md=skills/mealie/SKILL.md
 
 generatorOptions:
   disableNameSuffixHash: true
