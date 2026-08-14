@@ -63,6 +63,8 @@ spec:
                   key: VAPID_SUBJECT
             - name: HEALTHLOG_PROCESS_TYPE
               value: all
+            - name: NODE_OPTIONS
+              value: --max-old-space-size=1536
             - name: SESSION_COOKIE_SECURE
               value: "true"
             - name: IP_GEO_LOOKUP_DISABLED
