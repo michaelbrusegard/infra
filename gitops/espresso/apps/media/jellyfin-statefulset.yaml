@@ -88,18 +88,23 @@ spec:
         - name: nvidia0
           hostPath:
             path: /dev/nvidia0
+            type: CharDevice
         - name: nvidiactl
           hostPath:
             path: /dev/nvidiactl
+            type: CharDevice
         - name: nvidia-uvm
           hostPath:
             path: /dev/nvidia-uvm
+            type: CharDevice
         - name: nvidia-uvm-tools
           hostPath:
             path: /dev/nvidia-uvm-tools
+            type: CharDevice
         - name: render-d128
           hostPath:
             path: /dev/dri/renderD128
+            type: CharDevice
         - name: nvidia-driver
           hostPath:
             path: /run/opengl-driver/lib

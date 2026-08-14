@@ -8,7 +8,9 @@
 in {
   boot = {
     initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
-    kernelModules = ["kvm-amd" "nvme-tcp"];
+    kernelModules =
+      ["kvm-amd" "nvme-tcp"]
+      ++ lib.optionals hasNvidia ["nvidia" "nvidia_modeset" "nvidia_drm"];
     kernelParams = ["hugepagesz=2M" "hugepages=1024"];
 
     initrd.luks.devices =
@@ -29,6 +31,7 @@ in {
       modesetting.enable = true;
       powerManagement.enable = false;
       open = false;
+      package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
     };
   };
 
