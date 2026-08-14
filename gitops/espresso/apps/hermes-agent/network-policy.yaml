@@ -81,6 +81,14 @@ spec:
         - ports:
             - port: "9000"
               protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: healthlog
+            k8s:app: healthlog
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
     # searxng runs with hostNetwork (IPv6 source rotation), so it is reached
     # through the node IPs instead of a pod endpoint
     - toEntities:

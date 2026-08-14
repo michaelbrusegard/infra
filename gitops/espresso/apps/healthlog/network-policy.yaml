@@ -24,6 +24,14 @@ spec:
         - ports:
             - port: "3000"
               protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: hermes-agent
+            k8s:app: hermes-agent
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
