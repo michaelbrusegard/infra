@@ -17,6 +17,7 @@ configMapGenerator:
     files:
       - browser-navigation-skill.md=skills/browser-navigation/SKILL.md
       - cluster-access-skill.md=skills/cluster-access/SKILL.md
+      - daily-digest.py=scripts/daily-digest.py
       - jupyter-live-kernel-skill.md=skills/jupyter-live-kernel/SKILL.md
 
 generatorOptions:

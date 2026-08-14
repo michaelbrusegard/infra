@@ -29,7 +29,7 @@ spec:
             - sh
             - -c
             - |
-              mkdir -p /opt/data/workspace
+              mkdir -p /opt/data/workspace /opt/data/scripts
               mkdir -p /opt/browser-files
               mkdir -p /opt/data/hindsight /opt/data/skills/mealie /opt/data/skills/browser-navigation /opt/data/skills/cluster-access
               mkdir -p /opt/data/skills/data-science/jupyter-live-kernel
@@ -43,6 +43,7 @@ spec:
               install -m 0644 /bootstrap-config/mealie-skill.md /opt/data/skills/mealie/SKILL.md
               install -m 0644 /bootstrap-skills/browser-navigation-skill.md /opt/data/skills/browser-navigation/SKILL.md
               install -m 0644 /bootstrap-skills/cluster-access-skill.md /opt/data/skills/cluster-access/SKILL.md
+              install -m 0755 /bootstrap-skills/daily-digest.py /opt/data/scripts/daily-digest.py
               install -m 0644 /bootstrap-skills/jupyter-live-kernel-skill.md /opt/data/skills/data-science/jupyter-live-kernel/SKILL.md
               if [ -f /opt/data/skills/espresso-cluster/SKILL.md ]; then
                 mv /opt/data/skills/espresso-cluster/SKILL.md /opt/data/skills/espresso-cluster/SKILL.md.pvc-backup
