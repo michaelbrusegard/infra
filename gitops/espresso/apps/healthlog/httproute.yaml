@@ -11,6 +11,19 @@ spec:
   hostnames:
     - health.asgard.michaelbrusegard.com
   rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /api/import/apple-health-export
+        - path:
+            type: Exact
+            value: /api/admin/import-apple-health-export
+      timeouts:
+        request: 30m
+        backendRequest: 30m
+      backendRefs:
+        - name: healthlog
+          port: 3000
     - backendRefs:
         - name: healthlog
           port: 3000
