@@ -198,6 +198,8 @@ spec:
               value: http://127.0.0.1:9222
             - name: BROWSER_SHARED_PROFILE_SESSIONS
               value: "true"
+            - name: BROWSER_MAX_ACTIVE_TASKS
+              value: "6"
             - name: BROWSER_FILES_ROOT
               value: /opt/browser-files
             - name: API_SERVER_ENABLED
@@ -266,7 +268,6 @@ spec:
             - chromium
           args:
             - --no-sandbox
-            - --enable-unsafe-swiftshader
             - --ozone-platform=x11
             - --window-size=1440,900
             - --force-device-scale-factor=1
@@ -275,7 +276,6 @@ spec:
             - --no-first-run
             - --no-default-browser-check
             - --remote-debugging-port=9222
-            - --remote-allow-origins=*
             - --user-data-dir=/opt/browser/profile
             - about:blank
           env:
@@ -331,6 +331,8 @@ spec:
             runAsGroup: 10000
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL

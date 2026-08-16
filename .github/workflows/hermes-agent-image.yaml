@@ -149,7 +149,6 @@ jobs:
             --force-device-scale-factor=1 \
             --lang=en-US \
             --remote-debugging-port=9222 \
-            --remote-allow-origins='*' \
             --user-data-dir=/opt/browser/profile \
             about:blank)
           trap 'docker stop "$browser_id" >/dev/null 2>&1 || true' EXIT
@@ -163,6 +162,14 @@ jobs:
             fi
             sleep 1
           done
+          docker exec "$browser_id" curl --fail --silent \
+            http://127.0.0.1:6080/vnc.html >/dev/null
+          docker exec "$browser_id" pgrep --full \
+            'websockify.*127.0.0.1:6080.*127.0.0.1:5900' >/dev/null
+          docker exec "$browser_id" test ! -L \
+            /etc/chromium/policies/managed/hermes-browser.json
+          docker exec "$browser_id" grep --quiet ddkjiahejlhfcafbddmgiahcphecmpfh \
+            /etc/chromium/policies/managed/hermes-browser.json
           agent_id=$(docker run --detach --rm \
             --network "container:$browser_id" \
             --env AGENT_BROWSER_SOCKET_DIR=/tmp/agent-browser-smoke \

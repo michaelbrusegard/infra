@@ -81,8 +81,9 @@ pages as stateful flows rather than ordinary forms.
 - For an automatic interstitial, wait 5–10 seconds, then inspect again. Do not
   click arbitrary page locations while it is processing.
 - Use a snapshot ref for an accessible checkbox or button.
-- For a visual-only challenge, use the visual interaction workflow above and
-  re-analyze after every click because challenge imagery can update in place.
+- Do not attempt to solve image puzzles, account-recovery verification, MFA,
+  or repeated visual challenges autonomously. Report that human takeover is
+  required so the user can connect through the pod-local noVNC endpoint.
 - If a challenge reloads, preserve the existing browser profile and cookies.
   Do not clear storage, rotate identity settings, or repeatedly open new
   sessions unless the current session is irrecoverably broken.
@@ -91,6 +92,9 @@ pages as stateful flows rather than ordinary forms.
   doing so affects every browser task using that site.
 - If an action makes no progress, capture the new state and choose a different
   action. Never repeat the same blind click in a loop.
+- On an HTTP 403/429, unusual-traffic page, or second challenge in the same
+  workflow, stop retrying. Preserve the session and either use a public API or
+  search result, request human takeover, or report the block.
 - After the challenge clears, take a fresh snapshot before continuing the
   original task.
 
