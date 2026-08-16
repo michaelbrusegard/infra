@@ -13,11 +13,6 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 
 
 _COMMAND_LOCK = threading.RLock()
-_ACTIVE_GROUPS_LOCK = threading.Lock()
-_ACTIVE_GROUPS: set[str] = set()
-_MAX_ACTIVE_GROUPS = max(
-    1, int(os.environ.get("BROWSER_MAX_ACTIVE_TASKS", "6")),
-)
 _MAX_UPLOAD_FILES = 10
 _MAX_UPLOAD_FILE_BYTES = 100 * 1024 * 1024
 _MAX_UPLOAD_TOTAL_BYTES = 250 * 1024 * 1024
@@ -36,34 +31,17 @@ def _cdp(cdp_url: str, method: str, params: Optional[Dict[str, Any]] = None) -> 
     return _run_async(_cdp_call(cdp_url, method, params or {}, None, 10.0))
 
 
-def create_target_group(cdp_url: str, task_id: Optional[str] = None) -> Dict[str, Any]:
+def create_target_group(cdp_url: str) -> Dict[str, Any]:
     """Create a root page in Chrome's default context for a new Hermes task."""
     if not enabled():
         return {}
-    slot_id = task_id or uuid.uuid4().hex
-    with _ACTIVE_GROUPS_LOCK:
-        if slot_id not in _ACTIVE_GROUPS:
-            if len(_ACTIVE_GROUPS) >= _MAX_ACTIVE_GROUPS:
-                raise RuntimeError(
-                    "Browser task limit reached "
-                    f"({_MAX_ACTIVE_GROUPS}); wait for an active browser task to finish"
-                )
-            _ACTIVE_GROUPS.add(slot_id)
     with _COMMAND_LOCK:
-        try:
-            created = _cdp(cdp_url, "Target.createTarget", {"url": "about:blank"})
-        except Exception:
-            with _ACTIVE_GROUPS_LOCK:
-                _ACTIVE_GROUPS.discard(slot_id)
-            raise
+        created = _cdp(cdp_url, "Target.createTarget", {"url": "about:blank"})
         target_id = str(created.get("targetId") or "")
         if not target_id:
-            with _ACTIVE_GROUPS_LOCK:
-                _ACTIVE_GROUPS.discard(slot_id)
             raise RuntimeError("Chrome did not return a target ID for the browser session")
         return {
             "shared_profile_session": True,
-            "browser_slot_id": slot_id,
             "root_target_id": target_id,
             "active_target_id": target_id,
             "owned_target_ids": [target_id],
@@ -177,7 +155,7 @@ def run(
         if active not in owned:
             active = owned[-1] if owned else ""
         if not active:
-            created = create_target_group(cdp_url, task_id)
+            created = create_target_group(cdp_url)
             session.update(created)
             active = str(session["active_target_id"])
 
@@ -218,10 +196,6 @@ def close_target_group(session: Dict[str, Any]) -> None:
                 _cdp(cdp_url, "Target.closeTarget", {"targetId": target_id})
             except Exception:
                 pass
-    slot_id = str(session.get("browser_slot_id") or "")
-    if slot_id:
-        with _ACTIVE_GROUPS_LOCK:
-            _ACTIVE_GROUPS.discard(slot_id)
 
 
 def _files_root() -> Path:

@@ -203,7 +203,7 @@ index e8928a5..2c6dbf8 100644
          "features": {"cdp_override": True},
      }
 +    from tools.browser_session_router import create_target_group
-+    session_info.update(create_target_group(cdp_url, task_id))
++    session_info.update(create_target_group(cdp_url))
 +    return session_info
  
  

@@ -75,26 +75,24 @@ They are a last resort because layout movement can invalidate them.
 Treat “checking your browser,” CAPTCHA, unusual-traffic, bot-check, and similar
 pages as stateful flows rather than ordinary forms.
 
+- Always attempt to clear a challenge to the best of your ability. Bot
+  detection or repeated verification is not by itself a reason to stop.
 - First inspect with `browser_snapshot` and `browser_vision`; determine whether
   the page is waiting automatically, offers a semantic checkbox/button, or is
   visual-only.
-- For an automatic interstitial, wait 5–10 seconds, then inspect again. Do not
-  click arbitrary page locations while it is processing.
+- For an automatic interstitial, wait 5–10 seconds, then inspect again before
+  choosing the next interaction.
 - Use a snapshot ref for an accessible checkbox or button.
-- Do not attempt to solve image puzzles, account-recovery verification, MFA,
-  or repeated visual challenges autonomously. Report that human takeover is
-  required so the user can connect through the pod-local noVNC endpoint.
-- If a challenge reloads, preserve the existing browser profile and cookies.
-  Do not clear storage, rotate identity settings, or repeatedly open new
-  sessions unless the current session is irrecoverably broken.
+- For a visual-only challenge, use the visual interaction workflow above and
+  re-analyze after every click because challenge imagery can update in place.
+- If a challenge reloads or makes no progress, vary the tactic. Reload, use a
+  new tab, recover the session, or reset relevant site state when that offers a
+  better path forward.
 - Login state is shared across browser tasks and persists across pod restarts.
-  Do not sign out, clear site data, or switch an account unless the user asks;
-  doing so affects every browser task using that site.
-- If an action makes no progress, capture the new state and choose a different
-  action. Never repeat the same blind click in a loop.
-- On an HTTP 403/429, unusual-traffic page, or second challenge in the same
-  workflow, stop retrying. Preserve the session and either use a public API or
-  search result, request human takeover, or report the block.
+  Account, cookie, and site-data changes therefore affect every browser task
+  using that site.
+- After any unsuccessful interaction, capture the new state and select the
+  most promising next action from the current evidence.
 - After the challenge clears, take a fresh snapshot before continuing the
   original task.
 

@@ -198,8 +198,6 @@ spec:
               value: http://127.0.0.1:9222
             - name: BROWSER_SHARED_PROFILE_SESSIONS
               value: "true"
-            - name: BROWSER_MAX_ACTIVE_TASKS
-              value: "6"
             - name: BROWSER_FILES_ROOT
               value: /opt/browser-files
             - name: API_SERVER_ENABLED
