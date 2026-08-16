@@ -59,6 +59,18 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            k8s:app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+          rules:
+            http:
+              - method: GET
+                path: "/api/v1/.*"
+    - toEndpoints:
+        - matchLabels:
             k8s:io.kubernetes.pod.namespace: hindsight
             k8s:app: hindsight
       toPorts:

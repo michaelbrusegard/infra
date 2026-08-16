@@ -73,6 +73,25 @@ Use `kubectl exec` only when API-level state and logs are insufficient. Run a
 specific read-only command, avoid interactive shells, and do not inspect process
 environments or credential-bearing files.
 
+## Prometheus queries
+
+Prometheus is available at
+`http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`.
+Hermes may make read-only `GET` requests under `/api/v1/`; Cilium blocks
+non-GET methods and paths outside that prefix. Prefer bounded instant or range
+queries and inspect `/api/v1/targets` when an alert does not identify the
+failing scrape target.
+
+Examples:
+
+```sh
+curl --get --silent --show-error --fail \
+  --data-urlencode 'query=ALERTS{alertstate="firing"}' \
+  http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/query
+curl --silent --show-error --fail \
+  http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/targets
+```
+
 ## Dynamic discovery
 
 Discover topology, versions, addresses, pod placement, storage classes, and
