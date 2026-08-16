@@ -127,7 +127,7 @@ data:
       cdp_url: http://127.0.0.1:9222
       inactivity_timeout: 600
       command_timeout: 90
-      record_sessions: true
+      record_sessions: false
 
     skills:
       disabled:
