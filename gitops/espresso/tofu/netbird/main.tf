@@ -347,9 +347,9 @@ resource "netbird_account_settings" "main" {
   jwt_allow_groups                    = ["Users", "Admins", "Personal Devices"]
   routing_peer_dns_resolution_enabled = true
   peer_login_expiration_enabled       = true
-  peer_login_expiration               = 604800
+  peer_login_expiration               = 2592000
   peer_inactivity_expiration_enabled  = true
-  peer_inactivity_expiration          = 604800
+  peer_inactivity_expiration          = 2592000
 }
 
 resource "netbird_policy" "infra_access" {
