@@ -380,6 +380,17 @@
         Nice = 10;
         IOSchedulingClass = "idle";
       }
+      // lib.optionalAttrs (builtins.elem mode ["prune" "check"]) {
+        # Keep index-heavy maintenance from exhausting zram and making the
+        # backup host unreachable. OOMPolicy stops the whole unit so the
+        # cleanup below can release any repository locks.
+        Environment = ["GOMEMLIMIT=2GiB"];
+        MemoryHigh = "2G";
+        MemoryMax = "3G";
+        MemorySwapMax = "512M";
+        OOMPolicy = "stop";
+        TimeoutStartSec = "24h";
+      }
       // lib.optionalAttrs (mode != "unlock") {
         # A stopped restic process can leave a repository lock behind. Run a
         # separate cleanup process after every exit, including failures.

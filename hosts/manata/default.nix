@@ -1,4 +1,8 @@
-{inputs, ...}: {
+{
+  inputs,
+  lib,
+  ...
+}: {
   imports = [
     inputs.self.nixosModules.boot
     inputs.self.nixosModules.console
@@ -20,6 +24,23 @@
   ];
 
   time.timeZone = "Europe/Oslo";
+
+  # Keep both backup targets from running their expensive maintenance at the
+  # same time. Freddo retains the module defaults on the weekend.
+  systemd.timers = {
+    restic-maintenance.timerConfig = {
+      OnCalendar = lib.mkForce "*-*-* 16:00";
+      RandomizedDelaySec = lib.mkForce "1h";
+    };
+    restic-prune.timerConfig = {
+      OnCalendar = lib.mkForce "Wed 14:00";
+      RandomizedDelaySec = lib.mkForce "1h";
+    };
+    restic-check.timerConfig = {
+      OnCalendar = lib.mkForce "Thu 08:00";
+      RandomizedDelaySec = lib.mkForce "2h";
+    };
+  };
 
   services.restic.server.initializeRepositories = {
     n8n = ["pvc"];
