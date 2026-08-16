@@ -7,7 +7,7 @@
     };
 
     protectKernelImage = true;
-    rtkit.enable = true;
+    rtkit.enable = !isWsl;
 
     pam.loginLimits = [
       {
@@ -24,6 +24,6 @@
       }
     ];
 
-    tpm2.enable = true;
+    tpm2.enable = !isWsl;
   };
 }

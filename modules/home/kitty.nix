@@ -1,6 +1,7 @@
 {
   lib,
   pkgs,
+  isWsl,
   ...
 }: let
   terminalMod =
@@ -79,7 +80,7 @@
     })
     passthroughKeys);
 in {
-  programs.kitty = {
+  programs.kitty = lib.mkIf (!isWsl) {
     enable = true;
     shellIntegration.enableZshIntegration = true;
     settings = {
@@ -104,9 +105,9 @@ in {
       // lib.optionalAttrs pkgs.stdenv.isLinux passthroughBindings;
   };
 
-  home.sessionVariables.TERMINAL = "kitty";
+  home.sessionVariables.TERMINAL = lib.mkIf (!isWsl) "kitty";
 
-  xdg.terminal-exec = lib.mkIf pkgs.stdenv.isLinux {
+  xdg.terminal-exec = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
     enable = true;
     settings.default = ["kitty.desktop"];
   };

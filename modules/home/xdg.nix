@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  isWsl,
+  ...
+}: {
   xdg = {
     enable = pkgs.stdenv.isLinux;
 
@@ -20,6 +24,6 @@
       };
     };
 
-    mimeApps.enable = pkgs.stdenv.isLinux;
+    mimeApps.enable = pkgs.stdenv.isLinux && !isWsl;
   };
 }
