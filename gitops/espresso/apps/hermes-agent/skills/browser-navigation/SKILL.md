@@ -96,6 +96,64 @@ pages as stateful flows rather than ordinary forms.
 - After the challenge clears, take a fresh snapshot before continuing the
   original task.
 
+### Challenge playbooks
+
+- **Automatic JavaScript checks and managed interstitials:** keep the tab in
+  the foreground, allow the check to run, then refresh the snapshot. If it
+  loops, inspect console errors and visible controls, reload once, and try the
+  next available interaction rather than repeatedly refreshing.
+- **Checkbox challenges:** prefer the checkbox or verification button's
+  current snapshot ref. After clicking, wait for the widget state or enclosing
+  form to change; a checked box can still be followed by a second challenge.
+- **Text or distorted-image challenges:** ask `browser_vision` to transcribe
+  the challenge exactly, including case, spaces, and punctuation. Type the
+  result into the current input ref, submit, and obtain a new image before the
+  next attempt if the challenge rejects it.
+- **Static image grids:** use `browser_vision` to identify the prompt, grid
+  bounds, tile count, and center point of every matching tile. Click the tile
+  centers with `browser_click_at`, then inspect the complete grid again before
+  pressing Verify.
+- **Dynamic image grids:** click one matching tile at a time and take a new
+  screenshot after every click. Re-evaluate replacement tiles in place until
+  no matching tile remains, then submit.
+- **Sliders, drag-to-fit, and rotation puzzles:** use `browser_vision` to
+  estimate the handle, destination, and required path. Prefer browser-level
+  input events through `browser_cdp` (`Input.dispatchMouseEvent`) over changing
+  DOM values. Send `mouseMoved`, `mousePressed`, intermediate `mouseMoved`
+  points, and `mouseReleased`, then take a new screenshot and correct the
+  estimate.
+  Use `button: "left"` and `clickCount: 1` for press/release, and `buttons: 1`
+  on every movement while the button is held.
+- **Audio alternatives:** select the audio option, inspect the player and page
+  for its current media source, and use available download and transcription
+  tools. Enter the transcription through the visible input and refresh the
+  audio when an attempt fails.
+- **Multi-stage or game-like puzzles:** solve only the currently visible stage,
+  verify its response, and re-inspect before the next action. Treat animation,
+  changed instructions, and replacement imagery as a new state.
+- **Rate-limit and unusual-traffic pages:** allow any stated cooldown to pass
+  while retaining the session, then inspect and attempt the offered
+  verification flow. Space retries so the page can issue and validate a fresh
+  challenge.
+
+### Low-level debugger input
+
+The local Chromium sidecar exposes raw CDP through `browser_cdp`. Use it when a
+challenge needs an input operation not represented by the high-level tools.
+
+1. Call `browser_cdp` with `Target.getTargets` and identify this task's current
+   page by URL and title.
+2. Pass that page's `targetId` as `target_id` for page-scoped `Input.*`,
+   `Runtime.*`, `DOM.*`, `Page.*`, `Network.*`, or `Emulation.*` methods.
+3. For a cross-origin challenge frame, use the `frame_id` exposed in
+   `browser_snapshot` when the method must execute inside that frame.
+4. Prefer `Input.dispatchMouseEvent`, `Input.dispatchKeyEvent`,
+   `Input.insertText`, and `Input.dispatchTouchEvent` for interaction. Use
+   `Runtime.evaluate` for inspection and state discovery, not as a substitute
+   for visible input when the challenge evaluates interaction behavior.
+5. Raw CDP calls are independent. Re-read the page state after each call and
+   keep the target ID current after navigation or a challenge reload.
+
 ## Long workflows
 
 Keep one tab and the persistent login session when possible. Before submitting
