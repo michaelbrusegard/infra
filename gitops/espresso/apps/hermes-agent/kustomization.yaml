@@ -20,7 +20,10 @@ configMapGenerator:
       - android.py=scripts/android.py
       - android-emulator-launch.sh=scripts/android-emulator-launch.sh
       - android-automation-skill.md=skills/android-automation/SKILL.md
+      - browser-support=scripts/browser-support
+      - browser-support.py=scripts/browser-support.py
       - browser-navigation-skill.md=skills/browser-navigation/SKILL.md
+      - browser-support-skill.md=skills/browser-support/SKILL.md
       - cluster-access-skill.md=skills/cluster-access/SKILL.md
       - daily-digest.py=scripts/daily-digest.py
       - healthlog=scripts/healthlog

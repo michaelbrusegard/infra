@@ -33,7 +33,7 @@ spec:
             - |
               mkdir -p /opt/data/workspace /opt/data/scripts
               mkdir -p /opt/browser-files
-              mkdir -p /opt/data/hindsight /opt/data/skills/android-automation /opt/data/skills/mealie /opt/data/skills/media /opt/data/skills/browser-navigation /opt/data/skills/cluster-access /opt/data/skills/healthlog
+              mkdir -p /opt/data/hindsight /opt/data/skills/android-automation /opt/data/skills/mealie /opt/data/skills/media /opt/data/skills/browser-navigation /opt/data/skills/browser-support /opt/data/skills/cluster-access /opt/data/skills/healthlog
               mkdir -p /opt/data/skills/data-science/jupyter-live-kernel
               for file in /bootstrap-config/*; do
                 [ -f "$file" ] || continue
@@ -44,7 +44,10 @@ spec:
               install -m 0755 /bootstrap-skills/android /opt/data/scripts/android
               install -m 0644 /bootstrap-skills/android.py /opt/data/scripts/android.py
               install -m 0644 /bootstrap-skills/android-automation-skill.md /opt/data/skills/android-automation/SKILL.md
+              install -m 0755 /bootstrap-skills/browser-support /opt/data/scripts/browser-support
+              install -m 0644 /bootstrap-skills/browser-support.py /opt/data/scripts/browser-support.py
               install -m 0644 /bootstrap-skills/browser-navigation-skill.md /opt/data/skills/browser-navigation/SKILL.md
+              install -m 0644 /bootstrap-skills/browser-support-skill.md /opt/data/skills/browser-support/SKILL.md
               install -m 0644 /bootstrap-skills/cluster-access-skill.md /opt/data/skills/cluster-access/SKILL.md
               install -m 0755 /bootstrap-skills/daily-digest.py /opt/data/scripts/daily-digest.py
               install -m 0755 /bootstrap-skills/healthlog /opt/data/scripts/healthlog
@@ -364,6 +367,8 @@ spec:
           volumeMounts:
             - name: browser-profile
               mountPath: /opt/browser
+            - name: browser-policies
+              mountPath: /etc/chromium/policies/managed
             - name: browser-files
               mountPath: /opt/browser-files
             - name: browser-tmp
@@ -477,6 +482,8 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 512Mi
+        - name: browser-policies
+          emptyDir: {}
         - name: android-data
           persistentVolumeClaim:
             claimName: hermes-android-data

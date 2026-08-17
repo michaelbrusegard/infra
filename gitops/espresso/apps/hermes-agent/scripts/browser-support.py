@@ -1,0 +1,670 @@
+#!/usr/bin/env python3
+"""Allowlisted Chromium CDP helpers for Hermes browser operations."""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import os
+import re
+import sys
+import tarfile
+import time
+import uuid
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any, NamedTuple
+from urllib.parse import urlparse
+
+import requests
+from websocket import create_connection
+
+
+_SAFE_NAME = re.compile(r"[^A-Za-z0-9_.-]+")
+_CHALLENGE_PATTERNS = [
+    ("captcha", re.compile(r"\bcaptcha\b", re.I)),
+    ("verification", re.compile(r"\b(?:verify|verification|verified)\b", re.I)),
+    ("checking_browser", re.compile(r"checking your browser|just a moment", re.I)),
+    ("cloudflare", re.compile(r"\bcloudflare\b", re.I)),
+    ("unusual_traffic", re.compile(r"unusual traffic|too many requests|rate limit", re.I)),
+    ("robot_check", re.compile(r"are you human|are you a robot|press and hold", re.I)),
+    ("challenge_frame", re.compile(r"challenge|turnstile|recaptcha|hcaptcha", re.I)),
+]
+_MAX_TEXT_SNIPPET = 4000
+
+
+def compact(value: Any) -> None:
+    print(json.dumps(value, ensure_ascii=False, separators=(",", ":")))
+
+
+def safe_text(value: Any) -> str:
+    return str(value).strip()[:500]
+
+
+def safe_slug(value: str, fallback: str = "default") -> str:
+    return _SAFE_NAME.sub("_", value.strip())[:80] or fallback
+
+
+def hermes_home() -> Path:
+    return Path(os.environ.get("HERMES_HOME", "/opt/data")).resolve()
+
+
+def browser_files_root() -> Path:
+    return Path(os.environ.get("BROWSER_FILES_ROOT", "/opt/browser-files")).resolve()
+
+
+def browser_profile_root() -> Path:
+    return Path(os.environ.get("BROWSER_PROFILE_ROOT", "/opt/browser")).resolve()
+
+
+def allowed_local_roots() -> list[Path]:
+    return [
+        (hermes_home() / "workspace").resolve(),
+        (hermes_home() / "cache").resolve(),
+        browser_files_root(),
+        browser_profile_root(),
+    ]
+
+
+def ensure_within_roots(path: Path) -> Path:
+    resolved = path.expanduser().resolve()
+    if not any(resolved.is_relative_to(root) for root in allowed_local_roots()):
+        raise ValueError(
+            f"path must be under the Hermes workspace, cache, browser profile, or browser files root: {path}"
+        )
+    return resolved
+
+
+def browser_bucket(bucket: str) -> Path:
+    destination = browser_files_root() / bucket
+    destination.mkdir(parents=True, exist_ok=True)
+    return destination
+
+
+def resolve_output_path(raw_path: str | None, bucket: str, suffix: str) -> Path:
+    extension = suffix if suffix.startswith(".") else f".{suffix}"
+    if raw_path:
+        destination = ensure_within_roots(Path(raw_path))
+        if destination.name in {"", ".", ".."}:
+            raise ValueError("output path must name a file")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        return destination
+    return browser_bucket(bucket) / f"{uuid.uuid4().hex[:12]}{extension}"
+
+
+def default_cdp_url() -> str:
+    return os.environ.get("BROWSER_CDP_URL", "http://127.0.0.1:9222")
+
+
+def normalize_http_cdp_base(raw_url: str) -> str:
+    parsed = urlparse(raw_url)
+    if parsed.scheme in {"ws", "wss"}:
+        scheme = "https" if parsed.scheme == "wss" else "http"
+        host = parsed.netloc
+        path = parsed.path.rsplit("/", 2)[0]
+        if path.endswith("/devtools"):
+            path = path[: -len("/devtools")]
+        return f"{scheme}://{host}{path}".rstrip("/")
+    if parsed.scheme in {"http", "https"}:
+        return raw_url.rstrip("/")
+    raise ValueError(f"unsupported CDP URL scheme: {raw_url}")
+
+
+def directory_size(path: Path) -> int:
+    total = 0
+    if not path.exists():
+        return 0
+    for entry in path.rglob("*"):
+        try:
+            if entry.is_file() and not entry.is_symlink():
+                total += entry.stat().st_size
+        except FileNotFoundError:
+            continue
+    return total
+
+
+def iso_now() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+class Target(NamedTuple):
+    target_id: str
+    title: str
+    url: str
+    type: str
+    websocket_url: str
+
+
+class CDPClient:
+    def __init__(self, base_url: str) -> None:
+        self.base_url = normalize_http_cdp_base(base_url)
+
+    def _http_get(self, path: str) -> Any:
+        response = requests.get(f"{self.base_url}{path}", timeout=10)
+        response.raise_for_status()
+        return response.json()
+
+    def version(self) -> dict[str, Any]:
+        payload = self._http_get("/json/version")
+        return payload if isinstance(payload, dict) else {}
+
+    def targets(self) -> list[Target]:
+        payload = self._http_get("/json/list")
+        targets: list[Target] = []
+        for item in payload if isinstance(payload, list) else []:
+            if not isinstance(item, dict):
+                continue
+            target_id = str(item.get("id") or item.get("targetId") or "")
+            websocket_url = str(item.get("webSocketDebuggerUrl") or "")
+            if not target_id or not websocket_url:
+                continue
+            targets.append(
+                Target(
+                    target_id=target_id,
+                    title=str(item.get("title") or ""),
+                    url=str(item.get("url") or ""),
+                    type=str(item.get("type") or ""),
+                    websocket_url=websocket_url,
+                )
+            )
+        return targets
+
+    def target(self, target_id: str) -> Target:
+        for target in self.targets():
+            if target.target_id == target_id:
+                return target
+        raise ValueError(f"target_id not found: {target_id}")
+
+    def call(self, websocket_url: str, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        payload = {"id": 1, "method": method, "params": params or {}}
+        connection = create_connection(websocket_url, timeout=15)
+        try:
+            connection.send(json.dumps(payload))
+            while True:
+                raw = connection.recv()
+                message = json.loads(raw)
+                if message.get("id") != 1:
+                    continue
+                if "error" in message:
+                    error = message["error"]
+                    raise RuntimeError(
+                        f"{method} failed: {safe_text(error.get('message') or error)}"
+                    )
+                result = message.get("result")
+                return result if isinstance(result, dict) else {}
+        finally:
+            connection.close()
+
+
+def evaluate_expression(
+    client: CDPClient,
+    target_id: str,
+    expression: str,
+    *,
+    await_promise: bool = True,
+    return_by_value: bool = True,
+) -> Any:
+    target = client.target(target_id)
+    result = client.call(
+        target.websocket_url,
+        "Runtime.evaluate",
+        {
+            "expression": expression,
+            "awaitPromise": await_promise,
+            "returnByValue": return_by_value,
+            "userGesture": True,
+        },
+    )
+    details = result.get("exceptionDetails")
+    if details:
+        raise RuntimeError(safe_text(details.get("text") or "JavaScript exception"))
+    value = result.get("result", {})
+    if "value" in value:
+        return value["value"]
+    if "description" in value:
+        return value["description"]
+    return None
+
+
+def build_challenge_summary(page: dict[str, Any]) -> dict[str, Any]:
+    title = str(page.get("title") or "")
+    url = str(page.get("url") or "")
+    body_text = str(page.get("body_text") or "")
+    frames = page.get("frames") or []
+    combined = "\n".join(
+        [
+            title,
+            url,
+            body_text,
+            *(str(item.get("src") or "") for item in frames if isinstance(item, dict)),
+            *(str(item.get("title") or "") for item in frames if isinstance(item, dict)),
+        ]
+    )
+    signals: list[str] = []
+    for label, pattern in _CHALLENGE_PATTERNS:
+        if pattern.search(combined):
+            signals.append(label)
+    frame_signals = [
+        item for item in frames
+        if isinstance(item, dict)
+        and any(
+            token in str(item.get("src") or "").lower()
+            or token in str(item.get("title") or "").lower()
+            for token in ["captcha", "recaptcha", "hcaptcha", "turnstile", "challenge"]
+        )
+    ]
+    challenge_detected = bool(signals or frame_signals)
+    confidence = "high" if len(signals) >= 2 or frame_signals else "low"
+    if challenge_detected and any(signal in signals for signal in ["captcha", "robot_check"]):
+        confidence = "medium" if confidence == "low" else confidence
+    actions = []
+    if not challenge_detected:
+        actions.append("No challenge markers detected from the current page state.")
+    else:
+        actions.append("Refresh the Hermes browser snapshot before every interaction.")
+        if "checking_browser" in signals:
+            actions.append("Wait 5-10 seconds for the interstitial to complete before clicking.")
+        if any(signal in signals for signal in ["captcha", "robot_check", "verification"]):
+            actions.append("Use semantic refs first; fall back to browser_vision plus coordinate input only when needed.")
+        if frame_signals:
+            actions.append("Treat cross-origin challenge frames as stateful; keep the latest frame_id or target_id current.")
+        actions.append("Do not claim the challenge is solved until the original page resumes and a fresh snapshot confirms it.")
+    return {
+        "challenge_detected": challenge_detected,
+        "confidence": confidence if challenge_detected else "none",
+        "signals": signals,
+        "challenge_frames": frame_signals,
+        "recommended_actions": actions,
+    }
+
+
+def profile_backup_path(name: str | None) -> Path:
+    slug = safe_slug(name or datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ"), "profile")
+    return browser_bucket("browser-profile-backups") / f"{slug}.tar.gz"
+
+
+def cleanup_cutoff(hours: float) -> float:
+    if hours < 0:
+        raise ValueError("older-than-hours must be non-negative")
+    return time.time() - (hours * 3600)
+
+
+def handle_targets(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    targets = [
+        {
+            "target_id": target.target_id,
+            "title": target.title,
+            "url": target.url,
+            "type": target.type,
+        }
+        for target in client.targets()
+    ]
+    return {"targets": targets}
+
+
+def handle_frame_tree(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    target = client.target(args.target_id)
+    return {
+        "target_id": args.target_id,
+        "frame_tree": client.call(target.websocket_url, "Page.getFrameTree"),
+    }
+
+
+def handle_clipboard_get(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    value = evaluate_expression(
+        client,
+        args.target_id,
+        """
+        (async () => {
+          if (!navigator.clipboard?.readText) {
+            return {available: false, value: null};
+          }
+          try {
+            return {available: true, value: await navigator.clipboard.readText()};
+          } catch (error) {
+            return {available: true, error: String(error)};
+          }
+        })()
+        """,
+    )
+    return {"target_id": args.target_id, "clipboard": value}
+
+
+def handle_clipboard_set(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    payload = json.dumps(args.text)
+    value = evaluate_expression(
+        client,
+        args.target_id,
+        f"""
+        (async () => {{
+          if (!navigator.clipboard?.writeText) {{
+            return {{available: false}};
+          }}
+          try {{
+            await navigator.clipboard.writeText({payload});
+            return {{available: true, wrote: true}};
+          }} catch (error) {{
+            return {{available: true, wrote: false, error: String(error)}};
+          }}
+        }})()
+        """,
+    )
+    return {"target_id": args.target_id, "clipboard": value}
+
+
+def handle_touch_tap(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    target = client.target(args.target_id)
+    point = {"x": int(args.x), "y": int(args.y), "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
+    client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [point]})
+    client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    return {"target_id": args.target_id, "tap": {"x": int(args.x), "y": int(args.y)}}
+
+
+def handle_touch_swipe(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    target = client.target(args.target_id)
+    steps = max(1, int(args.steps))
+    start = {"x": int(args.x1), "y": int(args.y1), "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
+    client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [start]})
+    for step in range(1, steps + 1):
+        x = int(args.x1 + ((args.x2 - args.x1) * step / steps))
+        y = int(args.y1 + ((args.y2 - args.y1) * step / steps))
+        point = {"x": x, "y": y, "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
+        client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [point]})
+    client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    return {
+        "target_id": args.target_id,
+        "swipe": {"from": [int(args.x1), int(args.y1)], "to": [int(args.x2), int(args.y2)], "steps": steps},
+    }
+
+
+def handle_drag(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    target = client.target(args.target_id)
+    steps = max(1, int(args.steps))
+    client.call(target.websocket_url, "Input.dispatchMouseEvent", {"type": "mouseMoved", "x": int(args.x1), "y": int(args.y1)})
+    client.call(
+        target.websocket_url,
+        "Input.dispatchMouseEvent",
+        {"type": "mousePressed", "x": int(args.x1), "y": int(args.y1), "button": "left", "buttons": 1, "clickCount": 1},
+    )
+    for step in range(1, steps + 1):
+        x = int(args.x1 + ((args.x2 - args.x1) * step / steps))
+        y = int(args.y1 + ((args.y2 - args.y1) * step / steps))
+        client.call(
+            target.websocket_url,
+            "Input.dispatchMouseEvent",
+            {"type": "mouseMoved", "x": x, "y": y, "button": "left", "buttons": 1},
+        )
+    client.call(
+        target.websocket_url,
+        "Input.dispatchMouseEvent",
+        {"type": "mouseReleased", "x": int(args.x2), "y": int(args.y2), "button": "left", "buttons": 0, "clickCount": 1},
+    )
+    return {
+        "target_id": args.target_id,
+        "drag": {"from": [int(args.x1), int(args.y1)], "to": [int(args.x2), int(args.y2)], "steps": steps},
+    }
+
+
+def handle_challenge_state(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    page = evaluate_expression(
+        client,
+        args.target_id,
+        f"""
+        (() => {{
+          const frames = Array.from(document.querySelectorAll("iframe")).slice(0, 20).map((frame) => ({{
+            src: frame.getAttribute("src") || "",
+            title: frame.getAttribute("title") || "",
+            name: frame.getAttribute("name") || ""
+          }}));
+          return {{
+            title: document.title || "",
+            url: window.location.href,
+            ready_state: document.readyState,
+            body_text: (document.body?.innerText || "").slice(0, {_MAX_TEXT_SNIPPET}),
+            frames,
+          }};
+        }})()
+        """,
+    )
+    summary = build_challenge_summary(page if isinstance(page, dict) else {})
+    return {"target_id": args.target_id, "page": page, "challenge": summary}
+
+
+def handle_checkpoint_save(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    target = client.target(args.target_id)
+    name = safe_slug(args.name, "checkpoint")
+    checkpoint_dir = browser_bucket("browser-checkpoints")
+    base = checkpoint_dir / name
+    screenshot_path = base.with_suffix(".png")
+    metadata_path = base.with_suffix(".json")
+    screenshot = client.call(target.websocket_url, "Page.captureScreenshot", {"format": "png"})
+    screenshot_data = str(screenshot.get("data") or "")
+    if not screenshot_data:
+        raise RuntimeError("Page.captureScreenshot returned no image data")
+    screenshot_path.write_bytes(base64.b64decode(screenshot_data))
+    page = evaluate_expression(
+        client,
+        args.target_id,
+        """
+        (() => ({
+          title: document.title || "",
+          url: window.location.href,
+          ready_state: document.readyState,
+        }))()
+        """,
+    )
+    record = {
+        "name": name,
+        "saved_at": iso_now(),
+        "target_id": args.target_id,
+        "note": args.note or None,
+        "page": page,
+        "screenshot": str(screenshot_path),
+    }
+    metadata_path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {"checkpoint": record, "metadata_path": str(metadata_path)}
+
+
+def handle_checkpoint_list(_: argparse.Namespace) -> dict[str, Any]:
+    entries = []
+    for metadata in sorted(browser_bucket("browser-checkpoints").glob("*.json")):
+        try:
+            payload = json.loads(metadata.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        entries.append(payload)
+    return {"checkpoints": entries}
+
+
+def handle_checkpoint_delete(args: argparse.Namespace) -> dict[str, Any]:
+    name = safe_slug(args.name, "checkpoint")
+    removed = []
+    for suffix in [".json", ".png"]:
+        candidate = browser_bucket("browser-checkpoints") / f"{name}{suffix}"
+        if candidate.exists():
+            candidate.unlink()
+            removed.append(str(candidate))
+    return {"name": name, "removed": removed}
+
+
+def handle_profile_backup(args: argparse.Namespace) -> dict[str, Any]:
+    profile = browser_profile_root() / "profile"
+    if not profile.is_dir():
+        raise ValueError(f"browser profile directory is missing: {profile}")
+    destination = profile_backup_path(args.name)
+    with tarfile.open(destination, "w:gz") as archive:
+        archive.add(profile, arcname="profile")
+    return {"path": str(destination), "size_bytes": destination.stat().st_size}
+
+
+def handle_cleanup(args: argparse.Namespace) -> dict[str, Any]:
+    buckets = (
+        ["browser-checkpoints", "browser-profile-backups"]
+        if args.bucket == "all"
+        else [args.bucket]
+    )
+    cutoff = cleanup_cutoff(args.older_than_hours)
+    removed: list[str] = []
+    for bucket in buckets:
+        root = browser_bucket(bucket)
+        for candidate in root.rglob("*"):
+            try:
+                if candidate.is_file() and candidate.stat().st_mtime < cutoff:
+                    candidate.unlink()
+                    removed.append(str(candidate))
+            except FileNotFoundError:
+                continue
+        for directory in sorted(root.rglob("*"), reverse=True):
+            try:
+                if directory.is_dir() and not any(directory.iterdir()):
+                    directory.rmdir()
+            except OSError:
+                continue
+    return {"bucket": args.bucket, "removed": removed}
+
+
+def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    version = client.version()
+    targets = client.targets()
+    profile_root = browser_profile_root()
+    policy_root = profile_root / "policies"
+    unpacked_extensions = profile_root / "extensions-unpacked"
+    browser_files = browser_files_root()
+    return {
+        "cdp": {
+            "browser": version.get("Browser"),
+            "protocol_version": version.get("Protocol-Version"),
+            "user_agent": version.get("User-Agent"),
+            "web_socket_debugger_url": version.get("webSocketDebuggerUrl"),
+            "target_count": len(targets),
+        },
+        "profile": {
+            "root": str(profile_root),
+            "profile_dir": str(profile_root / "profile"),
+            "size_bytes": directory_size(profile_root / "profile"),
+            "policy_files": [str(path) for path in sorted(policy_root.rglob("*.json"))],
+            "unpacked_extensions": [
+                str(path) for path in sorted(unpacked_extensions.iterdir())
+            ] if unpacked_extensions.is_dir() else [],
+        },
+        "browser_files": {
+            "root": str(browser_files),
+            "size_bytes": directory_size(browser_files),
+            "checkpoints": len(list(browser_bucket("browser-checkpoints").glob("*.json"))),
+            "profile_backups": len(list(browser_bucket("browser-profile-backups").glob("*.tar.gz"))),
+        },
+    }
+
+
+HANDLERS = {
+    "targets": handle_targets,
+    "frame-tree": handle_frame_tree,
+    "clipboard-get": handle_clipboard_get,
+    "clipboard-set": handle_clipboard_set,
+    "touch-tap": handle_touch_tap,
+    "touch-swipe": handle_touch_swipe,
+    "drag": handle_drag,
+    "challenge-state": handle_challenge_state,
+    "checkpoint-save": handle_checkpoint_save,
+    "checkpoint-list": handle_checkpoint_list,
+    "checkpoint-delete": handle_checkpoint_delete,
+    "profile-backup": handle_profile_backup,
+    "cleanup": handle_cleanup,
+    "diagnostics": handle_diagnostics,
+}
+
+
+def parser() -> argparse.ArgumentParser:
+    root = argparse.ArgumentParser(
+        prog="browser-support",
+        description="Operate the self-hosted Hermes Chromium sidecar through bounded CDP helpers.",
+    )
+    root.add_argument("--cdp-url", default=default_cdp_url(), help="CDP discovery URL, defaults to BROWSER_CDP_URL")
+    sub = root.add_subparsers(dest="command", required=True)
+
+    sub.add_parser("targets", help="list current page targets and their target IDs")
+
+    frame_tree = sub.add_parser("frame-tree", help="return the Page.getFrameTree payload for one target")
+    frame_tree.add_argument("target_id")
+
+    clipboard_get = sub.add_parser("clipboard-get", help="read navigator.clipboard text from one page target")
+    clipboard_get.add_argument("target_id")
+
+    clipboard_set = sub.add_parser("clipboard-set", help="write navigator.clipboard text into one page target")
+    clipboard_set.add_argument("target_id")
+    clipboard_set.add_argument("text")
+
+    touch_tap = sub.add_parser("touch-tap", help="dispatch one atomic touch tap")
+    touch_tap.add_argument("target_id")
+    touch_tap.add_argument("x", type=int)
+    touch_tap.add_argument("y", type=int)
+
+    touch_swipe = sub.add_parser("touch-swipe", help="dispatch one touch swipe with interpolated moves")
+    touch_swipe.add_argument("target_id")
+    touch_swipe.add_argument("x1", type=int)
+    touch_swipe.add_argument("y1", type=int)
+    touch_swipe.add_argument("x2", type=int)
+    touch_swipe.add_argument("y2", type=int)
+    touch_swipe.add_argument("--steps", type=int, default=8)
+
+    drag = sub.add_parser("drag", help="dispatch one left-button drag gesture")
+    drag.add_argument("target_id")
+    drag.add_argument("x1", type=int)
+    drag.add_argument("y1", type=int)
+    drag.add_argument("x2", type=int)
+    drag.add_argument("y2", type=int)
+    drag.add_argument("--steps", type=int, default=12)
+
+    challenge = sub.add_parser("challenge-state", help="inspect one page for challenge or verification markers")
+    challenge.add_argument("target_id")
+
+    checkpoint_save = sub.add_parser("checkpoint-save", help="save a screenshot-backed checkpoint for one browser page")
+    checkpoint_save.add_argument("target_id")
+    checkpoint_save.add_argument("name")
+    checkpoint_save.add_argument("--note")
+
+    sub.add_parser("checkpoint-list", help="list saved browser checkpoints")
+    checkpoint_delete = sub.add_parser("checkpoint-delete", help="delete one saved browser checkpoint")
+    checkpoint_delete.add_argument("name")
+
+    profile_backup = sub.add_parser("profile-backup", help="archive the persistent Chromium profile to browser files")
+    profile_backup.add_argument("name", nargs="?")
+
+    cleanup = sub.add_parser("cleanup", help="remove older browser artifacts from shared storage")
+    cleanup.add_argument("bucket", choices=["browser-checkpoints", "browser-profile-backups", "all"])
+    cleanup.add_argument("--older-than-hours", type=float, default=168.0)
+
+    sub.add_parser("diagnostics", help="report CDP, profile, policy, extension, and storage details")
+    return root
+
+
+def main() -> int:
+    args = parser().parse_args()
+    try:
+        result = HANDLERS[args.command](args)
+    except (ValueError, RuntimeError, requests.RequestException, OSError, tarfile.TarError) as exc:
+        print(f"browser-support: {safe_text(exc)}", file=sys.stderr)
+        return 1
+    except Exception as exc:
+        print(
+            f"browser-support: request failed: {type(exc).__name__}: {safe_text(exc)}",
+            file=sys.stderr,
+        )
+        return 1
+    compact({"ok": True, **result})
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

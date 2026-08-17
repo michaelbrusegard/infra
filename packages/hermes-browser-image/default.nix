@@ -27,6 +27,7 @@
     name = "chromium";
     runtimeInputs = with pkgs; [
       coreutils
+      findutils
       gnugrep
       novnc
       procps
@@ -38,6 +39,7 @@
     text = ''
       export DISPLAY=:99
       export XKB_CONFIG_ROOT=${pkgs.xkeyboard_config}/share/X11/xkb
+      export HERMES_BROWSER_POLICY_TEMPLATE=/opt/hermes/hermes-browser.json
       mkdir -p /tmp/.X11-unix
       rm -f /tmp/.X99-lock /tmp/.X11-unix/X99
 
@@ -97,7 +99,38 @@
         --file-only &
       novnc_pid=$!
 
-      ${pkgs.chromium}/bin/chromium "$@" &
+      managed_policy_dir=/etc/chromium/policies/managed
+      mkdir -p "$managed_policy_dir"
+      cp "$HERMES_BROWSER_POLICY_TEMPLATE" \
+        "$managed_policy_dir/hermes-browser.json"
+      if [ -d /opt/browser/policies/managed ]; then
+        find /opt/browser/policies/managed -maxdepth 1 -type f -name '*.json' \
+          -exec cp {} "$managed_policy_dir/" \;
+      fi
+
+      extra_args=()
+      extension_dirs=()
+      if [ -d /opt/browser/extensions-unpacked ]; then
+        while IFS= read -r manifest; do
+          extension_dirs+=("$(dirname "$manifest")")
+        done < <(
+          find /opt/browser/extensions-unpacked -mindepth 2 -maxdepth 2 \
+            -type f -name manifest.json | sort
+        )
+      fi
+      if [ "''${#extension_dirs[@]}" -gt 0 ]; then
+        IFS=,
+        extra_args+=("--load-extension=''${extension_dirs[*]}")
+        unset IFS
+      fi
+      if [ -f /opt/browser/chromium-extra-args ]; then
+        while IFS= read -r arg; do
+          [ -n "$arg" ] || continue
+          extra_args+=("$arg")
+        done < /opt/browser/chromium-extra-args
+      fi
+
+      ${pkgs.chromium}/bin/chromium "$@" "''${extra_args[@]}" &
       browser_pid=$!
       wait "$browser_pid"
     '';
@@ -123,8 +156,9 @@
   };
 
   root = runCommand "hermes-browser-root" {} ''
-    mkdir -p "$out/etc" "$out/opt/browser" "$out/tmp"
+    mkdir -p "$out/etc" "$out/opt/browser" "$out/opt/hermes" "$out/tmp"
     ln -s ${fontconfigFile} "$out/etc/fonts.conf"
+    cp ${chromiumPolicy} "$out/opt/hermes/hermes-browser.json"
     cat > "$out/etc/passwd" <<'EOF'
     root:x:0:0:root:/root:/noshell
     browser:x:10000:10000:Hermes Browser:/opt/browser:/noshell
@@ -143,11 +177,6 @@ in
       tools
       root
     ];
-    extraCommands = ''
-      mkdir -p etc/chromium/policies/managed
-      cp ${chromiumPolicy} etc/chromium/policies/managed/hermes-browser.json
-      chmod 444 etc/chromium/policies/managed/hermes-browser.json
-    '';
     config = {
       Entrypoint = ["${browserLauncher}/bin/chromium"];
       Env = [

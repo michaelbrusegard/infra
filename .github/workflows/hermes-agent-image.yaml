@@ -97,6 +97,22 @@ jobs:
         run: |
           docker load < result-agent
           docker load < result-browser
+          smoke_root=$(mktemp -d)
+          mkdir -p "$smoke_root/browser-profile/policies/managed"
+          mkdir -p "$smoke_root/browser-profile/extensions-unpacked/hermes-smoke"
+          cat > "$smoke_root/browser-profile/policies/managed/site-controls.json" <<'JSON'
+          {
+            "URLBlocklist": ["https://blocked.example/*"]
+          }
+          JSON
+          cat > "$smoke_root/browser-profile/extensions-unpacked/hermes-smoke/manifest.json" <<'JSON'
+          {
+            "manifest_version": 3,
+            "name": "Hermes Smoke Extension",
+            "version": "1.0.0"
+          }
+          JSON
+          printf '%s\n' '--disable-notifications' > "$smoke_root/browser-profile/chromium-extra-args"
           docker run --rm "$AGENT_IMAGE_REF:nix" --help
           for binary in blogwatcher-cli ffmpeg flux gh helm himalaya jq jupyter jupyter-live-kernel kubectl magick node ocrmypdf pdftoppm sed stern tesseract tofu yq; do
             docker run --rm --entrypoint "$binary" "$AGENT_IMAGE_REF:nix" --help >/dev/null
@@ -140,7 +156,8 @@ jobs:
           '
           docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp "$BROWSER_IMAGE_REF:nix" --version
           browser_id=$(docker run --detach --rm --read-only \
-            --tmpfs /opt/browser:rw,uid=10000,gid=10000,mode=0700 \
+            -v "$smoke_root/browser-profile:/opt/browser" \
+            --tmpfs /etc/chromium/policies/managed:rw,uid=10000,gid=10000,mode=0755 \
             --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
             --tmpfs /dev/shm:rw,uid=10000,gid=10000,mode=1777 \
             "$BROWSER_IMAGE_REF:nix" \
@@ -170,6 +187,12 @@ jobs:
             /etc/chromium/policies/managed/hermes-browser.json
           docker exec "$browser_id" grep --quiet ddkjiahejlhfcafbddmgiahcphecmpfh \
             /etc/chromium/policies/managed/hermes-browser.json
+          docker exec "$browser_id" test -f \
+            /etc/chromium/policies/managed/site-controls.json
+          docker exec "$browser_id" pgrep -af chromium | grep --quiet \
+            -- '--load-extension=/opt/browser/extensions-unpacked/hermes-smoke'
+          docker exec "$browser_id" pgrep -af chromium | grep --quiet \
+            -- '--disable-notifications'
           agent_id=$(docker run --detach --rm \
             --network "container:$browser_id" \
             --env AGENT_BROWSER_SOCKET_DIR=/tmp/agent-browser-smoke \
@@ -183,6 +206,7 @@ jobs:
           printf '%s' "$tab_json" | jq -e '.data.tabs[0].targetId | length > 0' >/dev/null
           docker stop "$agent_id"
           docker stop "$browser_id"
+          rm -rf "$smoke_root"
           trap - EXIT
 
       - name: Publish images
