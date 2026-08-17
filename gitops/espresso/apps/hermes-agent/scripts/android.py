@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -97,6 +98,10 @@ def encode_input_text(value: str) -> str:
 
 def default_adb_endpoint() -> str | None:
     return os.environ.get("ANDROID_ADB_ENDPOINT") or None
+
+
+def iso_now() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def default_grpc_endpoint(serial: str | None = None) -> str | None:
@@ -468,15 +473,23 @@ def handle_snapshot(args: argparse.Namespace) -> dict[str, Any]:
     base.parent.mkdir(parents=True, exist_ok=True)
     screenshot_path = ensure_within_roots(Path(f"{base}.png"))
     ui_dump_path = ensure_within_roots(Path(f"{base}.xml"))
+    metadata_path = ensure_within_roots(Path(f"{base}.json"))
     screenshot = handle_screenshot(argparse.Namespace(serial=serial, path=str(screenshot_path)))
     ui_dump = handle_ui_dump(argparse.Namespace(serial=serial, path=str(ui_dump_path)))
+    health = health_report(serial)
+    snapshot = {
+        "name": safe_device_name(slug),
+        "saved_at": iso_now(),
+        "serial": serial,
+        "screenshot": screenshot["path"],
+        "ui_dump": ui_dump["path"],
+        "health": health,
+    }
+    metadata_path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return {
         "serial": serial,
-        "snapshot": {
-            "screenshot": screenshot["path"],
-            "ui_dump": ui_dump["path"],
-            "health": health_report(serial),
-        },
+        "snapshot": snapshot,
+        "metadata_path": str(metadata_path),
     }
 
 

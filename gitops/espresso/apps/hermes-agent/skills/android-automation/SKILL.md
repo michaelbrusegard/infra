@@ -39,7 +39,7 @@ storage.
 - `android --serial <serial> record [--seconds N] [path]` saves an MP4.
 - `android --serial <serial> uiautomator-dump [path]` saves the current UI XML.
 - `android --serial <serial> snapshot [--name NAME]` writes a screenshot, UI
-  XML, and health metadata bundle together.
+  XML, and JSON health metadata bundle together.
 - `android --serial <serial> logcat [--lines N] [path]` saves recent logcat
   output for debugging and failure triage.
 - `android --serial <serial> pull <remote> [path]` copies one device file into

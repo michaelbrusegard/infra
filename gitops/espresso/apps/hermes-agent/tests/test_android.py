@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import argparse
 import importlib.util
+import json
 import os
 import tempfile
 import unittest
@@ -162,6 +164,38 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertEqual(health["display"], {"width": 1080, "height": 2400})
         self.assertIn("mCurrentFocus", health["focus"])
         self.assertEqual(health["live_view"]["grpc_url"], "http://127.0.0.1:8554")
+
+    @mock.patch.object(android, "health_report")
+    @mock.patch.object(android, "handle_ui_dump")
+    @mock.patch.object(android, "handle_screenshot")
+    @mock.patch.object(android, "require_connected_serial")
+    def test_snapshot_writes_metadata_bundle(
+        self,
+        require_connected_serial: mock.Mock,
+        handle_screenshot: mock.Mock,
+        handle_ui_dump: mock.Mock,
+        health_report: mock.Mock,
+    ) -> None:
+        serial = "127.0.0.1:5555"
+        require_connected_serial.return_value = serial
+        screenshot = self.browser_files / "android" / "127.0.0.1_5555" / "snapshots" / "checkout.png"
+        ui_dump = self.browser_files / "android" / "127.0.0.1_5555" / "snapshots" / "checkout.xml"
+        screenshot.parent.mkdir(parents=True, exist_ok=True)
+        screenshot.write_bytes(b"png")
+        ui_dump.write_text("<hierarchy/>", encoding="utf-8")
+        handle_screenshot.return_value = {"path": str(screenshot)}
+        handle_ui_dump.return_value = {"path": str(ui_dump)}
+        health_report.return_value = {"boot_completed": True}
+
+        result = android.handle_snapshot(argparse.Namespace(serial=serial, name="checkout"))
+
+        metadata = Path(result["metadata_path"])
+        self.assertTrue(metadata.is_file())
+        payload = json.loads(metadata.read_text(encoding="utf-8"))
+        self.assertEqual(payload["serial"], serial)
+        self.assertEqual(payload["screenshot"], str(screenshot))
+        self.assertEqual(payload["ui_dump"], str(ui_dump))
+        self.assertEqual(payload["health"], {"boot_completed": True})
 
 
 if __name__ == "__main__":
