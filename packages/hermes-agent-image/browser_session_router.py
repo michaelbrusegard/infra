@@ -8,6 +8,8 @@ import shutil
 import threading
 import time
 import uuid
+import json
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
@@ -147,6 +149,7 @@ def run(
     if not session.get("shared_profile_session"):
         return raw_run(task_id, command, args, timeout, engine_override)
 
+    session["task_id"] = task_id
     cdp_url = str(session.get("cdp_url") or "")
     with _COMMAND_LOCK:
         before = _page_targets(cdp_url)
@@ -158,9 +161,11 @@ def run(
             created = create_target_group(cdp_url)
             session.update(created)
             active = str(session["active_target_id"])
+            persist_session(task_id, session)
 
         select_error = _select_target(task_id, session, raw_run, active, timeout)
         if select_error:
+            persist_session(task_id, session)
             return select_error
 
         result = raw_run(task_id, command, args, timeout, engine_override)
@@ -177,6 +182,7 @@ def run(
         elif active not in after:
             active = owned[-1] if owned else ""
         session["active_target_id"] = active
+        persist_session(task_id, session)
         _retarget_supervisor(task_id, previous, active)
         return result
 
@@ -196,14 +202,85 @@ def close_target_group(session: Dict[str, Any]) -> None:
                 _cdp(cdp_url, "Target.closeTarget", {"targetId": target_id})
             except Exception:
                 pass
+        remove_persisted_session(str(session.get("task_id") or ""))
 
 
 def _files_root() -> Path:
     return Path(os.environ.get("BROWSER_FILES_ROOT", "/opt/browser-files")).resolve()
 
 
+def _session_root() -> Path:
+    destination = _files_root() / "browser-sessions"
+    destination.mkdir(parents=True, exist_ok=True)
+    return destination
+
+
+def _safe_task_name(task_id: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]", "_", task_id)[:80] or "default"
+
+
+def _session_path(task_id: str) -> Path:
+    return _session_root() / f"{_safe_task_name(task_id)}.json"
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def persist_session(task_id: str, session: Dict[str, Any]) -> None:
+    """Persist one task-owned browser session under shared browser storage."""
+    if not task_id or not session.get("shared_profile_session"):
+        return
+    session["task_id"] = task_id
+    payload = {
+        "task_id": task_id,
+        "updated_at": _now_iso(),
+        "shared_profile_session": True,
+        "cdp_url": session.get("cdp_url"),
+        "root_target_id": session.get("root_target_id"),
+        "active_target_id": session.get("active_target_id"),
+        "owned_target_ids": [
+            str(target_id)
+            for target_id in session.get("owned_target_ids", [])
+            if str(target_id)
+        ],
+    }
+    destination = _session_path(task_id)
+    temp = destination.with_suffix(".tmp")
+    temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temp.replace(destination)
+
+
+def remove_persisted_session(task_id: str) -> None:
+    if not task_id:
+        return
+    try:
+        _session_path(task_id).unlink()
+    except FileNotFoundError:
+        pass
+
+
+def load_persisted_session(task_id: str) -> Dict[str, Any]:
+    payload = json.loads(_session_path(task_id).read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Invalid browser session metadata for task {task_id}")
+    return payload
+
+
+def list_persisted_sessions() -> List[Dict[str, Any]]:
+    sessions: List[Dict[str, Any]] = []
+    for path in sorted(_session_root().glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError):
+            continue
+        if isinstance(payload, dict):
+            sessions.append(payload)
+    return sessions
+
+
 def _task_directory(task_id: str, kind: str) -> Path:
-    safe_task = re.sub(r"[^A-Za-z0-9_.-]", "_", task_id)[:80] or "default"
+    safe_task = _safe_task_name(task_id)
     destination = _files_root() / safe_task / kind
     destination.mkdir(parents=True, exist_ok=True)
     return destination

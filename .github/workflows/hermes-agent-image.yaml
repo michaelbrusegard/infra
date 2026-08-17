@@ -51,8 +51,6 @@ jobs:
         run: |
           git apply --check --unidiff-zero ../../packages/hermes-agent-image/stateless-mattermost.patch
           git apply --unidiff-zero ../../packages/hermes-agent-image/stateless-mattermost.patch
-          git apply --check ../../packages/hermes-agent-image/browser-coordinate-click.patch
-          git apply ../../packages/hermes-agent-image/browser-coordinate-click.patch
           git apply --check ../../packages/hermes-agent-image/browser-shared-sessions.patch
           git apply ../../packages/hermes-agent-image/browser-shared-sessions.patch
           git apply --check --unidiff-zero ../../packages/hermes-agent-image/delegated-tool-progress.patch
@@ -136,6 +134,10 @@ jobs:
             hermes_python=$(sed -n "s|^export HERMES_PYTHON='"'"'\(.*\)'"'"'$|\1|p" "$(command -v hermes)")
             "$hermes_python" -c "from tools.browser_tool import BROWSER_TOOL_SCHEMAS; from tools import browser_session_router; names={s['"'"'name'"'"'] for s in BROWSER_TOOL_SCHEMAS}; assert {'"'"'browser_upload'"'"', '"'"'browser_download'"'"'} <= names"
             "$hermes_python" -c "from gateway.run import _normalize_gateway_tool_progress_event as n; assert n('"'"'subagent.tool'"'"') == ('"'"'tool.started'"'"', True); assert n('"'"'subagent.progress'"'"') == (None, False); assert n('"'"'tool.started'"'"') == ('"'"'tool.started'"'"', False)"
+          '
+          docker run --rm --entrypoint bash "$AGENT_IMAGE_REF:nix" -c '
+            browser-support --help >/dev/null
+            android --help >/dev/null
           '
           docker run --rm --entrypoint node "$AGENT_IMAGE_REF:nix" -e '
           for (const name of ["pptxgenjs", "react", "react-dom/server", "react-icons/fa", "sharp"]) {

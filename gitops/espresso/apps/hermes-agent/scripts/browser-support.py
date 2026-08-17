@@ -8,8 +8,10 @@ import base64
 import json
 import os
 import re
+import subprocess
 import sys
 import tarfile
+import tempfile
 import time
 import uuid
 from datetime import UTC, datetime
@@ -80,6 +82,54 @@ def browser_bucket(bucket: str) -> Path:
     destination = browser_files_root() / bucket
     destination.mkdir(parents=True, exist_ok=True)
     return destination
+
+
+def session_bucket() -> Path:
+    return browser_bucket("browser-sessions")
+
+
+def session_path(task_id: str) -> Path:
+    return session_bucket() / f"{safe_slug(task_id)}.json"
+
+
+def load_session_state(task_id: str) -> dict[str, Any]:
+    payload = json.loads(session_path(task_id).read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"invalid browser session metadata for task {task_id}")
+    return payload
+
+
+def list_session_states() -> list[dict[str, Any]]:
+    sessions: list[dict[str, Any]] = []
+    for candidate in sorted(session_bucket().glob("*.json")):
+        try:
+            payload = json.loads(candidate.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict):
+            sessions.append(payload)
+    return sessions
+
+
+def resolve_target_id(target_id: str | None, task_id: str | None) -> str:
+    if target_id:
+        return target_id
+    if not task_id:
+        raise ValueError("provide a target_id or --task-id")
+    session = load_session_state(task_id)
+    resolved = str(session.get("active_target_id") or "")
+    if not resolved:
+        raise ValueError(f"task {task_id} has no active_target_id in browser session metadata")
+    return resolved
+
+
+def resolve_session_hint(target_id: str) -> list[str]:
+    owners: list[str] = []
+    for session in list_session_states():
+        owned = [str(item) for item in session.get("owned_target_ids", [])]
+        if target_id in owned:
+            owners.append(str(session.get("task_id") or ""))
+    return owners
 
 
 def resolve_output_path(raw_path: str | None, bucket: str, suffix: str) -> Path:
@@ -227,6 +277,132 @@ def evaluate_expression(
     return None
 
 
+def resolve_target(client: CDPClient, args: argparse.Namespace) -> tuple[str, Target]:
+    target_id = resolve_target_id(getattr(args, "target_id", None), getattr(args, "task_id", None))
+    return target_id, client.target(target_id)
+
+
+def collect_page_state(client: CDPClient, target_id: str) -> dict[str, Any]:
+    page = evaluate_expression(
+        client,
+        target_id,
+        f"""
+        (() => {{
+          const frames = Array.from(document.querySelectorAll("iframe")).slice(0, 20).map((frame) => ({{
+            src: frame.getAttribute("src") || "",
+            title: frame.getAttribute("title") || "",
+            name: frame.getAttribute("name") || ""
+          }}));
+          return {{
+            title: document.title || "",
+            url: window.location.href,
+            ready_state: document.readyState,
+            body_text: (document.body?.innerText || "").slice(0, {_MAX_TEXT_SNIPPET}),
+            frames,
+          }};
+        }})()
+        """,
+    )
+    return page if isinstance(page, dict) else {}
+
+
+def collect_media_state(client: CDPClient, target_id: str) -> list[dict[str, Any]]:
+    media = evaluate_expression(
+        client,
+        target_id,
+        """
+        (() => {
+          return Array.from(document.querySelectorAll("video, audio")).slice(0, 20).map((node, index) => ({
+            index,
+            kind: node.tagName.toLowerCase(),
+            current_src: node.currentSrc || "",
+            src: node.getAttribute("src") || "",
+            poster: node.getAttribute("poster") || "",
+            paused: Boolean(node.paused),
+            muted: Boolean(node.muted),
+            controls: Boolean(node.controls),
+            autoplay: Boolean(node.autoplay),
+            loop: Boolean(node.loop),
+            plays_inline: Boolean(node.playsInline),
+            current_time: Number.isFinite(node.currentTime) ? node.currentTime : null,
+            duration: Number.isFinite(node.duration) ? node.duration : null,
+            ready_state: Number(node.readyState || 0),
+          }));
+        })()
+        """,
+    )
+    return media if isinstance(media, list) else []
+
+
+def load_previous_page(token: str) -> dict[str, Any]:
+    candidate = Path(token)
+    if candidate.is_absolute() or "/" in token:
+        payload = json.loads(ensure_within_roots(candidate).read_text(encoding="utf-8"))
+    else:
+        payload = json.loads(
+            (browser_bucket("browser-checkpoints") / f"{safe_slug(token, 'checkpoint')}.json").read_text(encoding="utf-8")
+        )
+    if not isinstance(payload, dict):
+        raise ValueError(f"invalid previous challenge payload: {token}")
+    page = payload.get("page")
+    if isinstance(page, dict):
+        return page
+    nested = payload.get("challenge")
+    if isinstance(nested, dict) and isinstance(nested.get("page"), dict):
+        return nested["page"]
+    raise ValueError(f"previous challenge payload has no page state: {token}")
+
+
+def page_signature(page: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "title": str(page.get("title") or ""),
+        "url": str(page.get("url") or ""),
+        "ready_state": str(page.get("ready_state") or ""),
+        "body_text": str(page.get("body_text") or "")[:512],
+        "frames": [
+            {
+                "src": str(item.get("src") or ""),
+                "title": str(item.get("title") or ""),
+                "name": str(item.get("name") or ""),
+            }
+            for item in page.get("frames", [])
+            if isinstance(item, dict)
+        ],
+    }
+
+
+def challenge_progress(previous_page: dict[str, Any], current_page: dict[str, Any]) -> dict[str, Any]:
+    previous = build_challenge_summary(previous_page)
+    current = build_challenge_summary(current_page)
+    previous_signals = set(previous["signals"])
+    current_signals = set(current["signals"])
+    signature_changed = page_signature(previous_page) != page_signature(current_page)
+    signals_cleared = sorted(previous_signals - current_signals)
+    signals_added = sorted(current_signals - previous_signals)
+    possible_progress = signature_changed or bool(signals_cleared) or (
+        previous["challenge_detected"] and not current["challenge_detected"]
+    )
+    notes: list[str] = []
+    if previous["challenge_detected"] and not current["challenge_detected"]:
+        notes.append("Challenge markers dropped, but verify with a fresh snapshot before assuming recovery.")
+    if signals_cleared:
+        notes.append(f"Signals cleared: {', '.join(signals_cleared)}.")
+    if signals_added:
+        notes.append(f"Signals added: {', '.join(signals_added)}.")
+    if signature_changed and not notes:
+        notes.append("The page state changed since the prior check; treat that as possible progress, not proof.")
+    if not notes:
+        notes.append("No concrete progress markers detected since the prior check.")
+    return {
+        "previous": previous,
+        "signature_changed": signature_changed,
+        "signals_cleared": signals_cleared,
+        "signals_added": signals_added,
+        "possible_progress": possible_progress,
+        "notes": notes,
+    }
+
+
 def build_challenge_summary(page: dict[str, Any]) -> dict[str, Any]:
     title = str(page.get("title") or "")
     url = str(page.get("url") or "")
@@ -292,32 +468,43 @@ def cleanup_cutoff(hours: float) -> float:
 
 def handle_targets(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
+    task_filter = str(args.task_id or "").strip() or None
     targets = [
         {
             "target_id": target.target_id,
             "title": target.title,
             "url": target.url,
             "type": target.type,
+            "task_owners": resolve_session_hint(target.target_id),
         }
         for target in client.targets()
     ]
+    if task_filter:
+        targets = [target for target in targets if task_filter in target["task_owners"]]
     return {"targets": targets}
+
+
+def handle_session_state(args: argparse.Namespace) -> dict[str, Any]:
+    if args.task_id:
+        return {"session": load_session_state(args.task_id)}
+    return {"sessions": list_session_states()}
 
 
 def handle_frame_tree(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
-    target = client.target(args.target_id)
+    target_id, target = resolve_target(client, args)
     return {
-        "target_id": args.target_id,
+        "target_id": target_id,
         "frame_tree": client.call(target.websocket_url, "Page.getFrameTree"),
     }
 
 
 def handle_clipboard_get(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
+    target_id = resolve_target_id(args.target_id, args.task_id)
     value = evaluate_expression(
         client,
-        args.target_id,
+        target_id,
         """
         (async () => {
           if (!navigator.clipboard?.readText) {
@@ -331,15 +518,16 @@ def handle_clipboard_get(args: argparse.Namespace) -> dict[str, Any]:
         })()
         """,
     )
-    return {"target_id": args.target_id, "clipboard": value}
+    return {"target_id": target_id, "clipboard": value}
 
 
 def handle_clipboard_set(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
+    target_id = resolve_target_id(args.target_id, args.task_id)
     payload = json.dumps(args.text)
     value = evaluate_expression(
         client,
-        args.target_id,
+        target_id,
         f"""
         (async () => {{
           if (!navigator.clipboard?.writeText) {{
@@ -354,21 +542,40 @@ def handle_clipboard_set(args: argparse.Namespace) -> dict[str, Any]:
         }})()
         """,
     )
-    return {"target_id": args.target_id, "clipboard": value}
+    return {"target_id": target_id, "clipboard": value}
+
+
+def handle_click(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    target_id, target = resolve_target(client, args)
+    x = int(args.x)
+    y = int(args.y)
+    client.call(target.websocket_url, "Input.dispatchMouseEvent", {"type": "mouseMoved", "x": x, "y": y})
+    client.call(
+        target.websocket_url,
+        "Input.dispatchMouseEvent",
+        {"type": "mousePressed", "x": x, "y": y, "button": args.button, "buttons": 1, "clickCount": args.click_count},
+    )
+    client.call(
+        target.websocket_url,
+        "Input.dispatchMouseEvent",
+        {"type": "mouseReleased", "x": x, "y": y, "button": args.button, "buttons": 0, "clickCount": args.click_count},
+    )
+    return {"target_id": target_id, "click": {"x": x, "y": y, "button": args.button, "click_count": args.click_count}}
 
 
 def handle_touch_tap(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
-    target = client.target(args.target_id)
+    target_id, target = resolve_target(client, args)
     point = {"x": int(args.x), "y": int(args.y), "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
     client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [point]})
     client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
-    return {"target_id": args.target_id, "tap": {"x": int(args.x), "y": int(args.y)}}
+    return {"target_id": target_id, "tap": {"x": int(args.x), "y": int(args.y)}}
 
 
 def handle_touch_swipe(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
-    target = client.target(args.target_id)
+    target_id, target = resolve_target(client, args)
     steps = max(1, int(args.steps))
     start = {"x": int(args.x1), "y": int(args.y1), "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
     client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [start]})
@@ -379,14 +586,14 @@ def handle_touch_swipe(args: argparse.Namespace) -> dict[str, Any]:
         client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [point]})
     client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
     return {
-        "target_id": args.target_id,
+        "target_id": target_id,
         "swipe": {"from": [int(args.x1), int(args.y1)], "to": [int(args.x2), int(args.y2)], "steps": steps},
     }
 
 
 def handle_drag(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
-    target = client.target(args.target_id)
+    target_id, target = resolve_target(client, args)
     steps = max(1, int(args.steps))
     client.call(target.websocket_url, "Input.dispatchMouseEvent", {"type": "mouseMoved", "x": int(args.x1), "y": int(args.y1)})
     client.call(
@@ -408,40 +615,81 @@ def handle_drag(args: argparse.Namespace) -> dict[str, Any]:
         {"type": "mouseReleased", "x": int(args.x2), "y": int(args.y2), "button": "left", "buttons": 0, "clickCount": 1},
     )
     return {
-        "target_id": args.target_id,
+        "target_id": target_id,
         "drag": {"from": [int(args.x1), int(args.y1)], "to": [int(args.x2), int(args.y2)], "steps": steps},
+    }
+
+
+def handle_media_state(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    target_id = resolve_target_id(args.target_id, args.task_id)
+    return {"target_id": target_id, "media": collect_media_state(client, target_id)}
+
+
+def handle_record_page(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    target_id, target = resolve_target(client, args)
+    destination = resolve_output_path(args.path, "browser-recordings", ".webm")
+    fps = max(1, int(args.fps))
+    interval = 1.0 / fps
+    frame_total = max(1, int(round(float(args.seconds) * fps)))
+    with tempfile.TemporaryDirectory(prefix="browser-record-", dir=browser_bucket("browser-recordings")) as tempdir:
+        frames_dir = Path(tempdir)
+        start = time.monotonic()
+        for index in range(frame_total):
+            screenshot = client.call(target.websocket_url, "Page.captureScreenshot", {"format": "png"})
+            screenshot_data = str(screenshot.get("data") or "")
+            if not screenshot_data:
+                raise RuntimeError("Page.captureScreenshot returned no image data during recording")
+            (frames_dir / f"frame-{index:05d}.png").write_bytes(base64.b64decode(screenshot_data))
+            if index + 1 < frame_total:
+                target_time = start + ((index + 1) * interval)
+                delay = target_time - time.monotonic()
+                if delay > 0:
+                    time.sleep(delay)
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-framerate",
+                str(fps),
+                "-i",
+                str(frames_dir / "frame-%05d.png"),
+                "-c:v",
+                "libvpx-vp9",
+                "-pix_fmt",
+                "yuv420p",
+                str(destination),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=max(60, int(args.seconds * 4) + 30),
+        )
+    return {
+        "target_id": target_id,
+        "path": str(destination),
+        "size_bytes": destination.stat().st_size,
+        "fps": fps,
+        "seconds": args.seconds,
+        "frames": frame_total,
     }
 
 
 def handle_challenge_state(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
-    page = evaluate_expression(
-        client,
-        args.target_id,
-        f"""
-        (() => {{
-          const frames = Array.from(document.querySelectorAll("iframe")).slice(0, 20).map((frame) => ({{
-            src: frame.getAttribute("src") || "",
-            title: frame.getAttribute("title") || "",
-            name: frame.getAttribute("name") || ""
-          }}));
-          return {{
-            title: document.title || "",
-            url: window.location.href,
-            ready_state: document.readyState,
-            body_text: (document.body?.innerText || "").slice(0, {_MAX_TEXT_SNIPPET}),
-            frames,
-          }};
-        }})()
-        """,
-    )
-    summary = build_challenge_summary(page if isinstance(page, dict) else {})
-    return {"target_id": args.target_id, "page": page, "challenge": summary}
+    target_id = resolve_target_id(args.target_id, args.task_id)
+    page = collect_page_state(client, target_id)
+    summary = build_challenge_summary(page)
+    progress = None
+    if args.previous:
+        progress = challenge_progress(load_previous_page(args.previous), page)
+    return {"target_id": target_id, "page": page, "challenge": summary, "progress": progress}
 
 
 def handle_checkpoint_save(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
-    target = client.target(args.target_id)
+    target_id, target = resolve_target(client, args)
     name = safe_slug(args.name, "checkpoint")
     checkpoint_dir = browser_bucket("browser-checkpoints")
     base = checkpoint_dir / name
@@ -452,23 +700,16 @@ def handle_checkpoint_save(args: argparse.Namespace) -> dict[str, Any]:
     if not screenshot_data:
         raise RuntimeError("Page.captureScreenshot returned no image data")
     screenshot_path.write_bytes(base64.b64decode(screenshot_data))
-    page = evaluate_expression(
-        client,
-        args.target_id,
-        """
-        (() => ({
-          title: document.title || "",
-          url: window.location.href,
-          ready_state: document.readyState,
-        }))()
-        """,
-    )
+    page = collect_page_state(client, target_id)
     record = {
         "name": name,
         "saved_at": iso_now(),
-        "target_id": args.target_id,
+        "target_id": target_id,
+        "task_id": getattr(args, "task_id", None) or None,
         "note": args.note or None,
         "page": page,
+        "challenge": build_challenge_summary(page),
+        "media": collect_media_state(client, target_id),
         "screenshot": str(screenshot_path),
     }
     metadata_path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -509,27 +750,36 @@ def handle_profile_backup(args: argparse.Namespace) -> dict[str, Any]:
 
 def handle_cleanup(args: argparse.Namespace) -> dict[str, Any]:
     buckets = (
-        ["browser-checkpoints", "browser-profile-backups"]
+        ["browser-checkpoints", "browser-profile-backups", "browser-sessions", "browser-task-artifacts"]
         if args.bucket == "all"
         else [args.bucket]
     )
     cutoff = cleanup_cutoff(args.older_than_hours)
     removed: list[str] = []
     for bucket in buckets:
-        root = browser_bucket(bucket)
-        for candidate in root.rglob("*"):
-            try:
-                if candidate.is_file() and candidate.stat().st_mtime < cutoff:
-                    candidate.unlink()
-                    removed.append(str(candidate))
-            except FileNotFoundError:
-                continue
-        for directory in sorted(root.rglob("*"), reverse=True):
-            try:
-                if directory.is_dir() and not any(directory.iterdir()):
-                    directory.rmdir()
-            except OSError:
-                continue
+        roots = (
+            [browser_bucket(bucket)]
+            if bucket != "browser-task-artifacts"
+            else [
+                path
+                for path in browser_files_root().iterdir()
+                if path.is_dir() and path.name not in {"android", "browser-checkpoints", "browser-profile-backups", "browser-sessions"}
+            ]
+        )
+        for root in roots:
+            for candidate in root.rglob("*"):
+                try:
+                    if candidate.is_file() and candidate.stat().st_mtime < cutoff:
+                        candidate.unlink()
+                        removed.append(str(candidate))
+                except FileNotFoundError:
+                    continue
+            for directory in sorted(root.rglob("*"), reverse=True):
+                try:
+                    if directory.is_dir() and not any(directory.iterdir()):
+                        directory.rmdir()
+                except OSError:
+                    continue
     return {"bucket": args.bucket, "removed": removed}
 
 
@@ -541,6 +791,7 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
     policy_root = profile_root / "policies"
     unpacked_extensions = profile_root / "extensions-unpacked"
     browser_files = browser_files_root()
+    sessions = list_session_states()
     return {
         "cdp": {
             "browser": version.get("Browser"),
@@ -548,6 +799,10 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
             "user_agent": version.get("User-Agent"),
             "web_socket_debugger_url": version.get("webSocketDebuggerUrl"),
             "target_count": len(targets),
+        },
+        "sessions": {
+            "count": len(sessions),
+            "items": sessions,
         },
         "profile": {
             "root": str(profile_root),
@@ -563,18 +818,27 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
             "size_bytes": directory_size(browser_files),
             "checkpoints": len(list(browser_bucket("browser-checkpoints").glob("*.json"))),
             "profile_backups": len(list(browser_bucket("browser-profile-backups").glob("*.tar.gz"))),
+            "task_directories": [
+                str(path)
+                for path in sorted(browser_files.iterdir())
+                if path.is_dir() and path.name not in {"android", "browser-checkpoints", "browser-profile-backups", "browser-sessions"}
+            ],
         },
     }
 
 
 HANDLERS = {
     "targets": handle_targets,
+    "session-state": handle_session_state,
     "frame-tree": handle_frame_tree,
     "clipboard-get": handle_clipboard_get,
     "clipboard-set": handle_clipboard_set,
+    "click": handle_click,
     "touch-tap": handle_touch_tap,
     "touch-swipe": handle_touch_swipe,
     "drag": handle_drag,
+    "media-state": handle_media_state,
+    "record-page": handle_record_page,
     "challenge-state": handle_challenge_state,
     "checkpoint-save": handle_checkpoint_save,
     "checkpoint-list": handle_checkpoint_list,
@@ -585,6 +849,14 @@ HANDLERS = {
 }
 
 
+def add_target_locator_arguments(command: argparse.ArgumentParser, *, positional: bool = True) -> None:
+    if positional:
+        command.add_argument("target_id", nargs="?", help="explicit page target ID; defaults to the active target for --task-id")
+    else:
+        command.add_argument("--target-id", help="explicit page target ID; defaults to the active target for --task-id")
+    command.add_argument("--task-id", help="resolve the active target from persisted task-owned browser session metadata")
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(
         prog="browser-support",
@@ -593,25 +865,36 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--cdp-url", default=default_cdp_url(), help="CDP discovery URL, defaults to BROWSER_CDP_URL")
     sub = root.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("targets", help="list current page targets and their target IDs")
+    targets = sub.add_parser("targets", help="list current page targets and their target IDs")
+    targets.add_argument("--task-id", help="filter targets to one persisted task session owner")
+
+    session_state = sub.add_parser("session-state", help="show persisted task-owned browser session metadata")
+    session_state.add_argument("task_id", nargs="?", help="optional task identifier; omit to list all persisted sessions")
 
     frame_tree = sub.add_parser("frame-tree", help="return the Page.getFrameTree payload for one target")
-    frame_tree.add_argument("target_id")
+    add_target_locator_arguments(frame_tree)
 
     clipboard_get = sub.add_parser("clipboard-get", help="read navigator.clipboard text from one page target")
-    clipboard_get.add_argument("target_id")
+    add_target_locator_arguments(clipboard_get)
 
     clipboard_set = sub.add_parser("clipboard-set", help="write navigator.clipboard text into one page target")
-    clipboard_set.add_argument("target_id")
+    add_target_locator_arguments(clipboard_set)
     clipboard_set.add_argument("text")
 
+    click = sub.add_parser("click", help="dispatch one atomic mouse click")
+    add_target_locator_arguments(click, positional=False)
+    click.add_argument("x", type=int)
+    click.add_argument("y", type=int)
+    click.add_argument("--button", choices=["left", "middle", "right"], default="left")
+    click.add_argument("--click-count", type=int, default=1)
+
     touch_tap = sub.add_parser("touch-tap", help="dispatch one atomic touch tap")
-    touch_tap.add_argument("target_id")
+    add_target_locator_arguments(touch_tap, positional=False)
     touch_tap.add_argument("x", type=int)
     touch_tap.add_argument("y", type=int)
 
     touch_swipe = sub.add_parser("touch-swipe", help="dispatch one touch swipe with interpolated moves")
-    touch_swipe.add_argument("target_id")
+    add_target_locator_arguments(touch_swipe, positional=False)
     touch_swipe.add_argument("x1", type=int)
     touch_swipe.add_argument("y1", type=int)
     touch_swipe.add_argument("x2", type=int)
@@ -619,18 +902,28 @@ def parser() -> argparse.ArgumentParser:
     touch_swipe.add_argument("--steps", type=int, default=8)
 
     drag = sub.add_parser("drag", help="dispatch one left-button drag gesture")
-    drag.add_argument("target_id")
+    add_target_locator_arguments(drag, positional=False)
     drag.add_argument("x1", type=int)
     drag.add_argument("y1", type=int)
     drag.add_argument("x2", type=int)
     drag.add_argument("y2", type=int)
     drag.add_argument("--steps", type=int, default=12)
 
+    media_state = sub.add_parser("media-state", help="inspect current audio/video elements in one page target")
+    add_target_locator_arguments(media_state)
+
+    record_page = sub.add_parser("record-page", help="capture a bounded viewport recording for one page target")
+    add_target_locator_arguments(record_page)
+    record_page.add_argument("--seconds", type=float, default=5.0)
+    record_page.add_argument("--fps", type=int, default=2)
+    record_page.add_argument("path", nargs="?", help="optional output path under workspace/cache/browser files")
+
     challenge = sub.add_parser("challenge-state", help="inspect one page for challenge or verification markers")
-    challenge.add_argument("target_id")
+    add_target_locator_arguments(challenge)
+    challenge.add_argument("--previous", help="previous checkpoint name or JSON path for progress-aware comparison")
 
     checkpoint_save = sub.add_parser("checkpoint-save", help="save a screenshot-backed checkpoint for one browser page")
-    checkpoint_save.add_argument("target_id")
+    add_target_locator_arguments(checkpoint_save)
     checkpoint_save.add_argument("name")
     checkpoint_save.add_argument("--note")
 
@@ -642,7 +935,7 @@ def parser() -> argparse.ArgumentParser:
     profile_backup.add_argument("name", nargs="?")
 
     cleanup = sub.add_parser("cleanup", help="remove older browser artifacts from shared storage")
-    cleanup.add_argument("bucket", choices=["browser-checkpoints", "browser-profile-backups", "all"])
+    cleanup.add_argument("bucket", choices=["browser-checkpoints", "browser-profile-backups", "browser-sessions", "browser-task-artifacts", "all"])
     cleanup.add_argument("--older-than-hours", type=float, default=168.0)
 
     sub.add_parser("diagnostics", help="report CDP, profile, policy, extension, and storage details")
@@ -653,7 +946,7 @@ def main() -> int:
     args = parser().parse_args()
     try:
         result = HANDLERS[args.command](args)
-    except (ValueError, RuntimeError, requests.RequestException, OSError, tarfile.TarError) as exc:
+    except (ValueError, RuntimeError, requests.RequestException, OSError, tarfile.TarError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
         print(f"browser-support: {safe_text(exc)}", file=sys.stderr)
         return 1
     except Exception as exc:
