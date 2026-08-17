@@ -100,6 +100,7 @@
   tools = pkgs.buildEnv {
     name = "hermes-agent-tools";
     paths = with pkgs; [
+      android-tools
       agentBrowser
       bashInteractive
       bind

@@ -31,7 +31,7 @@ spec:
             - |
               mkdir -p /opt/data/workspace /opt/data/scripts
               mkdir -p /opt/browser-files
-              mkdir -p /opt/data/hindsight /opt/data/skills/mealie /opt/data/skills/media /opt/data/skills/browser-navigation /opt/data/skills/cluster-access /opt/data/skills/healthlog
+              mkdir -p /opt/data/hindsight /opt/data/skills/android-automation /opt/data/skills/mealie /opt/data/skills/media /opt/data/skills/browser-navigation /opt/data/skills/cluster-access /opt/data/skills/healthlog
               mkdir -p /opt/data/skills/data-science/jupyter-live-kernel
               for file in /bootstrap-config/*; do
                 [ -f "$file" ] || continue
@@ -39,6 +39,9 @@ spec:
                 install -m 0644 "$file" "/opt/data/$(basename "$file")"
               done
               install -m 0644 /bootstrap-config/hindsight.json /opt/data/hindsight/config.json
+              install -m 0755 /bootstrap-skills/android /opt/data/scripts/android
+              install -m 0644 /bootstrap-skills/android.py /opt/data/scripts/android.py
+              install -m 0644 /bootstrap-skills/android-automation-skill.md /opt/data/skills/android-automation/SKILL.md
               install -m 0644 /bootstrap-skills/browser-navigation-skill.md /opt/data/skills/browser-navigation/SKILL.md
               install -m 0644 /bootstrap-skills/cluster-access-skill.md /opt/data/skills/cluster-access/SKILL.md
               install -m 0755 /bootstrap-skills/daily-digest.py /opt/data/scripts/daily-digest.py
