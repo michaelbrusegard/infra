@@ -19,3 +19,25 @@ spec:
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-single-replica
     cacheCapacity: 1Gi
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: hermes-android-data-backup
+  namespace: hermes-agent
+spec:
+  sourcePVC: hermes-android-data
+  trigger:
+    schedule: "45 2 * * *"
+  restic:
+    repository: freddo-restic-hermes-agent-pvc
+    pruneIntervalDays: 36500
+    retain:
+      within: 100y
+    moverSecurityContext:
+      runAsUser: 0
+      runAsGroup: 0
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: openebs-single-replica
+    cacheCapacity: 1Gi

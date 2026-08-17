@@ -25,6 +25,10 @@ spec:
         - ports:
             - port: "8642"
               protocol: TCP
+            - port: "5555"
+              protocol: TCP
+            - port: "8554"
+              protocol: TCP
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring

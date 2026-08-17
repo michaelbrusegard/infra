@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,10 @@ def safe_text(value: Any) -> str:
 
 def safe_device_name(value: str) -> str:
     return _SAFE_NAME.sub("_", value.strip())[:80] or "default"
+
+
+def env_name(serial: str) -> str:
+    return _SAFE_NAME.sub("_", serial.strip()).upper() or "DEFAULT"
 
 
 def hermes_home() -> Path:
@@ -90,6 +95,41 @@ def encode_input_text(value: str) -> str:
     return cleaned
 
 
+def default_adb_endpoint() -> str | None:
+    return os.environ.get("ANDROID_ADB_ENDPOINT") or None
+
+
+def default_grpc_endpoint(serial: str | None = None) -> str | None:
+    candidates = []
+    if serial:
+        suffix = env_name(serial)
+        candidates.extend(
+            [
+                os.environ.get(f"ANDROID_GRPC_URL_{suffix}"),
+                os.environ.get(f"ANDROID_EMULATOR_GRPC_URL_{suffix}"),
+            ]
+        )
+    candidates.extend(
+        [
+            os.environ.get("ANDROID_GRPC_URL"),
+            os.environ.get("ANDROID_EMULATOR_GRPC_URL"),
+        ]
+    )
+    for candidate in candidates:
+        if candidate:
+            return candidate
+    return None
+
+
+def is_tcp_endpoint(serial: str) -> bool:
+    value = serial.strip()
+    if not value:
+        return False
+    if re.fullmatch(r"emulator-\d+", value):
+        return False
+    return ":" in value
+
+
 def parse_devices(output: str) -> list[dict[str, Any]]:
     devices: list[dict[str, Any]] = []
     for raw_line in output.splitlines():
@@ -140,7 +180,7 @@ def run_adb(
 
 
 def chosen_serial(args: argparse.Namespace) -> str | None:
-    return args.serial or os.environ.get("ANDROID_SERIAL") or None
+    return args.serial or os.environ.get("ANDROID_SERIAL") or default_adb_endpoint() or None
 
 
 def require_serial(args: argparse.Namespace) -> str:
@@ -150,19 +190,104 @@ def require_serial(args: argparse.Namespace) -> str:
     return serial
 
 
+def connected_devices() -> list[dict[str, Any]]:
+    return parse_devices(str(run_adb(None, "devices", "-l")))
+
+
+def device_entry(serial: str) -> dict[str, Any] | None:
+    for entry in connected_devices():
+        if entry.get("serial") == serial:
+            return entry
+    return None
+
+
+def ensure_device_connection(serial: str) -> None:
+    if not is_tcp_endpoint(serial):
+        return
+    state = device_entry(serial)
+    if state and state.get("state") == "device":
+        return
+    run_adb(None, "connect", serial, check=False)
+
+
+def require_connected_serial(args: argparse.Namespace) -> str:
+    serial = require_serial(args)
+    ensure_device_connection(serial)
+    return serial
+
+
+def shell_text(serial: str, *args: str, timeout: int = 120) -> str:
+    return str(run_adb(serial, "shell", *args, timeout=timeout)).strip()
+
+
+def shell_bool(serial: str, *args: str) -> bool:
+    return shell_text(serial, *args).lower() in {"1", "true", "yes", "ok"}
+
+
+def parse_wm_size(output: str) -> dict[str, int] | None:
+    match = re.search(r"(\d+)x(\d+)", output)
+    if not match:
+        return None
+    return {"width": int(match.group(1)), "height": int(match.group(2))}
+
+
+def parse_focus(output: str) -> str | None:
+    for line in output.splitlines():
+        line = line.strip()
+        if "mCurrentFocus" in line or "mFocusedApp" in line:
+            return safe_text(line)
+    return None
+
+
+def live_view(serial: str) -> dict[str, Any]:
+    adb_endpoint = serial if is_tcp_endpoint(serial) else None
+    grpc_url = default_grpc_endpoint(serial)
+    result: dict[str, Any] = {"serial": serial}
+    if adb_endpoint:
+        result["adb_endpoint"] = adb_endpoint
+    if grpc_url:
+        result["grpc_url"] = grpc_url
+        if grpc_url.startswith("http://") or grpc_url.startswith("https://"):
+            result["webrtc_url"] = grpc_url
+    return result
+
+
+def health_report(serial: str) -> dict[str, Any]:
+    ensure_device_connection(serial)
+    entry = device_entry(serial) or {"serial": serial, "state": "unknown"}
+    boot_completed = shell_text(serial, "getprop", "sys.boot_completed")
+    boot_anim = shell_text(serial, "getprop", "init.svc.bootanim")
+    size = parse_wm_size(shell_text(serial, "wm", "size"))
+    density = shell_text(serial, "wm", "density")
+    focus = parse_focus(shell_text(serial, "dumpsys", "window", "windows", timeout=180))
+    report = {
+        "serial": serial,
+        "state": entry.get("state"),
+        "boot_completed": boot_completed == "1",
+        "boot_animation": boot_anim,
+        "display": size,
+        "density": safe_text(density) or None,
+        "focus": focus,
+        "live_view": live_view(serial),
+    }
+    return report
+
+
 def handle_devices(_: argparse.Namespace) -> dict[str, Any]:
-    return {"devices": parse_devices(str(run_adb(None, "devices", "-l")))}
+    return {"devices": connected_devices()}
 
 
 def handle_status(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     props = {
         "state": run_adb(serial, "get-state").strip(),
-        "model": run_adb(serial, "shell", "getprop", "ro.product.model").strip(),
-        "device": run_adb(serial, "shell", "getprop", "ro.product.device").strip(),
-        "manufacturer": run_adb(serial, "shell", "getprop", "ro.product.manufacturer").strip(),
-        "android_release": run_adb(serial, "shell", "getprop", "ro.build.version.release").strip(),
-        "sdk": run_adb(serial, "shell", "getprop", "ro.build.version.sdk").strip(),
+        "model": shell_text(serial, "getprop", "ro.product.model"),
+        "device": shell_text(serial, "getprop", "ro.product.device"),
+        "manufacturer": shell_text(serial, "getprop", "ro.product.manufacturer"),
+        "android_release": shell_text(serial, "getprop", "ro.build.version.release"),
+        "sdk": shell_text(serial, "getprop", "ro.build.version.sdk"),
+        "boot_completed": shell_text(serial, "getprop", "sys.boot_completed") == "1",
+        "display": parse_wm_size(shell_text(serial, "wm", "size")),
     }
     return {"serial": serial, "device": props}
 
@@ -179,7 +304,7 @@ def handle_disconnect(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def handle_screenshot(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     destination = resolve_output_path(args.path, serial, "screenshots", ".png")
     payload = run_adb(serial, "exec-out", "screencap", "-p", text=False, timeout=120)
     destination.write_bytes(bytes(payload))
@@ -187,7 +312,7 @@ def handle_screenshot(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def handle_record(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     destination = resolve_output_path(args.path, serial, "recordings", ".mp4")
     remote_name = f"/sdcard/Download/hermes-record-{uuid.uuid4().hex[:12]}.mp4"
     run_adb(
@@ -207,7 +332,7 @@ def handle_record(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def handle_ui_dump(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     destination = resolve_output_path(args.path, serial, "uiautomator", ".xml")
     remote_name = f"/sdcard/Download/hermes-ui-{uuid.uuid4().hex[:12]}.xml"
     run_adb(serial, "shell", "uiautomator", "dump", "--compressed", remote_name)
@@ -219,13 +344,13 @@ def handle_ui_dump(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def handle_tap(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     run_adb(serial, "shell", "input", "tap", str(args.x), str(args.y))
     return {"serial": serial, "tap": {"x": args.x, "y": args.y}}
 
 
 def handle_swipe(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     run_adb(
         serial,
         "shell",
@@ -248,20 +373,20 @@ def handle_swipe(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def handle_text(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     encoded = encode_input_text(args.text)
     run_adb(serial, "shell", "input", "text", encoded)
     return {"serial": serial, "text": encoded}
 
 
 def handle_keyevent(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     run_adb(serial, "shell", "input", "keyevent", str(args.keyevent))
     return {"serial": serial, "keyevent": str(args.keyevent)}
 
 
 def handle_open_url(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     run_adb(
         serial,
         "shell",
@@ -276,7 +401,7 @@ def handle_open_url(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def handle_app_start(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     if args.activity:
         target = f"{args.package}/{args.activity}"
         run_adb(serial, "shell", "am", "start", "-n", target)
@@ -299,23 +424,82 @@ def handle_app_start(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def handle_app_stop(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     run_adb(serial, "shell", "am", "force-stop", args.package)
     return {"serial": serial, "package": args.package}
 
 
 def handle_pull(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     destination = resolve_output_path(args.path, serial, "pulls", Path(args.remote).suffix or ".bin")
     run_adb(serial, "pull", args.remote, str(destination), timeout=300)
     return {"serial": serial, "remote": args.remote, "path": str(destination)}
 
 
 def handle_push(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_serial(args)
+    serial = require_connected_serial(args)
     source = resolve_local_source(args.path)
     run_adb(serial, "push", str(source), args.remote, timeout=300)
     return {"serial": serial, "path": str(source), "remote": args.remote}
+
+
+def handle_wait_for_boot(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    deadline = time.time() + args.timeout
+    last_state = "unknown"
+    while time.time() < deadline:
+        entry = device_entry(serial)
+        last_state = str(entry.get("state")) if entry else "missing"
+        if last_state == "device" and shell_text(serial, "getprop", "sys.boot_completed") == "1":
+            return {"serial": serial, "boot_completed": True, "health": health_report(serial)}
+        time.sleep(args.interval)
+    raise RuntimeError(f"{serial} did not finish booting within {args.timeout} seconds (state={last_state})")
+
+
+def handle_health(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    return health_report(serial)
+
+
+def handle_snapshot(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    slug = args.name or uuid.uuid4().hex[:12]
+    base = device_directory(serial, "snapshots") / safe_device_name(slug)
+    base.parent.mkdir(parents=True, exist_ok=True)
+    screenshot_path = ensure_within_roots(Path(f"{base}.png"))
+    ui_dump_path = ensure_within_roots(Path(f"{base}.xml"))
+    screenshot = handle_screenshot(argparse.Namespace(serial=serial, path=str(screenshot_path)))
+    ui_dump = handle_ui_dump(argparse.Namespace(serial=serial, path=str(ui_dump_path)))
+    return {
+        "serial": serial,
+        "snapshot": {
+            "screenshot": screenshot["path"],
+            "ui_dump": ui_dump["path"],
+            "health": health_report(serial),
+        },
+    }
+
+
+def handle_live_view(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_serial(args)
+    return live_view(serial)
+
+
+def handle_logcat(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    destination = resolve_output_path(args.path, serial, "logcat", ".txt")
+    output = str(
+        run_adb(
+            serial,
+            "logcat",
+            "-d",
+            "-t",
+            str(args.lines),
+            timeout=180,
+        )
+    )
+    destination.write_text(output, encoding="utf-8")
+    return {"serial": serial, "path": str(destination), "lines": args.lines}
 
 
 HANDLERS = {
@@ -335,6 +519,11 @@ HANDLERS = {
     "app-stop": handle_app_stop,
     "pull": handle_pull,
     "push": handle_push,
+    "wait-for-boot": handle_wait_for_boot,
+    "health": handle_health,
+    "snapshot": handle_snapshot,
+    "live-view": handle_live_view,
+    "logcat": handle_logcat,
 }
 
 
@@ -348,6 +537,8 @@ def parser() -> argparse.ArgumentParser:
 
     sub.add_parser("devices", help="list adb-visible devices with metadata")
     sub.add_parser("status", help="show one device's basic identity and Android version")
+    health = sub.add_parser("health", help="show boot, display, focus, and live-view details")
+    health.add_argument("--serial", help=argparse.SUPPRESS)
 
     connect = sub.add_parser("connect", help="connect to an adb TCP endpoint")
     connect.add_argument("endpoint", help="host:port or serial endpoint for adb connect")
@@ -363,6 +554,16 @@ def parser() -> argparse.ArgumentParser:
 
     ui_dump = sub.add_parser("uiautomator-dump", help="dump the current UI hierarchy as XML")
     ui_dump.add_argument("path", nargs="?", help="optional output path under workspace/cache/browser files")
+
+    snapshot = sub.add_parser("snapshot", help="capture screenshot, UI XML, and health in one bundle")
+    snapshot.add_argument("--name", help="optional stable basename for the snapshot bundle")
+
+    wait_for_boot = sub.add_parser("wait-for-boot", help="block until one device finishes booting")
+    wait_for_boot.add_argument("--timeout", type=int, choices=range(1, 1801), default=300, metavar="1..1800")
+    wait_for_boot.add_argument("--interval", type=float, default=2.0)
+
+    live_view_cmd = sub.add_parser("live-view", help="show adb and WebRTC/grpc viewing endpoints")
+    live_view_cmd.add_argument("--serial", help=argparse.SUPPRESS)
 
     tap = sub.add_parser("tap", help="tap one screen coordinate")
     tap.add_argument("x", type=int)
@@ -398,6 +599,10 @@ def parser() -> argparse.ArgumentParser:
     push = sub.add_parser("push", help="push one local file onto the device")
     push.add_argument("path", help="local file under workspace/cache/browser files")
     push.add_argument("remote", help="remote destination path")
+
+    logcat = sub.add_parser("logcat", help="save recent logcat output to Hermes storage")
+    logcat.add_argument("--lines", type=int, choices=range(1, 20001), default=400, metavar="1..20000")
+    logcat.add_argument("path", nargs="?", help="optional local output path under workspace/cache/browser files")
 
     return root
 

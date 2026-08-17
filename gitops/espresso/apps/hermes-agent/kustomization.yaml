@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - backup.yaml
+  - android-pvc.yaml
   - browser-pvc.yaml
   - browser-files-pvc.yaml
   - rbac.yaml
@@ -17,6 +18,7 @@ configMapGenerator:
     files:
       - android=scripts/android
       - android.py=scripts/android.py
+      - android-emulator-launch.sh=scripts/android-emulator-launch.sh
       - android-automation-skill.md=skills/android-automation/SKILL.md
       - browser-navigation-skill.md=skills/browser-navigation/SKILL.md
       - cluster-access-skill.md=skills/cluster-access/SKILL.md

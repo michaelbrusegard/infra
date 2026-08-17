@@ -95,6 +95,8 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
       - name: Install Tools
         run: nix profile install nixpkgs#kustomize nixpkgs#kubeconform
+      - name: Run Hermes Android unit tests
+        run: python3 -m unittest discover -s gitops/espresso/apps/hermes-agent/tests -p 'test_android.py'
       - name: Validate Kubernetes Manifests
         run: |
           kustomize build gitops/espresso | \

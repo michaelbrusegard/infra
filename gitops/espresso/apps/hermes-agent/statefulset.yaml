@@ -19,6 +19,8 @@ spec:
     spec:
       serviceAccountName: hermes-agent
       automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: espresso-0
       securityContext:
         fsGroup: 10000
         fsGroupChangePolicy: OnRootMismatch
@@ -104,6 +106,37 @@ spec:
               mountPath: /bootstrap-secret
             - name: bootstrap-skills
               mountPath: /bootstrap-skills
+        - name: prepare-android
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-cf01b4fed4755206618a7652f9dee23ec0f92e5c@sha256:6a79a0cc11b482a149e14719e3952e0facd2193050d11d848449f047a1582662
+          command:
+            - bash
+            - -euc
+            - |
+              mkdir -p /opt/android/adb /opt/android/android-home
+              if [ ! -s /opt/android/adb/adbkey ] || [ ! -s /opt/android/adb/adbkey.pub ]; then
+                HOME=/tmp adb keygen /opt/android/adb/adbkey
+              fi
+              chmod 600 /opt/android/adb/adbkey
+              chmod 644 /opt/android/adb/adbkey.pub
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 25m
+            limits:
+              memory: 128Mi
+              cpu: 100m
+          volumeMounts:
+            - name: android-data
+              mountPath: /opt/android
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       containers:
         - name: gateway
           image: ghcr.io/michaelbrusegard/hermes-agent:sha-cf01b4fed4755206618a7652f9dee23ec0f92e5c@sha256:6a79a0cc11b482a149e14719e3952e0facd2193050d11d848449f047a1582662
@@ -203,6 +236,14 @@ spec:
               value: "true"
             - name: BROWSER_FILES_ROOT
               value: /opt/browser-files
+            - name: ADB_VENDOR_KEYS
+              value: /opt/android/adb
+            - name: ANDROID_ADB_ENDPOINT
+              value: 127.0.0.1:5555
+            - name: ANDROID_SERIAL
+              value: 127.0.0.1:5555
+            - name: ANDROID_EMULATOR_GRPC_URL
+              value: http://hermes-android.hermes-agent.svc.cluster.local:8554
             - name: API_SERVER_ENABLED
               value: "true"
             - name: API_SERVER_HOST
@@ -249,6 +290,9 @@ spec:
               mountPath: /opt/data
             - name: browser-files
               mountPath: /opt/browser-files
+            - name: android-data
+              mountPath: /opt/android
+              readOnly: true
             - name: tmp
               mountPath: /tmp
             - name: kube-api-access
@@ -337,6 +381,81 @@ spec:
             capabilities:
               drop:
                 - ALL
+        - name: android-emulator
+          image: us-docker.pkg.dev/android-emulator-268719/images/30-google-x64-no-metrics:30.1.2
+          command:
+            - bash
+            - /bootstrap-skills/android-emulator-launch.sh
+          env:
+            - name: ADB_VENDOR_KEYS
+              value: /data/adb
+            - name: AVD_CONFIG
+              value: |
+                disk.dataPartition.size=8192M
+                hw.keyboard=yes
+            - name: EMULATOR_PARAMS
+              value: -gpu swiftshader_indirect
+          ports:
+            - containerPort: 5555
+              name: android-adb
+            - containerPort: 8554
+              name: android-webrtc
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: "2"
+            limits:
+              memory: 8Gi
+              cpu: "4"
+          startupProbe:
+            exec:
+              command:
+                - bash
+                - -ec
+                - |
+                  export ADB_VENDOR_KEYS=/data/adb
+                  adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+                  [ "$(adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - -ec
+                - |
+                  export ADB_VENDOR_KEYS=/data/adb
+                  adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+                  [ "$(adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -ec
+                - |
+                  export ADB_VENDOR_KEYS=/data/adb
+                  adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+                  [ "$(adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
+            periodSeconds: 15
+            timeoutSeconds: 10
+          volumeMounts:
+            - name: bootstrap-skills
+              mountPath: /bootstrap-skills
+            - name: android-data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+            - name: kvm
+              mountPath: /dev/kvm
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
       volumes:
         - name: bootstrap-config
           configMap:
@@ -358,6 +477,9 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 512Mi
+        - name: android-data
+          persistentVolumeClaim:
+            claimName: hermes-android-data
         - name: browser-profile
           persistentVolumeClaim:
             claimName: hermes-browser-profile
@@ -382,6 +504,10 @@ spec:
                       fieldRef:
                         apiVersion: v1
                         fieldPath: metadata.namespace
+        - name: kvm
+          hostPath:
+            path: /dev/kvm
+            type: CharDevice
   volumeClaimTemplates:
     - metadata:
         name: data

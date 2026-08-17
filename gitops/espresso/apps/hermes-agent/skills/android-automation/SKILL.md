@@ -1,6 +1,6 @@
 ---
 name: android-automation
-description: Operate Android devices over adb for screenshots, UI dumps, taps, swipes, key events, app launches, recordings, and bounded file transfer.
+description: Operate Android devices over adb for health checks, boot gating, screenshots, UI dumps, recordings, taps, swipes, key events, app launches, live-view endpoints, log capture, and bounded file transfer.
 ---
 
 # Android Automation
@@ -20,20 +20,28 @@ storage.
 
 ## Core workflow
 
-1. Use `android devices` to discover connected devices.
-2. Use `android --serial <serial> status` to confirm the model and Android
-   version.
-3. Inspect current state with `android --serial <serial> screenshot` and, when
-   structure matters, `android --serial <serial> uiautomator-dump`.
-4. Interact with `tap`, `swipe`, `text`, `keyevent`, `open-url`, `app-start`,
+1. Use `android devices` to discover connected devices. The built-in emulator
+   defaults to `127.0.0.1:5555` through `ANDROID_SERIAL`.
+2. Use `android status` or `android health` to confirm the model, Android
+   version, boot completion, display size, focus, and available live-view
+   endpoint.
+3. For emulator startup, block on `android wait-for-boot` before interacting.
+4. Inspect current state with `android snapshot`, or combine
+   `android screenshot` with `android uiautomator-dump` when you want separate
+   files.
+5. Interact with `tap`, `swipe`, `text`, `keyevent`, `open-url`, `app-start`,
    and `app-stop`.
-5. Re-capture screenshots or UI dumps after each consequential action.
+6. Re-capture screenshots or UI dumps after each consequential action.
 
 ## Files and recordings
 
 - `android --serial <serial> screenshot [path]` saves a PNG.
 - `android --serial <serial> record [--seconds N] [path]` saves an MP4.
 - `android --serial <serial> uiautomator-dump [path]` saves the current UI XML.
+- `android --serial <serial> snapshot [--name NAME]` writes a screenshot, UI
+  XML, and health metadata bundle together.
+- `android --serial <serial> logcat [--lines N] [path]` saves recent logcat
+  output for debugging and failure triage.
 - `android --serial <serial> pull <remote> [path]` copies one device file into
   Hermes storage.
 - `android --serial <serial> push <local> <remote>` sends one local file to the
@@ -47,6 +55,8 @@ When no path is supplied, captures are stored under
 ## Interaction patterns
 
 - Prefer screenshot plus UI dump together for complex apps.
+- Use `snapshot` when you need a reproducible checkpoint before or after a
+  risky step.
 - Use `tap` and `swipe` for pointer interaction.
 - Use `text` only for simple whitespace-separated text. For passwords, symbols,
   or keyboards that transform input, prefer app-specific deep links or
@@ -58,6 +68,10 @@ When no path is supplied, captures are stored under
 ## Limits
 
 - Screen recordings are bounded to 180 seconds per command.
+- `wait-for-boot` is a readiness helper, not a success guarantee for the app
+  under test; always verify the app state explicitly after boot.
+- `live-view` reports the current adb and gRPC/WebRTC endpoints but does not
+  guarantee a compatible external viewer is already attached.
 - Hermes does not assume every screen is machine-readable; always verify the
   resulting screenshot or UI dump before continuing.
 - Do not install APKs, change device trust settings, or factory-reset devices

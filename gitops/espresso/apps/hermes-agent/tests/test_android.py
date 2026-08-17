@@ -5,6 +5,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "android.py"
@@ -94,6 +95,73 @@ class AndroidScriptTests(unittest.TestCase):
 
         self.assertEqual(resolved, destination.resolve())
         self.assertTrue(destination.parent.is_dir())
+
+    def test_parse_wm_size_extracts_dimensions(self) -> None:
+        self.assertEqual(
+            android.parse_wm_size("Physical size: 1080x2400"),
+            {"width": 1080, "height": 2400},
+        )
+        self.assertIsNone(android.parse_wm_size("garbage"))
+
+    def test_live_view_uses_env_overrides(self) -> None:
+        os.environ["ANDROID_EMULATOR_GRPC_URL"] = "http://127.0.0.1:8554"
+        self.assertEqual(
+            android.live_view("127.0.0.1:5555"),
+            {
+                "serial": "127.0.0.1:5555",
+                "adb_endpoint": "127.0.0.1:5555",
+                "grpc_url": "http://127.0.0.1:8554",
+                "webrtc_url": "http://127.0.0.1:8554",
+            },
+        )
+
+    @mock.patch.object(android, "run_adb")
+    def test_ensure_device_connection_connects_missing_tcp_endpoints(self, run_adb: mock.Mock) -> None:
+        run_adb.side_effect = [
+            "List of devices attached\n",
+            "connected to 127.0.0.1:5555\n",
+        ]
+
+        android.ensure_device_connection("127.0.0.1:5555")
+
+        self.assertEqual(
+            run_adb.call_args_list,
+            [
+                mock.call(None, "devices", "-l"),
+                mock.call(None, "connect", "127.0.0.1:5555", check=False),
+            ],
+        )
+
+    @mock.patch.object(android, "device_entry")
+    @mock.patch.object(android, "shell_text")
+    @mock.patch.object(android, "ensure_device_connection")
+    def test_health_report_collects_focus_and_display(
+        self,
+        ensure_device_connection: mock.Mock,
+        shell_text: mock.Mock,
+        device_entry: mock.Mock,
+    ) -> None:
+        del ensure_device_connection
+        device_entry.return_value = {"serial": "127.0.0.1:5555", "state": "device"}
+        shell_text.side_effect = [
+            "1",
+            "stopped",
+            "Physical size: 1080x2400",
+            "Physical density: 420",
+            "mCurrentFocus=Window{123 u0 com.android.chrome/com.google.android.apps.chrome.Main}",
+        ]
+
+        with mock.patch.dict(
+            os.environ,
+            {"ANDROID_EMULATOR_GRPC_URL": "http://127.0.0.1:8554"},
+            clear=False,
+        ):
+            health = android.health_report("127.0.0.1:5555")
+
+        self.assertTrue(health["boot_completed"])
+        self.assertEqual(health["display"], {"width": 1080, "height": 2400})
+        self.assertIn("mCurrentFocus", health["focus"])
+        self.assertEqual(health["live_view"]["grpc_url"], "http://127.0.0.1:8554")
 
 
 if __name__ == "__main__":
