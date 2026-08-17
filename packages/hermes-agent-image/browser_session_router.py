@@ -2,19 +2,21 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
 import threading
 import time
 import uuid
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
 
-_COMMAND_LOCK = threading.RLock()
+_ROUTER_LOCK = threading.RLock()
+_SESSION_LOCKS: Dict[str, threading.RLock] = {}
+_INFLIGHT_COMMANDS: Dict[str, Dict[str, Any]] = {}
 _MAX_UPLOAD_FILES = 10
 _MAX_UPLOAD_FILE_BYTES = 100 * 1024 * 1024
 _MAX_UPLOAD_TOTAL_BYTES = 250 * 1024 * 1024
@@ -37,7 +39,7 @@ def create_target_group(cdp_url: str) -> Dict[str, Any]:
     """Create a root page in Chrome's default context for a new Hermes task."""
     if not enabled():
         return {}
-    with _COMMAND_LOCK:
+    with _ROUTER_LOCK:
         created = _cdp(cdp_url, "Target.createTarget", {"url": "about:blank"})
         target_id = str(created.get("targetId") or "")
         if not target_id:
@@ -64,9 +66,62 @@ def _live_owned(session: Dict[str, Any], targets: Dict[str, Dict[str, Any]]) -> 
     return [target_id for target_id in owned if target_id in targets]
 
 
+def _task_lock(task_id: str) -> threading.RLock:
+    with _ROUTER_LOCK:
+        lock = _SESSION_LOCKS.get(task_id)
+        if lock is None:
+            lock = threading.RLock()
+            _SESSION_LOCKS[task_id] = lock
+        return lock
+
+
+def _event_root() -> Path:
+    destination = _files_root() / "browser-session-events"
+    destination.mkdir(parents=True, exist_ok=True)
+    return destination
+
+
+def _event_path(task_id: str) -> Path:
+    return _event_root() / f"{_safe_task_name(task_id)}.jsonl"
+
+
+def _append_event(task_id: str, event: str, **payload: Any) -> None:
+    if not task_id:
+        return
+    record = {
+        "recorded_at": _now_iso(),
+        "task_id": task_id,
+        "event": event,
+        **payload,
+    }
+    with _ROUTER_LOCK:
+        with _event_path(task_id).open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n")
+
+
+def list_persisted_events(task_id: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+    candidates = [_event_path(task_id)] if task_id else sorted(_event_root().glob("*.jsonl"))
+    events: List[Dict[str, Any]] = []
+    for path in candidates:
+        if not path.exists():
+            continue
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except FileNotFoundError:
+            continue
+        for line in lines[-max(1, limit):]:
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(payload, dict):
+                events.append(payload)
+    return events[-max(1, limit):]
+
+
 def _claim_popup_descendants(
     session: Dict[str, Any], targets: Dict[str, Dict[str, Any]], new_ids: Iterable[str] = (),
-) -> List[str]:
+) -> tuple[List[str], List[str], List[str]]:
     """Claim opener descendants plus targets created by the serialized command."""
     owned = set(_live_owned(session, targets))
     changed = True
@@ -79,15 +134,20 @@ def _claim_popup_descendants(
     # A target with an opener owned by another task is not ours, even if it
     # happened to appear while this serialized command was running.  Only the
     # opener-less delta is the fallback for rel=noopener/window.open(...).
-    owned.update(
+    claimed_orphans = sorted(
         target_id
         for target_id in new_ids
         if target_id in targets and not targets[target_id].get("openerId")
     )
+    owned.update(claimed_orphans)
+    ignored_orphans = sorted(
+        target_id for target_id in new_ids
+        if target_id in targets and target_id not in owned
+    )
     ordered = [item for item in session.get("owned_target_ids", []) if item in owned]
     ordered.extend(target_id for target_id in targets if target_id in owned and target_id not in ordered)
     session["owned_target_ids"] = ordered
-    return ordered
+    return ordered, claimed_orphans, ignored_orphans
 
 
 def _tabs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -151,9 +211,9 @@ def run(
 
     session["task_id"] = task_id
     cdp_url = str(session.get("cdp_url") or "")
-    with _COMMAND_LOCK:
+    with _task_lock(task_id):
         before = _page_targets(cdp_url)
-        owned = _claim_popup_descendants(session, before)
+        owned, _, _ = _claim_popup_descendants(session, before)
         active = str(session.get("active_target_id") or "")
         if active not in owned:
             active = owned[-1] if owned else ""
@@ -162,19 +222,68 @@ def run(
             session.update(created)
             active = str(session["active_target_id"])
             persist_session(task_id, session)
+            _append_event(
+                task_id,
+                "session.created",
+                active_target_id=active,
+                root_target_id=session.get("root_target_id"),
+            )
 
         select_error = _select_target(task_id, session, raw_run, active, timeout)
         if select_error:
             persist_session(task_id, session)
+            _append_event(
+                task_id,
+                "command.select_failed",
+                command=command,
+                active_target_id=active,
+                error=select_error.get("error"),
+            )
             return select_error
 
-        result = raw_run(task_id, command, args, timeout, engine_override)
-        if command in _POPUP_SETTLE_COMMANDS:
-            time.sleep(0.2)
+        command_id = uuid.uuid4().hex[:12]
+        with _ROUTER_LOCK:
+            _INFLIGHT_COMMANDS[command_id] = {
+                "task_id": task_id,
+                "command": command,
+                "started_at": _now_iso(),
+                "active_target_id": active,
+            }
+        _append_event(
+            task_id,
+            "command.started",
+            command_id=command_id,
+            command=command,
+            active_target_id=active,
+        )
+        try:
+            result = raw_run(task_id, command, args, timeout, engine_override)
+            if command in _POPUP_SETTLE_COMMANDS:
+                time.sleep(0.2)
+        finally:
+            with _ROUTER_LOCK:
+                overlapping_tasks = sorted(
+                    {
+                        str(entry.get("task_id") or "")
+                        for key, entry in _INFLIGHT_COMMANDS.items()
+                        if key != command_id and str(entry.get("task_id") or "") != task_id
+                    }
+                )
+                _INFLIGHT_COMMANDS.pop(command_id, None)
 
         after = _page_targets(cdp_url)
         new_ids = set(after) - set(before)
-        owned = _claim_popup_descendants(session, after, new_ids)
+        allow_orphans = len(overlapping_tasks) == 0
+        claimed_new_ids = [
+            target_id
+            for target_id in new_ids
+            if target_id in after and str(after[target_id].get("openerId") or "") in owned
+        ]
+        owned, claimed_orphans, ignored_orphans = _claim_popup_descendants(
+            session,
+            after,
+            new_ids if allow_orphans else claimed_new_ids,
+        )
         previous = active
         popup_ids = [target_id for target_id in owned if target_id in new_ids]
         if popup_ids:
@@ -184,6 +293,20 @@ def run(
         session["active_target_id"] = active
         persist_session(task_id, session)
         _retarget_supervisor(task_id, previous, active)
+        _append_event(
+            task_id,
+            "command.completed",
+            command_id=command_id,
+            command=command,
+            active_target_id=active,
+            previous_target_id=previous,
+            new_target_ids=sorted(str(target_id) for target_id in new_ids),
+            popup_target_ids=popup_ids,
+            claimed_orphan_target_ids=claimed_orphans,
+            ignored_orphan_target_ids=ignored_orphans,
+            overlapping_tasks=overlapping_tasks,
+            success=bool(result.get("success", True)),
+        )
         return result
 
 
@@ -192,7 +315,7 @@ def close_target_group(session: Dict[str, Any]) -> None:
     if not session.get("shared_profile_session"):
         return
     cdp_url = str(session.get("cdp_url") or "")
-    with _COMMAND_LOCK:
+    with _ROUTER_LOCK:
         try:
             targets = _page_targets(cdp_url)
         except Exception:
@@ -202,7 +325,9 @@ def close_target_group(session: Dict[str, Any]) -> None:
                 _cdp(cdp_url, "Target.closeTarget", {"targetId": target_id})
             except Exception:
                 pass
-        remove_persisted_session(str(session.get("task_id") or ""))
+        task_id = str(session.get("task_id") or "")
+        remove_persisted_session(task_id)
+        _append_event(task_id, "session.closed", closed_target_ids=_live_owned(session, targets))
 
 
 def _files_root() -> Path:
@@ -244,6 +369,7 @@ def persist_session(task_id: str, session: Dict[str, Any]) -> None:
             for target_id in session.get("owned_target_ids", [])
             if str(target_id)
         ],
+        "event_log_path": str(_event_path(task_id)),
     }
     destination = _session_path(task_id)
     temp = destination.with_suffix(".tmp")
@@ -256,6 +382,10 @@ def remove_persisted_session(task_id: str) -> None:
         return
     try:
         _session_path(task_id).unlink()
+    except FileNotFoundError:
+        pass
+    try:
+        _event_path(task_id).unlink()
     except FileNotFoundError:
         pass
 

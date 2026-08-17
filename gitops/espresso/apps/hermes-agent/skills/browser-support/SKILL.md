@@ -26,6 +26,7 @@ outside the high-level browser tools.
 ```sh
 browser-support targets
 browser-support session-state [task-id]
+browser-support session-events [task-id] [--limit N]
 browser-support frame-tree <target-id>
 browser-support clipboard-get <target-id>
 browser-support clipboard-set <target-id> '<text>'
@@ -53,6 +54,10 @@ browser-support diagnostics
   progress, never a false guarantee.
 - `session-state` and `--task-id` are the safest way to line low-level helper
   calls up with the task-owned shared-profile page Hermes is already driving.
+- `session-events` shows the persisted routing history for each task, including
+  overlap warnings when concurrent commands made opener-less popup ownership
+  ambiguous. Treat those warnings as a signal to refresh page state and avoid
+  assuming Hermes already switched to a newly opened page.
 - `click`, `touch-*`, and `drag` are atomic helpers for pages or widgets that
   need raw input events. Re-check the page state after each gesture.
 - `media-state` reports bounded audio/video element state for pages that hide

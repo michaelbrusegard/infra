@@ -118,6 +118,29 @@ class BrowserSupportTests(unittest.TestCase):
 
         self.assertEqual(result["checkpoints"], [payload])
 
+    def test_session_events_reads_task_history(self) -> None:
+        events = self.browser_files / "browser-session-events" / "shopping-task.jsonl"
+        events.parent.mkdir(parents=True, exist_ok=True)
+        events.write_text(
+            "\n".join(
+                [
+                    json.dumps({"event": "command.started", "task_id": "shopping-task"}),
+                    json.dumps({"event": "command.completed", "task_id": "shopping-task"}),
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        result = browser_support.handle_session_events(
+            argparse.Namespace(task_id="shopping-task", limit=10)
+        )
+
+        self.assertEqual(
+            [item["event"] for item in result["events"]],
+            ["command.started", "command.completed"],
+        )
+
     def test_cleanup_prunes_old_files(self) -> None:
         target = self.browser_files / "browser-checkpoints" / "old.json"
         target.write_text("{}", encoding="utf-8")

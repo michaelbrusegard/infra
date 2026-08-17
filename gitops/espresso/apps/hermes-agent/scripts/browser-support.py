@@ -88,8 +88,16 @@ def session_bucket() -> Path:
     return browser_bucket("browser-sessions")
 
 
+def event_bucket() -> Path:
+    return browser_bucket("browser-session-events")
+
+
 def session_path(task_id: str) -> Path:
     return session_bucket() / f"{safe_slug(task_id)}.json"
+
+
+def event_path(task_id: str) -> Path:
+    return event_bucket() / f"{safe_slug(task_id)}.jsonl"
 
 
 def load_session_state(task_id: str) -> dict[str, Any]:
@@ -109,6 +117,34 @@ def list_session_states() -> list[dict[str, Any]]:
         if isinstance(payload, dict):
             sessions.append(payload)
     return sessions
+
+
+def load_session_events(task_id: str, limit: int = 50) -> list[dict[str, Any]]:
+    payload: list[dict[str, Any]] = []
+    candidate = event_path(task_id)
+    if not candidate.exists():
+        return payload
+    for line in candidate.read_text(encoding="utf-8").splitlines()[-max(1, limit):]:
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(record, dict):
+            payload.append(record)
+    return payload
+
+
+def list_session_events(limit: int = 50) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for candidate in sorted(event_bucket().glob("*.jsonl")):
+        for line in candidate.read_text(encoding="utf-8").splitlines()[-max(1, limit):]:
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(record, dict):
+                events.append(record)
+    return events[-max(1, limit):]
 
 
 def resolve_target_id(target_id: str | None, task_id: str | None) -> str:
@@ -490,6 +526,12 @@ def handle_session_state(args: argparse.Namespace) -> dict[str, Any]:
     return {"sessions": list_session_states()}
 
 
+def handle_session_events(args: argparse.Namespace) -> dict[str, Any]:
+    if args.task_id:
+        return {"task_id": args.task_id, "events": load_session_events(args.task_id, args.limit)}
+    return {"events": list_session_events(args.limit)}
+
+
 def handle_frame_tree(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
     target_id, target = resolve_target(client, args)
@@ -804,6 +846,10 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
             "count": len(sessions),
             "items": sessions,
         },
+        "session_events": {
+            "count": len(list(event_bucket().glob("*.jsonl"))),
+            "recent": list_session_events(20),
+        },
         "profile": {
             "root": str(profile_root),
             "profile_dir": str(profile_root / "profile"),
@@ -830,6 +876,7 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
 HANDLERS = {
     "targets": handle_targets,
     "session-state": handle_session_state,
+    "session-events": handle_session_events,
     "frame-tree": handle_frame_tree,
     "clipboard-get": handle_clipboard_get,
     "clipboard-set": handle_clipboard_set,
@@ -870,6 +917,10 @@ def parser() -> argparse.ArgumentParser:
 
     session_state = sub.add_parser("session-state", help="show persisted task-owned browser session metadata")
     session_state.add_argument("task_id", nargs="?", help="optional task identifier; omit to list all persisted sessions")
+
+    session_events = sub.add_parser("session-events", help="show persisted task event routing history")
+    session_events.add_argument("task_id", nargs="?", help="optional task identifier; omit to merge recent events across tasks")
+    session_events.add_argument("--limit", type=int, default=50)
 
     frame_tree = sub.add_parser("frame-tree", help="return the Page.getFrameTree payload for one target")
     add_target_locator_arguments(frame_tree)

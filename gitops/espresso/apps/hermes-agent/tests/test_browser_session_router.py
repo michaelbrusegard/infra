@@ -50,16 +50,34 @@ class BrowserSessionRouterTests(unittest.TestCase):
         self.assertEqual(payload["task_id"], "task/with spaces")
         self.assertEqual(payload["active_target_id"], "active-target")
         self.assertEqual(payload["owned_target_ids"], ["root-target", "active-target"])
+        self.assertTrue(payload["event_log_path"].endswith("task_with_spaces.jsonl"))
         self.assertIn("updated_at", payload)
+
+    def test_list_persisted_events_reads_jsonl(self) -> None:
+        events = self.browser_files / "browser-session-events" / "task.jsonl"
+        events.parent.mkdir(parents=True, exist_ok=True)
+        events.write_text(
+            '{"event":"command.started","task_id":"task"}\n'
+            '{"event":"command.completed","task_id":"task"}\n',
+            encoding="utf-8",
+        )
+
+        payload = browser_session_router.list_persisted_events("task", limit=10)
+
+        self.assertEqual([item["event"] for item in payload], ["command.started", "command.completed"])
 
     def test_remove_persisted_session_deletes_metadata(self) -> None:
         metadata = self.browser_files / "browser-sessions" / "task.json"
+        events = self.browser_files / "browser-session-events" / "task.jsonl"
         metadata.parent.mkdir(parents=True, exist_ok=True)
+        events.parent.mkdir(parents=True, exist_ok=True)
         metadata.write_text("{}", encoding="utf-8")
+        events.write_text("{}", encoding="utf-8")
 
         browser_session_router.remove_persisted_session("task")
 
         self.assertFalse(metadata.exists())
+        self.assertFalse(events.exists())
 
 
 if __name__ == "__main__":
