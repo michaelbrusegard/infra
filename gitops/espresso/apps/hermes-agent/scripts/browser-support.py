@@ -505,6 +505,147 @@ def build_challenge_summary(page: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _body_fragments(page: dict[str, Any], limit: int = 3) -> list[str]:
+    fragments: list[str] = []
+    for raw_line in str(page.get("body_text") or "").splitlines():
+        line = " ".join(raw_line.split()).strip()
+        if len(line) < 24:
+            continue
+        if line not in fragments:
+            fragments.append(line[:160])
+        if len(fragments) >= limit:
+            break
+    return fragments
+
+
+def verify_page_state(
+    current_page: dict[str, Any],
+    *,
+    expected_page: dict[str, Any] | None = None,
+    url_substring: str | None = None,
+    title_substring: str | None = None,
+    body_substrings: list[str] | None = None,
+    forbidden_signals: list[str] | None = None,
+) -> dict[str, Any]:
+    current_challenge = build_challenge_summary(current_page)
+    checks: list[dict[str, Any]] = []
+    evidence: list[str] = []
+    warnings: list[str] = []
+
+    current_url = str(current_page.get("url") or "")
+    current_title = str(current_page.get("title") or "")
+    current_body = str(current_page.get("body_text") or "")
+
+    def record(name: str, matched: bool, detail: str) -> None:
+        checks.append({"name": name, "matched": matched, "detail": detail})
+        if matched:
+            evidence.append(detail)
+
+    if expected_page is not None:
+        expected_url = str(expected_page.get("url") or "")
+        expected_title = str(expected_page.get("title") or "")
+        expected_path = urlparse(expected_url).path or "/"
+        current_path = urlparse(current_url).path or "/"
+        expected_fragments = _body_fragments(expected_page)
+
+        if expected_title:
+            matched = current_title == expected_title
+            record(
+                "checkpoint_title",
+                matched,
+                f"title {'matches' if matched else 'differs from'} checkpoint ({expected_title})",
+            )
+        if expected_url:
+            matched = current_url == expected_url
+            record(
+                "checkpoint_url",
+                matched,
+                f"url {'matches' if matched else 'differs from'} checkpoint ({expected_url})",
+            )
+            path_matched = current_path == expected_path
+            record(
+                "checkpoint_url_path",
+                path_matched,
+                f"url path {'matches' if path_matched else 'differs from'} checkpoint ({expected_path})",
+            )
+        if expected_fragments:
+            fragment_hits = [fragment for fragment in expected_fragments if fragment in current_body]
+            matched = bool(fragment_hits)
+            record(
+                "checkpoint_body_fragments",
+                matched,
+                "body still contains checkpoint text fragments"
+                if matched
+                else "body no longer contains sampled checkpoint text fragments",
+            )
+
+    if url_substring:
+        matched = url_substring in current_url
+        record(
+            "url_substring",
+            matched,
+            f"url {'contains' if matched else 'does not contain'} {url_substring!r}",
+        )
+    if title_substring:
+        matched = title_substring in current_title
+        record(
+            "title_substring",
+            matched,
+            f"title {'contains' if matched else 'does not contain'} {title_substring!r}",
+        )
+    for token in body_substrings or []:
+        matched = token in current_body
+        record(
+            "body_substring",
+            matched,
+            f"body {'contains' if matched else 'does not contain'} {token!r}",
+        )
+
+    present_signals = set(current_challenge["signals"])
+    if forbidden_signals:
+        for signal in forbidden_signals:
+            matched = signal not in present_signals
+            checks.append(
+                {
+                    "name": "forbidden_signal",
+                    "matched": matched,
+                    "detail": f"signal {signal!r} {'is absent' if matched else 'is still present'}",
+                    "signal": signal,
+                }
+            )
+            if matched:
+                evidence.append(f"signal {signal!r} is absent")
+
+    if current_challenge["challenge_detected"]:
+        warnings.append(
+            "Challenge markers are still present. Treat any page match as provisional until a fresh browser snapshot confirms recovery."
+        )
+
+    explicit_failures = [item for item in checks if not item["matched"]]
+    explicit_successes = [item for item in checks if item["matched"]]
+    matched = bool(checks) and not explicit_failures
+    if expected_page is not None and not checks:
+        matched = False
+        warnings.append("No verification evidence was derived from the checkpoint payload.")
+    elif expected_page is not None and checks and not explicit_successes:
+        warnings.append("The checkpoint comparison found no positive recovery markers.")
+    elif expected_page is not None and explicit_successes and explicit_failures:
+        warnings.append("Some checkpoint markers still match, but the page has drifted; verify before resuming.")
+
+    confidence = "high" if matched and not warnings else "medium" if explicit_successes else "low"
+    if current_challenge["challenge_detected"]:
+        confidence = "low"
+
+    return {
+        "matched": matched,
+        "confidence": confidence,
+        "checks": checks,
+        "evidence": evidence,
+        "warnings": warnings,
+        "challenge": current_challenge,
+    }
+
+
 def profile_backup_path(name: str | None) -> Path:
     slug = safe_slug(name or datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ"), "profile")
     return browser_bucket("browser-profile-backups") / f"{slug}.tar.gz"
@@ -743,6 +884,27 @@ def handle_challenge_state(args: argparse.Namespace) -> dict[str, Any]:
     return {"target_id": target_id, "page": page, "challenge": summary, "progress": progress}
 
 
+def handle_verify_page(args: argparse.Namespace) -> dict[str, Any]:
+    client = CDPClient(args.cdp_url)
+    target_id = resolve_target_id(args.target_id, args.task_id)
+    page = collect_page_state(client, target_id)
+    expected = load_previous_page(args.expected) if args.expected else None
+    verification = verify_page_state(
+        page,
+        expected_page=expected,
+        url_substring=args.url_substring,
+        title_substring=args.title_substring,
+        body_substrings=args.body_substring or [],
+        forbidden_signals=args.without_signal or [],
+    )
+    return {
+        "target_id": target_id,
+        "page": page,
+        "verification": verification,
+        "expected_page": expected,
+    }
+
+
 def handle_checkpoint_save(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
     target_id, target = resolve_target(client, args)
@@ -903,6 +1065,7 @@ HANDLERS = {
     "media-state": handle_media_state,
     "record-page": handle_record_page,
     "challenge-state": handle_challenge_state,
+    "verify-page": handle_verify_page,
     "checkpoint-save": handle_checkpoint_save,
     "checkpoint-list": handle_checkpoint_list,
     "checkpoint-delete": handle_checkpoint_delete,
@@ -988,6 +1151,26 @@ def parser() -> argparse.ArgumentParser:
     challenge = sub.add_parser("challenge-state", help="inspect one page for challenge or verification markers")
     add_target_locator_arguments(challenge)
     challenge.add_argument("--previous", help="previous checkpoint name or JSON path for progress-aware comparison")
+
+    verify_page = sub.add_parser(
+        "verify-page",
+        help="compare the current page against a checkpoint or explicit recovery markers",
+    )
+    add_target_locator_arguments(verify_page)
+    verify_page.add_argument("--expected", help="checkpoint name or JSON path to compare against")
+    verify_page.add_argument("--url-substring", help="require the current URL to contain this substring")
+    verify_page.add_argument("--title-substring", help="require the current title to contain this substring")
+    verify_page.add_argument(
+        "--body-substring",
+        action="append",
+        help="require the current body text to contain this substring; may be repeated",
+    )
+    verify_page.add_argument(
+        "--without-signal",
+        action="append",
+        choices=[label for label, _ in _CHALLENGE_PATTERNS],
+        help="require one challenge signal to be absent; may be repeated",
+    )
 
     checkpoint_save = sub.add_parser("checkpoint-save", help="save a screenshot-backed checkpoint for one browser page")
     add_target_locator_arguments(checkpoint_save)

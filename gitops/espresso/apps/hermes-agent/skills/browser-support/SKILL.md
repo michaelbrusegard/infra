@@ -36,6 +36,7 @@ browser-support touch-swipe --target-id <target-id> <x1> <y1> <x2> <y2> [--steps
 browser-support drag --target-id <target-id> <x1> <y1> <x2> <y2> [--steps N]
 browser-support media-state <target-id>
 browser-support challenge-state <target-id> [--previous checkpoint-or-json]
+browser-support verify-page <target-id> [--expected checkpoint-or-json] [--without-signal verification]
 browser-support checkpoint-save <target-id> <name> [--note ...]
 browser-support checkpoint-list
 browser-support checkpoint-delete <name>
@@ -52,6 +53,10 @@ browser-support diagnostics
   cannot guarantee that a challenge is solved. With `--previous`, it compares
   the current page state to earlier evidence and reports only possible
   progress, never a false guarantee.
+- `verify-page` is the conservative follow-up when you need structured evidence
+  that a page returned to an expected state. It compares the current page to a
+  saved checkpoint and/or explicit URL/title/body markers, and it stays
+  provisional when challenge signals remain.
 - `session-state` and `--task-id` are the safest way to line low-level helper
   calls up with the task-owned shared-profile page Hermes is already driving.
 - `session-events` shows the persisted routing history for each task, including

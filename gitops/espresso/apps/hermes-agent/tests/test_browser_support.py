@@ -101,6 +101,50 @@ class BrowserSupportTests(unittest.TestCase):
         self.assertTrue(progress["possible_progress"])
         self.assertIn("Challenge markers dropped", " ".join(progress["notes"]))
 
+    def test_verify_page_state_matches_checkpoint_without_false_guarantees(self) -> None:
+        verification = browser_support.verify_page_state(
+            {
+                "title": "Example Checkout",
+                "url": "https://shop.example/checkout?step=shipping",
+                "body_text": "Shipping address\nDelivery options\nPlace order",
+                "frames": [],
+            },
+            expected_page={
+                "title": "Example Checkout",
+                "url": "https://shop.example/checkout?step=shipping",
+                "body_text": "Shipping address\nDelivery options\nPlace order",
+                "frames": [],
+            },
+            forbidden_signals=["captcha", "verification"],
+        )
+
+        self.assertTrue(verification["matched"])
+        self.assertEqual(verification["confidence"], "high")
+        self.assertFalse(verification["warnings"])
+        self.assertIn("signal 'captcha' is absent", verification["evidence"])
+
+    def test_verify_page_state_stays_conservative_when_challenge_remains(self) -> None:
+        verification = browser_support.verify_page_state(
+            {
+                "title": "Example Checkout",
+                "url": "https://shop.example/checkout",
+                "body_text": "Verify you are human before continuing",
+                "frames": [{"src": "https://challenges.cloudflare.com/turnstile"}],
+            },
+            expected_page={
+                "title": "Example Checkout",
+                "url": "https://shop.example/checkout",
+                "body_text": "Shipping address\nDelivery options\nPlace order",
+                "frames": [],
+            },
+            forbidden_signals=["verification"],
+        )
+
+        self.assertFalse(verification["matched"])
+        self.assertEqual(verification["confidence"], "low")
+        self.assertTrue(verification["challenge"]["challenge_detected"])
+        self.assertIn("Challenge markers are still present", " ".join(verification["warnings"]))
+
     def test_profile_backup_writes_tarball(self) -> None:
         result = browser_support.handle_profile_backup(argparse.Namespace(name=None))
 
@@ -117,6 +161,43 @@ class BrowserSupportTests(unittest.TestCase):
         result = browser_support.handle_checkpoint_list(mock.Mock())
 
         self.assertEqual(result["checkpoints"], [payload])
+
+    @mock.patch.object(browser_support, "collect_page_state")
+    @mock.patch.object(browser_support, "CDPClient")
+    def test_verify_page_uses_checkpoint_expectations(
+        self,
+        client_cls: mock.Mock,
+        collect_page_state: mock.Mock,
+    ) -> None:
+        del client_cls
+        payload = {
+            "name": "cart-ready",
+            "page": {
+                "title": "Example Cart",
+                "url": "https://shop.example/cart",
+                "body_text": "Cart summary\nSubtotal",
+                "frames": [],
+            },
+        }
+        metadata = self.browser_files / "browser-checkpoints" / "cart-ready.json"
+        metadata.write_text(json.dumps(payload), encoding="utf-8")
+        collect_page_state.return_value = payload["page"]
+
+        result = browser_support.handle_verify_page(
+            argparse.Namespace(
+                cdp_url="http://127.0.0.1:9222",
+                target_id="target-1",
+                task_id=None,
+                expected="cart-ready",
+                url_substring=None,
+                title_substring=None,
+                body_substring=None,
+                without_signal=["captcha"],
+            )
+        )
+
+        self.assertTrue(result["verification"]["matched"])
+        self.assertEqual(result["expected_page"]["title"], "Example Cart")
 
     def test_session_events_reads_task_history(self) -> None:
         events = self.browser_files / "browser-session-events" / "shopping-task.jsonl"
@@ -171,6 +252,92 @@ class BrowserSupportTests(unittest.TestCase):
 
         self.assertIn(str(session), result["removed"])
         self.assertIn(str(artifact), result["removed"])
+
+    @mock.patch.object(browser_support, "resolve_target")
+    @mock.patch.object(browser_support, "CDPClient")
+    def test_click_dispatches_atomic_mouse_sequence(
+        self,
+        client_cls: mock.Mock,
+        resolve_target: mock.Mock,
+    ) -> None:
+        fake_client = mock.Mock()
+        client_cls.return_value = fake_client
+        fake_target = browser_support.Target("target-1", "Title", "https://example.com", "page", "ws://target")
+        resolve_target.return_value = ("target-1", fake_target)
+
+        result = browser_support.handle_click(
+            argparse.Namespace(
+                cdp_url="http://127.0.0.1:9222",
+                target_id="target-1",
+                task_id=None,
+                x=120,
+                y=340,
+                button="left",
+                click_count=1,
+            )
+        )
+
+        self.assertEqual(result["click"], {"x": 120, "y": 340, "button": "left", "click_count": 1})
+        self.assertEqual(
+            [call.args[1] for call in fake_client.call.call_args_list],
+            ["Input.dispatchMouseEvent", "Input.dispatchMouseEvent", "Input.dispatchMouseEvent"],
+        )
+
+    @mock.patch.object(browser_support, "resolve_target")
+    @mock.patch.object(browser_support, "CDPClient")
+    def test_touch_swipe_dispatches_interpolated_events(
+        self,
+        client_cls: mock.Mock,
+        resolve_target: mock.Mock,
+    ) -> None:
+        fake_client = mock.Mock()
+        client_cls.return_value = fake_client
+        fake_target = browser_support.Target("target-1", "Title", "https://example.com", "page", "ws://target")
+        resolve_target.return_value = ("target-1", fake_target)
+
+        result = browser_support.handle_touch_swipe(
+            argparse.Namespace(
+                cdp_url="http://127.0.0.1:9222",
+                target_id="target-1",
+                task_id=None,
+                x1=10,
+                y1=20,
+                x2=110,
+                y2=220,
+                steps=4,
+            )
+        )
+
+        self.assertEqual(result["swipe"]["steps"], 4)
+        self.assertEqual(len(fake_client.call.call_args_list), 6)
+
+    @mock.patch.object(browser_support, "resolve_target")
+    @mock.patch.object(browser_support, "CDPClient")
+    def test_drag_dispatches_press_move_release_sequence(
+        self,
+        client_cls: mock.Mock,
+        resolve_target: mock.Mock,
+    ) -> None:
+        fake_client = mock.Mock()
+        client_cls.return_value = fake_client
+        fake_target = browser_support.Target("target-1", "Title", "https://example.com", "page", "ws://target")
+        resolve_target.return_value = ("target-1", fake_target)
+
+        result = browser_support.handle_drag(
+            argparse.Namespace(
+                cdp_url="http://127.0.0.1:9222",
+                target_id="target-1",
+                task_id=None,
+                x1=1,
+                y1=2,
+                x2=51,
+                y2=62,
+                steps=3,
+            )
+        )
+
+        self.assertEqual(result["drag"]["steps"], 3)
+        self.assertEqual(len(fake_client.call.call_args_list), 6)
 
     @mock.patch.object(browser_support.time, "sleep")
     @mock.patch.object(browser_support.subprocess, "run")
