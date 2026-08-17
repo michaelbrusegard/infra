@@ -60,6 +60,10 @@ def browser_profile_root() -> Path:
     return Path(os.environ.get("BROWSER_PROFILE_ROOT", "/opt/browser")).resolve()
 
 
+def browser_supervisor_root() -> Path:
+    return browser_files_root() / "browser-supervisor"
+
+
 def allowed_local_roots() -> list[Path]:
     return [
         (hermes_home() / "workspace").resolve(),
@@ -208,6 +212,16 @@ def directory_size(path: Path) -> int:
         except FileNotFoundError:
             continue
     return total
+
+
+def load_json_file(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
 
 
 def iso_now() -> str:
@@ -834,6 +848,7 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
     unpacked_extensions = profile_root / "extensions-unpacked"
     browser_files = browser_files_root()
     sessions = list_session_states()
+    supervisor = load_json_file(browser_supervisor_root() / "status.json")
     return {
         "cdp": {
             "browser": version.get("Browser"),
@@ -850,6 +865,7 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
             "count": len(list(event_bucket().glob("*.jsonl"))),
             "recent": list_session_events(20),
         },
+        "supervisor": supervisor,
         "profile": {
             "root": str(profile_root),
             "profile_dir": str(profile_root / "profile"),

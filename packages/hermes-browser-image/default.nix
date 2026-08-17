@@ -43,6 +43,46 @@
       mkdir -p /tmp/.X11-unix
       rm -f /tmp/.X99-lock /tmp/.X11-unix/X99
 
+      browser_files_root=''${BROWSER_FILES_ROOT:-/opt/browser-files}
+      supervisor_dir="$browser_files_root/browser-supervisor"
+      status_file="$supervisor_dir/status.json"
+      mkdir -p "$supervisor_dir"
+
+      json_escape() {
+        local value=$1
+        value=''${value//\\/\\\\}
+        value=''${value//\"/\\\"}
+        value=''${value//$'\n'/\\n}
+        value=''${value//$'\r'/\\r}
+        value=''${value//$'\t'/\\t}
+        printf '%s' "$value"
+      }
+
+      iso_now() {
+        date -u +%Y-%m-%dT%H:%M:%SZ
+      }
+
+      write_status() {
+        local state=$1
+        local tmp="$status_file.tmp"
+        cat >"$tmp" <<EOF
+      {
+        "updated_at": "$(iso_now)",
+        "state": "$(json_escape "$state")",
+        "display": "$(json_escape "$DISPLAY")",
+        "xvfb_pid": ''${xvfb_pid:-null},
+        "x11vnc_pid": ''${x11vnc_pid:-null},
+        "novnc_pid": ''${novnc_pid:-null},
+        "browser_pid": ''${browser_pid:-null},
+        "restart_count": ''${restart_count:-0},
+        "last_exit_code": ''${last_exit_code:-null},
+        "extension_count": ''${extension_count:-0},
+        "managed_policy_count": ''${managed_policy_count:-0}
+      }
+      EOF
+        mv "$tmp" "$status_file"
+      }
+
       Xvfb "$DISPLAY" \
         -screen 0 1440x900x24 \
         -xkbdir "$XKB_CONFIG_ROOT" \
@@ -53,8 +93,15 @@
       browser_pid=
       novnc_pid=
       x11vnc_pid=
+      restart_count=0
+      last_exit_code=null
+      extension_count=0
+      managed_policy_count=0
+      shutting_down=0
 
       cleanup() {
+        shutting_down=1
+        write_status "stopping"
         if [ -n "$browser_pid" ]; then
           kill -TERM "$browser_pid" 2>/dev/null || true
         fi
@@ -65,8 +112,10 @@
           kill -TERM "$x11vnc_pid" 2>/dev/null || true
         fi
         kill -TERM "$xvfb_pid" 2>/dev/null || true
+        write_status "stopped"
       }
       trap cleanup EXIT INT TERM
+      write_status "starting"
 
       for _ in $(seq 1 50); do
         if [ -S /tmp/.X11-unix/X99 ]; then
@@ -107,6 +156,7 @@
         find /opt/browser/policies/managed -maxdepth 1 -type f -name '*.json' \
           -exec cp {} "$managed_policy_dir/" \;
       fi
+      managed_policy_count=$(find "$managed_policy_dir" -maxdepth 1 -type f -name '*.json' | wc -l)
 
       extra_args=()
       extension_dirs=()
@@ -118,6 +168,7 @@
             -type f -name manifest.json | sort
         )
       fi
+      extension_count=''${#extension_dirs[@]}
       if [ "''${#extension_dirs[@]}" -gt 0 ]; then
         IFS=,
         extra_args+=("--load-extension=''${extension_dirs[*]}")
@@ -130,9 +181,25 @@
         done < /opt/browser/chromium-extra-args
       fi
 
-      ${pkgs.chromium}/bin/chromium "$@" "''${extra_args[@]}" &
-      browser_pid=$!
-      wait "$browser_pid"
+      while true; do
+        write_status "running"
+        ${pkgs.chromium}/bin/chromium "$@" "''${extra_args[@]}" &
+        browser_pid=$!
+        write_status "running"
+        set +e
+        wait "$browser_pid"
+        exit_code=$?
+        set -e
+        last_exit_code=$exit_code
+        browser_pid=
+        if [ "$shutting_down" -eq 1 ] || [ "$exit_code" -eq 0 ]; then
+          break
+        fi
+        restart_count=$((restart_count + 1))
+        write_status "restarting"
+        sleep 2
+      done
+      write_status "exited"
     '';
   };
 

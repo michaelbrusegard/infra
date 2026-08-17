@@ -159,6 +159,7 @@ jobs:
           docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp "$BROWSER_IMAGE_REF:nix" --version
           browser_id=$(docker run --detach --rm --read-only \
             -v "$smoke_root/browser-profile:/opt/browser" \
+            --tmpfs /opt/browser-files:rw,uid=10000,gid=10000,mode=0755 \
             --tmpfs /etc/chromium/policies/managed:rw,uid=10000,gid=10000,mode=0755 \
             --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
             --tmpfs /dev/shm:rw,uid=10000,gid=10000,mode=1777 \
@@ -185,6 +186,8 @@ jobs:
             http://127.0.0.1:6080/vnc.html >/dev/null
           docker exec "$browser_id" pgrep --full \
             'websockify.*127.0.0.1:6080.*127.0.0.1:5900' >/dev/null
+          docker exec "$browser_id" jq -e '.state == "running" and .managed_policy_count >= 1' \
+            /opt/browser-files/browser-supervisor/status.json >/dev/null
           docker exec "$browser_id" test ! -L \
             /etc/chromium/policies/managed/hermes-browser.json
           docker exec "$browser_id" grep --quiet ddkjiahejlhfcafbddmgiahcphecmpfh \

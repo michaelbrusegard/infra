@@ -215,6 +215,22 @@ class BrowserSupportTests(unittest.TestCase):
         self.assertEqual(result["fps"], 2)
         self.assertEqual(fake_client.call.call_count, 2)
 
+    @mock.patch.object(browser_support, "CDPClient")
+    def test_diagnostics_reads_supervisor_status(self, client_cls: mock.Mock) -> None:
+        fake_client = mock.Mock()
+        fake_client.version.return_value = {"Browser": "Chromium"}
+        fake_client.targets.return_value = []
+        client_cls.return_value = fake_client
+        supervisor = self.browser_files / "browser-supervisor" / "status.json"
+        supervisor.parent.mkdir(parents=True, exist_ok=True)
+        supervisor.write_text(json.dumps({"state": "running", "restart_count": 1}), encoding="utf-8")
+
+        result = browser_support.handle_diagnostics(
+            argparse.Namespace(cdp_url="http://127.0.0.1:9222")
+        )
+
+        self.assertEqual(result["supervisor"], {"state": "running", "restart_count": 1})
+
 
 if __name__ == "__main__":
     unittest.main()
