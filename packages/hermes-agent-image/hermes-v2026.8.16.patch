@@ -1,0 +1,639 @@
+diff --git a/agent/context_compressor.py b/agent/context_compressor.py
+index d66bee1cad6f63871534c8386783cd41050bab83..0e4602b595ed089fdeaa3d39ba1b5c4ce522f741 100644
+--- a/agent/context_compressor.py
++++ b/agent/context_compressor.py
+@@ -1684,7 +1684,8 @@ def _summarize_tool_result_unguarded(tool_name: str, tool_args: str, tool_conten
+         mode = args.get("mode", "replace")
+         return f"[patch] {mode} in {path} ({content_len:,} chars result)"
+ 
+-    if tool_name in {"browser_navigate", "browser_click", "browser_snapshot",
++    if tool_name in {"browser_navigate", "browser_click", "browser_click_at",
++                     "browser_upload", "browser_download", "browser_snapshot",
+                      "browser_type", "browser_scroll", "browser_vision"}:
+         url = args.get("url", "")
+         ref = args.get("ref", "")
+diff --git a/agent/prompt_builder.py b/agent/prompt_builder.py
+index a42474bf7c2b6f7a90559950065fcbe99dfffba5..b0ac80cf9f980dc3069552f6af54a4e773225beb 100644
+--- a/agent/prompt_builder.py
++++ b/agent/prompt_builder.py
+@@ -2082,6 +2082,9 @@ def build_nous_subscription_prompt(valid_tool_names: "set[str] | None" = None) -
+         "browser_navigate",
+         "browser_snapshot",
+         "browser_click",
++        "browser_click_at",
++        "browser_upload",
++        "browser_download",
+         "browser_type",
+         "browser_scroll",
+         "browser_console",
+diff --git a/agent/tool_guardrails.py b/agent/tool_guardrails.py
+index 6e6a9cd8f54fca06a8b4a18200672a6b9581ea56..f0e102b558f20b8cd92074eee1f7592c49f825eb 100644
+--- a/agent/tool_guardrails.py
++++ b/agent/tool_guardrails.py
+@@ -48,6 +48,9 @@ MUTATING_TOOL_NAMES = frozenset(
+         "memory",
+         "skill_manage",
+         "browser_click",
++        "browser_click_at",
++        "browser_upload",
++        "browser_download",
+         "browser_type",
+         "browser_press",
+         "browser_scroll",
+diff --git a/agent/transports/hermes_tools_mcp_server.py b/agent/transports/hermes_tools_mcp_server.py
+index 5595c48d84d2d7d779310fbdb0d8ea151b7a8862..131a82b13e5850633117a0ba2c2d5efaeb3464f8 100644
+--- a/agent/transports/hermes_tools_mcp_server.py
++++ b/agent/transports/hermes_tools_mcp_server.py
+@@ -114,6 +114,9 @@ EXPOSED_TOOLS: tuple[str, ...] = (
+     "web_extract",
+     "browser_navigate",
+     "browser_click",
++    "browser_click_at",
++    "browser_upload",
++    "browser_download",
+     "browser_type",
+     "browser_press",
+     "browser_snapshot",
+diff --git a/gateway/run.py b/gateway/run.py
+index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976bfd2ab058 100644
+--- a/gateway/run.py
++++ b/gateway/run.py
+@@ -3369,6 +3369,21 @@ def _platform_config_key(platform: "Platform") -> str:
+     return "cli" if platform == Platform.LOCAL else platform.value
+ 
+ 
++def _is_stateless_mattermost_source(source: Any) -> bool:
++    """Return whether a Mattermost post must run without persistent memory."""
++    from gateway.config import Platform as GatewayPlatform
++
++    channel_ids = {
++        channel_id.strip()
++        for channel_id in os.getenv("MATTERMOST_STATELESS_CHANNELS", "").split(",")
++        if channel_id.strip()
++    }
++    return (
++        source.platform == GatewayPlatform.MATTERMOST
++        and source.chat_id in channel_ids
++    )
++
++
+ def _teams_pipeline_plugin_enabled() -> bool:
+     """Return True when the standalone Teams pipeline plugin is enabled."""
+     config = _load_gateway_config()
+@@ -4028,6 +4043,17 @@ def _reconnect_needs_attention(info: dict, now: float) -> bool:
+     return (now - queued_at) >= _RECONNECT_ATTENTION_AFTER_SECONDS
+ 
+ 
++def _normalize_gateway_tool_progress_event(
++    event_type: str,
++) -> tuple[Optional[str], bool]:
++    """Render delegated child tools once using ordinary progress events."""
++    if event_type == "subagent.tool":
++        return "tool.started", True
++    if event_type in {"subagent.progress", "subagent_progress"}:
++        return None, False
++    return event_type, False
++
++
+ class TurnRunner:
+     """Per-turn collaborator carrying the tool-progress callbacks that used to
+     be nested closures inside ``GatewayRunner._run_agent_inner``.
+@@ -4046,6 +4072,10 @@ class TurnRunner:
+ 
+     def progress_callback(self, event_type: str, tool_name: str = None, preview: str = None, args: dict = None, **kwargs):
+         """Callback invoked by agent on tool lifecycle events."""
++        event_type, delegated_tool = _normalize_gateway_tool_progress_event(event_type)
++        if event_type is None:
++            return
++        progress_prefix = "🔀 " if delegated_tool else ""
+         ctx = self._ctx
+         # Live status line (Slack's assistant status): stash the current
+         # tool phrase on the adapter; the _keep_typing refresh renders it
+@@ -4133,7 +4163,7 @@ class TurnRunner:
+         # tool_start/tool_complete callbacks instead. Do not also enqueue
+         # name-correlated text events, which would duplicate cards and
+         # mispair concurrent calls to the same tool.
+-        if ctx._native_slack_task_cards and event_type in {
++        if not delegated_tool and ctx._native_slack_task_cards and event_type in {
+             "tool.started",
+             "tool.completed",
+         }:
+@@ -4216,7 +4246,9 @@ class TurnRunner:
+             # "💻 terminal" header so back-to-back commands render as
+             # adjacent code blocks under a single header.
+             _block_header = (
+-                "" if ctx.last_was_terminal_block[0] else f"{emoji} {tool_name}\n"
++                ""
++                if ctx.last_was_terminal_block[0]
++                else f"{progress_prefix}{emoji} {tool_name}\n"
+             )
+             _code_block_full = f"{_block_header}```\n{_cmd_full}\n```"
+             # Single-line, capped preview for non-verbose modes.
+@@ -4247,11 +4279,11 @@ class TurnRunner:
+                 # detail.  Platform message-length limits handle the rest.
+                 if _pl > 0 and len(args_str) > _pl:
+                     args_str = args_str[:_pl - 3] + "..."
+-                msg = f"{emoji} {tool_name}({list(args.keys())})\n{args_str}"
++                msg = f"{progress_prefix}{emoji} {tool_name}({list(args.keys())})\n{args_str}"
+             elif preview:
+-                msg = f"{emoji} {tool_name}: \"{preview}\""
++                msg = f"{progress_prefix}{emoji} {tool_name}: \"{preview}\""
+             else:
+-                msg = f"{emoji} {tool_name}..."
++                msg = f"{progress_prefix}{emoji} {tool_name}..."
+             ctx.progress_queue.put(msg)
+             return
+ 
+@@ -4291,14 +4323,14 @@ class TurnRunner:
+             _verb = get_tool_verb(tool_name)
+             if _verb:
+                 if verb_drops_preview(tool_name):
+-                    msg = f"{emoji} {_verb}"
++                    msg = f"{progress_prefix}{emoji} {_verb}"
+                 else:
+-                    msg = f"{emoji} {_verb}{tool_verb_connector(tool_name)}{preview}"
++                    msg = f"{progress_prefix}{emoji} {_verb}{tool_verb_connector(tool_name)}{preview}"
+             else:
+-                msg = f"{emoji} {tool_name}: \"{preview}\""
++                msg = f"{progress_prefix}{emoji} {tool_name}: \"{preview}\""
+             ctx.last_was_terminal_block[0] = False
+         else:
+-            msg = f"{emoji} {tool_name}..."
++            msg = f"{progress_prefix}{emoji} {tool_name}..."
+             ctx.last_was_terminal_block[0] = False
+ 
+         # Dedup: collapse consecutive identical progress messages.
+@@ -5482,6 +5514,7 @@ class TurnRunner:
+                 max_iterations=max_iterations,
+                 quiet_mode=True,
+                 verbose_logging=False,
++                skip_memory=_is_stateless_mattermost_source(ctx.source),
+                 enabled_toolsets=ctx.enabled_toolsets,
+                 disabled_toolsets=ctx.disabled_toolsets,
+                 ephemeral_system_prompt=combined_ephemeral or None,
+@@ -21962,6 +21995,11 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+             from agent.skill_utils import parse_config_string_list
+ 
+             disabled_toolsets = parse_config_string_list(agent_cfg.get("disabled_toolsets")) or None
++            stateless_session = _is_stateless_mattermost_source(source)
++            if stateless_session:
++                disabled_toolsets = sorted(
++                    set(disabled_toolsets or []) | {"memory", "session_search"}
++                )
+ 
+             pr = self._provider_routing
+             max_iterations = _current_max_iterations()
+@@ -21997,6 +22035,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+                     max_iterations=max_iterations,
+                     quiet_mode=True,
+                     verbose_logging=False,
++                    skip_memory=stateless_session,
+                     enabled_toolsets=enabled_toolsets,
+                     disabled_toolsets=disabled_toolsets,
+                     reasoning_config=reasoning_config,
+@@ -27490,6 +27529,11 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+         from agent.skill_utils import parse_config_string_list
+ 
+         disabled_toolsets = parse_config_string_list(agent_cfg_local.get("disabled_toolsets")) or None
++        stateless_session = _is_stateless_mattermost_source(source)
++        if stateless_session:
++            disabled_toolsets = sorted(
++                set(disabled_toolsets or []) | {"memory", "session_search"}
++            )
+ 
+         display_config = user_config.get("display", {})
+         if not isinstance(display_config, dict):
+diff --git a/plugins/platforms/mattermost/adapter.py b/plugins/platforms/mattermost/adapter.py
+index 4e80958b3516594ad3d8095698fde90017abfdf6..d88116575ff6c12b22997bc2a67231577839674e 100644
+--- a/plugins/platforms/mattermost/adapter.py
++++ b/plugins/platforms/mattermost/adapter.py
+@@ -139,6 +139,11 @@ class MattermostAdapter(BasePlatformAdapter):
+             config.extra.get("reply_mode", "")
+             or os.getenv("MATTERMOST_REPLY_MODE", "off")
+         ).lower()
++        self._stateless_channels = {
++            channel_id.strip()
++            for channel_id in os.getenv("MATTERMOST_STATELESS_CHANNELS", "").split(",")
++            if channel_id.strip()
++        }
+ 
+         self._last_post_status: Optional[int] = None
+         self._last_post_error: str = ""
+@@ -919,7 +924,10 @@ class MattermostAdapter(BasePlatformAdapter):
+ 
+         # Thread support: if the post is in a thread, use root_id. In
+         # thread mode, top-level channel posts are valid roots for progress.
+-        thread_id = post.get("root_id") or None
++        if channel_id in self._stateless_channels and post_id:
++            thread_id = post_id
++        else:
++            thread_id = post.get("root_id") or None
+         if (
+             not thread_id
+             and self._reply_mode == "thread"
+diff --git a/tools/browser_supervisor.py b/tools/browser_supervisor.py
+index d17806f4b2ada0df70a74b69c1311296aee5b985..2811dd394a5b0f845c9068f359df8ef730c57fcd 100644
+--- a/tools/browser_supervisor.py
++++ b/tools/browser_supervisor.py
+@@ -308,6 +308,7 @@ class CDPSupervisor:
+         task_id: str,
+         cdp_url: str,
+         *,
++        target_id: Optional[str] = None,
+         dialog_policy: str = DEFAULT_DIALOG_POLICY,
+         dialog_timeout_s: float = DEFAULT_DIALOG_TIMEOUT_S,
+     ) -> None:
+@@ -318,6 +319,7 @@ class CDPSupervisor:
+             )
+         self.task_id = task_id
+         self.cdp_url = cdp_url
++        self.target_id = target_id
+         self.dialog_policy = dialog_policy
+         self.dialog_timeout_s = float(dialog_timeout_s)
+ 
+@@ -742,8 +744,18 @@ class CDPSupervisor:
+         """Find a page target, attach flattened session, enable domains, install dialog bridge."""
+         resp = await self._cdp("Target.getTargets")
+         targets = resp.get("result", {}).get("targetInfos", [])
+-        page_target = next((t for t in targets if t.get("type") == "page"), None)
++        page_target = next(
++            (
++                target
++                for target in targets
++                if target.get("type") == "page"
++                and (not self.target_id or target.get("targetId") == self.target_id)
++            ),
++            None,
++        )
+         if page_target is None:
++            if self.target_id:
++                raise RuntimeError(f"CDP target {self.target_id} is no longer available")
+             created = await self._cdp("Target.createTarget", {"url": "about:blank"})
+             target_id = created["result"]["targetId"]
+         else:
+@@ -1443,6 +1455,7 @@ class _SupervisorRegistry:
+         task_id: str,
+         cdp_url: str,
+         *,
++        target_id: Optional[str] = None,
+         dialog_policy: str = DEFAULT_DIALOG_POLICY,
+         dialog_timeout_s: float = DEFAULT_DIALOG_TIMEOUT_S,
+         start_timeout: float = 15.0,
+@@ -1455,7 +1468,7 @@ class _SupervisorRegistry:
+         with self._lock:
+             existing = self._by_task.get(task_id)
+             if existing is not None:
+-                if existing.cdp_url == cdp_url:
++                if existing.cdp_url == cdp_url and existing.target_id == target_id:
+                     thread_ok = existing._thread is not None and existing._thread.is_alive()
+                     loop_ok = existing._loop is not None and existing._loop.is_running()
+                     if thread_ok and loop_ok:
+@@ -1469,6 +1482,7 @@ class _SupervisorRegistry:
+         supervisor = CDPSupervisor(
+             task_id=task_id,
+             cdp_url=cdp_url,
++            target_id=target_id,
+             dialog_policy=dialog_policy,
+             dialog_timeout_s=dialog_timeout_s,
+         )
+@@ -1476,7 +1490,11 @@ class _SupervisorRegistry:
+         with self._lock:
+             # Guard against a concurrent get_or_start from another thread.
+             already = self._by_task.get(task_id)
+-            if already is not None and already.cdp_url == cdp_url:
++            if (
++                already is not None
++                and already.cdp_url == cdp_url
++                and already.target_id == target_id
++            ):
+                 supervisor.stop()
+                 return already
+             self._by_task[task_id] = supervisor
+diff --git a/tools/browser_tool.py b/tools/browser_tool.py
+index 544a06d51277098472436ce4e049e293078b52f3..8612e65cabf478c38f31efa60ee4d3ad98265d24 100644
+--- a/tools/browser_tool.py
++++ b/tools/browser_tool.py
+@@ -643,9 +643,12 @@ def _ensure_cdp_supervisor(task_id: str) -> None:
+         from tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
+ 
+         policy, timeout_s = _get_dialog_policy_config()
++        with _cleanup_lock:
++            target_id = _active_sessions.get(task_id, {}).get("active_target_id")
+         SUPERVISOR_REGISTRY.get_or_start(
+             task_id=task_id,
+             cdp_url=cdp_url,
++            target_id=target_id,
+             dialog_policy=policy,
+             dialog_timeout_s=timeout_s,
+         )
+@@ -1769,6 +1772,9 @@ def _cleanup_inactive_browser_sessions():
+ 
+     with _cleanup_lock:
+         for task_id, last_time in list(_session_last_activity.items()):
++            session_info = _active_sessions.get(task_id)
++            if session_info and session_info.get("shared_profile_session"):
++                continue
+             if current_time - last_time > BROWSER_SESSION_INACTIVITY_TIMEOUT:
+                 sessions_to_cleanup.append(task_id)
+ 
+@@ -2191,6 +2197,62 @@ BROWSER_TOOL_SCHEMAS = [
+             "required": ["ref"]
+         }
+     },
++    {
++        "name": "browser_click_at",
++        "description": "Click viewport coordinates with native mouse move, press, and release events. Use for canvas, image-grid, verification, and other visual-only controls after inspecting the current screenshot.",
++        "parameters": {
++            "type": "object",
++            "properties": {
++                "x": {
++                    "type": "integer",
++                    "description": "Horizontal viewport coordinate in CSS pixels"
++                },
++                "y": {
++                    "type": "integer",
++                    "description": "Vertical viewport coordinate in CSS pixels"
++                }
++            },
++            "required": ["x", "y"]
++        }
++    },
++    {
++        "name": "browser_upload",
++        "description": "Upload one or more local files through a file input identified by a current snapshot ref. Files are staged onto storage shared with the persistent Chrome sidecar before the input is populated.",
++        "parameters": {
++            "type": "object",
++            "properties": {
++                "ref": {
++                    "type": "string",
++                    "description": "File input element reference from the current snapshot (for example '@e3')"
++                },
++                "paths": {
++                    "type": "array",
++                    "items": {"type": "string"},
++                    "minItems": 1,
++                    "description": "Absolute paths to regular files visible to the Hermes Agent process"
++                }
++            },
++            "required": ["ref", "paths"]
++        }
++    },
++    {
++        "name": "browser_download",
++        "description": "Click a download element identified by a current snapshot ref and save the resulting file to persistent storage shared with Chrome.",
++        "parameters": {
++            "type": "object",
++            "properties": {
++                "ref": {
++                    "type": "string",
++                    "description": "Download element reference from the current snapshot (for example '@e5')"
++                },
++                "filename": {
++                    "type": "string",
++                    "description": "Expected output filename including extension"
++                }
++            },
++            "required": ["ref", "filename"]
++        }
++    },
+     {
+         "name": "browser_type",
+         "description": "Type text into an input field identified by its ref ID. Clears the field first, then types the new text. Requires browser_navigate and browser_snapshot to be called first.",
+@@ -2320,12 +2382,15 @@ def _create_cdp_session(task_id: str, cdp_url: str) -> Dict[str, str]:
+     session_name = f"cdp_{uuid.uuid4().hex[:10]}"
+     logger.info("Created CDP browser session %s → %s for task %s",
+                 session_name, _sanitize_url_for_logs(cdp_url), task_id)
+-    return {
++    session_info = {
+         "session_name": session_name,
+         "bb_session_id": None,
+         "cdp_url": cdp_url,
+         "features": {"cdp_override": True},
+     }
++    from tools.browser_session_router import create_target_group
++    session_info.update(create_target_group(cdp_url))
++    return session_info
+ 
+ 
+ def _get_session_info(task_id: Optional[str] = None) -> Dict[str, Any]:
+@@ -2765,7 +2830,7 @@ def _extract_screenshot_path_from_text(text: str) -> Optional[str]:
+     return None
+ 
+ 
+-def _run_browser_command(
++def _run_browser_command_unrouted(
+     task_id: str,
+     command: str,
+     args: List[str] = None,
+@@ -3095,6 +3160,35 @@ def _run_browser_command(
+     return result
+ 
+ 
++def _run_browser_command(
++    task_id: str,
++    command: str,
++    args: List[str] = None,
++    timeout: Optional[int] = None,
++    _engine_override: Optional[str] = None,
++) -> Dict[str, Any]:
++    """Route a browser command to the target group owned by this Hermes task."""
++    try:
++        session_info = _get_session_info(task_id)
++    except Exception as exc:
++        return {"success": False, "error": f"Failed to create browser session: {exc}"}
++
++    if session_info.get("shared_profile_session"):
++        from tools.browser_session_router import run
++        return run(
++            task_id,
++            session_info,
++            _run_browser_command_unrouted,
++            command,
++            args or [],
++            timeout,
++            _engine_override,
++        )
++    return _run_browser_command_unrouted(
++        task_id, command, args or [], timeout, _engine_override
++    )
++
++
+ def _store_full_snapshot(snapshot_text: str) -> Optional[str]:
+     """Write a full page snapshot to cache/web and return its absolute path.
+ 
+@@ -3670,6 +3764,108 @@ def browser_click(ref: str, task_id: Optional[str] = None) -> str:
+         return json.dumps(_copy_fallback_warning(response, result), ensure_ascii=False)
+ 
+ 
++def browser_click_at(x: int, y: int, task_id: Optional[str] = None) -> str:
++    """Click viewport coordinates with native mouse events."""
++    if _is_camofox_mode():
++        return json.dumps({
++            "success": False,
++            "error": "Coordinate clicks are unavailable with the Camofox backend.",
++        }, ensure_ascii=False)
++
++    effective_task_id = _last_session_key(task_id or "default")
++    move = _run_browser_command(
++        effective_task_id, "mouse", ["move", str(x), str(y)]
++    )
++    if not move.get("success"):
++        return json.dumps(move, ensure_ascii=False)
++    down = _run_browser_command(effective_task_id, "mouse", ["down", "left"])
++    if not down.get("success"):
++        return json.dumps(down, ensure_ascii=False)
++    time.sleep(0.08)
++    up = _run_browser_command(effective_task_id, "mouse", ["up", "left"])
++    if not up.get("success"):
++        _run_browser_command(
++            effective_task_id, "mouse", ["up", "left"]
++        )
++        return json.dumps(up, ensure_ascii=False)
++    return json.dumps({
++        "success": True,
++        "clicked_at": {"x": x, "y": y},
++    }, ensure_ascii=False)
++
++
++def browser_upload(ref: str, paths: List[str], task_id: Optional[str] = None) -> str:
++    """Stage local files on shared storage and populate a file input."""
++    if _is_camofox_mode():
++        return json.dumps({
++            "success": False,
++            "error": "File uploads are unavailable with the Camofox backend.",
++        }, ensure_ascii=False)
++
++    effective_task_id = _last_session_key(task_id or "default")
++    if not isinstance(paths, list) or not all(isinstance(path, str) for path in paths):
++        return json.dumps({
++            "success": False,
++            "error": "paths must be a list of absolute file paths",
++        }, ensure_ascii=False)
++    if not ref.startswith("@"):
++        ref = f"@{ref}"
++
++    try:
++        from tools.browser_session_router import stage_uploads
++        staged = stage_uploads(effective_task_id, paths)
++    except (OSError, ValueError) as exc:
++        return json.dumps({"success": False, "error": str(exc)}, ensure_ascii=False)
++
++    result = _run_browser_command(effective_task_id, "upload", [ref, *staged])
++    if not result.get("success"):
++        return json.dumps(result, ensure_ascii=False)
++    return json.dumps({
++        "success": True,
++        "uploaded": staged,
++        "count": len(staged),
++    }, ensure_ascii=False)
++
++
++def browser_download(
++    ref: str, filename: str, task_id: Optional[str] = None,
++) -> str:
++    """Download a link or button target into shared persistent storage."""
++    if _is_camofox_mode():
++        return json.dumps({
++            "success": False,
++            "error": "Managed downloads are unavailable with the Camofox backend.",
++        }, ensure_ascii=False)
++
++    effective_task_id = _last_session_key(task_id or "default")
++    if not ref.startswith("@"):
++        ref = f"@{ref}"
++    try:
++        from tools.browser_session_router import download_path
++        destination = download_path(effective_task_id, filename)
++    except (OSError, ValueError) as exc:
++        return json.dumps({"success": False, "error": str(exc)}, ensure_ascii=False)
++
++    result = _run_browser_command(
++        effective_task_id, "download", [ref, destination], timeout=120
++    )
++    if not result.get("success"):
++        return json.dumps(result, ensure_ascii=False)
++    downloaded = Path(destination)
++    if not downloaded.is_file():
++        return json.dumps({
++            "success": False,
++            "error": "The browser reported success but the downloaded file is missing",
++            "path": destination,
++        }, ensure_ascii=False)
++    return json.dumps({
++        "success": True,
++        "path": destination,
++        "filename": downloaded.name,
++        "size_bytes": downloaded.stat().st_size,
++    }, ensure_ascii=False)
++
++
+ def browser_type(ref: str, text: str, task_id: Optional[str] = None) -> str:
+     """
+     Type text into an input field.
+@@ -4958,10 +5154,22 @@ def _cleanup_single_browser_session(task_id: str) -> None:
+         # Stop auto-recording before closing (saves the file)
+         _maybe_stop_recording(task_id)
+ 
++        if session_info.get("shared_profile_session"):
++            # Close only this task's root and popup targets. The persistent
++            # sidecar process and its default profile belong to every task.
++            try:
++                from tools.browser_session_router import close_target_group
++                close_target_group(session_info)
++            except Exception as exc:
++                logger.warning(
++                    "Browser target-group cleanup failed for task %s: %s",
++                    task_id,
++                    exc,
++                )
+         # An expired cloud CDP URL cannot accept an agent-browser close command.
+         # Avoid feeding it back through _get_session_info(), which would try to
+         # renew the session recursively while cleanup is still in progress.
+-        if _session_has_expired(session_info):
++        elif _session_has_expired(session_info):
+             logger.debug(
+                 "Skipping agent-browser close for expired session %s",
+                 task_id,
+@@ -5408,6 +5616,42 @@ registry.register(
+     check_fn=check_browser_requirements,
+     emoji="👆",
+ )
++registry.register(
++    name="browser_click_at",
++    toolset="browser",
++    schema=_BROWSER_SCHEMA_MAP["browser_click_at"],
++    handler=lambda args, **kw: browser_click_at(
++        x=args.get("x", 0),
++        y=args.get("y", 0),
++        task_id=kw.get("task_id"),
++    ),
++    check_fn=check_browser_requirements,
++    emoji="👆",
++)
++registry.register(
++    name="browser_upload",
++    toolset="browser",
++    schema=_BROWSER_SCHEMA_MAP["browser_upload"],
++    handler=lambda args, **kw: browser_upload(
++        ref=args.get("ref", ""),
++        paths=args.get("paths", []),
++        task_id=kw.get("task_id"),
++    ),
++    check_fn=check_browser_requirements,
++    emoji="📤",
++)
++registry.register(
++    name="browser_download",
++    toolset="browser",
++    schema=_BROWSER_SCHEMA_MAP["browser_download"],
++    handler=lambda args, **kw: browser_download(
++        ref=args.get("ref", ""),
++        filename=args.get("filename", ""),
++        task_id=kw.get("task_id"),
++    ),
++    check_fn=check_browser_requirements,
++    emoji="📥",
++)
+ registry.register(
+     name="browser_type",
+     toolset="browser",

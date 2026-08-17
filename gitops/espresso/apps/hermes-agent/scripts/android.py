@@ -1,22 +1,30 @@
 #!/usr/bin/env python3
-"""Allowlisted Android automation CLI built on adb."""
+"""Android automation and unrestricted adb passthrough for Hermes."""
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
+import xml.etree.ElementTree as ET
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9_.-]+")
+_BOUNDS = re.compile(r"^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$")
+_AURORA_STORE_VERSION = "4.8.4"
+_AURORA_STORE_PACKAGE = "com.aurora.store"
+_AURORA_STORE_SHA256 = "8a1ed9aa09631290da91cb793e0517b0f20dc70239ac94ae6682cd94f91a4bad"
+_AURORA_STORE_APK = Path(f"/opt/android/apks/AuroraStore-{_AURORA_STORE_VERSION}.apk")
 
 
 def compact(value: Any) -> None:
@@ -35,34 +43,13 @@ def env_name(serial: str) -> str:
     return _SAFE_NAME.sub("_", serial.strip()).upper() or "DEFAULT"
 
 
-def hermes_home() -> Path:
-    return Path(os.environ.get("HERMES_HOME", "/opt/data")).resolve()
-
-
 def browser_files_root() -> Path:
     return Path(os.environ.get("BROWSER_FILES_ROOT", "/opt/browser-files")).resolve()
 
 
-def allowed_local_roots() -> list[Path]:
-    return [
-        (hermes_home() / "workspace").resolve(),
-        (hermes_home() / "cache").resolve(),
-        browser_files_root(),
-    ]
-
-
-def ensure_within_roots(path: Path) -> Path:
-    resolved = path.expanduser().resolve()
-    if not any(resolved.is_relative_to(root) for root in allowed_local_roots()):
-        raise ValueError(
-            f"local path must be under the Hermes workspace, cache, or browser files root: {path}"
-        )
-    return resolved
-
-
 def resolve_local_source(raw_path: str) -> Path:
-    source = ensure_within_roots(Path(raw_path))
-    if not source.is_file() or source.is_symlink():
+    source = Path(raw_path).expanduser().resolve()
+    if not source.is_file():
         raise ValueError(f"local source is not a regular file: {raw_path}")
     return source
 
@@ -81,7 +68,7 @@ def resolve_output_path(
 ) -> Path:
     suffix = extension if extension.startswith(".") else f".{extension}"
     if raw_path:
-        destination = ensure_within_roots(Path(raw_path))
+        destination = Path(raw_path).expanduser().resolve()
         if destination.name in {"", ".", ".."}:
             raise ValueError("output path must name a file")
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -96,12 +83,34 @@ def encode_input_text(value: str) -> str:
     return cleaned
 
 
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("value must be at least 1")
+    return parsed
+
+
+def positive_float(value: str) -> float:
+    parsed = float(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("value must be greater than 0")
+    return parsed
+
+
 def default_adb_endpoint() -> str | None:
     return os.environ.get("ANDROID_ADB_ENDPOINT") or None
 
 
 def iso_now() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def load_json_file(path: Path) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+    return payload if isinstance(payload, dict) else None
 
 
 def default_grpc_endpoint(serial: str | None = None) -> str | None:
@@ -124,6 +133,14 @@ def default_grpc_endpoint(serial: str | None = None) -> str | None:
         if candidate:
             return candidate
     return None
+
+
+def default_view_endpoint(serial: str | None = None) -> str | None:
+    candidates = []
+    if serial:
+        candidates.append(os.environ.get(f"ANDROID_VIEW_URL_{env_name(serial)}"))
+    candidates.append(os.environ.get("ANDROID_VIEW_URL"))
+    return next((candidate for candidate in candidates if candidate), None)
 
 
 def is_tcp_endpoint(serial: str) -> bool:
@@ -244,6 +261,52 @@ def parse_focus(output: str) -> str | None:
     return None
 
 
+def parse_bounds(value: str) -> dict[str, Any] | None:
+    match = _BOUNDS.fullmatch(value)
+    if not match:
+        return None
+    left, top, right, bottom = (int(part) for part in match.groups())
+    if right < left or bottom < top:
+        return None
+    return {
+        "left": left,
+        "top": top,
+        "right": right,
+        "bottom": bottom,
+        "center": [(left + right) // 2, (top + bottom) // 2],
+    }
+
+
+def parse_ui_tree(xml: str) -> dict[str, Any]:
+    root = ET.fromstring(xml)
+    nodes: list[dict[str, Any]] = []
+    for element in root.iter("node"):
+        attributes = element.attrib
+        bounds = parse_bounds(attributes.get("bounds", ""))
+        if bounds is None:
+            continue
+        node: dict[str, Any] = {
+            "ref": f"r{len(nodes) + 1}",
+            "bounds": bounds,
+        }
+        optional = {
+            "text": attributes.get("text"),
+            "description": attributes.get("content-desc"),
+            "resource_id": attributes.get("resource-id"),
+            "class": attributes.get("class"),
+            "package": attributes.get("package"),
+        }
+        node.update({key: value for key, value in optional.items() if value})
+        for key in ("clickable", "long-clickable", "scrollable", "focusable", "focused", "enabled"):
+            if key in attributes:
+                node[key.replace("-", "_")] = attributes[key] == "true"
+        nodes.append(node)
+    return {
+        "tree_id": hashlib.sha256(xml.encode("utf-8")).hexdigest()[:16],
+        "nodes": nodes,
+    }
+
+
 def live_view(serial: str) -> dict[str, Any]:
     adb_endpoint = serial if is_tcp_endpoint(serial) else None
     grpc_url = default_grpc_endpoint(serial)
@@ -252,8 +315,12 @@ def live_view(serial: str) -> dict[str, Any]:
         result["adb_endpoint"] = adb_endpoint
     if grpc_url:
         result["grpc_url"] = grpc_url
-        if grpc_url.startswith("http://") or grpc_url.startswith("https://"):
-            result["webrtc_url"] = grpc_url
+    viewer_url = default_view_endpoint(serial)
+    if viewer_url:
+        result["viewer_url"] = viewer_url
+    viewer_status = load_json_file(browser_files_root() / "android-viewer" / "status.json")
+    if viewer_status:
+        result["viewer_status"] = viewer_status
     return result
 
 
@@ -319,21 +386,74 @@ def handle_screenshot(args: argparse.Namespace) -> dict[str, Any]:
 def handle_record(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
     destination = resolve_output_path(args.path, serial, "recordings", ".mp4")
-    remote_name = f"/sdcard/Download/hermes-record-{uuid.uuid4().hex[:12]}.mp4"
-    run_adb(
-        serial,
-        "shell",
-        "screenrecord",
-        "--time-limit",
-        str(args.seconds),
-        remote_name,
-        timeout=args.seconds + 30,
-    )
+    remaining = args.seconds
+    remote_names: list[str] = []
     try:
-        run_adb(serial, "pull", remote_name, str(destination), timeout=args.seconds + 30)
+        with tempfile.TemporaryDirectory(prefix="android-record-", dir=destination.parent) as raw_temp:
+            temp_dir = Path(raw_temp)
+            parts: list[Path] = []
+            while remaining > 0:
+                duration = min(remaining, 170)
+                remote_name = f"/sdcard/Download/hermes-record-{uuid.uuid4().hex[:12]}.mp4"
+                remote_names.append(remote_name)
+                part = temp_dir / f"part-{len(parts):04d}.mp4"
+                run_adb(
+                    serial,
+                    "shell",
+                    "screenrecord",
+                    "--time-limit",
+                    str(duration),
+                    remote_name,
+                    timeout=duration + 30,
+                )
+                run_adb(serial, "pull", remote_name, str(part), timeout=duration + 30)
+                run_adb(serial, "shell", "rm", "-f", remote_name, check=False)
+                remote_names.remove(remote_name)
+                parts.append(part)
+                remaining -= duration
+
+            if len(parts) == 1:
+                parts[0].replace(destination)
+            else:
+                manifest = temp_dir / "concat.txt"
+                manifest.write_text(
+                    "".join(f"file '{part.name}'\n" for part in parts),
+                    encoding="utf-8",
+                )
+                completed = subprocess.run(
+                    [
+                        "ffmpeg",
+                        "-hide_banner",
+                        "-loglevel",
+                        "error",
+                        "-f",
+                        "concat",
+                        "-safe",
+                        "0",
+                        "-i",
+                        str(manifest),
+                        "-c",
+                        "copy",
+                        "-y",
+                        str(destination),
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=args.seconds + 120,
+                    cwd=temp_dir,
+                )
+                if completed.returncode != 0:
+                    raise RuntimeError(f"ffmpeg failed to join recording: {safe_text(completed.stderr)}")
     finally:
-        run_adb(serial, "shell", "rm", "-f", remote_name, check=False)
-    return {"serial": serial, "path": str(destination), "size_bytes": destination.stat().st_size}
+        for remote_name in remote_names:
+            run_adb(serial, "shell", "rm", "-f", remote_name, check=False)
+    return {
+        "serial": serial,
+        "duration_seconds": args.seconds,
+        "path": str(destination),
+        "size_bytes": destination.stat().st_size,
+    }
 
 
 def handle_ui_dump(args: argparse.Namespace) -> dict[str, Any]:
@@ -348,10 +468,48 @@ def handle_ui_dump(args: argparse.Namespace) -> dict[str, Any]:
     return {"serial": serial, "path": str(destination), "size_bytes": destination.stat().st_size}
 
 
+def current_ui_tree(serial: str) -> dict[str, Any]:
+    remote_name = f"/sdcard/Download/hermes-ui-{uuid.uuid4().hex[:12]}.xml"
+    run_adb(serial, "shell", "uiautomator", "dump", "--compressed", remote_name)
+    try:
+        xml = str(run_adb(serial, "exec-out", "cat", remote_name))
+    finally:
+        run_adb(serial, "shell", "rm", "-f", remote_name, check=False)
+    tree = parse_ui_tree(xml)
+    tree["serial"] = serial
+    return tree
+
+
+def handle_ui_tree(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    return current_ui_tree(serial)
+
+
 def handle_tap(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
     run_adb(serial, "shell", "input", "tap", str(args.x), str(args.y))
     return {"serial": serial, "tap": {"x": args.x, "y": args.y}}
+
+
+def handle_tap_ref(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    tree = current_ui_tree(serial)
+    if args.tree_id and args.tree_id != tree["tree_id"]:
+        raise RuntimeError(
+            f"UI changed: expected tree {args.tree_id}, current tree is {tree['tree_id']}; inspect ui-tree again"
+        )
+    match = next((node for node in tree["nodes"] if node["ref"] == args.ref), None)
+    if match is None:
+        raise ValueError(f"UI ref does not exist in the current tree: {args.ref}")
+    x, y = match["bounds"]["center"]
+    run_adb(serial, "shell", "input", "tap", str(x), str(y))
+    return {
+        "serial": serial,
+        "tree_id": tree["tree_id"],
+        "ref": args.ref,
+        "tap": {"x": x, "y": y},
+        "node": match,
+    }
 
 
 def handle_swipe(args: argparse.Namespace) -> dict[str, Any]:
@@ -374,6 +532,25 @@ def handle_swipe(args: argparse.Namespace) -> dict[str, Any]:
             "to": [args.x2, args.y2],
             "duration_ms": args.duration_ms,
         },
+    }
+
+
+def handle_long_press(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    run_adb(
+        serial,
+        "shell",
+        "input",
+        "swipe",
+        str(args.x),
+        str(args.y),
+        str(args.x),
+        str(args.y),
+        str(args.duration_ms),
+    )
+    return {
+        "serial": serial,
+        "long_press": {"x": args.x, "y": args.y, "duration_ms": args.duration_ms},
     }
 
 
@@ -434,6 +611,121 @@ def handle_app_stop(args: argparse.Namespace) -> dict[str, Any]:
     return {"serial": serial, "package": args.package}
 
 
+def handle_install(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    source = resolve_local_source(args.path)
+    command = ["install"]
+    if args.replace:
+        command.append("-r")
+    if args.grant_all:
+        command.append("-g")
+    if args.downgrade:
+        command.append("-d")
+    if args.test_only:
+        command.append("-t")
+    command.append(str(source))
+    response = str(run_adb(serial, *command, timeout=args.timeout)).strip()
+    return {"serial": serial, "path": str(source), "response": response}
+
+
+def handle_install_aurora(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    source = resolve_local_source(
+        os.environ.get("AURORA_STORE_APK", str(_AURORA_STORE_APK))
+    )
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    if digest != _AURORA_STORE_SHA256:
+        raise RuntimeError(
+            f"Aurora Store APK checksum mismatch: expected {_AURORA_STORE_SHA256}, got {digest}"
+        )
+    response = str(
+        run_adb(serial, "install", "-r", "-g", str(source), timeout=args.timeout)
+    ).strip()
+    package_path = shell_text(
+        serial,
+        "pm",
+        "path",
+        _AURORA_STORE_PACKAGE,
+        timeout=args.timeout,
+    )
+    if not package_path.startswith("package:"):
+        raise RuntimeError(
+            f"Aurora Store installation did not expose {_AURORA_STORE_PACKAGE}: {package_path}"
+        )
+    return {
+        "serial": serial,
+        "package": _AURORA_STORE_PACKAGE,
+        "version": _AURORA_STORE_VERSION,
+        "path": str(source),
+        "sha256": digest,
+        "response": response,
+        "package_path": package_path,
+    }
+
+
+def handle_uninstall(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    command = ["uninstall"]
+    if args.keep_data:
+        command.append("-k")
+    command.append(args.package)
+    response = str(run_adb(serial, *command, timeout=args.timeout)).strip()
+    return {"serial": serial, "package": args.package, "response": response}
+
+
+def handle_packages(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    command = ["pm", "list", "packages"]
+    if args.third_party:
+        command.append("-3")
+    if args.system:
+        command.append("-s")
+    if args.filter:
+        command.append(args.filter)
+    output = shell_text(serial, *command, timeout=180)
+    packages = sorted(
+        line.removeprefix("package:").strip()
+        for line in output.splitlines()
+        if line.strip().startswith("package:")
+    )
+    return {"serial": serial, "packages": packages, "count": len(packages)}
+
+
+def handle_permission(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    run_adb(serial, "shell", "pm", args.action, args.package, args.permission)
+    return {
+        "serial": serial,
+        "action": args.action,
+        "package": args.package,
+        "permission": args.permission,
+    }
+
+
+def handle_rotate(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    if args.orientation == "auto":
+        run_adb(serial, "shell", "settings", "put", "system", "accelerometer_rotation", "1")
+    else:
+        rotations = {
+            "portrait": "0",
+            "landscape": "1",
+            "reverse-portrait": "2",
+            "reverse-landscape": "3",
+        }
+        run_adb(serial, "shell", "settings", "put", "system", "accelerometer_rotation", "0")
+        run_adb(
+            serial,
+            "shell",
+            "settings",
+            "put",
+            "system",
+            "user_rotation",
+            rotations[args.orientation],
+        )
+    return {"serial": serial, "orientation": args.orientation}
+
+
 def handle_pull(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
     destination = resolve_output_path(args.path, serial, "pulls", Path(args.remote).suffix or ".bin")
@@ -471,9 +763,9 @@ def handle_snapshot(args: argparse.Namespace) -> dict[str, Any]:
     slug = args.name or uuid.uuid4().hex[:12]
     base = device_directory(serial, "snapshots") / safe_device_name(slug)
     base.parent.mkdir(parents=True, exist_ok=True)
-    screenshot_path = ensure_within_roots(Path(f"{base}.png"))
-    ui_dump_path = ensure_within_roots(Path(f"{base}.xml"))
-    metadata_path = ensure_within_roots(Path(f"{base}.json"))
+    screenshot_path = Path(f"{base}.png").expanduser().resolve()
+    ui_dump_path = Path(f"{base}.xml").expanduser().resolve()
+    metadata_path = Path(f"{base}.json").expanduser().resolve()
     screenshot = handle_screenshot(argparse.Namespace(serial=serial, path=str(screenshot_path)))
     ui_dump = handle_ui_dump(argparse.Namespace(serial=serial, path=str(ui_dump_path)))
     health = health_report(serial)
@@ -523,13 +815,22 @@ HANDLERS = {
     "screenshot": handle_screenshot,
     "record": handle_record,
     "uiautomator-dump": handle_ui_dump,
+    "ui-tree": handle_ui_tree,
     "tap": handle_tap,
+    "tap-ref": handle_tap_ref,
     "swipe": handle_swipe,
+    "long-press": handle_long_press,
     "text": handle_text,
     "keyevent": handle_keyevent,
     "open-url": handle_open_url,
     "app-start": handle_app_start,
     "app-stop": handle_app_stop,
+    "install": handle_install,
+    "install-aurora": handle_install_aurora,
+    "uninstall": handle_uninstall,
+    "packages": handle_packages,
+    "permission": handle_permission,
+    "rotate": handle_rotate,
     "pull": handle_pull,
     "push": handle_push,
     "wait-for-boot": handle_wait_for_boot,
@@ -543,7 +844,7 @@ HANDLERS = {
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(
         prog="android",
-        description="Operate Android devices over adb with Hermes-safe file handling.",
+        description="Operate Android devices with structured helpers or unrestricted adb passthrough.",
     )
     root.add_argument("--serial", help="adb device serial; defaults to ANDROID_SERIAL")
     sub = root.add_subparsers(dest="command", required=True)
@@ -559,35 +860,58 @@ def parser() -> argparse.ArgumentParser:
     sub.add_parser("disconnect", help="disconnect adb from --serial or all devices")
 
     screenshot = sub.add_parser("screenshot", help="capture a PNG screenshot")
-    screenshot.add_argument("path", nargs="?", help="optional output path under workspace/cache/browser files")
+    screenshot.add_argument(
+        "path",
+        nargs="?",
+        help="optional output path anywhere visible to the agent process",
+    )
 
-    record = sub.add_parser("record", help="capture a short MP4 screen recording")
-    record.add_argument("--seconds", type=int, choices=range(1, 181), default=30, metavar="1..180")
-    record.add_argument("path", nargs="?", help="optional output path under workspace/cache/browser files")
+    record = sub.add_parser("record", help="capture an MP4 screen recording of any duration")
+    record.add_argument("--seconds", type=positive_int, default=30)
+    record.add_argument(
+        "path",
+        nargs="?",
+        help="optional output path anywhere visible to the agent process",
+    )
 
     ui_dump = sub.add_parser("uiautomator-dump", help="dump the current UI hierarchy as XML")
-    ui_dump.add_argument("path", nargs="?", help="optional output path under workspace/cache/browser files")
+    ui_dump.add_argument(
+        "path",
+        nargs="?",
+        help="optional output path anywhere visible to the agent process",
+    )
+
+    sub.add_parser("ui-tree", help="return a compact UI tree with short-lived coordinate refs")
 
     snapshot = sub.add_parser("snapshot", help="capture screenshot, UI XML, and health in one bundle")
     snapshot.add_argument("--name", help="optional stable basename for the snapshot bundle")
 
     wait_for_boot = sub.add_parser("wait-for-boot", help="block until one device finishes booting")
-    wait_for_boot.add_argument("--timeout", type=int, choices=range(1, 1801), default=300, metavar="1..1800")
-    wait_for_boot.add_argument("--interval", type=float, default=2.0)
+    wait_for_boot.add_argument("--timeout", type=positive_int, default=300)
+    wait_for_boot.add_argument("--interval", type=positive_float, default=2.0)
 
-    live_view_cmd = sub.add_parser("live-view", help="show adb and WebRTC/grpc viewing endpoints")
+    live_view_cmd = sub.add_parser("live-view", help="show adb, browser viewer, and emulator gRPC endpoints")
     live_view_cmd.add_argument("--serial", help=argparse.SUPPRESS)
 
     tap = sub.add_parser("tap", help="tap one screen coordinate")
     tap.add_argument("x", type=int)
     tap.add_argument("y", type=int)
 
+    tap_ref = sub.add_parser("tap-ref", help="tap the center of a ref from ui-tree")
+    tap_ref.add_argument("ref", help="short-lived ref such as r12")
+    tap_ref.add_argument("--tree-id", help="refuse the tap if the UI changed since ui-tree")
+
     swipe = sub.add_parser("swipe", help="swipe between two screen coordinates")
     swipe.add_argument("x1", type=int)
     swipe.add_argument("y1", type=int)
     swipe.add_argument("x2", type=int)
     swipe.add_argument("y2", type=int)
-    swipe.add_argument("--duration-ms", type=int, choices=range(1, 60001), default=300, metavar="1..60000")
+    swipe.add_argument("--duration-ms", type=positive_int, default=300)
+
+    long_press = sub.add_parser("long-press", help="press and hold one screen coordinate")
+    long_press.add_argument("x", type=int)
+    long_press.add_argument("y", type=int)
+    long_press.add_argument("--duration-ms", type=positive_int, default=1000)
 
     text = sub.add_parser("text", help="type simple text through adb input")
     text.add_argument("text")
@@ -605,23 +929,91 @@ def parser() -> argparse.ArgumentParser:
     app_stop = sub.add_parser("app-stop", help="force-stop one Android app")
     app_stop.add_argument("package")
 
+    install = sub.add_parser("install", help="install an APK from Hermes-managed storage")
+    install.add_argument("path")
+    install.add_argument("--no-replace", action="store_false", dest="replace")
+    install.add_argument("--grant-all", action="store_true")
+    install.add_argument("--downgrade", action="store_true")
+    install.add_argument("--test-only", action="store_true")
+    install.add_argument("--timeout", type=positive_int, default=600)
+
+    install_aurora = sub.add_parser(
+        "install-aurora",
+        help="verify and install the bundled Aurora Store APK",
+    )
+    install_aurora.add_argument("--timeout", type=positive_int, default=600)
+
+    uninstall = sub.add_parser("uninstall", help="uninstall an Android package")
+    uninstall.add_argument("package")
+    uninstall.add_argument("--keep-data", action="store_true")
+    uninstall.add_argument("--timeout", type=positive_int, default=300)
+
+    packages = sub.add_parser("packages", help="list installed Android packages")
+    package_kind = packages.add_mutually_exclusive_group()
+    package_kind.add_argument("--third-party", action="store_true")
+    package_kind.add_argument("--system", action="store_true")
+    packages.add_argument("--filter")
+
+    permission = sub.add_parser("permission", help="grant or revoke an app runtime permission")
+    permission.add_argument("action", choices=("grant", "revoke"))
+    permission.add_argument("package")
+    permission.add_argument("permission")
+
+    rotate = sub.add_parser("rotate", help="set or restore automatic device rotation")
+    rotate.add_argument(
+        "orientation",
+        choices=("auto", "portrait", "landscape", "reverse-portrait", "reverse-landscape"),
+    )
+
     pull = sub.add_parser("pull", help="pull one device file into Hermes storage")
     pull.add_argument("remote", help="remote device path")
-    pull.add_argument("path", nargs="?", help="optional local output path under workspace/cache/browser files")
+    pull.add_argument(
+        "path",
+        nargs="?",
+        help="optional local output path anywhere visible to the agent process",
+    )
 
     push = sub.add_parser("push", help="push one local file onto the device")
-    push.add_argument("path", help="local file under workspace/cache/browser files")
+    push.add_argument("path", help="local file anywhere visible to the agent process")
     push.add_argument("remote", help="remote destination path")
 
     logcat = sub.add_parser("logcat", help="save recent logcat output to Hermes storage")
-    logcat.add_argument("--lines", type=int, choices=range(1, 20001), default=400, metavar="1..20000")
-    logcat.add_argument("path", nargs="?", help="optional local output path under workspace/cache/browser files")
+    logcat.add_argument("--lines", type=positive_int, default=400)
+    logcat.add_argument(
+        "path",
+        nargs="?",
+        help="optional local output path anywhere visible to the agent process",
+    )
+
+    adb = sub.add_parser(
+        "adb",
+        help="run any adb command with inherited stdin/stdout/stderr and exit status",
+    )
+    adb.add_argument(
+        "--no-serial",
+        action="store_true",
+        help="do not inject --serial/ANDROID_SERIAL before this global adb command",
+    )
+    adb.add_argument("arguments", nargs=argparse.REMAINDER)
 
     return root
 
 
 def main() -> int:
     args = parser().parse_args()
+    if args.command == "adb":
+        arguments = args.arguments
+        if arguments and arguments[0] == "--":
+            arguments = arguments[1:]
+        if not arguments:
+            print("android: adb requires a command", file=sys.stderr)
+            return 2
+        try:
+            serial = None if args.no_serial else chosen_serial(args)
+            return subprocess.call(adb_command(serial, *arguments))
+        except OSError as exc:
+            print(f"android: unable to run adb: {safe_text(exc)}", file=sys.stderr)
+            return 1
     try:
         result = HANDLERS[args.command](args)
     except (ValueError, RuntimeError, subprocess.TimeoutExpired) as exc:

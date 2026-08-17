@@ -19,11 +19,16 @@ class BrowserSessionRouterTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = tempfile.TemporaryDirectory()
         self.browser_files = Path(self.tempdir.name) / "opt" / "browser-files"
+        self.hermes_home = Path(self.tempdir.name) / "opt" / "data"
+        self.workspace = self.hermes_home / "workspace"
         self.browser_files.mkdir(parents=True)
+        self.workspace.mkdir(parents=True)
         self.previous = {
             "BROWSER_FILES_ROOT": os.environ.get("BROWSER_FILES_ROOT"),
+            "HERMES_HOME": os.environ.get("HERMES_HOME"),
         }
         os.environ["BROWSER_FILES_ROOT"] = str(self.browser_files)
+        os.environ["HERMES_HOME"] = str(self.hermes_home)
 
     def tearDown(self) -> None:
         for key, value in self.previous.items():
@@ -66,7 +71,7 @@ class BrowserSessionRouterTests(unittest.TestCase):
 
         self.assertEqual([item["event"] for item in payload], ["command.started", "command.completed"])
 
-    def test_remove_persisted_session_deletes_metadata(self) -> None:
+    def test_remove_persisted_session_deletes_metadata_and_keeps_events(self) -> None:
         metadata = self.browser_files / "browser-sessions" / "task.json"
         events = self.browser_files / "browser-session-events" / "task.jsonl"
         metadata.parent.mkdir(parents=True, exist_ok=True)
@@ -77,7 +82,74 @@ class BrowserSessionRouterTests(unittest.TestCase):
         browser_session_router.remove_persisted_session("task")
 
         self.assertFalse(metadata.exists())
-        self.assertFalse(events.exists())
+        self.assertTrue(events.exists())
+
+    def test_select_target_uses_current_stable_tab_id(self) -> None:
+        calls = []
+
+        def raw_run(task_id, command, args, timeout=None):
+            calls.append((task_id, command, args, timeout))
+            if not args:
+                return {
+                    "success": True,
+                    "data": {
+                        "tabs": [
+                            {
+                                "targetId": "target-current",
+                                "tabId": "t7",
+                                "label": None,
+                            }
+                        ]
+                    },
+                }
+            return {"success": True}
+
+        result = browser_session_router._select_target(
+            "task", {}, raw_run, "target-current", 30
+        )
+
+        self.assertIsNone(result)
+        self.assertEqual(calls[-1][2], ["t7"])
+
+    def test_select_target_supports_legacy_zero_index(self) -> None:
+        calls = []
+
+        def raw_run(task_id, command, args, timeout=None):
+            calls.append((task_id, command, args, timeout))
+            if not args:
+                return {
+                    "success": True,
+                    "data": {"tabs": [{"targetId": "target-legacy", "index": 0}]},
+                }
+            return {"success": True}
+
+        result = browser_session_router._select_target(
+            "task", {}, raw_run, "target-legacy", 30
+        )
+
+        self.assertIsNone(result)
+        self.assertEqual(calls[-1][2], ["0"])
+
+    def test_stage_uploads_has_no_artificial_file_count_ceiling(self) -> None:
+        sources = []
+        for index in range(12):
+            source = self.workspace / f"item-{index}.txt"
+            source.write_text(str(index), encoding="utf-8")
+            sources.append(str(source))
+
+        staged = browser_session_router.stage_uploads("task", sources)
+
+        self.assertEqual(len(staged), 12)
+        self.assertTrue(all(Path(path).is_file() for path in staged))
+
+    def test_stage_uploads_accepts_any_visible_regular_file(self) -> None:
+        source = Path(self.tempdir.name) / "outside-hermes-roots.txt"
+        source.write_text("visible", encoding="utf-8")
+
+        staged = browser_session_router.stage_uploads("task", [str(source)])
+
+        self.assertEqual(len(staged), 1)
+        self.assertEqual(Path(staged[0]).read_text(encoding="utf-8"), "visible")
 
 
 if __name__ == "__main__":

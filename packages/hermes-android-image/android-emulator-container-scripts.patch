@@ -1,0 +1,46 @@
+diff --git a/emu/containers/docker_container.py b/emu/containers/docker_container.py
+index 62b0d5e6e6d25fd8e494efb09436295beadab7a8..6a98ae886a0fd66e5fc8559ec83f6a8717d278da 100644
+--- a/emu/containers/docker_container.py
++++ b/emu/containers/docker_container.py
+@@ -102,7 +102,8 @@ class DockerContainer:
+             )
+             result = api_client.build(
+                 path=str(dest.absolute()), tag=image_tag, rm=True, decode=True,
+-                platform=DockerContainer.DEFAULT_PLATFORM
++                platform=DockerContainer.DEFAULT_PLATFORM,
++                network_mode="host",
+             )
+             for entry in result:
+                 if "stream" in entry and entry["stream"].strip():
+diff --git a/emu/emu_docker.py b/emu/emu_docker.py
+index a6e4e6079ad38a90cd0152a4a0a5a96eb1876794..ab7929d2a13780543aba61df742853bb0bb574b0 100644
+--- a/emu/emu_docker.py
++++ b/emu/emu_docker.py
+@@ -87,7 +87,7 @@ def create_docker_image(args):
+         logging.info("Processing %s, %s", img, emulator)
+         sys_docker = SystemImageContainer(img, args.repo)
+         if not sys_docker.available() and not sys_docker.can_pull():
+-            sys_docker.build(args.dest / "sys_img")
++            sys_docker.build(Path(args.dest) / "sys_img")
+         else:
+             logging.info(
+                 "Image %s is local: %s, pull: %s",
+diff --git a/emu/templates/Dockerfile.emulator b/emu/templates/Dockerfile.emulator
+index fd9eddaeea17eb9d78e7dd16196cd9bd8f4989c0..8f18ccd3463c2ff75daaa4378ec05dc58b36ef17 100644
+--- a/emu/templates/Dockerfile.emulator
++++ b/emu/templates/Dockerfile.emulator
+@@ -15,10 +15,10 @@ FROM {{from_base_img}} AS emulator
+ 
+ RUN apt-get clean && \
+     rm -rf /var/lib/apt/lists/* && \
+-    echo "deb http://mirrors.kernel.org/ubuntu/ focal main restricted universe multiverse" > /etc/apt/sources.list && \
+-    echo "deb http://mirrors.kernel.org/ubuntu/ focal-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
+-    echo "deb http://mirrors.kernel.org/ubuntu/ focal-security main restricted universe multiverse" >> /etc/apt/sources.list && \
+-    echo "deb http://mirrors.kernel.org/ubuntu/ focal-backports main restricted universe multiverse" >> /etc/apt/sources.list && \
++    echo "deb http://archive.ubuntu.com/ubuntu/ focal main restricted universe multiverse" > /etc/apt/sources.list && \
++    echo "deb http://archive.ubuntu.com/ubuntu/ focal-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
++    echo "deb http://archive.ubuntu.com/ubuntu/ focal-security main restricted universe multiverse" >> /etc/apt/sources.list && \
++    echo "deb http://archive.ubuntu.com/ubuntu/ focal-backports main restricted universe multiverse" >> /etc/apt/sources.list && \
+     echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries && \
+     echo 'Acquire::http::Timeout "120";' >> /etc/apt/apt.conf.d/80-retries && \
+     echo 'Acquire::https::Timeout "120";' >> /etc/apt/apt.conf.d/80-retries && \

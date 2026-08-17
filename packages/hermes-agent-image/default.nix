@@ -8,17 +8,21 @@
     patches = (old.patches or []) ++ [./agent-browser-target-id.patch];
   });
 
-  markitdownPptx = pkgs.python3Packages.markitdown.overrideAttrs {
-    dependencies = with pkgs.python3Packages; [
-      beautifulsoup4
-      defusedxml
-      lxml
-      markdownify
-      pathvalidate
-      puremagic
-      python-pptx
-      requests
-    ];
+  markitdownPptxDependencies = with pkgs.python3Packages; [
+    beautifulsoup4
+    charset-normalizer
+    defusedxml
+    lxml
+    magika
+    markdownify
+    pathvalidate
+    puremagic
+    python-pptx
+    requests
+  ];
+
+  markitdownPptx = pkgs.python3Packages.markitdown.overridePythonAttrs {
+    dependencies = markitdownPptxDependencies;
     doCheck = false;
     nativeCheckInputs = [];
   };
@@ -170,7 +174,7 @@ in
       Env = [
         "HOME=/opt/data"
         "HERMES_HOME=/opt/data"
-        "PATH=${tools}/bin:${hermes-agent}/bin"
+        "PATH=/opt/data/scripts:${tools}/bin:${hermes-agent}/bin"
         "NODE_PATH=${nodeTools}/lib/node_modules"
         "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
         "PYTHONDONTWRITEBYTECODE=1"

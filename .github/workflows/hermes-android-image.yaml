@@ -1,0 +1,314 @@
+name: Hermes Android Image
+
+'on':
+  push:
+    branches:
+      - main
+    paths:
+      - packages/hermes-android-image/**
+      - gitops/espresso/apps/hermes-agent/scripts/android-emulator-launch.sh
+      - .github/workflows/hermes-android-image.yaml
+  pull_request:
+    paths:
+      - packages/hermes-android-image/**
+      - gitops/espresso/apps/hermes-agent/scripts/android-emulator-launch.sh
+      - .github/workflows/hermes-android-image.yaml
+
+concurrency:
+  group: android-image-digest-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  ANDROID_IMAGE_REF: ghcr.io/michaelbrusegard/hermes-android
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.IMAGE_BUMP_DEPLOY_KEY }}
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: google/android-emulator-container-scripts
+          ref: 0654f694b46794fae4b178f1e1a17cb60c5d2d34
+          path: .upstream/android-emulator-container-scripts
+          persist-credentials: false
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        if: github.event_name == 'push'
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Reclaim runner disk space
+        run: |
+          sudo rm -rf /opt/hostedtoolcache /usr/local/lib/android /usr/share/dotnet
+          docker system prune --all --force
+
+      - name: Fetch pinned Android inputs
+        id: inputs
+        run: |
+          set -a
+          source packages/hermes-android-image/versions.env
+          set +a
+          source_root="$RUNNER_TEMP/hermes-android-sources"
+          mkdir -p "$source_root"
+
+          fetch_sha1() {
+            url=$1
+            output=$2
+            expected_size=$3
+            expected_sha1=$4
+            expected_sha256=$5
+            curl --fail --location --retry 5 --retry-all-errors \
+              --output "$output" "$url"
+            test "$(stat -c %s "$output")" = "$expected_size"
+            echo "$expected_sha1  $output" | sha1sum --check --strict
+            echo "$expected_sha256  $output" | sha256sum --check --strict
+          }
+
+          fetch_sha1 \
+            "$ANDROID_EMULATOR_URL" \
+            "$source_root/emulator.zip" \
+            "$ANDROID_EMULATOR_SIZE" \
+            "$ANDROID_EMULATOR_SHA1" \
+            "$ANDROID_EMULATOR_SHA256"
+          fetch_sha1 \
+            "$ANDROID_SYSTEM_IMAGE_URL" \
+            "$source_root/system-image.zip" \
+            "$ANDROID_SYSTEM_IMAGE_SIZE" \
+            "$ANDROID_SYSTEM_IMAGE_SHA1" \
+            "$ANDROID_SYSTEM_IMAGE_SHA256"
+          fetch_sha1 \
+            "$ANDROID_PLATFORM_TOOLS_URL" \
+            "$source_root/platform-tools.zip" \
+            "$ANDROID_PLATFORM_TOOLS_SIZE" \
+            "$ANDROID_PLATFORM_TOOLS_SHA1" \
+            "$ANDROID_PLATFORM_TOOLS_SHA256"
+
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$source_root/AuroraStore.apk" "$AURORA_STORE_URL"
+          test "$(stat -c %s "$source_root/AuroraStore.apk")" = "$AURORA_STORE_SIZE"
+          echo "$AURORA_STORE_SHA256  $source_root/AuroraStore.apk" | \
+            sha256sum --check --strict
+          unzip -q "$source_root/platform-tools.zip" -d "$source_root"
+          test -x "$source_root/platform-tools/adb"
+          echo "source_root=$source_root" >> "$GITHUB_OUTPUT"
+
+      - name: Build Android 17 Play Store image
+        env:
+          SOURCE_ROOT: ${{ steps.inputs.outputs.source_root }}
+        run: |
+          set -a
+          source packages/hermes-android-image/versions.env
+          set +a
+          test "$(git -C .upstream/android-emulator-container-scripts rev-parse HEAD)" = \
+            "$ANDROID_CONTAINER_SCRIPTS_COMMIT"
+          git -C .upstream/android-emulator-container-scripts apply --check \
+            "$GITHUB_WORKSPACE/packages/hermes-android-image/android-emulator-container-scripts.patch"
+          git -C .upstream/android-emulator-container-scripts apply \
+            "$GITHUB_WORKSPACE/packages/hermes-android-image/android-emulator-container-scripts.patch"
+          python3 -m venv .upstream/android-emulator-container-scripts/.venv
+          .upstream/android-emulator-container-scripts/.venv/bin/pip install \
+            --requirement packages/hermes-android-image/requirements-build.txt
+          (
+            cd "$SOURCE_ROOT"
+            ln -s platform-tools.zip platform-tools-latest-linux.zip
+            PYTHONPATH="$GITHUB_WORKSPACE/.upstream/android-emulator-container-scripts" \
+              "$GITHUB_WORKSPACE/.upstream/android-emulator-container-scripts/.venv/bin/python" \
+              -m emu.emu_docker create \
+              emulator.zip \
+              system-image.zip \
+              --dest "$RUNNER_TEMP/hermes-android-build" \
+              --repo hermes-local \
+              --name hermes-android-base \
+              --no-metrics
+          )
+          docker image inspect hermes-local/hermes-android-base:latest >/dev/null
+          docker tag \
+            hermes-local/hermes-android-base:latest \
+            "hermes-local/hermes-android-base:$ANDROID_EMULATOR_BUILD_ID"
+          docker image inspect \
+            "hermes-local/hermes-android-base:$ANDROID_EMULATOR_BUILD_ID" >/dev/null
+          cat > "$SOURCE_ROOT/.dockerignore" <<'EOF'
+          *
+          !platform-tools/
+          !platform-tools/**
+          !AuroraStore.apk
+          EOF
+          docker build \
+            --file packages/hermes-android-image/Dockerfile \
+            --build-arg BASE_IMAGE="hermes-local/hermes-android-base:$ANDROID_EMULATOR_BUILD_ID" \
+            --build-arg ANDROID_EMULATOR_VERSION="$ANDROID_EMULATOR_VERSION" \
+            --build-arg ANDROID_EMULATOR_SHA256="$ANDROID_EMULATOR_SHA256" \
+            --build-arg ANDROID_SYSTEM_IMAGE_VERSION="$ANDROID_SYSTEM_IMAGE_VERSION" \
+            --build-arg ANDROID_SYSTEM_IMAGE_SHA256="$ANDROID_SYSTEM_IMAGE_SHA256" \
+            --build-arg ANDROID_PLATFORM_TOOLS_VERSION="$ANDROID_PLATFORM_TOOLS_VERSION" \
+            --build-arg ANDROID_PLATFORM_TOOLS_SHA256="$ANDROID_PLATFORM_TOOLS_SHA256" \
+            --build-arg AURORA_STORE_VERSION="$AURORA_STORE_VERSION" \
+            --build-arg AURORA_STORE_SHA256="$AURORA_STORE_SHA256" \
+            --tag "$ANDROID_IMAGE_REF:ci" \
+            "$SOURCE_ROOT"
+
+      - name: Smoke test persistent Android device
+        timeout-minutes: 20
+        run: |
+          set -a
+          source packages/hermes-android-image/versions.env
+          set +a
+          test -c /dev/kvm
+          sudo chmod 0666 /dev/kvm
+          smoke_root=$(mktemp -d)
+          mkdir -p "$smoke_root/data" "$smoke_root/tmp"
+          chmod 0777 "$smoke_root/tmp"
+          docker run --rm \
+            --volume "$smoke_root/data:/data" \
+            --entrypoint bash \
+            "$ANDROID_IMAGE_REF:ci" -euc '
+              mkdir -p /data/adb /data/android-home /data/apks
+              /android/sdk/platform-tools/adb keygen /data/adb/adbkey
+              cp /opt/hermes/apks/AuroraStore-*.apk /data/apks/
+              chmod 0600 /data/adb/adbkey
+              chmod 0644 /data/adb/adbkey.pub /data/apks/*.apk
+            '
+
+          start_emulator() {
+            docker run --detach --rm \
+              --name hermes-android-smoke \
+              --device /dev/kvm \
+              --volume "$PWD/gitops/espresso/apps/hermes-agent/scripts/android-emulator-launch.sh:/bootstrap/android-emulator-launch.sh:ro" \
+              --volume "$smoke_root/data:/data" \
+              --volume "$smoke_root/tmp:/tmp" \
+              --env ADB_VENDOR_KEYS=/data/adb \
+              --env 'AVD_CONFIG=disk.dataPartition.size=4096M
+          hw.keyboard=yes' \
+              --env 'EMULATOR_PARAMS=-gpu swiftshader_indirect -timezone UTC' \
+              --entrypoint bash \
+              "$ANDROID_IMAGE_REF:ci" \
+              /bootstrap/android-emulator-launch.sh
+          }
+
+          wait_for_boot() {
+            for attempt in $(seq 1 90); do
+              docker exec hermes-android-smoke \
+                /android/sdk/platform-tools/adb connect 127.0.0.1:5555 \
+                >/dev/null 2>&1 || true
+              if [ "$(docker exec hermes-android-smoke \
+                /android/sdk/platform-tools/adb -s 127.0.0.1:5555 \
+                shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; then
+                return 0
+              fi
+              if [ "$attempt" = 90 ]; then
+                docker logs hermes-android-smoke
+                return 1
+              fi
+              sleep 5
+            done
+          }
+
+          adb_cmd() {
+            docker exec hermes-android-smoke \
+              /android/sdk/platform-tools/adb -s 127.0.0.1:5555 "$@"
+          }
+
+          trap 'docker rm --force hermes-android-smoke >/dev/null 2>&1 || true' EXIT
+          start_emulator
+          wait_for_boot
+          test "$(adb_cmd shell getprop ro.build.version.sdk | tr -d '\r')" = 37
+          test "$(adb_cmd shell getprop ro.build.version.release | tr -d '\r')" = 17
+          adb_cmd shell getprop ro.product.cpu.abilist | tr -d '\r' | \
+            grep --quiet 'arm64-v8a'
+          adb_cmd shell pm path com.android.vending | grep --quiet '^package:'
+          adb_cmd shell pm path com.google.android.gms | grep --quiet '^package:'
+          adb_cmd install -r -g "/data/apks/AuroraStore-$AURORA_STORE_VERSION.apk"
+          adb_cmd shell pm path com.aurora.store | grep --quiet '^package:'
+          adb_cmd shell monkey -p com.aurora.store \
+            -c android.intent.category.LAUNCHER 1 >/dev/null
+          adb_cmd shell screencap -p /sdcard/aurora-smoke.png
+          adb_cmd pull /sdcard/aurora-smoke.png "$smoke_root/aurora-smoke.png"
+          test -s "$smoke_root/aurora-smoke.png"
+
+          docker stop hermes-android-smoke
+          start_emulator
+          wait_for_boot
+          adb_cmd shell pm path com.aurora.store | grep --quiet '^package:'
+          docker stop hermes-android-smoke
+          trap - EXIT
+
+      - name: Publish image
+        id: publish
+        if: github.event_name == 'push'
+        env:
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          sha_image="$ANDROID_IMAGE_REF:sha-$GIT_SHA"
+          docker tag "$ANDROID_IMAGE_REF:ci" "$sha_image"
+          docker tag "$ANDROID_IMAGE_REF:ci" "$ANDROID_IMAGE_REF:main"
+          push_output=$(docker push "$sha_image")
+          printf '%s\n' "$push_output"
+          docker push "$ANDROID_IMAGE_REF:main"
+          digest=$(printf '%s\n' "$push_output" | \
+            sed -n 's/^.*digest: \(sha256:[0-9a-f]\{64\}\).*$/\1/p' | tail -1)
+          test -n "$digest"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Sync main before digest update
+        if: github.event_name == 'push'
+        run: git pull --rebase origin main
+
+      - name: Update Android image references
+        if: github.event_name == 'push'
+        env:
+          ANDROID_DIGEST: ${{ steps.publish.outputs.digest }}
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path = Path("gitops/espresso/apps/hermes-agent/statefulset.yaml")
+          image = (
+              f"{os.environ['ANDROID_IMAGE_REF']}:sha-{os.environ['GIT_SHA']}"
+              f"@{os.environ['ANDROID_DIGEST']}"
+          )
+          content = path.read_text()
+          patterns = (
+              r"(?m)^(\s*- name: prepare-android\n\s*image:)\s*.*$",
+              r"(?m)^(\s*- name: android-emulator\n\s*image:)\s*.*$",
+          )
+          for pattern in patterns:
+              content, replacements = re.subn(
+                  pattern,
+                  lambda match: f"{match.group(1)} {image}",
+                  content,
+              )
+              if replacements != 1:
+                  raise SystemExit(f"Failed to update Android image for {pattern}")
+          path.write_text(content)
+          PY
+
+      - name: Commit image digest update
+        if: github.event_name == 'push'
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          if git diff --quiet -- gitops/espresso/apps/hermes-agent/statefulset.yaml; then
+            exit 0
+          fi
+          git add gitops/espresso/apps/hermes-agent/statefulset.yaml
+          git commit -m "chore(hermes-agent): update android image digest [skip ci]"
+          git pull --rebase origin main
+          git push

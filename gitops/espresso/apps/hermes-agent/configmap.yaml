@@ -41,6 +41,7 @@ data:
 
     security:
       allow_lazy_installs: false
+      allow_private_urls: true
 
     platform_toolsets:
       webhook:
@@ -125,8 +126,11 @@ data:
     browser:
       cloud_provider: local
       cdp_url: http://127.0.0.1:9222
+      allow_private_urls: true
+      allow_unsafe_evaluate: true
+      restrict_evaluate: false
       inactivity_timeout: 600
-      command_timeout: 90
+      command_timeout: 1800
       record_sessions: false
 
     skills:

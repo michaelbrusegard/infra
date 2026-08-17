@@ -96,7 +96,10 @@ jobs:
       - name: Install Tools
         run: nix profile install nixpkgs#kustomize nixpkgs#kubeconform
       - name: Run Hermes Android unit tests
-        run: python3 -m unittest discover -s gitops/espresso/apps/hermes-agent/tests -p 'test_*.py'
+        run: |
+          nix-shell \
+            -p 'python3.withPackages (ps: [ ps.requests ps.websocket-client ])' \
+            --run "python3 -m unittest discover -s gitops/espresso/apps/hermes-agent/tests -p 'test_*.py'"
       - name: Validate Kubernetes Manifests
         run: |
           kustomize build gitops/espresso | \

@@ -115,10 +115,14 @@ spec:
             - bash
             - -euc
             - |
-              mkdir -p /opt/android/adb /opt/android/android-home
+              mkdir -p /opt/android/adb /opt/android/android-home /opt/android/apks
+              if [ -s /opt/hermes/apks/AuroraStore-4.8.4.apk ]; then
+                install -m 0644 /opt/hermes/apks/AuroraStore-4.8.4.apk /opt/android/apks/AuroraStore-4.8.4.apk
+              fi
               if [ ! -s /opt/android/adb/adbkey ] || [ ! -s /opt/android/adb/adbkey.pub ]; then
                 HOME=/tmp adb keygen /opt/android/adb/adbkey
               fi
+              chown 10000:10000 /opt/android/adb/adbkey /opt/android/adb/adbkey.pub
               chmod 600 /opt/android/adb/adbkey
               chmod 644 /opt/android/adb/adbkey.pub
           resources:
@@ -235,6 +239,8 @@ spec:
               value: http://searxng.searxng.svc.cluster.local:8080
             - name: BROWSER_CDP_URL
               value: http://127.0.0.1:9222
+            - name: HERMES_ALLOW_PRIVATE_URLS
+              value: "true"
             - name: BROWSER_SHARED_PROFILE_SESSIONS
               value: "true"
             - name: BROWSER_FILES_ROOT
@@ -247,6 +253,8 @@ spec:
               value: 127.0.0.1:5555
             - name: ANDROID_EMULATOR_GRPC_URL
               value: http://hermes-android.hermes-agent.svc.cluster.local:8554
+            - name: ANDROID_VIEW_URL
+              value: http://hermes-android.hermes-agent.svc.cluster.local:6080/vnc.html?autoconnect=true&resize=scale
             - name: API_SERVER_ENABLED
               value: "true"
             - name: API_SERVER_HOST
@@ -320,6 +328,9 @@ spec:
             - --window-size=1440,900
             - --force-device-scale-factor=1
             - --lang=en-US
+            - --use-gl=angle
+            - --use-angle=swiftshader-webgl
+            - --enable-unsafe-swiftshader
             - --disable-component-update
             - --no-first-run
             - --no-default-browser-check
@@ -387,7 +398,7 @@ spec:
               drop:
                 - ALL
         - name: android-emulator
-          image: us-docker.pkg.dev/android-emulator-268719/images/30-google-x64-no-metrics:30.1.2
+          image: us-docker.pkg.dev/android-emulator-268719/images/30-google-x64-no-metrics:30.1.2@sha256:e78ac1816acef59e40285e90003acd490ef54bb3242ed088afa31bc982577050
           command:
             - bash
             - /bootstrap-skills/android-emulator-launch.sh
@@ -399,12 +410,12 @@ spec:
                 disk.dataPartition.size=8192M
                 hw.keyboard=yes
             - name: EMULATOR_PARAMS
-              value: -gpu swiftshader_indirect
+              value: -gpu swiftshader_indirect -timezone Europe/Oslo
           ports:
             - containerPort: 5555
               name: android-adb
             - containerPort: 8554
-              name: android-webrtc
+              name: android-grpc
           resources:
             requests:
               memory: 4Gi
@@ -419,8 +430,8 @@ spec:
                 - -ec
                 - |
                   export ADB_VENDOR_KEYS=/data/adb
-                  adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
-                  [ "$(adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
+                  /android/sdk/platform-tools/adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+                  [ "$(/android/sdk/platform-tools/adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 60
@@ -431,8 +442,8 @@ spec:
                 - -ec
                 - |
                   export ADB_VENDOR_KEYS=/data/adb
-                  adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
-                  [ "$(adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
+                  /android/sdk/platform-tools/adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+                  [ "$(/android/sdk/platform-tools/adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
             periodSeconds: 30
             timeoutSeconds: 10
           readinessProbe:
@@ -442,8 +453,8 @@ spec:
                 - -ec
                 - |
                   export ADB_VENDOR_KEYS=/data/adb
-                  adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
-                  [ "$(adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
+                  /android/sdk/platform-tools/adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+                  [ "$(/android/sdk/platform-tools/adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
             periodSeconds: 15
             timeoutSeconds: 10
           volumeMounts:
@@ -451,7 +462,7 @@ spec:
               mountPath: /bootstrap-skills
             - name: android-data
               mountPath: /data
-            - name: tmp
+            - name: android-tmp
               mountPath: /tmp
             - name: kvm
               mountPath: /dev/kvm
@@ -461,6 +472,84 @@ spec:
             allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
+        - name: android-viewer
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-cf01b4fed4755206618a7652f9dee23ec0f92e5c@sha256:3ff7c1a507fb4eae0e3861f1049d91e4d37d53db7f640901b1d257eacfb595a1
+          command:
+            - android-viewer
+          env:
+            - name: ADB_VENDOR_KEYS
+              value: /opt/android/adb
+            - name: ANDROID_SERIAL
+              value: 127.0.0.1:5555
+            - name: ANDROID_VIEW_LISTEN
+              value: 0.0.0.0:6081
+            - name: BROWSER_FILES_ROOT
+              value: /opt/browser-files
+            - name: HOME
+              value: /tmp/home
+          ports:
+            - containerPort: 6081
+              name: android-viewer
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 1Gi
+              cpu: "1"
+          startupProbe:
+            exec:
+              command:
+                - curl
+                - --fail
+                - --silent
+                - http://127.0.0.1:6081/vnc.html
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - --fail
+                - --silent
+                - http://127.0.0.1:6081/vnc.html
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -ec
+                - |
+                  curl --fail --silent http://127.0.0.1:6081/vnc.html >/dev/null
+                  adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+                  [ "$(adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
+                  scrcpy_pid=$(jq -er '.scrcpy_pid | select(type == "number")' /opt/browser-files/android-viewer/status.json)
+                  kill -0 "$scrcpy_pid"
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: android-data
+              mountPath: /opt/android
+              readOnly: true
+            - name: browser-files
+              mountPath: /opt/browser-files
+            - name: android-viewer-tmp
+              mountPath: /tmp
+            - name: android-viewer-shm
+              mountPath: /dev/shm
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: bootstrap-config
           configMap:
@@ -478,6 +567,14 @@ spec:
           emptyDir: {}
         - name: browser-tmp
           emptyDir: {}
+        - name: android-tmp
+          emptyDir: {}
+        - name: android-viewer-tmp
+          emptyDir: {}
+        - name: android-viewer-shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
         - name: browser-shm
           emptyDir:
             medium: Memory

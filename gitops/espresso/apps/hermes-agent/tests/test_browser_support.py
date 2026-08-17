@@ -68,6 +68,16 @@ class BrowserSupportTests(unittest.TestCase):
         self.assertTrue(destination.is_relative_to(self.browser_files))
         self.assertEqual(destination.suffix, ".json")
 
+    def test_resolve_output_path_accepts_any_visible_destination(self) -> None:
+        requested = Path(self.tempdir.name) / "outside-hermes-roots" / "checkpoint.json"
+
+        destination = browser_support.resolve_output_path(
+            str(requested), "browser-checkpoints", ".json"
+        )
+
+        self.assertEqual(destination, requested)
+        self.assertTrue(destination.parent.is_dir())
+
     def test_resolve_target_id_uses_persisted_task_session(self) -> None:
         payload = {
             "task_id": "shopping-task",
@@ -81,6 +91,54 @@ class BrowserSupportTests(unittest.TestCase):
         resolved = browser_support.resolve_target_id(None, "shopping-task")
 
         self.assertEqual(resolved, "target-123")
+
+    @mock.patch.object(browser_support, "create_connection")
+    def test_cdp_client_omits_origin_for_local_chromium(self, connect: mock.Mock) -> None:
+        connection = mock.Mock()
+        connection.recv.return_value = json.dumps({"id": 1, "result": {"ready": True}})
+        connect.return_value = connection
+
+        client = browser_support.CDPClient("http://127.0.0.1:9222")
+        result = client.call(
+            "ws://127.0.0.1:9222/devtools/page/target",
+            "Page.getFrameTree",
+        )
+        client.close()
+
+        self.assertEqual(result, {"ready": True})
+        connect.assert_called_once_with(
+            "ws://127.0.0.1:9222/devtools/page/target",
+            timeout=15,
+            suppress_origin=True,
+        )
+        connection.close.assert_called_once_with()
+
+    @mock.patch.object(browser_support, "create_connection")
+    def test_cdp_client_reuses_one_session_for_input_sequences(
+        self, connect: mock.Mock
+    ) -> None:
+        connection = mock.Mock()
+        connection.recv.side_effect = [
+            json.dumps({"id": 1, "result": {}}),
+            json.dumps({"id": 2, "result": {}}),
+        ]
+        connect.return_value = connection
+        client = browser_support.CDPClient("http://127.0.0.1:9222")
+
+        client.call(
+            "ws://127.0.0.1:9222/devtools/page/target",
+            "Input.dispatchTouchEvent",
+            {"type": "touchStart", "touchPoints": []},
+        )
+        client.call(
+            "ws://127.0.0.1:9222/devtools/page/target",
+            "Input.dispatchTouchEvent",
+            {"type": "touchEnd", "touchPoints": []},
+        )
+        client.close()
+
+        connect.assert_called_once()
+        self.assertEqual(connection.send.call_count, 2)
 
     def test_challenge_progress_reports_possible_recovery_without_guarantees(self) -> None:
         progress = browser_support.challenge_progress(
@@ -238,13 +296,17 @@ class BrowserSupportTests(unittest.TestCase):
     def test_cleanup_prunes_task_artifacts_and_session_metadata(self) -> None:
         session = self.browser_files / "browser-sessions" / "task.json"
         artifact = self.browser_files / "task" / "downloads" / "old.txt"
+        viewer_status = self.browser_files / "android-viewer" / "status.json"
         session.parent.mkdir(parents=True, exist_ok=True)
         artifact.parent.mkdir(parents=True, exist_ok=True)
+        viewer_status.parent.mkdir(parents=True, exist_ok=True)
         session.write_text("{}", encoding="utf-8")
         artifact.write_text("old", encoding="utf-8")
+        viewer_status.write_text("{}", encoding="utf-8")
         old_mtime = 1_600_000_000
         os.utime(session, (old_mtime, old_mtime))
         os.utime(artifact, (old_mtime, old_mtime))
+        os.utime(viewer_status, (old_mtime, old_mtime))
 
         result = browser_support.handle_cleanup(
             argparse.Namespace(bucket="all", older_than_hours=1.0)
@@ -252,6 +314,7 @@ class BrowserSupportTests(unittest.TestCase):
 
         self.assertIn(str(session), result["removed"])
         self.assertIn(str(artifact), result["removed"])
+        self.assertTrue(viewer_status.exists())
 
     @mock.patch.object(browser_support, "resolve_target")
     @mock.patch.object(browser_support, "CDPClient")
@@ -282,6 +345,36 @@ class BrowserSupportTests(unittest.TestCase):
             [call.args[1] for call in fake_client.call.call_args_list],
             ["Input.dispatchMouseEvent", "Input.dispatchMouseEvent", "Input.dispatchMouseEvent"],
         )
+        self.assertEqual(fake_client.call.call_args_list[1].args[2]["buttons"], 1)
+        self.assertEqual(fake_client.call.call_args_list[2].args[2]["buttons"], 0)
+
+    @mock.patch.object(browser_support, "resolve_target")
+    @mock.patch.object(browser_support, "CDPClient")
+    def test_click_uses_the_cdp_mask_for_the_selected_button(
+        self,
+        client_cls: mock.Mock,
+        resolve_target: mock.Mock,
+    ) -> None:
+        fake_client = mock.Mock()
+        client_cls.return_value = fake_client
+        fake_target = browser_support.Target(
+            "target-1", "Title", "https://example.com", "page", "ws://target"
+        )
+        resolve_target.return_value = ("target-1", fake_target)
+
+        browser_support.handle_click(
+            argparse.Namespace(
+                cdp_url="http://127.0.0.1:9222",
+                target_id="target-1",
+                task_id=None,
+                x=120,
+                y=340,
+                button="right",
+                click_count=1,
+            )
+        )
+
+        self.assertEqual(fake_client.call.call_args_list[1].args[2]["buttons"], 2)
 
     @mock.patch.object(browser_support, "resolve_target")
     @mock.patch.object(browser_support, "CDPClient")
@@ -295,20 +388,24 @@ class BrowserSupportTests(unittest.TestCase):
         fake_target = browser_support.Target("target-1", "Title", "https://example.com", "page", "ws://target")
         resolve_target.return_value = ("target-1", fake_target)
 
-        result = browser_support.handle_touch_swipe(
-            argparse.Namespace(
-                cdp_url="http://127.0.0.1:9222",
-                target_id="target-1",
-                task_id=None,
-                x1=10,
-                y1=20,
-                x2=110,
-                y2=220,
-                steps=4,
+        with mock.patch.object(browser_support.time, "sleep") as sleep:
+            result = browser_support.handle_touch_swipe(
+                argparse.Namespace(
+                    cdp_url="http://127.0.0.1:9222",
+                    target_id="target-1",
+                    task_id=None,
+                    x1=10,
+                    y1=20,
+                    x2=110,
+                    y2=220,
+                    steps=4,
+                    duration_ms=800,
+                )
             )
-        )
 
         self.assertEqual(result["swipe"]["steps"], 4)
+        self.assertEqual(result["swipe"]["duration_ms"], 800)
+        self.assertEqual(sleep.call_args_list, [mock.call(0.2)] * 4)
         self.assertEqual(len(fake_client.call.call_args_list), 6)
 
     @mock.patch.object(browser_support, "resolve_target")
@@ -323,21 +420,64 @@ class BrowserSupportTests(unittest.TestCase):
         fake_target = browser_support.Target("target-1", "Title", "https://example.com", "page", "ws://target")
         resolve_target.return_value = ("target-1", fake_target)
 
-        result = browser_support.handle_drag(
-            argparse.Namespace(
-                cdp_url="http://127.0.0.1:9222",
-                target_id="target-1",
-                task_id=None,
-                x1=1,
-                y1=2,
-                x2=51,
-                y2=62,
-                steps=3,
+        with mock.patch.object(browser_support.time, "sleep") as sleep:
+            result = browser_support.handle_drag(
+                argparse.Namespace(
+                    cdp_url="http://127.0.0.1:9222",
+                    target_id="target-1",
+                    task_id=None,
+                    x1=1,
+                    y1=2,
+                    x2=51,
+                    y2=62,
+                    steps=3,
+                    duration_ms=900,
+                )
             )
-        )
 
         self.assertEqual(result["drag"]["steps"], 3)
+        self.assertEqual(result["drag"]["duration_ms"], 900)
+        self.assertEqual(sleep.call_args_list, [mock.call(0.3)] * 3)
         self.assertEqual(len(fake_client.call.call_args_list), 6)
+
+    @mock.patch.object(browser_support, "resolve_target")
+    @mock.patch.object(browser_support, "CDPClient")
+    def test_drag_releases_the_mouse_if_a_move_fails(
+        self,
+        client_cls: mock.Mock,
+        resolve_target: mock.Mock,
+    ) -> None:
+        fake_client = mock.Mock()
+        fake_client.call.side_effect = [
+            {},
+            {},
+            RuntimeError("move failed"),
+            {},
+        ]
+        client_cls.return_value = fake_client
+        fake_target = browser_support.Target(
+            "target-1", "Title", "https://example.com", "page", "ws://target"
+        )
+        resolve_target.return_value = ("target-1", fake_target)
+
+        with self.assertRaisesRegex(RuntimeError, "move failed"):
+            browser_support.handle_drag(
+                argparse.Namespace(
+                    cdp_url="http://127.0.0.1:9222",
+                    target_id="target-1",
+                    task_id=None,
+                    x1=1,
+                    y1=2,
+                    x2=51,
+                    y2=62,
+                    steps=3,
+                    duration_ms=900,
+                )
+            )
+
+        release = fake_client.call.call_args_list[-1].args[2]
+        self.assertEqual(release["type"], "mouseReleased")
+        self.assertEqual(release["buttons"], 0)
 
     @mock.patch.object(browser_support.time, "sleep")
     @mock.patch.object(browser_support.subprocess, "run")
@@ -389,14 +529,18 @@ class BrowserSupportTests(unittest.TestCase):
         fake_client.targets.return_value = []
         client_cls.return_value = fake_client
         supervisor = self.browser_files / "browser-supervisor" / "status.json"
+        android_viewer = self.browser_files / "android-viewer" / "status.json"
         supervisor.parent.mkdir(parents=True, exist_ok=True)
+        android_viewer.parent.mkdir(parents=True, exist_ok=True)
         supervisor.write_text(json.dumps({"state": "running", "restart_count": 1}), encoding="utf-8")
+        android_viewer.write_text(json.dumps({"state": "running", "serial": "device"}), encoding="utf-8")
 
         result = browser_support.handle_diagnostics(
             argparse.Namespace(cdp_url="http://127.0.0.1:9222")
         )
 
         self.assertEqual(result["supervisor"], {"state": "running", "restart_count": 1})
+        self.assertEqual(result["android_viewer"], {"state": "running", "serial": "device"})
 
 
 if __name__ == "__main__":

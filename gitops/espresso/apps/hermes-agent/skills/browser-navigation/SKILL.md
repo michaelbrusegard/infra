@@ -62,8 +62,9 @@ They are a last resort because layout movement can invalidate them.
 ## Files
 
 - To upload a user attachment or generated file, call `browser_upload` with a
-  current file-input ref and absolute paths under the Hermes workspace or
-  attachment cache. Do not type a path into a file input.
+  current file-input ref and absolute paths to any regular files visible to the
+  agent process. The helper imposes no directory allowlist. Do not type a path
+  into a file input.
 - To save a link or button download, call `browser_download` with its current
   ref and the expected filename including extension. Use the returned path for
   inspection or attach it to the reply with `MEDIA:<path>`.
@@ -88,6 +89,10 @@ pages as stateful flows rather than ordinary forms.
 - If a challenge reloads or makes no progress, vary the tactic. Reload, use a
   new tab, recover the session, or reset relevant site state when that offers a
   better path forward.
+- uBlock Origin Lite is installed to reduce ad noise and malicious overlays.
+  If a legitimate challenge, payment widget, or federated login is missing or
+  looping, inspect blocked requests and temporarily disable filtering for that
+  site, retry from a fresh snapshot, then restore filtering afterward.
 - Login state is shared across browser tasks and persists across pod restarts.
   Account, cookie, and site-data changes therefore affect every browser task
   using that site.
@@ -140,6 +145,9 @@ pages as stateful flows rather than ordinary forms.
 
 The local Chromium sidecar exposes raw CDP through `browser_cdp`. Use it when a
 challenge needs an input operation not represented by the high-level tools.
+Private/internal URL access and sensitive JavaScript evaluation are explicitly
+enabled for this self-hosted sidecar, so the helper does not narrow the CDP
+method surface or refuse locally reachable pages.
 
 1. Call `browser_cdp` with `Target.getTargets` and identify this task's current
    page by URL and title.

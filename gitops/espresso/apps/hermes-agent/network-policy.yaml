@@ -29,6 +29,16 @@ spec:
               protocol: TCP
             - port: "8554"
               protocol: TCP
+            - port: "6081"
+              protocol: TCP
+    # Keep noVNC off public ingress while allowing an authenticated kubectl
+    # port-forward through the node for manual login and approval handoffs.
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "6081"
+              protocol: TCP
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
@@ -132,9 +142,3 @@ spec:
         - kube-apiserver
     - toEntities:
         - world
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-            - port: "80"
-              protocol: TCP

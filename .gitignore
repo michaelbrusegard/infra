@@ -2,6 +2,8 @@
 .DS_Store
 .direnv/
 .terraform/
+__pycache__/
+*.py[cod]
 
 # build images
 result

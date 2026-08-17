@@ -213,6 +213,10 @@
           kustomize
           kubeconform
           opentofu
+          (python3.withPackages (pythonPackages: [
+            pythonPackages.requests
+            pythonPackages.websocket-client
+          ]))
           sops
           yq-go
         ];

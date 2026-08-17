@@ -5,7 +5,7 @@ description: Inspect and operate the self-hosted Hermes Chromium sidecar with ta
 
 # Browser Support
 
-Use `browser-support` when Hermes browser work needs low-level but bounded help
+Use `browser-support` when Hermes browser work needs low-level help
 outside the high-level browser tools.
 
 ## Target safety
@@ -32,8 +32,8 @@ browser-support clipboard-get <target-id>
 browser-support clipboard-set <target-id> '<text>'
 browser-support click --target-id <target-id> <x> <y>
 browser-support touch-tap --target-id <target-id> <x> <y>
-browser-support touch-swipe --target-id <target-id> <x1> <y1> <x2> <y2> [--steps N]
-browser-support drag --target-id <target-id> <x1> <y1> <x2> <y2> [--steps N]
+browser-support touch-swipe --target-id <target-id> <x1> <y1> <x2> <y2> [--steps N] [--duration-ms N]
+browser-support drag --target-id <target-id> <x1> <y1> <x2> <y2> [--steps N] [--duration-ms N]
 browser-support media-state <target-id>
 browser-support challenge-state <target-id> [--previous checkpoint-or-json]
 browser-support verify-page <target-id> [--expected checkpoint-or-json] [--without-signal verification]
@@ -42,7 +42,7 @@ browser-support checkpoint-list
 browser-support checkpoint-delete <name>
 browser-support record-page <target-id> [path] [--seconds N] [--fps N]
 browser-support profile-backup [name]
-browser-support cleanup <browser-checkpoints|browser-profile-backups|browser-sessions|browser-task-artifacts|all> [--older-than-hours N]
+browser-support cleanup <browser-checkpoints|browser-profile-backups|browser-session-events|browser-sessions|browser-task-artifacts|all> [--older-than-hours N]
 browser-support diagnostics
 ```
 
@@ -64,11 +64,16 @@ browser-support diagnostics
   ambiguous. Treat those warnings as a signal to refresh page state and avoid
   assuming Hermes already switched to a newly opened page.
 - `click`, `touch-*`, and `drag` are atomic helpers for pages or widgets that
-  need raw input events. Re-check the page state after each gesture.
-- `media-state` reports bounded audio/video element state for pages that hide
+  need raw input events. Swipe and drag duration is paced across all
+  intermediate points and has no artificial upper cap. Re-check the page state
+  after each gesture.
+- `media-state` reports audio/video element state for pages that hide
   controls or swap sources dynamically.
-- `record-page` captures a short bounded viewport recording to shared browser
+- `record-page` captures a viewport recording to shared browser
   storage so retries or challenge recovery can be reviewed later.
+- Explicit output and checkpoint paths may point anywhere visible to the agent
+  process. The helper imposes no directory allowlist; omitted paths still
+  default to persistent shared browser storage.
 - `checkpoint-save` is useful for shopping and checkout preparation. It stores
   a screenshot-backed JSON record, challenge summary, and media summary under
   shared browser files so the workflow can resume later without assuming that

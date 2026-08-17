@@ -17,9 +17,6 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 _ROUTER_LOCK = threading.RLock()
 _SESSION_LOCKS: Dict[str, threading.RLock] = {}
 _INFLIGHT_COMMANDS: Dict[str, Dict[str, Any]] = {}
-_MAX_UPLOAD_FILES = 10
-_MAX_UPLOAD_FILE_BYTES = 100 * 1024 * 1024
-_MAX_UPLOAD_TOTAL_BYTES = 250 * 1024 * 1024
 _POPUP_SETTLE_COMMANDS = {"click", "mouse", "press"}
 
 
@@ -156,6 +153,18 @@ def _tabs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     return tabs if isinstance(tabs, list) else []
 
 
+def _tab_reference(tab: Dict[str, Any]) -> Optional[str]:
+    """Return the strongest tab selector supported by the CLI response."""
+    for key in ("tabId", "label", "index"):
+        value = tab.get(key)
+        if value is None:
+            continue
+        reference = str(value).strip()
+        if reference:
+            return reference
+    return None
+
+
 def _select_target(
     task_id: str,
     session: Dict[str, Any],
@@ -169,8 +178,15 @@ def _select_target(
         listed = raw_run(task_id, "tab", [], timeout=timeout)
         for tab in _tabs(listed):
             if str(tab.get("targetId") or "") == target_id:
+                tab_reference = _tab_reference(tab)
+                if tab_reference is None:
+                    return {
+                        "success": False,
+                        "error": f"Browser target {target_id} has no selectable tab reference",
+                        "details": tab,
+                    }
                 switched = raw_run(
-                    task_id, "tab", [str(tab.get("index"))], timeout=timeout)
+                    task_id, "tab", [tab_reference], timeout=timeout)
                 if switched.get("success"):
                     return None
                 return switched
@@ -378,14 +394,11 @@ def persist_session(task_id: str, session: Dict[str, Any]) -> None:
 
 
 def remove_persisted_session(task_id: str) -> None:
+    """Remove live-session metadata while retaining its diagnostic event log."""
     if not task_id:
         return
     try:
         _session_path(task_id).unlink()
-    except FileNotFoundError:
-        pass
-    try:
-        _event_path(task_id).unlink()
     except FileNotFoundError:
         pass
 
@@ -418,28 +431,13 @@ def _task_directory(task_id: str, kind: str) -> Path:
 
 def stage_uploads(task_id: str, paths: List[str]) -> List[str]:
     """Copy agent-visible files into the path shared with the Chrome sidecar."""
-    if not paths or len(paths) > _MAX_UPLOAD_FILES:
-        raise ValueError(f"Upload requires 1-{_MAX_UPLOAD_FILES} files")
-    hermes_home = Path(os.environ.get("HERMES_HOME", "/opt/data"))
-    allowed_roots = [
-        (hermes_home / "workspace").resolve(),
-        (hermes_home / "cache").resolve(),
-        _files_root(),
-    ]
+    if not paths:
+        raise ValueError("Upload requires at least one file")
     sources: List[Path] = []
-    total = 0
     for raw_path in paths:
         source = Path(raw_path).expanduser().resolve(strict=True)
-        if not source.is_file() or source.is_symlink():
+        if not source.is_file():
             raise ValueError(f"Upload source is not a regular file: {raw_path}")
-        if not any(source.is_relative_to(root) for root in allowed_roots):
-            raise ValueError(f"Upload source must be under a Hermes workspace or cache: {raw_path}")
-        size = source.stat().st_size
-        if size > _MAX_UPLOAD_FILE_BYTES:
-            raise ValueError(f"Upload file exceeds 100 MiB: {source.name}")
-        total += size
-        if total > _MAX_UPLOAD_TOTAL_BYTES:
-            raise ValueError("Combined upload size exceeds 250 MiB")
         sources.append(source)
 
     destination = _task_directory(task_id, "uploads")

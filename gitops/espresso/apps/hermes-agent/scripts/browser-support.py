@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Allowlisted Chromium CDP helpers for Hermes browser operations."""
+"""Low-level Chromium CDP helpers for Hermes browser operations."""
 
 from __future__ import annotations
 
@@ -34,6 +34,7 @@ _CHALLENGE_PATTERNS = [
     ("challenge_frame", re.compile(r"challenge|turnstile|recaptcha|hcaptcha", re.I)),
 ]
 _MAX_TEXT_SNIPPET = 4000
+_MOUSE_BUTTON_MASKS = {"left": 1, "right": 2, "middle": 4}
 
 
 def compact(value: Any) -> None:
@@ -48,10 +49,6 @@ def safe_slug(value: str, fallback: str = "default") -> str:
     return _SAFE_NAME.sub("_", value.strip())[:80] or fallback
 
 
-def hermes_home() -> Path:
-    return Path(os.environ.get("HERMES_HOME", "/opt/data")).resolve()
-
-
 def browser_files_root() -> Path:
     return Path(os.environ.get("BROWSER_FILES_ROOT", "/opt/browser-files")).resolve()
 
@@ -64,22 +61,9 @@ def browser_supervisor_root() -> Path:
     return browser_files_root() / "browser-supervisor"
 
 
-def allowed_local_roots() -> list[Path]:
-    return [
-        (hermes_home() / "workspace").resolve(),
-        (hermes_home() / "cache").resolve(),
-        browser_files_root(),
-        browser_profile_root(),
-    ]
-
-
-def ensure_within_roots(path: Path) -> Path:
-    resolved = path.expanduser().resolve()
-    if not any(resolved.is_relative_to(root) for root in allowed_local_roots()):
-        raise ValueError(
-            f"path must be under the Hermes workspace, cache, browser profile, or browser files root: {path}"
-        )
-    return resolved
+def resolve_local_path(path: Path) -> Path:
+    """Resolve any path visible to the agent process without a helper allowlist."""
+    return path.expanduser().resolve()
 
 
 def browser_bucket(bucket: str) -> Path:
@@ -175,7 +159,7 @@ def resolve_session_hint(target_id: str) -> list[str]:
 def resolve_output_path(raw_path: str | None, bucket: str, suffix: str) -> Path:
     extension = suffix if suffix.startswith(".") else f".{suffix}"
     if raw_path:
-        destination = ensure_within_roots(Path(raw_path))
+        destination = resolve_local_path(Path(raw_path))
         if destination.name in {"", ".", ".."}:
             raise ValueError("output path must name a file")
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -239,6 +223,8 @@ class Target(NamedTuple):
 class CDPClient:
     def __init__(self, base_url: str) -> None:
         self.base_url = normalize_http_cdp_base(base_url)
+        self._connections: dict[str, Any] = {}
+        self._next_message_id = 1
 
     def _http_get(self, path: str) -> Any:
         response = requests.get(f"{self.base_url}{path}", timeout=10)
@@ -276,15 +262,34 @@ class CDPClient:
                 return target
         raise ValueError(f"target_id not found: {target_id}")
 
+    def close(self) -> None:
+        for connection in self._connections.values():
+            try:
+                connection.close()
+            except Exception:
+                pass
+        self._connections.clear()
+
+    def __del__(self) -> None:
+        self.close()
+
     def call(self, websocket_url: str, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
-        payload = {"id": 1, "method": method, "params": params or {}}
-        connection = create_connection(websocket_url, timeout=15)
+        message_id = self._next_message_id
+        self._next_message_id += 1
+        payload = {"id": message_id, "method": method, "params": params or {}}
+        connection = self._connections.get(websocket_url)
+        if connection is None:
+            # Chromium rejects websocket-client's synthesized HTTP Origin unless
+            # the browser is launched with a broad remote-allow-origins policy.
+            # CDP is pod-local here, so omit Origin on this direct debugger link.
+            connection = create_connection(websocket_url, timeout=15, suppress_origin=True)
+            self._connections[websocket_url] = connection
         try:
             connection.send(json.dumps(payload))
             while True:
                 raw = connection.recv()
                 message = json.loads(raw)
-                if message.get("id") != 1:
+                if message.get("id") != message_id:
                     continue
                 if "error" in message:
                     error = message["error"]
@@ -293,8 +298,13 @@ class CDPClient:
                     )
                 result = message.get("result")
                 return result if isinstance(result, dict) else {}
-        finally:
-            connection.close()
+        except Exception:
+            self._connections.pop(websocket_url, None)
+            try:
+                connection.close()
+            except Exception:
+                pass
+            raise
 
 
 def evaluate_expression(
@@ -387,7 +397,7 @@ def collect_media_state(client: CDPClient, target_id: str) -> list[dict[str, Any
 def load_previous_page(token: str) -> dict[str, Any]:
     candidate = Path(token)
     if candidate.is_absolute() or "/" in token:
-        payload = json.loads(ensure_within_roots(candidate).read_text(encoding="utf-8"))
+        payload = json.loads(resolve_local_path(candidate).read_text(encoding="utf-8"))
     else:
         payload = json.loads(
             (browser_bucket("browser-checkpoints") / f"{safe_slug(token, 'checkpoint')}.json").read_text(encoding="utf-8")
@@ -747,18 +757,43 @@ def handle_click(args: argparse.Namespace) -> dict[str, Any]:
     target_id, target = resolve_target(client, args)
     x = int(args.x)
     y = int(args.y)
+    button_mask = _MOUSE_BUTTON_MASKS[args.button]
     client.call(target.websocket_url, "Input.dispatchMouseEvent", {"type": "mouseMoved", "x": x, "y": y})
     client.call(
         target.websocket_url,
         "Input.dispatchMouseEvent",
-        {"type": "mousePressed", "x": x, "y": y, "button": args.button, "buttons": 1, "clickCount": args.click_count},
+        {
+            "type": "mousePressed",
+            "x": x,
+            "y": y,
+            "button": args.button,
+            "buttons": button_mask,
+            "clickCount": args.click_count,
+        },
     )
-    client.call(
-        target.websocket_url,
-        "Input.dispatchMouseEvent",
-        {"type": "mouseReleased", "x": x, "y": y, "button": args.button, "buttons": 0, "clickCount": args.click_count},
-    )
-    return {"target_id": target_id, "click": {"x": x, "y": y, "button": args.button, "click_count": args.click_count}}
+    try:
+        return {
+            "target_id": target_id,
+            "click": {
+                "x": x,
+                "y": y,
+                "button": args.button,
+                "click_count": args.click_count,
+            },
+        }
+    finally:
+        client.call(
+            target.websocket_url,
+            "Input.dispatchMouseEvent",
+            {
+                "type": "mouseReleased",
+                "x": x,
+                "y": y,
+                "button": args.button,
+                "buttons": 0,
+                "clickCount": args.click_count,
+            },
+        )
 
 
 def handle_touch_tap(args: argparse.Namespace) -> dict[str, Any]:
@@ -766,25 +801,38 @@ def handle_touch_tap(args: argparse.Namespace) -> dict[str, Any]:
     target_id, target = resolve_target(client, args)
     point = {"x": int(args.x), "y": int(args.y), "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
     client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [point]})
-    client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
-    return {"target_id": target_id, "tap": {"x": int(args.x), "y": int(args.y)}}
+    try:
+        return {"target_id": target_id, "tap": {"x": int(args.x), "y": int(args.y)}}
+    finally:
+        client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
 
 
 def handle_touch_swipe(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
     target_id, target = resolve_target(client, args)
     steps = max(1, int(args.steps))
+    duration_ms = max(0, int(args.duration_ms))
+    step_delay = duration_ms / steps / 1000
     start = {"x": int(args.x1), "y": int(args.y1), "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
     client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [start]})
-    for step in range(1, steps + 1):
-        x = int(args.x1 + ((args.x2 - args.x1) * step / steps))
-        y = int(args.y1 + ((args.y2 - args.y1) * step / steps))
-        point = {"x": x, "y": y, "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
-        client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [point]})
-    client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    try:
+        for step in range(1, steps + 1):
+            x = int(args.x1 + ((args.x2 - args.x1) * step / steps))
+            y = int(args.y1 + ((args.y2 - args.y1) * step / steps))
+            point = {"x": x, "y": y, "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
+            client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [point]})
+            if step_delay:
+                time.sleep(step_delay)
+    finally:
+        client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
     return {
         "target_id": target_id,
-        "swipe": {"from": [int(args.x1), int(args.y1)], "to": [int(args.x2), int(args.y2)], "steps": steps},
+        "swipe": {
+            "from": [int(args.x1), int(args.y1)],
+            "to": [int(args.x2), int(args.y2)],
+            "steps": steps,
+            "duration_ms": duration_ms,
+        },
     }
 
 
@@ -792,28 +840,41 @@ def handle_drag(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
     target_id, target = resolve_target(client, args)
     steps = max(1, int(args.steps))
+    duration_ms = max(0, int(args.duration_ms))
+    step_delay = duration_ms / steps / 1000
     client.call(target.websocket_url, "Input.dispatchMouseEvent", {"type": "mouseMoved", "x": int(args.x1), "y": int(args.y1)})
     client.call(
         target.websocket_url,
         "Input.dispatchMouseEvent",
         {"type": "mousePressed", "x": int(args.x1), "y": int(args.y1), "button": "left", "buttons": 1, "clickCount": 1},
     )
-    for step in range(1, steps + 1):
-        x = int(args.x1 + ((args.x2 - args.x1) * step / steps))
-        y = int(args.y1 + ((args.y2 - args.y1) * step / steps))
+    current_x = int(args.x1)
+    current_y = int(args.y1)
+    try:
+        for step in range(1, steps + 1):
+            current_x = int(args.x1 + ((args.x2 - args.x1) * step / steps))
+            current_y = int(args.y1 + ((args.y2 - args.y1) * step / steps))
+            client.call(
+                target.websocket_url,
+                "Input.dispatchMouseEvent",
+                {"type": "mouseMoved", "x": current_x, "y": current_y, "button": "left", "buttons": 1},
+            )
+            if step_delay:
+                time.sleep(step_delay)
+    finally:
         client.call(
             target.websocket_url,
             "Input.dispatchMouseEvent",
-            {"type": "mouseMoved", "x": x, "y": y, "button": "left", "buttons": 1},
+            {"type": "mouseReleased", "x": current_x, "y": current_y, "button": "left", "buttons": 0, "clickCount": 1},
         )
-    client.call(
-        target.websocket_url,
-        "Input.dispatchMouseEvent",
-        {"type": "mouseReleased", "x": int(args.x2), "y": int(args.y2), "button": "left", "buttons": 0, "clickCount": 1},
-    )
     return {
         "target_id": target_id,
-        "drag": {"from": [int(args.x1), int(args.y1)], "to": [int(args.x2), int(args.y2)], "steps": steps},
+        "drag": {
+            "from": [int(args.x1), int(args.y1)],
+            "to": [int(args.x2), int(args.y2)],
+            "steps": steps,
+            "duration_ms": duration_ms,
+        },
     }
 
 
@@ -968,7 +1029,13 @@ def handle_profile_backup(args: argparse.Namespace) -> dict[str, Any]:
 
 def handle_cleanup(args: argparse.Namespace) -> dict[str, Any]:
     buckets = (
-        ["browser-checkpoints", "browser-profile-backups", "browser-sessions", "browser-task-artifacts"]
+        [
+            "browser-checkpoints",
+            "browser-profile-backups",
+            "browser-session-events",
+            "browser-sessions",
+            "browser-task-artifacts",
+        ]
         if args.bucket == "all"
         else [args.bucket]
     )
@@ -981,7 +1048,17 @@ def handle_cleanup(args: argparse.Namespace) -> dict[str, Any]:
             else [
                 path
                 for path in browser_files_root().iterdir()
-                if path.is_dir() and path.name not in {"android", "browser-checkpoints", "browser-profile-backups", "browser-sessions"}
+                if path.is_dir()
+                and path.name
+                not in {
+                    "android",
+                    "android-viewer",
+                    "browser-checkpoints",
+                    "browser-profile-backups",
+                    "browser-session-events",
+                    "browser-sessions",
+                    "browser-supervisor",
+                }
             ]
         )
         for root in roots:
@@ -1011,6 +1088,7 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
     browser_files = browser_files_root()
     sessions = list_session_states()
     supervisor = load_json_file(browser_supervisor_root() / "status.json")
+    android_viewer = load_json_file(browser_files / "android-viewer" / "status.json")
     return {
         "cdp": {
             "browser": version.get("Browser"),
@@ -1028,6 +1106,7 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
             "recent": list_session_events(20),
         },
         "supervisor": supervisor,
+        "android_viewer": android_viewer,
         "profile": {
             "root": str(profile_root),
             "profile_dir": str(profile_root / "profile"),
@@ -1045,7 +1124,17 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
             "task_directories": [
                 str(path)
                 for path in sorted(browser_files.iterdir())
-                if path.is_dir() and path.name not in {"android", "browser-checkpoints", "browser-profile-backups", "browser-sessions"}
+                if path.is_dir()
+                and path.name
+                not in {
+                    "android",
+                    "android-viewer",
+                    "browser-checkpoints",
+                    "browser-profile-backups",
+                    "browser-session-events",
+                    "browser-sessions",
+                    "browser-supervisor",
+                }
             ],
         },
     }
@@ -1086,7 +1175,7 @@ def add_target_locator_arguments(command: argparse.ArgumentParser, *, positional
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(
         prog="browser-support",
-        description="Operate the self-hosted Hermes Chromium sidecar through bounded CDP helpers.",
+        description="Operate the self-hosted Hermes Chromium sidecar through CDP helpers.",
     )
     root.add_argument("--cdp-url", default=default_cdp_url(), help="CDP discovery URL, defaults to BROWSER_CDP_URL")
     sub = root.add_subparsers(dest="command", required=True)
@@ -1130,6 +1219,7 @@ def parser() -> argparse.ArgumentParser:
     touch_swipe.add_argument("x2", type=int)
     touch_swipe.add_argument("y2", type=int)
     touch_swipe.add_argument("--steps", type=int, default=8)
+    touch_swipe.add_argument("--duration-ms", type=int, default=600)
 
     drag = sub.add_parser("drag", help="dispatch one left-button drag gesture")
     add_target_locator_arguments(drag, positional=False)
@@ -1138,15 +1228,16 @@ def parser() -> argparse.ArgumentParser:
     drag.add_argument("x2", type=int)
     drag.add_argument("y2", type=int)
     drag.add_argument("--steps", type=int, default=12)
+    drag.add_argument("--duration-ms", type=int, default=800)
 
     media_state = sub.add_parser("media-state", help="inspect current audio/video elements in one page target")
     add_target_locator_arguments(media_state)
 
-    record_page = sub.add_parser("record-page", help="capture a bounded viewport recording for one page target")
+    record_page = sub.add_parser("record-page", help="capture a viewport recording for one page target")
     add_target_locator_arguments(record_page)
     record_page.add_argument("--seconds", type=float, default=5.0)
     record_page.add_argument("--fps", type=int, default=2)
-    record_page.add_argument("path", nargs="?", help="optional output path under workspace/cache/browser files")
+    record_page.add_argument("path", nargs="?", help="optional process-visible output path")
 
     challenge = sub.add_parser("challenge-state", help="inspect one page for challenge or verification markers")
     add_target_locator_arguments(challenge)
@@ -1185,7 +1276,17 @@ def parser() -> argparse.ArgumentParser:
     profile_backup.add_argument("name", nargs="?")
 
     cleanup = sub.add_parser("cleanup", help="remove older browser artifacts from shared storage")
-    cleanup.add_argument("bucket", choices=["browser-checkpoints", "browser-profile-backups", "browser-sessions", "browser-task-artifacts", "all"])
+    cleanup.add_argument(
+        "bucket",
+        choices=[
+            "browser-checkpoints",
+            "browser-profile-backups",
+            "browser-session-events",
+            "browser-sessions",
+            "browser-task-artifacts",
+            "all",
+        ],
+    )
     cleanup.add_argument("--older-than-hours", type=float, default=168.0)
 
     sub.add_parser("diagnostics", help="report CDP, profile, policy, extension, and storage details")
