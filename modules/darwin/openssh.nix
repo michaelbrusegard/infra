@@ -1,15 +1,14 @@
-{config, ...}: {
+_: {
   services.openssh = {
     enable = true;
-    extraConfig =
-      ''
-        PasswordAuthentication no
-        KbdInteractiveAuthentication no
-        PermitRootLogin no
-        AllowTcpForwarding no
-        X11Forwarding no
-      ''
-      + "\n"
-      + (builtins.concatStringsSep "\n" (map (port: "Port ${toString port}") config.secrets.openssh.ports));
+    # Apple's launchd socket owns the listener and always exposes SSH on port
+    # 22; a Port directive here only affects standalone sshd invocations.
+    extraConfig = ''
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      AllowTcpForwarding no
+      X11Forwarding no
+    '';
   };
 }
