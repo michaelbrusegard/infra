@@ -117,6 +117,7 @@
       fluxcd
       gh
       git
+      grpcurl
       gnused
       himalaya
       imagemagick

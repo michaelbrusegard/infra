@@ -426,7 +426,7 @@ jobs:
               lambda match: f"{match.group(1)}image: {agent_image}",
               content,
           )
-          if agent_replacements not in (1, 2):
+          if agent_replacements != 3:
               raise SystemExit("Failed to update Hermes Agent image reference")
           content, browser_replacements = re.subn(
               r"(?m)^(\s*- name: (?:browser|android-viewer)\n\s*image:)\s*.*$",

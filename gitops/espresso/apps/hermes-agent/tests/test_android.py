@@ -5,8 +5,12 @@ import importlib.util
 import json
 import os
 import re
+import subprocess
 import tempfile
+import threading
 import unittest
+import urllib.error
+import urllib.request
 from pathlib import Path
 from unittest import mock
 
@@ -17,6 +21,12 @@ SPEC = importlib.util.spec_from_file_location("hermes_android", SCRIPT_PATH)
 assert SPEC and SPEC.loader
 android = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(android)
+
+COMPANION_PATH = APP_ROOT / "scripts" / "android-companion.py"
+COMPANION_SPEC = importlib.util.spec_from_file_location("hermes_android_companion", COMPANION_PATH)
+assert COMPANION_SPEC and COMPANION_SPEC.loader
+companion = importlib.util.module_from_spec(COMPANION_SPEC)
+COMPANION_SPEC.loader.exec_module(companion)
 
 
 class AndroidScriptTests(unittest.TestCase):
@@ -35,6 +45,12 @@ class AndroidScriptTests(unittest.TestCase):
             "BROWSER_FILES_ROOT": os.environ.get("BROWSER_FILES_ROOT"),
             "ANDROID_EMULATOR_GRPC_URL": os.environ.get("ANDROID_EMULATOR_GRPC_URL"),
             "ANDROID_VIEW_URL": os.environ.get("ANDROID_VIEW_URL"),
+            "ANDROID_COMPANION_URL": os.environ.get("ANDROID_COMPANION_URL"),
+            "ANDROID_EMULATOR_GRPC_TOKEN_FILE": os.environ.get(
+                "ANDROID_EMULATOR_GRPC_TOKEN_FILE"
+            ),
+            "ANDROID_COMPANION_TOKEN_FILE": os.environ.get("ANDROID_COMPANION_TOKEN_FILE"),
+            "ANDROID_SERIAL": os.environ.get("ANDROID_SERIAL"),
             "AURORA_STORE_APK": os.environ.get("AURORA_STORE_APK"),
         }
         os.environ["HERMES_HOME"] = str(self.hermes_home)
@@ -47,6 +63,46 @@ class AndroidScriptTests(unittest.TestCase):
             else:
                 os.environ[key] = value
         self.tempdir.cleanup()
+
+    def test_global_serial_survives_subcommand_compatibility_option(self) -> None:
+        before = android.parser().parse_args(["--serial", "device-a", "health"])
+        after = android.parser().parse_args(["health", "--serial", "device-b"])
+
+        self.assertEqual(before.serial, "device-a")
+        self.assertEqual(after.serial, "device-b")
+
+    def test_http_companion_requires_authentication_for_semantic_tree(self) -> None:
+        token_file = Path(self.tempdir.name) / "http-companion-token"
+        token_file.write_text("http-companion-secret\n", encoding="utf-8")
+        os.environ["ANDROID_COMPANION_TOKEN_FILE"] = str(token_file)
+        os.environ["ANDROID_SERIAL"] = "device-a"
+        server = companion.Server(("127.0.0.1", 0), companion.Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        endpoint = f"http://127.0.0.1:{server.server_port}/v1/ui-tree"
+        try:
+            with self.assertRaises(urllib.error.HTTPError) as rejected:
+                urllib.request.urlopen(endpoint, timeout=2)
+            self.assertEqual(rejected.exception.code, 401)
+            rejected.exception.close()
+
+            request = urllib.request.Request(
+                endpoint,
+                headers={"Authorization": "Bearer http-companion-secret"},
+            )
+            with mock.patch.object(
+                companion.android,
+                "current_ui_tree",
+                return_value={"backend": "accessibility-service", "nodes": []},
+            ):
+                with urllib.request.urlopen(request, timeout=2) as response:
+                    payload = json.load(response)
+            self.assertTrue(payload["ok"])
+            self.assertEqual(payload["backend"], "accessibility-service")
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
 
     def test_parse_devices_reads_states_and_metadata(self) -> None:
         devices = android.parse_devices(
@@ -112,6 +168,7 @@ class AndroidScriptTests(unittest.TestCase):
     def test_live_view_uses_env_overrides(self) -> None:
         os.environ["ANDROID_EMULATOR_GRPC_URL"] = "http://127.0.0.1:8554"
         os.environ["ANDROID_VIEW_URL"] = "http://127.0.0.1:6080/vnc.html"
+        os.environ["ANDROID_COMPANION_URL"] = "http://127.0.0.1:8777"
         self.assertEqual(
             android.live_view("127.0.0.1:5555"),
             {
@@ -119,7 +176,78 @@ class AndroidScriptTests(unittest.TestCase):
                 "adb_endpoint": "127.0.0.1:5555",
                 "grpc_url": "http://127.0.0.1:8554",
                 "viewer_url": "http://127.0.0.1:6080/vnc.html",
+                "companion_url": "http://127.0.0.1:8777",
             },
+        )
+
+    @mock.patch.object(android.subprocess, "run")
+    def test_run_grpc_requires_and_injects_persisted_token(self, run: mock.Mock) -> None:
+        token_file = Path(self.tempdir.name) / "grpc-token"
+        token_file.write_text("secret-token\n", encoding="utf-8")
+        os.environ["ANDROID_EMULATOR_GRPC_TOKEN_FILE"] = str(token_file)
+        run.return_value = subprocess.CompletedProcess([], 0, stdout='{"state":"RUNNING"}\n', stderr="")
+
+        response = android.run_grpc(
+            "http://127.0.0.1:8554",
+            "android.emulation.control.EmulatorController/getVmState",
+        )
+
+        command = run.call_args.args[0]
+        self.assertIn("authorization: Bearer secret-token", command)
+        self.assertEqual(command[-2], "127.0.0.1:8554")
+        self.assertEqual(response, '{"state":"RUNNING"}')
+
+    @mock.patch.object(android, "accessibility_snapshot")
+    def test_current_ui_tree_prefers_on_device_accessibility(
+        self,
+        accessibility_snapshot: mock.Mock,
+    ) -> None:
+        accessibility_snapshot.return_value = {
+            "backend": "accessibility-service",
+            "tree_id": "tree-1",
+            "nodes": [],
+        }
+
+        tree = android.current_ui_tree("serial")
+
+        self.assertEqual(tree["backend"], "accessibility-service")
+        accessibility_snapshot.assert_called_once_with("serial")
+
+    @mock.patch.object(android, "run_adb")
+    def test_accessibility_request_authenticates_over_adb_shell(self, run_adb: mock.Mock) -> None:
+        token_file = Path(self.tempdir.name) / "companion-token"
+        token_file.write_text("companion-secret\n", encoding="utf-8")
+        os.environ["ANDROID_COMPANION_TOKEN_FILE"] = str(token_file)
+        sent: list[bytes] = []
+
+        def adb_side_effect(_: str, *args: str, **__: object) -> str | bytes:
+            if args[0] == "push":
+                sent.append(Path(args[1]).read_bytes())
+                return ""
+            if args[0] == "shell" and len(args) == 2:
+                return b'{"ok":true,"connected":true}\n'
+            return ""
+
+        run_adb.side_effect = adb_side_effect
+        response = android.accessibility_request("serial", {"op": "health"})
+
+        self.assertEqual(run_adb.call_count, 3)
+        push_call, request_call, cleanup_call = run_adb.call_args_list
+        self.assertEqual(push_call.args[1], "push")
+        self.assertIn("nc -w 20 127.0.0.1 8765", request_call.args[2])
+        self.assertEqual(cleanup_call.args[1:4], ("shell", "rm", "-f"))
+        payload = json.loads(sent[0])
+        self.assertEqual(payload, {"op": "health", "token": "companion-secret"})
+        self.assertTrue(response["connected"])
+
+    def test_stamp_tree_adds_short_lived_ref_metadata(self) -> None:
+        tree = android.stamp_tree({"tree_id": "abc", "nodes": []}, ttl_seconds=12.0)
+
+        self.assertEqual(tree["tree_id"], "abc")
+        self.assertEqual(tree["ref_ttl_seconds"], 12.0)
+        self.assertLess(
+            android.parse_iso8601(tree["captured_at"]),
+            android.parse_iso8601(tree["expires_at"]),
         )
 
     def test_parse_ui_tree_assigns_refs_and_centers(self) -> None:
@@ -153,41 +281,88 @@ class AndroidScriptTests(unittest.TestCase):
             ],
         )
 
-    @mock.patch.object(android, "run_adb")
-    @mock.patch.object(android, "current_ui_tree")
+    @mock.patch.object(android, "accessibility_action")
     @mock.patch.object(android, "require_connected_serial")
-    def test_tap_ref_verifies_tree_and_taps_center(
+    def test_tap_ref_uses_accessibility_action_and_verification(
         self,
         require_connected_serial: mock.Mock,
-        current_ui_tree: mock.Mock,
-        run_adb: mock.Mock,
+        accessibility_action: mock.Mock,
     ) -> None:
         require_connected_serial.return_value = "serial"
-        current_ui_tree.return_value = {
-            "tree_id": "abc123",
-            "nodes": [{"ref": "r7", "bounds": {"center": [90, 120]}}],
-        }
+        accessibility_action.return_value = {"accepted": True, "changed": True}
 
         result = android.handle_tap_ref(
-            argparse.Namespace(serial="serial", ref="r7", tree_id="abc123")
+            argparse.Namespace(
+                serial="serial",
+                ref="r7",
+                tree_id="abc123",
+                expires_at="2099-01-01T00:00:00Z",
+                verify_timeout=3.0,
+                fallback_screenshot=None,
+                require_change=False,
+            )
         )
 
-        run_adb.assert_called_once_with("serial", "shell", "input", "tap", "90", "120")
-        self.assertEqual(result["tap"], {"x": 90, "y": 120})
+        accessibility_action.assert_called_once_with(
+            "serial",
+            "abc123",
+            "r7",
+            "click",
+            verify_timeout=3.0,
+            require_change=False,
+        )
+        self.assertEqual(result["mode"], "accessibility-action")
+        self.assertTrue(result["verification"]["changed"])
 
-    @mock.patch.object(android, "current_ui_tree")
+    @mock.patch.object(android, "accessibility_action")
     @mock.patch.object(android, "require_connected_serial")
     def test_tap_ref_rejects_stale_tree(
         self,
         require_connected_serial: mock.Mock,
+        accessibility_action: mock.Mock,
+    ) -> None:
+        require_connected_serial.return_value = "serial"
+        accessibility_action.side_effect = RuntimeError(
+            "accessibility companion rejected request: stale tree_id"
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "stale tree_id"):
+            android.handle_tap_ref(
+                argparse.Namespace(
+                    serial="serial",
+                    ref="r1",
+                    tree_id="old",
+                    expires_at=None,
+                    verify_timeout=3.0,
+                    fallback_screenshot=None,
+                    require_change=False,
+                )
+            )
+
+    @mock.patch.object(android, "current_ui_tree")
+    @mock.patch.object(android, "require_connected_serial")
+    def test_tap_ref_rejects_expired_ref(
+        self,
+        require_connected_serial: mock.Mock,
         current_ui_tree: mock.Mock,
     ) -> None:
         require_connected_serial.return_value = "serial"
-        current_ui_tree.return_value = {"tree_id": "new", "nodes": []}
+        current_ui_tree.return_value = {
+            "tree_id": "same",
+            "nodes": [{"ref": "r1", "bounds": {"center": [1, 2]}}],
+        }
 
-        with self.assertRaisesRegex(RuntimeError, "UI changed"):
+        with self.assertRaisesRegex(RuntimeError, "expired"):
             android.handle_tap_ref(
-                argparse.Namespace(serial="serial", ref="r1", tree_id="old")
+                argparse.Namespace(
+                    serial="serial",
+                    ref="r1",
+                    tree_id="same",
+                    expires_at="2000-01-01T00:00:00Z",
+                    verify_timeout=3.0,
+                    fallback_screenshot=None,
+                    require_change=False,
+                )
             )
 
     def test_parser_does_not_impose_recording_or_gesture_caps(self) -> None:
@@ -229,6 +404,70 @@ class AndroidScriptTests(unittest.TestCase):
 
         call.assert_called_once_with(["adb", "devices", "-l"])
         self.assertEqual(result, 0)
+
+    @mock.patch.object(android, "accessibility_action")
+    @mock.patch.object(android, "accessibility_snapshot")
+    @mock.patch.object(android, "require_connected_serial", return_value="serial")
+    def test_text_uses_accessibility_set_text_for_unicode(
+        self,
+        require_connected_serial: mock.Mock,
+        accessibility_snapshot: mock.Mock,
+        accessibility_action: mock.Mock,
+    ) -> None:
+        del require_connected_serial
+        accessibility_snapshot.return_value = {
+            "tree_id": "tree-1",
+            "nodes": [{"ref": "r4", "editable": True, "focused": True}],
+        }
+        accessibility_action.return_value = {"accepted": True, "changed": True}
+        result = android.handle_text(
+            argparse.Namespace(
+                serial="serial",
+                text="Grüße ☕",
+                ref=None,
+                tree_id=None,
+                verify_timeout=1.0,
+                fallback_screenshot=None,
+            )
+        )
+
+        accessibility_action.assert_called_once_with(
+            "serial",
+            "tree-1",
+            "r4",
+            "set_text",
+            value="Grüße ☕",
+            verify_timeout=1.0,
+            require_change=False,
+        )
+        self.assertEqual(result["mode"], "accessibility-set-text")
+
+    @mock.patch.object(android, "set_clipboard_text", side_effect=RuntimeError("gRPC unavailable"))
+    @mock.patch.object(android, "accessibility_snapshot", side_effect=RuntimeError("service unavailable"))
+    @mock.patch.object(android, "run_adb")
+    @mock.patch.object(android, "require_connected_serial", return_value="serial")
+    def test_text_keeps_adb_as_final_ascii_fallback(
+        self,
+        require_connected_serial: mock.Mock,
+        run_adb: mock.Mock,
+        accessibility_snapshot: mock.Mock,
+        set_clipboard_text: mock.Mock,
+    ) -> None:
+        del require_connected_serial
+        del accessibility_snapshot
+        del set_clipboard_text
+
+        result = android.handle_text(
+            argparse.Namespace(
+                serial="serial",
+                text="hello world",
+                verify_timeout=1.0,
+                fallback_screenshot=None,
+            )
+        )
+
+        run_adb.assert_called_once_with("serial", "shell", "input", "text", "hello%sworld")
+        self.assertEqual(result["mode"], "adb-input-fallback")
 
     @mock.patch.object(android, "run_adb", return_value="Success\n")
     @mock.patch.object(android, "resolve_local_source")
@@ -338,6 +577,24 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("mCurrentFocus", health["focus"])
         self.assertEqual(health["live_view"]["grpc_url"], "http://127.0.0.1:8554")
 
+    @mock.patch.object(android, "grpc_json")
+    def test_get_emulator_status_collects_status_and_vm_state(self, grpc_json: mock.Mock) -> None:
+        grpc_json.side_effect = [
+            {"uptime": "1s"},
+            {"state": "RUNNING"},
+        ]
+
+        with mock.patch.dict(
+            os.environ,
+            {"ANDROID_EMULATOR_GRPC_URL": "http://127.0.0.1:8554"},
+            clear=False,
+        ):
+            status = android.get_emulator_status("127.0.0.1:5555")
+
+        self.assertEqual(status["grpc_url"], "http://127.0.0.1:8554")
+        self.assertEqual(status["status"], {"uptime": "1s"})
+        self.assertEqual(status["vm_state"], {"state": "RUNNING"})
+
     @mock.patch.object(android, "health_report")
     @mock.patch.object(android, "handle_ui_dump")
     @mock.patch.object(android, "handle_screenshot")
@@ -381,6 +638,18 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn('export ANDROID_AVD_HOME="$AVD_HOME"', launcher)
         self.assertIn(".hermes-system-image-sha256", launcher)
         self.assertIn("android-home-migrations", launcher)
+        self.assertIn('required_sdk="${ANDROID_REQUIRED_SDK:-}"', launcher)
+        self.assertIn('required_release="${ANDROID_REQUIRED_RELEASE:-}"', launcher)
+        self.assertIn('"state":"disabled","reason":"wrong-platform"', launcher)
+        self.assertIn('write_status "running"', launcher)
+        self.assertIn("trap cleanup EXIT", launcher)
+        self.assertIn("adb_device emu kill", launcher)
+        self.assertIn("-grpc-use-token", launcher)
+        self.assertIn("enable_accessibility_companion", launcher)
+        self.assertIn("nc -w 2 127.0.0.1 8765", launcher)
+        self.assertIn("/root/.android/avd/running/pid_*.ini", launcher)
+        self.assertIn('write_accessibility_status "starting" "waiting-for-boot"', launcher)
+        self.assertIn('rm -f "$GRPC_TOKEN_FILE"', launcher)
         self.assertIn('mv "$AVD_HOME" "$migration_dir"', launcher)
         self.assertLess(
             launcher.index("rm -rf /tmp/android-unknown"),
@@ -390,12 +659,45 @@ class AndroidScriptTests(unittest.TestCase):
     def test_android_workload_is_pinned_and_has_live_viewer(self) -> None:
         statefulset = (APP_ROOT / "statefulset.yaml").read_text(encoding="utf-8")
         services = (APP_ROOT / "services.yaml").read_text(encoding="utf-8")
+        network_policy = (APP_ROOT / "network-policy.yaml").read_text(encoding="utf-8")
+        kustomization = (APP_ROOT / "kustomization.yaml").read_text(encoding="utf-8")
+        companion_wrapper = (APP_ROOT / "scripts" / "android-companion").read_text(
+            encoding="utf-8"
+        )
         workflow = (APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-android-image.yaml").read_text(
             encoding="utf-8"
         )
+        agent_workflow = (
+            APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-agent-image.yaml"
+        ).read_text(encoding="utf-8")
         versions = (APP_ROOT.parents[3] / "packages" / "hermes-android-image" / "versions.env").read_text(
             encoding="utf-8"
         )
+        accessibility_source = (
+            APP_ROOT.parents[3]
+            / "packages"
+            / "hermes-android-companion"
+            / "src"
+            / "com"
+            / "hermes"
+            / "agent"
+            / "accessibility"
+            / "HermesAccessibilityService.java"
+        ).read_text(encoding="utf-8")
+        accessibility_manifest = (
+            APP_ROOT.parents[3] / "packages" / "hermes-android-companion" / "AndroidManifest.xml"
+        ).read_text(encoding="utf-8")
+        config_receiver_source = (
+            APP_ROOT.parents[3]
+            / "packages"
+            / "hermes-android-companion"
+            / "src"
+            / "com"
+            / "hermes"
+            / "agent"
+            / "accessibility"
+            / "ConfigReceiver.java"
+        ).read_text(encoding="utf-8")
 
         emulator_image = re.search(
             r"(?m)^        - name: android-emulator\n          image: (.+)$",
@@ -404,29 +706,59 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIsNotNone(emulator_image)
         assert emulator_image
         self.assertIn("@sha256:", emulator_image.group(1))
-        self.assertTrue(
-            emulator_image.group(1).startswith(
-                "us-docker.pkg.dev/android-emulator-268719/images/30-google-x64-no-metrics:"
-            )
-            or emulator_image.group(1).startswith(
-                "ghcr.io/michaelbrusegard/hermes-android:sha-"
-            )
-        )
+        self.assertIn('- name: ANDROID_REQUIRED_SDK\n              value: "37"', statefulset)
+        self.assertIn('- name: ANDROID_REQUIRED_RELEASE\n              value: "17"', statefulset)
+        self.assertIn("- name: android-companion\n", statefulset)
+        self.assertNotIn("name: android-grpc", statefulset)
+        self.assertIn("value: 0.0.0.0:8777", statefulset)
+        self.assertIn("/opt/android/companion/auth-token", statefulset)
+        self.assertIn("/opt/android/companion/emulator-grpc-token", statefulset)
+        self.assertNotIn("ANDROID_ACCESSIBILITY_PORT", statefulset)
+        self.assertIn("HermesAccessibility-1.0.0.apk", statefulset)
         self.assertIn("- name: android-viewer\n", statefulset)
         self.assertIn("value: 0.0.0.0:6081", statefulset)
         self.assertIn("chown 10000:10000 /opt/android/adb/adbkey", statefulset)
+        self.assertIn("chown 10000:10000 /opt/android/companion/auth-token", statefulset)
         self.assertIn("- name: android-tmp\n              mountPath: /tmp", statefulset)
         self.assertIn("value: -gpu swiftshader_indirect -timezone Europe/Oslo", statefulset)
         self.assertIn("/android/sdk/platform-tools/adb connect", statefulset)
         self.assertNotIn("pgrep -x scrcpy", statefulset)
         self.assertIn("kill -0 \"$scrcpy_pid\"", statefulset)
+        self.assertIn("port: 8777\n      targetPort: android-companion", services)
+        self.assertNotIn("targetPort: android-grpc", services)
         self.assertIn("port: 6080\n      targetPort: android-viewer", services)
+        self.assertIn('port: "8777"', network_policy)
+        self.assertIn("android-companion=scripts/android-companion", kustomization)
+        self.assertIn("android-companion.py=scripts/android-companion.py", kustomization)
+        self.assertIn("HERMES_PYTHON", companion_wrapper)
+        self.assertNotIn("/opt/hermes/.venv", companion_wrapper)
         self.assertIn("Android 17 Play Store image", workflow)
         self.assertIn("x86_64-37.0_r06.zip", versions)
         self.assertIn("ANDROID_PLATFORM_TOOLS_VERSION=37.0.1", versions)
+        self.assertIn("ANDROID_BUILD_TOOLS_VERSION=37.0.0", versions)
+        self.assertIn("ANDROID_PLATFORM_VERSION=37.0_r02", versions)
+        self.assertIn("AOSP_BUILD_COMMIT=", versions)
+        self.assertIn("HERMES_ACCESSIBILITY_VERSION=1.0.0", versions)
+        self.assertIn(f"AURORA_STORE_VERSION={android._AURORA_STORE_VERSION}", versions)
         self.assertIn(f"AURORA_STORE_SHA256={android._AURORA_STORE_SHA256}", versions)
         self.assertIn("AURORA_STORE_SHA256", workflow)
+        self.assertIn("Build accessibility companion", workflow)
+        self.assertIn("packages/hermes-android-companion/build.sh", workflow)
+        self.assertIn("com.android.settings:id/search_action_bar", workflow)
+        self.assertIn("Grüße ☕", workflow)
+        self.assertIn("AOSP_TESTKEY_PK8_SHA256", workflow)
+        self.assertIn("class HermesAccessibilityService", accessibility_source)
+        self.assertIn('InetAddress.getByName("127.0.0.1")', accessibility_source)
+        self.assertIn("LISTEN_PORT = 8765", accessibility_source)
+        self.assertIn("MAX_LIVE_SNAPSHOTS = 32", accessibility_source)
+        self.assertIn("snapshots.get(treeId)", accessibility_source)
+        self.assertIn("ACTION_SET_TEXT", accessibility_source)
+        self.assertIn("dispatchGesture", accessibility_source)
+        self.assertIn("requireAuthentication", accessibility_source)
+        self.assertIn('android:permission="android.permission.DUMP"', accessibility_manifest)
+        self.assertIn("class ConfigReceiver", config_receiver_source)
         self.assertIn("- name: prepare-android", workflow)
+        self.assertIn("if agent_replacements != 3:", agent_workflow)
 
 
 if __name__ == "__main__":

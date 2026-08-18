@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+
+agent_python=$(
+  sed -n "s/^export HERMES_PYTHON='\(.*\)'$/\1/p" "$(command -v hermes)"
+)
+if [ -z "$agent_python" ] || [ ! -x "$agent_python" ]; then
+  echo "android-companion: unable to locate the Hermes Python environment" >&2
+  exit 1
+fi
+
+exec "$agent_python" /opt/data/scripts/android-companion.py "$@"

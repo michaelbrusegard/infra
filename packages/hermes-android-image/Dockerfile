@@ -1,4 +1,4 @@
-ARG BASE_IMAGE
+ARG BASE_IMAGE=scratch
 FROM ${BASE_IMAGE}
 
 # The upstream health check runs unqualified `adb shell`. This image exposes
@@ -15,17 +15,21 @@ ARG ANDROID_PLATFORM_TOOLS_VERSION
 ARG ANDROID_PLATFORM_TOOLS_SHA256
 ARG AURORA_STORE_VERSION
 ARG AURORA_STORE_SHA256
+ARG HERMES_ACCESSIBILITY_VERSION
+ARG HERMES_ACCESSIBILITY_PACKAGE
 
 COPY platform-tools/ /opt/hermes/platform-tools/
 COPY AuroraStore.apk /opt/hermes/apks/AuroraStore.apk
+COPY HermesAccessibility-${HERMES_ACCESSIBILITY_VERSION}.apk /opt/hermes/apks/HermesAccessibility.apk
 
 RUN set -eux; \
     rm -rf /android/sdk/platform-tools; \
     mv /opt/hermes/platform-tools /android/sdk/platform-tools; \
     test -x /android/sdk/platform-tools/adb; \
     mv /opt/hermes/apks/AuroraStore.apk "/opt/hermes/apks/AuroraStore-${AURORA_STORE_VERSION}.apk"; \
+    mv /opt/hermes/apks/HermesAccessibility.apk "/opt/hermes/apks/HermesAccessibility-${HERMES_ACCESSIBILITY_VERSION}.apk"; \
     echo "${AURORA_STORE_SHA256}  /opt/hermes/apks/AuroraStore-${AURORA_STORE_VERSION}.apk" | sha256sum -c -; \
-    chmod 0644 "/opt/hermes/apks/AuroraStore-${AURORA_STORE_VERSION}.apk"
+    chmod 0644 /opt/hermes/apks/*.apk
 
 LABEL org.opencontainers.image.title="Hermes Android emulator" \
       org.opencontainers.image.description="Android 17 Play Store emulator for Hermes Agent" \
@@ -37,4 +41,6 @@ LABEL org.opencontainers.image.title="Hermes Android emulator" \
       com.hermes.android.platform-tools="${ANDROID_PLATFORM_TOOLS_VERSION}" \
       com.hermes.android.platform-tools.sha256="${ANDROID_PLATFORM_TOOLS_SHA256}" \
       com.hermes.aurora-store.version="${AURORA_STORE_VERSION}" \
-      com.hermes.aurora-store.sha256="${AURORA_STORE_SHA256}"
+      com.hermes.aurora-store.sha256="${AURORA_STORE_SHA256}" \
+      com.hermes.accessibility.version="${HERMES_ACCESSIBILITY_VERSION}" \
+      com.hermes.accessibility.package="${HERMES_ACCESSIBILITY_PACKAGE}"

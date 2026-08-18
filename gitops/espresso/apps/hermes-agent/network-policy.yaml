@@ -27,7 +27,7 @@ spec:
               protocol: TCP
             - port: "5555"
               protocol: TCP
-            - port: "8554"
+            - port: "8777"
               protocol: TCP
             - port: "6081"
               protocol: TCP

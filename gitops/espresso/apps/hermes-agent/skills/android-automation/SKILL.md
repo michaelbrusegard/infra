@@ -7,7 +7,13 @@ description: Operate the persistent Android emulator through structured UI refs,
 
 Use `/opt/data/scripts/android` with the `terminal` tool. The built-in emulator
 uses the persistent serial `127.0.0.1:5555`; its installed apps, login state,
-and device data survive pod restarts.
+and device data survive pod restarts. An on-device Android `AccessibilityService`
+provides semantic snapshots, short-lived refs, native node actions, gestures,
+and Unicode `ACTION_SET_TEXT`. It listens only on Android guest loopback and is
+queried through a token-authenticated ADB shell stream. Hermes also runs an
+authenticated pod-local HTTP companion on
+`http://127.0.0.1:8777`, while emulator gRPC is loopback-only and protected by
+the emulator's generated bearer token.
 
 When the underlying Android system image changes, the launcher compares the
 image fingerprint before boot. It moves an incompatible prior AVD to
@@ -20,18 +26,23 @@ restarts do not trigger this migration.
 1. Run `android wait-for-boot`, then `android health`.
 2. Run `android snapshot --name <checkpoint>` before a long or consequential
    flow. It saves the screenshot, UI XML, and device health together.
-3. Run `android ui-tree`. Prefer a semantic node with text, content
-   description, or resource ID.
-4. Use `android tap-ref <ref> --tree-id <tree-id>` to reject a stale ref if the
-   screen changed. Use coordinate `tap`, `long-press`, or `swipe` when the
-   target is visual-only.
-5. Re-run `ui-tree`, `screenshot`, or `snapshot` after every consequential
-   action. Verify the visible result instead of assuming an input succeeded.
+3. Run `android ui-tree`. It prefers the live AccessibilityService and falls
+   back to UIAutomator if the service is unavailable. Prefer a semantic node
+   with text, content description, or view ID. Refs expire quickly; use the
+   returned `expires_at` value as part of the action.
+4. Use
+   `android tap-ref <ref> --tree-id <tree-id> --expires-at <expires-at>` to
+   reject stale or expired refs automatically. Use coordinate `tap`,
+   `long-press`, or `swipe` when the target is visual-only.
+5. Accessibility actions return a fresh tree and compare its digest and event
+   sequence with the pre-action state. If no change can be confirmed, the
+   helper automatically saves a screenshot. Re-inspect that evidence rather
+   than assuming an input succeeded.
 
 Use `android live-view` for the browser-compatible noVNC console URL. The
 console is backed by scrcpy, accepts mouse and keyboard input, and reconnects
-when the emulator or app restarts. The same command also reports the raw ADB
-and emulator gRPC endpoints for debugging.
+when the emulator or app restarts. The same command also reports the raw ADB,
+authenticated companion, and emulator gRPC endpoints for debugging.
 
 For a manual login or approval handoff, keep the noVNC service cluster-local
 and have the operator run
@@ -50,16 +61,22 @@ android status
 android health
 android wait-for-boot [--timeout N]
 android live-view
+android emulator-status
+android vm-state [RUNNING|PAUSED|SHUTDOWN|RESET|RESTART|START|STOP]
+android clipboard
+android set-clipboard '<text>'
 android screenshot [path]
 android record [--seconds N] [path]
 android snapshot [--name NAME]
 android uiautomator-dump [path]
 android ui-tree
 android tap <x> <y>
-android tap-ref <ref> [--tree-id ID]
+android tap-ref <ref> [--tree-id ID] [--expires-at ISO8601]
+android action-ref <ref> <click|long_click|focus|accessibility_focus|clear_focus|scroll_forward|scroll_backward|set_text> [--tree-id ID] [--value TEXT]
+android global-action <back|home|recents|notifications|quick_settings|power_dialog|lock_screen|take_screenshot>
 android long-press <x> <y> [--duration-ms N]
 android swipe <x1> <y1> <x2> <y2> [--duration-ms N]
-android text '<text>'
+android text '<text>' [--ref REF --tree-id ID]
 android keyevent <keycode-or-name>
 android rotate <auto|portrait|landscape|reverse-portrait|reverse-landscape>
 android open-url <url>
@@ -80,10 +97,20 @@ in segments and joined automatically. Capture files default to
 `/opt/browser-files/android/<serial>/...` and can be attached with
 `MEDIA:<path>`.
 
+`android text '<text>'` first uses Accessibility `ACTION_SET_TEXT` on the
+focused editable node, which preserves Unicode, emoji, and special characters.
+It falls back to authenticated emulator clipboard paste, then to direct ADB
+input for simple ASCII. Use `--ref` and `--tree-id` when more than one editable
+node is visible.
+
 ## Installing apps
 
-The emulator uses the stable Android 17/API 37 x86_64 Play Store image with
-ARM64 translation. Prefer the built-in Play Store for apps that use Play
+The emulator is guarded to require the pinned Android 17/API 37 x86_64 Play
+Store image before it will boot. If the manifest still references an older
+base image, the Android launcher enters an explicit disabled state without
+booting that guest; the rest of Hermes stays healthy while the image workflow
+publishes and pins the correct digest. With the correct image, ARM64 translation is available. Prefer the
+built-in Play Store for apps that use Play
 delivery, split APKs, or Play services. Use the visible UI to sign in, search,
 install, update, and grant requested permissions exactly as on a phone.
 

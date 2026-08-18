@@ -19,6 +19,7 @@ spec:
     spec:
       serviceAccountName: hermes-agent
       automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 75
       nodeSelector:
         kubernetes.io/hostname: espresso-0
       securityContext:
@@ -42,6 +43,8 @@ spec:
               done
               install -m 0644 /bootstrap-config/hindsight.json /opt/data/hindsight/config.json
               install -m 0755 /bootstrap-skills/android /opt/data/scripts/android
+              install -m 0755 /bootstrap-skills/android-companion /opt/data/scripts/android-companion
+              install -m 0644 /bootstrap-skills/android-companion.py /opt/data/scripts/android-companion.py
               install -m 0644 /bootstrap-skills/android.py /opt/data/scripts/android.py
               install -m 0644 /bootstrap-skills/android-automation-skill.md /opt/data/skills/android-automation/SKILL.md
               install -m 0755 /bootstrap-skills/browser-support /opt/data/scripts/browser-support
@@ -115,16 +118,24 @@ spec:
             - bash
             - -euc
             - |
-              mkdir -p /opt/android/adb /opt/android/android-home /opt/android/apks
+              mkdir -p /opt/android/adb /opt/android/android-home /opt/android/apks /opt/android/companion
               if [ -s /opt/hermes/apks/AuroraStore-4.8.4.apk ]; then
                 install -m 0644 /opt/hermes/apks/AuroraStore-4.8.4.apk /opt/android/apks/AuroraStore-4.8.4.apk
+              fi
+              if [ -s /opt/hermes/apks/HermesAccessibility-1.0.0.apk ]; then
+                install -m 0644 /opt/hermes/apks/HermesAccessibility-1.0.0.apk /opt/android/apks/HermesAccessibility-1.0.0.apk
               fi
               if [ ! -s /opt/android/adb/adbkey ] || [ ! -s /opt/android/adb/adbkey.pub ]; then
                 HOME=/tmp adb keygen /opt/android/adb/adbkey
               fi
+              if [ ! -s /opt/android/companion/auth-token ]; then
+                od -An -tx1 -N 32 /dev/urandom | tr -d ' \n' >/opt/android/companion/auth-token
+              fi
               chown 10000:10000 /opt/android/adb/adbkey /opt/android/adb/adbkey.pub
+              chown 10000:10000 /opt/android/companion/auth-token
               chmod 600 /opt/android/adb/adbkey
               chmod 644 /opt/android/adb/adbkey.pub
+              chmod 600 /opt/android/companion/auth-token
           resources:
             requests:
               memory: 32Mi
@@ -252,9 +263,15 @@ spec:
             - name: ANDROID_SERIAL
               value: 127.0.0.1:5555
             - name: ANDROID_EMULATOR_GRPC_URL
-              value: http://hermes-android.hermes-agent.svc.cluster.local:8554
+              value: http://127.0.0.1:8554
+            - name: ANDROID_EMULATOR_GRPC_TOKEN_FILE
+              value: /opt/android/companion/emulator-grpc-token
             - name: ANDROID_VIEW_URL
               value: http://hermes-android.hermes-agent.svc.cluster.local:6080/vnc.html?autoconnect=true&resize=scale
+            - name: ANDROID_COMPANION_URL
+              value: http://127.0.0.1:8777
+            - name: ANDROID_COMPANION_TOKEN_FILE
+              value: /opt/android/companion/auth-token
             - name: API_SERVER_ENABLED
               value: "true"
             - name: API_SERVER_HOST
@@ -405,6 +422,10 @@ spec:
           env:
             - name: ADB_VENDOR_KEYS
               value: /data/adb
+            - name: ANDROID_REQUIRED_RELEASE
+              value: "17"
+            - name: ANDROID_REQUIRED_SDK
+              value: "37"
             - name: AVD_CONFIG
               value: |
                 disk.dataPartition.size=8192M
@@ -414,8 +435,6 @@ spec:
           ports:
             - containerPort: 5555
               name: android-adb
-            - containerPort: 8554
-              name: android-grpc
           resources:
             requests:
               memory: 4Gi
@@ -430,6 +449,9 @@ spec:
                 - -ec
                 - |
                   export ADB_VENDOR_KEYS=/data/adb
+                  if grep -q '"state":"disabled"' /data/status/launcher.json 2>/dev/null; then
+                    exit 0
+                  fi
                   /android/sdk/platform-tools/adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
                   [ "$(/android/sdk/platform-tools/adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
             periodSeconds: 10
@@ -442,6 +464,9 @@ spec:
                 - -ec
                 - |
                   export ADB_VENDOR_KEYS=/data/adb
+                  if grep -q '"state":"disabled"' /data/status/launcher.json 2>/dev/null; then
+                    exit 0
+                  fi
                   /android/sdk/platform-tools/adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
                   [ "$(/android/sdk/platform-tools/adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
             periodSeconds: 30
@@ -453,8 +478,12 @@ spec:
                 - -ec
                 - |
                   export ADB_VENDOR_KEYS=/data/adb
+                  if grep -q '"state":"disabled"' /data/status/launcher.json 2>/dev/null; then
+                    exit 0
+                  fi
                   /android/sdk/platform-tools/adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
                   [ "$(/android/sdk/platform-tools/adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
+                  grep -q '"state":"ready"' /data/status/accessibility.json
             periodSeconds: 15
             timeoutSeconds: 10
           volumeMounts:
@@ -472,6 +501,77 @@ spec:
             allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
+        - name: android-companion
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-cf01b4fed4755206618a7652f9dee23ec0f92e5c@sha256:6a79a0cc11b482a149e14719e3952e0facd2193050d11d848449f047a1582662
+          command:
+            - android-companion
+          env:
+            - name: ADB_VENDOR_KEYS
+              value: /opt/android/adb
+            - name: ANDROID_SERIAL
+              value: 127.0.0.1:5555
+            - name: ANDROID_EMULATOR_GRPC_URL
+              value: http://127.0.0.1:8554
+            - name: ANDROID_EMULATOR_GRPC_TOKEN_FILE
+              value: /opt/android/companion/emulator-grpc-token
+            - name: ANDROID_COMPANION_LISTEN
+              value: 0.0.0.0:8777
+            - name: ANDROID_COMPANION_TOKEN_FILE
+              value: /opt/android/companion/auth-token
+            - name: BROWSER_FILES_ROOT
+              value: /opt/browser-files
+            - name: HOME
+              value: /tmp/home
+          ports:
+            - containerPort: 8777
+              name: android-companion
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 50m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: android-companion
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: android-companion
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: android-companion
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: bootstrap-skills
+              mountPath: /bootstrap-skills
+            - name: android-data
+              mountPath: /opt/android
+              readOnly: true
+            - name: browser-files
+              mountPath: /opt/browser-files
+            - name: android-companion-tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
         - name: android-viewer
           image: ghcr.io/michaelbrusegard/hermes-browser:sha-cf01b4fed4755206618a7652f9dee23ec0f92e5c@sha256:3ff7c1a507fb4eae0e3861f1049d91e4d37d53db7f640901b1d257eacfb595a1
           command:
@@ -523,6 +623,9 @@ spec:
                 - -ec
                 - |
                   curl --fail --silent http://127.0.0.1:6081/vnc.html >/dev/null
+                  if grep -q '"state":"disabled"' /opt/android/status/launcher.json 2>/dev/null; then
+                    exit 0
+                  fi
                   adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
                   [ "$(adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
                   scrcpy_pid=$(jq -er '.scrcpy_pid | select(type == "number")' /opt/browser-files/android-viewer/status.json)
@@ -570,6 +673,8 @@ spec:
         - name: android-tmp
           emptyDir: {}
         - name: android-viewer-tmp
+          emptyDir: {}
+        - name: android-companion-tmp
           emptyDir: {}
         - name: android-viewer-shm
           emptyDir:

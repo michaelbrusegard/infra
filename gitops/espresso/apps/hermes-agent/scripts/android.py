@@ -17,14 +17,21 @@ import xml.etree.ElementTree as ET
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9_.-]+")
 _BOUNDS = re.compile(r"^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$")
+_SIMPLE_INPUT_TEXT = re.compile(r"^[A-Za-z0-9@%+=:,./_-]+(?: [A-Za-z0-9@%+=:,./_-]+)*$")
 _AURORA_STORE_VERSION = "4.8.4"
 _AURORA_STORE_PACKAGE = "com.aurora.store"
 _AURORA_STORE_SHA256 = "8a1ed9aa09631290da91cb793e0517b0f20dc70239ac94ae6682cd94f91a4bad"
 _AURORA_STORE_APK = Path(f"/opt/android/apks/AuroraStore-{_AURORA_STORE_VERSION}.apk")
+_DEFAULT_REF_TTL_SECONDS = 30.0
+_DEFAULT_VERIFY_TIMEOUT_SECONDS = 3.0
+_ACCESSIBILITY_GUEST_PORT = 8765
+_MAX_ACCESSIBILITY_REQUEST_BYTES = 1024 * 1024
+_MAX_ACCESSIBILITY_RESPONSE_BYTES = 32 * 1024 * 1024
 
 
 def compact(value: Any) -> None:
@@ -105,6 +112,14 @@ def iso_now() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+def parse_iso8601(value: str) -> datetime:
+    normalized = value.strip().replace("Z", "+00:00")
+    parsed = datetime.fromisoformat(normalized)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
+
+
 def load_json_file(path: Path) -> dict[str, Any] | None:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -140,6 +155,15 @@ def default_view_endpoint(serial: str | None = None) -> str | None:
     if serial:
         candidates.append(os.environ.get(f"ANDROID_VIEW_URL_{env_name(serial)}"))
     candidates.append(os.environ.get("ANDROID_VIEW_URL"))
+    return next((candidate for candidate in candidates if candidate), None)
+
+
+def default_companion_endpoint(serial: str | None = None) -> str | None:
+    del serial
+    candidates = [
+        os.environ.get("ANDROID_COMPANION_URL"),
+        os.environ.get("ANDROID_ACCESSIBILITY_COMPANION_URL"),
+    ]
     return next((candidate for candidate in candidates if candidate), None)
 
 
@@ -181,6 +205,15 @@ def adb_command(serial: str | None, *args: str) -> list[str]:
     return command
 
 
+def grpc_target(endpoint: str) -> str:
+    parsed = urlparse(endpoint)
+    if parsed.scheme and parsed.netloc:
+        return parsed.netloc
+    if parsed.scheme and parsed.path:
+        return parsed.path
+    return endpoint
+
+
 def run_adb(
     serial: str | None,
     *args: str,
@@ -199,6 +232,66 @@ def run_adb(
         stderr = completed.stderr if text else completed.stderr.decode("utf-8", "replace")
         raise RuntimeError(f"adb {' '.join(args)} failed: {safe_text(stderr)}")
     return completed.stdout
+
+
+def run_grpc(
+    endpoint: str,
+    method: str,
+    payload: dict[str, Any] | None = None,
+    *,
+    timeout: int = 60,
+    check: bool = True,
+) -> str:
+    command = [
+        "grpcurl",
+        "-plaintext",
+        "-emit-defaults",
+    ]
+    token_file = Path(
+        os.environ.get(
+            "ANDROID_EMULATOR_GRPC_TOKEN_FILE",
+            "/opt/android/companion/emulator-grpc-token",
+        )
+    )
+    try:
+        token = token_file.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        raise RuntimeError(f"unable to read emulator gRPC token: {safe_text(exc)}") from exc
+    if not token:
+        raise RuntimeError(f"empty emulator gRPC token file: {token_file}")
+    proto_file = token_file.parent / "emulator_controller.proto"
+    if proto_file.is_file():
+        command.extend(
+            [
+                "-import-path",
+                str(proto_file.parent),
+                "-proto",
+                proto_file.name,
+            ]
+        )
+    command.extend(
+        [
+            "-H",
+            f"authorization: Bearer {token}",
+            "-d",
+            json.dumps(payload or {}, ensure_ascii=False),
+            grpc_target(endpoint),
+            method,
+        ]
+    )
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except OSError as exc:
+        raise RuntimeError(f"unable to run grpcurl: {safe_text(exc)}") from exc
+    if check and completed.returncode != 0:
+        raise RuntimeError(f"{method} failed: {safe_text(completed.stderr)}")
+    return completed.stdout.strip()
 
 
 def chosen_serial(args: argparse.Namespace) -> str | None:
@@ -236,6 +329,151 @@ def require_connected_serial(args: argparse.Namespace) -> str:
     serial = require_serial(args)
     ensure_device_connection(serial)
     return serial
+
+
+def default_grpc_url_for_serial(serial: str) -> str:
+    grpc_url = default_grpc_endpoint(serial)
+    if not grpc_url:
+        raise RuntimeError(
+            "set ANDROID_EMULATOR_GRPC_URL or ANDROID_GRPC_URL to use emulator gRPC features"
+        )
+    return grpc_url
+
+
+def grpc_json(
+    serial: str,
+    method: str,
+    payload: dict[str, Any] | None = None,
+    *,
+    timeout: int = 60,
+) -> dict[str, Any]:
+    response = run_grpc(default_grpc_url_for_serial(serial), method, payload, timeout=timeout)
+    if not response:
+        return {}
+    parsed = json.loads(response)
+    if not isinstance(parsed, dict):
+        raise RuntimeError(f"{method} returned a non-object response")
+    return parsed
+
+
+def accessibility_request(
+    serial: str,
+    payload: dict[str, Any],
+    *,
+    timeout: float = 20.0,
+) -> dict[str, Any]:
+    token_file = Path(
+        os.environ.get(
+            "ANDROID_COMPANION_TOKEN_FILE",
+            "/opt/android/companion/auth-token",
+        )
+    )
+    try:
+        token = token_file.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        raise RuntimeError(f"unable to read accessibility companion token: {safe_text(exc)}") from exc
+    if not token:
+        raise RuntimeError(f"empty accessibility companion token file: {token_file}")
+    authenticated_payload = {**payload, "token": token}
+    request = (
+        json.dumps(authenticated_payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        + b"\n"
+    )
+    if len(request) > _MAX_ACCESSIBILITY_REQUEST_BYTES:
+        raise RuntimeError("accessibility companion request exceeds one MiB")
+
+    remote_request = f"/data/local/tmp/hermes-accessibility-{uuid.uuid4().hex}.json"
+    command_timeout = max(5, int(timeout) + 5)
+    with tempfile.NamedTemporaryFile(prefix="hermes-accessibility-", suffix=".json") as request_file:
+        request_file.write(request)
+        request_file.flush()
+        run_adb(serial, "push", request_file.name, remote_request, timeout=command_timeout)
+        try:
+            raw_response = run_adb(
+                serial,
+                "shell",
+                f"nc -w {max(1, int(timeout))} 127.0.0.1 {_ACCESSIBILITY_GUEST_PORT} < {remote_request}",
+                text=False,
+                timeout=command_timeout,
+            )
+        finally:
+            run_adb(
+                serial,
+                "shell",
+                "rm",
+                "-f",
+                remote_request,
+                check=False,
+                timeout=command_timeout,
+            )
+
+    assert isinstance(raw_response, bytes)
+    if len(raw_response) > _MAX_ACCESSIBILITY_RESPONSE_BYTES:
+        raise RuntimeError("accessibility companion response exceeds 32 MiB")
+    raw = raw_response.split(b"\n", 1)[0]
+    if not raw:
+        raise RuntimeError("accessibility companion returned an empty response")
+    try:
+        response = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("accessibility companion returned invalid JSON") from exc
+    if not isinstance(response, dict):
+        raise RuntimeError("accessibility companion returned a non-object response")
+    if not response.get("ok"):
+        raise RuntimeError(
+            f"accessibility companion rejected request: {safe_text(response.get('error', 'unknown error'))}"
+        )
+    return response
+
+
+def epoch_ms_iso(value: int | float) -> str:
+    return (
+        datetime.fromtimestamp(float(value) / 1000.0, UTC)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
+
+
+def accessibility_snapshot(serial: str, ttl_seconds: float | None = None) -> dict[str, Any]:
+    ttl = ttl_seconds if ttl_seconds is not None else ref_ttl_seconds()
+    response = accessibility_request(
+        serial,
+        {"op": "snapshot", "ttl_ms": max(1000, int(ttl * 1000))},
+    )
+    response["serial"] = serial
+    response["captured_at"] = epoch_ms_iso(response["captured_at_ms"])
+    response["expires_at"] = epoch_ms_iso(response["expires_at_ms"])
+    response["ref_ttl_seconds"] = ttl
+    return response
+
+
+def accessibility_action(
+    serial: str,
+    tree_id: str,
+    ref: str,
+    action: str,
+    *,
+    value: str | None = None,
+    verify_timeout: float = _DEFAULT_VERIFY_TIMEOUT_SECONDS,
+    require_change: bool = False,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "op": "action",
+        "tree_id": tree_id,
+        "ref": ref,
+        "action": action,
+        "verify_timeout_ms": max(0, int(verify_timeout * 1000)),
+        "require_change": require_change,
+        "fallback_gesture": True,
+    }
+    if value is not None:
+        payload["value"] = value
+    return accessibility_request(serial, payload, timeout=max(20.0, verify_timeout + 10.0))
+
+
+def accessibility_gesture(serial: str, gesture: dict[str, Any]) -> dict[str, Any]:
+    return accessibility_request(serial, {"op": "gesture", **gesture})
 
 
 def shell_text(serial: str, *args: str, timeout: int = 120) -> str:
@@ -307,6 +545,165 @@ def parse_ui_tree(xml: str) -> dict[str, Any]:
     }
 
 
+def ref_ttl_seconds() -> float:
+    raw = os.environ.get("ANDROID_UI_REF_TTL_SECONDS", "")
+    if not raw:
+        return _DEFAULT_REF_TTL_SECONDS
+    try:
+        parsed = float(raw)
+    except ValueError:
+        return _DEFAULT_REF_TTL_SECONDS
+    return parsed if parsed > 0 else _DEFAULT_REF_TTL_SECONDS
+
+
+def stamp_tree(tree: dict[str, Any], ttl_seconds: float | None = None) -> dict[str, Any]:
+    ttl = ttl_seconds if ttl_seconds is not None else ref_ttl_seconds()
+    captured_at = datetime.now(UTC)
+    expires_at = captured_at.timestamp() + ttl
+    tree["captured_at"] = captured_at.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    tree["expires_at"] = (
+        datetime.fromtimestamp(expires_at, UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    )
+    tree["ref_ttl_seconds"] = ttl
+    return tree
+
+
+def tree_expired(expires_at: str) -> bool:
+    return datetime.now(UTC) >= parse_iso8601(expires_at)
+
+
+def maybe_capture_action_fallback(
+    serial: str,
+    fallback_path: str | None,
+    *,
+    force: bool = False,
+) -> dict[str, Any] | None:
+    if not fallback_path and not force:
+        return None
+    screenshot = handle_screenshot(argparse.Namespace(serial=serial, path=fallback_path))
+    return {"screenshot": screenshot["path"]}
+
+
+def verify_tree_change(
+    serial: str,
+    previous_tree_id: str,
+    *,
+    previous_digest: str | None = None,
+    previous_event_sequence: int | None = None,
+    timeout_seconds: float,
+    screenshot_fallback_path: str | None,
+    require_change: bool,
+) -> dict[str, Any]:
+    deadline = time.time() + timeout_seconds
+    latest_tree_id = previous_tree_id
+    while time.time() < deadline:
+        tree = current_ui_tree(serial)
+        latest_tree_id = str(tree["tree_id"])
+        digest_changed = previous_digest is not None and tree.get("digest") != previous_digest
+        event_changed = (
+            previous_event_sequence is not None
+            and tree.get("event_sequence") != previous_event_sequence
+        )
+        id_changed = previous_digest is None and latest_tree_id != previous_tree_id
+        if digest_changed or event_changed or id_changed:
+            return {
+                "changed": True,
+                "tree_id": latest_tree_id,
+                "digest": tree.get("digest"),
+                "event_sequence": tree.get("event_sequence"),
+                "captured_at": tree.get("captured_at"),
+                "expires_at": tree.get("expires_at"),
+            }
+        time.sleep(0.35)
+    fallback = maybe_capture_action_fallback(
+        serial,
+        screenshot_fallback_path,
+        force=True,
+    )
+    if require_change:
+        detail = ""
+        if fallback:
+            detail = f"; screenshot fallback saved to {fallback['screenshot']}"
+        raise RuntimeError(f"UI tree did not change after the action{detail}")
+    result: dict[str, Any] = {"changed": False, "tree_id": latest_tree_id}
+    if fallback:
+        result["fallback"] = fallback
+    return result
+
+
+def verify_coordinate_action(
+    serial: str,
+    before: dict[str, Any],
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return verify_tree_change(
+        serial,
+        str(before["tree_id"]),
+        previous_digest=before.get("digest"),
+        previous_event_sequence=before.get("event_sequence"),
+        timeout_seconds=float(getattr(args, "verify_timeout", _DEFAULT_VERIFY_TIMEOUT_SECONDS)),
+        screenshot_fallback_path=getattr(args, "fallback_screenshot", None),
+        require_change=bool(getattr(args, "require_change", False)),
+    )
+
+
+def simple_adb_input_text(value: str) -> bool:
+    return bool(_SIMPLE_INPUT_TEXT.fullmatch(value.strip()))
+
+
+def set_clipboard_text(serial: str, text: str) -> dict[str, Any]:
+    if not text:
+        raise ValueError("text must not be empty")
+    grpc_json(
+        serial,
+        "android.emulation.control.EmulatorController/setClipboard",
+        {"text": text},
+    )
+    clipboard = grpc_json(
+        serial,
+        "android.emulation.control.EmulatorController/getClipboard",
+        {},
+    )
+    if clipboard.get("text") != text:
+        raise RuntimeError("emulator clipboard verification failed")
+    return clipboard
+
+
+def get_clipboard_text(serial: str) -> dict[str, Any]:
+    return grpc_json(
+        serial,
+        "android.emulation.control.EmulatorController/getClipboard",
+        {},
+    )
+
+
+def get_emulator_status(serial: str) -> dict[str, Any]:
+    status = grpc_json(
+        serial,
+        "android.emulation.control.EmulatorController/getStatus",
+        {},
+    )
+    vm_state = grpc_json(
+        serial,
+        "android.emulation.control.EmulatorController/getVmState",
+        {},
+    )
+    return {
+        "grpc_url": default_grpc_url_for_serial(serial),
+        "status": status,
+        "vm_state": vm_state,
+    }
+
+
+def set_vm_state(serial: str, state: str) -> dict[str, Any]:
+    grpc_json(
+        serial,
+        "android.emulation.control.EmulatorController/setVmState",
+        {"state": state},
+    )
+    return get_emulator_status(serial)
+
+
 def live_view(serial: str) -> dict[str, Any]:
     adb_endpoint = serial if is_tcp_endpoint(serial) else None
     grpc_url = default_grpc_endpoint(serial)
@@ -318,6 +715,9 @@ def live_view(serial: str) -> dict[str, Any]:
     viewer_url = default_view_endpoint(serial)
     if viewer_url:
         result["viewer_url"] = viewer_url
+    companion_url = default_companion_endpoint(serial)
+    if companion_url:
+        result["companion_url"] = companion_url
     viewer_status = load_json_file(browser_files_root() / "android-viewer" / "status.json")
     if viewer_status:
         result["viewer_status"] = viewer_status
@@ -331,7 +731,7 @@ def health_report(serial: str) -> dict[str, Any]:
     boot_anim = shell_text(serial, "getprop", "init.svc.bootanim")
     size = parse_wm_size(shell_text(serial, "wm", "size"))
     density = shell_text(serial, "wm", "density")
-    focus = parse_focus(shell_text(serial, "dumpsys", "window", "windows", timeout=180))
+    focus = parse_focus(shell_text(serial, "dumpsys", "window", timeout=180))
     report = {
         "serial": serial,
         "state": entry.get("state"),
@@ -342,6 +742,16 @@ def health_report(serial: str) -> dict[str, Any]:
         "focus": focus,
         "live_view": live_view(serial),
     }
+    grpc_url = default_grpc_endpoint(serial)
+    if grpc_url:
+        try:
+            report["emulator"] = get_emulator_status(serial)
+        except Exception as exc:
+            report["emulator_error"] = safe_text(exc)
+    try:
+        report["accessibility"] = accessibility_request(serial, {"op": "health"}, timeout=5.0)
+    except Exception as exc:
+        report["accessibility_error"] = safe_text(exc)
     return report
 
 
@@ -468,7 +878,7 @@ def handle_ui_dump(args: argparse.Namespace) -> dict[str, Any]:
     return {"serial": serial, "path": str(destination), "size_bytes": destination.stat().st_size}
 
 
-def current_ui_tree(serial: str) -> dict[str, Any]:
+def current_uiautomator_tree(serial: str) -> dict[str, Any]:
     remote_name = f"/sdcard/Download/hermes-ui-{uuid.uuid4().hex[:12]}.xml"
     run_adb(serial, "shell", "uiautomator", "dump", "--compressed", remote_name)
     try:
@@ -476,8 +886,19 @@ def current_ui_tree(serial: str) -> dict[str, Any]:
     finally:
         run_adb(serial, "shell", "rm", "-f", remote_name, check=False)
     tree = parse_ui_tree(xml)
+    tree["tree_id"] = f"uiautomator:{tree['tree_id']}"
     tree["serial"] = serial
-    return tree
+    tree["backend"] = "uiautomator"
+    return stamp_tree(tree)
+
+
+def current_ui_tree(serial: str) -> dict[str, Any]:
+    try:
+        return accessibility_snapshot(serial)
+    except Exception as exc:
+        tree = current_uiautomator_tree(serial)
+        tree["accessibility_error"] = safe_text(exc)
+        return tree
 
 
 def handle_ui_tree(args: argparse.Namespace) -> dict[str, Any]:
@@ -487,33 +908,152 @@ def handle_ui_tree(args: argparse.Namespace) -> dict[str, Any]:
 
 def handle_tap(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
+    before = current_ui_tree(serial)
+    try:
+        gesture = accessibility_gesture(
+            serial,
+            {"type": "tap", "x": args.x, "y": args.y, "duration_ms": 1},
+        )
+        if gesture.get("accepted"):
+            return {
+                "serial": serial,
+                "tap": {"x": args.x, "y": args.y},
+                "mode": "accessibility-gesture",
+                "verification": verify_coordinate_action(serial, before, args),
+            }
+    except Exception:
+        pass
     run_adb(serial, "shell", "input", "tap", str(args.x), str(args.y))
-    return {"serial": serial, "tap": {"x": args.x, "y": args.y}}
+    return {
+        "serial": serial,
+        "tap": {"x": args.x, "y": args.y},
+        "mode": "adb-input",
+        "verification": verify_coordinate_action(serial, before, args),
+    }
 
 
 def handle_tap_ref(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
-    tree = current_ui_tree(serial)
-    if args.tree_id and args.tree_id != tree["tree_id"]:
+    if args.expires_at and tree_expired(args.expires_at):
         raise RuntimeError(
-            f"UI changed: expected tree {args.tree_id}, current tree is {tree['tree_id']}; inspect ui-tree again"
+            f"UI ref expired at {args.expires_at}; inspect ui-tree again before acting on {args.ref}"
+        )
+
+    tree: dict[str, Any] | None = None
+    tree_id = args.tree_id
+    if not tree_id:
+        tree = current_ui_tree(serial)
+        tree_id = str(tree["tree_id"])
+    elif tree_id.startswith("uiautomator:"):
+        tree = current_uiautomator_tree(serial)
+    if (tree is None or tree.get("backend") == "accessibility-service") and not tree_id.startswith(
+        "uiautomator:"
+    ):
+        try:
+            action = accessibility_action(
+                serial,
+                tree_id,
+                args.ref,
+                "click",
+                verify_timeout=args.verify_timeout,
+                require_change=args.require_change,
+            )
+            result: dict[str, Any] = {
+                "serial": serial,
+                "tree_id": tree_id,
+                "ref": args.ref,
+                "mode": "accessibility-action",
+                "verification": action,
+            }
+            if not action.get("changed"):
+                result["fallback"] = maybe_capture_action_fallback(
+                    serial,
+                    args.fallback_screenshot,
+                    force=True,
+                )
+            return result
+        except Exception as exc:
+            if args.tree_id:
+                try:
+                    fallback = maybe_capture_action_fallback(
+                        serial,
+                        args.fallback_screenshot,
+                        force=True,
+                    )
+                except Exception:
+                    fallback = None
+                detail = f"; screenshot saved to {fallback['screenshot']}" if fallback else ""
+                raise RuntimeError(f"{safe_text(exc)}{detail}") from exc
+            if tree is not None and tree.get("backend") == "accessibility-service":
+                try:
+                    fallback = maybe_capture_action_fallback(
+                        serial,
+                        args.fallback_screenshot,
+                        force=True,
+                    )
+                except Exception:
+                    fallback = None
+                detail = f"; screenshot saved to {fallback['screenshot']}" if fallback else ""
+                raise RuntimeError(f"{safe_text(exc)}{detail}") from exc
+
+    if tree is None:
+        tree = current_uiautomator_tree(serial)
+    if tree_id != tree["tree_id"]:
+        raise RuntimeError(
+            f"UI changed: expected tree {tree_id}, current tree is {tree['tree_id']}; inspect ui-tree again"
         )
     match = next((node for node in tree["nodes"] if node["ref"] == args.ref), None)
     if match is None:
         raise ValueError(f"UI ref does not exist in the current tree: {args.ref}")
     x, y = match["bounds"]["center"]
     run_adb(serial, "shell", "input", "tap", str(x), str(y))
+    verification = verify_tree_change(
+        serial,
+        tree["tree_id"],
+        timeout_seconds=args.verify_timeout,
+        screenshot_fallback_path=args.fallback_screenshot,
+        require_change=args.require_change,
+    )
     return {
         "serial": serial,
         "tree_id": tree["tree_id"],
+        "expires_at": tree.get("expires_at"),
         "ref": args.ref,
         "tap": {"x": x, "y": y},
         "node": match,
+        "mode": "uiautomator-adb-fallback",
+        "verification": verification,
     }
 
 
 def handle_swipe(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
+    before = current_ui_tree(serial)
+    try:
+        gesture = accessibility_gesture(
+            serial,
+            {
+                "type": "swipe",
+                "x1": args.x1,
+                "y1": args.y1,
+                "x2": args.x2,
+                "y2": args.y2,
+                "duration_ms": args.duration_ms,
+            },
+        )
+        if gesture.get("accepted"):
+            return {
+                "serial": serial,
+                "swipe": {
+                    "from": [args.x1, args.y1],
+                    "to": [args.x2, args.y2],
+                    "duration_ms": args.duration_ms,
+                },
+                "mode": "accessibility-gesture",
+                "verification": verify_coordinate_action(serial, before, args),
+            }
+    except Exception:
+        pass
     run_adb(
         serial,
         "shell",
@@ -532,11 +1072,33 @@ def handle_swipe(args: argparse.Namespace) -> dict[str, Any]:
             "to": [args.x2, args.y2],
             "duration_ms": args.duration_ms,
         },
+        "mode": "adb-input",
+        "verification": verify_coordinate_action(serial, before, args),
     }
 
 
 def handle_long_press(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
+    before = current_ui_tree(serial)
+    try:
+        gesture = accessibility_gesture(
+            serial,
+            {
+                "type": "long_press",
+                "x": args.x,
+                "y": args.y,
+                "duration_ms": args.duration_ms,
+            },
+        )
+        if gesture.get("accepted"):
+            return {
+                "serial": serial,
+                "long_press": {"x": args.x, "y": args.y, "duration_ms": args.duration_ms},
+                "mode": "accessibility-gesture",
+                "verification": verify_coordinate_action(serial, before, args),
+            }
+    except Exception:
+        pass
     run_adb(
         serial,
         "shell",
@@ -551,14 +1113,140 @@ def handle_long_press(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "serial": serial,
         "long_press": {"x": args.x, "y": args.y, "duration_ms": args.duration_ms},
+        "mode": "adb-input",
+        "verification": verify_coordinate_action(serial, before, args),
     }
 
 
 def handle_text(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
-    encoded = encode_input_text(args.text)
-    run_adb(serial, "shell", "input", "text", encoded)
-    return {"serial": serial, "text": encoded}
+    accessibility_error: str | None = None
+    try:
+        target_ref = getattr(args, "ref", None)
+        requested_tree_id = getattr(args, "tree_id", None)
+        if target_ref and requested_tree_id:
+            action = accessibility_action(
+                serial,
+                requested_tree_id,
+                target_ref,
+                "set_text",
+                value=args.text,
+                verify_timeout=args.verify_timeout,
+                require_change=False,
+            )
+            return {
+                "serial": serial,
+                "text": args.text,
+                "ref": target_ref,
+                "mode": "accessibility-set-text",
+                "verification": action,
+            }
+        tree = accessibility_snapshot(serial)
+        if not target_ref:
+            editable = [node for node in tree["nodes"] if node.get("editable")]
+            target = next((node for node in editable if node.get("focused")), None)
+            if target is None and len(editable) == 1:
+                target = editable[0]
+            if target:
+                target_ref = str(target["ref"])
+        if target_ref:
+            action = accessibility_action(
+                serial,
+                str(tree["tree_id"]),
+                target_ref,
+                "set_text",
+                value=args.text,
+                verify_timeout=args.verify_timeout,
+                require_change=False,
+            )
+            return {
+                "serial": serial,
+                "text": args.text,
+                "ref": target_ref,
+                "mode": "accessibility-set-text",
+                "verification": action,
+            }
+    except Exception as exc:
+        accessibility_error = safe_text(exc)
+
+    try:
+        clipboard = set_clipboard_text(serial, args.text)
+        run_adb(serial, "shell", "input", "keyevent", "279")
+        return {
+            "serial": serial,
+            "text": args.text,
+            "mode": "grpc-clipboard-paste",
+            "clipboard": clipboard,
+            "accessibility_error": accessibility_error,
+        }
+    except Exception as clipboard_exc:
+        if not simple_adb_input_text(args.text):
+            raise RuntimeError(
+                "Unicode text entry failed through accessibility and emulator clipboard: "
+                f"{accessibility_error}; {safe_text(clipboard_exc)}"
+            ) from clipboard_exc
+
+    if simple_adb_input_text(args.text):
+        encoded = encode_input_text(args.text)
+        run_adb(serial, "shell", "input", "text", encoded)
+        return {
+            "serial": serial,
+            "text": encoded,
+            "mode": "adb-input-fallback",
+            "accessibility_error": accessibility_error,
+        }
+    raise RuntimeError("text entry failed")
+
+
+def handle_action_ref(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    tree_id = args.tree_id
+    if not tree_id:
+        tree_id = str(accessibility_snapshot(serial)["tree_id"])
+    try:
+        action = accessibility_action(
+            serial,
+            tree_id,
+            args.ref,
+            args.action,
+            value=args.value,
+            verify_timeout=args.verify_timeout,
+            require_change=args.require_change,
+        )
+    except Exception as exc:
+        try:
+            fallback = maybe_capture_action_fallback(
+                serial,
+                args.fallback_screenshot,
+                force=True,
+            )
+        except Exception:
+            fallback = None
+        detail = f"; screenshot saved to {fallback['screenshot']}" if fallback else ""
+        raise RuntimeError(f"{safe_text(exc)}{detail}") from exc
+    result: dict[str, Any] = {
+        "serial": serial,
+        "tree_id": tree_id,
+        "ref": args.ref,
+        "action": args.action,
+        "verification": action,
+    }
+    if not action.get("changed"):
+        result["fallback"] = maybe_capture_action_fallback(
+            serial,
+            args.fallback_screenshot,
+            force=True,
+        )
+    return result
+
+
+def handle_global_action(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    response = accessibility_request(
+        serial,
+        {"op": "global_action", "action": args.action},
+    )
+    return {"serial": serial, "global_action": response}
 
 
 def handle_keyevent(args: argparse.Namespace) -> dict[str, Any]:
@@ -790,6 +1478,28 @@ def handle_live_view(args: argparse.Namespace) -> dict[str, Any]:
     return live_view(serial)
 
 
+def handle_emulator_status(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    return {"serial": serial, "emulator": get_emulator_status(serial)}
+
+
+def handle_vm_state(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    if args.state:
+        return {"serial": serial, "emulator": set_vm_state(serial, args.state)}
+    return {"serial": serial, "emulator": get_emulator_status(serial)}
+
+
+def handle_clipboard(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    return {"serial": serial, "clipboard": get_clipboard_text(serial)}
+
+
+def handle_set_clipboard(args: argparse.Namespace) -> dict[str, Any]:
+    serial = require_connected_serial(args)
+    return {"serial": serial, "clipboard": set_clipboard_text(serial, args.text)}
+
+
 def handle_logcat(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
     destination = resolve_output_path(args.path, serial, "logcat", ".txt")
@@ -821,6 +1531,8 @@ HANDLERS = {
     "swipe": handle_swipe,
     "long-press": handle_long_press,
     "text": handle_text,
+    "action-ref": handle_action_ref,
+    "global-action": handle_global_action,
     "keyevent": handle_keyevent,
     "open-url": handle_open_url,
     "app-start": handle_app_start,
@@ -837,6 +1549,10 @@ HANDLERS = {
     "health": handle_health,
     "snapshot": handle_snapshot,
     "live-view": handle_live_view,
+    "emulator-status": handle_emulator_status,
+    "vm-state": handle_vm_state,
+    "clipboard": handle_clipboard,
+    "set-clipboard": handle_set_clipboard,
     "logcat": handle_logcat,
 }
 
@@ -852,7 +1568,7 @@ def parser() -> argparse.ArgumentParser:
     sub.add_parser("devices", help="list adb-visible devices with metadata")
     sub.add_parser("status", help="show one device's basic identity and Android version")
     health = sub.add_parser("health", help="show boot, display, focus, and live-view details")
-    health.add_argument("--serial", help=argparse.SUPPRESS)
+    health.add_argument("--serial", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
 
     connect = sub.add_parser("connect", help="connect to an adb TCP endpoint")
     connect.add_argument("endpoint", help="host:port or serial endpoint for adb connect")
@@ -891,15 +1607,36 @@ def parser() -> argparse.ArgumentParser:
     wait_for_boot.add_argument("--interval", type=positive_float, default=2.0)
 
     live_view_cmd = sub.add_parser("live-view", help="show adb, browser viewer, and emulator gRPC endpoints")
-    live_view_cmd.add_argument("--serial", help=argparse.SUPPRESS)
+    live_view_cmd.add_argument("--serial", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
+
+    sub.add_parser("emulator-status", help="show emulator gRPC status and VM state")
+
+    vm_state = sub.add_parser("vm-state", help="get or set the emulator VM run state")
+    vm_state.add_argument(
+        "state",
+        nargs="?",
+        choices=("RUNNING", "PAUSED", "SHUTDOWN", "RESET", "RESTART", "START", "STOP"),
+    )
+
+    sub.add_parser("clipboard", help="read the emulator clipboard through gRPC")
+
+    set_clipboard = sub.add_parser("set-clipboard", help="set the emulator clipboard through gRPC")
+    set_clipboard.add_argument("text")
 
     tap = sub.add_parser("tap", help="tap one screen coordinate")
     tap.add_argument("x", type=int)
     tap.add_argument("y", type=int)
+    tap.add_argument("--verify-timeout", type=positive_float, default=_DEFAULT_VERIFY_TIMEOUT_SECONDS)
+    tap.add_argument("--fallback-screenshot")
+    tap.add_argument("--require-change", action="store_true")
 
     tap_ref = sub.add_parser("tap-ref", help="tap the center of a ref from ui-tree")
     tap_ref.add_argument("ref", help="short-lived ref such as r12")
     tap_ref.add_argument("--tree-id", help="refuse the tap if the UI changed since ui-tree")
+    tap_ref.add_argument("--expires-at", help="refuse the tap if the ref has expired")
+    tap_ref.add_argument("--verify-timeout", type=positive_float, default=_DEFAULT_VERIFY_TIMEOUT_SECONDS)
+    tap_ref.add_argument("--fallback-screenshot", help="save a screenshot if verification cannot confirm a change")
+    tap_ref.add_argument("--require-change", action="store_true")
 
     swipe = sub.add_parser("swipe", help="swipe between two screen coordinates")
     swipe.add_argument("x1", type=int)
@@ -907,14 +1644,60 @@ def parser() -> argparse.ArgumentParser:
     swipe.add_argument("x2", type=int)
     swipe.add_argument("y2", type=int)
     swipe.add_argument("--duration-ms", type=positive_int, default=300)
+    swipe.add_argument("--verify-timeout", type=positive_float, default=_DEFAULT_VERIFY_TIMEOUT_SECONDS)
+    swipe.add_argument("--fallback-screenshot")
+    swipe.add_argument("--require-change", action="store_true")
 
     long_press = sub.add_parser("long-press", help="press and hold one screen coordinate")
     long_press.add_argument("x", type=int)
     long_press.add_argument("y", type=int)
     long_press.add_argument("--duration-ms", type=positive_int, default=1000)
+    long_press.add_argument("--verify-timeout", type=positive_float, default=_DEFAULT_VERIFY_TIMEOUT_SECONDS)
+    long_press.add_argument("--fallback-screenshot")
+    long_press.add_argument("--require-change", action="store_true")
 
-    text = sub.add_parser("text", help="type simple text through adb input")
+    text = sub.add_parser("text", help="type text through adb input or emulator clipboard paste")
     text.add_argument("text")
+    text.add_argument("--ref", help="editable accessibility ref to target")
+    text.add_argument("--tree-id", help="tree that owns --ref")
+    text.add_argument("--verify-timeout", type=positive_float, default=0.0)
+    text.add_argument("--fallback-screenshot", help="save a screenshot if verification cannot confirm a change")
+
+    action_ref = sub.add_parser("action-ref", help="perform a semantic accessibility action on a ref")
+    action_ref.add_argument("ref")
+    action_ref.add_argument(
+        "action",
+        choices=(
+            "click",
+            "long_click",
+            "focus",
+            "accessibility_focus",
+            "clear_focus",
+            "scroll_forward",
+            "scroll_backward",
+            "set_text",
+        ),
+    )
+    action_ref.add_argument("--tree-id")
+    action_ref.add_argument("--value", help="value for set_text")
+    action_ref.add_argument("--verify-timeout", type=positive_float, default=_DEFAULT_VERIFY_TIMEOUT_SECONDS)
+    action_ref.add_argument("--fallback-screenshot")
+    action_ref.add_argument("--require-change", action="store_true")
+
+    global_action = sub.add_parser("global-action", help="perform one Android accessibility global action")
+    global_action.add_argument(
+        "action",
+        choices=(
+            "back",
+            "home",
+            "recents",
+            "notifications",
+            "quick_settings",
+            "power_dialog",
+            "lock_screen",
+            "take_screenshot",
+        ),
+    )
 
     keyevent = sub.add_parser("keyevent", help="send one Android keyevent")
     keyevent.add_argument("keyevent")

@@ -42,9 +42,9 @@ spec:
     - name: adb
       port: 5555
       targetPort: android-adb
-    - name: grpc
-      port: 8554
-      targetPort: android-grpc
+    - name: companion
+      port: 8777
+      targetPort: android-companion
     - name: viewer
       port: 6080
       targetPort: android-viewer

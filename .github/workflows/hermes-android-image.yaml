@@ -6,11 +6,13 @@ name: Hermes Android Image
       - main
     paths:
       - packages/hermes-android-image/**
+      - packages/hermes-android-companion/**
       - gitops/espresso/apps/hermes-agent/scripts/android-emulator-launch.sh
       - .github/workflows/hermes-android-image.yaml
   pull_request:
     paths:
       - packages/hermes-android-image/**
+      - packages/hermes-android-companion/**
       - gitops/espresso/apps/hermes-agent/scripts/android-emulator-launch.sh
       - .github/workflows/hermes-android-image.yaml
 
@@ -94,6 +96,36 @@ jobs:
             "$ANDROID_PLATFORM_TOOLS_SIZE" \
             "$ANDROID_PLATFORM_TOOLS_SHA1" \
             "$ANDROID_PLATFORM_TOOLS_SHA256"
+          fetch_sha1 \
+            "$ANDROID_BUILD_TOOLS_URL" \
+            "$source_root/build-tools.zip" \
+            "$ANDROID_BUILD_TOOLS_SIZE" \
+            "$ANDROID_BUILD_TOOLS_SHA1" \
+            "$ANDROID_BUILD_TOOLS_SHA256"
+          fetch_sha1 \
+            "$ANDROID_PLATFORM_URL" \
+            "$source_root/platform.zip" \
+            "$ANDROID_PLATFORM_SIZE" \
+            "$ANDROID_PLATFORM_SHA1" \
+            "$ANDROID_PLATFORM_SHA256"
+
+          for key_file in testkey.pk8 testkey.x509.pem; do
+            curl --fail --location --retry 5 --retry-all-errors \
+              "https://android.googlesource.com/platform/build/+/$AOSP_BUILD_COMMIT/target/product/security/$key_file?format=TEXT" | \
+              base64 --decode >"$source_root/$key_file"
+          done
+          echo "$AOSP_TESTKEY_PK8_SHA256  $source_root/testkey.pk8" | \
+            sha256sum --check --strict
+          echo "$AOSP_TESTKEY_X509_SHA256  $source_root/testkey.x509.pem" | \
+            sha256sum --check --strict
+
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$source_root/grpcurl.tar.gz" "$GRPCURL_URL"
+          test "$(stat -c %s "$source_root/grpcurl.tar.gz")" = "$GRPCURL_SIZE"
+          echo "$GRPCURL_SHA256  $source_root/grpcurl.tar.gz" | \
+            sha256sum --check --strict
+          tar -xzf "$source_root/grpcurl.tar.gz" -C "$source_root" grpcurl
+          chmod 0755 "$source_root/grpcurl"
 
           curl --fail --location --retry 5 --retry-all-errors \
             --output "$source_root/AuroraStore.apk" "$AURORA_STORE_URL"
@@ -103,6 +135,23 @@ jobs:
           unzip -q "$source_root/platform-tools.zip" -d "$source_root"
           test -x "$source_root/platform-tools/adb"
           echo "source_root=$source_root" >> "$GITHUB_OUTPUT"
+
+      - name: Build accessibility companion
+        env:
+          SOURCE_ROOT: ${{ steps.inputs.outputs.source_root }}
+        run: |
+          set -a
+          source packages/hermes-android-image/versions.env
+          set +a
+          bash packages/hermes-android-companion/build.sh \
+            "$SOURCE_ROOT/platform.zip" \
+            "$SOURCE_ROOT/build-tools.zip" \
+            "$SOURCE_ROOT/testkey.pk8" \
+            "$SOURCE_ROOT/testkey.x509.pem" \
+            "$HERMES_ACCESSIBILITY_VERSION_CODE" \
+            "$HERMES_ACCESSIBILITY_VERSION" \
+            "$SOURCE_ROOT/HermesAccessibility-$HERMES_ACCESSIBILITY_VERSION.apk"
+          test -s "$SOURCE_ROOT/HermesAccessibility-$HERMES_ACCESSIBILITY_VERSION.apk"
 
       - name: Build Android 17 Play Store image
         env:
@@ -144,6 +193,7 @@ jobs:
           !platform-tools/
           !platform-tools/**
           !AuroraStore.apk
+          !HermesAccessibility-*.apk
           EOF
           docker build \
             --file packages/hermes-android-image/Dockerfile \
@@ -156,11 +206,15 @@ jobs:
             --build-arg ANDROID_PLATFORM_TOOLS_SHA256="$ANDROID_PLATFORM_TOOLS_SHA256" \
             --build-arg AURORA_STORE_VERSION="$AURORA_STORE_VERSION" \
             --build-arg AURORA_STORE_SHA256="$AURORA_STORE_SHA256" \
+            --build-arg HERMES_ACCESSIBILITY_VERSION="$HERMES_ACCESSIBILITY_VERSION" \
+            --build-arg HERMES_ACCESSIBILITY_PACKAGE="$HERMES_ACCESSIBILITY_PACKAGE" \
             --tag "$ANDROID_IMAGE_REF:ci" \
             "$SOURCE_ROOT"
 
       - name: Smoke test persistent Android device
-        timeout-minutes: 20
+        timeout-minutes: 45
+        env:
+          SOURCE_ROOT: ${{ steps.inputs.outputs.source_root }}
         run: |
           set -a
           source packages/hermes-android-image/versions.env
@@ -174,10 +228,12 @@ jobs:
             --volume "$smoke_root/data:/data" \
             --entrypoint bash \
             "$ANDROID_IMAGE_REF:ci" -euc '
-              mkdir -p /data/adb /data/android-home /data/apks
+              mkdir -p /data/adb /data/android-home /data/apks /data/companion
               /android/sdk/platform-tools/adb keygen /data/adb/adbkey
+              od -An -tx1 -N 32 /dev/urandom | tr -d " \n" >/data/companion/auth-token
               cp /opt/hermes/apks/AuroraStore-*.apk /data/apks/
-              chmod 0600 /data/adb/adbkey
+              cp /opt/hermes/apks/HermesAccessibility-*.apk /data/apks/
+              chmod 0600 /data/adb/adbkey /data/companion/auth-token
               chmod 0644 /data/adb/adbkey.pub /data/apks/*.apk
             '
 
@@ -186,9 +242,12 @@ jobs:
               --name hermes-android-smoke \
               --device /dev/kvm \
               --volume "$PWD/gitops/espresso/apps/hermes-agent/scripts/android-emulator-launch.sh:/bootstrap/android-emulator-launch.sh:ro" \
+              --volume "$SOURCE_ROOT/grpcurl:/opt/hermes/bin/grpcurl:ro" \
               --volume "$smoke_root/data:/data" \
               --volume "$smoke_root/tmp:/tmp" \
               --env ADB_VENDOR_KEYS=/data/adb \
+              --env ANDROID_REQUIRED_RELEASE=17 \
+              --env ANDROID_REQUIRED_SDK=37 \
               --env 'AVD_CONFIG=disk.dataPartition.size=4096M
           hw.keyboard=yes' \
               --env 'EMULATOR_PARAMS=-gpu swiftshader_indirect -timezone UTC' \
@@ -220,15 +279,118 @@ jobs:
               /android/sdk/platform-tools/adb -s 127.0.0.1:5555 "$@"
           }
 
+          assert_running_launcher() {
+            test "$(jq -r '.state' "$smoke_root/data/status/launcher.json")" = running
+          }
+
+          wait_for_accessibility() {
+            for attempt in $(seq 1 60); do
+              if [ "$(jq -r '.state // empty' "$smoke_root/data/status/accessibility.json" 2>/dev/null)" = ready ]; then
+                return 0
+              fi
+              if [ "$attempt" = 60 ]; then
+                docker logs hermes-android-smoke
+                return 1
+              fi
+              sleep 2
+            done
+          }
+
+          accessibility_request() {
+            token=$(tr -d '\r\n' <"$smoke_root/data/companion/auth-token")
+            request=$(jq -cn --argjson payload "$1" --arg token "$token" \
+              '$payload + {token: $token}')
+            accessibility_raw_request "$request"
+          }
+
+          accessibility_raw_request() {
+            encoded=$(printf '%s\n' "$1" | base64 --wrap=0)
+            adb_cmd shell \
+              "printf %s $encoded | base64 -d | nc -w 20 127.0.0.1 8765"
+          }
+
+          grpc_request() {
+            token=$(tr -d '\r\n' <"$smoke_root/data/companion/emulator-grpc-token")
+            docker exec hermes-android-smoke /opt/hermes/bin/grpcurl \
+              -plaintext \
+              -H "authorization: Bearer $token" \
+              -import-path /data/companion \
+              -proto emulator_controller.proto \
+              -d "$1" \
+              127.0.0.1:8554 \
+              "$2"
+          }
+
           trap 'docker rm --force hermes-android-smoke >/dev/null 2>&1 || true' EXIT
           start_emulator
           wait_for_boot
+          assert_running_launcher
+          wait_for_accessibility
           test "$(adb_cmd shell getprop ro.build.version.sdk | tr -d '\r')" = 37
           test "$(adb_cmd shell getprop ro.build.version.release | tr -d '\r')" = 17
           adb_cmd shell getprop ro.product.cpu.abilist | tr -d '\r' | \
             grep --quiet 'arm64-v8a'
           adb_cmd shell pm path com.android.vending | grep --quiet '^package:'
           adb_cmd shell pm path com.google.android.gms | grep --quiet '^package:'
+          adb_cmd shell pm path com.hermes.agent.accessibility | grep --quiet '^package:'
+          adb_cmd shell dumpsys accessibility | grep --quiet \
+            'com.hermes.agent.accessibility/.HermesAccessibilityService'
+          accessibility_request '{"op":"health"}' | jq -e '.ok and .connected'
+          accessibility_raw_request '{"op":"health","token":"wrong"}' | \
+            jq -e '(.ok | not) and (.error | contains("invalid companion token"))'
+          accessibility_request '{"op":"snapshot","ttl_ms":30000}' | \
+            jq -e '.ok and .backend == "accessibility-service" and (.node_count > 0)'
+          adb_cmd shell am start -a android.settings.SETTINGS >/dev/null
+          sleep 2
+          settings_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
+          settings_tree_id=$(printf '%s\n' "$settings_tree" | jq -r '.tree_id')
+          settings_search_ref=$(printf '%s\n' "$settings_tree" | jq -r \
+            '.nodes[] | select(.view_id == "com.android.settings:id/search_action_bar" and .clickable) | .ref' | \
+            head -1)
+          test -n "$settings_search_ref"
+          click_request=$(jq -cn \
+            --arg tree_id "$settings_tree_id" \
+            --arg ref "$settings_search_ref" \
+            '{op:"action",tree_id:$tree_id,ref:$ref,action:"click",verify_timeout_ms:3000}')
+          accessibility_request "$click_request" | jq -e '.ok and .accepted'
+          sleep 1
+          search_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
+          search_tree_id=$(printf '%s\n' "$search_tree" | jq -r '.tree_id')
+          search_edit_ref=$(printf '%s\n' "$search_tree" | jq -r \
+            '.nodes[] | select(.editable) | .ref' | head -1)
+          test -n "$search_edit_ref"
+          text_request=$(jq -cn \
+            --arg tree_id "$search_tree_id" \
+            --arg ref "$search_edit_ref" \
+            --arg value 'Grüße ☕' \
+            '{op:"action",tree_id:$tree_id,ref:$ref,action:"set_text",value:$value,verify_timeout_ms:3000}')
+          accessibility_request "$text_request" | jq -e '.ok and .accepted'
+          sleep 1
+          accessibility_request '{"op":"snapshot","ttl_ms":30000}' | \
+            jq -e '.nodes | any(.text == "Grüße ☕")'
+          accessibility_request '{"op":"gesture","type":"tap","x":100,"y":100,"duration_ms":1}' | \
+            jq -e '.ok and .accepted'
+          accessibility_request '{"op":"action","tree_id":"stale","ref":"r0","action":"click"}' | \
+            jq -e '(.ok | not) and (.error | contains("stale tree_id"))'
+          test -s "$smoke_root/data/companion/emulator-grpc-token"
+          if docker exec hermes-android-smoke /opt/hermes/bin/grpcurl \
+            -plaintext \
+            -import-path /data/companion \
+            -proto emulator_controller.proto \
+            -d '{}' \
+            127.0.0.1:8554 \
+            android.emulation.control.EmulatorController/getVmState; then
+            echo "emulator gRPC unexpectedly accepted an unauthenticated request" >&2
+            exit 1
+          fi
+          grpc_request '{}' \
+            android.emulation.control.EmulatorController/getVmState | \
+            jq -e '.state == "RUNNING"'
+          grpc_request '{"text":"Grüße ☕"}' \
+            android.emulation.control.EmulatorController/setClipboard >/dev/null
+          grpc_request '{}' \
+            android.emulation.control.EmulatorController/getClipboard | \
+            jq -e '.text == "Grüße ☕"'
           adb_cmd install -r -g "/data/apks/AuroraStore-$AURORA_STORE_VERSION.apk"
           adb_cmd shell pm path com.aurora.store | grep --quiet '^package:'
           adb_cmd shell monkey -p com.aurora.store \
@@ -237,11 +399,25 @@ jobs:
           adb_cmd pull /sdcard/aurora-smoke.png "$smoke_root/aurora-smoke.png"
           test -s "$smoke_root/aurora-smoke.png"
 
-          docker stop hermes-android-smoke
+          docker stop --timeout 70 hermes-android-smoke
+          test "$(jq -r '.state' "$smoke_root/data/status/launcher.json")" = stopped
           start_emulator
           wait_for_boot
+          assert_running_launcher
+          wait_for_accessibility
           adb_cmd shell pm path com.aurora.store | grep --quiet '^package:'
-          docker stop hermes-android-smoke
+          adb_cmd shell pm path com.android.vending | grep --quiet '^package:'
+          adb_cmd shell pm path com.google.android.gms | grep --quiet '^package:'
+          adb_cmd shell pm path com.hermes.agent.accessibility | grep --quiet '^package:'
+          docker stop --timeout 70 hermes-android-smoke
+
+          start_emulator
+          wait_for_boot
+          assert_running_launcher
+          wait_for_accessibility
+          adb_cmd shell pm path com.aurora.store | grep --quiet '^package:'
+          accessibility_request '{"op":"health"}' | jq -e '.ok and .connected'
+          docker stop --timeout 70 hermes-android-smoke
           trap - EXIT
 
       - name: Publish image
