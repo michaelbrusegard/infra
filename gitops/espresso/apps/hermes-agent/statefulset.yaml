@@ -5,6 +5,9 @@ metadata:
   namespace: hermes-agent
 spec:
   replicas: 1
+  updateStrategy:
+    type: OnDelete
+    rollingUpdate: null
   selector:
     matchLabels:
       app: hermes-agent
@@ -13,6 +16,7 @@ spec:
     metadata:
       annotations:
         configmap.reloader.stakater.com/reload: hermes-agent-bootstrap,hermes-agent-skills
+        hermes.michaelbrusegard.com/android-image-rollout: "pending"
         secret.reloader.stakater.com/reload: cliproxyapi,hermes-agent-env,hermes-alert-webhook,hermes-media-client,hindsight,mattermost-integrations,mattermost-outputs,mealie-api
       labels:
         app: hermes-agent
@@ -20,8 +24,23 @@ spec:
       serviceAccountName: hermes-agent
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 75
-      nodeSelector:
-        kubernetes.io/hostname: espresso-0
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - espresso-0
       securityContext:
         fsGroup: 10000
         fsGroupChangePolicy: OnRootMismatch
@@ -439,9 +458,11 @@ spec:
             requests:
               memory: 4Gi
               cpu: "2"
+              hermes.michaelbrusegard.com/kvm: "1"
             limits:
               memory: 8Gi
               cpu: "4"
+              hermes.michaelbrusegard.com/kvm: "1"
           startupProbe:
             exec:
               command:
@@ -493,8 +514,6 @@ spec:
               mountPath: /data
             - name: android-tmp
               mountPath: /tmp
-            - name: kvm
-              mountPath: /dev/kvm
           securityContext:
             runAsUser: 0
             runAsGroup: 0
@@ -524,7 +543,7 @@ spec:
               value: /tmp/home
           ports:
             - containerPort: 8777
-              name: android-companion
+              name: android-api
           resources:
             requests:
               memory: 128Mi
@@ -535,20 +554,20 @@ spec:
           startupProbe:
             httpGet:
               path: /healthz
-              port: android-companion
+              port: android-api
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 60
           livenessProbe:
             httpGet:
               path: /healthz
-              port: android-companion
+              port: android-api
             periodSeconds: 30
             timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /readyz
-              port: android-companion
+              port: android-api
             periodSeconds: 10
             timeoutSeconds: 5
           volumeMounts:
@@ -713,10 +732,6 @@ spec:
                       fieldRef:
                         apiVersion: v1
                         fieldPath: metadata.namespace
-        - name: kvm
-          hostPath:
-            path: /dev/kvm
-            type: CharDevice
   volumeClaimTemplates:
     - metadata:
         name: data

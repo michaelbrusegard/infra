@@ -1,6 +1,7 @@
 name: Hermes Android Image
 
 'on':
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -26,6 +27,7 @@ env:
 
 jobs:
   build-and-publish:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions:
@@ -45,7 +47,7 @@ jobs:
           persist-credentials: false
 
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -109,15 +111,17 @@ jobs:
             "$ANDROID_PLATFORM_SHA1" \
             "$ANDROID_PLATFORM_SHA256"
 
-          for key_file in testkey.pk8 testkey.x509.pem; do
-            curl --fail --location --retry 5 --retry-all-errors \
-              "https://android.googlesource.com/platform/build/+/$AOSP_BUILD_COMMIT/target/product/security/$key_file?format=TEXT" | \
-              base64 --decode >"$source_root/$key_file"
-          done
-          echo "$AOSP_TESTKEY_PK8_SHA256  $source_root/testkey.pk8" | \
-            sha256sum --check --strict
-          echo "$AOSP_TESTKEY_X509_SHA256  $source_root/testkey.x509.pem" | \
-            sha256sum --check --strict
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            for key_file in testkey.pk8 testkey.x509.pem; do
+              curl --fail --location --retry 5 --retry-all-errors \
+                "https://android.googlesource.com/platform/build/+/$AOSP_BUILD_COMMIT/target/product/security/$key_file?format=TEXT" | \
+                base64 --decode >"$source_root/$key_file"
+            done
+            echo "$AOSP_TESTKEY_PK8_SHA256  $source_root/testkey.pk8" | \
+              sha256sum --check --strict
+            echo "$AOSP_TESTKEY_X509_SHA256  $source_root/testkey.x509.pem" | \
+              sha256sum --check --strict
+          fi
 
           curl --fail --location --retry 5 --retry-all-errors \
             --output "$source_root/grpcurl.tar.gz" "$GRPCURL_URL"
@@ -139,15 +143,31 @@ jobs:
       - name: Build accessibility companion
         env:
           SOURCE_ROOT: ${{ steps.inputs.outputs.source_root }}
+          SIGNING_KEY_PK8_B64: ${{ secrets.HERMES_ANDROID_SIGNING_KEY_PK8_B64 }}
+          SIGNING_CERT_X509_PEM_B64: ${{ secrets.HERMES_ANDROID_SIGNING_CERT_X509_PEM_B64 }}
         run: |
           set -a
           source packages/hermes-android-image/versions.env
           set +a
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            signing_key="$SOURCE_ROOT/testkey.pk8"
+            signing_cert="$SOURCE_ROOT/testkey.x509.pem"
+          else
+            test -n "$SIGNING_KEY_PK8_B64"
+            test -n "$SIGNING_CERT_X509_PEM_B64"
+            signing_key="$SOURCE_ROOT/hermes-android-signing.pk8"
+            signing_cert="$SOURCE_ROOT/hermes-android-signing.x509.pem"
+            printf '%s' "$SIGNING_KEY_PK8_B64" | base64 --decode >"$signing_key"
+            printf '%s' "$SIGNING_CERT_X509_PEM_B64" | base64 --decode >"$signing_cert"
+            chmod 0600 "$signing_key" "$signing_cert"
+            actual_cert_sha256=$(openssl x509 -in "$signing_cert" -outform DER | sha256sum | cut -d' ' -f1)
+            test "$actual_cert_sha256" = "$HERMES_ACCESSIBILITY_SIGNING_CERT_SHA256"
+          fi
           bash packages/hermes-android-companion/build.sh \
             "$SOURCE_ROOT/platform.zip" \
             "$SOURCE_ROOT/build-tools.zip" \
-            "$SOURCE_ROOT/testkey.pk8" \
-            "$SOURCE_ROOT/testkey.x509.pem" \
+            "$signing_key" \
+            "$signing_cert" \
             "$HERMES_ACCESSIBILITY_VERSION_CODE" \
             "$HERMES_ACCESSIBILITY_VERSION" \
             "$SOURCE_ROOT/HermesAccessibility-$HERMES_ACCESSIBILITY_VERSION.apk"
@@ -422,7 +442,7 @@ jobs:
 
       - name: Publish image
         id: publish
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         env:
           GIT_SHA: ${{ github.sha }}
         run: |
@@ -438,43 +458,22 @@ jobs:
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
       - name: Sync main before digest update
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         run: git pull --rebase origin main
 
       - name: Update Android image references
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         env:
           ANDROID_DIGEST: ${{ steps.publish.outputs.digest }}
           GIT_SHA: ${{ github.sha }}
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import os
-          import re
-
-          path = Path("gitops/espresso/apps/hermes-agent/statefulset.yaml")
-          image = (
-              f"{os.environ['ANDROID_IMAGE_REF']}:sha-{os.environ['GIT_SHA']}"
-              f"@{os.environ['ANDROID_DIGEST']}"
-          )
-          content = path.read_text()
-          patterns = (
-              r"(?m)^(\s*- name: prepare-android\n\s*image:)\s*.*$",
-              r"(?m)^(\s*- name: android-emulator\n\s*image:)\s*.*$",
-          )
-          for pattern in patterns:
-              content, replacements = re.subn(
-                  pattern,
-                  lambda match: f"{match.group(1)} {image}",
-                  content,
-              )
-              if replacements != 1:
-                  raise SystemExit(f"Failed to update Android image for {pattern}")
-          path.write_text(content)
-          PY
+          image="$ANDROID_IMAGE_REF:sha-$GIT_SHA@$ANDROID_DIGEST"
+          python3 packages/hermes-android-image/update-manifest.py \
+            --manifest gitops/espresso/apps/hermes-agent/statefulset.yaml \
+            --image "$image"
 
       - name: Commit image digest update
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         env:
           GIT_AUTHOR_NAME: github-actions[bot]
           GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com

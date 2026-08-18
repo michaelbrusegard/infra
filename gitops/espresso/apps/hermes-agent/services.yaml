@@ -44,7 +44,7 @@ spec:
       targetPort: android-adb
     - name: companion
       port: 8777
-      targetPort: android-companion
+      targetPort: android-api
     - name: viewer
       port: 6080
       targetPort: android-viewer

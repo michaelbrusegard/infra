@@ -28,6 +28,17 @@ assert COMPANION_SPEC and COMPANION_SPEC.loader
 companion = importlib.util.module_from_spec(COMPANION_SPEC)
 COMPANION_SPEC.loader.exec_module(companion)
 
+MANIFEST_UPDATER_PATH = (
+    APP_ROOT.parents[3] / "packages" / "hermes-android-image" / "update-manifest.py"
+)
+MANIFEST_UPDATER_SPEC = importlib.util.spec_from_file_location(
+    "hermes_android_manifest_updater",
+    MANIFEST_UPDATER_PATH,
+)
+assert MANIFEST_UPDATER_SPEC and MANIFEST_UPDATER_SPEC.loader
+manifest_updater = importlib.util.module_from_spec(MANIFEST_UPDATER_SPEC)
+MANIFEST_UPDATER_SPEC.loader.exec_module(manifest_updater)
+
 
 class AndroidScriptTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -99,6 +110,32 @@ class AndroidScriptTests(unittest.TestCase):
                     payload = json.load(response)
             self.assertTrue(payload["ok"])
             self.assertEqual(payload["backend"], "accessibility-service")
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+    def test_http_companion_exports_unauthenticated_degraded_metrics(self) -> None:
+        server = companion.Server(("127.0.0.1", 0), companion.Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        endpoint = f"http://127.0.0.1:{server.server_port}/metrics"
+        try:
+            with (
+                mock.patch.object(companion, "launcher_status", return_value={"state": "disabled"}),
+                mock.patch.object(
+                    companion,
+                    "accessibility_status",
+                    return_value={"state": "stopped"},
+                ),
+                urllib.request.urlopen(endpoint, timeout=2) as response,
+            ):
+                payload = response.read().decode("utf-8")
+                self.assertEqual(response.headers.get_content_type(), "text/plain")
+            self.assertIn("hermes_android_companion_up 1", payload)
+            self.assertIn("hermes_android_available 0", payload)
+            self.assertIn("hermes_android_disabled 1", payload)
+            self.assertIn('hermes_android_launcher_state{state="disabled"} 1', payload)
         finally:
             server.shutdown()
             server.server_close()
@@ -656,10 +693,55 @@ class AndroidScriptTests(unittest.TestCase):
             launcher.index("mkdir -p /root/.android"),
         )
 
+    def test_android_manifest_updater_atomically_releases_pending_rollout(self) -> None:
+        manifest = (APP_ROOT / "statefulset.yaml").read_text(encoding="utf-8")
+        manifest = manifest.replace(
+            manifest_updater.READY_ANNOTATION,
+            manifest_updater.PENDING_ANNOTATION,
+            1,
+        ).replace(
+            "type: RollingUpdate",
+            "type: OnDelete\n    rollingUpdate: null",
+            1,
+        )
+        image = f"ghcr.io/example/hermes-android:sha-test@sha256:{'a' * 64}"
+
+        updated = manifest_updater.update_content(manifest, image)
+
+        self.assertEqual(updated.count(f"image: {image}"), 2)
+        self.assertNotIn(manifest_updater.PENDING_ANNOTATION, updated)
+        self.assertIn(manifest_updater.READY_ANNOTATION, updated)
+        self.assertIn("updateStrategy:\n    type: RollingUpdate", updated)
+        self.assertNotIn("updateStrategy:\n    type: OnDelete", updated)
+
+    def test_android_manifest_updater_rejects_mutable_or_inconsistent_rollouts(self) -> None:
+        manifest = (APP_ROOT / "statefulset.yaml").read_text(encoding="utf-8")
+        manifest = manifest.replace(
+            manifest_updater.READY_ANNOTATION,
+            manifest_updater.PENDING_ANNOTATION,
+            1,
+        ).replace(
+            "type: RollingUpdate",
+            "type: OnDelete\n    rollingUpdate: null",
+            1,
+        )
+        with self.assertRaisesRegex(ValueError, "immutable GHCR digest"):
+            manifest_updater.update_content(manifest, "ghcr.io/example/hermes-android:latest")
+
+        inconsistent = manifest.replace(
+            "type: OnDelete\n    rollingUpdate: null",
+            "type: RollingUpdate",
+            1,
+        )
+        image = f"ghcr.io/example/hermes-android:sha-test@sha256:{'b' * 64}"
+        with self.assertRaisesRegex(ValueError, "missing its OnDelete"):
+            manifest_updater.update_content(inconsistent, image)
+
     def test_android_workload_is_pinned_and_has_live_viewer(self) -> None:
         statefulset = (APP_ROOT / "statefulset.yaml").read_text(encoding="utf-8")
         services = (APP_ROOT / "services.yaml").read_text(encoding="utf-8")
         network_policy = (APP_ROOT / "network-policy.yaml").read_text(encoding="utf-8")
+        monitoring = (APP_ROOT / "monitoring.yaml").read_text(encoding="utf-8")
         kustomization = (APP_ROOT / "kustomization.yaml").read_text(encoding="utf-8")
         companion_wrapper = (APP_ROOT / "scripts" / "android-companion").read_text(
             encoding="utf-8"
@@ -667,8 +749,18 @@ class AndroidScriptTests(unittest.TestCase):
         workflow = (APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-android-image.yaml").read_text(
             encoding="utf-8"
         )
+        manifest_updater_source = MANIFEST_UPDATER_PATH.read_text(encoding="utf-8")
         agent_workflow = (
             APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-agent-image.yaml"
+        ).read_text(encoding="utf-8")
+        kvm_device_plugin = (
+            APP_ROOT.parents[3]
+            / "gitops"
+            / "espresso"
+            / "infrastructure"
+            / "controllers"
+            / "generic-device-plugin"
+            / "daemonset.yaml"
         ).read_text(encoding="utf-8")
         versions = (APP_ROOT.parents[3] / "packages" / "hermes-android-image" / "versions.env").read_text(
             encoding="utf-8"
@@ -721,13 +813,27 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("chown 10000:10000 /opt/android/companion/auth-token", statefulset)
         self.assertIn("- name: android-tmp\n              mountPath: /tmp", statefulset)
         self.assertIn("value: -gpu swiftshader_indirect -timezone Europe/Oslo", statefulset)
+        self.assertIn("hermes.michaelbrusegard.com/kvm: \"1\"", statefulset)
+        self.assertIn("preferredDuringSchedulingIgnoredDuringExecution", statefulset)
+        self.assertNotIn("mountPath: /dev/kvm", statefulset)
+        rollout_pending = 'hermes.michaelbrusegard.com/android-image-rollout: "pending"' in statefulset
+        rollout_ready = 'hermes.michaelbrusegard.com/android-image-rollout: "ready"' in statefulset
+        self.assertNotEqual(rollout_pending, rollout_ready)
+        if rollout_pending:
+            self.assertIn("updateStrategy:\n    type: OnDelete", statefulset)
+        else:
+            self.assertIn("updateStrategy:\n    type: RollingUpdate", statefulset)
         self.assertIn("/android/sdk/platform-tools/adb connect", statefulset)
         self.assertNotIn("pgrep -x scrcpy", statefulset)
         self.assertIn("kill -0 \"$scrcpy_pid\"", statefulset)
-        self.assertIn("port: 8777\n      targetPort: android-companion", services)
+        self.assertIn("port: 8777\n      targetPort: android-api", services)
         self.assertNotIn("targetPort: android-grpc", services)
         self.assertIn("port: 6080\n      targetPort: android-viewer", services)
         self.assertIn('port: "8777"', network_policy)
+        self.assertIn("kind: PodMonitor", monitoring)
+        self.assertIn("path: /metrics", monitoring)
+        self.assertIn("alert: HermesAndroidUnavailable", monitoring)
+        self.assertIn("alert: HermesAndroidMetricsMissing", monitoring)
         self.assertIn("android-companion=scripts/android-companion", kustomization)
         self.assertIn("android-companion.py=scripts/android-companion.py", kustomization)
         self.assertIn("HERMES_PYTHON", companion_wrapper)
@@ -747,6 +853,14 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("com.android.settings:id/search_action_bar", workflow)
         self.assertIn("Grüße ☕", workflow)
         self.assertIn("AOSP_TESTKEY_PK8_SHA256", workflow)
+        self.assertIn("HERMES_ANDROID_SIGNING_KEY_PK8_B64", workflow)
+        self.assertIn("HERMES_ANDROID_SIGNING_CERT_X509_PEM_B64", workflow)
+        self.assertIn("HERMES_ACCESSIBILITY_SIGNING_CERT_SHA256", workflow)
+        self.assertIn("update-manifest.py", workflow)
+        self.assertIn("workflow_dispatch", workflow)
+        self.assertIn("--domain=hermes.michaelbrusegard.com", kvm_device_plugin)
+        self.assertIn("path: /dev/kvm", kvm_device_plugin)
+        self.assertIn("2cc50b0@sha256:", kvm_device_plugin)
         self.assertIn("class HermesAccessibilityService", accessibility_source)
         self.assertIn('InetAddress.getByName("127.0.0.1")', accessibility_source)
         self.assertIn("LISTEN_PORT = 8765", accessibility_source)
@@ -757,7 +871,7 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("requireAuthentication", accessibility_source)
         self.assertIn('android:permission="android.permission.DUMP"', accessibility_manifest)
         self.assertIn("class ConfigReceiver", config_receiver_source)
-        self.assertIn("- name: prepare-android", workflow)
+        self.assertIn("name: prepare-android", manifest_updater_source)
         self.assertIn("if agent_replacements != 3:", agent_workflow)
 
 

@@ -2,14 +2,14 @@
 set -euo pipefail
 
 if [ "$#" -ne 7 ]; then
-  echo "usage: build.sh PLATFORM_ZIP BUILD_TOOLS_ZIP TESTKEY_PK8 TESTKEY_X509 VERSION_CODE VERSION_NAME OUTPUT_APK" >&2
+  echo "usage: build.sh PLATFORM_ZIP BUILD_TOOLS_ZIP SIGNING_KEY_PK8 SIGNING_CERT_X509 VERSION_CODE VERSION_NAME OUTPUT_APK" >&2
   exit 2
 fi
 
 platform_zip=$1
 build_tools_zip=$2
-testkey_pk8=$3
-testkey_x509=$4
+signing_key_pk8=$3
+signing_cert_x509=$4
 version_code=$5
 version_name=$6
 output_apk=$7
@@ -61,8 +61,8 @@ cp "$build_root/resources.apk" "$build_root/unsigned.apk"
 )
 mkdir -p "$(dirname "$output_apk")"
 "$build_tools/apksigner" sign \
-  --key "$testkey_pk8" \
-  --cert "$testkey_x509" \
+  --key "$signing_key_pk8" \
+  --cert "$signing_cert_x509" \
   --out "$output_apk" \
   "$build_root/unsigned.apk"
 "$build_tools/apksigner" verify --verbose --print-certs "$output_apk"

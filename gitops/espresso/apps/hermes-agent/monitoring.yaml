@@ -1,0 +1,44 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: hermes-android
+  namespace: hermes-agent
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: hermes-agent
+  podMetricsEndpoints:
+    - port: android-api
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 5s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hermes-android
+  namespace: hermes-agent
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: hermes-android
+      rules:
+        - alert: HermesAndroidUnavailable
+          expr: max by (namespace) (hermes_android_available{namespace="hermes-agent"}) == 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Hermes Android automation is unavailable
+            description: The Android emulator or its accessibility companion has not been ready for ten minutes.
+        - alert: HermesAndroidMetricsMissing
+          expr: absent(hermes_android_available{namespace="hermes-agent"})
+          for: 2h
+          labels:
+            severity: warning
+          annotations:
+            summary: Hermes Android health metrics are missing
+            description: Prometheus has not discovered Android companion health metrics for two hours, including the image-build bootstrap window.

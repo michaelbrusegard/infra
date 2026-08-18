@@ -51,6 +51,43 @@ def launcher_status() -> dict[str, Any] | None:
     return android.load_json_file(Path("/opt/android/status/launcher.json"))
 
 
+def accessibility_status() -> dict[str, Any] | None:
+    return android.load_json_file(Path("/opt/android/status/accessibility.json"))
+
+
+def metrics_payload() -> str:
+    launcher = launcher_status() or {}
+    accessibility = accessibility_status() or {}
+    launcher_state = str(launcher.get("state", "unknown"))
+    if launcher_state not in {"disabled", "running", "starting", "stopped"}:
+        launcher_state = "unknown"
+    accessibility_state = str(accessibility.get("state", "unknown"))
+    if accessibility_state not in {"ready", "starting", "stopped"}:
+        accessibility_state = "unknown"
+    available = int(launcher_state == "running" and accessibility_state == "ready")
+    disabled = int(launcher_state == "disabled")
+    return "\n".join(
+        (
+            "# HELP hermes_android_companion_up Whether the Android companion HTTP service is running.",
+            "# TYPE hermes_android_companion_up gauge",
+            "hermes_android_companion_up 1",
+            "# HELP hermes_android_available Whether Android and its accessibility service are ready for agent work.",
+            "# TYPE hermes_android_available gauge",
+            f"hermes_android_available {available}",
+            "# HELP hermes_android_disabled Whether the launcher deliberately disabled an incompatible image.",
+            "# TYPE hermes_android_disabled gauge",
+            f"hermes_android_disabled {disabled}",
+            "# HELP hermes_android_launcher_state Current launcher state.",
+            "# TYPE hermes_android_launcher_state gauge",
+            f'hermes_android_launcher_state{{state="{launcher_state}"}} 1',
+            "# HELP hermes_android_accessibility_state Current accessibility companion state.",
+            "# TYPE hermes_android_accessibility_state gauge",
+            f'hermes_android_accessibility_state{{state="{accessibility_state}"}} 1',
+            "",
+        )
+    )
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "HermesAndroidCompanion/1.0"
 
@@ -68,6 +105,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def send_text(self, status: int, body: str, content_type: str) -> None:
+        encoded = body.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(encoded)))
+        self.end_headers()
+        self.wfile.write(encoded)
 
     def require_auth(self) -> bool:
         header = self.headers.get("Authorization", "")
@@ -122,6 +167,13 @@ class Handler(BaseHTTPRequestHandler):
                     )
                     return
                 self.send_json(HTTPStatus.OK, {"ok": True, "launcher": launcher, **payload})
+                return
+            if self.path == "/metrics":
+                self.send_text(
+                    HTTPStatus.OK,
+                    metrics_payload(),
+                    "text/plain; version=0.0.4; charset=utf-8",
+                )
                 return
             if not self.require_auth():
                 return
