@@ -1,5 +1,8 @@
 {pkgs, ...}: let
+  bypassTable = "8228";
   interface = "tetherfuse";
+  proxyIp = "192.168.49.1";
+  proxyPort = "8228";
   service = "tetherfuse-tunnel.service";
 
   setup = pkgs.writeShellApplication {
@@ -12,12 +15,21 @@
     ];
     text = ''
       resolvectl revert ${interface} 2>/dev/null || true
+      ip -4 rule del pref 103 to ${proxyIp}/32 lookup ${bypassTable} 2>/dev/null || true
       ip -4 rule del pref 104 2>/dev/null || true
       ip -6 rule del pref 104 2>/dev/null || true
+      ip -4 route flush table ${bypassTable} 2>/dev/null || true
       ip link delete ${interface} 2>/dev/null || true
 
       ip tuntap add name ${interface} mode tun
+      ip address replace 10.255.255.1/32 dev ${interface}
       ip link set ${interface} up
+
+      # The proxy connection itself must never enter the tunnel. A separate
+      # table keeps this route effective even while NetworkManager removes the
+      # Wi-Fi Direct connection during disconnect.
+      ip -4 route replace table ${bypassTable} ${proxyIp}/32 dev wlan0
+      ip -4 rule add pref 103 to ${proxyIp}/32 lookup ${bypassTable}
 
       # NetBird normally consults the main table before its own routing table.
       # The tunnel's two /1 routes would therefore shadow NetBird network
@@ -53,8 +65,10 @@
     ];
     text = ''
       resolvectl revert ${interface} 2>/dev/null || true
+      ip -4 rule del pref 103 to ${proxyIp}/32 lookup ${bypassTable} 2>/dev/null || true
       ip -4 rule del pref 104 2>/dev/null || true
       ip -6 rule del pref 104 2>/dev/null || true
+      ip -4 route flush table ${bypassTable} 2>/dev/null || true
       ip link delete ${interface} 2>/dev/null || true
     '';
   };
@@ -93,7 +107,7 @@ in {
     serviceConfig = {
       Type = "simple";
       ExecStartPre = "${setup}/bin/tetherfuse-setup";
-      ExecStart = "${pkgs.tun2proxy}/bin/tun2proxy-bin --tun ${interface} --proxy socks5://192.168.49.1:8228 --dns virtual --ipv6-enabled --exit-on-fatal-error";
+      ExecStart = "${pkgs.tun2proxy}/bin/tun2proxy-bin --tun ${interface} --proxy socks5://${proxyIp}:${proxyPort} --dns virtual --ipv6-enabled --exit-on-fatal-error";
       ExecStopPost = "${cleanup}/bin/tetherfuse-cleanup";
       KillSignal = "SIGINT";
       Restart = "on-failure";
