@@ -39,6 +39,7 @@
     ./disko.nix
     ./hardware.nix
     ./networking.nix
+    ./tetherfuse.nix
   ];
 
   time.timeZone = "America/Los_Angeles";
