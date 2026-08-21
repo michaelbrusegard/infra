@@ -143,6 +143,8 @@ spec:
               if [ ! -s /opt/android/companion/auth-token ]; then
                 od -An -tx1 -N 32 /dev/urandom | tr -d ' \n' >/opt/android/companion/auth-token
               fi
+              chown 10000:10000 /opt/android/adb/adbkey /opt/android/adb/adbkey.pub
+              chown 10000:10000 /opt/android/companion/auth-token
               chmod 600 /opt/android/adb/adbkey
               chmod 644 /opt/android/adb/adbkey.pub
               chmod 600 /opt/android/companion/auth-token
@@ -159,13 +161,9 @@ spec:
             - name: tmp
               mountPath: /tmp
           securityContext:
-            runAsUser: 10000
-            runAsGroup: 10000
-            runAsNonRoot: true
+            runAsUser: 0
+            runAsGroup: 0
             allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
       containers:
         - name: gateway
           image: ghcr.io/michaelbrusegard/hermes-agent:sha-830068d56ba3d80825bd0053517d34149997dbda@sha256:4c2e87910d6c0cdee89b1f9af6bc6070c92fa15fba0100a9eca7a66a9c2b80fa
