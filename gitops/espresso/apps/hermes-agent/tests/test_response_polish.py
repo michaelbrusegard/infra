@@ -50,12 +50,8 @@ class ResponsePolishTests(unittest.TestCase):
             name: sys.modules.get(name) for name in ("tools", "tools.registry")
         }
         registry = types.ModuleType("tools.registry")
-        registry.tool_error = lambda message: json.dumps(
-            {"success": False, "error": message}
-        )
-        registry.tool_result = lambda payload: json.dumps(
-            {"success": True, "result": payload}
-        )
+        registry.tool_error = lambda message: json.dumps({"error": message})
+        registry.tool_result = lambda payload: json.dumps(payload)
         tools = types.ModuleType("tools")
         tools.registry = registry
         sys.modules["tools"] = tools
@@ -91,8 +87,7 @@ class ResponsePolishTests(unittest.TestCase):
             }
         )
         payload = json.loads(raw)
-        self.assertTrue(payload["success"])
-        self.assertEqual(payload["result"]["polished_text"], "Polished text.")
+        self.assertEqual(payload["polished_text"], "Polished text.")
         self.assertEqual(len(self.context.llm.calls), 1)
         messages, kwargs = self.context.llm.calls[0]
         self.assertEqual(kwargs["model"], "kimi-k2")
@@ -102,7 +97,7 @@ class ResponsePolishTests(unittest.TestCase):
     def test_rejects_empty_draft_without_calling_model(self):
         raw = self.context.tool["handler"]({"draft": "  "})
         payload = json.loads(raw)
-        self.assertFalse(payload["success"])
+        self.assertEqual(payload["error"], "draft is required")
         self.assertEqual(self.context.llm.calls, [])
 
 
