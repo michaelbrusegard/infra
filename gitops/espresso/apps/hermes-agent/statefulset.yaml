@@ -695,6 +695,14 @@ spec:
             - --provider=oidc
             - --provider-display-name=Pocket ID
             - --oidc-issuer-url=https://id.asgard.michaelbrusegard.com
+            # Keep the browser authorization URL public, but send discovery,
+            # key, token, and userinfo traffic directly to Pocket ID. The
+            # internal Gateway intentionally rejects pod-originated requests.
+            - --skip-oidc-discovery=true
+            - --login-url=https://id.asgard.michaelbrusegard.com/authorize
+            - --redeem-url=http://pocket-id-internal.pocket-id.svc.cluster.local:1411/api/oidc/token
+            - --oidc-jwks-url=http://pocket-id-internal.pocket-id.svc.cluster.local:1411/.well-known/jwks.json
+            - --profile-url=http://pocket-id-internal.pocket-id.svc.cluster.local:1411/api/oidc/userinfo
             - --redirect-url=https://android.asgard.michaelbrusegard.com/oauth2/callback
             - --http-address=0.0.0.0:4180
             - --upstream=http://127.0.0.1:6081

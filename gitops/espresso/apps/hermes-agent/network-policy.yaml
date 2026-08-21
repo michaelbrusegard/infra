@@ -119,6 +119,16 @@ spec:
         - ports:
             - port: "9000"
               protocol: TCP
+    # OAuth2 Proxy performs OIDC key, token, and userinfo requests directly
+    # against Pocket ID. Browser authorization still uses the public issuer.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: pocket-id
+            k8s:app: pocket-id
+      toPorts:
+        - ports:
+            - port: "1411"
+              protocol: TCP
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: healthlog
