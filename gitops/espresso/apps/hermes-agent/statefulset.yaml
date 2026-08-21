@@ -138,7 +138,7 @@ spec:
                 install -m 0644 /opt/hermes/apks/HermesAccessibility-1.0.0.apk /opt/android/apks/HermesAccessibility-1.0.0.apk
               fi
               if [ ! -s /opt/android/adb/adbkey ] || [ ! -s /opt/android/adb/adbkey.pub ]; then
-                HOME=/tmp adb keygen /opt/android/adb/adbkey
+                HOME=/tmp /android/sdk/platform-tools/adb keygen /opt/android/adb/adbkey
               fi
               if [ ! -s /opt/android/companion/auth-token ]; then
                 od -An -tx1 -N 32 /dev/urandom | tr -d ' \n' >/opt/android/companion/auth-token

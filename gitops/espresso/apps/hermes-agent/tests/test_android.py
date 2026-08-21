@@ -871,8 +871,16 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("requireAuthentication", accessibility_source)
         self.assertIn('android:permission="android.permission.DUMP"', accessibility_manifest)
         self.assertIn("class ConfigReceiver", config_receiver_source)
+        self.assertIn(
+            "HOME=/tmp /android/sdk/platform-tools/adb keygen /opt/android/adb/adbkey",
+            statefulset,
+        )
         self.assertIn("name: prepare-android", manifest_updater_source)
-        self.assertIn("if agent_replacements != 3:", agent_workflow)
+        self.assertIn(
+            r"(?m)^(\s*- name: (?:gateway|android-companion)\n\s*image:)\s*.*$",
+            agent_workflow,
+        )
+        self.assertIn("if agent_replacements != 2:", agent_workflow)
 
 
 if __name__ == "__main__":
