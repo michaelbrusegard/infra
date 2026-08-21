@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 
+if [ -n "${HOME:-}" ]; then
+  mkdir -p "$HOME"
+fi
+
 agent_python=$(
   sed -n "s/^export HERMES_PYTHON='\(.*\)'$/\1/p" "$(command -v hermes)"
 )

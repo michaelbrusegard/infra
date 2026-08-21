@@ -746,6 +746,7 @@ class AndroidScriptTests(unittest.TestCase):
         companion_wrapper = (APP_ROOT / "scripts" / "android-companion").read_text(
             encoding="utf-8"
         )
+        self.assertIn('mkdir -p "$HOME"', companion_wrapper)
         workflow = (APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-android-image.yaml").read_text(
             encoding="utf-8"
         )
