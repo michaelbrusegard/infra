@@ -1,5 +1,6 @@
 {
   pkgs,
+  config,
   lib,
   isWsl,
   homePersistenceRoot ? null,
@@ -56,6 +57,36 @@
       recursive = true;
     })
   skills;
+  cliProxyApi = {
+    baseUrl = "https://llm.asgard.michaelbrusegard.com";
+    piProviderPackage = "npm:@router-for-me/pi-cliproxyapi-provider@1.4.13";
+  };
+  cliProxyApiKey = pkgs.writeShellApplication {
+    name = "cliproxyapi-api-key";
+    text = ''
+      api_key_file=${lib.escapeShellArg config.secrets.keys.cliProxyApiKeyFile}
+
+      if [ ! -r "$api_key_file" ]; then
+        echo "CLIProxyAPI API key is unavailable at $api_key_file" >&2
+        exit 1
+      fi
+
+      exec ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} "$api_key_file"
+    '';
+  };
+  piCliProxyApi =
+    (pkgs.writeShellApplication {
+      name = "pi";
+      text = ''
+        cli_proxy_api_key="$(${lib.getExe cliProxyApiKey})"
+        export CLIPROXYAPI_API_KEY="$cli_proxy_api_key"
+        export CLIPROXYAPI_BASE_URL=${lib.escapeShellArg cliProxyApi.baseUrl}
+
+        exec ${lib.getExe pkgs.pi-coding-agent} "$@"
+      '';
+    }).overrideAttrs (_: {
+      inherit (pkgs.pi-coding-agent) version;
+    });
   direnvWrapped = package: executable:
     (pkgs.writeShellApplication {
       name = executable;
@@ -137,6 +168,13 @@ in {
       settings = {
         approval_policy = "never";
         sandbox_mode = "danger-full-access";
+        model_provider = "cliproxyapi";
+        model_providers.cliproxyapi = {
+          name = "CLIProxyAPI";
+          base_url = "${cliProxyApi.baseUrl}/v1";
+          wire_api = "responses";
+          auth.command = lib.getExe cliProxyApiKey;
+        };
         apps._default.enabled = false;
         mcp_servers = {
           open_browser_use = {
@@ -171,10 +209,15 @@ in {
       };
       inherit skills;
       settings = {
+        apiKeyHelper = lib.getExe cliProxyApiKey;
         disableRemoteControl = true;
         enableAllProjectMcpServers = true;
         enableArtifact = false;
-        env.ENABLE_CLAUDEAI_MCP_SERVERS = "false";
+        env = {
+          ANTHROPIC_BASE_URL = cliProxyApi.baseUrl;
+          CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
+          ENABLE_CLAUDEAI_MCP_SERVERS = "false";
+        };
         permissions.defaultMode = "bypassPermissions";
         sandbox.enabled = false;
         skipDangerousModePermissionPrompt = true;
@@ -191,7 +234,7 @@ in {
     {
       packages =
         [
-          (direnvWrapped pkgs.pi-coding-agent "pi")
+          (direnvWrapped piCliProxyApi "pi")
           pkgs.open-browser-use
           pkgs.open-computer-use
           pkgs.slack-cli
@@ -218,6 +261,46 @@ in {
           };
         }
         // piSkillFiles;
+
+      activation.piConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        config_file="$HOME/.pi/agent/settings.json"
+        config_dir=$(dirname "$config_file")
+        temp_file=$(mktemp)
+
+        if [ -f "$config_file" ]; then
+          ${lib.getExe pkgs.jq} \
+            --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
+            --arg package ${lib.escapeShellArg cliProxyApi.piProviderPackage} '
+            def package_source:
+              if type == "string" then .
+              elif type == "object" then (.source // "")
+              else ""
+              end;
+            def is_cliproxyapi:
+              package_source
+              | test("^(npm:)?@router-for-me/pi-cliproxyapi-provider(@.*)?$");
+            .npmCommand = [$npm]
+            | .packages = (
+                [(.packages // [])[] | select(is_cliproxyapi | not)]
+                + [$package]
+              )
+          ' "$config_file" > "$temp_file"
+        else
+          ${lib.getExe pkgs.jq} -n \
+            --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
+            --arg package ${lib.escapeShellArg cliProxyApi.piProviderPackage} '{
+              npmCommand: [$npm],
+              packages: [$package]
+            }' > "$temp_file"
+        fi
+
+        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
+          $DRY_RUN_CMD mkdir -p "$config_dir"
+          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
+        fi
+
+        rm -f "$temp_file"
+      '';
 
       activation.paseoConfig = lib.mkIf (paseoHostnames != []) (lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.paseo/config.json"
