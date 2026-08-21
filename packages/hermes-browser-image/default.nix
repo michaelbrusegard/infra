@@ -63,6 +63,9 @@
       "$out/videobridge_gateway/gateway_server.py"
     chmod u+w "$out/videobridge_gateway/gateway_server.py"
     patch -d "$out/videobridge_gateway" -p1 < ${./android-viewer-gateway.patch}
+    substituteInPlace "$out/videobridge_gateway/gateway_server.py" \
+      --replace-fail 'web.TCPSite(runner, "0.0.0.0", args.port)' 'web.TCPSite(runner, "127.0.0.1", args.port)' \
+      --replace-fail 'Gateway Webserver listening on http://0.0.0.0:' 'Gateway Webserver listening on http://127.0.0.1:'
     touch "$out/videobridge_gateway/__init__.py"
   '';
   androidWebrtcPython = pkgs.python3.withPackages (pythonPackages:

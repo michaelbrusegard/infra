@@ -88,13 +88,3 @@ index 9e345b9..68a1a50 100644
      app.router.add_get("/api/v1/emulator/ws-jsep", handle_websocket_jsep)
  
      return app
-@@ -377,10 +447,10 @@ async def main():
-     app = init_app(args.videobridge_token)
-     runner = web.AppRunner(app)
-     await runner.setup()
--    site = web.TCPSite(runner, "0.0.0.0", args.port)
-+    site = web.TCPSite(runner, "127.0.0.1", args.port)
-     await site.start()
- 
--    logging.info(f"Gateway Webserver listening on http://0.0.0.0:{args.port}")
-+    logging.info(f"Gateway Webserver listening on http://127.0.0.1:{args.port}")
