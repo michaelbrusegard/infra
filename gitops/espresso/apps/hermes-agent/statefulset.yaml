@@ -143,8 +143,6 @@ spec:
               if [ ! -s /opt/android/companion/auth-token ]; then
                 od -An -tx1 -N 32 /dev/urandom | tr -d ' \n' >/opt/android/companion/auth-token
               fi
-              chown 10000:10000 /opt/android/adb/adbkey /opt/android/adb/adbkey.pub
-              chown 10000:10000 /opt/android/companion/auth-token
               chmod 600 /opt/android/adb/adbkey
               chmod 644 /opt/android/adb/adbkey.pub
               chmod 600 /opt/android/companion/auth-token
@@ -161,8 +159,9 @@ spec:
             - name: tmp
               mountPath: /tmp
           securityContext:
-            runAsUser: 0
-            runAsGroup: 0
+            runAsUser: 10000
+            runAsGroup: 10000
+            runAsNonRoot: true
             allowPrivilegeEscalation: false
             capabilities:
               drop:

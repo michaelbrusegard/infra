@@ -809,8 +809,11 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("HermesAccessibility-1.0.0.apk", statefulset)
         self.assertIn("- name: android-viewer\n", statefulset)
         self.assertIn("value: 0.0.0.0:6081", statefulset)
-        self.assertIn("chown 10000:10000 /opt/android/adb/adbkey", statefulset)
-        self.assertIn("chown 10000:10000 /opt/android/companion/auth-token", statefulset)
+        self.assertNotIn("chown 10000:10000 /opt/android/adb/adbkey", statefulset)
+        self.assertNotIn("chown 10000:10000 /opt/android/companion/auth-token", statefulset)
+        self.assertIn("runAsUser: 10000", statefulset)
+        self.assertIn("runAsGroup: 10000", statefulset)
+        self.assertIn("runAsNonRoot: true", statefulset)
         self.assertIn("- name: android-tmp\n              mountPath: /tmp", statefulset)
         self.assertIn("value: -gpu swiftshader_indirect -timezone Europe/Oslo", statefulset)
         self.assertIn("hermes.michaelbrusegard.com/kvm: \"1\"", statefulset)
@@ -875,6 +878,10 @@ class AndroidScriptTests(unittest.TestCase):
             "HOME=/tmp /android/sdk/platform-tools/adb keygen /opt/android/adb/adbkey",
             statefulset,
         )
+        self.assertNotIn("chown 10000:10000 /opt/android/adb/adbkey", statefulset)
+        self.assertIn("runAsUser: 10000", statefulset)
+        self.assertIn("runAsGroup: 10000", statefulset)
+        self.assertIn("runAsNonRoot: true", statefulset)
         self.assertIn("name: prepare-android", manifest_updater_source)
         self.assertIn(
             r"(?m)^(\s*- name: (?:gateway|android-companion)\n\s*image:)\s*.*$",
