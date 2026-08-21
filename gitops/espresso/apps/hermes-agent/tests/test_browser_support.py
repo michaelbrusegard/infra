@@ -26,19 +26,23 @@ class BrowserSupportTests(unittest.TestCase):
         self.hermes_home = root / "opt" / "data"
         self.browser_files = root / "opt" / "browser-files"
         self.browser_profile = root / "opt" / "browser"
+        self.browser_policy = root / "etc" / "chromium" / "policies" / "managed"
         (self.hermes_home / "workspace").mkdir(parents=True)
         (self.hermes_home / "cache").mkdir(parents=True)
         (self.browser_files / "browser-checkpoints").mkdir(parents=True)
         (self.browser_profile / "profile").mkdir(parents=True)
         (self.browser_profile / "profile" / "Preferences").write_text("{}", encoding="utf-8")
+        self.browser_policy.mkdir(parents=True)
         self.previous = {
             "HERMES_HOME": os.environ.get("HERMES_HOME"),
             "BROWSER_FILES_ROOT": os.environ.get("BROWSER_FILES_ROOT"),
             "BROWSER_PROFILE_ROOT": os.environ.get("BROWSER_PROFILE_ROOT"),
+            "BROWSER_POLICY_ROOT": os.environ.get("BROWSER_POLICY_ROOT"),
         }
         os.environ["HERMES_HOME"] = str(self.hermes_home)
         os.environ["BROWSER_FILES_ROOT"] = str(self.browser_files)
         os.environ["BROWSER_PROFILE_ROOT"] = str(self.browser_profile)
+        os.environ["BROWSER_POLICY_ROOT"] = str(self.browser_policy)
 
     def tearDown(self) -> None:
         for key, value in self.previous.items():
@@ -522,12 +526,18 @@ class BrowserSupportTests(unittest.TestCase):
         self.assertEqual(result["fps"], 2)
         self.assertEqual(fake_client.call.call_count, 2)
 
+    @mock.patch.object(browser_support, "probe_expected_extensions")
     @mock.patch.object(browser_support, "CDPClient")
-    def test_diagnostics_reads_supervisor_status(self, client_cls: mock.Mock) -> None:
+    def test_diagnostics_reads_supervisor_status(
+        self, client_cls: mock.Mock, extension_probes: mock.Mock
+    ) -> None:
         fake_client = mock.Mock()
         fake_client.version.return_value = {"Browser": "Chromium"}
         fake_client.targets.return_value = []
         client_cls.return_value = fake_client
+        extension_probes.return_value = [
+            {"id": "extension-id", "loaded": True, "healthy": True}
+        ]
         supervisor = self.browser_files / "browser-supervisor" / "status.json"
         android_viewer = self.browser_files / "android-viewer" / "status.json"
         supervisor.parent.mkdir(parents=True, exist_ok=True)
@@ -541,6 +551,70 @@ class BrowserSupportTests(unittest.TestCase):
 
         self.assertEqual(result["supervisor"], {"state": "running", "restart_count": 1})
         self.assertEqual(result["android_viewer"], {"state": "running", "serial": "device"})
+        self.assertTrue(result["extensions"]["all_expected_loaded"])
+
+    @mock.patch.object(browser_support, "evaluate_expression")
+    def test_extension_probe_verifies_runtime_and_rulesets(
+        self, evaluate: mock.Mock
+    ) -> None:
+        client = mock.Mock()
+        client.call.side_effect = [
+            {"targetId": "extension-target"},
+            {"success": True},
+        ]
+        evaluate.return_value = {
+            "readyState": "complete",
+            "title": "uBlock Origin Lite",
+            "url": "chrome-extension://extension-id/popup.html",
+            "runtimeId": "extension-id",
+            "enabledRulesets": ["easylist", "easyprivacy"],
+        }
+
+        result = browser_support.probe_extension(
+            client,
+            "ws://browser",
+            {
+                "id": "extension-id",
+                "name": "uBlock Origin Lite",
+                "probe_url": "chrome-extension://extension-id/popup.html",
+                "requires_enabled_rulesets": True,
+            },
+        )
+
+        self.assertTrue(result["loaded"])
+        self.assertTrue(result["healthy"])
+        self.assertEqual(result["enabled_rulesets"], ["easylist", "easyprivacy"])
+        client.call.assert_any_call(
+            "ws://browser", "Target.closeTarget", {"targetId": "extension-target"}
+        )
+
+    def test_installed_profile_extensions_reads_manifest_and_preferences(self) -> None:
+        default_profile = self.browser_profile / "profile" / "Default"
+        extension = default_profile / "Extensions" / "extension-id" / "1.2.3_0"
+        extension.mkdir(parents=True)
+        (extension / "manifest.json").write_text(
+            json.dumps({"name": "Example Extension", "version": "1.2.3"}),
+            encoding="utf-8",
+        )
+        (default_profile / "Preferences").write_text(
+            json.dumps(
+                {
+                    "extensions": {
+                        "settings": {
+                            "extension-id": {"state": 1, "disable_reasons": []}
+                        }
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = browser_support.installed_profile_extensions(self.browser_profile)
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["id"], "extension-id")
+        self.assertEqual(result[0]["version"], "1.2.3")
+        self.assertTrue(result[0]["enabled_in_preferences"])
 
 
 if __name__ == "__main__":

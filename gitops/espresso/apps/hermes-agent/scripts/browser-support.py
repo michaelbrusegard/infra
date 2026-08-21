@@ -35,6 +35,14 @@ _CHALLENGE_PATTERNS = [
 ]
 _MAX_TEXT_SNIPPET = 4000
 _MOUSE_BUTTON_MASKS = {"left": 1, "right": 2, "middle": 4}
+_EXPECTED_EXTENSION_PROBES = (
+    {
+        "id": "ddkjiahejlhfcafbddmgiahcphecmpfh",
+        "name": "uBlock Origin Lite",
+        "probe_url": "chrome-extension://ddkjiahejlhfcafbddmgiahcphecmpfh/popup.html",
+        "requires_enabled_rulesets": True,
+    },
+)
 
 
 def compact(value: Any) -> None:
@@ -55,6 +63,12 @@ def browser_files_root() -> Path:
 
 def browser_profile_root() -> Path:
     return Path(os.environ.get("BROWSER_PROFILE_ROOT", "/opt/browser")).resolve()
+
+
+def browser_policy_root() -> Path:
+    return Path(
+        os.environ.get("BROWSER_POLICY_ROOT", "/etc/chromium/policies/managed")
+    ).resolve()
 
 
 def browser_supervisor_root() -> Path:
@@ -206,6 +220,149 @@ def load_json_file(path: Path) -> dict[str, Any] | None:
     except (FileNotFoundError, json.JSONDecodeError):
         return None
     return payload if isinstance(payload, dict) else None
+
+
+def installed_profile_extensions(profile_root: Path) -> list[dict[str, Any]]:
+    profile_directory = profile_root / "profile"
+    extensions: list[dict[str, Any]] = []
+    for manifest_path in sorted(
+        profile_directory.glob("*/Extensions/*/*/manifest.json")
+    ):
+        manifest = load_json_file(manifest_path)
+        if manifest is None:
+            continue
+        profile_name = manifest_path.parents[3].name
+        extension_id = manifest_path.parents[1].name
+        preferences = load_json_file(profile_directory / profile_name / "Preferences") or {}
+        settings = preferences.get("extensions", {}).get("settings", {})
+        preference = settings.get(extension_id, {}) if isinstance(settings, dict) else {}
+        disable_reasons = (
+            preference.get("disable_reasons", []) if isinstance(preference, dict) else []
+        )
+        state = preference.get("state") if isinstance(preference, dict) else None
+        extensions.append(
+            {
+                "id": extension_id,
+                "name": str(manifest.get("name") or extension_id),
+                "version": str(manifest.get("version") or manifest_path.parent.name),
+                "profile": profile_name,
+                "enabled_in_preferences": state != 0 and not disable_reasons,
+                "disable_reasons": disable_reasons,
+                "path": str(manifest_path.parent),
+            }
+        )
+    return extensions
+
+
+def probe_extension(
+    client: "CDPClient", browser_websocket_url: str, extension: dict[str, Any]
+) -> dict[str, Any]:
+    extension_id = str(extension["id"])
+    name = str(extension["name"])
+    probe_url = str(extension["probe_url"])
+    target_id: str | None = None
+    result: dict[str, Any] = {
+        "id": extension_id,
+        "name": name,
+        "probe_url": probe_url,
+        "loaded": False,
+        "healthy": False,
+        "enabled_rulesets": [],
+    }
+    try:
+        created = client.call(
+            browser_websocket_url,
+            "Target.createTarget",
+            {"url": probe_url, "background": True},
+        )
+        target_id = str(created.get("targetId") or "")
+        if not target_id:
+            raise RuntimeError("Chromium did not return an extension probe target")
+
+        probe_state: Any = None
+        last_error: Exception | None = None
+        for _ in range(30):
+            try:
+                probe_state = evaluate_expression(
+                    client,
+                    target_id,
+                    """
+                    (async () => {
+                      const dnr = globalThis.chrome?.declarativeNetRequest;
+                      const enabledRulesets = dnr?.getEnabledRulesets
+                        ? await dnr.getEnabledRulesets()
+                        : [];
+                      return {
+                        readyState: document.readyState,
+                        title: document.title,
+                        url: location.href,
+                        runtimeId: globalThis.chrome?.runtime?.id || null,
+                        enabledRulesets,
+                      };
+                    })()
+                    """,
+                )
+                if isinstance(probe_state, dict) and probe_state.get("readyState") == "complete":
+                    break
+            except (RuntimeError, ValueError) as exc:
+                last_error = exc
+            time.sleep(0.1)
+        if not isinstance(probe_state, dict):
+            raise RuntimeError(last_error or "extension probe did not return page state")
+
+        enabled_rulesets = probe_state.get("enabledRulesets")
+        if not isinstance(enabled_rulesets, list):
+            enabled_rulesets = []
+        loaded = probe_state.get("runtimeId") == extension_id
+        requires_rulesets = bool(extension.get("requires_enabled_rulesets"))
+        result.update(
+            {
+                "loaded": loaded,
+                "healthy": loaded and (not requires_rulesets or bool(enabled_rulesets)),
+                "title": safe_text(probe_state.get("title") or ""),
+                "url": safe_text(probe_state.get("url") or ""),
+                "enabled_rulesets": [safe_text(item) for item in enabled_rulesets],
+            }
+        )
+        if not loaded:
+            result["error"] = "extension runtime was unavailable"
+        elif requires_rulesets and not enabled_rulesets:
+            result["error"] = "extension loaded without enabled blocking rulesets"
+    except Exception as exc:
+        result["error"] = safe_text(exc)
+    finally:
+        if target_id:
+            try:
+                client.call(
+                    browser_websocket_url,
+                    "Target.closeTarget",
+                    {"targetId": target_id},
+                )
+            except Exception as exc:
+                result["close_error"] = safe_text(exc)
+    return result
+
+
+def probe_expected_extensions(
+    client: "CDPClient", browser_websocket_url: str
+) -> list[dict[str, Any]]:
+    if not browser_websocket_url:
+        return [
+            {
+                "id": extension["id"],
+                "name": extension["name"],
+                "probe_url": extension["probe_url"],
+                "loaded": False,
+                "healthy": False,
+                "enabled_rulesets": [],
+                "error": "CDP browser websocket is unavailable",
+            }
+            for extension in _EXPECTED_EXTENSION_PROBES
+        ]
+    return [
+        probe_extension(client, browser_websocket_url, extension)
+        for extension in _EXPECTED_EXTENSION_PROBES
+    ]
 
 
 def iso_now() -> str:
@@ -1083,12 +1240,16 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
     version = client.version()
     targets = client.targets()
     profile_root = browser_profile_root()
-    policy_root = profile_root / "policies"
+    policy_root = browser_policy_root()
     unpacked_extensions = profile_root / "extensions-unpacked"
     browser_files = browser_files_root()
     sessions = list_session_states()
     supervisor = load_json_file(browser_supervisor_root() / "status.json")
     android_viewer = load_json_file(browser_files / "android-viewer" / "status.json")
+    extension_probes = probe_expected_extensions(
+        client, str(version.get("webSocketDebuggerUrl") or "")
+    )
+    installed_extensions = installed_profile_extensions(profile_root)
     return {
         "cdp": {
             "browser": version.get("Browser"),
@@ -1107,11 +1268,18 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
         },
         "supervisor": supervisor,
         "android_viewer": android_viewer,
+        "extensions": {
+            "all_expected_loaded": bool(extension_probes)
+            and all(item.get("healthy") for item in extension_probes),
+            "expected": extension_probes,
+        },
         "profile": {
             "root": str(profile_root),
             "profile_dir": str(profile_root / "profile"),
             "size_bytes": directory_size(profile_root / "profile"),
-            "policy_files": [str(path) for path in sorted(policy_root.rglob("*.json"))],
+            "policy_root": str(policy_root),
+            "policy_files": [str(path) for path in sorted(policy_root.glob("*.json"))],
+            "installed_extensions": installed_extensions,
             "unpacked_extensions": [
                 str(path) for path in sorted(unpacked_extensions.iterdir())
             ] if unpacked_extensions.is_dir() else [],

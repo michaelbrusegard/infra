@@ -97,6 +97,7 @@ jobs:
           smoke_root=$(mktemp -d)
           mkdir -p "$smoke_root/agent-scripts"
           mkdir -p "$smoke_root/browser-files"
+          mkdir -p "$smoke_root/browser-policies"
           mkdir -p "$smoke_root/browser-profile/policies/managed"
           mkdir -p "$smoke_root/browser-profile/extensions-unpacked/hermes-smoke"
           install -m 0755 \
@@ -107,7 +108,10 @@ jobs:
             gitops/espresso/apps/hermes-agent/scripts/android.py \
             gitops/espresso/apps/hermes-agent/scripts/browser-support.py \
             "$smoke_root/agent-scripts/"
-          chmod 0777 "$smoke_root/browser-files" "$smoke_root/browser-profile"
+          chmod 0777 \
+            "$smoke_root/browser-files" \
+            "$smoke_root/browser-policies" \
+            "$smoke_root/browser-profile"
           cat > "$smoke_root/browser-profile/policies/managed/site-controls.json" <<'JSON'
           {
             "URLBlocklist": ["https://blocked.example/*"]
@@ -208,7 +212,7 @@ jobs:
           browser_id=$(docker run --detach --rm --read-only \
             -v "$smoke_root/browser-profile:/opt/browser" \
             -v "$smoke_root/browser-files:/opt/browser-files" \
-            --tmpfs /etc/chromium/policies/managed:rw,uid=10000,gid=10000,mode=0755 \
+            -v "$smoke_root/browser-policies:/etc/chromium/policies/managed" \
             --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
             --tmpfs /dev/shm:rw,uid=10000,gid=10000,mode=1777 \
             "$BROWSER_IMAGE_REF:nix" \
@@ -242,6 +246,9 @@ jobs:
           docker exec "$browser_id" pgrep --full \
             'websockify.*127.0.0.1:6080.*127.0.0.1:5900' >/dev/null
           docker exec "$browser_id" jq -e '.state == "running" and .managed_policy_count >= 1' \
+            /opt/browser-files/browser-supervisor/status.json >/dev/null
+          docker exec "$browser_id" jq -e \
+            '.extension_count >= 2 and .external_extension_count >= 1 and .unpacked_extension_count >= 1' \
             /opt/browser-files/browser-supervisor/status.json >/dev/null
           docker exec "$browser_id" test ! -L \
             /etc/chromium/policies/managed/hermes-browser.json
@@ -300,10 +307,12 @@ jobs:
             --env BROWSER_CDP_URL=http://127.0.0.1:9222 \
             --env BROWSER_FILES_ROOT=/opt/browser-files \
             --env BROWSER_PROFILE_ROOT=/opt/browser \
+            --env BROWSER_POLICY_ROOT=/etc/chromium/policies/managed \
             --env BROWSER_SHARED_PROFILE_SESSIONS=true \
             --volume "$smoke_root/agent-scripts:/opt/data/scripts:ro" \
             --volume "$smoke_root/browser-files:/opt/browser-files" \
             --volume "$smoke_root/browser-profile:/opt/browser:ro" \
+            --volume "$smoke_root/browser-policies:/etc/chromium/policies/managed:ro" \
             --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
             --entrypoint sleep \
             "$AGENT_IMAGE_REF:nix" \
@@ -336,7 +345,7 @@ jobs:
             "$support_target_id" --expected combined-smoke \
             --without-signal captcha | jq -e '.ok and .verification.matched' >/dev/null
           docker exec "$agent_id" browser-support diagnostics | \
-            jq -e '.ok and .cdp.target_count > 0 and (.profile.unpacked_extensions | length) > 0' \
+            jq -e '.ok and .cdp.target_count > 0 and .extensions.all_expected_loaded and (.extensions.expected[0].enabled_rulesets | length) > 0 and (.profile.installed_extensions | map(select(.id == "ddkjiahejlhfcafbddmgiahcphecmpfh")) | length) >= 1 and (.profile.policy_files | length) >= 2 and (.profile.unpacked_extensions | length) > 0' \
             >/dev/null
           docker exec "$agent_id" bash -euc '
             hermes_python=$(sed -n "s|^export HERMES_PYTHON='"'"'\(.*\)'"'"'$|\1|p" "$(command -v hermes)")

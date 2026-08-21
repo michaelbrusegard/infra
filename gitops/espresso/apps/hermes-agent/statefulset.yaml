@@ -267,6 +267,10 @@ spec:
               value: "true"
             - name: BROWSER_FILES_ROOT
               value: /opt/browser-files
+            - name: BROWSER_PROFILE_ROOT
+              value: /opt/browser
+            - name: BROWSER_POLICY_ROOT
+              value: /etc/chromium/policies/managed
             - name: ADB_VENDOR_KEYS
               value: /opt/android/adb
             - name: ANDROID_ADB_ENDPOINT
@@ -329,6 +333,12 @@ spec:
               mountPath: /opt/data
             - name: browser-files
               mountPath: /opt/browser-files
+            - name: browser-profile
+              mountPath: /opt/browser
+              readOnly: true
+            - name: browser-policies
+              mountPath: /etc/chromium/policies/managed
+              readOnly: true
             - name: android-data
               mountPath: /opt/android
               readOnly: true

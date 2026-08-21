@@ -85,6 +85,8 @@
         "restart_count": ''${restart_count:-0},
         "last_exit_code": ''${last_exit_code:-null},
         "extension_count": ''${extension_count:-0},
+        "external_extension_count": ''${external_extension_count:-0},
+        "unpacked_extension_count": ''${unpacked_extension_count:-0},
         "managed_policy_count": ''${managed_policy_count:-0}
       }
       EOF
@@ -110,6 +112,8 @@
       restart_count=0
       last_exit_code=null
       extension_count=0
+      external_extension_count=0
+      unpacked_extension_count=0
       managed_policy_count=0
       shutting_down=0
 
@@ -174,6 +178,13 @@
 
       extra_args=()
       extension_dirs=()
+      external_extension_dir=/run/current-system/sw/share/chromium/extensions
+      if [ -d "$external_extension_dir" ]; then
+        external_extension_count=$(
+          find "$external_extension_dir" -maxdepth 1 -name '*.json' \
+            \( -type f -o -type l \) | wc -l
+        )
+      fi
       if [ -d /opt/browser/extensions-unpacked ]; then
         while IFS= read -r manifest; do
           extension_dirs+=("$(dirname "$manifest")")
@@ -182,7 +193,8 @@
             -type f -name manifest.json | sort
         )
       fi
-      extension_count=''${#extension_dirs[@]}
+      unpacked_extension_count=''${#extension_dirs[@]}
+      extension_count=$((external_extension_count + unpacked_extension_count))
       if [ "''${#extension_dirs[@]}" -gt 0 ]; then
         IFS=,
         extra_args+=("--load-extension=''${extension_dirs[*]}")

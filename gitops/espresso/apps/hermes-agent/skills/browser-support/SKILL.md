@@ -82,4 +82,8 @@ browser-support diagnostics
   larger browser maintenance or when a site-specific session should be preserved
   explicitly.
 - `diagnostics` reports CDP version, current targets, profile size, policy
-  files, unpacked extensions, persisted task sessions, and browser-files usage.
+  files, installed and unpacked extensions, persisted task sessions, and
+  browser-files usage. It actively opens and closes a background uBlock Origin
+  Lite page and queries its enabled declarative rulesets, so use
+  `extensions.all_expected_loaded` rather than inferring extension health from
+  an idle MV3 service-worker target.
