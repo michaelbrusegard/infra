@@ -344,7 +344,10 @@ jobs:
           docker exec "$agent_id" browser-support verify-page \
             "$support_target_id" --expected combined-smoke \
             --without-signal captcha | jq -e '.ok and .verification.matched' >/dev/null
-          docker exec "$agent_id" browser-support diagnostics | \
+          diagnostics=$(docker exec "$agent_id" browser-support diagnostics)
+          printf '%s\n' "$diagnostics" | jq \
+            '{ok,cdp,extensions,supervisor,profile:{size_bytes:.profile.size_bytes,policy_files:.profile.policy_files,installed_extensions:.profile.installed_extensions,unpacked_extensions:.profile.unpacked_extensions}}'
+          printf '%s\n' "$diagnostics" | \
             jq -e '.ok and .cdp.target_count > 0 and .extensions.all_expected_loaded and (.extensions.expected[0].enabled_rulesets | length) > 0 and (.profile.installed_extensions | map(select(.id == "ddkjiahejlhfcafbddmgiahcphecmpfh")) | length) >= 1 and (.profile.policy_files | length) >= 2 and (.profile.unpacked_extensions | length) > 0' \
             >/dev/null
           docker exec "$agent_id" bash -euc '
