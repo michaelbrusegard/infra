@@ -355,8 +355,8 @@ jobs:
               if docker inspect hermes-android-smoke >/dev/null 2>&1; then
                 for status_file in launcher accessibility; do
                   printf 'Android %s status: ' "$status_file"
-                  docker exec hermes-android-smoke jq -c . \
-                    "/data/status/$status_file.json" 2>/dev/null || echo unavailable
+                  docker exec hermes-android-smoke cat \
+                    "/data/status/$status_file.json" 2>/dev/null | jq -c . || echo unavailable
                 done
                 printf 'Android boot properties: '
                 # shellcheck disable=SC2016 # Expanded by the Android guest shell.
@@ -371,7 +371,8 @@ jobs:
                   com.hermes.agent.accessibility \
                   com.aurora.store; do
                   printf 'Android package %s: ' "$package"
-                  adb_cmd shell pm path "$package" 2>/dev/null | head -1 || echo unavailable
+                  package_path=$(adb_cmd shell pm path "$package" 2>/dev/null | head -1 || true)
+                  printf '%s\n' "${package_path:-missing}"
                 done
               fi
             fi
@@ -401,8 +402,15 @@ jobs:
           mark_smoke_stage 'accessibility companion package'
           adb_cmd shell pm path com.hermes.agent.accessibility | grep --quiet '^package:'
           mark_smoke_stage 'enabled accessibility service'
-          adb_cmd shell dumpsys accessibility | grep --quiet \
-            'com.hermes.agent.accessibility/.HermesAccessibilityService'
+          enabled_accessibility_services=$(adb_cmd shell settings get secure \
+            enabled_accessibility_services | tr -d '\r')
+          case ":$enabled_accessibility_services:" in
+            *":com.hermes.agent.accessibility/.HermesAccessibilityService:"*) ;;
+            *)
+              echo "Hermes accessibility service is not enabled" >&2
+              exit 1
+              ;;
+          esac
           mark_smoke_stage 'authenticated accessibility health'
           accessibility_request '{"op":"health"}' | jq -e '.ok and .connected'
           mark_smoke_stage 'accessibility authentication rejection'
