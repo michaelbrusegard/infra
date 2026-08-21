@@ -711,6 +711,8 @@ spec:
             - --code-challenge-method=S256
             - --skip-provider-button=true
             - --reverse-proxy=true
+            - --trusted-proxy-ip=10.42.0.0/16
+            - --trusted-proxy-ip=fd42::/56
             - --proxy-websockets=true
             - --cookie-name=__Host-hermes_android
             - --cookie-secure=true
