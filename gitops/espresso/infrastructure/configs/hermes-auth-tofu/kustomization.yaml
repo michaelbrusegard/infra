@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../tofu-base
+patches:
+  - target:
+      kind: Terraform
+      name: tofu-base
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: hermes-auth
+  - target:
+      kind: Terraform
+      name: hermes-auth
+    patch: |
+      apiVersion: infra.contrib.fluxcd.io/v1alpha2
+      kind: Terraform
+      metadata:
+        name: hermes-auth
+      spec:
+        path: ./gitops/espresso/tofu/hermes-auth
+        backendConfig:
+          secretSuffix: hermes-auth
+        varsFrom:
+          - kind: Secret
+            name: pocket-id-credentials
+        writeOutputsToSecret:
+          name: hermes-viewer-auth
+          outputs:
+            - oauth2_client_id
+            - oauth2_client_secret
+            - oauth2_cookie_secret

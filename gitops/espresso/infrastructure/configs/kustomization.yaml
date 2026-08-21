@@ -8,6 +8,7 @@ resources:
   - gateway
   - github-tofu
   - grafana
+  - hermes-auth-tofu
   - hubble-ui
   - manafishrov-pocket-id-tofu
   - manafishrov-dns-tofu
