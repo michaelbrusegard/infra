@@ -460,18 +460,33 @@ jobs:
           fi
           sleep 1
           mark_smoke_stage 'Settings UI editor discovery'
-          search_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
-          search_tree_id=$(printf '%s\n' "$search_tree" | jq -r '.tree_id')
-          search_edit_ref=$(printf '%s\n' "$search_tree" | jq -r \
-            '.nodes[] | select(.editable) | .ref' | head -1)
-          test -n "$search_edit_ref"
-          text_request=$(jq -cn \
-            --arg tree_id "$search_tree_id" \
-            --arg ref "$search_edit_ref" \
-            --arg value 'Grüße ☕' \
-            '{op:"action",tree_id:$tree_id,ref:$ref,action:"set_text",value:$value,verify_timeout_ms:3000}')
           mark_smoke_stage 'Unicode accessibility text entry'
-          accessibility_request "$text_request" | jq -e '.ok and .accepted'
+          text_response=
+          for attempt in $(seq 1 5); do
+            search_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
+            search_tree_id=$(printf '%s\n' "$search_tree" | jq -r '.tree_id')
+            search_edit_ref=$(printf '%s\n' "$search_tree" | jq -r \
+              '.nodes[] | select(.editable) | .ref' | head -1)
+            if [ -n "$search_edit_ref" ]; then
+              text_request=$(jq -cn \
+                --arg tree_id "$search_tree_id" \
+                --arg ref "$search_edit_ref" \
+                --arg value 'Grüße ☕' \
+                '{op:"action",tree_id:$tree_id,ref:$ref,action:"set_text",value:$value,verify_timeout_ms:3000}')
+              text_response=$(accessibility_request "$text_request")
+              if printf '%s\n' "$text_response" | jq -e \
+                '.ok and .accepted' >/dev/null; then
+                break
+              fi
+            fi
+            sleep 1
+          done
+          if ! printf '%s\n' "$text_response" | jq -e \
+            '.ok and .accepted' >/dev/null; then
+            printf 'Unicode text entry response: %s\n' \
+              "$(printf '%s\n' "$text_response" | jq -c .)" >&2
+            exit 1
+          fi
           sleep 1
           mark_smoke_stage 'Unicode accessibility text verification'
           accessibility_request '{"op":"snapshot","ttl_ms":30000}' | \
