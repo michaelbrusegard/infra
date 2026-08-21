@@ -39,6 +39,8 @@ configMapGenerator:
       - media=scripts/media
       - media.py=scripts/media.py
       - media-skill.md=skills/media/SKILL.md
+      - response-polish-init.py=plugins/response-polish/__init__.py
+      - response-polish-plugin.yaml=plugins/response-polish/plugin.yaml
 
 generatorOptions:
   disableNameSuffixHash: true

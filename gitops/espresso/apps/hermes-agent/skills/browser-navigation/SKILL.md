@@ -10,20 +10,18 @@ Use the browser tools for interactive pages. Prefer `web_search` or
 
 ## Browser task routing
 
-When operating as the user-facing parent and `delegate_task` is available,
-delegate interactive browser workflows before making the first browser call.
-Pass the child the complete objective, target URLs, relevant conversation
-context, constraints, required output, and authorization boundaries. Ask the
-child to perform the browser workflow through completion and return verified
-findings for the parent to present to the user.
+Operate the browser directly when that is the clearest path. For a long,
+self-contained interactive workflow, the user-facing parent may delegate the
+complete workflow with the `operator` profile. Use the `researcher` profile for
+parallel research or visual analysis that does not need to own the parent's
+interactive tab flow. Pass the complete objective, relevant context,
+constraints, output requirements, and authorization boundaries.
 
-Do not delegate ordinary `web_search` or `web_extract` requests, transcript
-extraction, or work that does not require interactive browser tools. When
-delegation is unavailable, including inside a leaf child agent, operate the
-browser directly using the guidance below. Avoid splitting one browser workflow
-between parent and child because their tab groups are isolated. Browser tasks
-share the persistent login profile, but each task owns its own root tab and any
-tabs or popups opened from it.
+Avoid splitting one interactive workflow between parent and child because their
+tab groups are isolated. Browser tasks share the persistent login profile, but
+each task owns its own root tab and any tabs or popups opened from it. Ordinary
+`web_search`, `web_extract`, transcript extraction, and short browser workflows
+do not need delegation.
 
 ## Reliable interaction loop
 

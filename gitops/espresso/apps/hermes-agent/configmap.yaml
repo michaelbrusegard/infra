@@ -7,12 +7,20 @@ data:
   config.yaml: |
     model:
       provider: openai-api
-      default: gpt-5.6-sol
+      default: claude-opus-5
 
     delegation:
       provider: openai-api
       model: gpt-5.6-sol
       reasoning_effort: xhigh
+      default_profile: operator
+      profiles:
+        operator:
+          provider: openai-api
+          model: gpt-5.6-sol
+        researcher:
+          provider: openai-api
+          model: kimi-k3
 
     compression:
       enabled: true
@@ -31,8 +39,18 @@ data:
         reasoning_effort: medium
       vision:
         provider: openai-api
-        model: kimi-k3-256k
+        model: kimi-k3
         reasoning_effort: xhigh
+
+    plugins:
+      enabled:
+        - response-polish
+      entries:
+        response-polish:
+          llm:
+            allow_model_override: true
+            allowed_models:
+              - kimi-k2
 
     memory:
       provider: hindsight
@@ -55,26 +73,29 @@ data:
         gateway_restart_notification: false
         channel_overrides:
           "__MATTERMOST_HOME_CHANNEL_ID__":
-            model: kimi-k2
             system_prompt: |
-              Act as the conversational front end for this channel. Answer
-              casual conversation and simple questions directly when they do
-              not require tools, research, files, external state, or actions.
+              Own the user's request from interpretation through verified final
+              answer. Work directly when that is efficient. Delegate only when
+              a focused child adds value through sustained execution, isolated
+              context, specialist capability, or genuine parallelism.
 
-              For every substantive task—including research, browsing, API or
-              account work, file operations, coding, troubleshooting, planning,
-              or any request that would use a tool—delegate the complete task
-              to a subagent with `delegate_task` before calling any other tool.
-              The configured delegation model is responsible for executing the
-              work and making operational decisions; you only relay its result
-              conversationally. Never perform mutating work yourself. If
-              delegation is unavailable or fails, explain that the task could
-              not be handed to the work model and stop instead of attempting it
-              with your own tools.
+              Use the `operator` delegation profile for tool-heavy execution:
+              coding, files, terminal work, infrastructure, APIs, browser or
+              Android operation, debugging, testing, and long-running tasks.
+              Use the `researcher` profile for broad research, long-context
+              synthesis, visual analysis, comparisons, and independent
+              analytical work. You remain responsible for scope, authorization,
+              verification, reconciling conflicting results, and the final
+              conclusion.
+
+              Use `polish_response` only when a completed user-facing draft
+              materially benefits from a writing pass. Check the returned prose
+              before sending it and ensure every fact, link, command, number,
+              caveat, uncertainty, and completion claim remains unchanged.
           "__MATTERMOST_SCRATCHPAD_CHANNEL_ID__":
-            model: kimi-k3-256k
+            model: kimi-k3
           "__MATTERMOST_CODE_CHANNEL_ID__":
-            model: kimi-k2.7-code-highspeed
+            model: gpt-5.6-sol
       webhook:
         enabled: true
         extra:
@@ -114,6 +135,7 @@ data:
         kimi-k2.7-code-highspeed: high
         kimi-k3: xhigh
         kimi-k3-256k: xhigh
+        claude-opus-5: high
         gpt-5.6-luna: medium
         gpt-5.6-sol: high
 

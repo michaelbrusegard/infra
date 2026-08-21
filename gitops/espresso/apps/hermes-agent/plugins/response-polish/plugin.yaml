@@ -1,0 +1,7 @@
+name: response-polish
+version: 1.0.0
+description: Polish user-facing prose without changing its factual content.
+author: michaelbrusegard
+kind: standalone
+provides_tools:
+  - polish_response
