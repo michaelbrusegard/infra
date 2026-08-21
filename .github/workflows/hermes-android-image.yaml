@@ -258,7 +258,8 @@ jobs:
             '
 
           start_emulator() {
-            docker run --detach --rm \
+            docker rm --force hermes-android-smoke >/dev/null 2>&1 || true
+            docker run --detach \
               --name hermes-android-smoke \
               --device /dev/kvm \
               --volume "$PWD/gitops/espresso/apps/hermes-agent/scripts/android-emulator-launch.sh:/bootstrap/android-emulator-launch.sh:ro" \
@@ -285,6 +286,11 @@ jobs:
                 /android/sdk/platform-tools/adb -s 127.0.0.1:5555 \
                 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; then
                 return 0
+              fi
+              if [ "$(docker inspect --format '{{.State.Running}}' \
+                hermes-android-smoke 2>/dev/null || true)" != true ]; then
+                docker logs hermes-android-smoke 2>&1 || true
+                return 1
               fi
               if [ "$attempt" = 90 ]; then
                 docker logs hermes-android-smoke
@@ -317,7 +323,8 @@ jobs:
           }
 
           accessibility_request() {
-            token=$(tr -d '\r\n' <"$smoke_root/data/companion/auth-token")
+            token=$(docker exec --user 0:0 hermes-android-smoke \
+              sh -c 'tr -d "\r\n" </data/companion/auth-token')
             request=$(jq -cn --argjson payload "$1" --arg token "$token" \
               '$payload + {token: $token}')
             accessibility_raw_request "$request"
@@ -330,7 +337,8 @@ jobs:
           }
 
           grpc_request() {
-            token=$(tr -d '\r\n' <"$smoke_root/data/companion/emulator-grpc-token")
+            token=$(docker exec --user 0:0 hermes-android-smoke \
+              sh -c 'tr -d "\r\n" </data/companion/emulator-grpc-token')
             docker exec hermes-android-smoke /opt/hermes/bin/grpcurl \
               -plaintext \
               -H "authorization: Bearer $token" \
@@ -423,18 +431,33 @@ jobs:
           adb_cmd shell am start -a android.settings.SETTINGS >/dev/null
           sleep 2
           mark_smoke_stage 'Settings UI search control discovery'
-          settings_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
-          settings_tree_id=$(printf '%s\n' "$settings_tree" | jq -r '.tree_id')
-          settings_search_ref=$(printf '%s\n' "$settings_tree" | jq -r \
-            '.nodes[] | select(.view_id == "com.android.settings:id/search_action_bar" and .clickable) | .ref' | \
-            head -1)
-          test -n "$settings_search_ref"
-          click_request=$(jq -cn \
-            --arg tree_id "$settings_tree_id" \
-            --arg ref "$settings_search_ref" \
-            '{op:"action",tree_id:$tree_id,ref:$ref,action:"click",verify_timeout_ms:3000}')
           mark_smoke_stage 'Settings UI search control click'
-          accessibility_request "$click_request" | jq -e '.ok and .accepted'
+          click_response=
+          for attempt in $(seq 1 5); do
+            settings_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
+            settings_tree_id=$(printf '%s\n' "$settings_tree" | jq -r '.tree_id')
+            settings_search_ref=$(printf '%s\n' "$settings_tree" | jq -r \
+              '.nodes[] | select(.view_id == "com.android.settings:id/search_action_bar" and .clickable) | .ref' | \
+              head -1)
+            if [ -n "$settings_search_ref" ]; then
+              click_request=$(jq -cn \
+                --arg tree_id "$settings_tree_id" \
+                --arg ref "$settings_search_ref" \
+                '{op:"action",tree_id:$tree_id,ref:$ref,action:"click",verify_timeout_ms:3000}')
+              click_response=$(accessibility_request "$click_request")
+              if printf '%s\n' "$click_response" | jq -e \
+                '.ok and .accepted' >/dev/null; then
+                break
+              fi
+            fi
+            sleep 1
+          done
+          if ! printf '%s\n' "$click_response" | jq -e \
+            '.ok and .accepted' >/dev/null; then
+            printf 'Settings search click response: %s\n' \
+              "$(printf '%s\n' "$click_response" | jq -c .)" >&2
+            exit 1
+          fi
           sleep 1
           mark_smoke_stage 'Settings UI editor discovery'
           search_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
@@ -491,8 +514,8 @@ jobs:
           adb_cmd shell monkey -p com.aurora.store \
             -c android.intent.category.LAUNCHER 1 >/dev/null
           adb_cmd shell screencap -p /sdcard/aurora-smoke.png
-          adb_cmd pull /sdcard/aurora-smoke.png "$smoke_root/aurora-smoke.png"
-          test -s "$smoke_root/aurora-smoke.png"
+          adb_cmd pull /sdcard/aurora-smoke.png /data/aurora-smoke.png
+          test -s "$smoke_root/data/aurora-smoke.png"
 
           mark_smoke_stage 'first graceful shutdown'
           docker stop --timeout 70 hermes-android-smoke
