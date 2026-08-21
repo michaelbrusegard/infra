@@ -14,6 +14,7 @@
     yearly = 3;
   };
   keepTagArgs = lib.concatMapStringsSep " " (tag: "--keep-tag ${lib.escapeShellArg tag}") config.services.restic.server.maintenance.keepTags;
+  pruneExcludeGroupArgs = lib.escapeShellArgs config.services.restic.server.maintenance.pruneExcludeGroups;
   freshness = config.services.restic.server.maintenance.freshness;
   freshnessEntries = lib.concatStringsSep "\n" (lib.mapAttrsToList (repo: maxAge: "${repo}:${toString maxAge}") freshness.maxAgeSeconds);
   groupEntries = lib.concatStringsSep "\n" (lib.mapAttrsToList (name: passwordFile: "${name}:${passwordFile}") passwordFiles);
@@ -193,6 +194,7 @@
 
       status=0
       keep_tag_args=(${keepTagArgs})
+      prune_exclude_groups=(${pruneExcludeGroupArgs})
       metrics_tmp=""
 
       if [ "$mode" = "metrics" ]; then
@@ -291,6 +293,15 @@
         local group="$1"
         local password_file="$2"
         local base="${dataDir}/$group"
+        if [ "$mode" = "prune" ]; then
+          for excluded_group in "''${prune_exclude_groups[@]}"; do
+            if [ "$group" = "$excluded_group" ]; then
+              echo "restic prune: skipping excluded group $group"
+              return
+            fi
+          done
+        fi
+
 
         if [ ! -d "$base" ]; then
           echo "restic $mode: skipping missing group $group"
@@ -409,6 +420,11 @@ in {
       type = lib.types.listOf lib.types.str;
       default = [];
       description = "Restic snapshot tags to always keep during repository maintenance.";
+    };
+    maintenance.pruneExcludeGroups = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "Repository groups excluded from local prune maintenance.";
     };
 
     maintenance.freshness = {

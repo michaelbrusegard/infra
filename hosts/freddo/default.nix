@@ -61,6 +61,7 @@
   };
 
   services.restic.server.maintenance.keepTags = ["legacy-minecraft"];
+  services.restic.server.maintenance.pruneExcludeGroups = ["nextcloud"];
 
   # Media configuration and Minecraft worlds are backed up weekly; all other
   # repositories use the module's 36-hour freshness threshold.
