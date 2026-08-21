@@ -93,6 +93,21 @@
       "3rdparty".extensions.${ublockOriginLiteId}.disableFirstRunPage = true;
     }
   );
+  novncDefaults = pkgs.writeText "defaults.json" "{}";
+  novncMandatory = pkgs.writeText "mandatory.json" (
+    builtins.toJSON {
+      autoconnect = true;
+      reconnect = true;
+      resize = "scale";
+      view_only = false;
+    }
+  );
+  novncWeb = runCommand "hermes-novnc-web" {} ''
+    cp -r ${pkgs.novnc}/share/webapps/novnc "$out"
+    chmod -R u+w "$out"
+    cp ${novncDefaults} "$out/defaults.json"
+    cp ${novncMandatory} "$out/mandatory.json"
+  '';
 
   fontconfigFile = pkgs.makeFontsConf {
     fontDirectories = with pkgs; [
@@ -236,16 +251,18 @@
       novnc \
         --listen 127.0.0.1:6080 \
         --vnc 127.0.0.1:5900 \
+        --web ${novncWeb} \
         --file-only &
       novnc_pid=$!
 
       managed_policy_dir=/etc/chromium/policies/managed
       mkdir -p "$managed_policy_dir"
-      cp "$HERMES_BROWSER_POLICY_TEMPLATE" \
+      find "$managed_policy_dir" -maxdepth 1 -type f -name '*.json' -delete
+      install -m 0644 "$HERMES_BROWSER_POLICY_TEMPLATE" \
         "$managed_policy_dir/hermes-browser.json"
       if [ -d /opt/browser/policies/managed ]; then
         find /opt/browser/policies/managed -maxdepth 1 -type f -name '*.json' \
-          -exec cp {} "$managed_policy_dir/" \;
+          -exec install -m 0644 {} "$managed_policy_dir/" \;
       fi
       managed_policy_count=$(find "$managed_policy_dir" -maxdepth 1 -type f -name '*.json' | wc -l)
 
@@ -438,6 +455,7 @@
       novnc \
         --listen "$novnc_listen" \
         --vnc "127.0.0.1:$vnc_port" \
+        --web ${novncWeb} \
         --file-only &
       novnc_pid=$!
       write_status "waiting-for-emulator"

@@ -243,6 +243,10 @@ jobs:
           done
           docker exec "$browser_id" curl --fail --silent \
             http://127.0.0.1:6080/vnc.html >/dev/null
+          docker exec "$browser_id" curl --fail --silent \
+            http://127.0.0.1:6080/mandatory.json | jq -e \
+              '.autoconnect == true and .reconnect == true and .resize == "scale" and .view_only == false' \
+              >/dev/null
           docker exec "$browser_id" pgrep --full \
             'websockify.*127.0.0.1:6080.*127.0.0.1:5900' >/dev/null
           docker exec "$browser_id" jq -e '.state == "running" and .managed_policy_count >= 1' \
@@ -281,6 +285,26 @@ jobs:
             -- '/opt/browser/extensions-unpacked/hermes-smoke'
           docker exec "$browser_id" pgrep -af chromium | grep --quiet \
             -- '--disable-notifications'
+          echo 'Browser smoke stage: restart with the same policy volume'
+          docker restart "$browser_id" >/dev/null
+          for attempt in $(seq 1 30); do
+            if docker exec "$browser_id" curl --fail --silent \
+              http://127.0.0.1:9222/json/version >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              docker logs "$browser_id"
+              exit 1
+            fi
+            sleep 1
+          done
+          docker exec "$browser_id" jq -e \
+            '.state == "running" and .managed_policy_count >= 1' \
+            /opt/browser-files/browser-supervisor/status.json >/dev/null
+          docker exec "$browser_id" test -f \
+            /etc/chromium/policies/managed/hermes-browser.json
+          docker exec "$browser_id" test -f \
+            /etc/chromium/policies/managed/site-controls.json
           echo 'Browser smoke stage: verify supervisor recovery'
           restart_before=$(docker exec "$browser_id" jq -r \
             '.restart_count' /opt/browser-files/browser-supervisor/status.json)
