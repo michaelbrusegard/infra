@@ -10,6 +10,7 @@ resources:
   - configmap.yaml
   - statefulset.yaml
   - services.yaml
+  - httproute.yaml
   - monitoring.yaml
   - network-policy.yaml
 

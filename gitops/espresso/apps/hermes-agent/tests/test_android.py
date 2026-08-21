@@ -795,6 +795,7 @@ class AndroidScriptTests(unittest.TestCase):
     def test_android_workload_is_pinned_and_has_live_viewer(self) -> None:
         statefulset = (APP_ROOT / "statefulset.yaml").read_text(encoding="utf-8")
         services = (APP_ROOT / "services.yaml").read_text(encoding="utf-8")
+        httproute = (APP_ROOT / "httproute.yaml").read_text(encoding="utf-8")
         network_policy = (APP_ROOT / "network-policy.yaml").read_text(encoding="utf-8")
         monitoring = (APP_ROOT / "monitoring.yaml").read_text(encoding="utf-8")
         kustomization = (APP_ROOT / "kustomization.yaml").read_text(encoding="utf-8")
@@ -906,7 +907,17 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("port: 8777\n      targetPort: android-api", services)
         self.assertNotIn("targetPort: android-grpc", services)
         self.assertIn("port: 6080\n      targetPort: android-viewer", services)
+        self.assertIn("android.asgard.michaelbrusegard.com", httproute)
+        self.assertIn("name: hermes-android\n          port: 6080", httproute)
+        self.assertIn("- httproute.yaml", kustomization)
+        self.assertIn("- name: ANDROID_VIEW_URL", statefulset)
+        self.assertIn(
+            "value: https://android.asgard.michaelbrusegard.com/vnc.html?autoconnect=true&resize=scale",
+            statefulset,
+        )
         self.assertIn('port: "8777"', network_policy)
+        self.assertIn('- fromEntities:\n        - ingress', network_policy)
+        self.assertIn('port: "6081"', network_policy)
         self.assertIn("kind: PodMonitor", monitoring)
         self.assertIn("path: /metrics", monitoring)
         self.assertIn("alert: HermesAndroidUnavailable", monitoring)

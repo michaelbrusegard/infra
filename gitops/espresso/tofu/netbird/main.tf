@@ -37,6 +37,11 @@ locals {
       address = "hermes.${local.domain}"
       group   = "infra"
     }
+    hermes_android = {
+      name    = "Hermes Android"
+      address = "android.${local.domain}"
+      group   = "infra"
+    }
     cliproxyapi = {
       name    = "CLIProxyAPI"
       address = "llm.${local.domain}"

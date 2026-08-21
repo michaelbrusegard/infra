@@ -282,7 +282,7 @@ spec:
             - name: ANDROID_EMULATOR_GRPC_TOKEN_FILE
               value: /opt/android/companion/emulator-grpc-token
             - name: ANDROID_VIEW_URL
-              value: http://hermes-android.hermes-agent.svc.cluster.local:6080/vnc.html?autoconnect=true&resize=scale
+              value: https://android.asgard.michaelbrusegard.com/vnc.html?autoconnect=true&resize=scale
             - name: ANDROID_COMPANION_URL
               value: http://127.0.0.1:8777
             - name: ANDROID_COMPANION_TOKEN_FILE

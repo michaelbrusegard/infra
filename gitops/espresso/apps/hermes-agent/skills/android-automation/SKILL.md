@@ -47,14 +47,15 @@ a login or payment window with Android `FLAG_SECURE`. The same command also
 reports the raw ADB, authenticated companion, and emulator gRPC endpoints for
 debugging.
 
-For a manual login or approval handoff, keep the noVNC service cluster-local
-and have the operator run
-`kubectl -n hermes-agent port-forward svc/hermes-android 6080:6080`, then open
-`http://127.0.0.1:6080/vnc.html?autoconnect=true&resize=scale`. Credentials,
-passkeys, one-time codes, and payment data can be entered directly into the
-visible phone without placing them in an ADB command or agent log. After the
-handoff, refresh `android health` and `android ui-tree` and continue from the
-persisted device state.
+For a manual login or approval handoff, ask the operator to connect NetBird and
+open the stable private console at
+`https://android.asgard.michaelbrusegard.com/vnc.html?autoconnect=true&resize=scale`.
+The hostname is routed through the internal gateway and the NetBird Infra ACL;
+it is not published through the public gateway. Credentials, passkeys,
+one-time codes, and payment data can be entered directly into the visible
+phone without placing them in an ADB command or agent log. After the handoff,
+refresh `android health` and `android ui-tree` and continue from the persisted
+device state.
 
 `android screenshot` also prefers the emulator framebuffer and reports
 `source: emulator-grpc` with `secure_windows_visible: true` when that path is
