@@ -807,6 +807,14 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("/opt/android/companion/emulator-grpc-token", statefulset)
         self.assertNotIn("ANDROID_ACCESSIBILITY_PORT", statefulset)
         self.assertIn("HermesAccessibility-1.0.0.apk", statefulset)
+        self.assertIn(
+            "[ ! -s /opt/android/apks/AuroraStore-4.8.4.apk ]",
+            statefulset,
+        )
+        self.assertIn(
+            "[ ! -s /opt/android/apks/HermesAccessibility-1.0.0.apk ]",
+            statefulset,
+        )
         self.assertIn("- name: android-viewer\n", statefulset)
         self.assertIn("value: 0.0.0.0:6081", statefulset)
         self.assertNotIn("chown 10000:10000 /opt/android/adb/adbkey", statefulset)

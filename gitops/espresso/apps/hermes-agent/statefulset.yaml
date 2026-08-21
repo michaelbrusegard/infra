@@ -131,10 +131,10 @@ spec:
             - -euc
             - |
               mkdir -p /opt/android/adb /opt/android/android-home /opt/android/apks /opt/android/companion
-              if [ -s /opt/hermes/apks/AuroraStore-4.8.4.apk ]; then
+              if [ -s /opt/hermes/apks/AuroraStore-4.8.4.apk ] && [ ! -s /opt/android/apks/AuroraStore-4.8.4.apk ]; then
                 install -m 0644 /opt/hermes/apks/AuroraStore-4.8.4.apk /opt/android/apks/AuroraStore-4.8.4.apk
               fi
-              if [ -s /opt/hermes/apks/HermesAccessibility-1.0.0.apk ]; then
+              if [ -s /opt/hermes/apks/HermesAccessibility-1.0.0.apk ] && [ ! -s /opt/android/apks/HermesAccessibility-1.0.0.apk ]; then
                 install -m 0644 /opt/hermes/apks/HermesAccessibility-1.0.0.apk /opt/android/apks/HermesAccessibility-1.0.0.apk
               fi
               if [ ! -s /opt/android/adb/adbkey ] || [ ! -s /opt/android/adb/adbkey.pub ]; then
