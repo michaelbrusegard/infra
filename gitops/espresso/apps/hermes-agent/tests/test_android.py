@@ -700,8 +700,8 @@ class AndroidScriptTests(unittest.TestCase):
             manifest_updater.PENDING_ANNOTATION,
             1,
         ).replace(
-            "type: RollingUpdate",
-            "type: OnDelete\n    rollingUpdate: null",
+            manifest_updater.READY_STRATEGY,
+            manifest_updater.PENDING_STRATEGY,
             1,
         )
         image = f"ghcr.io/example/hermes-android:sha-test@sha256:{'a' * 64}"
@@ -711,8 +711,8 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertEqual(updated.count(f"image: {image}"), 2)
         self.assertNotIn(manifest_updater.PENDING_ANNOTATION, updated)
         self.assertIn(manifest_updater.READY_ANNOTATION, updated)
-        self.assertIn("updateStrategy:\n    type: RollingUpdate", updated)
-        self.assertNotIn("updateStrategy:\n    type: OnDelete", updated)
+        self.assertIn(manifest_updater.READY_STRATEGY, updated)
+        self.assertNotIn(manifest_updater.PENDING_STRATEGY, updated)
 
     def test_android_manifest_updater_rejects_mutable_or_inconsistent_rollouts(self) -> None:
         manifest = (APP_ROOT / "statefulset.yaml").read_text(encoding="utf-8")
@@ -721,20 +721,20 @@ class AndroidScriptTests(unittest.TestCase):
             manifest_updater.PENDING_ANNOTATION,
             1,
         ).replace(
-            "type: RollingUpdate",
-            "type: OnDelete\n    rollingUpdate: null",
+            manifest_updater.READY_STRATEGY,
+            manifest_updater.PENDING_STRATEGY,
             1,
         )
         with self.assertRaisesRegex(ValueError, "immutable GHCR digest"):
             manifest_updater.update_content(manifest, "ghcr.io/example/hermes-android:latest")
 
         inconsistent = manifest.replace(
-            "type: OnDelete\n    rollingUpdate: null",
-            "type: RollingUpdate",
+            manifest_updater.PENDING_STRATEGY,
+            manifest_updater.READY_STRATEGY,
             1,
         )
         image = f"ghcr.io/example/hermes-android:sha-test@sha256:{'b' * 64}"
-        with self.assertRaisesRegex(ValueError, "missing its OnDelete"):
+        with self.assertRaisesRegex(ValueError, "missing its partition hold"):
             manifest_updater.update_content(inconsistent, image)
 
     def test_android_workload_is_pinned_and_has_live_viewer(self) -> None:
@@ -814,15 +814,15 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("- name: android-tmp\n              mountPath: /tmp", statefulset)
         self.assertIn("value: -gpu swiftshader_indirect -timezone Europe/Oslo", statefulset)
         self.assertIn("hermes.michaelbrusegard.com/kvm: \"1\"", statefulset)
-        self.assertIn("preferredDuringSchedulingIgnoredDuringExecution", statefulset)
+        self.assertNotIn("kubernetes.io/hostname", statefulset)
         self.assertNotIn("mountPath: /dev/kvm", statefulset)
         rollout_pending = 'hermes.michaelbrusegard.com/android-image-rollout: "pending"' in statefulset
         rollout_ready = 'hermes.michaelbrusegard.com/android-image-rollout: "ready"' in statefulset
         self.assertNotEqual(rollout_pending, rollout_ready)
         if rollout_pending:
-            self.assertIn("updateStrategy:\n    type: OnDelete", statefulset)
+            self.assertIn(manifest_updater.PENDING_STRATEGY, statefulset)
         else:
-            self.assertIn("updateStrategy:\n    type: RollingUpdate", statefulset)
+            self.assertIn(manifest_updater.READY_STRATEGY, statefulset)
         self.assertIn("/android/sdk/platform-tools/adb connect", statefulset)
         self.assertNotIn("pgrep -x scrcpy", statefulset)
         self.assertIn("kill -0 \"$scrcpy_pid\"", statefulset)

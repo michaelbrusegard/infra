@@ -10,6 +10,14 @@ from pathlib import Path
 
 PENDING_ANNOTATION = 'hermes.michaelbrusegard.com/android-image-rollout: "pending"'
 READY_ANNOTATION = 'hermes.michaelbrusegard.com/android-image-rollout: "ready"'
+PENDING_STRATEGY = """  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 1"""
+READY_STRATEGY = """  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0"""
 IMAGE_PATTERNS = (
     r"(?m)^(\s*- name: prepare-android\n\s*image:)\s*.*$",
     r"(?m)^(\s*- name: android-emulator\n\s*image:)\s*.*$",
@@ -31,17 +39,13 @@ def update_content(content: str, image: str) -> str:
 
     if PENDING_ANNOTATION in content:
         content = content.replace(PENDING_ANNOTATION, READY_ANNOTATION, 1)
-        content, replacements = re.subn(
-            r"(?m)^(  updateStrategy:\n    type:) OnDelete\n    rollingUpdate: null$",
-            r"\1 RollingUpdate",
-            content,
-        )
-        if replacements != 1:
-            raise ValueError("pending rollout is missing its OnDelete update strategy")
+        if content.count(PENDING_STRATEGY) != 1:
+            raise ValueError("pending rollout is missing its partition hold")
+        content = content.replace(PENDING_STRATEGY, READY_STRATEGY, 1)
     elif READY_ANNOTATION not in content:
         raise ValueError("manifest is missing the Android rollout state annotation")
-    elif "  updateStrategy:\n    type: RollingUpdate\n" not in content:
-        raise ValueError("ready rollout is missing its RollingUpdate strategy")
+    elif content.count(READY_STRATEGY) != 1:
+        raise ValueError("ready rollout is missing its released partition")
 
     return content
 

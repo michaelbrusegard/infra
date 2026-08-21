@@ -6,8 +6,9 @@ metadata:
 spec:
   replicas: 1
   updateStrategy:
-    type: OnDelete
-    rollingUpdate: null
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 1
   selector:
     matchLabels:
       app: hermes-agent
@@ -33,14 +34,6 @@ spec:
                     operator: In
                     values:
                       - amd64
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - espresso-0
       securityContext:
         fsGroup: 10000
         fsGroupChangePolicy: OnRootMismatch
