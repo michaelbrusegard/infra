@@ -38,11 +38,31 @@ class BrowserSupportTests(unittest.TestCase):
             "BROWSER_FILES_ROOT": os.environ.get("BROWSER_FILES_ROOT"),
             "BROWSER_PROFILE_ROOT": os.environ.get("BROWSER_PROFILE_ROOT"),
             "BROWSER_POLICY_ROOT": os.environ.get("BROWSER_POLICY_ROOT"),
+            "BROWSER_VIEW_URL": os.environ.get("BROWSER_VIEW_URL"),
         }
         os.environ["HERMES_HOME"] = str(self.hermes_home)
         os.environ["BROWSER_FILES_ROOT"] = str(self.browser_files)
         os.environ["BROWSER_PROFILE_ROOT"] = str(self.browser_profile)
         os.environ["BROWSER_POLICY_ROOT"] = str(self.browser_policy)
+
+    def test_live_view_reports_configured_interactive_console(self) -> None:
+        os.environ["BROWSER_VIEW_URL"] = "https://browser.example/vnc.html?autoconnect=true"
+        supervisor = self.browser_files / "browser-supervisor" / "status.json"
+        supervisor.parent.mkdir(parents=True)
+        supervisor.write_text(json.dumps({"state": "running"}), encoding="utf-8")
+
+        result = browser_support.handle_live_view(argparse.Namespace())
+
+        self.assertEqual(
+            result["viewer_url"],
+            "https://browser.example/vnc.html?autoconnect=true",
+        )
+        self.assertTrue(result["interactive"])
+        self.assertEqual(result["supervisor"]["state"], "running")
+        self.assertEqual(
+            result["persistent_profile"],
+            str(self.browser_profile / "profile"),
+        )
 
     def tearDown(self) -> None:
         for key, value in self.previous.items():

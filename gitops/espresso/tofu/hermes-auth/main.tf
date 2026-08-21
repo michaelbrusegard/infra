@@ -7,14 +7,16 @@ data "pocketid_group" "admin" {
 }
 
 resource "pocketid_client" "android_viewer" {
-  name = "Hermes Android Viewer"
+  name = "Hermes Remote Viewers"
 
   callback_urls = [
     "https://android.${local.domain}/oauth2/callback",
+    "https://browser.${local.domain}/oauth2/callback",
   ]
 
   logout_callback_urls = [
     "https://android.${local.domain}/",
+    "https://browser.${local.domain}/",
   ]
 
   launch_url   = "https://android.${local.domain}/vnc.html?autoconnect=true&resize=scale&view_only=false&reconnect=true"

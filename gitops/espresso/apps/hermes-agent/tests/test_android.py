@@ -813,6 +813,14 @@ class AndroidScriptTests(unittest.TestCase):
             / "hermes-auth"
             / "main.tf"
         ).read_text(encoding="utf-8")
+        netbird_tofu = (
+            APP_ROOT.parents[3]
+            / "gitops"
+            / "espresso"
+            / "tofu"
+            / "netbird"
+            / "main.tf"
+        ).read_text(encoding="utf-8")
         companion_wrapper = (APP_ROOT / "scripts" / "android-companion").read_text(
             encoding="utf-8"
         )
@@ -921,19 +929,31 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("port: 8777\n      targetPort: android-api", services)
         self.assertNotIn("targetPort: android-grpc", services)
         self.assertIn("port: 6080\n      targetPort: viewer-auth", services)
+        self.assertIn("name: hermes-browser", services)
+        self.assertIn("port: 6080\n      targetPort: browser-auth", services)
         self.assertIn("android.asgard.michaelbrusegard.com", httproute)
+        self.assertIn("browser.asgard.michaelbrusegard.com", httproute)
         self.assertIn("type: Exact\n            value: /", httproute)
         self.assertIn("replaceFullPath: /vnc.html", httproute)
         self.assertIn("name: hermes-android\n          port: 6080", httproute)
+        self.assertIn("name: hermes-browser\n          port: 6080", httproute)
         self.assertIn("- httproute.yaml", kustomization)
         self.assertIn("- name: ANDROID_VIEW_URL", statefulset)
         self.assertIn(
             "value: https://android.asgard.michaelbrusegard.com/vnc.html?autoconnect=true&resize=scale&view_only=false&reconnect=true",
             statefulset,
         )
+        self.assertIn("- name: BROWSER_VIEW_URL", statefulset)
+        self.assertIn(
+            "value: https://browser.asgard.michaelbrusegard.com/vnc.html?autoconnect=true&resize=scale&view_only=false&reconnect=true",
+            statefulset,
+        )
         self.assertIn("- name: android-viewer-auth", statefulset)
+        self.assertIn("- name: browser-viewer-auth", statefulset)
         self.assertIn("oauth2-proxy:v7.15.3@sha256:", statefulset)
         self.assertIn("--upstream=http://127.0.0.1:6081", statefulset)
+        self.assertIn("--upstream=http://127.0.0.1:6080", statefulset)
+        self.assertIn("--http-address=0.0.0.0:4181", statefulset)
         self.assertIn("--code-challenge-method=S256", statefulset)
         self.assertIn("name: hermes-viewer-auth", statefulset)
         self.assertIn('className="input-overlay"', viewer_app)
@@ -942,10 +962,16 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn('type: "keyboard"', viewer_app)
         self.assertIn('data "pocketid_group" "admin"', viewer_auth_tofu)
         self.assertIn("data.pocketid_group.admin.id", viewer_auth_tofu)
+        self.assertIn('"https://browser.${local.domain}/oauth2/callback"', viewer_auth_tofu)
+        self.assertIn("hermes_browser = {", netbird_tofu)
+        self.assertIn('address = "browser.${local.domain}"', netbird_tofu)
         self.assertIn('port: "8777"', network_policy)
         self.assertIn('- fromEntities:\n        - ingress', network_policy)
         self.assertIn('port: "4180"', network_policy)
+        self.assertIn('port: "4181"', network_policy)
+        self.assertNotIn('port: "6080"', network_policy)
         self.assertNotIn('port: "6081"', network_policy)
+        self.assertNotIn('port: "9222"', network_policy)
         self.assertIn("kind: PodMonitor", monitoring)
         self.assertIn("path: /metrics", monitoring)
         self.assertIn("alert: HermesAndroidUnavailable", monitoring)

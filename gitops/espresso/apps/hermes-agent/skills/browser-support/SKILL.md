@@ -43,6 +43,7 @@ browser-support checkpoint-delete <name>
 browser-support record-page <target-id> [path] [--seconds N] [--fps N]
 browser-support profile-backup [name]
 browser-support cleanup <browser-checkpoints|browser-profile-backups|browser-session-events|browser-sessions|browser-task-artifacts|all> [--older-than-hours N]
+browser-support live-view
 browser-support diagnostics
 ```
 
@@ -81,6 +82,9 @@ browser-support diagnostics
 - `profile-backup` archives the persistent Chromium profile. Use it before
   larger browser maintenance or when a site-specific session should be preserved
   explicitly.
+- `live-view` reports the stable, authenticated noVNC console for a manual
+  browser handoff. It exposes the existing Chromium display, not a second
+  browser or profile.
 - `diagnostics` reports CDP version, current targets, profile size, policy
   files, installed and unpacked extensions, persisted task sessions, and
   browser-files usage. It actively opens and closes a background uBlock Origin

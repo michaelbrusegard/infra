@@ -14,6 +14,8 @@ spec:
         - ports:
             - port: "4180"
               protocol: TCP
+            - port: "4181"
+              protocol: TCP
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: uptime-kuma
@@ -35,13 +37,15 @@ spec:
               protocol: TCP
             - port: "8777"
               protocol: TCP
-    # kubectl port-forward reaches the same authenticated proxy as the private
-    # Gateway route; the raw noVNC listener remains pod-local.
+    # kubectl port-forward reaches the same authenticated proxies as the
+    # private Gateway routes; the raw noVNC listeners remain pod-local.
     - fromEntities:
         - host
       toPorts:
         - ports:
             - port: "4180"
+              protocol: TCP
+            - port: "4181"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:

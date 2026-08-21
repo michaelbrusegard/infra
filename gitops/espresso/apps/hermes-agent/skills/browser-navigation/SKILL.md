@@ -94,6 +94,14 @@ pages as stateful flows rather than ordinary forms.
 - Login state is shared across browser tasks and persists across pod restarts.
   Account, cookie, and site-data changes therefore affect every browser task
   using that site.
+- When credentials, a passkey, a one-time code, payment data, or a user-only
+  approval is required, preserve the current page and ask the operator to run
+  `browser-support live-view`, connect NetBird, and open the reported console.
+  The private console is protected by Pocket ID and accepts direct mouse and
+  keyboard input into the same Chromium profile Hermes controls, so sensitive
+  values do not need to enter an agent prompt, tool call, or log. Pause browser
+  actions during the handoff. After the operator confirms completion, refresh
+  the browser snapshot and continue from the persisted authenticated state.
 - After any unsuccessful interaction, capture the new state and select the
   most promising next action from the current evidence.
 - After the challenge clears, take a fresh snapshot before continuing the

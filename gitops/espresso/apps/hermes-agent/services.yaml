@@ -48,3 +48,16 @@ spec:
     - name: viewer
       port: 6080
       targetPort: viewer-auth
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-browser
+  namespace: hermes-agent
+spec:
+  selector:
+    app: hermes-agent
+  ports:
+    - name: viewer
+      port: 6080
+      targetPort: browser-auth

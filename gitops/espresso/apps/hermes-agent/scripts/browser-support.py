@@ -75,6 +75,14 @@ def browser_supervisor_root() -> Path:
     return browser_files_root() / "browser-supervisor"
 
 
+def browser_view_url() -> str:
+    return os.environ.get(
+        "BROWSER_VIEW_URL",
+        "https://browser.asgard.michaelbrusegard.com/vnc.html"
+        "?autoconnect=true&resize=scale&view_only=false&reconnect=true",
+    )
+
+
 def resolve_local_path(path: Path) -> Path:
     """Resolve any path visible to the agent process without a helper allowlist."""
     return path.expanduser().resolve()
@@ -1256,6 +1264,15 @@ def handle_cleanup(args: argparse.Namespace) -> dict[str, Any]:
     return {"bucket": args.bucket, "removed": removed}
 
 
+def handle_live_view(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "viewer_url": browser_view_url(),
+        "interactive": True,
+        "persistent_profile": str(browser_profile_root() / "profile"),
+        "supervisor": load_json_file(browser_supervisor_root() / "status.json"),
+    }
+
+
 def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
     version = client.version()
@@ -1349,6 +1366,7 @@ HANDLERS = {
     "checkpoint-delete": handle_checkpoint_delete,
     "profile-backup": handle_profile_backup,
     "cleanup": handle_cleanup,
+    "live-view": handle_live_view,
     "diagnostics": handle_diagnostics,
 }
 
@@ -1478,6 +1496,7 @@ def parser() -> argparse.ArgumentParser:
     )
     cleanup.add_argument("--older-than-hours", type=float, default=168.0)
 
+    sub.add_parser("live-view", help="show the authenticated interactive Chromium console URL")
     sub.add_parser("diagnostics", help="report CDP, profile, policy, extension, and storage details")
     return root
 

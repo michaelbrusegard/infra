@@ -261,6 +261,8 @@ spec:
               value: http://searxng.searxng.svc.cluster.local:8080
             - name: BROWSER_CDP_URL
               value: http://127.0.0.1:9222
+            - name: BROWSER_VIEW_URL
+              value: https://browser.asgard.michaelbrusegard.com/vnc.html?autoconnect=true&resize=scale&view_only=false&reconnect=true
             - name: HERMES_ALLOW_PRIVATE_URLS
               value: "true"
             - name: BROWSER_SHARED_PROFILE_SESSIONS
@@ -767,6 +769,92 @@ spec:
             httpGet:
               path: /ready
               port: viewer-auth
+            periodSeconds: 10
+            timeoutSeconds: 5
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+        - name: browser-viewer-auth
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.3@sha256:10a1165743a192e1940b4708fb9647027185ce11a681a1c5519b442ff7f1f561
+          args:
+            - --provider=oidc
+            - --provider-display-name=Pocket ID
+            - --oidc-issuer-url=https://id.asgard.michaelbrusegard.com
+            - --skip-oidc-discovery=true
+            - --login-url=https://id.asgard.michaelbrusegard.com/authorize
+            - --redeem-url=http://pocket-id-internal.pocket-id.svc.cluster.local:1411/api/oidc/token
+            - --oidc-jwks-url=http://pocket-id-internal.pocket-id.svc.cluster.local:1411/.well-known/jwks.json
+            - --profile-url=http://pocket-id-internal.pocket-id.svc.cluster.local:1411/api/oidc/userinfo
+            - --redirect-url=https://browser.asgard.michaelbrusegard.com/oauth2/callback
+            - --http-address=0.0.0.0:4181
+            - --upstream=http://127.0.0.1:6080
+            - --email-domain=*
+            - --scope=openid profile email
+            - --code-challenge-method=S256
+            - --skip-provider-button=true
+            - --reverse-proxy=true
+            - --trusted-proxy-ip=10.42.0.0/16
+            - --trusted-proxy-ip=fd42::/56
+            - --proxy-websockets=true
+            - --cookie-name=__Host-hermes_browser
+            - --cookie-secure=true
+            - --cookie-httponly=true
+            - --cookie-samesite=lax
+            - --cookie-refresh=1h
+            - --cookie-expire=12h
+            - --whitelist-domain=browser.asgard.michaelbrusegard.com
+            - --pass-access-token=false
+            - --pass-user-headers=false
+            - --silence-ping-logging=true
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-viewer-auth
+                  key: oauth2_client_id
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-viewer-auth
+                  key: oauth2_client_secret
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-viewer-auth
+                  key: oauth2_cookie_secret
+          ports:
+            - containerPort: 4181
+              name: browser-auth
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 25m
+            limits:
+              memory: 128Mi
+              cpu: 250m
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: browser-auth
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: browser-auth
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: browser-auth
             periodSeconds: 10
             timeoutSeconds: 5
           securityContext:
