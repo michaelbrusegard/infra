@@ -169,7 +169,7 @@ spec:
                 - ALL
       containers:
         - name: gateway
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-cf01b4fed4755206618a7652f9dee23ec0f92e5c@sha256:6a79a0cc11b482a149e14719e3952e0facd2193050d11d848449f047a1582662
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-830068d56ba3d80825bd0053517d34149997dbda@sha256:4c2e87910d6c0cdee89b1f9af6bc6070c92fa15fba0100a9eca7a66a9c2b80fa
           args:
             - gateway
             - run
@@ -348,7 +348,7 @@ spec:
               drop:
                 - ALL
         - name: browser
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-cf01b4fed4755206618a7652f9dee23ec0f92e5c@sha256:3ff7c1a507fb4eae0e3861f1049d91e4d37d53db7f640901b1d257eacfb595a1
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-830068d56ba3d80825bd0053517d34149997dbda@sha256:f108b27446bf766e0e6cd7e9e2bd51ba92a8b00cd4daf9577b22c14a336ea469
           command:
             - chromium
           args:
@@ -514,7 +514,7 @@ spec:
             seccompProfile:
               type: RuntimeDefault
         - name: android-companion
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-cf01b4fed4755206618a7652f9dee23ec0f92e5c@sha256:6a79a0cc11b482a149e14719e3952e0facd2193050d11d848449f047a1582662
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-830068d56ba3d80825bd0053517d34149997dbda@sha256:4c2e87910d6c0cdee89b1f9af6bc6070c92fa15fba0100a9eca7a66a9c2b80fa
           command:
             - android-companion
           env:
@@ -585,7 +585,7 @@ spec:
               drop:
                 - ALL
         - name: android-viewer
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-cf01b4fed4755206618a7652f9dee23ec0f92e5c@sha256:3ff7c1a507fb4eae0e3861f1049d91e4d37d53db7f640901b1d257eacfb595a1
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-830068d56ba3d80825bd0053517d34149997dbda@sha256:f108b27446bf766e0e6cd7e9e2bd51ba92a8b00cd4daf9577b22c14a336ea469
           command:
             - android-viewer
           env:
