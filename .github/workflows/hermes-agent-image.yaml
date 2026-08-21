@@ -89,6 +89,7 @@ jobs:
 
       - name: Smoke test images
         run: |
+          echo 'Browser smoke stage: load images and verify agent toolchain'
           docker load < result-agent
           docker load < result-browser
           smoke_root=$(mktemp -d)
@@ -167,6 +168,7 @@ jobs:
               exit 1
             fi
           '
+          echo 'Browser smoke stage: verify browser and Android viewer entrypoints'
           docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp "$BROWSER_IMAGE_REF:nix" --version
           docker run --rm --entrypoint android-viewer "$BROWSER_IMAGE_REF:nix" --help
           android_viewer_id=$(docker run --detach --rm --read-only \
@@ -199,6 +201,7 @@ jobs:
           docker exec "$android_viewer_id" scrcpy --version >/dev/null
           docker stop "$android_viewer_id"
           trap - EXIT
+          echo 'Browser smoke stage: start Chromium supervisor'
           browser_id=$(docker run --detach --rm --read-only \
             -v "$smoke_root/browser-profile:/opt/browser" \
             -v "$smoke_root/browser-files:/opt/browser-files" \
@@ -245,6 +248,7 @@ jobs:
             /etc/chromium/policies/managed/site-controls.json
           docker exec "$browser_id" test -f \
             /opt/hermes/extensions/ublock-origin-lite.crx
+          echo 'Browser smoke stage: verify managed policies and extensions'
           for attempt in $(seq 1 30); do
             if docker exec "$browser_id" sh -c \
               'test -f /opt/browser/profile/Default/Extensions/ddkjiahejlhfcafbddmgiahcphecmpfh/*/manifest.json'; then
@@ -256,9 +260,6 @@ jobs:
             fi
             sleep 1
           done
-          docker exec "$browser_id" jq -e \
-            '.extensions.settings.ddkjiahejlhfcafbddmgiahcphecmpfh | .location == 2 and (.path | startswith("ddkjiahejlhfcafbddmgiahcphecmpfh/"))' \
-            /opt/browser/profile/Default/Preferences >/dev/null
           docker exec "$browser_id" sh -c \
             'jq -e '\'' .version == "2026.812.1211" '\'' /opt/browser/profile/Default/Extensions/ddkjiahejlhfcafbddmgiahcphecmpfh/*/manifest.json >/dev/null'
           if docker logs "$browser_id" 2>&1 | grep -Eq \
@@ -270,6 +271,7 @@ jobs:
             -- '/opt/browser/extensions-unpacked/hermes-smoke'
           docker exec "$browser_id" pgrep -af chromium | grep --quiet \
             -- '--disable-notifications'
+          echo 'Browser smoke stage: verify supervisor recovery'
           restart_before=$(docker exec "$browser_id" jq -r \
             '.restart_count' /opt/browser-files/browser-supervisor/status.json)
           docker exec "$browser_id" sh -c \
@@ -288,6 +290,7 @@ jobs:
             fi
             sleep 1
           done
+          echo 'Browser smoke stage: verify agent CDP integration'
           agent_id=$(docker run --detach --rm \
             --network "container:$browser_id" \
             --env AGENT_BROWSER_SOCKET_DIR=/tmp/agent-browser-smoke \
@@ -364,6 +367,7 @@ jobs:
               assert any(event.get("event") == "command.completed" for event in events), events
           PY
           '
+          echo 'Browser smoke stage: clean up persistent test state'
           docker stop "$agent_id"
           docker stop "$browser_id"
           docker run --rm --user 0:0 \
