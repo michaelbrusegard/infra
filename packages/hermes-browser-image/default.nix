@@ -3,6 +3,76 @@
   pkgs,
   runCommand,
 }: let
+  androidEmulatorContainerScripts = pkgs.fetchFromGitHub {
+    owner = "google";
+    repo = "android-emulator-container-scripts";
+    rev = "0654f694b46794fae4b178f1e1a17cb60c5d2d34";
+    sha256 = "1l3yqphfcl6z6pb6xflwf9sfzw9679jh98r90s5d8hl23kbmgxrl";
+  };
+  androidViewerLogger = pkgs.writeText "android-viewer-logger.ts" ''
+    const logger = {
+      setLevel: (_level: string) => undefined,
+      trace: (...args: unknown[]) => console.debug(...args),
+      debug: (...args: unknown[]) => console.debug(...args),
+      info: (...args: unknown[]) => console.info(...args),
+      warn: (...args: unknown[]) => console.warn(...args),
+      error: (...args: unknown[]) => console.error(...args),
+    };
+
+    export default logger;
+  '';
+  androidWebrtcFrontend = pkgs.buildNpmPackage {
+    pname = "hermes-android-webrtc-frontend";
+    version = "2.0.0-0654f69";
+    src = androidEmulatorContainerScripts;
+    sourceRoot = "${androidEmulatorContainerScripts.name}/js/example";
+    npmDepsHash = "sha256-7oIAKHGIpntx7+LBiwDJYXXlVDPCvXSFEVAe6ck85nA=";
+    nativeBuildInputs = with pkgs; [
+      protobuf
+      protoc-gen-js
+    ];
+    postPatch = ''
+      cp -r ../src ./lib
+      chmod -R u+w ./lib
+      cp ${./android-viewer-app.tsx} ./src/App.tsx
+      cp ${androidViewerLogger} ./lib/components/emulator/net/logger.ts
+      substituteInPlace ./index.html \
+        --replace-fail "<title>Android Emulator WebRTC Demo</title>" "<title>Hermes Android</title>"
+      substituteInPlace ./vite.config.js \
+        --replace-fail "base: '/android-emulator-webrtc/'," "base: '/'," \
+        --replace-fail "/src\\/proto/" "/lib\\/proto/"
+    '';
+    preBuild = ''
+      protoc \
+        -I ../proto \
+        --plugin=protoc-gen-js=${pkgs.protoc-gen-js}/bin/protoc-gen-js \
+        --js_out=import_style=commonjs,binary:./lib/proto \
+        ../proto/emulator_controller.proto
+    '';
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out"
+      cp -r dist/. "$out/"
+      runHook postInstall
+    '';
+  };
+  androidWebrtcGateway = runCommand "hermes-android-webrtc-gateway-source" {} ''
+    mkdir -p "$out/videobridge_gateway"
+    cp \
+      ${androidEmulatorContainerScripts}/gateway/src/videobridge_gateway/gateway_server.py \
+      "$out/videobridge_gateway/gateway_server.py"
+    chmod u+w "$out/videobridge_gateway/gateway_server.py"
+    patch -d "$out/videobridge_gateway" -p1 < ${./android-viewer-gateway.patch}
+    touch "$out/videobridge_gateway/__init__.py"
+  '';
+  androidWebrtcPython = pkgs.python3.withPackages (pythonPackages:
+    with pythonPackages; [
+      aiohttp
+      grpcio
+      grpcio-tools
+      protobuf
+      websockets
+    ]);
   ublockOriginLiteId = "ddkjiahejlhfcafbddmgiahcphecmpfh";
   ublockOriginLiteVersion = "2026.812.1211";
   ublockOriginLiteCrx = pkgs.fetchurl {
@@ -233,12 +303,13 @@
     name = "android-viewer";
     runtimeInputs = with pkgs; [
       android-tools
+      androidWebrtcPython
+      chromium
       coreutils
       curl
       gnugrep
       novnc
       procps
-      scrcpy
       x11vnc
       xkbcomp
       xkeyboard_config
@@ -246,8 +317,8 @@
     ];
     text = ''
       if [ "''${1:-}" = "--help" ] || [ "''${1:-}" = "-h" ]; then
-        echo "Usage: android-viewer [scrcpy options...]"
-        echo "Mirrors ANDROID_SERIAL through scrcpy and serves it over noVNC."
+        echo "Usage: android-viewer [Chromium options...]"
+        echo "Streams the emulator framebuffer through WebRTC and serves it over noVNC."
         exit 0
       fi
 
@@ -260,14 +331,21 @@
       browser_files_root="''${BROWSER_FILES_ROOT:-/opt/browser-files}"
       supervisor_dir="$browser_files_root/android-viewer"
       status_file="$supervisor_dir/status.json"
+      grpc_token_file="''${ANDROID_EMULATOR_GRPC_TOKEN_FILE:-/opt/android/companion/emulator-grpc-token}"
+      grpc_proto_dir="''${ANDROID_EMULATOR_GRPC_PROTO_DIR:-/opt/android/companion}"
+      gateway_root="$HOME/webrtc-gateway"
+      discovery_file="$gateway_root/emulator-discovery.ini"
       restart_count=0
       last_exit_code=null
-      scrcpy_pid=
+      backend=emulator-webrtc
+      gateway_pid=
+      web_pid=
+      viewer_pid=
       x11vnc_pid=
       novnc_pid=
       shutting_down=0
 
-      mkdir -p "$HOME" "$supervisor_dir" /tmp/.X11-unix
+      mkdir -p "$HOME" "$supervisor_dir" "$gateway_root" /tmp/.X11-unix
       display_number="''${DISPLAY#:}"
       rm -f "/tmp/.X$display_number-lock" "/tmp/.X11-unix/X$display_number"
 
@@ -290,13 +368,17 @@
       {
         "updated_at": "$(iso_now)",
         "state": "$(json_escape "$state")",
+        "backend": "$(json_escape "$backend")",
         "serial": "$(json_escape "$serial")",
         "display": "$(json_escape "$DISPLAY")",
         "novnc_listen": "$(json_escape "$novnc_listen")",
         "xvfb_pid": ''${xvfb_pid:-null},
         "x11vnc_pid": ''${x11vnc_pid:-null},
         "novnc_pid": ''${novnc_pid:-null},
-        "scrcpy_pid": ''${scrcpy_pid:-null},
+        "gateway_pid": ''${gateway_pid:-null},
+        "web_pid": ''${web_pid:-null},
+        "viewer_pid": ''${viewer_pid:-null},
+        "secure_capture": true,
         "restart_count": $restart_count,
         "last_exit_code": $last_exit_code
       }
@@ -315,7 +397,7 @@
       cleanup() {
         shutting_down=1
         write_status "stopping"
-        for pid in "$scrcpy_pid" "$novnc_pid" "$x11vnc_pid" "$xvfb_pid"; do
+        for pid in "$viewer_pid" "$web_pid" "$gateway_pid" "$novnc_pid" "$x11vnc_pid" "$xvfb_pid"; do
           if [ -n "$pid" ]; then
             kill -TERM "$pid" 2>/dev/null || true
           fi
@@ -355,41 +437,120 @@
         --vnc "127.0.0.1:$vnc_port" \
         --file-only &
       novnc_pid=$!
-      write_status "waiting-for-device"
-
-      while [ "$shutting_down" -eq 0 ]; do
-        adb connect "$serial" >/dev/null 2>&1 || true
-        if [ "$(adb -s "$serial" get-state 2>/dev/null || true)" = "device" ] && \
-          [ "$(adb -s "$serial" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; then
+      write_status "waiting-for-emulator"
+      for _ in $(seq 1 60); do
+        if [ -s "$grpc_token_file" ] && \
+          [ -s "$grpc_proto_dir/emulator_controller.proto" ] && \
+          [ -s "$grpc_proto_dir/rtc_service_v2.proto" ] && \
+          [ -s "$grpc_proto_dir/ice_config.proto" ]; then
           break
         fi
-        sleep 2
+        sleep 1
       done
+      if [ ! -s "$grpc_token_file" ]; then
+        echo "Timed out waiting for emulator gRPC token: $grpc_token_file" >&2
+        exit 1
+      fi
+
+      rm -rf "$gateway_root/videobridge_gateway"
+      cp -r ${androidWebrtcGateway}/videobridge_gateway "$gateway_root/"
+      chmod -R u+w "$gateway_root/videobridge_gateway"
+      mkdir -p "$gateway_root/videobridge_gateway/proto"
+      touch "$gateway_root/videobridge_gateway/proto/__init__.py"
+      ${androidWebrtcPython}/bin/python -m grpc_tools.protoc \
+        -I "$grpc_proto_dir" \
+        --python_out="$gateway_root/videobridge_gateway/proto" \
+        --grpc_python_out="$gateway_root/videobridge_gateway/proto" \
+        "$grpc_proto_dir/emulator_controller.proto" \
+        "$grpc_proto_dir/rtc_service_v2.proto" \
+        "$grpc_proto_dir/ice_config.proto"
 
       while [ "$shutting_down" -eq 0 ]; do
-        write_status "running"
-        set +e
-        scrcpy \
-          --serial "$serial" \
-          --no-audio \
-          --stay-awake \
-          --max-fps=30 \
-          --video-bit-rate=8M \
-          --window-title="Hermes Android" \
+        token=$(tr -d '\r\n' <"$grpc_token_file")
+        if [ -z "$token" ]; then
+          echo "Emulator gRPC token is empty: $grpc_token_file" >&2
+          exit 1
+        fi
+        cat >"$discovery_file" <<EOF
+      grpc.port=8554
+      grpc.token=$token
+      EOF
+
+        PYTHONPATH="$gateway_root" ${androidWebrtcPython}/bin/python \
+          -m videobridge_gateway.gateway_server \
+          --port=8080 \
+          --discovery_file="$discovery_file" \
+          --videobridge_token="$token" &
+        gateway_pid=$!
+        ${androidWebrtcPython}/bin/python \
+          -m http.server 8081 \
+          --bind 127.0.0.1 \
+          --directory ${androidWebrtcFrontend} &
+        web_pid=$!
+
+        services_ready=0
+        for _ in $(seq 1 60); do
+          if curl --fail --silent http://127.0.0.1:8080/api/v1/emulator/status | grep -q '"booted": true' && \
+            curl --fail --silent http://127.0.0.1:8081/ >/dev/null; then
+            services_ready=1
+            break
+          fi
+          if ! kill -0 "$gateway_pid" 2>/dev/null || ! kill -0 "$web_pid" 2>/dev/null; then
+            break
+          fi
+          sleep 1
+        done
+        if [ "$services_ready" -ne 1 ]; then
+          echo "Android WebRTC viewer services failed to become ready" >&2
+          exit 1
+        fi
+
+        ${pkgs.chromium}/bin/chromium \
+          --app=http://127.0.0.1:8081/ \
+          --kiosk \
+          --no-sandbox \
+          --ozone-platform=x11 \
+          --window-position=0,0 \
+          --window-size=1080,1920 \
+          --force-device-scale-factor=1 \
+          --autoplay-policy=no-user-gesture-required \
+          --use-gl=angle \
+          --use-angle=swiftshader-webgl \
+          --enable-unsafe-swiftshader \
+          --disable-component-update \
+          --disable-default-apps \
+          --disable-features=Translate \
+          --hide-scrollbars \
+          --no-first-run \
+          --no-default-browser-check \
+          --remote-debugging-port=9223 \
+          --user-data-dir="$HOME/chromium-profile" \
           "$@" &
-        scrcpy_pid=$!
+        viewer_pid=$!
         write_status "running"
-        wait "$scrcpy_pid"
+
+        set +e
+        while kill -0 "$viewer_pid" 2>/dev/null && \
+          kill -0 "$gateway_pid" 2>/dev/null && \
+          kill -0 "$web_pid" 2>/dev/null; do
+          sleep 2
+        done
+        for pid in "$viewer_pid" "$web_pid" "$gateway_pid"; do
+          kill -TERM "$pid" 2>/dev/null || true
+        done
+        wait "$viewer_pid"
         exit_code=$?
+        wait "$web_pid" "$gateway_pid" 2>/dev/null || true
         set -e
-        scrcpy_pid=
+        viewer_pid=
+        web_pid=
+        gateway_pid=
         last_exit_code=$exit_code
         if [ "$shutting_down" -eq 1 ]; then
           break
         fi
         restart_count=$((restart_count + 1))
         write_status "reconnecting"
-        adb connect "$serial" >/dev/null 2>&1 || true
         sleep 2
       done
     '';

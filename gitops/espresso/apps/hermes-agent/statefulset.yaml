@@ -616,11 +616,11 @@ spec:
               name: android-viewer
           resources:
             requests:
-              memory: 256Mi
-              cpu: 100m
+              memory: 512Mi
+              cpu: 250m
             limits:
-              memory: 1Gi
-              cpu: "1"
+              memory: 2Gi
+              cpu: "2"
           startupProbe:
             exec:
               command:
@@ -652,8 +652,20 @@ spec:
                   fi
                   adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
                   [ "$(adb -s 127.0.0.1:5555 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]
-                  scrcpy_pid=$(jq -er '.scrcpy_pid | select(type == "number")' /opt/browser-files/android-viewer/status.json)
-                  kill -0 "$scrcpy_pid"
+                  viewer_status=/opt/browser-files/android-viewer/status.json
+                  jq -e '.state == "running"' "$viewer_status" >/dev/null
+                  if [ "$(jq -r '.backend // "scrcpy"' "$viewer_status")" = "emulator-webrtc" ]; then
+                    jq -e '.secure_capture == true' "$viewer_status" >/dev/null
+                    viewer_pid=$(jq -er '.viewer_pid | select(type == "number")' "$viewer_status")
+                    gateway_pid=$(jq -er '.gateway_pid | select(type == "number")' "$viewer_status")
+                    kill -0 "$viewer_pid"
+                    kill -0 "$gateway_pid"
+                    curl --fail --silent http://127.0.0.1:8080/api/v1/emulator/status >/dev/null
+                    curl --fail --silent http://127.0.0.1:9223/json/version >/dev/null
+                  else
+                    scrcpy_pid=$(jq -er '.scrcpy_pid | select(type == "number")' "$viewer_status")
+                    kill -0 "$scrcpy_pid"
+                  fi
             periodSeconds: 10
             timeoutSeconds: 5
           volumeMounts:

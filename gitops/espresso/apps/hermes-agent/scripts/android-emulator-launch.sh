@@ -10,6 +10,7 @@ STATUS_FILE="$STATUS_DIR/launcher.json"
 ACCESSIBILITY_STATUS_FILE="$STATUS_DIR/accessibility.json"
 COMPANION_DIR="$DATA_ROOT/companion"
 GRPC_TOKEN_FILE="$COMPANION_DIR/emulator-grpc-token"
+GRPC_ALLOWLIST_FILE="$COMPANION_DIR/emulator-access.json"
 ACCESSIBILITY_PACKAGE=com.hermes.agent.accessibility
 ACCESSIBILITY_SERVICE="$ACCESSIBILITY_PACKAGE/.HermesAccessibilityService"
 COMPANION_AUTH_TOKEN_FILE="$COMPANION_DIR/auth-token"
@@ -83,6 +84,10 @@ rm -rf /tmp/android-unknown /tmp/pulse /tmp/pulse-socket
 mkdir -p /root/.android "$ADB_DIR" "$AVD_HOME" "$STATUS_DIR" "$COMPANION_DIR" /tmp/android-unknown /tmp/pulse
 find /android/sdk/emulator/lib -maxdepth 1 -type f -name '*.proto' \
   -exec install -m 0644 {} "$COMPANION_DIR/" \;
+cp /android/sdk/emulator/lib/emulator_access.json "$GRPC_ALLOWLIST_FILE"
+sed -i '\|/android.emulation.control.EmulatorController/\.\*|a\                "/android.emulation.control.v2.Rtc/.*",' \
+  "$GRPC_ALLOWLIST_FILE"
+chmod 0644 "$GRPC_ALLOWLIST_FILE"
 
 if ! find "$AVD_HOME" -maxdepth 1 -type f -name '*.ini' -print -quit | grep -q .; then
   cp -a /android-home/. "$AVD_HOME/"
@@ -152,6 +157,7 @@ launch_cmd=(
   -ports "5556,5557"
   -grpc 8554
   -grpc-use-token
+  -grpc-allowlist "$GRPC_ALLOWLIST_FILE"
   -no-window
   -no-snapshot-save
   -no-boot-anim

@@ -40,9 +40,12 @@ restarts do not trigger this migration.
    than assuming an input succeeded.
 
 Use `android live-view` for the browser-compatible noVNC console URL. The
-console is backed by scrcpy, accepts mouse and keyboard input, and reconnects
-when the emulator or app restarts. The same command also reports the raw ADB,
-authenticated companion, and emulator gRPC endpoints for debugging.
+console is backed by the emulator's native WebRTC framebuffer, accepts mouse
+and keyboard input, and reconnects when the emulator or app restarts. Unlike
+ADB screenshots or scrcpy, this framebuffer remains visible when an app marks
+a login or payment window with Android `FLAG_SECURE`. The same command also
+reports the raw ADB, authenticated companion, and emulator gRPC endpoints for
+debugging.
 
 For a manual login or approval handoff, keep the noVNC service cluster-local
 and have the operator run
@@ -52,6 +55,11 @@ passkeys, one-time codes, and payment data can be entered directly into the
 visible phone without placing them in an ADB command or agent log. After the
 handoff, refresh `android health` and `android ui-tree` and continue from the
 persisted device state.
+
+`android screenshot` also prefers the emulator framebuffer and reports
+`source: emulator-grpc` with `secure_windows_visible: true` when that path is
+available. If it reports `source: adb-screencap`, secure app windows may be
+black; use `android health`, restore the emulator gRPC path, and capture again.
 
 ## Commands
 

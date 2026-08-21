@@ -198,7 +198,7 @@ jobs:
             sleep 1
           done
           docker exec "$android_viewer_id" grep --quiet \
-            '"state": "waiting-for-device"' \
+            '"state": "waiting-for-emulator"' \
             /opt/browser-files/android-viewer/status.json
           docker exec "$android_viewer_id" pgrep -x Xvfb >/dev/null
           docker exec "$android_viewer_id" pgrep -x x11vnc >/dev/null

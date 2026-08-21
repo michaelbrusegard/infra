@@ -234,6 +234,59 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertEqual(command[-2], "127.0.0.1:8554")
         self.assertEqual(response, '{"state":"RUNNING"}')
 
+    @mock.patch.object(android, "run_adb")
+    @mock.patch.object(android, "grpc_json")
+    @mock.patch.object(android, "require_connected_serial", return_value="127.0.0.1:5555")
+    def test_screenshot_prefers_emulator_framebuffer(
+        self,
+        _require_serial: mock.Mock,
+        grpc_json: mock.Mock,
+        run_adb: mock.Mock,
+    ) -> None:
+        os.environ["ANDROID_EMULATOR_GRPC_URL"] = "http://127.0.0.1:8554"
+        grpc_json.return_value = {"image": "c2VjdXJlLXBuZw=="}
+        destination = Path(self.tempdir.name) / "secure.png"
+
+        result = android.handle_screenshot(argparse.Namespace(path=str(destination)))
+
+        self.assertEqual(destination.read_bytes(), b"secure-png")
+        self.assertEqual(result["source"], "emulator-grpc")
+        self.assertTrue(result["secure_windows_visible"])
+        grpc_json.assert_called_once_with(
+            "127.0.0.1:5555",
+            "android.emulation.control.EmulatorController/getScreenshot",
+            {"format": "PNG", "display": 0},
+            timeout=120,
+        )
+        run_adb.assert_not_called()
+
+    @mock.patch.object(android, "run_adb", return_value=b"adb-png")
+    @mock.patch.object(android, "grpc_json", side_effect=RuntimeError("gRPC unavailable"))
+    @mock.patch.object(android, "require_connected_serial", return_value="127.0.0.1:5555")
+    def test_screenshot_falls_back_to_adb(
+        self,
+        _require_serial: mock.Mock,
+        _grpc_json: mock.Mock,
+        run_adb: mock.Mock,
+    ) -> None:
+        os.environ["ANDROID_EMULATOR_GRPC_URL"] = "http://127.0.0.1:8554"
+        destination = Path(self.tempdir.name) / "fallback.png"
+
+        result = android.handle_screenshot(argparse.Namespace(path=str(destination)))
+
+        self.assertEqual(destination.read_bytes(), b"adb-png")
+        self.assertEqual(result["source"], "adb-screencap")
+        self.assertFalse(result["secure_windows_visible"])
+        self.assertIn("gRPC unavailable", result["grpc_error"])
+        run_adb.assert_called_once_with(
+            "127.0.0.1:5555",
+            "exec-out",
+            "screencap",
+            "-p",
+            text=False,
+            timeout=120,
+        )
+
     @mock.patch.object(android, "accessibility_snapshot")
     def test_current_ui_tree_prefers_on_device_accessibility(
         self,
@@ -682,6 +735,8 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("trap cleanup EXIT", launcher)
         self.assertIn("adb_device emu kill", launcher)
         self.assertIn("-grpc-use-token", launcher)
+        self.assertIn('-grpc-allowlist "$GRPC_ALLOWLIST_FILE"', launcher)
+        self.assertIn('"/android.emulation.control.v2.Rtc/.*",', launcher)
         self.assertIn("enable_accessibility_companion", launcher)
         self.assertIn("nc -w 2 127.0.0.1 8765", launcher)
         self.assertIn("/root/.android/avd/running/pid_*.ini", launcher)
@@ -843,7 +898,11 @@ class AndroidScriptTests(unittest.TestCase):
             self.assertIn(manifest_updater.READY_STRATEGY, statefulset)
         self.assertIn("/android/sdk/platform-tools/adb connect", statefulset)
         self.assertNotIn("pgrep -x scrcpy", statefulset)
+        self.assertIn("emulator-webrtc", statefulset)
+        self.assertIn("kill -0 \"$viewer_pid\"", statefulset)
+        self.assertIn("kill -0 \"$gateway_pid\"", statefulset)
         self.assertIn("kill -0 \"$scrcpy_pid\"", statefulset)
+        self.assertIn("http://127.0.0.1:8080/api/v1/emulator/status", statefulset)
         self.assertIn("port: 8777\n      targetPort: android-api", services)
         self.assertNotIn("targetPort: android-grpc", services)
         self.assertIn("port: 6080\n      targetPort: android-viewer", services)

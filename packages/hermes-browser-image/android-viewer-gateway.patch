@@ -1,0 +1,100 @@
+diff --git a/gateway_server.py b/gateway_server.py
+index 9e345b9..68a1a50 100644
+--- a/gateway_server.py
++++ b/gateway_server.py
+@@ -124,6 +124,74 @@ async def handle_status(request):
+         return web.json_response({"error": str(e)}, status=500)
+ 
+ 
++async def handle_screenshot(request):
++    """GET /api/v1/emulator/screenshot returns the secure-capable framebuffer."""
++    if not EMULATOR_CHANNEL:
++        return web.json_response({"error": "No channel to emulator"}, status=503)
++
++    try:
++        stub = ec_grpc.EmulatorControllerStub(EMULATOR_CHANNEL)
++        metadata = get_emulator_metadata()
++        image = await stub.getScreenshot(
++            ec.ImageFormat(format=ec.ImageFormat.PNG, display=0),
++            metadata=metadata,
++        )
++        if not image.image:
++            return web.json_response({"error": "Emulator returned no image"}, status=503)
++        return web.Response(
++            body=image.image,
++            content_type="image/png",
++            headers={"Cache-Control": "no-store, max-age=0"},
++        )
++    except Exception as e:
++        logging.error(f"Error fetching emulator screenshot: {e}")
++        return web.json_response({"error": str(e)}, status=500)
++
++
++async def handle_input(request):
++    """POST /api/v1/emulator/input injects fallback mouse or keyboard input."""
++    if not EMULATOR_CHANNEL:
++        return web.json_response({"error": "No channel to emulator"}, status=503)
++
++    try:
++        data = await request.json()
++        event_type = data.get("type")
++        stub = ec_grpc.EmulatorControllerStub(EMULATOR_CHANNEL)
++        metadata = get_emulator_metadata()
++        if event_type == "mouse":
++            await stub.sendMouse(
++                ec.MouseEvent(
++                    x=max(0, int(data.get("x", 0))),
++                    y=max(0, int(data.get("y", 0))),
++                    buttons=max(0, int(data.get("buttons", 0))),
++                    display=0,
++                ),
++                metadata=metadata,
++            )
++        elif event_type == "keyboard":
++            key = str(data.get("key", ""))
++            if not key:
++                return web.json_response({"error": "Keyboard key is required"}, status=400)
++            event_names = {
++                "keydown": ec.KeyboardEvent.keydown,
++                "keyup": ec.KeyboardEvent.keyup,
++                "keypress": ec.KeyboardEvent.keypress,
++            }
++            requested_event = str(data.get("event", "keypress"))
++            if requested_event not in event_names:
++                return web.json_response({"error": "Unknown keyboard event"}, status=400)
++            await stub.sendKey(
++                ec.KeyboardEvent(eventType=event_names[requested_event], key=key),
++                metadata=metadata,
++            )
++        else:
++            return web.json_response({"error": "Unknown input type"}, status=400)
++        return web.json_response({"status": "success"})
++    except Exception as e:
++        logging.error(f"Error injecting emulator input: {e}")
++        return web.json_response({"error": str(e)}, status=500)
++
++
+ async def handle_gps(request):
+     """
+     POST /api/v1/emulator/gps
+@@ -317,6 +385,8 @@ def init_app(videobridge_token):
+ 
+     # Register routes
+     app.router.add_get("/api/v1/emulator/status", handle_status)
++    app.router.add_get("/api/v1/emulator/screenshot", handle_screenshot)
++    app.router.add_post("/api/v1/emulator/input", handle_input)
+     app.router.add_post("/api/v1/emulator/gps", handle_gps)
+     app.router.add_get("/api/v1/emulator/logcat", handle_logcat)
+     app.router.add_get("/api/v1/emulator/ws-jsep", handle_websocket_jsep)
+ 
+     return app
+@@ -377,10 +447,10 @@ async def main():
+     app = init_app(args.videobridge_token)
+     runner = web.AppRunner(app)
+     await runner.setup()
+-    site = web.TCPSite(runner, "0.0.0.0", args.port)
++    site = web.TCPSite(runner, "127.0.0.1", args.port)
+     await site.start()
+ 
+-    logging.info(f"Gateway Webserver listening on http://0.0.0.0:{args.port}")
++    logging.info(f"Gateway Webserver listening on http://127.0.0.1:{args.port}")

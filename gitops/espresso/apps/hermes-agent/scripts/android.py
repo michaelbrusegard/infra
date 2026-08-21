@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -788,9 +789,41 @@ def handle_disconnect(args: argparse.Namespace) -> dict[str, Any]:
 def handle_screenshot(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
     destination = resolve_output_path(args.path, serial, "screenshots", ".png")
+    grpc_url = default_grpc_endpoint(serial)
+    if grpc_url:
+        try:
+            screenshot = grpc_json(
+                serial,
+                "android.emulation.control.EmulatorController/getScreenshot",
+                {"format": "PNG", "display": 0},
+                timeout=120,
+            )
+            encoded = screenshot.get("image")
+            if not isinstance(encoded, str) or not encoded:
+                raise RuntimeError("emulator gRPC screenshot returned no image data")
+            destination.write_bytes(base64.b64decode(encoded, validate=True))
+            return {
+                "serial": serial,
+                "path": str(destination),
+                "size_bytes": destination.stat().st_size,
+                "source": "emulator-grpc",
+                "secure_windows_visible": True,
+            }
+        except (RuntimeError, ValueError, OSError) as exc:
+            grpc_error = safe_text(exc)
+    else:
+        grpc_error = "emulator gRPC endpoint is not configured"
+
     payload = run_adb(serial, "exec-out", "screencap", "-p", text=False, timeout=120)
     destination.write_bytes(bytes(payload))
-    return {"serial": serial, "path": str(destination), "size_bytes": destination.stat().st_size}
+    return {
+        "serial": serial,
+        "path": str(destination),
+        "size_bytes": destination.stat().st_size,
+        "source": "adb-screencap",
+        "secure_windows_visible": False,
+        "grpc_error": grpc_error,
+    }
 
 
 def handle_record(args: argparse.Namespace) -> dict[str, Any]:
