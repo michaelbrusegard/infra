@@ -50,19 +50,12 @@
     write-agent-instructions = "${../../config/skills/write-agent-instructions}";
   };
   agentInstructions = ../../config/AGENTS.md;
-  ompSkillFiles = lib.mapAttrs' (name: source:
-    lib.nameValuePair ".omp/agent/skills/${name}" {
+  piSkillFiles = lib.mapAttrs' (name: source:
+    lib.nameValuePair ".pi/agent/skills/${name}" {
       inherit source;
       recursive = true;
     })
   skills;
-  ompManagedConfig = (pkgs.formats.yaml {}).generate "omp-managed-config.yml" {
-    disabledProviders = [
-      "claude"
-      "codex"
-    ];
-    tools.approvalMode = "yolo";
-  };
   direnvWrapped = package: executable:
     (pkgs.writeShellApplication {
       name = executable;
@@ -198,8 +191,7 @@ in {
     {
       packages =
         [
-          (direnvWrapped pkgs.omp "omp")
-          pkgs.kimi-code
+          (direnvWrapped pkgs.pi-coding-agent "pi")
           pkgs.open-browser-use
           pkgs.open-computer-use
           pkgs.slack-cli
@@ -216,92 +208,38 @@ in {
 
       file =
         {
-          ".omp/agent/mcp.json".text = builtins.toJSON {
-            "$schema" = "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json";
-            mcpServers = {
-              open-browser-use = {
-                type = "stdio";
-                command = openBrowserUseCommand;
-                args = ["mcp"];
-              };
-              open-computer-use = {
-                type = "stdio";
-                command = openComputerUseCommand;
-                args = ["mcp"];
-              };
-            };
-          };
           ".codex/AGENTS.md".source = agentInstructions;
           ".claude/CLAUDE.md".source = agentInstructions;
-          ".omp/agent/AGENTS.md".source = agentInstructions;
-          ".omp/agent/RULES.md".source = ../../config/agent-instructions/omp-rules.md;
-          ".kimi-code/AGENTS.md".source = agentInstructions;
+          ".pi/agent/AGENTS.md".source = agentInstructions;
           "${openBrowserUseExtensionDirectory}" = lib.mkIf (!isWsl) {
             source = pkgs.open-browser-use.chromeExtensionUnpacked;
             recursive = true;
             force = true;
           };
         }
-        // ompSkillFiles;
-
-      activation.ompConfig = lib.hm.dag.entryAfter ["linkGeneration"] ''
-        config_file="$HOME/.omp/agent/config.yml"
-        config_dir=$(dirname "$config_file")
-        temp_file=$(mktemp)
-
-        if [ -f "$config_file" ]; then
-          ${lib.getExe pkgs.yq-go} eval-all \
-            'select(fileIndex == 0) * select(fileIndex == 1)' \
-            "$config_file" ${ompManagedConfig} > "$temp_file"
-        else
-          ${pkgs.coreutils}/bin/cp ${ompManagedConfig} "$temp_file"
-        fi
-
-        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
-          $DRY_RUN_CMD mkdir -p "$config_dir"
-          if [ -L "$config_file" ]; then
-            $DRY_RUN_CMD rm -f "$config_file"
-          fi
-          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
-        fi
-
-        rm -f "$temp_file"
-      '';
+        // piSkillFiles;
 
       activation.paseoConfig = lib.mkIf (paseoHostnames != []) (lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.paseo/config.json"
         config_dir=$(dirname "$config_file")
         temp_file=$(mktemp)
-        kimi_provider='${builtins.toJSON {
-          extends = "acp";
-          label = "Kimi Code CLI";
-          command = [
-            (lib.getExe pkgs.kimi-code)
-            "acp"
-          ];
-        }}'
 
         if [ -f "$config_file" ]; then
           ${lib.getExe pkgs.jq} \
-            --argjson hostnames '${builtins.toJSON paseoHostnames}' \
-            --argjson kimi_provider "$kimi_provider" '
+            --argjson hostnames '${builtins.toJSON paseoHostnames}' '
             .daemon = ((.daemon // {}) + {
               hostnames: (((.daemon.hostnames // []) + $hostnames) | unique)
             })
-            | .agents = ((.agents // {}) + {
-              providers: ((.agents.providers // {}) + {
-                kimi: $kimi_provider
-              })
-            })
+            | del(.agents.providers.kimi)
+            | if .agents.providers? == {} then del(.agents.providers) else . end
+            | if .agents? == {} then del(.agents) else . end
           ' "$config_file" > "$temp_file"
         else
           ${lib.getExe pkgs.jq} \
             --argjson hostnames '${builtins.toJSON paseoHostnames}' \
-            --argjson kimi_provider "$kimi_provider" \
             '{
               version: 1,
-              daemon: {hostnames: $hostnames},
-              agents: {providers: {kimi: $kimi_provider}}
+              daemon: {hostnames: $hostnames}
             }' > "$temp_file"
         fi
 
@@ -319,8 +257,7 @@ in {
           [
             ".claude"
             ".codex"
-            ".kimi-code"
-            ".omp"
+            ".pi"
             ".cache/slack-cli"
           ]
           ++ lib.optionals (!isWsl) [
