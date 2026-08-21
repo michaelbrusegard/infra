@@ -8,7 +8,7 @@ spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      partition: 1
+      partition: 0
   selector:
     matchLabels:
       app: hermes-agent
@@ -17,7 +17,7 @@ spec:
     metadata:
       annotations:
         configmap.reloader.stakater.com/reload: hermes-agent-bootstrap,hermes-agent-skills
-        hermes.michaelbrusegard.com/android-image-rollout: "pending"
+        hermes.michaelbrusegard.com/android-image-rollout: "ready"
         secret.reloader.stakater.com/reload: cliproxyapi,hermes-agent-env,hermes-alert-webhook,hermes-media-client,hindsight,mattermost-integrations,mattermost-outputs,mealie-api
       labels:
         app: hermes-agent
@@ -125,7 +125,7 @@ spec:
             - name: bootstrap-skills
               mountPath: /bootstrap-skills
         - name: prepare-android
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-cf01b4fed4755206618a7652f9dee23ec0f92e5c@sha256:6a79a0cc11b482a149e14719e3952e0facd2193050d11d848449f047a1582662
+          image: ghcr.io/michaelbrusegard/hermes-android:sha-0178d747e401d0a87deb0d8fbd20143f29c235f2@sha256:318141826dd9155d2f5c29e1b7805ecec22cdff134f6e9f8e221a14665db86d8
           command:
             - bash
             - -euc
@@ -427,7 +427,7 @@ spec:
               drop:
                 - ALL
         - name: android-emulator
-          image: us-docker.pkg.dev/android-emulator-268719/images/30-google-x64-no-metrics:30.1.2@sha256:e78ac1816acef59e40285e90003acd490ef54bb3242ed088afa31bc982577050
+          image: ghcr.io/michaelbrusegard/hermes-android:sha-0178d747e401d0a87deb0d8fbd20143f29c235f2@sha256:318141826dd9155d2f5c29e1b7805ecec22cdff134f6e9f8e221a14665db86d8
           command:
             - bash
             - /bootstrap-skills/android-emulator-launch.sh
