@@ -562,13 +562,22 @@ class BrowserSupportTests(unittest.TestCase):
             {"targetId": "extension-target"},
             {"success": True},
         ]
-        evaluate.return_value = {
-            "readyState": "complete",
-            "title": "uBlock Origin Lite",
-            "url": "chrome-extension://extension-id/popup.html",
-            "runtimeId": "extension-id",
-            "enabledRulesets": ["easylist", "easyprivacy"],
-        }
+        evaluate.side_effect = [
+            {
+                "readyState": "complete",
+                "title": "",
+                "url": "about:blank",
+                "runtimeId": None,
+                "enabledRulesets": [],
+            },
+            {
+                "readyState": "complete",
+                "title": "uBlock Origin Lite",
+                "url": "chrome-extension://extension-id/popup.html",
+                "runtimeId": "extension-id",
+                "enabledRulesets": ["easylist", "easyprivacy"],
+            },
+        ]
 
         result = browser_support.probe_extension(
             client,
@@ -584,6 +593,7 @@ class BrowserSupportTests(unittest.TestCase):
         self.assertTrue(result["loaded"])
         self.assertTrue(result["healthy"])
         self.assertEqual(result["enabled_rulesets"], ["easylist", "easyprivacy"])
+        self.assertEqual(evaluate.call_count, 2)
         client.call.assert_any_call(
             "ws://browser", "Target.closeTarget", {"targetId": "extension-target"}
         )
@@ -593,7 +603,19 @@ class BrowserSupportTests(unittest.TestCase):
         extension = default_profile / "Extensions" / "extension-id" / "1.2.3_0"
         extension.mkdir(parents=True)
         (extension / "manifest.json").write_text(
-            json.dumps({"name": "Example Extension", "version": "1.2.3"}),
+            json.dumps(
+                {
+                    "name": "__MSG_extName__",
+                    "version": "1.2.3",
+                    "default_locale": "en",
+                }
+            ),
+            encoding="utf-8",
+        )
+        locale = extension / "_locales" / "en"
+        locale.mkdir(parents=True)
+        (locale / "messages.json").write_text(
+            json.dumps({"extName": {"message": "Example Extension"}}),
             encoding="utf-8",
         )
         (default_profile / "Preferences").write_text(
@@ -613,6 +635,7 @@ class BrowserSupportTests(unittest.TestCase):
 
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["id"], "extension-id")
+        self.assertEqual(result[0]["name"], "Example Extension")
         self.assertEqual(result[0]["version"], "1.2.3")
         self.assertTrue(result[0]["enabled_in_preferences"])
 

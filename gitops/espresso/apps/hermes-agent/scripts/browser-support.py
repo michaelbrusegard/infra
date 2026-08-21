@@ -222,6 +222,23 @@ def load_json_file(path: Path) -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) else None
 
 
+def extension_manifest_name(manifest_path: Path, manifest: dict[str, Any]) -> str:
+    raw_name = str(manifest.get("name") or manifest_path.parents[1].name)
+    message_match = re.fullmatch(r"__MSG_(.+)__", raw_name)
+    if message_match is None:
+        return raw_name
+    message_key = message_match.group(1)
+    default_locale = str(manifest.get("default_locale") or "en")
+    for locale in dict.fromkeys((default_locale, "en", "en_US")):
+        messages = load_json_file(
+            manifest_path.parent / "_locales" / locale / "messages.json"
+        )
+        message = messages.get(message_key) if messages else None
+        if isinstance(message, dict) and message.get("message"):
+            return str(message["message"])
+    return raw_name
+
+
 def installed_profile_extensions(profile_root: Path) -> list[dict[str, Any]]:
     profile_directory = profile_root / "profile"
     extensions: list[dict[str, Any]] = []
@@ -243,7 +260,7 @@ def installed_profile_extensions(profile_root: Path) -> list[dict[str, Any]]:
         extensions.append(
             {
                 "id": extension_id,
-                "name": str(manifest.get("name") or extension_id),
+                "name": extension_manifest_name(manifest_path, manifest),
                 "version": str(manifest.get("version") or manifest_path.parent.name),
                 "profile": profile_name,
                 "enabled_in_preferences": state != 0 and not disable_reasons,
@@ -302,7 +319,11 @@ def probe_extension(
                     })()
                     """,
                 )
-                if isinstance(probe_state, dict) and probe_state.get("readyState") == "complete":
+                if (
+                    isinstance(probe_state, dict)
+                    and probe_state.get("readyState") == "complete"
+                    and probe_state.get("runtimeId") == extension_id
+                ):
                     break
             except (RuntimeError, ValueError) as exc:
                 last_error = exc
