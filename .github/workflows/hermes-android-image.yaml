@@ -425,8 +425,24 @@ jobs:
           accessibility_raw_request '{"op":"health","token":"wrong"}' | \
             jq -e '(.ok | not) and (.error | contains("invalid companion token"))'
           mark_smoke_stage 'initial accessibility snapshot'
-          accessibility_request '{"op":"snapshot","ttl_ms":30000}' | \
-            jq -e '.ok and .backend == "accessibility-service" and (.node_count > 0)'
+          initial_snapshot_ready=false
+          initial_snapshot=
+          for attempt in $(seq 1 30); do
+            initial_snapshot=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
+            if printf '%s\n' "$initial_snapshot" | jq -e \
+              '.ok and .backend == "accessibility-service" and (.node_count > 0)' \
+              >/dev/null; then
+              initial_snapshot_ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$initial_snapshot_ready" != true ]; then
+            printf 'Initial accessibility snapshot: %s\n' \
+              "$(printf '%s\n' "$initial_snapshot" | jq -c \
+                '{ok,backend,node_count,error}')" >&2
+            exit 1
+          fi
           mark_smoke_stage 'Settings UI launch'
           adb_cmd shell am start -a android.settings.SETTINGS >/dev/null
           sleep 2
@@ -487,10 +503,17 @@ jobs:
               "$(printf '%s\n' "$text_response" | jq -c .)" >&2
             exit 1
           fi
-          sleep 1
           mark_smoke_stage 'Unicode accessibility text verification'
-          accessibility_request '{"op":"snapshot","ttl_ms":30000}' | \
-            jq -e '.nodes | any(.text == "Grüße ☕")'
+          unicode_text_visible=false
+          for attempt in $(seq 1 10); do
+            if accessibility_request '{"op":"snapshot","ttl_ms":30000}' | \
+              jq -e '.nodes | any(.text == "Grüße ☕")' >/dev/null; then
+              unicode_text_visible=true
+              break
+            fi
+            sleep 1
+          done
+          test "$unicode_text_visible" = true
           mark_smoke_stage 'accessibility gesture injection'
           accessibility_request '{"op":"gesture","type":"tap","x":100,"y":100,"duration_ms":1}' | \
             jq -e '.ok and .accepted'
