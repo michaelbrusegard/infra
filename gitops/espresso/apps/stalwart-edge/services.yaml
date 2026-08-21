@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: stalwart-edge-internal
+  namespace: stalwart-edge
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: stalwart-edge
+  ports:
+    - name: smtp
+      port: 25
+      targetPort: smtp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stalwart-edge
+  namespace: stalwart-edge
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.13,fd7a:115c:a1e0:188::13
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  externalTrafficPolicy: Local
+  selector:
+    app: stalwart-edge
+  ports:
+    - name: smtp
+      port: 25
+      targetPort: smtp

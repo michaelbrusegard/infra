@@ -101,6 +101,20 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-rbac
+  namespace: manafishrov-stalwart
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: ClusterRole
+  name: manafishrov-rbac
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: manafishrov-volsync
@@ -185,6 +199,20 @@ kind: RoleBinding
 metadata:
   name: manafishrov-volsync
   namespace: manafishrov-vaultwarden
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: ClusterRole
+  name: manafishrov-volsync
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-volsync
+  namespace: manafishrov-stalwart
 subjects:
   - kind: ServiceAccount
     name: manafishrov
@@ -311,6 +339,20 @@ kind: RoleBinding
 metadata:
   name: manafishrov-secrets
   namespace: manafishrov-public
+subjects:
+  - kind: ServiceAccount
+    name: manafishrov
+    namespace: flux-system
+roleRef:
+  kind: ClusterRole
+  name: manafishrov-secrets
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manafishrov-secrets
+  namespace: manafishrov-stalwart
 subjects:
   - kind: ServiceAccount
     name: manafishrov

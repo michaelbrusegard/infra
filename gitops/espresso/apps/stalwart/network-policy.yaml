@@ -35,6 +35,18 @@ spec:
         - ports:
             - port: "8080"
               protocol: TCP
+    # The headless inbound edge may deliver over LMTP and read the address
+    # inventory over the management API. Neither port is exposed by the edge.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: stalwart-edge
+            k8s:app: stalwart-edge
+      toPorts:
+        - ports:
+            - port: "24"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
     # Public-facing mail ports: inbound SMTP, client submission, and IMAP.
     # Auth ports are exposed to the world so mail clients work without VPN;
     # Stalwart's built-in fail2ban handles brute-force noise.

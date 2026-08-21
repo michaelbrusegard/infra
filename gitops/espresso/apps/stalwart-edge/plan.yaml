@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-edge-plan
+  namespace: stalwart-edge
+data:
+  00-listeners.ndjson.tmpl: |
+    {"@type":"create","object":"NetworkListener","value":{"smtp":{"name":"smtp","protocol":"smtp","bind":{"[::]:25":true},"useTls":true,"tlsImplicit":false},"http":{"name":"http","protocol":"http","bind":{"127.0.0.1:8080":true},"useTls":false,"tlsImplicit":false}}}
+
+  10-certificate.ndjson.tmpl: |
+    {"@type":"create","object":"Certificate","value":{"cert-wildcard":{"certificate":{"@type":"File","filePath":"/var/lib/stalwart/private/tls/tls.crt"},"privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/tls/tls.key"}}}}
+
+  # This is an address-only external directory. It cannot authenticate a user:
+  # queryLogin is deliberately impossible and no password hashes are synced.
+  15-routing-directory.ndjson.tmpl: |
+    {"@type":"create","object":"Directory","value":{"dir-routing":{"@type":"Sql","description":"Automatically synchronized edge recipient index","store":{"@type":"Sqlite","path":"/var/lib/stalwart/routing/recipients.sqlite3","poolMaxConnections":4},"columnEmail":"name","columnSecret":"secret","columnClass":"type","columnDescription":"description","queryLogin":"SELECT name, secret, description, type FROM accounts WHERE name = ?1 AND 0","queryRecipient":"SELECT a.name, a.secret, a.description, a.type FROM emails e JOIN accounts a ON a.name = e.name WHERE e.address = ?1 AND a.active = 1 LIMIT 1","queryMemberOf":"SELECT member_of FROM group_members WHERE name = ?1","queryEmailAliases":"SELECT address FROM emails WHERE name = ?1"}}}
+
+  20-domains.ndjson.tmpl: |
+    {"@type":"create","object":"Domain","value":{"d-edge":{"name":"edge.asgard.michaelbrusegard.com","aliases":{},"certificateManagement":{"@type":"Manual"},"dkimManagement":{"@type":"Manual"},"dnsManagement":{"@type":"Manual"},"subAddressing":{"@type":"Disabled"},"reportAddressUri":null,"allowRelaying":false,"isEnabled":true,"directoryId":null,"memberTenantId":null,"catchAllAddress":null,"description":"Internal administrative identity for the inbound edge","logo":null},"d-personal":{"name":"michaelbrusegard.com","aliases":{},"certificateManagement":{"@type":"Manual"},"dkimManagement":{"@type":"Manual"},"dnsManagement":{"@type":"Manual"},"subAddressing":{"@type":"Enabled"},"reportAddressUri":"mailto:postmaster@michaelbrusegard.com","allowRelaying":false,"isEnabled":true,"directoryId":"#dir-routing","memberTenantId":null,"catchAllAddress":null,"description":"Recipient-validation domain relayed to personal Stalwart","logo":null},"d-manafishrov":{"name":"manafishrov.com","aliases":{},"certificateManagement":{"@type":"Manual"},"dkimManagement":{"@type":"Manual"},"dnsManagement":{"@type":"Manual"},"subAddressing":{"@type":"Enabled"},"reportAddressUri":"mailto:postmaster@manafishrov.com","allowRelaying":false,"isEnabled":true,"directoryId":"#dir-routing","memberTenantId":null,"catchAllAddress":null,"description":"Recipient-validation domain relayed to Manafish Stalwart","logo":null}}}
+
+  # The public SMTP identity is independent of the disabled HTTP/WebUI surface.
+  25-system-identity.ndjson.tmpl: |
+    {"@type":"update","object":"SystemSettings","value":{"defaultHostname":"mail.asgard.michaelbrusegard.com","defaultDomainId":"#d-edge","defaultCertificateId":"#cert-wildcard"}}
+
+  40-system-accounts.ndjson.tmpl: |
+    {"@type":"create","object":"Account","value":{"admin":{"@type":"User","name":${ADMIN_LOCAL_JSON},"domainId":"#d-edge","credentials":{"0":{"@type":"Password","secret":${ADMIN_PASSWORD_JSON}}},"memberGroupIds":{},"roles":{"@type":"Admin"},"permissions":{"@type":"Inherit"},"quotas":{},"aliases":{},"encryptionAtRest":{"@type":"Disabled"}}}}
+
+  60-routes.ndjson.tmpl: |
+    {"@type":"create","object":"MtaRoute","value":{"to-personal":{"@type":"Relay","name":"to-personal","address":"stalwart-internal.stalwart.svc.cluster.local","port":24,"protocol":"lmtp","implicitTls":true,"allowInvalidCerts":true,"authSecret":{"@type":"None"},"description":"Private TLS-wrapped final delivery to the personal mailbox backend"},"to-manafishrov":{"@type":"Relay","name":"to-manafishrov","address":"stalwart-internal.manafishrov-stalwart.svc.cluster.local","port":24,"protocol":"lmtp","implicitTls":true,"allowInvalidCerts":true,"authSecret":{"@type":"None"},"description":"Private TLS-wrapped final delivery to the Manafish mailbox backend"},"mx":{"@type":"Mx","name":"mx","ipLookupStrategy":"v4ThenV6","maxMxHosts":5,"maxMultihomed":2,"description":"Direct delivery for edge-generated DSNs and reports"}}}
+
+  70-outbound-strategy.ndjson.tmpl: |
+    {"@type":"update","object":"MtaOutboundStrategy","value":{"route":{"match":{"0":{"if":"rcpt_domain == 'michaelbrusegard.com'","then":"'to-personal'"},"1":{"if":"rcpt_domain == 'manafishrov.com'","then":"'to-manafishrov'"}},"else":"'mx'"}}}
+
+  75-disable-auth.ndjson.tmpl: |
+    {"@type":"update","object":"MtaStageAuth","value":{"saslMechanisms":{"else":"false"},"require":{"else":"false"}}}
+
+  77-inbound-filtering.ndjson.tmpl: |
+    {"@type":"update","object":"SenderAuth","value":{"dkimVerify":{"else":"relaxed"},"spfEhloVerify":{"match":{"0":{"if":"listener == 'smtp'","then":"relaxed"}},"else":"disable"},"spfFromVerify":{"match":{"0":{"if":"listener == 'smtp'","then":"relaxed"}},"else":"disable"},"dmarcVerify":{"match":{"0":{"if":"listener == 'smtp'","then":"relaxed"}},"else":"disable"},"reverseIpVerify":{"match":{"0":{"if":"listener == 'smtp'","then":"relaxed"}},"else":"disable"}}}
+    {"@type":"update","object":"MtaStageData","value":{"enableSpamFilter":{"match":{"0":{"if":"listener == 'smtp'","then":"true"}},"else":"false"}}}
+
+  # Stalwart creates this application by default. Keep it disabled even though
+  # the management listener also has no Service, Gateway route, or user access.
+  80-disable-web-application.ndjson.tmpl: |
+    {"@type":"create","object":"Application","value":{"webui":{"enabled":false,"description":"Stalwart Web Interface (disabled on headless edge)","resourceUrl":"https://github.com/stalwartlabs/webui/releases/latest/download/webui.zip","urlPrefix":{"/admin":true,"/account":true}}}}
+
+  90-tracer-stdout.ndjson.tmpl: |
+    {"@type":"create","object":"Tracer","value":{"stdout":{"@type":"Stdout","enable":true,"level":"info","ansi":false,"buffered":false,"eventsPolicy":"exclude","events":{}}}}

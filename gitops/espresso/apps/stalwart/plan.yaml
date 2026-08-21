@@ -9,7 +9,7 @@ data:
   # lexical order, so cross-object refs (#alias) must point at objects
   # declared in earlier files within the same batch.
   00-listeners.ndjson.tmpl: |
-    {"@type":"create","object":"NetworkListener","value":{"smtp":{"name":"smtp","protocol":"smtp","bind":{"[::]:25":true},"useTls":true,"tlsImplicit":false},"submissions":{"name":"submissions","protocol":"smtp","bind":{"[::]:465":true},"useTls":true,"tlsImplicit":true},"submission":{"name":"submission","protocol":"smtp","bind":{"[::]:587":true},"useTls":true,"tlsImplicit":false},"imaps":{"name":"imaps","protocol":"imap","bind":{"[::]:993":true},"useTls":true,"tlsImplicit":true},"sieve":{"name":"sieve","protocol":"manageSieve","bind":{"[::]:4190":true},"useTls":true,"tlsImplicit":false},"http":{"name":"http","protocol":"http","bind":{"[::]:8080":true},"useTls":false,"tlsImplicit":false},"https":{"name":"https","protocol":"http","bind":{"[::]:443":true},"useTls":true,"tlsImplicit":true}}}
+    {"@type":"create","object":"NetworkListener","value":{"edge-lmtp":{"name":"edge-lmtp","protocol":"lmtp","bind":{"[::]:24":true},"useTls":true,"tlsImplicit":true},"smtp":{"name":"smtp","protocol":"smtp","bind":{"[::]:25":true},"useTls":true,"tlsImplicit":false},"submissions":{"name":"submissions","protocol":"smtp","bind":{"[::]:465":true},"useTls":true,"tlsImplicit":true},"submission":{"name":"submission","protocol":"smtp","bind":{"[::]:587":true},"useTls":true,"tlsImplicit":false},"imaps":{"name":"imaps","protocol":"imap","bind":{"[::]:993":true},"useTls":true,"tlsImplicit":true},"sieve":{"name":"sieve","protocol":"manageSieve","bind":{"[::]:4190":true},"useTls":true,"tlsImplicit":false},"http":{"name":"http","protocol":"http","bind":{"[::]:8080":true},"useTls":false,"tlsImplicit":false},"https":{"name":"https","protocol":"http","bind":{"[::]:443":true},"useTls":true,"tlsImplicit":true}}}
 
   10-certificate.ndjson.tmpl: |
     {"@type":"create","object":"Certificate","value":{"cert-wildcard":{"certificate":{"@type":"File","filePath":"/var/lib/stalwart/private/tls/tls.crt"},"privateKey":{"@type":"File","filePath":"/var/lib/stalwart/private/tls/tls.key"}}}}
@@ -34,6 +34,12 @@ data:
 
   60-route-resend.ndjson.tmpl: |
     {"@type":"create","object":"MtaRoute","value":{"mx":{"@type":"Relay","name":"mx","address":"smtp.resend.com","port":465,"protocol":"smtp","authUsername":"resend","authSecret":{"@type":"Value","secret":${RESEND_API_KEY_JSON}},"implicitTls":true,"allowInvalidCerts":false,"description":"Resend smarthost for all external outbound"}}}
+
+  # The edge has already evaluated the original Internet sender. Do not repeat
+  # sender authentication or spam filtering against the edge pod's address.
+  70-trusted-edge-delivery.ndjson.tmpl: |
+    {"@type":"update","object":"SenderAuth","value":{"dkimVerify":{"match":{"0":{"if":"listener == 'edge-lmtp'","then":"disable"}},"else":"relaxed"},"spfEhloVerify":{"match":{"0":{"if":"local_port == 25","then":"relaxed"}},"else":"disable"},"spfFromVerify":{"match":{"0":{"if":"local_port == 25","then":"relaxed"}},"else":"disable"},"dmarcVerify":{"match":{"0":{"if":"local_port == 25","then":"relaxed"}},"else":"disable"},"reverseIpVerify":{"match":{"0":{"if":"local_port == 25","then":"relaxed"}},"else":"disable"}}}
+    {"@type":"update","object":"MtaStageData","value":{"enableSpamFilter":{"match":{"0":{"if":"listener == 'edge-lmtp'","then":"false"}},"else":"is_empty(authenticated_as)"}}}
 
   80-mta-sts.ndjson.tmpl: |
     {"@type":"update","object":"MtaSts","value":{"mode":"testing","maxAge":604800000,"mxHosts":{}}}

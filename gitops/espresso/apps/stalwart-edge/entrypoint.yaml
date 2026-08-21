@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-edge-entrypoint
+  namespace: stalwart-edge
+data:
+  entrypoint.sh: |
+    #!/bin/sh
+    set -e
+    MARKER=/var/lib/stalwart/.bootstrapped
+    if [ ! -f "$MARKER" ]; then
+      echo "stalwart-edge-entrypoint: marker absent -> booting in recovery mode"
+      export STALWART_RECOVERY_MODE=true
+    else
+      echo "stalwart-edge-entrypoint: marker present -> booting normally"
+    fi
+    exec /usr/local/bin/stalwart --config /var/lib/stalwart/config.json

@@ -16,6 +16,6 @@ spec:
   secretTemplate:
     annotations:
       reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
-      reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "stalwart"
+      reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "stalwart,stalwart-edge,manafishrov-stalwart"
       reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
-      reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "stalwart"
+      reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "stalwart,stalwart-edge,manafishrov-stalwart"

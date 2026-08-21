@@ -1,0 +1,274 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-edge-directory-sync
+  namespace: stalwart-edge
+data:
+  sync.py: |
+    #!/usr/bin/env python3
+    """Synchronize backend recipient addresses into the edge SQL directory."""
+
+    import argparse
+    import json
+    import os
+    import sqlite3
+    import subprocess
+    import sys
+    from dataclasses import dataclass
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+
+    DATABASE = Path(
+        os.environ.get(
+            "STALWART_EDGE_DIRECTORY_DB",
+            "/var/lib/stalwart/routing/recipients.sqlite3",
+        )
+    )
+    READY_MARKER = DATABASE.parent / ".recipients-ready"
+
+
+    @dataclass(frozen=True)
+    class Source:
+        name: str
+        url: str
+        domain: str
+        token: str
+
+
+    def connect() -> sqlite3.Connection:
+        DATABASE.parent.mkdir(parents=True, exist_ok=True)
+        connection = sqlite3.connect(DATABASE, timeout=30)
+        connection.execute("PRAGMA journal_mode = WAL")
+        connection.execute("PRAGMA synchronous = NORMAL")
+        connection.execute("PRAGMA busy_timeout = 30000")
+        connection.execute("PRAGMA foreign_keys = ON")
+        return connection
+
+
+    def initialize() -> None:
+        with connect() as connection:
+            connection.executescript(
+                """
+                CREATE TABLE IF NOT EXISTS accounts (
+                    name TEXT PRIMARY KEY,
+                    secret TEXT,
+                    description TEXT,
+                    type TEXT NOT NULL,
+                    active BOOLEAN DEFAULT 1,
+                    source TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS group_members (
+                    name TEXT NOT NULL,
+                    member_of TEXT NOT NULL,
+                    PRIMARY KEY (name, member_of)
+                );
+                CREATE TABLE IF NOT EXISTS emails (
+                    name TEXT NOT NULL REFERENCES accounts(name) ON DELETE CASCADE,
+                    address TEXT NOT NULL UNIQUE,
+                    type TEXT,
+                    PRIMARY KEY (name, address)
+                );
+                CREATE TABLE IF NOT EXISTS sync_metadata (
+                    source TEXT PRIMARY KEY,
+                    last_success TEXT NOT NULL,
+                    recipient_count INTEGER NOT NULL
+                );
+                """
+            )
+
+
+    def query(source: Source, object_type: str, fields: str) -> list[dict]:
+        environment = os.environ.copy()
+        environment["STALWART_URL"] = source.url
+        environment["STALWART_TOKEN"] = source.token
+        environment.pop("STALWART_USER", None)
+        environment.pop("STALWART_PASSWORD", None)
+        result = subprocess.run(
+            [
+                "stalwart-cli",
+                "--insecure",
+                "query",
+                object_type,
+                "--json",
+                "--fields",
+                fields,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=environment,
+        )
+        return [
+            json.loads(line)
+            for line in result.stdout.splitlines()
+            if line.strip()
+        ]
+
+
+    def collection_values(value: object) -> list[object]:
+        if isinstance(value, dict):
+            return list(value.values())
+        if isinstance(value, list):
+            return value
+        return []
+
+
+    def address_from_alias(alias: object, domains_by_id: dict[str, str]) -> str | None:
+        if isinstance(alias, str):
+            return alias.lower()
+        if not isinstance(alias, dict) or alias.get("enabled") is False:
+            return None
+        name = alias.get("name")
+        domain = domains_by_id.get(str(alias.get("domainId")))
+        if name and domain:
+            return f"{name}@{domain}".lower()
+        return None
+
+
+    def read_source(source: Source) -> dict[str, tuple[str, set[str]]]:
+        domains = query(source, "Domain", "id,name")
+        domains_by_id = {
+            str(item["id"]): str(item["name"]).lower()
+            for item in domains
+            if item.get("id") is not None and item.get("name")
+        }
+        if source.domain not in domains_by_id.values():
+            raise RuntimeError(
+                f"{source.name} did not return configured domain {source.domain}"
+            )
+
+        objects = query(
+            source,
+            "Account",
+            "id,@type,emailAddress,aliases",
+        )
+        mailing_lists = query(
+            source,
+            "MailingList",
+            "id,emailAddress,aliases",
+        )
+        for item in mailing_lists:
+            item["_edgeObjectType"] = "MailingList"
+        objects += mailing_lists
+
+        records: dict[str, tuple[str, set[str]]] = {}
+        for item in objects:
+            primary = str(item.get("emailAddress") or "").lower()
+            addresses = {primary} if "@" in primary else set()
+            for alias in collection_values(item.get("aliases")):
+                address = address_from_alias(alias, domains_by_id)
+                if address:
+                    addresses.add(address)
+
+            addresses = {
+                address
+                for address in addresses
+                if address.rpartition("@")[2] == source.domain
+            }
+            if not addresses:
+                continue
+
+            if "@" not in primary:
+                primary = sorted(addresses)[0]
+            account_type = (
+                "group"
+                if item.get("@type") == "Group"
+                or item.get("_edgeObjectType") == "MailingList"
+                else "individual"
+            )
+            previous = records.get(primary)
+            if previous:
+                previous[1].update(addresses)
+            else:
+                records[primary] = (account_type, addresses)
+
+        return records
+
+
+    def replace_source(
+        source: Source,
+        records: dict[str, tuple[str, set[str]]],
+    ) -> int:
+        with connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute("DELETE FROM accounts WHERE source = ?", (source.name,))
+            for primary, (account_type, addresses) in sorted(records.items()):
+                connection.execute(
+                    """
+                    INSERT INTO accounts
+                        (name, secret, description, type, active, source)
+                    VALUES (?, NULL, ?, ?, 1, ?)
+                    """,
+                    (
+                        primary,
+                        f"Automatically synchronized from {source.name}",
+                        account_type,
+                        source.name,
+                    ),
+                )
+                connection.executemany(
+                    "INSERT INTO emails (name, address, type) VALUES (?, ?, NULL)",
+                    ((primary, address) for address in sorted(addresses)),
+                )
+            recipient_count = sum(len(record[1]) for record in records.values())
+            connection.execute(
+                """
+                INSERT INTO sync_metadata (source, last_success, recipient_count)
+                VALUES (?, ?, ?)
+                ON CONFLICT(source) DO UPDATE SET
+                    last_success = excluded.last_success,
+                    recipient_count = excluded.recipient_count
+                """,
+                (
+                    source.name,
+                    datetime.now(timezone.utc).isoformat(),
+                    recipient_count,
+                ),
+            )
+        return recipient_count
+
+
+    def configured_sources() -> list[Source]:
+        return [
+            Source(
+                name="personal",
+                url=os.environ["PERSONAL_SYNC_URL"],
+                domain=os.environ["PERSONAL_SYNC_DOMAIN"].lower(),
+                token=os.environ["STALWART_PERSONAL_SYNC_TOKEN"],
+            ),
+            Source(
+                name="manafishrov",
+                url=os.environ["MANAFISH_SYNC_URL"],
+                domain=os.environ["MANAFISH_SYNC_DOMAIN"].lower(),
+                token=os.environ["STALWART_MANAFISH_SYNC_TOKEN"],
+            ),
+        ]
+
+
+    def synchronize() -> int:
+        failures = 0
+        for source in configured_sources():
+            try:
+                records = read_source(source)
+                count = replace_source(source, records)
+                print(f"{source.name}: synchronized {count} recipient addresses")
+            except Exception as error:  # Keep the previous rows for this source.
+                failures += 1
+                print(f"{source.name}: synchronization failed: {error}", file=sys.stderr)
+        if failures == 0:
+            READY_MARKER.touch()
+        return failures
+
+
+    def main() -> int:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--init", action="store_true")
+        parser.add_argument("--once", action="store_true")
+        arguments = parser.parse_args()
+        initialize()
+        return synchronize() if arguments.once else 0
+
+
+    if __name__ == "__main__":
+        raise SystemExit(main())

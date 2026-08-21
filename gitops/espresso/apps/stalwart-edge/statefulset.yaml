@@ -1,23 +1,21 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: stalwart
-  namespace: stalwart
+  name: stalwart-edge
+  namespace: stalwart-edge
   annotations:
-    configmap.reloader.stakater.com/reload: stalwart-plan,stalwart-reconciler,stalwart-entrypoint
-    # wildcard-tls included so the pod rolls on renewal - Stalwart reads file
-    # certs only at startup.
-    secret.reloader.stakater.com/reload: stalwart-env,stalwart-dkim,wildcard-tls
+    configmap.reloader.stakater.com/reload: stalwart-edge-plan,stalwart-edge-reconciler,stalwart-edge-entrypoint,stalwart-edge-directory-sync
+    secret.reloader.stakater.com/reload: stalwart-edge-env,wildcard-tls
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: stalwart
-  serviceName: stalwart-internal
+      app: stalwart-edge
+  serviceName: stalwart-edge-internal
   template:
     metadata:
       labels:
-        app: stalwart
+        app: stalwart-edge
     spec:
       shareProcessNamespace: true
       securityContext:
@@ -27,45 +25,36 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: stalwart
-          image: stalwartlabs/stalwart:v0.16.17@sha256:a8108e19bd927e172d4d8c128907b8dfc93fd180ae8ee07dccdd42cb97eb9dfa
+          image: stalwartlabs/stalwart:v0.16.16@sha256:66ae90f2753ec1dabd70f69cad7da9f0598d2628a04193ce2b08c7263d47aced
           command:
             - /entrypoint/entrypoint.sh
-          env:
-            - name: STALWART_PUBLIC_URL
-              value: https://mail.asgard.michaelbrusegard.com
           envFrom:
             - secretRef:
-                name: stalwart-env
-                optional: true
+                name: stalwart-edge-env
           ports:
-            - containerPort: 8080
-              name: http
-            - containerPort: 443
-              name: https
-            - containerPort: 24
-              name: edge-lmtp
             - containerPort: 25
               name: smtp
-            - containerPort: 465
-              name: submissions
-            - containerPort: 587
-              name: submission
-            - containerPort: 993
-              name: imaps
-            - containerPort: 4190
-              name: sieve
           startupProbe:
-            tcpSocket:
-              port: http
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - curl -fsS --max-time 3 http://127.0.0.1:8080/healthz/live >/dev/null || curl -fsS --max-time 3 http://127.0.0.1:8080/ >/dev/null
             periodSeconds: 10
             failureThreshold: 30
           livenessProbe:
-            tcpSocket:
-              port: http
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - curl -fsS --max-time 3 http://127.0.0.1:8080/healthz/live >/dev/null || curl -fsS --max-time 3 http://127.0.0.1:8080/ >/dev/null
             periodSeconds: 30
           readinessProbe:
-            tcpSocket:
-              port: http
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - test -f /var/lib/stalwart/routing/.recipients-ready && (curl -fsS --max-time 3 http://127.0.0.1:8080/healthz/live >/dev/null || curl -fsS --max-time 3 http://127.0.0.1:8080/ >/dev/null)
             periodSeconds: 10
           resources:
             requests:
@@ -84,9 +73,6 @@ spec:
             - mountPath: /var/lib/stalwart/private/tls
               name: tls
               readOnly: true
-            - mountPath: /var/lib/stalwart/private/dkim
-              name: dkim
-              readOnly: true
             - mountPath: /entrypoint
               name: entrypoint
               readOnly: true
@@ -100,9 +86,17 @@ spec:
           env:
             - name: STALWART_CLI_VERSION
               value: v1.0.7
+            - name: PERSONAL_SYNC_URL
+              value: https://stalwart-internal.stalwart.svc.cluster.local
+            - name: PERSONAL_SYNC_DOMAIN
+              value: michaelbrusegard.com
+            - name: MANAFISH_SYNC_URL
+              value: https://stalwart-internal.manafishrov-stalwart.svc.cluster.local
+            - name: MANAFISH_SYNC_DOMAIN
+              value: manafishrov.com
           envFrom:
             - secretRef:
-                name: stalwart-env
+                name: stalwart-edge-env
           resources:
             requests:
               cpu: 20m
@@ -118,26 +112,30 @@ spec:
             - mountPath: /reconciler
               name: reconciler
               readOnly: true
+            - mountPath: /sync
+              name: directory-sync
+              readOnly: true
       volumes:
         - name: config
           configMap:
-            name: stalwart-config
+            name: stalwart-edge-config
         - name: tls
           secret:
             secretName: wildcard-tls
-        - name: dkim
-          secret:
-            secretName: stalwart-dkim
         - name: entrypoint
           configMap:
-            name: stalwart-entrypoint
+            name: stalwart-edge-entrypoint
             defaultMode: 0555
         - name: plan
           configMap:
-            name: stalwart-plan
+            name: stalwart-edge-plan
         - name: reconciler
           configMap:
-            name: stalwart-reconciler
+            name: stalwart-edge-reconciler
+            defaultMode: 0555
+        - name: directory-sync
+          configMap:
+            name: stalwart-edge-directory-sync
             defaultMode: 0555
   volumeClaimTemplates:
     - metadata:
@@ -147,5 +145,5 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 50Gi
+            storage: 20Gi
         storageClassName: ssd-ha

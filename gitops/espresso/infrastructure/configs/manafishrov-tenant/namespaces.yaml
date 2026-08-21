@@ -12,3 +12,11 @@ metadata:
   labels:
     gateway-access: public
     pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: manafishrov-stalwart
+  labels:
+    gateway-access: public
+    pod-security.kubernetes.io/enforce: baseline
