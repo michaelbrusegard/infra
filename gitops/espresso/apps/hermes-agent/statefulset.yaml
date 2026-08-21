@@ -513,7 +513,7 @@ spec:
         - name: android-companion
           image: ghcr.io/michaelbrusegard/hermes-agent:sha-830068d56ba3d80825bd0053517d34149997dbda@sha256:4c2e87910d6c0cdee89b1f9af6bc6070c92fa15fba0100a9eca7a66a9c2b80fa
           command:
-            - android-companion
+            - /opt/data/scripts/android-companion
           env:
             - name: ADB_VENDOR_KEYS
               value: /opt/android/adb
