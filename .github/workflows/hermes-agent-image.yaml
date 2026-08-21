@@ -51,6 +51,8 @@ jobs:
         run: |
           git apply --check ../../packages/hermes-agent-image/hermes-v2026.8.16.patch
           git apply ../../packages/hermes-agent-image/hermes-v2026.8.16.patch
+          git apply --check ../../packages/hermes-agent-image/delegation-profiles.patch
+          git apply ../../packages/hermes-agent-image/delegation-profiles.patch
           install -m 0644 ../../packages/hermes-agent-image/browser_session_router.py tools/browser_session_router.py
           git add -f tools/browser_session_router.py
 
@@ -144,6 +146,7 @@ jobs:
             "$hermes_python" -c "from gateway.run import _normalize_gateway_tool_progress_event as n; assert n('"'"'subagent.tool'"'"') == ('"'"'tool.started'"'"', True); assert n('"'"'subagent.progress'"'"') == (None, False); assert n('"'"'tool.started'"'"') == ('"'"'tool.started'"'"', False)"
             "$hermes_python" -c "import os; from types import SimpleNamespace; from gateway.config import Platform; from gateway.run import _is_stateless_mattermost_source as s; os.environ['"'"'MATTERMOST_STATELESS_CHANNELS'"'"']='"'"'one,two'"'"'; assert s(SimpleNamespace(platform=Platform.MATTERMOST, chat_id='"'"'two'"'"')); assert not s(SimpleNamespace(platform=Platform.MATTERMOST, chat_id='"'"'three'"'"'))"
             "$hermes_python" -c "from tools import browser_tool as b; b._active_sessions.clear(); b._session_last_activity.clear(); b._active_sessions['"'"'keep'"'"']={'"'"'shared_profile_session'"'"': True}; b._session_last_activity['"'"'keep'"'"']=0; cleaned=[]; b.cleanup_browser=lambda task_id: cleaned.append(task_id); b._cleanup_inactive_browser_sessions(); assert cleaned == []"
+            "$hermes_python" -c "import inspect; from run_agent import AIAgent; from tools.delegate_tool import DELEGATE_TASK_SCHEMA as s, _resolve_delegation_profile as r; cfg={'"'"'provider'"'"':'"'"'openai-api'"'"','"'"'model'"'"':'"'"'fallback'"'"','"'"'default_profile'"'"':'"'"'operator'"'"','"'"'profiles'"'"':{'"'"'operator'"'"':{'"'"'model'"'"':'"'"'gpt-5.6-sol'"'"'},'"'"'researcher'"'"':{'"'"'model'"'"':'"'"'kimi-k3'"'"'}}}; assert r(cfg, None)[0]['"'"'model'"'"']=='"'"'gpt-5.6-sol'"'"'; assert r(cfg, '"'"'researcher'"'"')[0]['"'"'model'"'"']=='"'"'kimi-k3'"'"'; assert '"'"'profile'"'"' in s['"'"'parameters'"'"']['"'"'properties'"'"']; assert '"'"'profile'"'"' in s['"'"'parameters'"'"']['"'"'properties'"'"']['"'"'tasks'"'"']['"'"'items'"'"']['"'"'properties'"'"']; assert '"'"'profile=function_args.get(\"profile\")'"'"' in inspect.getsource(AIAgent._dispatch_delegate_task)"
           '
           docker run --rm \
             --volume "$smoke_root/agent-scripts:/opt/data/scripts:ro" \

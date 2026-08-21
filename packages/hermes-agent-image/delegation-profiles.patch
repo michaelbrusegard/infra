@@ -1,0 +1,310 @@
+diff --git a/tools/delegate_tool.py b/tools/delegate_tool.py
+index a8da698..4ed2ea9 100644
+--- a/tools/delegate_tool.py
++++ b/tools/delegate_tool.py
+@@ -17,6 +17,7 @@ The parent's context only sees the delegation call and the summary result,
+ never the child's intermediate tool calls or reasoning.
+ """
+ 
++import copy
+ import enum
+ import contextvars
+ import json
+@@ -1479,6 +1480,7 @@ def _build_child_agent(
+     override_api_mode: Optional[str] = None,
+     override_request_overrides: Optional[Dict[str, Any]] = None,
+     override_max_tokens: Optional[int] = None,
++    override_reasoning_effort: Any = None,
+     # ACP transport overrides from trusted delegation config.
+     override_acp_command: Optional[str] = None,
+     override_acp_args: Optional[List[str]] = None,
+@@ -1713,7 +1715,11 @@ def _build_child_agent(
+         # Keep the raw value — ``str(x or "")`` would coerce a YAML boolean
+         # False (``reasoning_effort: false``) to "" and inherit the parent
+         # instead of disabling thinking for children.
+-        delegation_effort = delegation_cfg.get("reasoning_effort")
++        delegation_effort = (
++            override_reasoning_effort
++            if override_reasoning_effort is not None
++            else delegation_cfg.get("reasoning_effort")
++        )
+         if delegation_effort or delegation_effort is False:
+             from hermes_constants import parse_reasoning_effort
+ 
+@@ -3431,6 +3437,7 @@ def delegate_task(
+     tasks: Optional[List[Dict[str, Any]]] = None,
+     max_iterations: Optional[int] = None,
+     role: Optional[str] = None,
++    profile: Optional[str] = None,
+     background: Optional[bool] = None,
+     output_schema: Optional[Dict[str, Any]] = None,
+     action: Optional[str] = None,
+@@ -3443,8 +3450,8 @@ def delegate_task(
+     already-running ones.
+ 
+     Spawn modes (action='spawn' or omitted):
+-      - Single: provide goal (+ optional context and role)
+-      - Batch:  provide tasks array [{goal, context, role}, ...]
++      - Single: provide goal (+ optional context, role, and profile)
++      - Batch:  provide tasks array [{goal, context, role, profile}, ...]
+ 
+     Control modes (synchronous, never backgrounded):
+       - action='list'  -> live children of this conversation's spawn tree
+@@ -3525,16 +3532,6 @@ def delegate_task(
+         )
+     effective_max_iter = default_max_iter
+ 
+-    # Resolve delegation credentials (provider:model pair).
+-    # When delegation.provider is configured, this resolves the full credential
+-    # bundle (base_url, api_key, api_mode) via the same runtime provider system
+-    # used by CLI/gateway startup.  When unconfigured, returns None values so
+-    # children inherit from the parent.
+-    try:
+-        creds = _resolve_delegation_credentials(cfg, parent_agent)
+-    except ValueError as exc:
+-        return tool_error(str(exc))
+-
+     # Normalize to task list
+     max_children = _get_max_concurrent_children()
+     recovered_tasks, tasks_error = _recover_tasks_from_json_string(tasks)
+@@ -3561,7 +3558,12 @@ def delegate_task(
+             )
+         task_list = tasks
+     elif goal and isinstance(goal, str) and goal.strip():
+-        single_task: Dict[str, Any] = {"goal": goal, "context": context, "role": top_role}
++        single_task: Dict[str, Any] = {
++            "goal": goal,
++            "context": context,
++            "role": top_role,
++            "profile": profile,
++        }
+         if output_schema is not None:
+             single_task["output_schema"] = output_schema
+         task_list = [single_task]
+@@ -3607,6 +3609,24 @@ def delegate_task(
+             return tool_error(f"Task {i} output_schema invalid: {schema_err}")
+         task_schemas.append(coerced_schema)
+ 
++    # Resolve every task's capability profile before constructing any child.
++    # A bad profile therefore fails the whole fan-out atomically instead of
++    # leaving a partially spawned batch behind. Per-task selection wins over
++    # the top-level selection, which in turn falls back to default_profile.
++    task_routes: List[Dict[str, Any]] = []
++    for i, task in enumerate(task_list):
++        requested_profile = task.get("profile") or profile
++        try:
++            profile_cfg, profile_name = _resolve_delegation_profile(
++                cfg, requested_profile
++            )
++            route = _resolve_delegation_credentials(profile_cfg, parent_agent)
++        except ValueError as exc:
++            return tool_error(f"Task {i} delegation profile invalid: {exc}")
++        route["profile"] = profile_name
++        route["reasoning_effort"] = profile_cfg.get("reasoning_effort")
++        task_routes.append(route)
++
+     overall_start = time.monotonic()
+     results = []
+ 
+@@ -3657,6 +3677,7 @@ def delegate_task(
+     # subagent-lifecycle API).
+     children = []
+     for i, t in enumerate(task_list):
++        creds = task_routes[i]
+         # Per-task role beats top-level; normalise again so unknown
+         # per-task values warn and degrade to leaf uniformly.
+         effective_role = _normalize_role(t.get("role") or top_role)
+@@ -3685,6 +3706,7 @@ def delegate_task(
+             override_api_mode=creds["api_mode"],
+             override_request_overrides=creds.get("request_overrides"),
+             override_max_tokens=creds.get("max_output_tokens"),
++            override_reasoning_effort=creds.get("reasoning_effort"),
+             override_acp_command=creds.get("command"),
+             override_acp_args=creds.get("args"),
+             role=effective_role,
+@@ -4063,6 +4085,10 @@ def delegate_task(
+             return tuple(parts), in_tool
+ 
+         _goals = [t["goal"] for t in task_list]
++        _route_models = {route.get("model") for route in task_routes}
++        _dispatch_model = (
++            next(iter(_route_models)) if len(_route_models) == 1 else "mixed-profiles"
++        )
+         dispatch = dispatch_async_delegation_batch(
+             goals=_goals,
+             context=context,
+@@ -4070,7 +4096,7 @@ def delegate_task(
+             # parent's toolsets (no model-facing toolsets arg).
+             toolsets=None,
+             role=top_role,
+-            model=creds["model"],
++            model=_dispatch_model,
+             session_key=_session_key,
+             origin_ui_session_id=_origin_ui_session_id,
+             origin_session_id=_wake_sid,
+@@ -4236,6 +4262,50 @@ def _resolve_child_credential_pool(
+     return None
+ 
+ 
++def _resolve_delegation_profile(
++    cfg: dict, requested_profile: Optional[str]
++) -> tuple[dict, Optional[str]]:
++    """Merge a configured capability profile onto delegation defaults.
++
++    Profiles select provider/model capability, while ``role`` continues to
++    control delegation topology. Configurations without profiles preserve the
++    historical single-route behavior.
++    """
++    profiles = cfg.get("profiles")
++    if not isinstance(profiles, dict) or not profiles:
++        if requested_profile:
++            raise ValueError(
++                f"Unknown delegation profile '{requested_profile}': "
++                "delegation.profiles is not configured."
++            )
++        return dict(cfg), None
++
++    requested = str(requested_profile or "").strip()
++    default_profile = str(cfg.get("default_profile") or "").strip()
++    selected = requested or default_profile
++    available = sorted(str(name) for name in profiles)
++    if not selected:
++        raise ValueError(
++            "delegation.profiles is configured but delegation.default_profile "
++            f"is missing. Available profiles: {', '.join(available)}"
++        )
++
++    profile_cfg = profiles.get(selected)
++    if not isinstance(profile_cfg, dict):
++        raise ValueError(
++            f"Unknown delegation profile '{selected}'. Available profiles: "
++            f"{', '.join(available)}"
++        )
++
++    merged = {
++        key: value
++        for key, value in cfg.items()
++        if key not in {"profiles", "default_profile"}
++    }
++    merged.update(profile_cfg)
++    return merged, selected
++
++
+ def _resolve_delegation_credentials(cfg: dict, parent_agent) -> dict:
+     """Resolve credentials for subagent delegation.
+ 
+@@ -4455,8 +4525,9 @@ def _build_top_level_description() -> str:
+         "- Leaf children (the default) cannot call delegate_task, clarify, "
+         "memory, send_message, or cronjob; orchestrators regain only "
+         "delegate_task.\n"
+-        "- Children inherit the parent model and fallback chain unless pinned "
+-        "globally via delegation.provider / delegation.model in config.yaml. "
++        "- Use 'profile' to select a configured capability route; omitted "
++        "profiles use delegation.default_profile. Role controls topology, "
++        "not model selection. "
+         "Results are returned as an array, one entry per task."
+     )
+ 
+@@ -4512,6 +4583,24 @@ def _build_role_param_description() -> str:
+     )
+ 
+ 
++def _build_profile_param_description() -> str:
++    """Describe the configured model-neutral capability profiles."""
++    cfg = _load_config()
++    profiles = cfg.get("profiles")
++    if not isinstance(profiles, dict) or not profiles:
++        return (
++            "Capability route for the child. No named profiles are configured; "
++            "omit this field to use the legacy delegation provider/model."
++        )
++    names = sorted(str(name) for name in profiles)
++    default = str(cfg.get("default_profile") or "").strip()
++    default_note = f" Default: '{default}'." if default else ""
++    return (
++        "Capability route for the child, independent of the leaf/orchestrator "
++        f"role. Available profiles: {', '.join(names)}.{default_note}"
++    )
++
++
+ def _build_dynamic_schema_overrides() -> dict:
+     """Return per-call schema overrides reflecting current config.
+ 
+@@ -4519,15 +4608,28 @@ def _build_dynamic_schema_overrides() -> dict:
+     get_definitions() pass rewrites the description fields to the user's
+     actual limits.
+     """
+-    overrides_params = {
+-        **DELEGATE_TASK_SCHEMA["parameters"],
+-    }
+-    # Deep-copy properties so we don't mutate the static schema dict.
+-    overrides_params["properties"] = {
+-        k: dict(v) for k, v in DELEGATE_TASK_SCHEMA["parameters"]["properties"].items()
+-    }
++    # Nested task properties are updated below, so use a true deep copy and
++    # never mutate the static registry schema.
++    overrides_params = copy.deepcopy(DELEGATE_TASK_SCHEMA["parameters"])
+     overrides_params["properties"]["tasks"]["description"] = _build_tasks_param_description()
+     overrides_params["properties"]["role"]["description"] = _build_role_param_description()
++    profile_description = _build_profile_param_description()
++    configured_profiles = _load_config().get("profiles")
++    profile_names = (
++        sorted(str(name) for name in configured_profiles)
++        if isinstance(configured_profiles, dict)
++        else []
++    )
++    profile_schemas = [
++        overrides_params["properties"]["profile"],
++        overrides_params["properties"]["tasks"]["items"]["properties"]["profile"],
++    ]
++    for profile_schema in profile_schemas:
++        profile_schema["description"] = profile_description
++        if profile_names:
++            profile_schema["enum"] = profile_names
++        else:
++            profile_schema.pop("enum", None)
+ 
+     return {
+         "description": _build_top_level_description(),
+@@ -4584,6 +4686,10 @@ DELEGATE_TASK_SCHEMA = {
+                             "enum": ["leaf", "orchestrator"],
+                             "description": "Per-task role override. See top-level 'role' for semantics.",
+                         },
++                        "profile": {
++                            "type": "string",
++                            "description": "Per-task capability profile override.",
++                        },
+                         "output_schema": {
+                             "type": "object",
+                             "description": (
+@@ -4610,6 +4716,10 @@ DELEGATE_TASK_SCHEMA = {
+                 "enum": ["leaf", "orchestrator"],
+                 "description": "(rebuilt at get_definitions() time)",
+             },
++            "profile": {
++                "type": "string",
++                "description": "(rebuilt at get_definitions() time)",
++            },
+             "output_schema": {
+                 "type": "object",
+                 "description": (
+@@ -4721,6 +4831,7 @@ registry.register(
+         tasks=_strip_model_hidden_task_fields(args.get("tasks")),
+         max_iterations=args.get("max_iterations"),
+         role=args.get("role"),
++        profile=args.get("profile"),
+         background=_model_background_value(args, kw.get("parent_agent")),
+         output_schema=args.get("output_schema"),
+         action=args.get("action"),
+diff --git a/run_agent.py b/run_agent.py
+index f26384d..631ffd6 100644
+--- a/run_agent.py
++++ b/run_agent.py
+@@ -8223,6 +8223,7 @@ class AIAgent:
+             tasks=_strip_model_hidden_task_fields(function_args.get("tasks")),
+             max_iterations=function_args.get("max_iterations"),
+             role=function_args.get("role"),
++            profile=function_args.get("profile"),
+             background=(not _is_subagent),
+             action=function_args.get("action"),
+             subagent_id=function_args.get("subagent_id"),
