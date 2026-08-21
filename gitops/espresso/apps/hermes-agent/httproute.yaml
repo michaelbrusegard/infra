@@ -11,6 +11,17 @@ spec:
   hostnames:
     - android.asgard.michaelbrusegard.com
   rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /vnc.html
+            statusCode: 302
     - backendRefs:
         - name: hermes-android
           port: 6080

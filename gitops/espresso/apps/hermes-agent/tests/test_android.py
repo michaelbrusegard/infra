@@ -922,6 +922,8 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertNotIn("targetPort: android-grpc", services)
         self.assertIn("port: 6080\n      targetPort: viewer-auth", services)
         self.assertIn("android.asgard.michaelbrusegard.com", httproute)
+        self.assertIn("type: Exact\n            value: /", httproute)
+        self.assertIn("replaceFullPath: /vnc.html", httproute)
         self.assertIn("name: hermes-android\n          port: 6080", httproute)
         self.assertIn("- httproute.yaml", kustomization)
         self.assertIn("- name: ANDROID_VIEW_URL", statefulset)
