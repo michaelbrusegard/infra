@@ -27,45 +27,35 @@
   };
   openComputerUseSkill = "${openComputerUseSource}/skills/open-computer-use";
   openComputerUseCommand = lib.getExe pkgs.open-computer-use;
-  frontendDesignSource = pkgs.fetchFromGitHub {
-    owner = "anthropics";
-    repo = "claude-code";
-    rev = "7ef6eec9d9ba84ea6f233f26c45f1df5c5991843";
-    hash = "sha256-E18pPkdErB133CIShgLBhdHBiyPALuRl30uOqhy21v0=";
-  };
-  codeReviewerSource = pkgs.fetchFromGitHub {
-    owner = "davila7";
-    repo = "claude-code-templates";
-    rev = "f2ba9f42ce5c958e1588859fdbbb96eab40db3ee";
-    hash = "sha256-K3FKutnKROzvHRqihVXPgzAb2tb8AmewCMrtvdUMAL0=";
-  };
-  excalidrawDiagramSource = pkgs.fetchFromGitHub {
-    owner = "coleam00";
-    repo = "excalidraw-diagram-skill";
-    rev = "8646fcc9f74f38539c6cdb4c969723336a96ddcd";
-    hash = "sha256-X0GEwn/1n6jxmnaF0YMMBWpEOaQ8XOy3yigLXkBDi/w=";
-  };
-  remotionSkillsSource = pkgs.fetchFromGitHub {
-    owner = "remotion-dev";
-    repo = "skills";
-    rev = "4951f6aca2a236f2f2a2bff4734566963fe12707";
-    hash = "sha256-5wHRpXGMbIWGuVH3TuHsQBJv4sfrjprX+poo6niqb2o=";
-  };
-  sharedAgentSkills = {
+  skills = {
+    babysit-pr = "${../../config/skills/babysit-pr}";
+    blast-radius = "${../../config/skills/blast-radius}";
+    diagnose = "${../../config/skills/diagnose}";
+    domain-context = "${../../config/skills/domain-context}";
+    excalidraw-diagram = "${../../config/skills/excalidraw-diagram}";
+    file-pr = "${../../config/skills/file-pr}";
+    frontend-design = "${../../config/skills/frontend-design}";
+    grill = "${../../config/skills/grill}";
+    incident-brief = "${../../config/skills/incident-brief}";
     open-browser-use = openBrowserUseSkill;
     open-computer-use = openComputerUseSkill;
-    frontend-design = "${frontendDesignSource}/plugins/frontend-design/skills/frontend-design";
-    code-reviewer = "${codeReviewerSource}/cli-tool/components/skills/development/code-reviewer";
-    excalidraw-diagram = "${excalidrawDiagramSource}";
-    remotion-best-practices = "${remotionSkillsSource}/skills/remotion-best-practices";
+    recall-work = "${../../config/skills/recall-work}";
+    reflect-workflow = "${../../config/skills/reflect-workflow}";
+    review-pr = "${../../config/skills/review-pr}";
+    self-review = "${../../config/skills/self-review}";
+    show-work = "${../../config/skills/show-work}";
     slack = "${../../config/skills/slack}";
+    unslop = "${../../config/skills/unslop}";
+    wizard = "${../../config/skills/wizard}";
+    write-agent-instructions = "${../../config/skills/write-agent-instructions}";
   };
+  agentInstructions = ../../config/AGENTS.md;
   ompSkillFiles = lib.mapAttrs' (name: source:
     lib.nameValuePair ".omp/agent/skills/${name}" {
       inherit source;
       recursive = true;
     })
-  sharedAgentSkills;
+  skills;
   ompManagedConfig = (pkgs.formats.yaml {}).generate "omp-managed-config.yml" {
     disabledProviders = [
       "claude"
@@ -168,7 +158,7 @@ in {
           };
         };
       };
-      skills = sharedAgentSkills;
+      inherit skills;
     };
 
     claude-code = {
@@ -186,7 +176,7 @@ in {
           args = ["mcp"];
         };
       };
-      skills = sharedAgentSkills;
+      inherit skills;
       settings = {
         disableRemoteControl = true;
         enableAllProjectMcpServers = true;
@@ -241,6 +231,11 @@ in {
               };
             };
           };
+          ".codex/AGENTS.md".source = agentInstructions;
+          ".claude/CLAUDE.md".source = agentInstructions;
+          ".omp/agent/AGENTS.md".source = agentInstructions;
+          ".omp/agent/RULES.md".source = ../../config/agent-instructions/omp-rules.md;
+          ".kimi-code/AGENTS.md".source = agentInstructions;
           "${openBrowserUseExtensionDirectory}" = lib.mkIf (!isWsl) {
             source = pkgs.open-browser-use.chromeExtensionUnpacked;
             recursive = true;
