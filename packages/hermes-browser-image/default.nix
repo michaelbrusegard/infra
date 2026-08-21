@@ -408,8 +408,9 @@
 
   root = runCommand "hermes-browser-root" {} ''
     mkdir -p \
-      "$out/etc" \
+      "$out/etc/chromium/policies/managed" \
       "$out/opt/browser" \
+      "$out/opt/browser-files" \
       "$out/opt/hermes/extensions" \
       "$out/run/current-system/sw/share/chromium/extensions" \
       "$out/tmp"
@@ -426,7 +427,6 @@
     root:x:0:
     browser:x:10000:
     EOF
-    chmod 1777 "$out/tmp"
   '';
 in
   dockerTools.buildLayeredImage {
@@ -436,6 +436,17 @@ in
       tools
       root
     ];
+    fakeRootCommands = ''
+      chown 10000:10000 \
+        ./etc/chromium/policies/managed \
+        ./opt/browser \
+        ./opt/browser-files
+      chmod 0755 \
+        ./etc/chromium/policies/managed \
+        ./opt/browser \
+        ./opt/browser-files
+      chmod 1777 ./tmp
+    '';
     config = {
       Entrypoint = ["${browserLauncher}/bin/chromium"];
       Env = [
