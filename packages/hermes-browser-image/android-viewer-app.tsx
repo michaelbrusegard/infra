@@ -23,12 +23,79 @@ function fitViewer(): ViewerSize {
   };
 }
 
+let inputQueue: Promise<void> = Promise.resolve();
+
 function sendFallbackInput(payload: Record<string, unknown>) {
-  void fetch("http://127.0.0.1:8080/api/v1/emulator/input", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  inputQueue = inputQueue
+    .then(async () => {
+      const response = await fetch(
+        "http://127.0.0.1:8080/api/v1/emulator/input",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Emulator input failed with HTTP ${response.status}`);
+      }
+    })
+    .catch((cause: unknown) => {
+      console.error("Failed to inject emulator input", cause);
+    });
+}
+
+function GrpcInputOverlay({ width, height }: ViewerSize) {
+  const mouseButtons = useRef(0);
+
+  const pointer = (event: React.MouseEvent<HTMLDivElement>, buttons: number) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = Math.round(
+      Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) *
+        DEVICE_WIDTH,
+    );
+    const y = Math.round(
+      Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) *
+        DEVICE_HEIGHT,
+    );
+    sendFallbackInput({ type: "mouse", x, y, buttons });
+  };
+
+  return (
+    <div
+      className="input-overlay"
+      style={{ width, height }}
+      tabIndex={0}
+      aria-label="Interactive Android emulator screen"
+      onMouseDown={(event) => {
+        event.preventDefault();
+        const buttons = event.button === 2 ? 2 : 1;
+        mouseButtons.current = buttons;
+        event.currentTarget.focus();
+        pointer(event, buttons);
+      }}
+      onMouseMove={(event) => {
+        if (mouseButtons.current !== 0) pointer(event, mouseButtons.current);
+      }}
+      onMouseUp={(event) => {
+        pointer(event, 0);
+        mouseButtons.current = 0;
+      }}
+      onMouseLeave={(event) => {
+        if (mouseButtons.current !== 0) pointer(event, 0);
+        mouseButtons.current = 0;
+      }}
+      onContextMenu={(event) => event.preventDefault()}
+      onKeyDown={(event) => {
+        event.preventDefault();
+        sendFallbackInput({ type: "keyboard", event: "keydown", key: event.key });
+      }}
+      onKeyUp={(event) => {
+        event.preventDefault();
+        sendFallbackInput({ type: "keyboard", event: "keyup", key: event.key });
+      }}
+    />
+  );
 }
 
 function FallbackFramebuffer({ width, height }: ViewerSize) {
@@ -133,6 +200,7 @@ function App() {
               setError(cause instanceof Error ? cause.message : String(cause));
             }}
           />
+          <GrpcInputOverlay {...viewerSize} />
         </div>
         {state === "connected" ? null : <FallbackFramebuffer {...viewerSize} />}
       </section>
@@ -165,9 +233,10 @@ style.textContent = `
   body { user-select: none; }
   main { width: 100%; height: 100%; display: flex; align-items: center; justify-content: space-between; }
   .screen { position: relative; flex: 1; height: 100%; display: flex; align-items: center; justify-content: center; background: #000; }
-  .webrtc { visibility: hidden; }
+  .webrtc { position: relative; visibility: hidden; }
   .webrtc.visible { visibility: visible; }
-  .fallback { position: absolute; overflow: hidden; outline: none; background: #000; cursor: default; }
+  .input-overlay { position: absolute; inset: 0; z-index: 2; outline: none; cursor: default; touch-action: none; }
+  .fallback { position: absolute; z-index: 3; overflow: hidden; outline: none; background: #000; cursor: default; }
   .fallback img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
   .fallback span { position: absolute; right: 8px; bottom: 8px; padding: 4px 7px; border-radius: 5px; background: rgba(0,0,0,.64); color: #b9c9dd; font-size: 10px; }
   aside { width: ${CONTROLS_WIDTH}px; height: 100%; padding: 22px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; border-left: 1px solid #273142; background: #101722; }

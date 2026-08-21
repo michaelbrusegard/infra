@@ -49,13 +49,15 @@ debugging.
 
 For a manual login or approval handoff, ask the operator to connect NetBird and
 open the stable private console at
-`https://android.asgard.michaelbrusegard.com/vnc.html?autoconnect=true&resize=scale`.
-The hostname is routed through the internal gateway and the NetBird Infra ACL;
-it is not published through the public gateway. Credentials, passkeys,
-one-time codes, and payment data can be entered directly into the visible
-phone without placing them in an ADB command or agent log. After the handoff,
-refresh `android health` and `android ui-tree` and continue from the persisted
-device state.
+`https://android.asgard.michaelbrusegard.com/vnc.html?autoconnect=true&resize=scale&view_only=false&reconnect=true`.
+Use the URL reported by `android live-view`, which also forces interactive mode
+and automatic reconnection. The hostname is routed through the internal gateway
+and the NetBird Infra ACL, then protected by Pocket ID authentication restricted
+to the `admin` group. It is not published through the public gateway. Credentials,
+passkeys, one-time codes, and payment data can be entered directly into the
+visible phone without placing them in an ADB command or agent log. After the
+handoff, refresh `android health` and `android ui-tree` and continue from the
+persisted device state.
 
 `android screenshot` also prefers the emulator framebuffer and reports
 `source: emulator-grpc` with `secure_windows_visible: true` when that path is

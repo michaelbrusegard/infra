@@ -12,7 +12,7 @@ spec:
         - ingress
       toPorts:
         - ports:
-            - port: "6081"
+            - port: "4180"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
@@ -35,15 +35,13 @@ spec:
               protocol: TCP
             - port: "8777"
               protocol: TCP
-            - port: "6081"
-              protocol: TCP
-    # Keep noVNC off public ingress while allowing an authenticated kubectl
-    # port-forward through the node for manual login and approval handoffs.
+    # kubectl port-forward reaches the same authenticated proxy as the private
+    # Gateway route; the raw noVNC listener remains pod-local.
     - fromEntities:
         - host
       toPorts:
         - ports:
-            - port: "6081"
+            - port: "4180"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:

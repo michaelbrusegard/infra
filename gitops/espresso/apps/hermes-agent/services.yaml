@@ -47,4 +47,4 @@ spec:
       targetPort: android-api
     - name: viewer
       port: 6080
-      targetPort: android-viewer
+      targetPort: viewer-auth

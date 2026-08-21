@@ -18,7 +18,7 @@ spec:
       annotations:
         configmap.reloader.stakater.com/reload: hermes-agent-bootstrap,hermes-agent-skills
         hermes.michaelbrusegard.com/android-image-rollout: "ready"
-        secret.reloader.stakater.com/reload: cliproxyapi,hermes-agent-env,hermes-alert-webhook,hermes-media-client,hindsight,mattermost-integrations,mattermost-outputs,mealie-api
+        secret.reloader.stakater.com/reload: cliproxyapi,hermes-agent-env,hermes-alert-webhook,hermes-media-client,hermes-viewer-auth,hindsight,mattermost-integrations,mattermost-outputs,mealie-api
       labels:
         app: hermes-agent
     spec:
@@ -282,7 +282,7 @@ spec:
             - name: ANDROID_EMULATOR_GRPC_TOKEN_FILE
               value: /opt/android/companion/emulator-grpc-token
             - name: ANDROID_VIEW_URL
-              value: https://android.asgard.michaelbrusegard.com/vnc.html?autoconnect=true&resize=scale
+              value: https://android.asgard.michaelbrusegard.com/vnc.html?autoconnect=true&resize=scale&view_only=false&reconnect=true
             - name: ANDROID_COMPANION_URL
               value: http://127.0.0.1:8777
             - name: ANDROID_COMPANION_TOKEN_FILE
@@ -606,7 +606,7 @@ spec:
             - name: ANDROID_SERIAL
               value: 127.0.0.1:5555
             - name: ANDROID_VIEW_LISTEN
-              value: 0.0.0.0:6081
+              value: 127.0.0.1:6081
             - name: BROWSER_FILES_ROOT
               value: /opt/browser-files
             - name: HOME
@@ -682,6 +682,85 @@ spec:
             runAsNonRoot: true
             runAsUser: 10000
             runAsGroup: 10000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+        - name: android-viewer-auth
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.3@sha256:10a1165743a192e1940b4708fb9647027185ce11a681a1c5519b442ff7f1f561
+          args:
+            - --provider=oidc
+            - --provider-display-name=Pocket ID
+            - --oidc-issuer-url=https://id.asgard.michaelbrusegard.com
+            - --redirect-url=https://android.asgard.michaelbrusegard.com/oauth2/callback
+            - --http-address=0.0.0.0:4180
+            - --upstream=http://127.0.0.1:6081
+            - --email-domain=*
+            - --scope=openid profile email
+            - --code-challenge-method=S256
+            - --skip-provider-button=true
+            - --reverse-proxy=true
+            - --proxy-websockets=true
+            - --cookie-name=__Host-hermes_android
+            - --cookie-secure=true
+            - --cookie-httponly=true
+            - --cookie-samesite=lax
+            - --cookie-refresh=1h
+            - --cookie-expire=12h
+            - --whitelist-domain=android.asgard.michaelbrusegard.com
+            - --pass-access-token=false
+            - --pass-user-headers=false
+            - --silence-ping-logging=true
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-viewer-auth
+                  key: oauth2_client_id
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-viewer-auth
+                  key: oauth2_client_secret
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-viewer-auth
+                  key: oauth2_cookie_secret
+          ports:
+            - containerPort: 4180
+              name: viewer-auth
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 25m
+            limits:
+              memory: 128Mi
+              cpu: 250m
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: viewer-auth
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: viewer-auth
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: viewer-auth
+            periodSeconds: 10
+            timeoutSeconds: 5
+          securityContext:
+            runAsNonRoot: true
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             seccompProfile:
