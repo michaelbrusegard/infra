@@ -426,11 +426,11 @@ jobs:
           browser_image = f"{browser_ref}:sha-{git_sha}@{os.environ['BROWSER_DIGEST']}"
           content = path.read_text()
           content, agent_replacements = re.subn(
-              rf"(?m)^(\s*)image:\s*{re.escape(agent_ref)}:.*$",
-              lambda match: f"{match.group(1)}image: {agent_image}",
+              r"(?m)^(\s*- name: (?:gateway|android-companion)\n\s*image:)\s*.*$",
+              lambda match: f"{match.group(1)} {agent_image}",
               content,
           )
-          if agent_replacements != 3:
+          if agent_replacements != 2:
               raise SystemExit("Failed to update Hermes Agent image reference")
           content, browser_replacements = re.subn(
               r"(?m)^(\s*- name: (?:browser|android-viewer)\n\s*image:)\s*.*$",
