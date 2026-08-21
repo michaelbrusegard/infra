@@ -563,6 +563,9 @@ spec:
           volumeMounts:
             - name: bootstrap-skills
               mountPath: /bootstrap-skills
+            - name: data
+              mountPath: /opt/data
+              readOnly: true
             - name: android-data
               mountPath: /opt/android
               readOnly: true

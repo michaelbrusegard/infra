@@ -802,6 +802,10 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn('- name: ANDROID_REQUIRED_RELEASE\n              value: "17"', statefulset)
         self.assertIn("- name: android-companion\n", statefulset)
         self.assertIn("- /opt/data/scripts/android-companion", statefulset)
+        self.assertIn(
+            "- name: data\n              mountPath: /opt/data\n              readOnly: true",
+            statefulset,
+        )
         self.assertNotIn("name: android-grpc", statefulset)
         self.assertIn("value: 0.0.0.0:8777", statefulset)
         self.assertIn("/opt/android/companion/auth-token", statefulset)
