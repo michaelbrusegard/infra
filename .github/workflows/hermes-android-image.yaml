@@ -341,27 +341,80 @@ jobs:
               "$2"
           }
 
-          trap 'docker rm --force hermes-android-smoke >/dev/null 2>&1 || true' EXIT
+          smoke_stage=setup
+          mark_smoke_stage() {
+            smoke_stage=$1
+            printf 'Android smoke stage: %s\n' "$smoke_stage"
+          }
+
+          cleanup_smoke() {
+            exit_code=$?
+            trap - EXIT
+            if [ "$exit_code" -ne 0 ]; then
+              echo "::error::Android smoke failed during: $smoke_stage"
+              if docker inspect hermes-android-smoke >/dev/null 2>&1; then
+                for status_file in launcher accessibility; do
+                  printf 'Android %s status: ' "$status_file"
+                  docker exec hermes-android-smoke jq -c . \
+                    "/data/status/$status_file.json" 2>/dev/null || echo unavailable
+                done
+                printf 'Android boot properties: '
+                # shellcheck disable=SC2016 # Expanded by the Android guest shell.
+                adb_cmd shell 'printf "boot=%s sdk=%s release=%s abi=%s\\n" \
+                  "$(getprop sys.boot_completed)" \
+                  "$(getprop ro.build.version.sdk)" \
+                  "$(getprop ro.build.version.release)" \
+                  "$(getprop ro.product.cpu.abilist)"' 2>/dev/null || echo unavailable
+                for package in \
+                  com.android.vending \
+                  com.google.android.gms \
+                  com.hermes.agent.accessibility \
+                  com.aurora.store; do
+                  printf 'Android package %s: ' "$package"
+                  adb_cmd shell pm path "$package" 2>/dev/null | head -1 || echo unavailable
+                done
+              fi
+            fi
+            docker rm --force hermes-android-smoke >/dev/null 2>&1 || true
+            exit "$exit_code"
+          }
+
+          trap cleanup_smoke EXIT
+          mark_smoke_stage 'initial emulator boot'
           start_emulator
           wait_for_boot
+          mark_smoke_stage 'initial launcher status'
           assert_running_launcher
+          mark_smoke_stage 'initial accessibility readiness'
           wait_for_accessibility
+          mark_smoke_stage 'Android SDK property'
           test "$(adb_cmd shell getprop ro.build.version.sdk | tr -d '\r')" = 37
+          mark_smoke_stage 'Android release property'
           test "$(adb_cmd shell getprop ro.build.version.release | tr -d '\r')" = 17
+          mark_smoke_stage 'ARM64 translation ABI'
           adb_cmd shell getprop ro.product.cpu.abilist | tr -d '\r' | \
             grep --quiet 'arm64-v8a'
+          mark_smoke_stage 'Play Store package'
           adb_cmd shell pm path com.android.vending | grep --quiet '^package:'
+          mark_smoke_stage 'Google Play services package'
           adb_cmd shell pm path com.google.android.gms | grep --quiet '^package:'
+          mark_smoke_stage 'accessibility companion package'
           adb_cmd shell pm path com.hermes.agent.accessibility | grep --quiet '^package:'
+          mark_smoke_stage 'enabled accessibility service'
           adb_cmd shell dumpsys accessibility | grep --quiet \
             'com.hermes.agent.accessibility/.HermesAccessibilityService'
+          mark_smoke_stage 'authenticated accessibility health'
           accessibility_request '{"op":"health"}' | jq -e '.ok and .connected'
+          mark_smoke_stage 'accessibility authentication rejection'
           accessibility_raw_request '{"op":"health","token":"wrong"}' | \
             jq -e '(.ok | not) and (.error | contains("invalid companion token"))'
+          mark_smoke_stage 'initial accessibility snapshot'
           accessibility_request '{"op":"snapshot","ttl_ms":30000}' | \
             jq -e '.ok and .backend == "accessibility-service" and (.node_count > 0)'
+          mark_smoke_stage 'Settings UI launch'
           adb_cmd shell am start -a android.settings.SETTINGS >/dev/null
           sleep 2
+          mark_smoke_stage 'Settings UI search control discovery'
           settings_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
           settings_tree_id=$(printf '%s\n' "$settings_tree" | jq -r '.tree_id')
           settings_search_ref=$(printf '%s\n' "$settings_tree" | jq -r \
@@ -372,8 +425,10 @@ jobs:
             --arg tree_id "$settings_tree_id" \
             --arg ref "$settings_search_ref" \
             '{op:"action",tree_id:$tree_id,ref:$ref,action:"click",verify_timeout_ms:3000}')
+          mark_smoke_stage 'Settings UI search control click'
           accessibility_request "$click_request" | jq -e '.ok and .accepted'
           sleep 1
+          mark_smoke_stage 'Settings UI editor discovery'
           search_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
           search_tree_id=$(printf '%s\n' "$search_tree" | jq -r '.tree_id')
           search_edit_ref=$(printf '%s\n' "$search_tree" | jq -r \
@@ -384,15 +439,21 @@ jobs:
             --arg ref "$search_edit_ref" \
             --arg value 'Grüße ☕' \
             '{op:"action",tree_id:$tree_id,ref:$ref,action:"set_text",value:$value,verify_timeout_ms:3000}')
+          mark_smoke_stage 'Unicode accessibility text entry'
           accessibility_request "$text_request" | jq -e '.ok and .accepted'
           sleep 1
+          mark_smoke_stage 'Unicode accessibility text verification'
           accessibility_request '{"op":"snapshot","ttl_ms":30000}' | \
             jq -e '.nodes | any(.text == "Grüße ☕")'
+          mark_smoke_stage 'accessibility gesture injection'
           accessibility_request '{"op":"gesture","type":"tap","x":100,"y":100,"duration_ms":1}' | \
             jq -e '.ok and .accepted'
+          mark_smoke_stage 'stale accessibility reference rejection'
           accessibility_request '{"op":"action","tree_id":"stale","ref":"r0","action":"click"}' | \
             jq -e '(.ok | not) and (.error | contains("stale tree_id"))'
+          mark_smoke_stage 'emulator gRPC token publication'
           test -s "$smoke_root/data/companion/emulator-grpc-token"
+          mark_smoke_stage 'unauthenticated emulator gRPC rejection'
           if docker exec hermes-android-smoke /opt/hermes/bin/grpcurl \
             -plaintext \
             -import-path /data/companion \
@@ -403,40 +464,55 @@ jobs:
             echo "emulator gRPC unexpectedly accepted an unauthenticated request" >&2
             exit 1
           fi
+          mark_smoke_stage 'authenticated emulator gRPC state'
           grpc_request '{}' \
             android.emulation.control.EmulatorController/getVmState | \
             jq -e '.state == "RUNNING"'
+          mark_smoke_stage 'emulator gRPC clipboard write'
           grpc_request '{"text":"Grüße ☕"}' \
             android.emulation.control.EmulatorController/setClipboard >/dev/null
+          mark_smoke_stage 'emulator gRPC clipboard read'
           grpc_request '{}' \
             android.emulation.control.EmulatorController/getClipboard | \
             jq -e '.text == "Grüße ☕"'
+          mark_smoke_stage 'Aurora Store installation'
           adb_cmd install -r -g "/data/apks/AuroraStore-$AURORA_STORE_VERSION.apk"
+          mark_smoke_stage 'Aurora Store package verification'
           adb_cmd shell pm path com.aurora.store | grep --quiet '^package:'
+          mark_smoke_stage 'Aurora Store launch and screenshot'
           adb_cmd shell monkey -p com.aurora.store \
             -c android.intent.category.LAUNCHER 1 >/dev/null
           adb_cmd shell screencap -p /sdcard/aurora-smoke.png
           adb_cmd pull /sdcard/aurora-smoke.png "$smoke_root/aurora-smoke.png"
           test -s "$smoke_root/aurora-smoke.png"
 
+          mark_smoke_stage 'first graceful shutdown'
           docker stop --timeout 70 hermes-android-smoke
           test "$(jq -r '.state' "$smoke_root/data/status/launcher.json")" = stopped
+          mark_smoke_stage 'second emulator boot'
           start_emulator
           wait_for_boot
+          mark_smoke_stage 'second boot readiness'
           assert_running_launcher
           wait_for_accessibility
+          mark_smoke_stage 'second boot package persistence'
           adb_cmd shell pm path com.aurora.store | grep --quiet '^package:'
           adb_cmd shell pm path com.android.vending | grep --quiet '^package:'
           adb_cmd shell pm path com.google.android.gms | grep --quiet '^package:'
           adb_cmd shell pm path com.hermes.agent.accessibility | grep --quiet '^package:'
+          mark_smoke_stage 'second graceful shutdown'
           docker stop --timeout 70 hermes-android-smoke
 
+          mark_smoke_stage 'third emulator boot'
           start_emulator
           wait_for_boot
+          mark_smoke_stage 'third boot readiness'
           assert_running_launcher
           wait_for_accessibility
+          mark_smoke_stage 'third boot health and persistence'
           adb_cmd shell pm path com.aurora.store | grep --quiet '^package:'
           accessibility_request '{"op":"health"}' | jq -e '.ok and .connected'
+          mark_smoke_stage 'final graceful shutdown'
           docker stop --timeout 70 hermes-android-smoke
           trap - EXIT
 
