@@ -119,6 +119,7 @@
       git
       grpcurl
       gnused
+      gnutar
       himalaya
       imagemagick
       jupyterLiveKernel

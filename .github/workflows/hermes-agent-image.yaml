@@ -136,7 +136,7 @@ jobs:
           JSON
           printf '%s\n' '--disable-notifications' > "$smoke_root/browser-profile/chromium-extra-args"
           docker run --rm "$AGENT_IMAGE_REF:nix" --help
-          for binary in blogwatcher-cli ffmpeg flux gh helm himalaya jq jupyter jupyter-live-kernel kubectl magick node ocrmypdf pdftoppm sed stern tesseract tofu yq; do
+          for binary in blogwatcher-cli ffmpeg flux gh helm himalaya jq jupyter jupyter-live-kernel kubectl magick node ocrmypdf pdftoppm sed stern tar tesseract tofu yq; do
             docker run --rm --entrypoint "$binary" "$AGENT_IMAGE_REF:nix" --help >/dev/null
           done
           docker run --rm --entrypoint agent-browser "$AGENT_IMAGE_REF:nix" --version
