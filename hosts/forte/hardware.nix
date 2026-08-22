@@ -8,11 +8,24 @@
     echo 1 > /sys/class/leds/asus::kbd_backlight/brightness
   '';
 
+  # The ASUS EC can lose the battery methods mid-session. Hibernating after
+  # that point hangs before an image is written, so fail before entering S4.
+  # A full power-off resets the EC.
+  ecHealthCheck = pkgs.writeShellScript "forte-ec-health-check" ''
+    if ! ${lib.getExe' pkgs.coreutils "timeout"} 3 ${lib.getExe' pkgs.coreutils "cat"} /sys/class/power_supply/BAT1/status >/dev/null 2>&1; then
+      echo "ASUS EC battery methods are unavailable; refusing to hibernate. Power off fully to reset the EC." >&2
+      exit 1
+    fi
+  '';
+
   # Hibernate quirks: the touchpad (AMD GPIO 8) storms while wake-armed and
   # can abort hibernation, and the ITE aura controller keeps its sleep breathing
   # animation after resume until a USB re-attach re-initialises it.
   hibernateWakeupFix = pkgs.writeShellScript "forte-hibernate-wakeup-fix" ''
-    [ "$2" = hibernate ] || exit 0
+    case "$2" in
+      hibernate | hybrid-sleep) ;;
+      *) exit 0 ;;
+    esac
     touchpad=/sys/bus/i2c/devices/i2c-ASCF1A01:00/power/wakeup
     case "$1" in
       pre)
@@ -85,6 +98,11 @@ in {
       };
     };
   };
+
+  # Gamescope otherwise selects the RTX 5080 and crashes in NVIDIA's Vulkan
+  # shader compiler. Keep the session compositor on the display-driving iGPU;
+  # games can still opt into the NVIDIA PRIME offload wrapper.
+  programs.steam.gamescopeSession.args = ["--prefer-vk-device" "1002:150e"];
 
   local = {
     # Render games on the RTX 5080 instead of the AMD iGPU (offload default).
@@ -179,7 +197,14 @@ in {
     };
 
     power-profiles-daemon.enable = true;
-    upower.enable = true;
+    upower = {
+      enable = true;
+      # Leave enough charge to write the hibernation image, and use the path
+      # covered by the forte-specific EC and wakeup safeguards.
+      percentageCritical = 15;
+      percentageAction = 10;
+      criticalPowerAction = "Hibernate";
+    };
     fwupd.enable = true;
 
     # Closing the lid locks + blanks the internal panel (handled in Hyprland
@@ -198,6 +223,9 @@ in {
       ExecStart = lib.mkForce ["" "${setKbdBacklightLow}"];
       ExecStop = lib.mkForce (lib.getExe' pkgs.coreutils "true");
     };
+
+    services.systemd-hibernate.serviceConfig.ExecStartPre = "${ecHealthCheck}";
+    services.systemd-hybrid-sleep.serviceConfig.ExecStartPre = "${ecHealthCheck}";
   };
 
   environment.etc."systemd/system-sleep/00-forte-hibernate-wakeup-fix".source = hibernateWakeupFix;
