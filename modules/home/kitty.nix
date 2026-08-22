@@ -83,23 +83,27 @@ in {
   programs.kitty = lib.mkIf (!isWsl) {
     enable = true;
     shellIntegration.enableZshIntegration = true;
-    settings = {
-      font_family = "GeistMono Nerd Font";
-      font_size = 15;
-      disable_ligatures = "always";
-      window_padding_width = 0;
-      hide_window_decorations =
-        if pkgs.stdenv.hostPlatform.isDarwin
-        then "titlebar-only"
-        else true;
-      enabled_layouts = "splits";
-      tab_bar_style = "separator";
-      tab_title_template = "{index}: {title}";
-      active_tab_title_template = "{index}: {title}";
-      show_hyperlink_targets = true;
-      enable_audio_bell = false;
-      clear_all_shortcuts = true;
-    };
+    settings =
+      {
+        font_family = "GeistMono Nerd Font";
+        font_size = 15;
+        disable_ligatures = "always";
+        window_padding_width = 0;
+        hide_window_decorations =
+          if pkgs.stdenv.hostPlatform.isDarwin
+          then "titlebar-only"
+          else true;
+        enabled_layouts = "splits";
+        tab_bar_style = "separator";
+        tab_title_template = "{index}: {title}";
+        active_tab_title_template = "{index}: {title}";
+        show_hyperlink_targets = true;
+        enable_audio_bell = false;
+        clear_all_shortcuts = true;
+      }
+      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+        macos_quit_when_last_window_closed = true;
+      };
     keybindings =
       terminalBindings
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux passthroughBindings;
