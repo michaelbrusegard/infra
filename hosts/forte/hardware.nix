@@ -201,8 +201,8 @@ in {
       enable = true;
       # Leave enough charge to write the hibernation image, and use the path
       # covered by the forte-specific EC and wakeup safeguards.
-      percentageCritical = 15;
-      percentageAction = 10;
+      percentageCritical = 10;
+      percentageAction = 5;
       criticalPowerAction = "Hibernate";
     };
     fwupd.enable = true;
