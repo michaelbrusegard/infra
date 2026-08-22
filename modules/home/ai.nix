@@ -77,6 +77,7 @@
   piCliProxyApi =
     (pkgs.writeShellApplication {
       name = "pi";
+      runtimeInputs = [pkgs.nodejs];
       text = ''
         cli_proxy_api_key="$(${lib.getExe cliProxyApiKey})"
         export CLIPROXYAPI_API_KEY="$cli_proxy_api_key"

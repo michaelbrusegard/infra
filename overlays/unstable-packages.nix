@@ -22,6 +22,8 @@ in {
     neovim-unwrapped
     vimPlugins
     claude-code
+    codex
+    pi-coding-agent
     uv
     ty
     oxlint
@@ -39,10 +41,6 @@ in {
     nextcloud-talk-desktop
     signal-desktop
     ;
-
-  codex = pkgs-unstable.codex.override {
-    inherit (prev) livekit-libwebrtc;
-  };
 
   netbird = pkgs-unstable.netbird.overrideAttrs (_: {
     version = netbirdVersion;
