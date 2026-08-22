@@ -3,11 +3,11 @@
 in {
   programs.zen-browser.profiles."default".search = {
     force = true;
-    default = "SearXNG";
-    privateDefault = "SearXNG";
+    default = "ddg";
+    privateDefault = "ddg";
     order = [
-      "SearXNG"
       "ddg"
+      "SearXNG"
       "ChatGPT"
       "Nix Packages"
       "Nix Options"
