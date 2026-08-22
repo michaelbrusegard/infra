@@ -12,7 +12,7 @@ inputs: _: prev: let
     rev = "v${netbirdVersion}";
     hash = "sha256-YRXXuaqnQBLODcz/FNpIG9Ht+6VGRknE2Q6Q5ZaAIus=";
   };
-  netbirdVendorHash = "sha256-6FN7l+e75Pw2+v0sktomlck+7daro1i6c4ZV53SRePI=";
+  netbirdVendorHash = "sha256-55QVwZ2Gi35JQbpLgmpRI+mBN58TOq9qSOOG4PLSf/w=";
 in {
   inherit
     (pkgs-unstable)
