@@ -814,7 +814,11 @@ class AndroidScriptTests(unittest.TestCase):
         )[0]
 
         self.assertNotIn("--no-sandbox", browser_image)
+        self.assertIn('"$out/run/wrappers/bin"', browser_image)
+        self.assertIn("chmod 4755 ./run/wrappers/bin/", browser_image)
         self.assertNotIn("--no-sandbox", browser)
+        self.assertIn("allowPrivilegeEscalation: true", browser)
+        self.assertIn("allowPrivilegeEscalation: true", android_viewer)
         self.assertIn(
             'Names:  []string{"chroot", "clone", "unshare"}', seccomp_generator
         )

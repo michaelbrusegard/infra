@@ -605,6 +605,7 @@
       "$out/opt/browser" \
       "$out/opt/browser-files" \
       "$out/opt/hermes/extensions" \
+      "$out/run/wrappers/bin" \
       "$out/run/current-system/sw/share/chromium/extensions" \
       "$out/tmp"
     ln -s ${fontconfigFile} "$out/etc/fonts.conf"
@@ -612,6 +613,9 @@
     cp ${ublockOriginLiteCrx} "$out/opt/hermes/extensions/ublock-origin-lite.crx"
     cp ${ublockOriginLiteExternal} \
       "$out/run/current-system/sw/share/chromium/extensions/${ublockOriginLiteId}.json"
+    cp \
+      ${pkgs.chromium.sandbox}/bin/${pkgs.chromium.sandboxExecutableName} \
+      "$out/run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}"
     cat > "$out/etc/passwd" <<'EOF'
     root:x:0:0:root:/root:/noshell
     browser:x:10000:10000:Hermes Browser:/opt/browser:/noshell
@@ -638,6 +642,8 @@ in
         ./etc/chromium/policies/managed \
         ./opt/browser \
         ./opt/browser-files
+      chown 0:0 ./run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}
+      chmod 4755 ./run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}
       chmod 1777 ./tmp
     '';
     config = {

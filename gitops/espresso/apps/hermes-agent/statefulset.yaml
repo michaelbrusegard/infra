@@ -429,7 +429,7 @@ spec:
             runAsNonRoot: true
             runAsUser: 10000
             runAsGroup: 10000
-            allowPrivilegeEscalation: false
+            allowPrivilegeEscalation: true
             readOnlyRootFilesystem: true
             seccompProfile:
               type: Localhost
@@ -684,7 +684,7 @@ spec:
             runAsNonRoot: true
             runAsUser: 10000
             runAsGroup: 10000
-            allowPrivilegeEscalation: false
+            allowPrivilegeEscalation: true
             readOnlyRootFilesystem: true
             seccompProfile:
               type: Localhost
