@@ -99,11 +99,6 @@ in {
     };
   };
 
-  # Gamescope otherwise selects the RTX 5080 and crashes in NVIDIA's Vulkan
-  # shader compiler. Keep the session compositor on the display-driving iGPU;
-  # games can still opt into the NVIDIA PRIME offload wrapper.
-  programs.steam.gamescopeSession.args = ["--prefer-vk-device" "1002:150e"];
-
   local = {
     # Render games on the RTX 5080 instead of the AMD iGPU (offload default).
     gaming.nvidiaOffload = true;
