@@ -815,6 +815,8 @@ class AndroidScriptTests(unittest.TestCase):
 
         self.assertNotIn("--no-sandbox", browser_image)
         self.assertIn('"$out/run/wrappers/bin"', browser_image)
+        self.assertIn("extraCommands =", browser_image)
+        self.assertIn("cp --dereference", browser_image)
         self.assertIn("chmod 4755 ./run/wrappers/bin/", browser_image)
         self.assertNotIn("--no-sandbox", browser)
         self.assertIn("allowPrivilegeEscalation: true", browser)

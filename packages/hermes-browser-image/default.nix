@@ -633,6 +633,12 @@ in
       tools
       root
     ];
+    extraCommands = ''
+      rm ./run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}
+      cp --dereference \
+        ${pkgs.chromium.sandbox}/bin/${pkgs.chromium.sandboxExecutableName} \
+        ./run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}
+    '';
     fakeRootCommands = ''
       chown 10000:10000 \
         ./etc/chromium/policies/managed \
