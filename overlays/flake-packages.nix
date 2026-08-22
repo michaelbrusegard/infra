@@ -1,7 +1,7 @@
 inputs: _: prev: let
   inherit (prev.stdenv.hostPlatform) system;
   paseoPackage = inputs.paseo.packages.${system}.paseo.override {
-    npmDepsHash = "sha256-n7k3zQ1NOm7dGmpqKE6RaEkl50/M2eFek6XIQJbYCEc=";
+    npmDepsHash = "sha256-i5PbVUe2Ec+GtghV9IpCJQJ9hcUT5hFhmxneNvoD584=";
   };
   paseoDesktopPackage =
     (inputs.paseo.packages.${system}.desktop.override {
