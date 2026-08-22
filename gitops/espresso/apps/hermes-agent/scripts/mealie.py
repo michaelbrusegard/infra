@@ -15,6 +15,14 @@ from urllib.request import Request, urlopen
 
 
 MEAL_TYPES = ("breakfast", "lunch", "dinner", "side", "snack", "drink", "dessert")
+IMAGE_TYPES = {
+    ".avif": "image/avif",
+    ".heic": "image/heic",
+    ".jpeg": "image/jpeg",
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+}
 MISSING = object()
 
 
@@ -163,6 +171,43 @@ class MealieClient:
             content_type=f"multipart/form-data; boundary={boundary}",
         )
 
+    def put_image(self, path: str, filename: str) -> Any:
+        if not os.path.isfile(filename):
+            raise ValueError("image file does not exist")
+        extension = os.path.splitext(filename)[1].lower()
+        if extension not in IMAGE_TYPES:
+            raise ValueError("unsupported image extension")
+        try:
+            with open(filename, "rb") as image:
+                content = image.read()
+        except OSError as exc:
+            raise ValueError(f"unable to read image: {exc}") from exc
+        boundary = f"----hermes-mealie-{secrets.token_hex(16)}"
+        safe_name = (
+            os.path.basename(filename)
+            .replace('"', "_")
+            .replace("\r", "_")
+            .replace("\n", "_")
+        )
+        data = (
+            (
+                f"--{boundary}\r\n"
+                'Content-Disposition: form-data; name="extension"\r\n\r\n'
+                f"{extension}\r\n"
+                f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="image"; filename="{safe_name}"\r\n'
+                f"Content-Type: {IMAGE_TYPES[extension]}\r\n\r\n"
+            ).encode()
+            + content
+            + f"\r\n--{boundary}--\r\n".encode()
+        )
+        return self.request(
+            "PUT",
+            path,
+            raw_data=data,
+            content_type=f"multipart/form-data; boundary={boundary}",
+        )
+
     def delete(self, path: str) -> Any:
         return self.request("DELETE", path)
 
@@ -248,6 +293,10 @@ def request_for(args: argparse.Namespace, client: MealieClient) -> Any:
         if not changes:
             raise ValueError("recipe-edit requires at least one change")
         return update_recipe(client, args.slug, changes)
+    if command == "recipe-image":
+        return client.put_image(
+            f"/api/recipes/{encoded(args.slug)}/image", args.file
+        )
     if command == "recipe-delete":
         require_confirmation(args, "a recipe")
         return client.delete(f"/api/recipes/{encoded(args.slug)}")
@@ -280,6 +329,32 @@ def request_for(args: argparse.Namespace, client: MealieClient) -> Any:
         )
     if command == "import-zip":
         return client.post_archive("/api/recipes/create/zip", args.file)
+    if command == "foods":
+        query = paging(args)
+        query["search"] = args.search
+        return client.get("/api/foods", query)
+    if command == "food-add":
+        return client.post(
+            "/api/foods",
+            {"name": args.name, "description": args.description},
+        )
+    if command == "units":
+        query = paging(args)
+        query["search"] = args.search
+        return client.get("/api/units", query)
+    if command == "unit-add":
+        return client.post(
+            "/api/units",
+            {"name": args.name, "abbreviation": args.abbreviation},
+        )
+    if command == "tags":
+        query = paging(args)
+        query["search"] = args.search
+        return client.get("/api/organizers/tags", query)
+    if command == "tag":
+        return client.get(f"/api/organizers/tags/slug/{encoded(args.slug)}")
+    if command == "tag-add":
+        return client.post("/api/organizers/tags", {"name": args.name})
     if command == "mealplans":
         query = paging(args)
         query.update({"start_date": args.start, "end_date": args.end})
@@ -495,6 +570,9 @@ def parser() -> argparse.ArgumentParser:
     delete = sub.add_parser("recipe-delete", help="delete a recipe")
     delete.add_argument("slug")
     delete.add_argument("--yes", action="store_true")
+    image = sub.add_parser("recipe-image", help="replace a recipe image")
+    image.add_argument("slug")
+    image.add_argument("--file", required=True)
 
     import_url = sub.add_parser("import-url", help="import one recipe from a URL")
     import_url.add_argument("url")
@@ -511,6 +589,26 @@ def parser() -> argparse.ArgumentParser:
     import_raw.add_argument("--include-categories", action="store_true")
     import_zip = sub.add_parser("import-zip", help="import a Mealie recipe archive")
     import_zip.add_argument("file")
+
+    foods = sub.add_parser("foods", help="list or search foods")
+    foods.add_argument("--search")
+    add_paging(foods)
+    food_add = sub.add_parser("food-add", help="create a food")
+    food_add.add_argument("name")
+    food_add.add_argument("--description", default="")
+    units = sub.add_parser("units", help="list or search units")
+    units.add_argument("--search")
+    add_paging(units)
+    unit_add = sub.add_parser("unit-add", help="create a unit")
+    unit_add.add_argument("name")
+    unit_add.add_argument("--abbreviation", default="")
+    tags = sub.add_parser("tags", help="list or search tags")
+    tags.add_argument("--search")
+    add_paging(tags)
+    tag = sub.add_parser("tag", help="get one tag by slug")
+    tag.add_argument("slug")
+    tag_add = sub.add_parser("tag-add", help="create a tag")
+    tag_add.add_argument("name")
 
     mealplans = sub.add_parser("mealplans", help="list meal-plan entries")
     mealplans.add_argument("--start", help="YYYY-MM-DD")
