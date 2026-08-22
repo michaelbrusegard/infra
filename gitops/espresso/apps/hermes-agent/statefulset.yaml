@@ -363,7 +363,6 @@ spec:
           command:
             - chromium
           args:
-            - --no-sandbox
             - --ozone-platform=x11
             - --window-size=1440,900
             - --force-device-scale-factor=1
@@ -433,7 +432,8 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             seccompProfile:
-              type: RuntimeDefault
+              type: Localhost
+              localhostProfile: hermes/chromium.json
             capabilities:
               drop:
                 - ALL
@@ -687,7 +687,8 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             seccompProfile:
-              type: RuntimeDefault
+              type: Localhost
+              localhostProfile: hermes/chromium.json
             capabilities:
               drop:
                 - ALL

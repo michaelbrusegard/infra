@@ -1,6 +1,7 @@
 {pkgs}:
 pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
   betterbird = pkgs.callPackage ./betterbird {};
+  chromium-seccomp-profile = pkgs.callPackage ./chromium-seccomp-profile {};
 }
 // {
   open-browser-use = pkgs.callPackage ./open-browser-use {};

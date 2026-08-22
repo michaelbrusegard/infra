@@ -5,13 +5,21 @@ name: Hermes Agent Images
     branches:
       - main
     paths:
+      - flake.nix
+      - flake.lock
+      - packages/default.nix
       - packages/hermes-agent-image/**
       - packages/hermes-browser-image/**
+      - packages/chromium-seccomp-profile/**
       - .github/workflows/hermes-agent-image.yaml
   pull_request:
     paths:
+      - flake.nix
+      - flake.lock
+      - packages/default.nix
       - packages/hermes-agent-image/**
       - packages/hermes-browser-image/**
+      - packages/chromium-seccomp-profile/**
       - .github/workflows/hermes-agent-image.yaml
 
 concurrency:
@@ -88,12 +96,14 @@ jobs:
             in
             pkgs.callPackage ./packages/hermes-browser-image {}
           '
+          nix build --out-link result-chromium-seccomp .#chromium-seccomp-profile
 
       - name: Smoke test images
         run: |
           echo 'Browser smoke stage: load images and verify agent toolchain'
           docker load < result-agent
           docker load < result-browser
+          chromium_seccomp_profile=$(readlink -f result-chromium-seccomp)
           smoke_root=$(mktemp -d)
           mkdir -p "$smoke_root/agent-scripts"
           mkdir -p "$smoke_root/browser-files"
@@ -179,6 +189,8 @@ jobs:
           docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp "$BROWSER_IMAGE_REF:nix" --version
           docker run --rm --entrypoint android-viewer "$BROWSER_IMAGE_REF:nix" --help
           android_viewer_id=$(docker run --detach --rm --read-only \
+            --security-opt apparmor=unconfined \
+            --security-opt "seccomp=$chromium_seccomp_profile" \
             --tmpfs /opt/browser-files:rw,uid=10000,gid=10000,mode=0755 \
             --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
             --tmpfs /dev/shm:rw,uid=10000,gid=10000,mode=1777 \
@@ -210,13 +222,14 @@ jobs:
           trap - EXIT
           echo 'Browser smoke stage: start Chromium supervisor'
           browser_id=$(docker run --detach --rm --read-only \
+            --security-opt apparmor=unconfined \
+            --security-opt "seccomp=$chromium_seccomp_profile" \
             -v "$smoke_root/browser-profile:/opt/browser" \
             -v "$smoke_root/browser-files:/opt/browser-files" \
             -v "$smoke_root/browser-policies:/etc/chromium/policies/managed" \
             --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
             --tmpfs /dev/shm:rw,uid=10000,gid=10000,mode=1777 \
             "$BROWSER_IMAGE_REF:nix" \
-            --no-sandbox \
             --ozone-platform=x11 \
             --window-size=1440,900 \
             --force-device-scale-factor=1 \
@@ -241,6 +254,22 @@ jobs:
             fi
             sleep 1
           done
+          chromium_processes=$(docker exec "$browser_id" pgrep -af chromium)
+          if [[ " $chromium_processes " == *" --no-sandbox "* ]]; then
+            echo 'Chromium unexpectedly disabled its internal sandbox' >&2
+            exit 1
+          fi
+          chromium_pid=$(docker exec "$browser_id" jq -er \
+            '.browser_pid' /opt/browser-files/browser-supervisor/status.json)
+          renderer_pid=$(docker exec "$browser_id" pgrep -f -- '--type=renderer' | sed -n '1p')
+          renderer_status=$(docker exec "$browser_id" cat "/proc/$renderer_pid/status")
+          printf '%s\n' "$renderer_status" | awk \
+            '$1 == "Seccomp:" { found = 1; if ($2 != 2) exit 1 } END { if (!found) exit 1 }'
+          printf '%s\n' "$renderer_status" | awk \
+            '$1 == "Seccomp_filters:" { found = 1; if ($2 < 2) exit 1 } END { if (!found) exit 1 }'
+          chromium_user_ns=$(docker exec "$browser_id" readlink "/proc/$chromium_pid/ns/user")
+          renderer_user_ns=$(docker exec "$browser_id" readlink "/proc/$renderer_pid/ns/user")
+          test "$chromium_user_ns" != "$renderer_user_ns"
           docker exec "$browser_id" curl --fail --silent \
             http://127.0.0.1:6080/vnc.html >/dev/null
           docker exec "$browser_id" curl --fail --silent \

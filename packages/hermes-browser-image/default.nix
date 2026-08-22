@@ -529,7 +529,6 @@
         ${pkgs.chromium}/bin/chromium \
           --app=http://127.0.0.1:8081/ \
           --kiosk \
-          --no-sandbox \
           --ozone-platform=x11 \
           --window-position=0,0 \
           --window-size=1080,1920 \

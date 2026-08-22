@@ -786,6 +786,55 @@ class AndroidScriptTests(unittest.TestCase):
             launcher.index("mkdir -p /root/.android"),
         )
 
+    def test_chromium_uses_its_internal_sandbox(self) -> None:
+        statefulset = (APP_ROOT / "statefulset.yaml").read_text(encoding="utf-8")
+        browser_image = (
+            APP_ROOT.parents[3] / "packages" / "hermes-browser-image" / "default.nix"
+        ).read_text(encoding="utf-8")
+        seccomp_generator = (
+            APP_ROOT.parents[3]
+            / "packages"
+            / "chromium-seccomp-profile"
+            / "generate.go"
+        ).read_text(encoding="utf-8")
+        seccomp_install = (
+            APP_ROOT.parents[3] / "hosts" / "espresso" / "seccomp-profiles.nix"
+        ).read_text(encoding="utf-8")
+        k3s_module = (
+            APP_ROOT.parents[3] / "modules" / "nixos" / "k3s.nix"
+        ).read_text(encoding="utf-8")
+        image_workflow = (
+            APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-agent-image.yaml"
+        ).read_text(encoding="utf-8")
+        browser = statefulset.split("        - name: browser\n", 1)[1].split(
+            "        - name: android-emulator\n", 1
+        )[0]
+        android_viewer = statefulset.split("        - name: android-viewer\n", 1)[1].split(
+            "        - name: android-viewer-auth\n", 1
+        )[0]
+
+        self.assertNotIn("--no-sandbox", browser_image)
+        self.assertNotIn("--no-sandbox", browser)
+        self.assertIn(
+            'Names:  []string{"chroot", "clone", "unshare"}', seccomp_generator
+        )
+        self.assertIn("chromium-seccomp-profile", seccomp_install)
+        self.assertNotIn("chromium", k3s_module)
+        self.assertIn(
+            "nix build --out-link result-chromium-seccomp ", image_workflow
+        )
+        self.assertIn(
+            '--security-opt "seccomp=$chromium_seccomp_profile"', image_workflow
+        )
+        self.assertNotIn("seccomp=unconfined", image_workflow)
+        seccomp_profile = (
+            "seccompProfile:\n"
+            "              type: Localhost\n"
+            "              localhostProfile: hermes/chromium.json"
+        )
+        self.assertIn(seccomp_profile, browser)
+        self.assertIn(seccomp_profile, android_viewer)
+
     def test_android_manifest_updater_atomically_releases_pending_rollout(self) -> None:
         manifest = (APP_ROOT / "statefulset.yaml").read_text(encoding="utf-8")
         manifest = manifest.replace(

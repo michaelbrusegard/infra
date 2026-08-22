@@ -19,6 +19,7 @@
     inputs.self.nixosModules.security
     inputs.self.nixosModules.watchdog
     ./cluster.nix
+    ./seccomp-profiles.nix
     ./networking.nix
     ./ipv6-rotation.nix
     ./hardware.nix
