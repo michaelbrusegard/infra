@@ -186,7 +186,7 @@ def main() -> None:
             )
             if event_time and event_time >= RECENT:
                 recent_events.append((event_time, event))
-        for event_time, event in sorted(recent_events):
+        for event_time, event in sorted(recent_events, key=lambda item: item[0]):
             regarding = event.get("regarding") or event.get("involvedObject") or {}
             message = event.get("note") or event.get("message") or "no detail"
             line = (
