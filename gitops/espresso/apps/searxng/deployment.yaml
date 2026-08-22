@@ -96,6 +96,10 @@ spec:
               mountPath: /var/cache/searxng
             - name: tmp
               mountPath: /tmp
+            - name: marginalia-api-key
+              mountPath: /run/secrets/marginalia-api-key
+              subPath: MARGINALIA_API_KEY
+              readOnly: true
       volumes:
         - name: config-template
           configMap:
@@ -112,3 +116,9 @@ spec:
         - name: tmp
           emptyDir:
             sizeLimit: 100Mi
+        - name: marginalia-api-key
+          secret:
+            secretName: searxng-env
+            items:
+              - key: MARGINALIA_API_KEY
+                path: MARGINALIA_API_KEY

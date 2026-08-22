@@ -16,8 +16,15 @@ data:
     }
 
     active_range="$(read_range)"
-    sed "s|__IPV6_RANGE__|$active_range|g" \
-      /template/settings.yml > /etc/searxng/settings.yml
+    marginalia_api_key="$(cat /run/secrets/marginalia-api-key)"
+    sed "s|__IPV6_RANGE__|$active_range|g" /template/settings.yml |
+      while IFS= read -r line; do
+        if [ "$line" = '        api_key: "__MARGINALIA_API_KEY__"' ]; then
+          printf '        api_key: "%s"\n' "$marginalia_api_key"
+        else
+          printf '%s\n' "$line"
+        fi
+      done > /etc/searxng/settings.yml
 
     /usr/local/searxng/entrypoint.sh &
     searxng_pid=$!
@@ -92,6 +99,10 @@ data:
         disabled: false
       - name: searchmysite
         disabled: false
+      - name: marginalia
+        api_key: "__MARGINALIA_API_KEY__"
+        disabled: false
+        inactive: false
       - name: mwmbl
         disabled: true
       - name: qwant
