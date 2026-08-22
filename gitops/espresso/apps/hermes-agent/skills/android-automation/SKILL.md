@@ -26,18 +26,40 @@ restarts do not trigger this migration.
 1. Run `android wait-for-boot`, then `android health`.
 2. Run `android snapshot --name <checkpoint>` before a long or consequential
    flow. It saves the screenshot, UI XML, and device health together.
-3. Run `android ui-tree`. It prefers the live AccessibilityService and falls
-   back to UIAutomator if the service is unavailable. Prefer a semantic node
-   with text, content description, or view ID. Refs expire quickly; use the
-   returned `expires_at` value as part of the action.
-4. Use
-   `android tap-ref <ref> --tree-id <tree-id> --expires-at <expires-at>` to
-   reject stale or expired refs automatically. Use coordinate `tap`,
-   `long-press`, or `swipe` when the target is visual-only.
+3. Use an exploratory `android ui-tree --compact` to choose a target predicate.
+   It emits one JSON line per clickable node that has text or a content
+   description, with `ref`, `tree_id`, and `expires_at`. A full `ui-tree`
+   prefers the live AccessibilityService and falls back to UIAutomator. Refs
+   expire after 30 seconds, so never reuse a ref from the exploratory tree.
+4. Capture the real action tree and use its ref in the same shell invocation.
+   Inspection and action cannot be separate tool calls. For example, replace
+   the predicate below with the semantic target chosen during exploration:
+
+   ```sh
+   android ui-tree > /tmp/t.json &&
+   python3 -c '
+   import json
+   d = json.load(open("/tmp/t.json"))
+   n = next(x for x in d["nodes"] if x.get("clickable") and x.get("content_description") == "Search")
+   print(n["ref"], d["tree_id"], d["expires_at"])
+   ' | while read -r ref tree_id expires_at; do
+     android tap-ref "$ref" --tree-id "$tree_id" --expires-at "$expires_at"
+   done
+   ```
+
+   Use coordinate `tap`, `long-press`, or `swipe` when the target is
+   visual-only.
 5. Accessibility actions return a fresh tree and compare its digest and event
    sequence with the pre-action state. If no change can be confirmed, the
    helper automatically saves a screenshot. Re-inspect that evidence rather
    than assuming an input succeeded.
+
+Do not filter semantic WebView targets on `visible` or trust their `bounds`.
+Below-fold WebView nodes can report `visible: false` with bounds collapsed at
+the viewport edge, while accessibility `ACTION_CLICK` through `tap-ref` or
+`action-ref ... click` still succeeds without scrolling. Coordinate actions
+genuinely require the target to be on screen with trustworthy coordinates;
+scroll first only for that case.
 
 Use `android live-view` for the browser-compatible noVNC console URL. The
 console is backed by the emulator's native WebRTC framebuffer, accepts mouse
@@ -80,7 +102,7 @@ android screenshot [path]
 android record [--seconds N] [path]
 android snapshot [--name NAME]
 android uiautomator-dump [path]
-android ui-tree
+android ui-tree [--compact]
 android tap <x> <y>
 android tap-ref <ref> [--tree-id ID] [--expires-at ISO8601]
 android action-ref <ref> <click|long_click|focus|accessibility_focus|clear_focus|scroll_forward|scroll_backward|set_text> [--tree-id ID] [--value TEXT]

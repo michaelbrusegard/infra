@@ -939,6 +939,31 @@ def handle_ui_tree(args: argparse.Namespace) -> dict[str, Any]:
     return current_ui_tree(serial)
 
 
+def compact_ui_tree_nodes(tree: dict[str, Any]) -> list[dict[str, Any]]:
+    tree_id = tree.get("tree_id")
+    expires_at = tree.get("expires_at")
+    result: list[dict[str, Any]] = []
+    for node in tree.get("nodes", []):
+        if not node.get("clickable"):
+            continue
+        text = str(node.get("text") or "").strip()
+        content_description = str(
+            node.get("content_description") or node.get("description") or ""
+        ).strip()
+        if not text and not content_description:
+            continue
+        result.append(
+            {
+                "ref": node.get("ref"),
+                "text": text,
+                "content_description": content_description,
+                "tree_id": tree_id,
+                "expires_at": expires_at,
+            }
+        )
+    return result
+
+
 def handle_tap(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
     before = current_ui_tree(serial)
@@ -1630,7 +1655,12 @@ def parser() -> argparse.ArgumentParser:
         help="optional output path anywhere visible to the agent process",
     )
 
-    sub.add_parser("ui-tree", help="return a compact UI tree with short-lived coordinate refs")
+    ui_tree = sub.add_parser("ui-tree", help="return a UI tree with short-lived refs")
+    ui_tree.add_argument(
+        "--compact",
+        action="store_true",
+        help="emit one JSON line per labeled clickable node",
+    )
 
     snapshot = sub.add_parser("snapshot", help="capture screenshot, UI XML, and health in one bundle")
     snapshot.add_argument("--name", help="optional stable basename for the snapshot bundle")
@@ -1841,6 +1871,10 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    if args.command == "ui-tree" and args.compact:
+        for node in compact_ui_tree_nodes(result):
+            compact(node)
+        return 0
     compact({"ok": True, **result})
     return 0
 

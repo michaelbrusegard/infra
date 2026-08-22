@@ -340,6 +340,42 @@ class AndroidScriptTests(unittest.TestCase):
             android.parse_iso8601(tree["expires_at"]),
         )
 
+    def test_compact_ui_tree_nodes_keeps_only_labeled_clickable_nodes(self) -> None:
+        tree = {
+            "tree_id": "tree-1",
+            "expires_at": "2099-01-01T00:00:00Z",
+            "nodes": [
+                {"ref": "r1", "clickable": True, "text": " Buy "},
+                {
+                    "ref": "r2",
+                    "clickable": True,
+                    "description": "Checkout",
+                },
+                {"ref": "r3", "clickable": True, "text": ""},
+                {"ref": "r4", "clickable": False, "text": "Ignored"},
+            ],
+        }
+
+        self.assertEqual(
+            android.compact_ui_tree_nodes(tree),
+            [
+                {
+                    "ref": "r1",
+                    "text": "Buy",
+                    "content_description": "",
+                    "tree_id": "tree-1",
+                    "expires_at": "2099-01-01T00:00:00Z",
+                },
+                {
+                    "ref": "r2",
+                    "text": "",
+                    "content_description": "Checkout",
+                    "tree_id": "tree-1",
+                    "expires_at": "2099-01-01T00:00:00Z",
+                },
+            ],
+        )
+
     def test_parse_ui_tree_assigns_refs_and_centers(self) -> None:
         tree = android.parse_ui_tree(
             '<hierarchy><node text="Buy" content-desc="Checkout" '
@@ -460,9 +496,11 @@ class AndroidScriptTests(unittest.TestCase):
         swipe = android.parser().parse_args(
             ["swipe", "0", "0", "10", "10", "--duration-ms", "120000"]
         )
+        ui_tree = android.parser().parse_args(["ui-tree", "--compact"])
 
         self.assertEqual(record.seconds, 7200)
         self.assertEqual(swipe.duration_ms, 120000)
+        self.assertTrue(ui_tree.compact)
 
     @mock.patch.object(android.subprocess, "call", return_value=17)
     def test_adb_passthrough_preserves_arguments_and_exit_status(
