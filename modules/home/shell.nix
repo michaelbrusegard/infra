@@ -108,6 +108,9 @@
         text = "";
       };
 
+      # Preserve terminal capabilities when connecting from Kitty over SSH.
+      packages = [pkgs.kitty.terminfo];
+
       shellAliases =
         {
           dl = "cd $HOME/Downloads";
@@ -158,9 +161,7 @@
           ".local/state/pnpm"
           ".cache/gitstatus"
           ".cache/p10k-${config.home.username}"
-        ];
-        files = [
-          ".config/zsh/.zsh_history"
+          ".config/zsh"
         ];
       };
     };
