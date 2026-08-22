@@ -4,7 +4,8 @@ inputs: _: prev: let
     inherit system;
     config.allowUnfree = true;
   };
-  # TODO: Remove these NetBird version overrides once nixpkgs has 0.72.4 or newer.
+  # TODO: Remove these NetBird version overrides once stable nixpkgs has 0.72.4 or newer.
+  # The unstable 0.77 recipe expects the newer web UI source layout.
   netbirdVersion = "0.72.4";
   netbirdSrc = prev.fetchFromGitHub {
     owner = "netbirdio";
@@ -12,7 +13,7 @@ inputs: _: prev: let
     rev = "v${netbirdVersion}";
     hash = "sha256-YRXXuaqnQBLODcz/FNpIG9Ht+6VGRknE2Q6Q5ZaAIus=";
   };
-  netbirdVendorHash = "sha256-55QVwZ2Gi35JQbpLgmpRI+mBN58TOq9qSOOG4PLSf/w=";
+  netbirdVendorHash = "sha256-6FN7l+e75Pw2+v0sktomlck+7daro1i6c4ZV53SRePI=";
 in {
   inherit
     (pkgs-unstable)
@@ -42,20 +43,28 @@ in {
     signal-desktop
     ;
 
-  netbird = pkgs-unstable.netbird.overrideAttrs (_: {
+  netbird = prev.netbird.overrideAttrs (_: {
     version = netbirdVersion;
     src = netbirdSrc;
     vendorHash = netbirdVendorHash;
     postPatch = ''
+      substituteInPlace client/cmd/root.go \
+        --replace-fail 'unix:///var/run/netbird.sock' 'unix:///var/run/netbird/sock'
       substituteInPlace client/cmd/kubernetes.go \
         --replace-fail $'\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}' \
                        $'\t\tif err != nil {\n\t\t\tlog.Debugf("could not resolve reverse DNS for peer %s: %v", peer.IP, err)\n\t\t\tcontinue\n\t\t}'
     '';
   });
-  netbird-ui = pkgs-unstable.netbird-ui.overrideAttrs (_: {
+  netbird-ui = prev.netbird-ui.overrideAttrs (_: {
     version = netbirdVersion;
     src = netbirdSrc;
     vendorHash = netbirdVendorHash;
+    postPatch = ''
+      substituteInPlace client/cmd/root.go \
+        --replace-fail 'unix:///var/run/netbird.sock' 'unix:///var/run/netbird/sock'
+      substituteInPlace client/ui/client_ui.go \
+        --replace-fail 'unix:///var/run/netbird.sock' 'unix:///var/run/netbird/sock'
+    '';
   });
   feishin = prev.feishin.overrideAttrs (old: {
     postFixup =
