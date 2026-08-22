@@ -1,5 +1,5 @@
 {pkgs}:
-pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
+pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
   betterbird = pkgs.callPackage ./betterbird {};
 }
 // {

@@ -4,10 +4,10 @@
   ...
 }: {
   xdg = {
-    enable = pkgs.stdenv.isLinux;
+    enable = pkgs.stdenv.hostPlatform.isLinux;
 
     userDirs = {
-      enable = pkgs.stdenv.isLinux;
+      enable = pkgs.stdenv.hostPlatform.isLinux;
       createDirectories = true;
       # Keep exporting XDG_*_DIR env vars (26.05 default flips to false).
       setSessionVariables = true;
@@ -24,6 +24,6 @@
       };
     };
 
-    mimeApps.enable = pkgs.stdenv.isLinux && !isWsl;
+    mimeApps.enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
   };
 }

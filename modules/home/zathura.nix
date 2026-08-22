@@ -4,7 +4,7 @@
   isWsl,
   ...
 }: let
-  enable = pkgs.stdenv.isLinux && !isWsl;
+  enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
 in {
   programs.zathura = lib.mkIf enable {
     enable = true;

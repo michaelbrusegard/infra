@@ -7,7 +7,7 @@
   localTimeZone ? "UTC",
   ...
 }: let
-  enable = pkgs.stdenv.isLinux && !isWsl;
+  enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
 
   nextcloudUrl = "https://cloud.asgard.michaelbrusegard.com/remote.php/dav";
   nextcloudUser = "michaelbrusegard";

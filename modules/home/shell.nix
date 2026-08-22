@@ -104,7 +104,7 @@
 
   home =
     {
-      file.".hushlogin" = lib.mkIf pkgs.stdenv.isDarwin {
+      file.".hushlogin" = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
         text = "";
       };
 
@@ -125,7 +125,7 @@
           vim = "nvim";
           vi = "nvim";
         }
-        // lib.optionalAttrs (pkgs.stdenv.isLinux && !isWsl) {
+        // lib.optionalAttrs (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
           pbcopy = "wl-copy";
           pbpaste = "wl-paste";
         };
@@ -141,11 +141,11 @@
           "$HOME/.cargo/bin"
           "$HOME/.local/state/pnpm"
         ]
-        ++ lib.optionals pkgs.stdenv.isDarwin [
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           "/opt/homebrew/bin"
         ];
 
-      activation = lib.optionalAttrs pkgs.stdenv.isDarwin {
+      activation = lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
         createScreenshotsDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
           $DRY_RUN_CMD mkdir -p "$HOME/Pictures/screenshots"
         '';

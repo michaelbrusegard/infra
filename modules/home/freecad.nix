@@ -11,15 +11,15 @@ in {
   home =
     {
       packages =
-        lib.optionals (pkgs.stdenv.isLinux && !isWsl) [
+        lib.optionals (pkgs.stdenv.hostPlatform.isLinux && !isWsl) [
           pkgs.freecad-wayland
         ]
-        ++ lib.optionals pkgs.stdenv.isDarwin [
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           pkgs.brewCasks.freecad
         ];
 
       file = lib.mkMerge [
-        (lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+        (lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
           ".config/FreeCAD".source =
             config.lib.file.mkOutOfStoreSymlink freecadConfig;
 
@@ -27,7 +27,7 @@ in {
             config.lib.file.mkOutOfStoreSymlink "${freecadConfig}/v1-1/macros";
         })
 
-        (lib.mkIf pkgs.stdenv.isDarwin {
+        (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
           "Library/Preferences/FreeCAD".source =
             config.lib.file.mkOutOfStoreSymlink freecadConfig;
 

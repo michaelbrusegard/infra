@@ -5,7 +5,7 @@
   homePersistenceRoot ? null,
   ...
 }: let
-  enable = !isWsl && pkgs.stdenv.isLinux;
+  enable = !isWsl && pkgs.stdenv.hostPlatform.isLinux;
   unlockWrapper = pkgs.writeShellScript "gnome-keyring-empty-unlock" ''
     printf '\n' | exec ${pkgs.gnome-keyring}/bin/gnome-keyring-daemon \
       --start --foreground --unlock --components=secrets

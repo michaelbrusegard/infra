@@ -165,7 +165,7 @@
     }
   ];
 in
-  lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+  lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
     # Wayland clipboard CLI: `cmd | wl-copy`, `wl-paste` to read back.
     home.packages = [pkgs.wl-clipboard];
 

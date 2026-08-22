@@ -47,7 +47,7 @@ in {
           inkscape-with-extensions
           audacity
         ]
-        ++ lib.optionals pkgs.stdenv.isLinux [
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
           mattermost-desktop
           fluffychat
           imv
@@ -70,7 +70,7 @@ in {
           nextcloudClient
           nextcloud-talk-desktop
         ]
-        ++ lib.optionals pkgs.stdenv.isDarwin [
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           ice-bar
           brewCasks.raycast
           brewCasks.mattermost
@@ -94,7 +94,7 @@ in {
           brewCasks.nextcloud-talk
         ]);
     }
-    // lib.optionalAttrs (pkgs.stdenv.isLinux && !isWsl) {
+    // lib.optionalAttrs (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
       activation.enableNextcloudExperimentalOptions = lib.hm.dag.entryAfter ["writeBoundary"] ''
         nextcloudCfg="$HOME/.config/Nextcloud/nextcloud.cfg"
         $DRY_RUN_CMD mkdir -p "$HOME/.config/Nextcloud"

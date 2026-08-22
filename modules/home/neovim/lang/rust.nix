@@ -14,7 +14,7 @@
             local extension_path = '${pkgs.vscode-extensions.vadimcn.vscode-lldb}/share/vscode/extensions/vadimcn.vscode-lldb/'
             local codelldb_path = extension_path .. 'adapter/codelldb'
             local liblldb_path = extension_path .. 'lldb/lib/liblldb${
-              if pkgs.stdenv.isDarwin
+              if pkgs.stdenv.hostPlatform.isDarwin
               then ".dylib"
               else ".so"
             }'

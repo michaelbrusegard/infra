@@ -11,12 +11,12 @@
 in {
   home =
     {
-      sessionVariables = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+      sessionVariables = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
         ELECTRON_OZONE_PLATFORM_HINT = "auto";
         GTK_THEME = "Catppuccin-GTK-Dark";
       };
 
-      pointerCursor = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+      pointerCursor = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
         package = pkgs.bibata-cursors;
         name = "Bibata-Modern-Classic";
         size = 24;
@@ -32,7 +32,7 @@ in {
       ];
     };
 
-  qt = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) ({
+  qt = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) ({
       enable = true;
       style.name = "kvantum";
     }
@@ -49,7 +49,7 @@ in {
       };
     })));
 
-  gtk = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+  gtk = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
     enable = true;
     colorScheme = "dark";
 
@@ -78,11 +78,11 @@ in {
     };
   };
 
-  xdg.configFile = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+  xdg.configFile = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
     "DankMaterialShell".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
   };
 
-  systemd.user.services.dms-wallpaper = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+  systemd.user.services.dms-wallpaper = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
     Unit = {
       PartOf = ["dms.service"];
       After = ["dms.service"];

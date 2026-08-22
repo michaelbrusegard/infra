@@ -17,7 +17,7 @@
   openBrowserUseSkill = "${openBrowserUseSource}/skills/open-browser-use";
   openBrowserUseCommand = lib.getExe pkgs.open-browser-use;
   openBrowserUseExtensionDirectory =
-    if pkgs.stdenv.isDarwin
+    if pkgs.stdenv.hostPlatform.isDarwin
     then "Library/Application Support/OpenBrowserUse/chrome-extension/release"
     else ".local/share/open-browser-use/chrome-extension/release";
   openComputerUseSource = pkgs.fetchFromGitHub {
@@ -105,7 +105,7 @@
         pkgs.gawk
         pkgs.nmap
       ]
-      ++ lib.optionals pkgs.stdenv.isLinux [
+      ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
         pkgs.iproute2
       ];
     text = ''
@@ -241,11 +241,11 @@ in {
           pkgs.slack-cli
         ]
         ++ lib.optionals (!isWsl) (with pkgs;
-          lib.optionals pkgs.stdenv.isLinux [
+          lib.optionals pkgs.stdenv.hostPlatform.isLinux [
             paseo
             paseo-desktop
           ]
-          ++ lib.optionals pkgs.stdenv.isDarwin [
+          ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
             brewCasks.codex-app
             brewCasks.paseo
           ]);
@@ -357,13 +357,13 @@ in {
   programs.chromium = lib.mkIf (!isWsl) {
     enable = true;
     package =
-      if pkgs.stdenv.isDarwin
+      if pkgs.stdenv.hostPlatform.isDarwin
       then pkgs.brewCasks.ungoogled-chromium
       else pkgs.ungoogled-chromium;
     nativeMessagingHosts = [pkgs.open-browser-use];
   };
 
-  launchd.agents.paseo-netbird-forward = lib.mkIf pkgs.stdenv.isDarwin {
+  launchd.agents.paseo-netbird-forward = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
     enable = true;
     config = {
       ProgramArguments = [
@@ -376,7 +376,7 @@ in {
     };
   };
 
-  systemd.user.services.paseo-netbird-forward = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+  systemd.user.services.paseo-netbird-forward = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
     Unit = {
       Description = "Expose Paseo localhost daemon on NetBird";
       After = ["network-online.target"];

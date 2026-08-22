@@ -16,7 +16,7 @@
       text = ''
         profile = "gpu-hq";
         vo =
-          if pkgs.stdenv.isDarwin
+          if pkgs.stdenv.hostPlatform.isDarwin
           then "libmpv"
           else "gpu-next";
         hwdec = "auto-safe";

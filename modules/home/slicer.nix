@@ -67,11 +67,11 @@ in {
   home =
     {
       packages =
-        lib.optionals (pkgs.stdenv.isLinux && !isWsl) [
+        lib.optionals (pkgs.stdenv.hostPlatform.isLinux && !isWsl) [
           orca-slicer
           bambu-studio
         ]
-        ++ lib.optionals pkgs.stdenv.isDarwin [
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           pkgs.brewCasks.orcaslicer
           pkgs.brewCasks.bambu-studio
         ];

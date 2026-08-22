@@ -8,7 +8,7 @@
   gamemodeRun ? false,
   ...
 }: let
-  enable = pkgs.stdenv.isLinux && !isWsl;
+  enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
 
   gamemoderun = lib.getExe' pkgs.gamemode "gamemoderun";
 

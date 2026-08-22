@@ -5,11 +5,11 @@
   ...
 }: let
   terminalMod =
-    if pkgs.stdenv.isDarwin
+    if pkgs.stdenv.hostPlatform.isDarwin
     then "cmd"
     else "ctrl";
   tabMod =
-    if pkgs.stdenv.isDarwin
+    if pkgs.stdenv.hostPlatform.isDarwin
     then "ctrl"
     else "super";
 
@@ -89,7 +89,7 @@ in {
       disable_ligatures = "always";
       window_padding_width = 0;
       hide_window_decorations =
-        if pkgs.stdenv.isDarwin
+        if pkgs.stdenv.hostPlatform.isDarwin
         then "titlebar-only"
         else true;
       enabled_layouts = "splits";
@@ -102,12 +102,12 @@ in {
     };
     keybindings =
       terminalBindings
-      // lib.optionalAttrs pkgs.stdenv.isLinux passthroughBindings;
+      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux passthroughBindings;
   };
 
   home.sessionVariables.TERMINAL = lib.mkIf (!isWsl) "kitty";
 
-  xdg.terminal-exec = lib.mkIf (pkgs.stdenv.isLinux && !isWsl) {
+  xdg.terminal-exec = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
     enable = true;
     settings.default = ["kitty.desktop"];
   };
