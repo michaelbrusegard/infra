@@ -814,13 +814,10 @@ class AndroidScriptTests(unittest.TestCase):
         )[0]
 
         self.assertNotIn("--no-sandbox", browser_image)
-        self.assertIn('"$out/run/wrappers/bin"', browser_image)
-        self.assertIn("extraCommands =", browser_image)
-        self.assertIn("cp --dereference", browser_image)
-        self.assertIn("chmod 4755 ./run/wrappers/bin/", browser_image)
+        self.assertEqual(browser_image.count("--disable-setuid-sandbox"), 2)
         self.assertNotIn("--no-sandbox", browser)
-        self.assertIn("allowPrivilegeEscalation: true", browser)
-        self.assertIn("allowPrivilegeEscalation: true", android_viewer)
+        self.assertIn("allowPrivilegeEscalation: false", browser)
+        self.assertIn("allowPrivilegeEscalation: false", android_viewer)
         self.assertIn(
             'Names:  []string{"chroot", "clone", "unshare"}', seccomp_generator
         )

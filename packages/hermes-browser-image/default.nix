@@ -299,7 +299,9 @@
 
       while true; do
         write_status "running"
-        ${pkgs.chromium}/bin/chromium "$@" "''${extra_args[@]}" &
+        ${pkgs.chromium}/bin/chromium \
+          --disable-setuid-sandbox \
+          "$@" "''${extra_args[@]}" &
         browser_pid=$!
         write_status "running"
         set +e
@@ -527,6 +529,7 @@
         fi
 
         ${pkgs.chromium}/bin/chromium \
+          --disable-setuid-sandbox \
           --app=http://127.0.0.1:8081/ \
           --kiosk \
           --ozone-platform=x11 \
@@ -605,7 +608,6 @@
       "$out/opt/browser" \
       "$out/opt/browser-files" \
       "$out/opt/hermes/extensions" \
-      "$out/run/wrappers/bin" \
       "$out/run/current-system/sw/share/chromium/extensions" \
       "$out/tmp"
     ln -s ${fontconfigFile} "$out/etc/fonts.conf"
@@ -613,9 +615,6 @@
     cp ${ublockOriginLiteCrx} "$out/opt/hermes/extensions/ublock-origin-lite.crx"
     cp ${ublockOriginLiteExternal} \
       "$out/run/current-system/sw/share/chromium/extensions/${ublockOriginLiteId}.json"
-    cp \
-      ${pkgs.chromium.sandbox}/bin/${pkgs.chromium.sandboxExecutableName} \
-      "$out/run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}"
     cat > "$out/etc/passwd" <<'EOF'
     root:x:0:0:root:/root:/noshell
     browser:x:10000:10000:Hermes Browser:/opt/browser:/noshell
@@ -633,12 +632,6 @@ in
       tools
       root
     ];
-    extraCommands = ''
-      rm ./run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}
-      cp --dereference \
-        ${pkgs.chromium.sandbox}/bin/${pkgs.chromium.sandboxExecutableName} \
-        ./run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}
-    '';
     fakeRootCommands = ''
       chown 10000:10000 \
         ./etc/chromium/policies/managed \
@@ -648,8 +641,6 @@ in
         ./etc/chromium/policies/managed \
         ./opt/browser \
         ./opt/browser-files
-      chown 0:0 ./run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}
-      chmod 4755 ./run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}
       chmod 1777 ./tmp
     '';
     config = {
