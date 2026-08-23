@@ -30,9 +30,7 @@ env:
   REGISTRY: ghcr.io
   AGENT_IMAGE_REF: ghcr.io/michaelbrusegard/hermes-agent
   BROWSER_IMAGE_REF: ghcr.io/michaelbrusegard/hermes-browser
-  # dockerTools currently emits an agent layer that Docker accepts but
-  # containerd rejects with "archive/tar: invalid tar header".
-  ROLLOUT_AGENT_IMAGE: "false"
+  ROLLOUT_AGENT_IMAGE: "true"
 
 jobs:
   build-and-publish:
