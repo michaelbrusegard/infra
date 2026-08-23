@@ -109,6 +109,11 @@ jobs:
           fi
           docker load < result-agent
           docker load < result-browser
+          agent_layer_count=$(docker image inspect "$AGENT_IMAGE_REF:nix" --format '{{len .RootFS.Layers}}')
+          if [ "$agent_layer_count" -gt 40 ]; then
+            echo "Hermes Agent image has $agent_layer_count layers; expected at most 40" >&2
+            exit 1
+          fi
           chromium_seccomp_profile=$(readlink -f result-chromium-seccomp)
           smoke_root=$(mktemp -d)
           mkdir -p "$smoke_root/agent-scripts"
@@ -458,7 +463,7 @@ jobs:
         env:
           GIT_SHA: ${{ github.sha }}
         run: |
-          nix profile install nixpkgs#skopeo nixpkgs#umoci
+          nix profile install nixpkgs#skopeo nixpkgs#rootlesskit
           registries_conf="$RUNNER_TEMP/registries.conf"
           printf '%s\n' 'unqualified-search-registries = ["docker.io"]' > "$registries_conf"
           skopeo --registries-conf "$registries_conf" copy \
@@ -474,15 +479,52 @@ jobs:
           browser_digest=$(skopeo --registries-conf "$registries_conf" inspect \
             "docker://$BROWSER_IMAGE_REF:sha-$GIT_SHA" | jq -r .Digest)
 
-          # Validate the published layers from a fresh pull. Local smoke tests
-          # cannot detect a registry-side conversion that containerd cannot
-          # unpack on the cluster.
-          skopeo --registries-conf "$registries_conf" copy \
-            "docker://$AGENT_IMAGE_REF@$agent_digest" "oci:$RUNNER_TEMP/agent-verify:latest"
-          skopeo --registries-conf "$registries_conf" copy \
-            "docker://$BROWSER_IMAGE_REF@$browser_digest" "oci:$RUNNER_TEMP/browser-verify:latest"
-          umoci unpack --rootless --image "$RUNNER_TEMP/agent-verify:latest" "$RUNNER_TEMP/agent-rootfs"
-          umoci unpack --rootless --image "$RUNNER_TEMP/browser-verify:latest" "$RUNNER_TEMP/browser-rootfs"
+          # Validate with the same containerd release and overlay snapshotter
+          # used by k3s. OCI unpackers accept deep dockerTools images that
+          # containerd rejects while applying the overlay chain.
+          containerd_dir="$RUNNER_TEMP/containerd-2.2.3"
+          mkdir -p "$containerd_dir"
+          curl --fail --location --silent --show-error \
+            --output "$containerd_dir/containerd.tar.gz" \
+            https://github.com/containerd/containerd/releases/download/v2.2.3/containerd-2.2.3-linux-amd64.tar.gz
+          echo "ca26ef5138f17b847bbeeec36d4bf5e002b54d25858197a870c125d57f44d32f  $containerd_dir/containerd.tar.gz" \
+            | sha256sum --check
+          tar -xzf "$containerd_dir/containerd.tar.gz" -C "$containerd_dir"
+
+          docker image rm "$AGENT_IMAGE_REF:nix" "$BROWSER_IMAGE_REF:nix" || true
+          rm -f result-agent result-browser
+          nix store gc
+
+          cat > "$RUNNER_TEMP/containerd-validate.toml" <<EOF
+          version = 3
+          root = "$RUNNER_TEMP/containerd-root"
+          state = "$RUNNER_TEMP/containerd-state"
+          disabled_plugins = ["io.containerd.cri.v1.runtime", "io.containerd.cri.v1.images", "io.containerd.grpc.v1.cri", "io.containerd.server.v1.ttrpc"]
+
+          [grpc]
+            address = "$RUNNER_TEMP/containerd.sock"
+            uid = 0
+            gid = 0
+          EOF
+          cat > "$RUNNER_TEMP/validate-containerd-images" <<EOF
+          #!/usr/bin/env bash
+          set -euo pipefail
+          "$containerd_dir/bin/containerd" \
+            --config "$RUNNER_TEMP/containerd-validate.toml" \
+            >"$RUNNER_TEMP/containerd.log" 2>&1 &
+          containerd_pid=\$!
+          trap 'kill "\$containerd_pid" 2>/dev/null || true' EXIT
+          for _ in \$(seq 1 100); do
+            [ -S "$RUNNER_TEMP/containerd.sock" ] && break
+            sleep 0.2
+          done
+          "$containerd_dir/bin/ctr" --address "$RUNNER_TEMP/containerd.sock" \
+            images pull --snapshotter overlayfs "$AGENT_IMAGE_REF@$agent_digest"
+          "$containerd_dir/bin/ctr" --address "$RUNNER_TEMP/containerd.sock" \
+            images pull --snapshotter overlayfs "$BROWSER_IMAGE_REF@$browser_digest"
+          EOF
+          chmod +x "$RUNNER_TEMP/validate-containerd-images"
+          rootlesskit --net=host "$RUNNER_TEMP/validate-containerd-images"
 
           echo "agent_digest=$agent_digest" >> "$GITHUB_OUTPUT"
           echo "browser_digest=$browser_digest" >> "$GITHUB_OUTPUT"

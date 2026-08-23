@@ -165,6 +165,9 @@ in
   dockerTools.buildLayeredImage {
     name = "ghcr.io/michaelbrusegard/hermes-agent";
     tag = "nix";
+    # Keep the overlay chain shallow enough for k3s containerd. The default
+    # 100-layer image consistently fails while applying layer 94.
+    maxLayers = 40;
     contents = [
       hermes-agent
       nodeTools
