@@ -221,8 +221,8 @@ publish_grpc_token() {
     return 1
   fi
   printf '%s\n' "$token" >"$GRPC_TOKEN_FILE.tmp"
-  chmod 600 "$GRPC_TOKEN_FILE.tmp"
-  chown 10000:10000 "$GRPC_TOKEN_FILE.tmp"
+  chmod 640 "$GRPC_TOKEN_FILE.tmp"
+  chown 10000:0 "$GRPC_TOKEN_FILE.tmp"
   mv "$GRPC_TOKEN_FILE.tmp" "$GRPC_TOKEN_FILE"
 }
 

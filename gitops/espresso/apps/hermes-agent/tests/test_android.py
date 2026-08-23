@@ -994,8 +994,10 @@ class AndroidScriptTests(unittest.TestCase):
         )
         self.assertIn("- name: android-viewer\n", statefulset)
         self.assertIn("value: 127.0.0.1:6081", statefulset)
-        self.assertIn("chown 10000:10000 /opt/android/adb/adbkey", statefulset)
-        self.assertIn("chown 10000:10000 /opt/android/companion/auth-token", statefulset)
+        self.assertIn("chown 10000:0 /opt/android/adb/adbkey", statefulset)
+        self.assertIn("chown 10000:0 /opt/android/companion/auth-token", statefulset)
+        self.assertIn("chmod 640 /opt/android/adb/adbkey", statefulset)
+        self.assertIn("chmod 640 /opt/android/companion/auth-token", statefulset)
         self.assertIn(
             "securityContext:\n            runAsUser: 0\n            runAsGroup: 0\n            allowPrivilegeEscalation: false",
             statefulset,
@@ -1110,7 +1112,8 @@ class AndroidScriptTests(unittest.TestCase):
             "HOME=/tmp /android/sdk/platform-tools/adb keygen /opt/android/adb/adbkey",
             statefulset,
         )
-        self.assertIn("chown 10000:10000 /opt/android/adb/adbkey", statefulset)
+        self.assertIn("chown 10000:0 /opt/android/adb/adbkey", statefulset)
+        self.assertIn("chmod 640 /opt/android/adb/adbkey", statefulset)
         self.assertIn(
             "securityContext:\n            runAsUser: 0\n            runAsGroup: 0\n            allowPrivilegeEscalation: false",
             statefulset,

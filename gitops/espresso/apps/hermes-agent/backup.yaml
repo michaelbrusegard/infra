@@ -35,8 +35,8 @@ spec:
     retain:
       within: 100y
     moverSecurityContext:
-      runAsUser: 10000
-      runAsGroup: 10000
+      runAsUser: 0
+      runAsGroup: 0
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-single-replica

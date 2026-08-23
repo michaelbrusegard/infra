@@ -145,11 +145,11 @@ spec:
               if [ ! -s /opt/android/companion/auth-token ]; then
                 od -An -tx1 -N 32 /dev/urandom | tr -d ' \n' >/opt/android/companion/auth-token
               fi
-              chown 10000:10000 /opt/android/adb/adbkey /opt/android/adb/adbkey.pub
-              chown 10000:10000 /opt/android/companion/auth-token
-              chmod 600 /opt/android/adb/adbkey
+              chown 10000:0 /opt/android/adb/adbkey /opt/android/adb/adbkey.pub
+              chown 10000:0 /opt/android/companion/auth-token
+              chmod 640 /opt/android/adb/adbkey
               chmod 644 /opt/android/adb/adbkey.pub
-              chmod 600 /opt/android/companion/auth-token
+              chmod 640 /opt/android/companion/auth-token
           resources:
             requests:
               memory: 32Mi
