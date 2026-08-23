@@ -30,6 +30,9 @@ env:
   REGISTRY: ghcr.io
   AGENT_IMAGE_REF: ghcr.io/michaelbrusegard/hermes-agent
   BROWSER_IMAGE_REF: ghcr.io/michaelbrusegard/hermes-browser
+  # dockerTools currently emits an agent layer that Docker accepts but
+  # containerd rejects with "archive/tar: invalid tar header".
+  ROLLOUT_AGENT_IMAGE: "false"
 
 jobs:
   build-and-publish:
@@ -507,13 +510,14 @@ jobs:
           agent_image = f"{agent_ref}:sha-{git_sha}@{os.environ['AGENT_DIGEST']}"
           browser_image = f"{browser_ref}:sha-{git_sha}@{os.environ['BROWSER_DIGEST']}"
           content = path.read_text()
-          content, agent_replacements = re.subn(
-              r"(?m)^(\s*- name: (?:gateway|android-companion)\n\s*image:)\s*.*$",
-              lambda match: f"{match.group(1)} {agent_image}",
-              content,
-          )
-          if agent_replacements != 2:
-              raise SystemExit("Failed to update Hermes Agent image reference")
+          if os.environ["ROLLOUT_AGENT_IMAGE"] == "true":
+              content, agent_replacements = re.subn(
+                  r"(?m)^(\s*- name: (?:gateway|android-companion)\n\s*image:)\s*.*$",
+                  lambda match: f"{match.group(1)} {agent_image}",
+                  content,
+              )
+              if agent_replacements != 2:
+                  raise SystemExit("Failed to update Hermes Agent image reference")
           content, browser_replacements = re.subn(
               r"(?m)^(\s*- name: (?:browser|android-viewer)\n\s*image:)\s*.*$",
               lambda match: f"{match.group(1)} {browser_image}",
