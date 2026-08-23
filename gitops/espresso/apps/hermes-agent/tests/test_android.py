@@ -829,6 +829,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn(
             '--security-opt "seccomp=$chromium_seccomp_profile"', image_workflow
         )
+        self.assertIn(
+            "kernel.apparmor_restrict_unprivileged_userns=0", image_workflow
+        )
         self.assertNotIn("seccomp=unconfined", image_workflow)
         seccomp_profile = (
             "seccompProfile:\n"

@@ -101,6 +101,9 @@ jobs:
       - name: Smoke test images
         run: |
           echo 'Browser smoke stage: load images and verify agent toolchain'
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
           docker load < result-agent
           docker load < result-browser
           chromium_seccomp_profile=$(readlink -f result-chromium-seccomp)
