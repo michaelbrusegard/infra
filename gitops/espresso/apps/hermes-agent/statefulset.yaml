@@ -359,7 +359,7 @@ spec:
               drop:
                 - ALL
         - name: browser
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-126b03d7b511f5298581cb54b401a4c0339136cc@sha256:57de9b48bc456036ddbda80ded1343968362bed3a5cbad57bd0730f327fec939
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-43756c45b23cecd757066e0c5c3a5e4e2f6695ad@sha256:57de9b48bc456036ddbda80ded1343968362bed3a5cbad57bd0730f327fec939
           command:
             - chromium
           args:
@@ -599,7 +599,7 @@ spec:
               drop:
                 - ALL
         - name: android-viewer
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-126b03d7b511f5298581cb54b401a4c0339136cc@sha256:57de9b48bc456036ddbda80ded1343968362bed3a5cbad57bd0730f327fec939
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-43756c45b23cecd757066e0c5c3a5e4e2f6695ad@sha256:57de9b48bc456036ddbda80ded1343968362bed3a5cbad57bd0730f327fec939
           command:
             - android-viewer
           env:
