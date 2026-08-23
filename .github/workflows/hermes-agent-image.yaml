@@ -455,7 +455,7 @@ jobs:
         env:
           GIT_SHA: ${{ github.sha }}
         run: |
-          nix profile install nixpkgs#skopeo
+          nix profile install nixpkgs#skopeo nixpkgs#umoci
           registries_conf="$RUNNER_TEMP/registries.conf"
           printf '%s\n' 'unqualified-search-registries = ["docker.io"]' > "$registries_conf"
           skopeo --registries-conf "$registries_conf" copy \
@@ -470,6 +470,17 @@ jobs:
             "docker://$AGENT_IMAGE_REF:sha-$GIT_SHA" | jq -r .Digest)
           browser_digest=$(skopeo --registries-conf "$registries_conf" inspect \
             "docker://$BROWSER_IMAGE_REF:sha-$GIT_SHA" | jq -r .Digest)
+
+          # Validate the published layers from a fresh pull. Local smoke tests
+          # cannot detect a registry-side conversion that containerd cannot
+          # unpack on the cluster.
+          skopeo --registries-conf "$registries_conf" copy \
+            "docker://$AGENT_IMAGE_REF@$agent_digest" "oci:$RUNNER_TEMP/agent-verify:latest"
+          skopeo --registries-conf "$registries_conf" copy \
+            "docker://$BROWSER_IMAGE_REF@$browser_digest" "oci:$RUNNER_TEMP/browser-verify:latest"
+          umoci unpack --image "$RUNNER_TEMP/agent-verify:latest" "$RUNNER_TEMP/agent-rootfs"
+          umoci unpack --image "$RUNNER_TEMP/browser-verify:latest" "$RUNNER_TEMP/browser-rootfs"
+
           echo "agent_digest=$agent_digest" >> "$GITHUB_OUTPUT"
           echo "browser_digest=$browser_digest" >> "$GITHUB_OUTPUT"
 
