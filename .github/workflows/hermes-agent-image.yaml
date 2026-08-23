@@ -478,8 +478,8 @@ jobs:
             "docker://$AGENT_IMAGE_REF@$agent_digest" "oci:$RUNNER_TEMP/agent-verify:latest"
           skopeo --registries-conf "$registries_conf" copy \
             "docker://$BROWSER_IMAGE_REF@$browser_digest" "oci:$RUNNER_TEMP/browser-verify:latest"
-          umoci unpack --image "$RUNNER_TEMP/agent-verify:latest" "$RUNNER_TEMP/agent-rootfs"
-          umoci unpack --image "$RUNNER_TEMP/browser-verify:latest" "$RUNNER_TEMP/browser-rootfs"
+          umoci unpack --rootless --image "$RUNNER_TEMP/agent-verify:latest" "$RUNNER_TEMP/agent-rootfs"
+          umoci unpack --rootless --image "$RUNNER_TEMP/browser-verify:latest" "$RUNNER_TEMP/browser-rootfs"
 
           echo "agent_digest=$agent_digest" >> "$GITHUB_OUTPUT"
           echo "browser_digest=$browser_digest" >> "$GITHUB_OUTPUT"
