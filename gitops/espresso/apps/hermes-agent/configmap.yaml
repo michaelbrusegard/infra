@@ -7,7 +7,7 @@ data:
   config.yaml: |
     model:
       provider: openai-api
-      default: claude-opus-4-8
+      default: claude-opus-4-6
 
     delegation:
       provider: openai-api
@@ -135,7 +135,7 @@ data:
         kimi-k2.7-code-highspeed: high
         kimi-k3: xhigh
         kimi-k3-256k: xhigh
-        claude-opus-4-8: high
+        claude-opus-4-6: high
         gpt-5.6-luna: medium
         gpt-5.6-sol: high
 
