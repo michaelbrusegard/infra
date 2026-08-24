@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: valkey
-          image: valkey/valkey:9.1.1-alpine@sha256:3fe38a705227d29534a199e876b38d5474dec4d3baca980ac6894df539416562
+          image: valkey/valkey:9.1.1-alpine@sha256:7bf043f6ff25ea50b557e2f6da8f76fce62775d766d943f076d1e66838099315
           args:
             - --maxmemory
             - 256mb
