@@ -66,9 +66,6 @@ spec:
               - targets: ["10.0.186.17:9100"]
                 labels:
                   instance: freddo
-              - targets: ["10.0.186.18:9100"]
-                labels:
-                  instance: manata
           - job_name: node-exporter-ipv6
             static_configs:
               - targets: ["[fd7a:115c:a1e0:187::2]:9100"]
