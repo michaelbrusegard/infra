@@ -4,9 +4,7 @@
   pkgs,
   runCommand,
 }: let
-  agentBrowser = pkgs.agent-browser.overrideAttrs (old: {
-    patches = (old.patches or []) ++ [./agent-browser-target-id.patch];
-  });
+  agentBrowser = pkgs.callPackage ./agent-browser.nix {};
 
   markitdownPptxDependencies = with pkgs.python3Packages; [
     beautifulsoup4

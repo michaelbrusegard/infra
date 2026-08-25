@@ -1,5 +1,17 @@
+diff --git a/run_agent.py b/run_agent.py
+index 623773814..bd9ea2178 100644
+--- a/run_agent.py
++++ b/run_agent.py
+@@ -8382,6 +8382,7 @@ class AIAgent:
+             tasks=_strip_model_hidden_task_fields(function_args.get("tasks")),
+             max_iterations=function_args.get("max_iterations"),
+             role=function_args.get("role"),
++            profile=function_args.get("profile"),
+             background=(not _is_subagent),
+             action=function_args.get("action"),
+             subagent_id=function_args.get("subagent_id"),
 diff --git a/tools/delegate_tool.py b/tools/delegate_tool.py
-index a8da698..4ed2ea9 100644
+index 8699edb98..a86707669 100644
 --- a/tools/delegate_tool.py
 +++ b/tools/delegate_tool.py
 @@ -17,6 +17,7 @@ The parent's context only sees the delegation call and the summary result,
@@ -10,7 +22,7 @@ index a8da698..4ed2ea9 100644
  import enum
  import contextvars
  import json
-@@ -1479,6 +1480,7 @@ def _build_child_agent(
+@@ -1591,6 +1592,7 @@ def _build_child_agent(
      override_api_mode: Optional[str] = None,
      override_request_overrides: Optional[Dict[str, Any]] = None,
      override_max_tokens: Optional[int] = None,
@@ -18,7 +30,7 @@ index a8da698..4ed2ea9 100644
      # ACP transport overrides from trusted delegation config.
      override_acp_command: Optional[str] = None,
      override_acp_args: Optional[List[str]] = None,
-@@ -1713,7 +1715,11 @@ def _build_child_agent(
+@@ -1826,7 +1828,11 @@ def _build_child_agent(
          # Keep the raw value — ``str(x or "")`` would coerce a YAML boolean
          # False (``reasoning_effort: false``) to "" and inherit the parent
          # instead of disabling thinking for children.
@@ -31,7 +43,7 @@ index a8da698..4ed2ea9 100644
          if delegation_effort or delegation_effort is False:
              from hermes_constants import parse_reasoning_effort
  
-@@ -3431,6 +3437,7 @@ def delegate_task(
+@@ -3600,6 +3606,7 @@ def delegate_task(
      tasks: Optional[List[Dict[str, Any]]] = None,
      max_iterations: Optional[int] = None,
      role: Optional[str] = None,
@@ -39,7 +51,7 @@ index a8da698..4ed2ea9 100644
      background: Optional[bool] = None,
      output_schema: Optional[Dict[str, Any]] = None,
      action: Optional[str] = None,
-@@ -3443,8 +3450,8 @@ def delegate_task(
+@@ -3612,8 +3619,8 @@ def delegate_task(
      already-running ones.
  
      Spawn modes (action='spawn' or omitted):
@@ -50,7 +62,7 @@ index a8da698..4ed2ea9 100644
  
      Control modes (synchronous, never backgrounded):
        - action='list'  -> live children of this conversation's spawn tree
-@@ -3525,16 +3532,6 @@ def delegate_task(
+@@ -3694,16 +3701,6 @@ def delegate_task(
          )
      effective_max_iter = default_max_iter
  
@@ -67,7 +79,7 @@ index a8da698..4ed2ea9 100644
      # Normalize to task list
      max_children = _get_max_concurrent_children()
      recovered_tasks, tasks_error = _recover_tasks_from_json_string(tasks)
-@@ -3561,7 +3558,12 @@ def delegate_task(
+@@ -3730,7 +3727,12 @@ def delegate_task(
              )
          task_list = tasks
      elif goal and isinstance(goal, str) and goal.strip():
@@ -81,7 +93,7 @@ index a8da698..4ed2ea9 100644
          if output_schema is not None:
              single_task["output_schema"] = output_schema
          task_list = [single_task]
-@@ -3607,6 +3609,24 @@ def delegate_task(
+@@ -3776,6 +3778,24 @@ def delegate_task(
              return tool_error(f"Task {i} output_schema invalid: {schema_err}")
          task_schemas.append(coerced_schema)
  
@@ -106,7 +118,7 @@ index a8da698..4ed2ea9 100644
      overall_start = time.monotonic()
      results = []
  
-@@ -3657,6 +3677,7 @@ def delegate_task(
+@@ -3826,6 +3846,7 @@ def delegate_task(
      # subagent-lifecycle API).
      children = []
      for i, t in enumerate(task_list):
@@ -114,15 +126,15 @@ index a8da698..4ed2ea9 100644
          # Per-task role beats top-level; normalise again so unknown
          # per-task values warn and degrade to leaf uniformly.
          effective_role = _normalize_role(t.get("role") or top_role)
-@@ -3685,6 +3706,7 @@ def delegate_task(
-             override_api_mode=creds["api_mode"],
-             override_request_overrides=creds.get("request_overrides"),
-             override_max_tokens=creds.get("max_output_tokens"),
-+            override_reasoning_effort=creds.get("reasoning_effort"),
-             override_acp_command=creds.get("command"),
-             override_acp_args=creds.get("args"),
-             role=effective_role,
-@@ -4063,6 +4085,10 @@ def delegate_task(
+@@ -3855,6 +3876,7 @@ def delegate_task(
+                 override_api_mode=creds["api_mode"],
+                 override_request_overrides=creds.get("request_overrides"),
+                 override_max_tokens=creds.get("max_output_tokens"),
++                override_reasoning_effort=creds.get("reasoning_effort"),
+                 override_acp_command=creds.get("command"),
+                 override_acp_args=creds.get("args"),
+                 role=effective_role,
+@@ -4241,6 +4263,10 @@ def delegate_task(
              return tuple(parts), in_tool
  
          _goals = [t["goal"] for t in task_list]
@@ -133,7 +145,7 @@ index a8da698..4ed2ea9 100644
          dispatch = dispatch_async_delegation_batch(
              goals=_goals,
              context=context,
-@@ -4070,7 +4096,7 @@ def delegate_task(
+@@ -4248,7 +4274,7 @@ def delegate_task(
              # parent's toolsets (no model-facing toolsets arg).
              toolsets=None,
              role=top_role,
@@ -142,7 +154,7 @@ index a8da698..4ed2ea9 100644
              session_key=_session_key,
              origin_ui_session_id=_origin_ui_session_id,
              origin_session_id=_wake_sid,
-@@ -4236,6 +4262,50 @@ def _resolve_child_credential_pool(
+@@ -4414,6 +4440,50 @@ def _resolve_child_credential_pool(
      return None
  
  
@@ -193,7 +205,7 @@ index a8da698..4ed2ea9 100644
  def _resolve_delegation_credentials(cfg: dict, parent_agent) -> dict:
      """Resolve credentials for subagent delegation.
  
-@@ -4455,8 +4525,9 @@ def _build_top_level_description() -> str:
+@@ -4647,8 +4717,9 @@ def _build_top_level_description() -> str:
          "- Leaf children (the default) cannot call delegate_task, clarify, "
          "memory, send_message, or cronjob; orchestrators regain only "
          "delegate_task.\n"
@@ -205,7 +217,7 @@ index a8da698..4ed2ea9 100644
          "Results are returned as an array, one entry per task."
      )
  
-@@ -4512,6 +4583,24 @@ def _build_role_param_description() -> str:
+@@ -4704,6 +4775,24 @@ def _build_role_param_description() -> str:
      )
  
  
@@ -230,7 +242,7 @@ index a8da698..4ed2ea9 100644
  def _build_dynamic_schema_overrides() -> dict:
      """Return per-call schema overrides reflecting current config.
  
-@@ -4519,15 +4608,28 @@ def _build_dynamic_schema_overrides() -> dict:
+@@ -4711,15 +4800,28 @@ def _build_dynamic_schema_overrides() -> dict:
      get_definitions() pass rewrites the description fields to the user's
      actual limits.
      """
@@ -266,7 +278,7 @@ index a8da698..4ed2ea9 100644
  
      return {
          "description": _build_top_level_description(),
-@@ -4584,6 +4686,10 @@ DELEGATE_TASK_SCHEMA = {
+@@ -4776,6 +4878,10 @@ DELEGATE_TASK_SCHEMA = {
                              "enum": ["leaf", "orchestrator"],
                              "description": "Per-task role override. See top-level 'role' for semantics.",
                          },
@@ -277,7 +289,7 @@ index a8da698..4ed2ea9 100644
                          "output_schema": {
                              "type": "object",
                              "description": (
-@@ -4610,6 +4716,10 @@ DELEGATE_TASK_SCHEMA = {
+@@ -4802,6 +4908,10 @@ DELEGATE_TASK_SCHEMA = {
                  "enum": ["leaf", "orchestrator"],
                  "description": "(rebuilt at get_definitions() time)",
              },
@@ -288,7 +300,7 @@ index a8da698..4ed2ea9 100644
              "output_schema": {
                  "type": "object",
                  "description": (
-@@ -4721,6 +4831,7 @@ registry.register(
+@@ -4913,6 +5023,7 @@ registry.register(
          tasks=_strip_model_hidden_task_fields(args.get("tasks")),
          max_iterations=args.get("max_iterations"),
          role=args.get("role"),
@@ -296,15 +308,3 @@ index a8da698..4ed2ea9 100644
          background=_model_background_value(args, kw.get("parent_agent")),
          output_schema=args.get("output_schema"),
          action=args.get("action"),
-diff --git a/run_agent.py b/run_agent.py
-index f26384d..631ffd6 100644
---- a/run_agent.py
-+++ b/run_agent.py
-@@ -8223,6 +8223,7 @@ class AIAgent:
-             tasks=_strip_model_hidden_task_fields(function_args.get("tasks")),
-             max_iterations=function_args.get("max_iterations"),
-             role=function_args.get("role"),
-+            profile=function_args.get("profile"),
-             background=(not _is_subagent),
-             action=function_args.get("action"),
-             subagent_id=function_args.get("subagent_id"),
