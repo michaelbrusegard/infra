@@ -35,7 +35,6 @@
       "mas"
     ];
     casks = [
-      "netbird-ui"
       # TODO: re-enable once the upstream homebrew-cask scribus definition
       # stops declaring conflicting `depends_on macos` (on_arm/on_intel
       # versions plus a bare `depends_on :macos`), which brew rejects with
@@ -44,6 +43,9 @@
       # "scribus"
       "proton-drive"
     ];
+    extraConfig = ''
+      cask "netbirdio/tap/netbird-ui", trusted: true
+    '';
     masApps = {
       "Amphetamine" = 937984704;
       "Proton Pass for Safari" = 6502835663;
