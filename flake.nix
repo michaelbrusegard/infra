@@ -100,7 +100,7 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     paseo = {
-      url = "github:getpaseo/paseo/v0.4.0";
+      url = "github:getpaseo/paseo/v0.5.2";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     zen-browser = {
