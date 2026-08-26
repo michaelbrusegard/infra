@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: NousResearch/hermes-agent
-          ref: df4b65147d7ddd74dd449f9067aabbca5aef0ec7 # v2026.8.16
+          ref: fcbd1076a93841fa88855acce810e342a5b78101 # v2026.8.19
           path: .upstream/hermes-agent
           persist-credentials: false
 
@@ -58,8 +58,8 @@ jobs:
       - name: Apply local Hermes patches
         working-directory: .upstream/hermes-agent
         run: |
-          git apply --check ../../packages/hermes-agent-image/hermes-v2026.8.16.patch
-          git apply ../../packages/hermes-agent-image/hermes-v2026.8.16.patch
+          git apply --check ../../packages/hermes-agent-image/hermes-v2026.8.19.patch
+          git apply ../../packages/hermes-agent-image/hermes-v2026.8.19.patch
           git apply --check ../../packages/hermes-agent-image/delegation-profiles.patch
           git apply ../../packages/hermes-agent-image/delegation-profiles.patch
           install -m 0644 ../../packages/hermes-agent-image/browser_session_router.py tools/browser_session_router.py
@@ -148,7 +148,7 @@ jobs:
           for binary in blogwatcher-cli ffmpeg flux gh helm himalaya jq jupyter jupyter-live-kernel kubectl magick node ocrmypdf pdftoppm sed stern tar tesseract tofu yq; do
             docker run --rm --entrypoint "$binary" "$AGENT_IMAGE_REF:nix" --help >/dev/null
           done
-          docker run --rm --entrypoint agent-browser "$AGENT_IMAGE_REF:nix" --version
+          docker run --rm --entrypoint agent-browser "$AGENT_IMAGE_REF:nix" --version | grep --fixed-strings 'agent-browser 0.35.0'
           docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp --entrypoint soffice "$AGENT_IMAGE_REF:nix" --version
           docker run --rm --entrypoint python3 "$AGENT_IMAGE_REF:nix" -c '
           import defusedxml
@@ -313,7 +313,7 @@ jobs:
             sleep 1
           done
           docker exec "$browser_id" sh -c \
-            'jq -e '\'' .version == "2026.812.1211" '\'' /opt/browser/profile/Default/Extensions/ddkjiahejlhfcafbddmgiahcphecmpfh/*/manifest.json >/dev/null'
+            'jq -e '\'' .version == "2026.820.1159" '\'' /opt/browser/profile/Default/Extensions/ddkjiahejlhfcafbddmgiahcphecmpfh/*/manifest.json >/dev/null'
           if docker logs "$browser_id" 2>&1 | grep -Eq \
             'Failed to load extension|Extension error'; then
             docker logs "$browser_id"

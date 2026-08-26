@@ -259,13 +259,12 @@ in {
           pkgs.slack-cli
         ]
         ++ lib.optionals (!isWsl) (with pkgs;
-          lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+          [
             paseo
             paseo-desktop
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
             brewCasks.codex-app
-            brewCasks.paseo
           ]);
 
       file =

@@ -168,7 +168,7 @@ spec:
             allowPrivilegeEscalation: false
       containers:
         - name: gateway
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-b18969adc43e3088c14c4ba79af59245f339882a@sha256:e950420fb9b6ff99bd70409c93418a4e00bcb0e3b17014243ac99d9c02776b80
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-f969f5ad1ae9df411c55aec042fdd78c0de2eeaa@sha256:21831cb5a074d621be8950ecba02e0e847c6a38e41bcf746db2c0ae5455c34df
           args:
             - gateway
             - run
@@ -359,7 +359,7 @@ spec:
               drop:
                 - ALL
         - name: browser
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-b18969adc43e3088c14c4ba79af59245f339882a@sha256:57de9b48bc456036ddbda80ded1343968362bed3a5cbad57bd0730f327fec939
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-f969f5ad1ae9df411c55aec042fdd78c0de2eeaa@sha256:11611117011c4247637664a39fc198e0f0b41751c607cde70f7368ccb63c201c
           command:
             - chromium
           args:
@@ -525,7 +525,7 @@ spec:
             seccompProfile:
               type: RuntimeDefault
         - name: android-companion
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-b18969adc43e3088c14c4ba79af59245f339882a@sha256:e950420fb9b6ff99bd70409c93418a4e00bcb0e3b17014243ac99d9c02776b80
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-f969f5ad1ae9df411c55aec042fdd78c0de2eeaa@sha256:21831cb5a074d621be8950ecba02e0e847c6a38e41bcf746db2c0ae5455c34df
           command:
             - /opt/data/scripts/android-companion
           env:
@@ -599,7 +599,7 @@ spec:
               drop:
                 - ALL
         - name: android-viewer
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-b18969adc43e3088c14c4ba79af59245f339882a@sha256:57de9b48bc456036ddbda80ded1343968362bed3a5cbad57bd0730f327fec939
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-f969f5ad1ae9df411c55aec042fdd78c0de2eeaa@sha256:11611117011c4247637664a39fc198e0f0b41751c607cde70f7368ccb63c201c
           command:
             - android-viewer
           env:
@@ -693,7 +693,7 @@ spec:
               drop:
                 - ALL
         - name: android-viewer-auth
-          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.3@sha256:10a1165743a192e1940b4708fb9647027185ce11a681a1c5519b442ff7f1f561
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4@sha256:b1b2021fe8f4004573e8d690dec6c7bb29cc44364572cf8510a05bf3a0ae2ded
           args:
             - --provider=oidc
             - --provider-display-name=Pocket ID
@@ -782,7 +782,7 @@ spec:
               drop:
                 - ALL
         - name: browser-viewer-auth
-          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.3@sha256:10a1165743a192e1940b4708fb9647027185ce11a681a1c5519b442ff7f1f561
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4@sha256:b1b2021fe8f4004573e8d690dec6c7bb29cc44364572cf8510a05bf3a0ae2ded
           args:
             - --provider=oidc
             - --provider-display-name=Pocket ID

@@ -77,10 +77,10 @@
       websockets
     ]);
   ublockOriginLiteId = "ddkjiahejlhfcafbddmgiahcphecmpfh";
-  ublockOriginLiteVersion = "2026.812.1211";
+  ublockOriginLiteVersion = "2026.820.1159";
   ublockOriginLiteCrx = pkgs.fetchurl {
-    url = "https://clients2.googleusercontent.com/crx/blobs/Abe5cL5iPjDW5ZJUYXR41Hf3hetLBjRflHjsNb88fI1gS7hxh7pS_HTlL0HvmEAhs2JGtXQ_QYdg8IC9R9cNR3IZMJwoXwCcuICdXiacfzA3ii2QE9gSd1IrYdW9KlXFe9MBAMZSmuXvDSfumN6MpiP8B0tWIgCIm-_NsA/DDKJIAHEJLHFCAFBDDMGIAHCPHECMPFH_2026_812_1211_0.crx";
-    hash = "sha256-QjPIOwUbfw6Is8GiL+FjiPECqg0ThT/csEViJH4E1W0=";
+    url = "https://clients2.googleusercontent.com/crx/blobs/Abe5cL6jgS7UbQLqrOGJVZfqnpyWC5zn5nRV8xCUDS7yyvZrP9tuSCLz7BA-Drzn0iJ8GA_MvO4e0CJ-Rhd9rD6_5I03LdpaB7C-Y1HDKaNcvq9598BEIfoE4nFT68I1_nm5AMZSmuVfu8goBvj3Em6oiQCK-5QL1fHNTg/DDKJIAHEJLHFCAFBDDMGIAHCPHECMPFH_2026_820_1159_0.crx";
+    hash = "sha256-fBzFyuzCdxv3NW0RJTIu/1wxNSFFr/pCVtfdZnWZTAs=";
   };
   ublockOriginLiteExternal = pkgs.writeText "${ublockOriginLiteId}.json" (
     builtins.toJSON {

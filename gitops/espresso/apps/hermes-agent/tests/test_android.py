@@ -806,6 +806,18 @@ class AndroidScriptTests(unittest.TestCase):
         image_workflow = (
             APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-agent-image.yaml"
         ).read_text(encoding="utf-8")
+        agent_browser_package = (
+            APP_ROOT.parents[3]
+            / "packages"
+            / "hermes-agent-image"
+            / "agent-browser.nix"
+        ).read_text(encoding="utf-8")
+        hermes_patch = (
+            APP_ROOT.parents[3]
+            / "packages"
+            / "hermes-agent-image"
+            / "hermes-v2026.8.19.patch"
+        ).read_text(encoding="utf-8")
         browser = statefulset.split("        - name: browser\n", 1)[1].split(
             "        - name: android-emulator\n", 1
         )[0]
@@ -833,6 +845,9 @@ class AndroidScriptTests(unittest.TestCase):
             "kernel.apparmor_restrict_unprivileged_userns=0", image_workflow
         )
         self.assertNotIn("seccomp=unconfined", image_workflow)
+        self.assertIn('version = "0.35.0";', agent_browser_package)
+        self.assertNotIn("agent-browser-target-id.patch", image_workflow)
+        self.assertIn('                "--pin-tab",', hermes_patch)
         seccomp_profile = (
             "seccompProfile:\n"
             "              type: Localhost\n"
@@ -1045,7 +1060,7 @@ class AndroidScriptTests(unittest.TestCase):
         )
         self.assertIn("- name: android-viewer-auth", statefulset)
         self.assertIn("- name: browser-viewer-auth", statefulset)
-        self.assertIn("oauth2-proxy:v7.15.3@sha256:", statefulset)
+        self.assertIn("oauth2-proxy:v7.15.4@sha256:", statefulset)
         self.assertIn("--upstream=http://127.0.0.1:6081", statefulset)
         self.assertIn("--upstream=http://127.0.0.1:6080", statefulset)
         self.assertIn("--http-address=0.0.0.0:4181", statefulset)
@@ -1095,6 +1110,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("HERMES_ACCESSIBILITY_SIGNING_CERT_SHA256", workflow)
         self.assertIn("update-manifest.py", workflow)
         self.assertIn("workflow_dispatch", workflow)
+        self.assertIn("fcbd1076a93841fa88855acce810e342a5b78101 # v2026.8.19", agent_workflow)
+        self.assertIn("agent-browser 0.35.0", agent_workflow)
+        self.assertIn("hermes-v2026.8.19.patch", agent_workflow)
         self.assertIn("--domain=hermes.michaelbrusegard.com", kvm_device_plugin)
         self.assertIn("path: /dev/kvm", kvm_device_plugin)
         self.assertIn("2cc50b0@sha256:", kvm_device_plugin)

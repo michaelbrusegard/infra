@@ -1,8 +1,8 @@
 diff --git a/agent/context_compressor.py b/agent/context_compressor.py
-index d66bee1cad6f63871534c8386783cd41050bab83..0e4602b595ed089fdeaa3d39ba1b5c4ce522f741 100644
+index 4c48794fb..1f84c9d7e 100644
 --- a/agent/context_compressor.py
 +++ b/agent/context_compressor.py
-@@ -1684,7 +1684,8 @@ def _summarize_tool_result_unguarded(tool_name: str, tool_args: str, tool_conten
+@@ -1825,7 +1825,8 @@ def _summarize_tool_result_unguarded(tool_name: str, tool_args: str, tool_conten
          mode = args.get("mode", "replace")
          return f"[patch] {mode} in {path} ({content_len:,} chars result)"
  
@@ -13,10 +13,10 @@ index d66bee1cad6f63871534c8386783cd41050bab83..0e4602b595ed089fdeaa3d39ba1b5c4c
          url = args.get("url", "")
          ref = args.get("ref", "")
 diff --git a/agent/prompt_builder.py b/agent/prompt_builder.py
-index a42474bf7c2b6f7a90559950065fcbe99dfffba5..b0ac80cf9f980dc3069552f6af54a4e773225beb 100644
+index 4f26ffcf2..02ad757f0 100644
 --- a/agent/prompt_builder.py
 +++ b/agent/prompt_builder.py
-@@ -2082,6 +2082,9 @@ def build_nous_subscription_prompt(valid_tool_names: "set[str] | None" = None) -
+@@ -2225,6 +2225,9 @@ def build_nous_subscription_prompt(valid_tool_names: "set[str] | None" = None) -
          "browser_navigate",
          "browser_snapshot",
          "browser_click",
@@ -27,7 +27,7 @@ index a42474bf7c2b6f7a90559950065fcbe99dfffba5..b0ac80cf9f980dc3069552f6af54a4e7
          "browser_scroll",
          "browser_console",
 diff --git a/agent/tool_guardrails.py b/agent/tool_guardrails.py
-index 6e6a9cd8f54fca06a8b4a18200672a6b9581ea56..f0e102b558f20b8cd92074eee1f7592c49f825eb 100644
+index e4afbbba8..04e931da5 100644
 --- a/agent/tool_guardrails.py
 +++ b/agent/tool_guardrails.py
 @@ -48,6 +48,9 @@ MUTATING_TOOL_NAMES = frozenset(
@@ -41,7 +41,7 @@ index 6e6a9cd8f54fca06a8b4a18200672a6b9581ea56..f0e102b558f20b8cd92074eee1f7592c
          "browser_press",
          "browser_scroll",
 diff --git a/agent/transports/hermes_tools_mcp_server.py b/agent/transports/hermes_tools_mcp_server.py
-index 5595c48d84d2d7d779310fbdb0d8ea151b7a8862..131a82b13e5850633117a0ba2c2d5efaeb3464f8 100644
+index e3fcec625..9e9e55805 100644
 --- a/agent/transports/hermes_tools_mcp_server.py
 +++ b/agent/transports/hermes_tools_mcp_server.py
 @@ -114,6 +114,9 @@ EXPOSED_TOOLS: tuple[str, ...] = (
@@ -55,10 +55,10 @@ index 5595c48d84d2d7d779310fbdb0d8ea151b7a8862..131a82b13e5850633117a0ba2c2d5efa
      "browser_press",
      "browser_snapshot",
 diff --git a/gateway/run.py b/gateway/run.py
-index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976bfd2ab058 100644
+index 84604b303..0c051bcc1 100644
 --- a/gateway/run.py
 +++ b/gateway/run.py
-@@ -3369,6 +3369,21 @@ def _platform_config_key(platform: "Platform") -> str:
+@@ -3628,6 +3628,21 @@ def _platform_config_key(platform: "Platform") -> str:
      return "cli" if platform == Platform.LOCAL else platform.value
  
  
@@ -80,7 +80,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
  def _teams_pipeline_plugin_enabled() -> bool:
      """Return True when the standalone Teams pipeline plugin is enabled."""
      config = _load_gateway_config()
-@@ -4028,6 +4043,17 @@ def _reconnect_needs_attention(info: dict, now: float) -> bool:
+@@ -4287,6 +4302,17 @@ def _reconnect_needs_attention(info: dict, now: float) -> bool:
      return (now - queued_at) >= _RECONNECT_ATTENTION_AFTER_SECONDS
  
  
@@ -98,7 +98,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
  class TurnRunner:
      """Per-turn collaborator carrying the tool-progress callbacks that used to
      be nested closures inside ``GatewayRunner._run_agent_inner``.
-@@ -4046,6 +4072,10 @@ class TurnRunner:
+@@ -4305,6 +4331,10 @@ class TurnRunner:
  
      def progress_callback(self, event_type: str, tool_name: str = None, preview: str = None, args: dict = None, **kwargs):
          """Callback invoked by agent on tool lifecycle events."""
@@ -109,7 +109,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
          ctx = self._ctx
          # Live status line (Slack's assistant status): stash the current
          # tool phrase on the adapter; the _keep_typing refresh renders it
-@@ -4133,7 +4163,7 @@ class TurnRunner:
+@@ -4392,7 +4422,7 @@ class TurnRunner:
          # tool_start/tool_complete callbacks instead. Do not also enqueue
          # name-correlated text events, which would duplicate cards and
          # mispair concurrent calls to the same tool.
@@ -118,7 +118,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
              "tool.started",
              "tool.completed",
          }:
-@@ -4216,7 +4246,9 @@ class TurnRunner:
+@@ -4475,7 +4505,9 @@ class TurnRunner:
              # "💻 terminal" header so back-to-back commands render as
              # adjacent code blocks under a single header.
              _block_header = (
@@ -129,7 +129,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
              )
              _code_block_full = f"{_block_header}```\n{_cmd_full}\n```"
              # Single-line, capped preview for non-verbose modes.
-@@ -4247,11 +4279,11 @@ class TurnRunner:
+@@ -4506,11 +4538,11 @@ class TurnRunner:
                  # detail.  Platform message-length limits handle the rest.
                  if _pl > 0 and len(args_str) > _pl:
                      args_str = args_str[:_pl - 3] + "..."
@@ -144,7 +144,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
              ctx.progress_queue.put(msg)
              return
  
-@@ -4291,14 +4323,14 @@ class TurnRunner:
+@@ -4550,14 +4582,14 @@ class TurnRunner:
              _verb = get_tool_verb(tool_name)
              if _verb:
                  if verb_drops_preview(tool_name):
@@ -163,7 +163,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
              ctx.last_was_terminal_block[0] = False
  
          # Dedup: collapse consecutive identical progress messages.
-@@ -5482,6 +5514,7 @@ class TurnRunner:
+@@ -5755,6 +5787,7 @@ class TurnRunner:
                  max_iterations=max_iterations,
                  quiet_mode=True,
                  verbose_logging=False,
@@ -171,7 +171,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
                  enabled_toolsets=ctx.enabled_toolsets,
                  disabled_toolsets=ctx.disabled_toolsets,
                  ephemeral_system_prompt=combined_ephemeral or None,
-@@ -21962,6 +21995,11 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+@@ -22474,6 +22507,11 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
              from agent.skill_utils import parse_config_string_list
  
              disabled_toolsets = parse_config_string_list(agent_cfg.get("disabled_toolsets")) or None
@@ -183,7 +183,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
  
              pr = self._provider_routing
              max_iterations = _current_max_iterations()
-@@ -21997,6 +22035,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+@@ -22509,6 +22547,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
                      max_iterations=max_iterations,
                      quiet_mode=True,
                      verbose_logging=False,
@@ -191,7 +191,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
                      enabled_toolsets=enabled_toolsets,
                      disabled_toolsets=disabled_toolsets,
                      reasoning_config=reasoning_config,
-@@ -27490,6 +27529,11 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+@@ -28102,6 +28141,11 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
          from agent.skill_utils import parse_config_string_list
  
          disabled_toolsets = parse_config_string_list(agent_cfg_local.get("disabled_toolsets")) or None
@@ -204,7 +204,7 @@ index a4fcde2d499dee9386690cff598148af4650eea4..e8e49c07a7fdc2132d5a7ff3414c976b
          display_config = user_config.get("display", {})
          if not isinstance(display_config, dict):
 diff --git a/plugins/platforms/mattermost/adapter.py b/plugins/platforms/mattermost/adapter.py
-index 4e80958b3516594ad3d8095698fde90017abfdf6..d88116575ff6c12b22997bc2a67231577839674e 100644
+index 4e80958b3..d88116575 100644
 --- a/plugins/platforms/mattermost/adapter.py
 +++ b/plugins/platforms/mattermost/adapter.py
 @@ -139,6 +139,11 @@ class MattermostAdapter(BasePlatformAdapter):
@@ -232,7 +232,7 @@ index 4e80958b3516594ad3d8095698fde90017abfdf6..d88116575ff6c12b22997bc2a6723157
              not thread_id
              and self._reply_mode == "thread"
 diff --git a/tools/browser_supervisor.py b/tools/browser_supervisor.py
-index d17806f4b2ada0df70a74b69c1311296aee5b985..2811dd394a5b0f845c9068f359df8ef730c57fcd 100644
+index d17806f4b..2811dd394 100644
 --- a/tools/browser_supervisor.py
 +++ b/tools/browser_supervisor.py
 @@ -308,6 +308,7 @@ class CDPSupervisor:
@@ -310,7 +310,7 @@ index d17806f4b2ada0df70a74b69c1311296aee5b985..2811dd394a5b0f845c9068f359df8ef7
                  return already
              self._by_task[task_id] = supervisor
 diff --git a/tools/browser_tool.py b/tools/browser_tool.py
-index 544a06d51277098472436ce4e049e293078b52f3..8612e65cabf478c38f31efa60ee4d3ad98265d24 100644
+index 34f38baa1..92bb7de4a 100644
 --- a/tools/browser_tool.py
 +++ b/tools/browser_tool.py
 @@ -643,9 +643,12 @@ def _ensure_cdp_supervisor(task_id: str) -> None:
@@ -326,7 +326,7 @@ index 544a06d51277098472436ce4e049e293078b52f3..8612e65cabf478c38f31efa60ee4d3ad
              dialog_policy=policy,
              dialog_timeout_s=timeout_s,
          )
-@@ -1769,6 +1772,9 @@ def _cleanup_inactive_browser_sessions():
+@@ -1779,6 +1782,9 @@ def _cleanup_inactive_browser_sessions():
  
      with _cleanup_lock:
          for task_id, last_time in list(_session_last_activity.items()):
@@ -336,7 +336,7 @@ index 544a06d51277098472436ce4e049e293078b52f3..8612e65cabf478c38f31efa60ee4d3ad
              if current_time - last_time > BROWSER_SESSION_INACTIVITY_TIMEOUT:
                  sessions_to_cleanup.append(task_id)
  
-@@ -2191,6 +2197,62 @@ BROWSER_TOOL_SCHEMAS = [
+@@ -2201,6 +2207,62 @@ BROWSER_TOOL_SCHEMAS = [
              "required": ["ref"]
          }
      },
@@ -399,7 +399,7 @@ index 544a06d51277098472436ce4e049e293078b52f3..8612e65cabf478c38f31efa60ee4d3ad
      {
          "name": "browser_type",
          "description": "Type text into an input field identified by its ref ID. Clears the field first, then types the new text. Requires browser_navigate and browser_snapshot to be called first.",
-@@ -2320,12 +2382,15 @@ def _create_cdp_session(task_id: str, cdp_url: str) -> Dict[str, str]:
+@@ -2330,12 +2392,15 @@ def _create_cdp_session(task_id: str, cdp_url: str) -> Dict[str, str]:
      session_name = f"cdp_{uuid.uuid4().hex[:10]}"
      logger.info("Created CDP browser session %s → %s for task %s",
                  session_name, _sanitize_url_for_logs(cdp_url), task_id)
@@ -416,7 +416,7 @@ index 544a06d51277098472436ce4e049e293078b52f3..8612e65cabf478c38f31efa60ee4d3ad
  
  
  def _get_session_info(task_id: Optional[str] = None) -> Dict[str, Any]:
-@@ -2765,7 +2830,7 @@ def _extract_screenshot_path_from_text(text: str) -> Optional[str]:
+@@ -2775,7 +2840,7 @@ def _extract_screenshot_path_from_text(text: str) -> Optional[str]:
      return None
  
  
@@ -425,7 +425,32 @@ index 544a06d51277098472436ce4e049e293078b52f3..8612e65cabf478c38f31efa60ee4d3ad
      task_id: str,
      command: str,
      args: List[str] = None,
-@@ -3095,6 +3160,35 @@ def _run_browser_command(
+@@ -2854,10 +2919,20 @@ def _run_browser_command(
+     # Local mode: --session <name> launches a local headless Chromium.
+     # The rest of the command (--json, command, args) is identical.
+     if session_info.get("cdp_url"):
+-        # Cloud mode — connect to remote Browserbase browser via CDP
+-        # IMPORTANT: Do NOT use --session with --cdp. In agent-browser >=0.13,
+-        # --session creates a local browser instance and silently ignores --cdp.
+-        backend_args = ["--cdp", session_info["cdp_url"]]
++        # Modern agent-browser supports named CDP sessions. Shared-profile
++        # sessions use a dedicated daemon and sticky target binding so a
++        # daemon restart or a concurrently opened tab cannot silently move a
++        # Hermes task onto another task's page.
++        if session_info.get("shared_profile_session"):
++            backend_args = [
++                "--session",
++                session_info["session_name"],
++                "--cdp",
++                session_info["cdp_url"],
++                "--pin-tab",
++            ]
++        else:
++            backend_args = ["--cdp", session_info["cdp_url"]]
+     else:
+         # Local mode — launch Chromium (headless by default, headed when configured)
+         backend_args = ["--session", session_info["session_name"]]
+@@ -3105,6 +3180,35 @@ def _run_browser_command(
      return result
  
  
@@ -461,7 +486,7 @@ index 544a06d51277098472436ce4e049e293078b52f3..8612e65cabf478c38f31efa60ee4d3ad
  def _store_full_snapshot(snapshot_text: str) -> Optional[str]:
      """Write a full page snapshot to cache/web and return its absolute path.
  
-@@ -3670,6 +3764,108 @@ def browser_click(ref: str, task_id: Optional[str] = None) -> str:
+@@ -3680,6 +3784,108 @@ def browser_click(ref: str, task_id: Optional[str] = None) -> str:
          return json.dumps(_copy_fallback_warning(response, result), ensure_ascii=False)
  
  
@@ -570,7 +595,7 @@ index 544a06d51277098472436ce4e049e293078b52f3..8612e65cabf478c38f31efa60ee4d3ad
  def browser_type(ref: str, text: str, task_id: Optional[str] = None) -> str:
      """
      Type text into an input field.
-@@ -4958,10 +5154,22 @@ def _cleanup_single_browser_session(task_id: str) -> None:
+@@ -4968,10 +5174,22 @@ def _cleanup_single_browser_session(task_id: str) -> None:
          # Stop auto-recording before closing (saves the file)
          _maybe_stop_recording(task_id)
  
@@ -594,7 +619,7 @@ index 544a06d51277098472436ce4e049e293078b52f3..8612e65cabf478c38f31efa60ee4d3ad
              logger.debug(
                  "Skipping agent-browser close for expired session %s",
                  task_id,
-@@ -5408,6 +5616,42 @@ registry.register(
+@@ -5418,6 +5636,42 @@ registry.register(
      check_fn=check_browser_requirements,
      emoji="👆",
  )

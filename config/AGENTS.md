@@ -36,14 +36,15 @@ For comments, replies, Slack, email, and other conversational messages, use
 this layout exactly:
 
 ```md
-[MODEL-SLUG] RESPONDING ON BEHALF OF MICHAEL
-------
-
 [actual reply]
+
+---
+MODEL-SLUG · responding on behalf of Michael
 ```
 
 Replace `MODEL-SLUG` and `[actual reply]`; do not include the code fence. Keep
-the header uppercase and use exactly six hyphens.
+the provenance footer at the very bottom of the message, after the horizontal
+rule. Use plain text as shown; do not format it as a heading or emphasize it.
 
 For PR descriptions and other durable authored descriptions, put this as the
 final line after a horizontal rule:
@@ -61,4 +62,4 @@ client or harness.
 
 Do not remove or rewrite model provenance while editing an existing draft.
 Immediately before an external write, verify that the correct provenance form
-is present once.
+is present once at the bottom of the artifact.
