@@ -7,8 +7,7 @@
 }: let
   enable = !isWsl && pkgs.stdenv.hostPlatform.isLinux;
   unlockWrapper = pkgs.writeShellScript "gnome-keyring-empty-unlock" ''
-    printf '\n' | exec ${pkgs.gnome-keyring}/bin/gnome-keyring-daemon \
-      --start --foreground --unlock --components=secrets
+    printf '\n' | exec ${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --unlock
   '';
 in {
   services.gnome-keyring = lib.mkIf enable {
@@ -17,7 +16,7 @@ in {
   };
 
   systemd.user.services.gnome-keyring = lib.mkIf enable {
-    Service.ExecStart = lib.mkForce "${unlockWrapper}";
+    Service.ExecStartPost = unlockWrapper;
   };
 
   home = lib.optionalAttrs (homePersistenceRoot != null) {
