@@ -31,7 +31,6 @@
   skills = {
     babysit-pr = "${../../config/skills/babysit-pr}";
     blast-radius = "${../../config/skills/blast-radius}";
-    cursor-agent = "${../../config/skills/cursor-agent}";
     diagnose = "${../../config/skills/diagnose}";
     domain-context = "${../../config/skills/domain-context}";
     excalidraw-diagram = "${../../config/skills/excalidraw-diagram}";
@@ -61,13 +60,6 @@
   cliProxyApi = {
     baseUrl = "https://llm.asgard.michaelbrusegard.com";
     piProviderPackage = "npm:@router-for-me/pi-cliproxyapi-provider@1.4.13";
-  };
-  piMcpAdapterPackage = "npm:pi-mcp-adapter@2.27.0";
-  cursorAgent = pkgs.writeShellApplication {
-    name = "agent";
-    text = ''
-      exec ${lib.getExe pkgs.cursor-cli} "$@"
-    '';
   };
   cliProxyApiKey = pkgs.writeShellApplication {
     name = "cliproxyapi-api-key";
@@ -196,10 +188,6 @@ in {
             args = ["mcp"];
             default_tools_approval_mode = "approve";
           };
-          quiverai = {
-            url = "https://app.quiver.ai/mcp";
-            default_tools_approval_mode = "approve";
-          };
         };
       };
       inherit skills;
@@ -218,10 +206,6 @@ in {
           type = "stdio";
           command = openComputerUseCommand;
           args = ["mcp"];
-        };
-        quiverai = {
-          type = "http";
-          url = "https://app.quiver.ai/mcp";
         };
       };
       inherit skills;
@@ -252,8 +236,6 @@ in {
       packages =
         [
           (direnvWrapped piCliProxyApi "pi")
-          cursorAgent
-          pkgs.cursor-cli
           pkgs.open-browser-use
           pkgs.open-computer-use
           pkgs.slack-cli
@@ -280,112 +262,6 @@ in {
         }
         // piSkillFiles;
 
-      activation.cursorCliConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        config_file="$HOME/.cursor/cli-config.json"
-        config_dir=$(dirname "$config_file")
-        temp_file=$(mktemp)
-
-        if [ -f "$config_file" ]; then
-          ${lib.getExe pkgs.jq} '
-            .version = 1
-            | .editor = ((.editor // {}) + {vimMode: true})
-            | .permissions = {
-                allow: (((.permissions.allow // []) + [
-                  "Shell(*)",
-                  "Read(**)",
-                  "Write(**)",
-                  "WebFetch(*)",
-                  "Mcp(*:*)"
-                ]) | unique),
-                deny: []
-              }
-            | .approvalMode = "unrestricted"
-            | .sandbox = ((.sandbox // {}) + {mode: "disabled"})
-            | .notifications = true
-            | .hints = true
-            | .rewind = true
-            | .suggestNextPrompt = true
-            | .display = ((.display // {}) + {
-                showLineNumbers: true,
-                showThinkingBlocks: true,
-                showStatusIndicators: true,
-                showStatusLineRunningTime: true
-              })
-            | .attribution = ((.attribution // {}) + {
-                attributeCommitsToAgent: false,
-                attributePRsToAgent: false
-              })
-          ' "$config_file" > "$temp_file"
-        else
-          ${lib.getExe pkgs.jq} -n '{
-            version: 1,
-            editor: {vimMode: true},
-            permissions: {
-              allow: [
-                "Shell(*)",
-                "Read(**)",
-                "Write(**)",
-                "WebFetch(*)",
-                "Mcp(*:*)"
-              ],
-              deny: []
-            },
-            approvalMode: "unrestricted",
-            sandbox: {mode: "disabled"},
-            notifications: true,
-            hints: true,
-            rewind: true,
-            suggestNextPrompt: true,
-            display: {
-              showLineNumbers: true,
-              showThinkingBlocks: true,
-              showStatusIndicators: true,
-              showStatusLineRunningTime: true
-            },
-            attribution: {
-              attributeCommitsToAgent: false,
-              attributePRsToAgent: false
-            }
-          }' > "$temp_file"
-        fi
-
-        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
-          $DRY_RUN_CMD mkdir -p "$config_dir"
-          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
-        fi
-
-        rm -f "$temp_file"
-      '';
-
-      activation.cursorMcpConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        config_file="$HOME/.cursor/mcp.json"
-        config_dir=$(dirname "$config_file")
-        temp_file=$(mktemp)
-
-        if [ -f "$config_file" ]; then
-          ${lib.getExe pkgs.jq} \
-            --arg url "https://app.quiver.ai/mcp" '
-            .mcpServers = ((.mcpServers // {}) + {
-              quiverai: ((.mcpServers.quiverai // {}) + {url: $url})
-            })
-          ' "$config_file" > "$temp_file"
-        else
-          ${lib.getExe pkgs.jq} -n \
-            --arg url "https://app.quiver.ai/mcp" '{
-              mcpServers: {
-                quiverai: {url: $url}
-              }
-            }' > "$temp_file"
-        fi
-
-        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
-          $DRY_RUN_CMD mkdir -p "$config_dir"
-          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
-        fi
-
-        rm -f "$temp_file"
-      '';
-
       activation.piConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.pi/agent/settings.json"
         config_dir=$(dirname "$config_file")
@@ -394,58 +270,27 @@ in {
         if [ -f "$config_file" ]; then
           ${lib.getExe pkgs.jq} \
             --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
-            --arg providerPackage ${lib.escapeShellArg cliProxyApi.piProviderPackage} \
-            --arg mcpPackage ${lib.escapeShellArg piMcpAdapterPackage} '
+            --arg package ${lib.escapeShellArg cliProxyApi.piProviderPackage} '
             def package_source:
               if type == "string" then .
               elif type == "object" then (.source // "")
               else ""
               end;
-            def is_managed_package:
+            def is_cliproxyapi:
               package_source
-              | test("^(npm:)?(@router-for-me/pi-cliproxyapi-provider|pi-mcp-adapter)(@.*)?$");
+              | test("^(npm:)?@router-for-me/pi-cliproxyapi-provider(@.*)?$");
             .npmCommand = [$npm]
             | .packages = (
-                [(.packages // [])[] | select(is_managed_package | not)]
-                + [$providerPackage, $mcpPackage]
+                [(.packages // [])[] | select(is_cliproxyapi | not)]
+                + [$package]
               )
           ' "$config_file" > "$temp_file"
         else
           ${lib.getExe pkgs.jq} -n \
             --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
-            --arg providerPackage ${lib.escapeShellArg cliProxyApi.piProviderPackage} \
-            --arg mcpPackage ${lib.escapeShellArg piMcpAdapterPackage} '{
+            --arg package ${lib.escapeShellArg cliProxyApi.piProviderPackage} '{
               npmCommand: [$npm],
-              packages: [$providerPackage, $mcpPackage]
-            }' > "$temp_file"
-        fi
-
-        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
-          $DRY_RUN_CMD mkdir -p "$config_dir"
-          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
-        fi
-
-        rm -f "$temp_file"
-      '';
-
-      activation.piMcpConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        config_file="$HOME/.pi/agent/mcp.json"
-        config_dir=$(dirname "$config_file")
-        temp_file=$(mktemp)
-
-        if [ -f "$config_file" ]; then
-          ${lib.getExe pkgs.jq} \
-            --arg url "https://app.quiver.ai/mcp" '
-            .mcpServers = ((.mcpServers // {}) + {
-              quiverai: ((.mcpServers.quiverai // {}) + {url: $url})
-            })
-          ' "$config_file" > "$temp_file"
-        else
-          ${lib.getExe pkgs.jq} -n \
-            --arg url "https://app.quiver.ai/mcp" '{
-              mcpServers: {
-                quiverai: {url: $url}
-              }
+              packages: [$package]
             }' > "$temp_file"
         fi
 
@@ -495,7 +340,6 @@ in {
           [
             ".claude"
             ".codex"
-            ".cursor"
             ".pi"
             ".cache/slack-cli"
           ]
