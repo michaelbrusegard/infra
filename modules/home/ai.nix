@@ -61,6 +61,7 @@
     baseUrl = "https://llm.asgard.michaelbrusegard.com";
     piProviderPackage = "npm:@router-for-me/pi-cliproxyapi-provider@1.4.13";
   };
+  piLoopPackage = "npm:@koltmcbride/pi-loop@0.2.0";
   cliProxyApiKey = pkgs.writeShellApplication {
     name = "cliproxyapi-api-key";
     text = ''
@@ -270,7 +271,8 @@ in {
         if [ -f "$config_file" ]; then
           ${lib.getExe pkgs.jq} \
             --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
-            --arg package ${lib.escapeShellArg cliProxyApi.piProviderPackage} '
+            --arg provider_package ${lib.escapeShellArg cliProxyApi.piProviderPackage} \
+            --arg pi_loop_package ${lib.escapeShellArg piLoopPackage} '
             def package_source:
               if type == "string" then .
               elif type == "object" then (.source // "")
@@ -279,18 +281,22 @@ in {
             def is_cliproxyapi:
               package_source
               | test("^(npm:)?@router-for-me/pi-cliproxyapi-provider(@.*)?$");
+            def is_pi_loop:
+              package_source
+              | test("^(npm:)?@koltmcbride/pi-loop(@.*)?$");
             .npmCommand = [$npm]
             | .packages = (
-                [(.packages // [])[] | select(is_cliproxyapi | not)]
-                + [$package]
+                [(.packages // [])[] | select((is_cliproxyapi or is_pi_loop) | not)]
+                + [$provider_package, $pi_loop_package]
               )
           ' "$config_file" > "$temp_file"
         else
           ${lib.getExe pkgs.jq} -n \
             --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
-            --arg package ${lib.escapeShellArg cliProxyApi.piProviderPackage} '{
+            --arg provider_package ${lib.escapeShellArg cliProxyApi.piProviderPackage} \
+            --arg pi_loop_package ${lib.escapeShellArg piLoopPackage} '{
               npmCommand: [$npm],
-              packages: [$package]
+              packages: [$provider_package, $pi_loop_package]
             }' > "$temp_file"
         fi
 
