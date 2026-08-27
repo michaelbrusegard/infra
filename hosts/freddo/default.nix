@@ -63,14 +63,19 @@
   services.restic.server.maintenance.keepTags = ["legacy-minecraft"];
   services.restic.server.maintenance.pruneExcludeGroups = ["nextcloud"];
 
-  # Media configuration and Minecraft worlds are backed up weekly; all other
-  # repositories use the module's 36-hour freshness threshold.
+  # Minecraft worlds are backed up only after player activity, so snapshot age
+  # does not indicate backup health for these repositories.
+  services.restic.server.maintenance.freshness.excludedRepositories = [
+    "minecraft-creative/world"
+    "minecraft-revelation/world"
+    "minecraft-vanilla/world"
+  ];
+
+  # Media configuration is backed up weekly; all other repositories use the
+  # module's 36-hour freshness threshold.
   services.restic.server.maintenance.freshness.maxAgeSeconds = {
     "bazarr/repo-config" = 8 * 24 * 60 * 60;
     "jellyfin/repo-config" = 8 * 24 * 60 * 60;
-    "minecraft-creative/world" = 8 * 24 * 60 * 60;
-    "minecraft-revelation/world" = 8 * 24 * 60 * 60;
-    "minecraft-vanilla/world" = 8 * 24 * 60 * 60;
     "navidrome/repo-data" = 8 * 24 * 60 * 60;
     "prowlarr/repo-config" = 8 * 24 * 60 * 60;
     "radarr/repo-config" = 8 * 24 * 60 * 60;

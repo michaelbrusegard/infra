@@ -17,6 +17,7 @@
   pruneExcludeGroupArgs = lib.escapeShellArgs config.services.restic.server.maintenance.pruneExcludeGroups;
   freshness = config.services.restic.server.maintenance.freshness;
   freshnessEntries = lib.concatStringsSep "\n" (lib.mapAttrsToList (repo: maxAge: "${repo}:${toString maxAge}") freshness.maxAgeSeconds);
+  freshnessExcludedEntries = lib.concatStringsSep "\n" freshness.excludedRepositories;
   groupEntries = lib.concatStringsSep "\n" (lib.mapAttrsToList (name: passwordFile: "${name}:${passwordFile}") passwordFiles);
   repoEntries = lib.concatStringsSep "\n" (lib.flatten (lib.mapAttrsToList (group: repos: map (repo: "${group}:${repo}") repos) repositories));
   resticToolCommon = ''
@@ -254,11 +255,23 @@
       ${freshnessEntries}
       FRESHNESS
 
+          freshness_excluded=false
+          while IFS= read -r candidate; do
+            if [ "$candidate" = "$repo_arg" ]; then
+              freshness_excluded=true
+              break
+            fi
+          done <<'FRESHNESS_EXCLUDED'
+      ${freshnessExcludedEntries}
+      FRESHNESS_EXCLUDED
+
           repo_label=$(jq -Rn --arg repository "$repo_arg" '$repository')
           printf 'restic_repository_latest_snapshot_timestamp_seconds{repository=%s} %s\n' \
             "$repo_label" "$latest_snapshot" >>"$metrics_tmp"
-          printf 'restic_repository_max_age_seconds{repository=%s} %s\n' \
-            "$repo_label" "$max_age" >>"$metrics_tmp"
+          if [ "$freshness_excluded" = false ]; then
+            printf 'restic_repository_max_age_seconds{repository=%s} %s\n' \
+              "$repo_label" "$max_age" >>"$metrics_tmp"
+          fi
         elif [ "$mode" = "unlock" ]; then
           if ! restic -r "$repo" unlock; then
             echo "restic unlock failed for $repo" >&2
@@ -438,6 +451,12 @@ in {
         type = lib.types.attrsOf lib.types.ints.positive;
         default = {};
         description = "Per-repository maximum snapshot ages, keyed by service/repository.";
+      };
+
+      excludedRepositories = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [];
+        description = "Repositories excluded from snapshot freshness alerting.";
       };
     };
   };
