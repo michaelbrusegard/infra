@@ -362,6 +362,28 @@ Then deploy with colmena:
 colmena apply --on macchiato
 ```
 
+## Cortado (NixOS Router)
+
+Follow the Macchiato installation steps, using the Cortado flake target:
+
+```sh
+nixos-anywhere --extra-files ./keys --flake .#cortado --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
+```
+
+After installation, enroll the encrypted disk for TPM auto unlock:
+
+```sh
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
+  /dev/disk/by-id/nvme-TWSC_TSC3AN128-H2T70S_TTSFA258HX00212-part2
+```
+
+Port 6 is WAN. Ports 1–5 are the `10.0.15.0/24` LAN, with Cortado at
+`10.0.15.1`. Deploy updates with:
+
+```sh
+colmena apply --on cortado
+```
+
 ## Espresso (NixOS K3S Cluster)
 
 The Espresso setup consists of the nodes espresso-0, espresso-1 and espresso-2
