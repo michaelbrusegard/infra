@@ -264,6 +264,12 @@
       })
 
       (lib.mkSystem {
+        name = "cortado";
+        system = "x86_64-linux";
+        users = ["admin" "deploy"];
+      })
+
+      (lib.mkSystem {
         name = "leggero";
         system = "aarch64-linux";
         users = ["admin" "deploy"];
@@ -321,6 +327,11 @@
       }
       {
         name = "macchiato";
+        system = "x86_64-linux";
+        buildOnTarget = true;
+      }
+      {
+        name = "cortado";
         system = "x86_64-linux";
         buildOnTarget = true;
       }

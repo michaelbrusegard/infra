@@ -15,6 +15,7 @@ with the private sibling flake `../infra-secrets` exposed as input `secrets`.
 | `forte`            | NixOS laptop  | `nh os switch`                  |
 | `ristretto-wsl`    | NixOS WSL     | `nh os switch`                  |
 | `macchiato`        | NixOS router  | `colmena apply --on macchiato`  |
+| `cortado`          | NixOS router  | `colmena apply --on cortado`    |
 | `leggero`          | NixOS RPi     | `colmena apply --on leggero`    |
 | `espresso-{0,1,2}` | NixOS k3s     | `colmena apply --on espresso-*` |
 

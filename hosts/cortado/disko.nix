@@ -2,8 +2,7 @@ _: {
   disko.devices = {
     disk.main = {
       type = "disk";
-      # TODO(cortado): Replace this with the system disk's /dev/disk/by-id path.
-      device = "/dev/disk/by-id/TODO_CORTADO_SYSTEM_DISK";
+      device = "/dev/disk/by-id/nvme-TWSC_TSC3AN128-H2T70S_TTSFA258HX00212";
       content = {
         type = "gpt";
         partitions = {

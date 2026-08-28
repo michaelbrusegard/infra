@@ -1,10 +1,11 @@
 _: {
-  # TODO(cortado): Replace this generic hardware configuration after collecting
-  # `nixos-generate-config`, `lspci -nnk`, and the NIC driver information.
   boot = {
-    initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
-    kernelModules = [];
+    initrd.availableKernelModules = ["xhci_pci" "nvme" "uas" "usbhid" "sd_mod" "sdhci_pci"];
+    kernelModules = ["kvm-intel"];
   };
 
-  hardware.enableRedistributableFirmware = true;
+  hardware = {
+    enableRedistributableFirmware = true;
+    cpu.intel.updateMicrocode = true;
+  };
 }
