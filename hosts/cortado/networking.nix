@@ -78,8 +78,8 @@ in {
       };
     };
 
-    # Request native IPv6 and split a delegated prefix between trusted and IoT
-    # networks. If the ISP does not delegate a prefix, IPv4 remains unaffected.
+    # Request an IPv4 address (ia_na) and an IPv6 prefix delegation (ia_pd),
+    # splitting the delegated /64s across the trusted and IoT networks.
     dhcpcd = {
       enable = true;
       denyInterfaces = [lanBridge iotInterface];
@@ -112,15 +112,12 @@ in {
         # Never permit unsolicited forwarding from the ISP.
         iifname "${wanInterface}" drop
 
-        # Trusted clients and NetBird administrators may initiate connections
-        # into less-trusted networks. Stateful firewall rules permit replies.
         iifname "${lanBridge}" oifname "${wanInterface}" accept
         iifname "${lanBridge}" oifname "${iotInterface}" accept
         iifname "${netbirdInterface}" oifname { "${lanBridge}", "${iotInterface}", "${wanInterface}" } accept
 
-        # IoT clients cannot initiate connections to trusted clients. Their
-        # internet access is limited to web traffic, QUIC, NTP, and essential
-        # ICMPv6. DNS must use Cortado rather than an external resolver.
+        # IoT network: internet only, and no external resolvers. Reaching the
+        # trusted network is blocked by the default-drop policy.
         iifname "${iotInterface}" oifname "${wanInterface}" tcp dport { 80, 443 } accept
         iifname "${iotInterface}" oifname "${wanInterface}" udp dport { 123, 443 } accept
         iifname "${iotInterface}" oifname "${wanInterface}" meta l4proto ipv6-icmp accept
@@ -135,8 +132,7 @@ in {
     };
   };
 
-  # Trusted LAN access is covered by trustedInterfaces. Do not expose SSH on
-  # the ISP-facing interface.
+  # Reachable from the trusted LAN and NetBird, never from the ISP.
   services.openssh.openFirewall = lib.mkForce false;
 
   services = {
@@ -192,9 +188,7 @@ in {
 
     blocky.settings = {
       # Unlike macchiato, cortado runs systemd-resolved for NetBird split DNS,
-      # which already holds 127.0.0.53:53. Enumerate the listeners rather than
-      # binding the wildcard so the two do not collide. Loopback is required
-      # because networking.nameservers points the router at its own Blocky.
+      # which already holds 127.0.0.53:53, so a wildcard bind would collide.
       ports.dns = [
         "127.0.0.1:53"
         "[::1]:53"
