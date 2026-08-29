@@ -20,6 +20,7 @@ data:
     import os
     import re
     import sqlite3
+    import ssl
     import time
     import urllib.error
     import urllib.parse
@@ -38,6 +39,9 @@ data:
     PRIORITY_SOURCE = os.environ.get("PRIORITY_SOURCE", "monochrome")
     PREFERRED_SOURCES = os.environ.get("PREFERRED_SOURCES", "all")
     CONVERT_TO_FLAC = os.environ.get("CONVERT_TO_FLAC", "true").lower() == "true"
+    AUDIO_SUFFIXES = {".aac", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav"}
+    LOSSY_SUFFIXES = {".aac", ".m4a", ".mp3", ".ogg", ".opus"}
+    QUEUE_RETRY_AFTER_SECONDS = 24 * 60 * 60
 
     PLAYLISTS = {
         "daily_jams": {
@@ -140,9 +144,24 @@ data:
             data = json.dumps(payload).encode("utf-8")
             headers["Content-Type"] = "application/json"
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
-        with urllib.request.urlopen(req, timeout=timeout) as response:
-            body = response.read()
-        return json.loads(body.decode("utf-8")) if body else {}
+        attempts = 4 if method == "GET" else 1
+        for attempt in range(1, attempts + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as response:
+                    body = response.read()
+                return json.loads(body.decode("utf-8")) if body else {}
+            except urllib.error.HTTPError as exc:
+                if exc.code not in {429, 500, 502, 503, 504} or attempt == attempts:
+                    raise
+                error = exc
+            except (urllib.error.URLError, TimeoutError, ssl.SSLError) as exc:
+                if attempt == attempts:
+                    raise
+                error = exc
+            delay = 2 ** attempt
+            log(f"GET retry attempt={attempt + 1}/{attempts} delay={delay}s error={error}")
+            time.sleep(delay)
+        raise RuntimeError("HTTP retry loop exhausted")
 
 
     def musicgrabber_json(method, path, payload=None):
@@ -279,7 +298,9 @@ data:
             root = MUSIC_ROOT / root_name
             if not root.exists():
                 continue
-            for path in root.rglob("*.flac"):
+            for path in root.rglob("*"):
+                if not path.is_file() or path.suffix.lower() not in AUDIO_SUFFIXES:
+                    continue
                 try:
                     rel = path.relative_to(root)
                 except ValueError:
@@ -312,7 +333,7 @@ data:
                        local_path = coalesce(?, local_path),
                        status = case
                          when status = 'deleted' then status
-                         when ? = 'downloaded' then 'downloaded'
+                         when ? in ('downloaded', 'lossy_fallback') then ?
                          when status in ('queued', 'downloaded', 'lossy_fallback') then status
                          else ?
                        end
@@ -321,6 +342,7 @@ data:
                 (
                     timestamp,
                     str(local_path) if local_path else None,
+                    status,
                     status,
                     status,
                     rec_id,
@@ -418,6 +440,51 @@ data:
         return index.get(track_key(artist, title))
 
 
+    def recommendation_needs_download(conn, row):
+        status = row["status"]
+        if status == "deleted":
+            return False
+        if status in {"downloaded", "lossy_fallback"}:
+            local_path = Path(row["local_path"]) if row["local_path"] else None
+            if local_path and local_path.exists():
+                return False
+            conn.execute(
+                """
+                update recommendation_seen
+                   set status = 'seen', local_path = null,
+                       last_error = 'downloaded file is missing'
+                 where id = ?
+                """,
+                (row["id"],),
+            )
+            return True
+        if status == "queued":
+            try:
+                queued_at = datetime.fromisoformat((row["queued_at"] or "").replace("Z", "+00:00"))
+            except ValueError:
+                queued_at = None
+            if queued_at is not None and queued_at.tzinfo is None:
+                queued_at = queued_at.replace(tzinfo=timezone.utc)
+            age = (
+                datetime.now(timezone.utc) - queued_at
+                if queued_at is not None
+                else None
+            )
+            if age is not None and age.total_seconds() < QUEUE_RETRY_AFTER_SECONDS:
+                return False
+            conn.execute(
+                """
+                update recommendation_seen
+                   set status = 'seen', import_id = null, queued_at = null,
+                       last_error = 'queued job expired before completion'
+                 where id = ?
+                """,
+                (row["id"],),
+            )
+            return True
+        return True
+
+
     def playlist_line(path):
         playlist_dir = MUSIC_ROOT / "Playlists"
         try:
@@ -443,6 +510,31 @@ data:
         log(f"wrote playlist {path} tracks={len(unique)}")
 
 
+    def completed_job_path(job):
+        final_path = job.get("final_path")
+        if final_path:
+            path = Path(final_path)
+            if path.exists():
+                return path
+        match = re.match(r"^Already exists: (.+)$", job.get("error") or "")
+        if not match:
+            return None
+        relative = Path(match.group(1))
+        candidates = []
+        for root_name in ("Albums", "Singles"):
+            root = MUSIC_ROOT / root_name
+            if not root.exists():
+                continue
+            for path in root.rglob(relative.name):
+                try:
+                    path.relative_to(root)
+                except ValueError:
+                    continue
+                if path.is_file() and path.parts[-len(relative.parts):] == relative.parts:
+                    candidates.append(path)
+        return candidates[0] if len(candidates) == 1 else None
+
+
     def refresh_musicgrabber_status(conn):
         local = local_index()
         try:
@@ -450,30 +542,65 @@ data:
         except Exception as exc:
             log(f"musicgrabber status refresh failed: {exc}")
             return
-        queued = conn.execute(
-            "select id, artist, title from recommendation_seen where status = 'queued'"
+        tracked = conn.execute(
+            """
+            select id, artist, title, status
+              from recommendation_seen
+             where status in ('queued', 'downloaded', 'lossy_fallback')
+            """
         ).fetchall()
-        by_key = {track_key(row["artist"], row["title"]): row for row in queued}
+        by_key = {track_key(row["artist"], row["title"]): row for row in tracked}
+        by_title = {}
+        ambiguous_titles = set()
+        for row in tracked:
+            title = normalize(row["title"])
+            if title in by_title:
+                ambiguous_titles.add(title)
+            else:
+                by_title[title] = row
+        for title in ambiguous_titles:
+            by_title.pop(title, None)
+        jobs.sort(
+            key=lambda job: job.get("completed_at") or job.get("created_at") or "",
+            reverse=True,
+        )
         timestamp = now()
+        handled = set()
         for job in jobs:
             key = track_key(job.get("artist"), job.get("title"))
-            row = by_key.get(key)
-            if not row:
+            row = by_key.get(key) or by_title.get(normalize(job.get("title")))
+            if not row or row["id"] in handled:
                 continue
+            handled.add(row["id"])
             status = job.get("status")
             if status == "completed":
+                local_path = completed_job_path(job) or find_local(
+                    local,
+                    row["artist"],
+                    row["title"],
+                )
+                if not local_path:
+                    log(
+                        "musicgrabber completed without a resolvable local file: "
+                        f"{row['artist']} - {row['title']}"
+                    )
+                    continue
                 quality = job.get("audio_quality") or ""
-                next_status = "lossy_fallback" if "from AAC" in quality or "from OPUS" in quality or "from MP3" in quality else "downloaded"
-                local_path = find_local(local, row["artist"], row["title"])
+                next_status = (
+                    "lossy_fallback"
+                    if local_path.suffix.lower() in LOSSY_SUFFIXES
+                    else "downloaded"
+                )
                 conn.execute(
                     """
                     update recommendation_seen
-                       set status = ?, downloaded_at = ?, local_path = coalesce(?, local_path), last_error = ?
+                       set status = ?, downloaded_at = coalesce(downloaded_at, ?),
+                           local_path = ?, last_error = ?
                      where id = ?
                     """,
-                    (next_status, timestamp, str(local_path) if local_path else None, quality, row["id"]),
+                    (next_status, timestamp, str(local_path), quality, row["id"]),
                 )
-            elif status == "failed":
+            elif status == "failed" and row["status"] == "queued":
                 conn.execute(
                     "update recommendation_seen set status = 'failed', last_error = ? where id = ?",
                     ((job.get("error") or "musicgrabber job failed")[:500], row["id"]),
@@ -671,7 +798,18 @@ data:
                 for rec in tracks:
                     local_path = find_local(local, rec["artist"], rec["title"])
                     if local_path:
-                        rec_id = upsert_seen(conn, playlist_type, rec, "downloaded", local_path)
+                        local_status = (
+                            "lossy_fallback"
+                            if local_path.suffix.lower() in LOSSY_SUFFIXES
+                            else "downloaded"
+                        )
+                        rec_id = upsert_seen(
+                            conn,
+                            playlist_type,
+                            rec,
+                            local_status,
+                            local_path,
+                        )
                         recommendation_ids.append(rec_id)
                         stats[playlist_type]["local"] += 1
                         skipped += 1
@@ -679,10 +817,14 @@ data:
                     rec_id = upsert_seen(conn, playlist_type, rec, "seen")
                     recommendation_ids.append(rec_id)
                     row = conn.execute(
-                        "select status from recommendation_seen where id = ?",
+                        """
+                        select id, status, local_path, queued_at
+                          from recommendation_seen
+                         where id = ?
+                        """,
                         (rec_id,),
                     ).fetchone()
-                    if row and row["status"] in {"queued", "downloaded", "lossy_fallback", "deleted"}:
+                    if row and not recommendation_needs_download(conn, row):
                         skipped += 1
                         continue
                     candidates[playlist_type].append((rec_id, rec))
