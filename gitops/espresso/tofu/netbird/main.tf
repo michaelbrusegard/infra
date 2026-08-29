@@ -197,13 +197,13 @@ resource "netbird_group" "users" {
   name = "Users"
 }
 
+# Network routers select every peer in their group, so these stay per-site: a
+# peer in the wrong one becomes an equal-metric router for a network it cannot
+# reach.
 resource "netbird_group" "routing_peers" {
-  name = "Routing Peers"
+  name = "Asgard Routing Peers"
 }
 
-# Cortado is a router for its own site, not for Asgard. The Asgard network
-# router selects every peer in `routing_peers`, so a second peer there becomes
-# an equal-metric HA router for resources it cannot reach.
 resource "netbird_group" "midgard_routing_peers" {
   name = "Midgard Routing Peers"
 }
