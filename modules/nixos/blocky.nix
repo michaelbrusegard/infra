@@ -9,6 +9,15 @@ _: {
         "https://dns.adguard-dns.com/dns-query"
       ];
 
+      # Without this blocky resolves its own DoH hostnames through the system
+      # resolver, which points back at blocky.
+      bootstrapDns = [
+        {
+          upstream = "https://1.1.1.1/dns-query";
+          ips = ["1.1.1.1" "1.0.0.1"];
+        }
+      ];
+
       blocking = {
         denylists = {
           ads_and_trackers = [
