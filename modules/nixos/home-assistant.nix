@@ -1,4 +1,4 @@
-_: {
+{config, ...}: {
   services.home-assistant = {
     enable = true;
     config = null;
@@ -29,4 +29,13 @@ _: {
       "matter"
     ];
   };
+
+  environment.persistence."/persistent".directories = [
+    {
+      directory = config.services.home-assistant.configDir;
+      user = "hass";
+      group = "hass";
+      mode = "0700";
+    }
+  ];
 }
