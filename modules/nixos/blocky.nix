@@ -12,16 +12,15 @@ _: {
       blocking = {
         denylists = {
           ads_and_trackers = [
-            "https://oisd.nl/abp"
             "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
           ];
           security = [
-            "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/hosts/pro.txt"
+            "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt"
           ];
           privacy = [
-            "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/hosts/native.apple.txt"
-            "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/hosts/native.tiktok.txt"
-            "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/hosts/native.windows.txt"
+            "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/native.apple.txt"
+            "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/native.tiktok.txt"
+            "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/native.winoffice.txt"
           ];
         };
 

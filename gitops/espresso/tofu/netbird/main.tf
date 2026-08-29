@@ -201,6 +201,18 @@ resource "netbird_group" "routing_peers" {
   name = "Routing Peers"
 }
 
+# Cortado is a router for its own site, not for Asgard. The Asgard network
+# router selects every peer in `routing_peers`, so a second peer there becomes
+# an equal-metric HA router for resources it cannot reach.
+resource "netbird_group" "midgard_routing_peers" {
+  name = "Midgard Routing Peers"
+}
+
+import {
+  to = netbird_group.midgard_routing_peers
+  id = "da9lkjace66g0085uetg"
+}
+
 resource "netbird_group" "home" {
   name = "Home"
 }
@@ -273,6 +285,16 @@ resource "netbird_setup_key" "macchiato" {
   usage_limit            = 0
   allow_extra_dns_labels = true
   auto_groups            = [netbird_group.routing_peers.id]
+  ephemeral              = false
+  revoked                = false
+}
+
+resource "netbird_setup_key" "cortado" {
+  name                   = "cortado"
+  type                   = "reusable"
+  usage_limit            = 0
+  allow_extra_dns_labels = true
+  auto_groups            = [netbird_group.midgard_routing_peers.id]
   ephemeral              = false
   revoked                = false
 }
@@ -364,7 +386,7 @@ resource "netbird_account_settings" "main" {
 
 resource "netbird_policy" "infra_access" {
   name        = "Infra Access"
-  description = "Allow admins to access infra resources"
+  description = "Allow admins to access infra resources and the Midgard routing peers"
   enabled     = true
 
   rule {
@@ -374,7 +396,10 @@ resource "netbird_policy" "infra_access" {
     enabled       = true
     protocol      = "all"
     sources       = [netbird_group.admins.id]
-    destinations  = [netbird_group.infra.id]
+    destinations = [
+      netbird_group.infra.id,
+      netbird_group.midgard_routing_peers.id,
+    ]
   }
 }
 
