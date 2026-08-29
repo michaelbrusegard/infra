@@ -3,9 +3,6 @@
   pkgs,
   ...
 }: {
-  nixpkgs.config.permittedInsecurePackages = [
-    "unifi-controller-9.5.21"
-  ];
   services.unifi.enable = true;
 
   # Plain TCP to TLS bridge so the k8s internal gateway can reach Unifi's HTTPS UI
