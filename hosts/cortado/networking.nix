@@ -103,7 +103,9 @@ in {
 
     firewall = {
       enable = true;
-      trustedInterfaces = [lanBridge];
+      # NetBird peers are gated by the account's access policies, so the host
+      # firewall does not filter them again.
+      trustedInterfaces = [lanBridge netbirdInterface];
       filterForward = true;
 
       extraForwardRules = ''
@@ -128,19 +130,6 @@ in {
         "${iotInterface}" = {
           allowedTCPPorts = [53];
           allowedUDPPorts = [53 67];
-        };
-        "${netbirdInterface}" = {
-          allowedTCPPorts =
-            config.secrets.openssh.ports
-            ++ [
-              53 # Blocky DNS
-              4000 # Blocky API and metrics
-              8123 # Home Assistant
-              8443 # UniFi Network Application
-              8444 # UniFi TLS proxy
-              9100 # node_exporter
-            ];
-          allowedUDPPorts = [53];
         };
       };
     };
