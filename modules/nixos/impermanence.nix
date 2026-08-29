@@ -56,6 +56,7 @@ in {
   };
 
   systemd.tmpfiles.rules = [
+    "d /etc/ssh 0755 root root -"
     "z /etc/ssh/ssh_host_ed25519_key 0600 root root -"
     "z /etc/ssh/ssh_host_ed25519_key.pub 0644 root root -"
   ];
