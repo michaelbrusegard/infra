@@ -208,11 +208,6 @@ resource "netbird_group" "midgard_routing_peers" {
   name = "Midgard Routing Peers"
 }
 
-import {
-  to = netbird_group.midgard_routing_peers
-  id = "da9lkjace66g0085uetg"
-}
-
 resource "netbird_group" "home" {
   name = "Home"
 }
