@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   wanInterface = "enp2s0";
@@ -294,6 +295,17 @@ in {
           allowedUDPPorts = [53 67];
         };
       };
+    };
+  };
+
+  # Plain TCP to TLS bridge so the k8s internal gateway can reach the Unifi
+  # HTTPS UI published at unifi.${baseDomain}.
+  systemd.services.unifi-proxy = {
+    after = ["network.target" "unifi.service"];
+    wantedBy = ["multi-user.target"];
+    serviceConfig = {
+      ExecStart = "${lib.getExe pkgs.socat} TCP-LISTEN:8444,fork,reuseaddr OPENSSL:127.0.0.1:8443,verify=0";
+      Restart = "always";
     };
   };
 
