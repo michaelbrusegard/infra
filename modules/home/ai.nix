@@ -51,6 +51,17 @@
     write-agent-instructions = "${../../config/skills/write-agent-instructions}";
   };
   agentInstructions = ../../config/AGENTS.md;
+  paseoAgentInstructions = ''
+    Prefer Paseo tools for agent delegation, workspace lifecycle, heartbeats,
+    schedules, and Paseo browser tabs. Use Paseo's create_agent instead of a
+    provider-native subagent when both can perform the task. A created agent must
+    use the same Paseo provider as its parent; the model may differ, but the
+    provider must not. Before delegating, call list_profiles and consider only
+    profiles matching the current provider. Follow the selected profile's notes,
+    and use provider discovery only when no matching profile fits. Use the paseo
+    CLI only when an equivalent Paseo tool is unavailable. Keep direct coding
+    work in the current workspace on the harness's local file and shell tools.
+  '';
   piSkillFiles = lib.mapAttrs' (name: source:
     lib.nameValuePair ".pi/agent/skills/${name}" {
       inherit source;
@@ -312,9 +323,15 @@ in {
 
         if [ -f "$config_file" ]; then
           ${lib.getExe pkgs.jq} \
-            --argjson hostnames '${builtins.toJSON paseoHostnames}' '
+            --argjson hostnames '${builtins.toJSON paseoHostnames}' \
+            --arg append_system_prompt ${lib.escapeShellArg paseoAgentInstructions} '
             .daemon = ((.daemon // {}) + {
-              hostnames: (((.daemon.hostnames // []) + $hostnames) | unique)
+              hostnames: (((.daemon.hostnames // []) + $hostnames) | unique),
+              mcp: ((.daemon.mcp // {}) + {
+                enabled: true,
+                injectIntoAgents: true
+              }),
+              appendSystemPrompt: $append_system_prompt
             })
             | del(.agents.providers.kimi)
             | if .agents.providers? == {} then del(.agents.providers) else . end
@@ -323,9 +340,17 @@ in {
         else
           ${lib.getExe pkgs.jq} \
             --argjson hostnames '${builtins.toJSON paseoHostnames}' \
+            --arg append_system_prompt ${lib.escapeShellArg paseoAgentInstructions} \
             '{
               version: 1,
-              daemon: {hostnames: $hostnames}
+              daemon: {
+                hostnames: $hostnames,
+                mcp: {
+                  enabled: true,
+                  injectIntoAgents: true
+                },
+                appendSystemPrompt: $append_system_prompt
+              }
             }' > "$temp_file"
         fi
 
