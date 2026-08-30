@@ -233,6 +233,12 @@ in {
               transport http {
                 tls_insecure_skip_verify
               }
+              # The controller rejects POSTs whose Origin port differs from its
+              # own 8443, which is every browser request through this proxy.
+              # Only the trusted LAN and NetBird reach Caddy, so losing the
+              # origin check costs little.
+              header_up -Origin
+              header_up -Referer
             }
           '';
         };
