@@ -3,6 +3,10 @@
     if pkgs.stdenv.hostPlatform.isDarwin
     then {control = true;}
     else {meta = true;};
+  inspectorId =
+    if pkgs.stdenv.hostPlatform.isDarwin
+    then "key_inspectorMac"
+    else "key_inspector";
 in {
   programs.zen-browser.profiles."default" = {
     keyboardShortcutsVersion = 19;
@@ -70,11 +74,19 @@ in {
         };
       }
       {
-        id = "key_inspector";
-        key = "l";
+        id = "key_toggleToolbox";
+        key = "i";
         modifiers = {
           accel = true;
-          shift = true;
+          alt = true;
+        };
+      }
+      {
+        id = inspectorId;
+        key = "c";
+        modifiers = {
+          accel = true;
+          alt = true;
         };
       }
       {
