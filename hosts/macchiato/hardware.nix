@@ -1,13 +1,12 @@
 _: {
   boot = {
     initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod"];
-    kernelModules = ["kvm-amd"];
+    kernelModules = ["kvm-intel"];
   };
 
   hardware = {
     enableRedistributableFirmware = true;
-    cpu.amd.updateMicrocode = true;
-    bluetooth.enable = true;
+    cpu.intel.updateMicrocode = true;
   };
 
   services.zigbee2mqtt.settings.serial = {
