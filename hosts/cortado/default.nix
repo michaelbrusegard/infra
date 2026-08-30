@@ -31,4 +31,24 @@
     enable = true;
     enabledCollectors = ["systemd"];
   };
+
+  # Owns only the yaml skeleton home assistant generated at onboarding, plus
+  # the reverse proxy trust that caddy depends on. Integrations, devices, and
+  # dashboards stay UI-managed in .storage; the include files stay writable so
+  # the automation editors keep working.
+  services.home-assistant.config = {
+    default_config = {};
+    frontend.themes = "!include_dir_merge_named themes";
+    automation = "!include automations.yaml";
+    script = "!include scripts.yaml";
+    scene = "!include scenes.yaml";
+    homeassistant.external_url = "https://home-assistant.midgard.michaelbrusegard.com";
+    http = {
+      use_x_forwarded_for = true;
+      trusted_proxies = [
+        "127.0.0.1"
+        "::1"
+      ];
+    };
+  };
 }
