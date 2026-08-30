@@ -194,8 +194,8 @@ in {
         interface = [lanBridge iotInterface];
         dhcp-authoritative = true;
         dhcp-range = [
-          "set:trusted,10.0.15.20,10.0.15.254,24h"
-          "set:iot,10.0.17.20,10.0.17.254,24h"
+          "set:trusted,10.0.15.2,10.0.15.254,24h"
+          "set:iot,10.0.17.2,10.0.17.254,24h"
         ];
         dhcp-host = [
           "74:fa:29:26:eb:42,10.0.15.2,unifi-ap"
