@@ -14,3 +14,9 @@ variable "macchiato_blocky_dns_ip" {
   type        = string
   default     = "10.0.186.1"
 }
+
+variable "cortado_services_ip" {
+  description = "Stable LAN address of cortado where Blocky and the Caddy-published UIs listen, reached through the Midgard router. Same reasoning as macchiato_blocky_dns_ip."
+  type        = string
+  default     = "10.0.15.1"
+}

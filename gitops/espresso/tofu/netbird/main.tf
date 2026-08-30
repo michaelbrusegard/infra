@@ -212,6 +212,10 @@ resource "netbird_group" "home" {
   name = "Home"
 }
 
+resource "netbird_group" "midgard" {
+  name = "Midgard"
+}
+
 resource "netbird_group" "health" {
   name = "Health"
 }
@@ -297,6 +301,30 @@ resource "netbird_setup_key" "cortado" {
 resource "netbird_network" "asgard" {
   name        = "Asgard"
   description = "Routed internal services at Asgard"
+}
+
+resource "netbird_network" "midgard" {
+  name        = "Midgard"
+  description = "Routed internal services at Midgard"
+}
+
+resource "netbird_network_router" "cortado" {
+  network_id  = netbird_network.midgard.id
+  peer_groups = [netbird_group.midgard_routing_peers.id]
+  enabled     = true
+  masquerade  = true
+  metric      = 100
+}
+
+# Just cortado's service address, not the LAN: Blocky, Caddy, and the UIs all
+# listen there, and nothing else at Midgard is exposed.
+resource "netbird_network_resource" "cortado_services" {
+  network_id  = netbird_network.midgard.id
+  name        = "Cortado Services"
+  description = "Blocky DNS and the Caddy-published UIs on cortado"
+  address     = "${var.cortado_services_ip}/32"
+  groups      = [netbird_group.midgard.id]
+  enabled     = true
 }
 
 resource "netbird_network_router" "macchiato" {
@@ -446,6 +474,22 @@ resource "netbird_policy" "home_access" {
   }
 }
 
+resource "netbird_policy" "midgard_access" {
+  name        = "Midgard Access"
+  description = "Allow admins to access services at Midgard"
+  enabled     = true
+
+  rule {
+    name          = "Admins to Midgard"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.admins.id]
+    destinations  = [netbird_group.midgard.id]
+  }
+}
+
 resource "netbird_policy" "personal_device_mesh" {
   name        = "Personal Device Mesh"
   description = "Allow personal admin devices to communicate with each other over NetBird"
@@ -576,6 +620,27 @@ resource "netbird_nameserver_group" "macchiato_blocky_dns" {
   ]
 
   search_domains_enabled = true
+}
+
+# Scoped to admins: they are the only peers with a route into Midgard, so
+# handing this resolver to anyone else would stall their midgard lookups.
+resource "netbird_nameserver_group" "cortado_blocky_dns" {
+  name        = "Cortado Blocky DNS"
+  description = "Blocky DNS on cortado for the Midgard domain"
+  enabled     = true
+  primary     = false
+  domains     = ["midgard.michaelbrusegard.com"]
+  groups      = [netbird_group.admins.id]
+
+  nameservers = [
+    {
+      ip      = var.cortado_services_ip
+      ns_type = "udp"
+      port    = 53
+    }
+  ]
+
+  search_domains_enabled = false
 }
 
 # The provider authenticates as this user, so NetBird rejects destroying it
