@@ -53,6 +53,31 @@ in {
         modifiers.accel = true;
       }
       {
+        id = "zen-copy-url";
+        key = "c";
+        modifiers = {
+          accel = true;
+          shift = true;
+        };
+      }
+      {
+        id = "zen-copy-url-markdown";
+        key = "c";
+        modifiers = {
+          accel = true;
+          alt = true;
+          shift = true;
+        };
+      }
+      {
+        id = "key_inspector";
+        key = "l";
+        modifiers = {
+          accel = true;
+          shift = true;
+        };
+      }
+      {
         id = "zen-workspace-switch-1";
         key = "1";
         modifiers = ctrlOrSuper;
