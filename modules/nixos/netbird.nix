@@ -5,13 +5,8 @@
   users,
   ...
 }: {
-  # systemd-resolved is required so NetBird can register per-domain (split)
-  services.resolved.enable = true;
-
-  # NetworkManager must defer DNS to systemd-resolved, otherwise it rewrites
-  # /etc/resolv.conf with the LAN resolver and clobbers NetBird's split DNS.
-  networking.networkmanager.dns = "systemd-resolved";
-
+  # Split DNS needs systemd-resolved, which hosts enable themselves: a router
+  # running its own resolver on port 53 wants nothing to do with it.
   services.netbird = {
     useRoutingFeatures = lib.mkDefault "client";
     clients.default = {
