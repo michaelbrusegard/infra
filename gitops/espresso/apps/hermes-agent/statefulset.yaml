@@ -182,6 +182,10 @@ spec:
               value: /opt/data
             - name: HOME
               value: /opt/data
+            - name: TZ
+              value: America/Los_Angeles
+            - name: LANG
+              value: en_US.UTF-8
             - name: OPENAI_BASE_URL
               value: http://cliproxyapi.cliproxyapi.svc.cluster.local:8317/v1
             - name: OPENAI_API_KEY
@@ -379,6 +383,10 @@ spec:
           env:
             - name: HOME
               value: /opt/browser
+            - name: TZ
+              value: America/Los_Angeles
+            - name: LANG
+              value: en_US.UTF-8
           resources:
             requests:
               memory: 512Mi
@@ -454,7 +462,7 @@ spec:
                 disk.dataPartition.size=8192M
                 hw.keyboard=yes
             - name: EMULATOR_PARAMS
-              value: -gpu swiftshader_indirect -timezone Europe/Oslo
+              value: -gpu swiftshader_indirect -timezone America/Los_Angeles -prop persist.sys.locale=en-US
           ports:
             - containerPort: 5555
               name: android-adb

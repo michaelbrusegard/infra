@@ -650,8 +650,9 @@ in
         "PATH=${tools}/bin"
         "FONTCONFIG_FILE=/etc/fonts.conf"
         "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
-        "TZ=Europe/Oslo"
+        "TZ=America/Los_Angeles"
         "TZDIR=${pkgs.tzdata}/share/zoneinfo"
+        "LANG=en_US.UTF-8"
       ];
       User = "10000:10000";
       WorkingDir = "/opt/browser";

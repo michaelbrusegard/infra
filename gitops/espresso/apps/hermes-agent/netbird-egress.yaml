@@ -1,0 +1,59 @@
+apiVersion: netbird.io/v1alpha1
+kind: SetupKey
+metadata:
+  name: hermes-egress
+  namespace: hermes-agent
+spec:
+  name: hermes-egress
+  allowExtraDnsLabels: false
+  autoGroups:
+    - name: Hermes Egress
+  ephemeral: true
+---
+apiVersion: netbird.io/v1alpha1
+kind: SidecarProfile
+metadata:
+  name: hermes-egress
+  namespace: hermes-agent
+spec:
+  setupKeyRef:
+    name: hermes-egress
+  podSelector:
+    matchLabels:
+      app: hermes-agent
+  injectionMode: Sidecar
+  containerOverride:
+    image: docker.io/netbirdio/netbird:0.77.0@sha256:fcf1d37d1a9b8c65e2968193d8762896750cfb4e81b04862b1b464f4eede3b9e
+    env:
+      - name: NB_HOSTNAME
+        value: hermes-agent
+      - name: NB_DISABLE_DNS
+        value: "true"
+    startupProbe:
+      exec:
+        command:
+          - netbird
+          - status
+          - --check
+          - startup
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 60
+    livenessProbe:
+      exec:
+        command:
+          - netbird
+          - status
+          - --check
+          - live
+      periodSeconds: 30
+      timeoutSeconds: 5
+    readinessProbe:
+      exec:
+        command:
+          - netbird
+          - status
+          - --check
+          - ready
+      periodSeconds: 10
+      timeoutSeconds: 5

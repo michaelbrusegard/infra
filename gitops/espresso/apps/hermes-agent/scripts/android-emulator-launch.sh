@@ -208,6 +208,15 @@ wait_for_boot() {
   return 1
 }
 
+configure_region() {
+  adb_device shell settings put system system_locales en-US >/dev/null 2>&1 || true
+  adb_device shell settings put system time_12_24 24 >/dev/null 2>&1 || true
+  adb_device shell setprop persist.sys.locale en-US >/dev/null 2>&1 || true
+  adb_device shell setprop persist.sys.timezone America/Los_Angeles >/dev/null 2>&1 || true
+  # The emulator console expects longitude before latitude.
+  adb_device emu geo fix -122.4194 37.7749 >/dev/null 2>&1 || true
+}
+
 publish_grpc_token() {
   token=
   for discovery_file in /root/.android/avd/running/pid_*.ini /tmp/pid_*_info.ini; do
@@ -295,6 +304,7 @@ supervise_control_plane() {
     write_accessibility_status degraded boot-timeout
     return
   fi
+  configure_region
   while kill -0 "$emulator_pid" 2>/dev/null; do
     publish_grpc_token || true
     enable_accessibility_companion || true

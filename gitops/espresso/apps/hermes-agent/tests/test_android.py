@@ -905,6 +905,7 @@ class AndroidScriptTests(unittest.TestCase):
         services = (APP_ROOT / "services.yaml").read_text(encoding="utf-8")
         httproute = (APP_ROOT / "httproute.yaml").read_text(encoding="utf-8")
         network_policy = (APP_ROOT / "network-policy.yaml").read_text(encoding="utf-8")
+        netbird_egress = (APP_ROOT / "netbird-egress.yaml").read_text(encoding="utf-8")
         monitoring = (APP_ROOT / "monitoring.yaml").read_text(encoding="utf-8")
         kustomization = (APP_ROOT / "kustomization.yaml").read_text(encoding="utf-8")
         viewer_app = (
@@ -1018,7 +1019,18 @@ class AndroidScriptTests(unittest.TestCase):
             statefulset,
         )
         self.assertIn("- name: android-tmp\n              mountPath: /tmp", statefulset)
-        self.assertIn("value: -gpu swiftshader_indirect -timezone Europe/Oslo", statefulset)
+        self.assertIn(
+            "value: -gpu swiftshader_indirect -timezone America/Los_Angeles -prop persist.sys.locale=en-US",
+            statefulset,
+        )
+        self.assertNotIn("- name: netbird-egress", statefulset)
+        self.assertIn("kind: SidecarProfile", netbird_egress)
+        self.assertIn("kind: SetupKey", netbird_egress)
+        self.assertIn("name: Hermes Egress", netbird_egress)
+        self.assertIn("injectionMode: Sidecar", netbird_egress)
+        self.assertIn("netbirdio/netbird:0.77.0@sha256:", netbird_egress)
+        self.assertIn("value: America/Los_Angeles", statefulset)
+        self.assertIn("settings put system time_12_24 24", (APP_ROOT / "scripts" / "android-emulator-launch.sh").read_text(encoding="utf-8"))
         self.assertIn("hermes.michaelbrusegard.com/kvm: \"1\"", statefulset)
         self.assertNotIn("kubernetes.io/hostname", statefulset)
         self.assertNotIn("mountPath: /dev/kvm", statefulset)
@@ -1075,7 +1087,12 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn('"https://browser.${local.domain}/oauth2/callback"', viewer_auth_tofu)
         self.assertIn("hermes_browser = {", netbird_tofu)
         self.assertIn('address = "browser.${local.domain}"', netbird_tofu)
+        self.assertIn('network               = "0.0.0.0/0"', netbird_tofu)
+        self.assertIn("netbird_group.hermes_egress.id", netbird_tofu)
         self.assertIn('port: "8777"', network_policy)
+        self.assertIn("Fail closed", network_policy)
+        self.assertIn("forces the tunnel through the HTTPS relay", network_policy)
+        self.assertNotIn('port: "51820"', network_policy)
         self.assertIn('- fromEntities:\n        - ingress', network_policy)
         self.assertIn('port: "4180"', network_policy)
         self.assertIn('port: "4181"', network_policy)
@@ -1088,6 +1105,7 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("alert: HermesAndroidMetricsMissing", monitoring)
         self.assertIn("android-companion=scripts/android-companion", kustomization)
         self.assertIn("android-companion.py=scripts/android-companion.py", kustomization)
+        self.assertIn("- netbird-egress.yaml", kustomization)
         self.assertIn("HERMES_PYTHON", companion_wrapper)
         self.assertNotIn("/opt/hermes/.venv", companion_wrapper)
         self.assertIn("Android 17 Play Store image", workflow)

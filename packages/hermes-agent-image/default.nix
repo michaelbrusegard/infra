@@ -135,6 +135,7 @@
       socat
       stern
       tesseract
+      tzdata
       unzip
       yq-go
       zip
@@ -180,6 +181,9 @@ in
         "PATH=/opt/data/scripts:${tools}/bin:${hermes-agent}/bin"
         "NODE_PATH=${nodeTools}/lib/node_modules"
         "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+        "TZ=America/Los_Angeles"
+        "TZDIR=${pkgs.tzdata}/share/zoneinfo"
+        "LANG=en_US.UTF-8"
         "PYTHONDONTWRITEBYTECODE=1"
         "PIP_DISABLE_PIP_VERSION_CHECK=1"
       ];

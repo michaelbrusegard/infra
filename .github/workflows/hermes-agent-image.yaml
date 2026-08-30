@@ -387,7 +387,7 @@ jobs:
             --cdp http://127.0.0.1:9222 --json eval \
             'JSON.stringify({webdriver: navigator.webdriver, webgl: Boolean(document.createElement("canvas").getContext("webgl")), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, userAgent: navigator.userAgent, plugins: navigator.plugins.length, languages: navigator.languages.length, screen: [screen.width, screen.height]})')
           printf '%s' "$fingerprint_json" | jq -e \
-            '.success and (.data.result | fromjson | .webdriver == false and .webgl == true and .timeZone == "Europe/Oslo" and (.userAgent | contains("HeadlessChrome") | not) and .plugins > 0 and .languages > 0 and .screen == [1440, 900])' \
+            '.success and (.data.result | fromjson | .webdriver == false and .webgl == true and .timeZone == "America/Los_Angeles" and (.userAgent | contains("HeadlessChrome") | not) and .plugins > 0 and .languages > 0 and .screen == [1440, 900])' \
             >/dev/null
           support_target_id=$(printf '%s' "$tab_json" | jq -er '.data.tabs[0].targetId')
           docker exec "$agent_id" browser-support frame-tree "$support_target_id" >/dev/null

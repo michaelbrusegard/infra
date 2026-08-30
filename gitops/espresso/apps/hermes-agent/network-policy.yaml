@@ -166,5 +166,14 @@ spec:
         - cidr: fd7a:115c:a1e0:188::/64
     - toEntities:
         - kube-apiserver
-    - toEntities:
-        - world
+    # Fail closed: public application traffic must traverse the NetBird tunnel.
+    # Only NetBird's control/relay endpoint and STUN may leave the pod directly;
+    # blocking peer UDP deliberately forces the tunnel through the HTTPS relay.
+    - toFQDNs:
+        - matchName: netbird.asgard.michaelbrusegard.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "3478"
+              protocol: UDP
