@@ -31,11 +31,4 @@
     enable = true;
     enabledCollectors = ["systemd"];
   };
-
-  # Blocky binds explicit listen addresses, so it must not start before those
-  # addresses exist on the bridges.
-  systemd.services.blocky = {
-    after = ["network-online.target"];
-    wants = ["network-online.target"];
-  };
 }

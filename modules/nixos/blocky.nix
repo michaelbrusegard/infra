@@ -1,4 +1,11 @@
 _: {
+  # Blocky downloads its blocklists at startup and keeps serving with empty
+  # lists if that fails, so it must not race the network coming up.
+  systemd.services.blocky = {
+    after = ["network-online.target"];
+    wants = ["network-online.target"];
+  };
+
   services.blocky = {
     enable = true;
 
