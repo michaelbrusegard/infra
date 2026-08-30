@@ -32,16 +32,10 @@
     enabledCollectors = ["systemd"];
   };
 
-  # Owns only the yaml skeleton home assistant generated at onboarding, plus
-  # the reverse proxy trust that caddy depends on. Integrations, devices, and
-  # dashboards stay UI-managed in .storage; the include files stay writable so
-  # the automation editors keep working.
+  # Host deltas on the module's skeleton: caddy terminates TLS on this box, so
+  # home assistant must trust the loopback proxy, and links it generates
+  # should use the published name.
   services.home-assistant.config = {
-    default_config = {};
-    frontend.themes = "!include_dir_merge_named themes";
-    automation = "!include automations.yaml";
-    script = "!include scripts.yaml";
-    scene = "!include scenes.yaml";
     homeassistant.external_url = "https://home-assistant.midgard.michaelbrusegard.com";
     http = {
       use_x_forwarded_for = true;
