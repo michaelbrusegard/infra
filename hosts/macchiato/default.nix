@@ -29,6 +29,7 @@ in {
     inputs.self.nixosModules.impermanence
     inputs.self.nixosModules.lanzaboote
     inputs.self.nixosModules.locale
+    inputs.self.nixosModules.netbird
     inputs.self.nixosModules.networking
     inputs.self.nixosModules.nh
     inputs.self.nixosModules.nix
