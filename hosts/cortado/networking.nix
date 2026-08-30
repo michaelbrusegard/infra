@@ -187,14 +187,6 @@ in {
     };
 
     blocky.settings = {
-      # Unlike macchiato, cortado runs systemd-resolved for NetBird split DNS,
-      # which already holds 127.0.0.53:53, so a wildcard bind would collide.
-      ports.dns = [
-        "127.0.0.1:53"
-        "[::1]:53"
-        "10.0.15.1:53"
-        "10.0.17.1:53"
-      ];
       # Override the public dyndns record on the LAN so local clients reach
       # Cortado directly instead of hairpinning off the WAN address.
       customDNS.mapping = {
