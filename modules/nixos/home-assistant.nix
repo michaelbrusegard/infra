@@ -18,6 +18,15 @@
     # when adding one fails on missing requirements.
   };
 
+  # The declared configuration references these, but home assistant only
+  # creates them when it owns the skeleton itself. Referencing a missing file
+  # fails the whole yaml parse and boots into recovery mode.
+  systemd.tmpfiles.rules = [
+    "f ${config.services.home-assistant.configDir}/automations.yaml 0600 hass hass -"
+    "f ${config.services.home-assistant.configDir}/scripts.yaml 0600 hass hass -"
+    "f ${config.services.home-assistant.configDir}/scenes.yaml 0600 hass hass -"
+  ];
+
   environment.persistence."/persistent".directories = [
     {
       directory = config.services.home-assistant.configDir;
