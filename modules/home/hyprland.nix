@@ -88,8 +88,7 @@
       workspace = 3;
     }
     {
-      class = "^(electron)$";
-      initial_title = "^Paseo$";
+      class = "^(paseo-desktop)$";
       workspace = 1;
     }
     {
