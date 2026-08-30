@@ -12,32 +12,10 @@
       script = "!include scripts.yaml";
       scene = "!include scenes.yaml";
     };
-    extraComponents = [
-      "backup"
-      "bluetooth"
-      "config"
-      "dhcp"
-      "energy"
-      "go2rtc"
-      "history"
-      "homeassistant_alerts"
-      "image_upload"
-      "logbook"
-      "media_source"
-      "mobile_app"
-      "my"
-      "ssdp"
-      "stream"
-      "sun"
-      "usb"
-      "webhook"
-      "zeroconf"
-      "zha"
-      "met"
-      "otbr"
-      "thread"
-      "matter"
-    ];
+    # extraComponents inherits the module's default, which keeps onboarding
+    # and platform detection working. Integrations added through the UI live
+    # in .storage where nix cannot see them, so their components belong here
+    # when adding one fails on missing requirements.
   };
 
   environment.persistence."/persistent".directories = [
