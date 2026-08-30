@@ -135,6 +135,30 @@ in {
   # Reachable from the trusted LAN and NetBird, never from the ISP.
   services.openssh.openFirewall = lib.mkForce false;
 
+  security.acme = {
+    acceptTerms = true;
+    defaults.email = config.secrets.acme.email;
+    certs.${baseDomain} = {
+      domain = "*.${baseDomain}";
+      extraDomainNames = [baseDomain];
+      dnsProvider = "cloudflare";
+      credentialFiles."CLOUDFLARE_DNS_API_TOKEN_FILE" = config.secrets.cloudflare-dyndns.apiTokenFile;
+      group = "caddy";
+      reloadServices = ["caddy"];
+    };
+  };
+
+  # The ACME account and issued certificates must survive reboots, or every
+  # boot burns Let's Encrypt rate limit.
+  environment.persistence."/persistent".directories = [
+    {
+      directory = "/var/lib/acme";
+      user = "acme";
+      group = "acme";
+      mode = "0755";
+    }
+  ];
+
   services = {
     cloudflare-dyndns.domains = [routerDomain];
 
@@ -193,6 +217,31 @@ in {
         "${routerDomain}" = "10.0.15.1,fd7a:115c:a1e0:15::1";
         "home-assistant.${baseDomain}" = "10.0.15.1,fd7a:115c:a1e0:15::1";
         "unifi.${baseDomain}" = "10.0.15.1,fd7a:115c:a1e0:15::1";
+      };
+    };
+
+    # TLS for the names Blocky maps above. Reachable from the trusted LAN and
+    # NetBird only; the WAN firewall stays closed, which is also why the cert
+    # comes from a DNS-01 challenge rather than HTTP-01.
+    caddy = {
+      enable = true;
+      virtualHosts = {
+        "unifi.${baseDomain}" = {
+          useACMEHost = baseDomain;
+          extraConfig = ''
+            reverse_proxy https://127.0.0.1:8443 {
+              transport http {
+                tls_insecure_skip_verify
+              }
+            }
+          '';
+        };
+        "home-assistant.${baseDomain}" = {
+          useACMEHost = baseDomain;
+          extraConfig = ''
+            reverse_proxy 127.0.0.1:8123
+          '';
+        };
       };
     };
 
