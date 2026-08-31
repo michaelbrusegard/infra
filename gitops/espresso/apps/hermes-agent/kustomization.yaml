@@ -7,7 +7,6 @@ resources:
   - browser-pvc.yaml
   - browser-files-pvc.yaml
   - rbac.yaml
-  - netbird-egress.yaml
   - configmap.yaml
   - statefulset.yaml
   - services.yaml

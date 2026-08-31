@@ -208,10 +208,6 @@ resource "netbird_group" "midgard_routing_peers" {
   name = "Midgard Routing Peers"
 }
 
-resource "netbird_group" "hermes_egress" {
-  name = "Hermes Egress"
-}
-
 resource "netbird_group" "home" {
   name = "Home"
 }
@@ -300,22 +296,6 @@ resource "netbird_setup_key" "cortado" {
   auto_groups            = [netbird_group.midgard_routing_peers.id]
   ephemeral              = false
   revoked                = false
-}
-
-# Send Hermes' public traffic through Cortado. NetBird expands the IPv4 exit
-# route into a paired ::/0 route for IPv6-capable peers; Kubernetes pod,
-# service, and node routes remain more specific and therefore stay local.
-resource "netbird_route" "hermes_cortado_exit" {
-  network               = "0.0.0.0/0"
-  network_id            = "hermes-cortado-exit"
-  description           = "Hermes Agent internet egress through Cortado"
-  peer_groups           = [netbird_group.midgard_routing_peers.id]
-  groups                = [netbird_group.hermes_egress.id]
-  access_control_groups = [netbird_group.hermes_egress.id]
-  masquerade            = true
-  metric                = 50
-  enabled               = true
-  skip_auto_apply       = false
 }
 
 resource "netbird_network" "asgard" {

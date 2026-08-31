@@ -3,8 +3,4 @@ kind: Namespace
 metadata:
   name: hermes-agent
   labels:
-    # NetBird's transparent routing sidecar requires privileged networking.
-    # Keep the exemption scoped to this dedicated workload namespace.
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/audit: baseline
-    pod-security.kubernetes.io/warn: baseline
+    pod-security.kubernetes.io/enforce: baseline
