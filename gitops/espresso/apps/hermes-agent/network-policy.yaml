@@ -163,8 +163,11 @@ spec:
         - cidr: 10.43.0.0/16
         - cidr: 10.0.188.0/24
         - cidr: fd42::/56
+        - cidr: fd43::/112
         - cidr: fd7a:115c:a1e0:188::/64
     - toEntities:
         - kube-apiserver
+    # The pod's direct default routes are removed after NetBird connects, so
+    # world access here carries only traffic emitted through the tunnel.
     - toEntities:
         - world

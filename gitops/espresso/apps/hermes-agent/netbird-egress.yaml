@@ -1,0 +1,50 @@
+apiVersion: netbird.io/v1alpha1
+kind: SetupKey
+metadata:
+  name: hermes-egress
+  namespace: hermes-agent
+spec:
+  name: hermes-egress
+  allowExtraDnsLabels: false
+  autoGroups:
+    - name: Hermes Egress
+  ephemeral: true
+---
+apiVersion: netbird.io/v1alpha1
+kind: SidecarProfile
+metadata:
+  name: hermes-egress
+  namespace: hermes-agent
+spec:
+  setupKeyRef:
+    name: hermes-egress
+  podSelector:
+    matchLabels:
+      app: hermes-agent
+  injectionMode: Sidecar
+  containerOverride:
+    image: netbirdio/netbird:0.77.1@sha256:66f408b0c423e9c3376deea7bc0da78024d32494dd0f957344993015b74c4451
+    env:
+      - name: NB_SETUP_KEY
+        valueFrom:
+          secretKeyRef:
+            name: setup-key-hermes-egress
+            key: setup-key
+      - name: NB_MANAGEMENT_URL
+        value: https://netbird.asgard.michaelbrusegard.com
+      - name: NB_LOG_FILE
+        value: console
+      - name: NB_DISABLE_PROFILES
+        value: "true"
+      - name: NB_DISABLE_UPDATE_SETTINGS
+        value: "false"
+      - name: NB_DISABLE_DNS
+        value: "true"
+      - name: NB_FORCE_RELAY
+        value: "true"
+      - name: NB_HOSTNAME
+        value: hermes-agent
+      - name: NB_DAEMON_ADDR
+        value: unix:///var/run/netbird/netbird.sock
+      - name: NB_ENTRYPOINT_SERVICE_TIMEOUT
+        value: "0"

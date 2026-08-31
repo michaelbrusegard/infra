@@ -32,11 +32,6 @@ locals {
       address = "grafana.${local.domain}"
       group   = "infra"
     }
-    hermes_agent = {
-      name    = "Hermes Agent"
-      address = "hermes.${local.domain}"
-      group   = "infra"
-    }
     hermes_android = {
       name    = "Hermes Android"
       address = "android.${local.domain}"
@@ -208,6 +203,10 @@ resource "netbird_group" "midgard_routing_peers" {
   name = "Midgard Routing Peers"
 }
 
+resource "netbird_group" "hermes_egress" {
+  name = "Hermes Egress"
+}
+
 resource "netbird_group" "home" {
   name = "Home"
 }
@@ -296,6 +295,48 @@ resource "netbird_setup_key" "cortado" {
   auto_groups            = [netbird_group.midgard_routing_peers.id]
   ephemeral              = false
   revoked                = false
+}
+
+resource "netbird_policy" "hermes_egress_access" {
+  name        = "Hermes Egress Access"
+  description = "Allow Hermes to reach the Cortado exit peer"
+  enabled     = true
+
+  rule {
+    name          = "Hermes to Cortado"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.hermes_egress.id]
+    destinations  = [netbird_group.midgard_routing_peers.id]
+  }
+}
+
+resource "netbird_route" "hermes_cortado_exit_ipv4" {
+  network         = "0.0.0.0/0"
+  network_id      = "hermes-cortado-exit-ipv4"
+  description     = "Hermes IPv4 internet egress through Cortado"
+  peer_groups     = [netbird_group.midgard_routing_peers.id]
+  groups          = [netbird_group.hermes_egress.id]
+  masquerade      = true
+  metric          = 50
+  enabled         = true
+  skip_auto_apply = false
+}
+
+# NetBird's account-level IPv6 overlay is enabled for the built-in All group.
+# The provider does not yet expose ipv6_enabled_groups, so that setting remains
+# in the management database while these route and group IDs stay declarative.
+resource "netbird_route" "hermes_cortado_exit_ipv6" {
+  network     = "::/0"
+  network_id  = "hermes-cortado-exit-ipv6"
+  description = "Hermes IPv6 internet egress through Cortado"
+  peer_groups = [netbird_group.midgard_routing_peers.id]
+  groups      = [netbird_group.hermes_egress.id]
+  masquerade  = true
+  metric      = 50
+  enabled     = true
 }
 
 resource "netbird_network" "asgard" {

@@ -38,6 +38,46 @@ spec:
         fsGroup: 10000
         fsGroupChangePolicy: OnRootMismatch
       initContainers:
+        # The operator prepends its restartable NetBird init sidecar. Wait for
+        # its policy route, then preserve cluster-local and NetBird control
+        # traffic before removing the direct defaults. Without the tunnel,
+        # application traffic therefore has no fallback path to the internet.
+        - name: preserve-cluster-routes
+          image: netbirdio/netbird:0.77.1@sha256:66f408b0c423e9c3376deea7bc0da78024d32494dd0f957344993015b74c4451
+          command:
+            - sh
+            - -ec
+            - |
+              until ip rule show | grep -q "lookup 7120"; do
+                sleep 0.2
+              done
+              gateway4="$(ip route show default | head -n1 | cut -d' ' -f3)"
+              gateway6="$(ip -6 route show default | head -n1 | cut -d' ' -f3)"
+              test -n "$gateway4"
+              test -n "$gateway6"
+              ip route replace 10.0.188.0/24 via "$gateway4" dev eth0
+              ip route replace 10.42.0.0/16 via "$gateway4" dev eth0
+              ip route replace 10.43.0.0/16 via "$gateway4" dev eth0
+              ip -6 route replace fd42::/56 via "$gateway6" dev eth0
+              ip -6 route replace fd43::/112 via "$gateway6" dev eth0
+              ip route del default
+              ip -6 route del default
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_ADMIN
+            runAsNonRoot: false
+            runAsUser: 0
+          resources:
+            requests:
+              memory: 8Mi
+              cpu: 5m
+            limits:
+              memory: 16Mi
+              cpu: 25m
         - name: bootstrap-config
           image: busybox:1.38.0@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8
           command:
