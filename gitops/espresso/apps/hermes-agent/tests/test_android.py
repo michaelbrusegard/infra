@@ -1028,7 +1028,7 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("kind: SetupKey", netbird_egress)
         self.assertIn("name: Hermes Egress", netbird_egress)
         self.assertIn("injectionMode: Sidecar", netbird_egress)
-        self.assertIn("netbirdio/netbird:0.77.0@sha256:", netbird_egress)
+        self.assertNotIn("containerOverride:", netbird_egress)
         self.assertIn("value: America/Los_Angeles", statefulset)
         self.assertIn("settings put system time_12_24 24", (APP_ROOT / "scripts" / "android-emulator-launch.sh").read_text(encoding="utf-8"))
         self.assertIn("hermes.michaelbrusegard.com/kvm: \"1\"", statefulset)
