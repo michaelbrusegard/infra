@@ -70,7 +70,7 @@
   skills;
   cliProxyApi = {
     baseUrl = "https://llm.asgard.michaelbrusegard.com";
-    piProviderPackage = "npm:@router-for-me/pi-cliproxyapi-provider@1.4.13";
+    piProviderPackage = "npm:@router-for-me/pi-cliproxyapi-provider@1.4.15";
   };
   cliProxyApiKey = pkgs.writeShellApplication {
     name = "cliproxyapi-api-key";
@@ -85,6 +85,31 @@
       exec ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} "$api_key_file"
     '';
   };
+  codexSettings = {
+    approval_policy = "never";
+    sandbox_mode = "danger-full-access";
+    model_provider = "cliproxyapi";
+    model_providers.cliproxyapi = {
+      name = "CLIProxyAPI";
+      base_url = "${cliProxyApi.baseUrl}/v1";
+      wire_api = "responses";
+      auth.command = lib.getExe cliProxyApiKey;
+    };
+    apps._default.enabled = false;
+    mcp_servers = {
+      open_browser_use = {
+        command = openBrowserUseCommand;
+        args = ["mcp"];
+        default_tools_approval_mode = "approve";
+      };
+      open_computer_use = {
+        command = openComputerUseCommand;
+        args = ["mcp"];
+        default_tools_approval_mode = "approve";
+      };
+    };
+  };
+  codexConfig = (pkgs.formats.toml {}).generate "codex-config" codexSettings;
   piCliProxyApi =
     (pkgs.writeShellApplication {
       name = "pi";
@@ -177,30 +202,9 @@ in {
     codex = {
       enable = true;
       package = direnvWrapped pkgs.codex "codex";
-      settings = {
-        approval_policy = "never";
-        sandbox_mode = "danger-full-access";
-        model_provider = "cliproxyapi";
-        model_providers.cliproxyapi = {
-          name = "CLIProxyAPI";
-          base_url = "${cliProxyApi.baseUrl}/v1";
-          wire_api = "responses";
-          auth.command = lib.getExe cliProxyApiKey;
-        };
-        apps._default.enabled = false;
-        mcp_servers = {
-          open_browser_use = {
-            command = openBrowserUseCommand;
-            args = ["mcp"];
-            default_tools_approval_mode = "approve";
-          };
-          open_computer_use = {
-            command = openComputerUseCommand;
-            args = ["mcp"];
-            default_tools_approval_mode = "approve";
-          };
-        };
-      };
+      # Codex persists project trust and other TUI settings here, so an
+      # activation script maintains a writable config instead of a store link.
+      settings = {};
       inherit skills;
     };
 
@@ -272,6 +276,32 @@ in {
           };
         }
         // piSkillFiles;
+
+      activation.codexConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        config_file="$HOME/.codex/config.toml"
+        config_dir=$(dirname "$config_file")
+        temp_file=$(mktemp)
+
+        if [ -f "$config_file" ]; then
+          ${lib.getExe pkgs.yq-go} eval-all \
+            --input-format toml \
+            --output-format toml \
+            'select(fileIndex == 0) * select(fileIndex == 1)' \
+            "$config_file" \
+            ${lib.escapeShellArg codexConfig} > "$temp_file"
+        else
+          ${lib.getExe' pkgs.uutils-coreutils "uutils-cp"} \
+            ${lib.escapeShellArg codexConfig} \
+            "$temp_file"
+        fi
+
+        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
+          $DRY_RUN_CMD mkdir -p "$config_dir"
+          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
+        fi
+
+        rm -f "$temp_file"
+      '';
 
       activation.piConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.pi/agent/settings.json"
