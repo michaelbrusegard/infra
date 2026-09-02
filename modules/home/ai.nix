@@ -15,7 +15,6 @@
     hash = "sha256-126y3P32bqa0tH1+3l/HfZbxItrKOCA/S66AFjueivs=";
   };
   openBrowserUseSkill = "${openBrowserUseSource}/skills/open-browser-use";
-  openBrowserUseCommand = lib.getExe pkgs.open-browser-use;
   openBrowserUseExtensionDirectory =
     if pkgs.stdenv.hostPlatform.isDarwin
     then "Library/Application Support/OpenBrowserUse/chrome-extension/release"
@@ -27,7 +26,6 @@
     hash = "sha256-e3JUiCNFl5nCQph4exBf+BH/6UdRgVTwUJzZE/eGY2s=";
   };
   openComputerUseSkill = "${openComputerUseSource}/skills/open-computer-use";
-  openComputerUseCommand = lib.getExe pkgs.open-computer-use;
   skills = {
     babysit-pr = "${../../config/skills/babysit-pr}";
     blast-radius = "${../../config/skills/blast-radius}";
@@ -85,31 +83,6 @@
       exec ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} "$api_key_file"
     '';
   };
-  codexSettings = {
-    approval_policy = "never";
-    sandbox_mode = "danger-full-access";
-    model_provider = "cliproxyapi";
-    model_providers.cliproxyapi = {
-      name = "CLIProxyAPI";
-      base_url = "${cliProxyApi.baseUrl}/v1";
-      wire_api = "responses";
-      auth.command = lib.getExe cliProxyApiKey;
-    };
-    apps._default.enabled = false;
-    mcp_servers = {
-      open_browser_use = {
-        command = openBrowserUseCommand;
-        args = ["mcp"];
-        default_tools_approval_mode = "approve";
-      };
-      open_computer_use = {
-        command = openComputerUseCommand;
-        args = ["mcp"];
-        default_tools_approval_mode = "approve";
-      };
-    };
-  };
-  codexConfig = (pkgs.formats.toml {}).generate "codex-config" codexSettings;
   piCliProxyApi =
     (pkgs.writeShellApplication {
       name = "pi";
@@ -198,76 +171,27 @@
     '';
   };
 in {
-  programs = {
-    codex = {
-      enable = true;
-      package = direnvWrapped pkgs.codex "codex";
-      # Codex persists project trust and other TUI settings here, so an
-      # activation script maintains a writable config instead of a store link.
-      settings = {};
-      inherit skills;
-    };
-
-    claude-code = {
-      enable = true;
-      package = direnvWrapped pkgs.claude-code "claude";
-      mcpServers = {
-        open-browser-use = {
-          type = "stdio";
-          command = openBrowserUseCommand;
-          args = ["mcp"];
-        };
-        open-computer-use = {
-          type = "stdio";
-          command = openComputerUseCommand;
-          args = ["mcp"];
-        };
-      };
-      inherit skills;
-      settings = {
-        apiKeyHelper = lib.getExe cliProxyApiKey;
-        disableRemoteControl = true;
-        enableAllProjectMcpServers = true;
-        enableArtifact = false;
-        env = {
-          ANTHROPIC_BASE_URL = cliProxyApi.baseUrl;
-          CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
-          ENABLE_CLAUDEAI_MCP_SERVERS = "false";
-        };
-        permissions.defaultMode = "bypassPermissions";
-        sandbox.enabled = false;
-        skipDangerousModePermissionPrompt = true;
-        attribution = {
-          commit = "";
-          pr = "";
-          sessionUrl = false;
-        };
-      };
-    };
-  };
-
   home =
     {
       packages =
         [
+          pkgs.claude-code
+          pkgs.codex
+          pkgs.kimi-cli
           (direnvWrapped piCliProxyApi "pi")
           pkgs.open-browser-use
           pkgs.open-computer-use
           pkgs.slack-cli
         ]
-        ++ lib.optionals (!isWsl) (with pkgs;
-          [
+        ++ lib.optionals (!isWsl) (
+          with pkgs; [
             paseo
             paseo-desktop
           ]
-          ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-            brewCasks.codex-app
-          ]);
+        );
 
       file =
         {
-          ".codex/AGENTS.md".source = agentInstructions;
-          ".claude/CLAUDE.md".source = agentInstructions;
           ".pi/agent/AGENTS.md".source = agentInstructions;
           "${openBrowserUseExtensionDirectory}" = lib.mkIf (!isWsl) {
             source = pkgs.open-browser-use.chromeExtensionUnpacked;
@@ -276,32 +200,6 @@ in {
           };
         }
         // piSkillFiles;
-
-      activation.codexConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        config_file="$HOME/.codex/config.toml"
-        config_dir=$(dirname "$config_file")
-        temp_file=$(mktemp)
-
-        if [ -f "$config_file" ]; then
-          ${lib.getExe pkgs.yq-go} eval-all \
-            --input-format toml \
-            --output-format toml \
-            'select(fileIndex == 0) * select(fileIndex == 1)' \
-            "$config_file" \
-            ${lib.escapeShellArg codexConfig} > "$temp_file"
-        else
-          ${lib.getExe' pkgs.uutils-coreutils "uutils-cp"} \
-            ${lib.escapeShellArg codexConfig} \
-            "$temp_file"
-        fi
-
-        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
-          $DRY_RUN_CMD mkdir -p "$config_dir"
-          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
-        fi
-
-        rm -f "$temp_file"
-      '';
 
       activation.piConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.pi/agent/settings.json"

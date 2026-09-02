@@ -12,8 +12,6 @@ in {
     jankyborders
     neovim-unwrapped
     vimPlugins
-    claude-code
-    codex
     pi-coding-agent
     uv
     ty
@@ -32,6 +30,20 @@ in {
     nextcloud-talk-desktop
     signal-desktop
     ;
+
+  # claude-fable-5-1 requires Claude Code 2.1.251 or newer, while
+  # nixpkgs-unstable is still on 2.1.245.
+  claude-code = pkgs-unstable.claude-code.override {
+    manifest = {
+      version = "2.1.258";
+      platforms = {
+        "darwin-arm64".checksum = "b63136194160791c27cfa7b0403060d85eb0752991625fde8c09f9acacb17c78";
+        "darwin-x64".checksum = "c857db5cd712865623bd61e806cf3f7e8e279c9e5c7c0af5eca06ca6717fc7fb";
+        "linux-arm64".checksum = "43dc490af55262edcb3e9b1cb315de22cc09ccb08bd52a4c39bc5eabaa63100f";
+        "linux-x64".checksum = "704f1334ac65d3e89e1c6c1d7663293ad786a6166afdb71b5075337df630f976";
+      };
+    };
+  };
 
   netbird = pkgs-unstable.netbird.overrideAttrs (old: {
     postPatch =
