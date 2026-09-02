@@ -15,6 +15,7 @@
     hash = "sha256-126y3P32bqa0tH1+3l/HfZbxItrKOCA/S66AFjueivs=";
   };
   openBrowserUseSkill = "${openBrowserUseSource}/skills/open-browser-use";
+  openBrowserUseCommand = lib.getExe pkgs.open-browser-use;
   openBrowserUseExtensionDirectory =
     if pkgs.stdenv.hostPlatform.isDarwin
     then "Library/Application Support/OpenBrowserUse/chrome-extension/release"
@@ -26,6 +27,7 @@
     hash = "sha256-e3JUiCNFl5nCQph4exBf+BH/6UdRgVTwUJzZE/eGY2s=";
   };
   openComputerUseSkill = "${openComputerUseSource}/skills/open-computer-use";
+  openComputerUseCommand = lib.getExe pkgs.open-computer-use;
   skills = {
     babysit-pr = "${../../config/skills/babysit-pr}";
     blast-radius = "${../../config/skills/blast-radius}";
@@ -60,12 +62,15 @@
     CLI only when an equivalent Paseo tool is unavailable. Keep direct coding
     work in the current workspace on the harness's local file and shell tools.
   '';
-  piSkillFiles = lib.mapAttrs' (name: source:
-    lib.nameValuePair ".pi/agent/skills/${name}" {
-      inherit source;
-      recursive = true;
-    })
-  skills;
+  skillFilesFor = directory:
+    lib.mapAttrs' (name: source:
+      lib.nameValuePair "${directory}/${name}" {
+        inherit source;
+        recursive = true;
+      })
+    skills;
+  piSkillFiles = skillFilesFor ".pi/agent/skills";
+  kimiSkillFiles = skillFilesFor ".kimi/skills";
   cliProxyApi = {
     baseUrl = "https://llm.asgard.michaelbrusegard.com";
     piProviderPackage = "npm:@router-for-me/pi-cliproxyapi-provider@1.4.15";
@@ -83,6 +88,53 @@
       exec ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} "$api_key_file"
     '';
   };
+  codexSettings = {
+    approval_policy = "never";
+    sandbox_mode = "danger-full-access";
+    apps._default.enabled = false;
+    mcp_servers = {
+      open_browser_use = {
+        command = openBrowserUseCommand;
+        args = ["mcp"];
+        default_tools_approval_mode = "approve";
+      };
+      open_computer_use = {
+        command = openComputerUseCommand;
+        args = ["mcp"];
+        default_tools_approval_mode = "approve";
+      };
+    };
+  };
+  codexConfig = (pkgs.formats.toml {}).generate "codex-config" codexSettings;
+  kimiAgent = (pkgs.formats.yaml {}).generate "kimi-agent.yaml" {
+    version = 1;
+    agent = {
+      extend = "default";
+      system_prompt_args.ROLE_ADDITIONAL = builtins.readFile agentInstructions;
+    };
+  };
+  kimiMcpConfig = pkgs.writeText "kimi-mcp.json" (builtins.toJSON {
+    mcpServers = {
+      open-browser-use = {
+        command = openBrowserUseCommand;
+        args = ["mcp"];
+      };
+      open-computer-use = {
+        command = openComputerUseCommand;
+        args = ["mcp"];
+      };
+    };
+  });
+  kimiConfigured =
+    (pkgs.writeShellApplication {
+      name = "kimi";
+      text = ''
+        exec ${lib.getExe pkgs.kimi-cli} \
+          --agent-file ${lib.escapeShellArg kimiAgent} "$@"
+      '';
+    }).overrideAttrs (_: {
+      inherit (pkgs.kimi-cli) version;
+    });
   piCliProxyApi =
     (pkgs.writeShellApplication {
       name = "pi";
@@ -171,13 +223,53 @@
     '';
   };
 in {
+  programs = {
+    codex = {
+      enable = true;
+      package = direnvWrapped pkgs.codex "codex";
+      # Codex persists project trust and other TUI settings here, so an
+      # activation script maintains a writable config instead of a store link.
+      settings = {};
+      inherit skills;
+    };
+
+    claude-code = {
+      enable = true;
+      package = direnvWrapped pkgs.claude-code "claude";
+      mcpServers = {
+        open-browser-use = {
+          type = "stdio";
+          command = openBrowserUseCommand;
+          args = ["mcp"];
+        };
+        open-computer-use = {
+          type = "stdio";
+          command = openComputerUseCommand;
+          args = ["mcp"];
+        };
+      };
+      inherit skills;
+      settings = {
+        disableRemoteControl = true;
+        enableAllProjectMcpServers = true;
+        enableArtifact = false;
+        permissions.defaultMode = "bypassPermissions";
+        sandbox.enabled = false;
+        skipDangerousModePermissionPrompt = true;
+        attribution = {
+          commit = "";
+          pr = "";
+          sessionUrl = false;
+        };
+      };
+    };
+  };
+
   home =
     {
       packages =
         [
-          pkgs.claude-code
-          pkgs.codex
-          pkgs.kimi-cli
+          (direnvWrapped kimiConfigured "kimi")
           (direnvWrapped piCliProxyApi "pi")
           pkgs.open-browser-use
           pkgs.open-computer-use
@@ -192,6 +284,8 @@ in {
 
       file =
         {
+          ".codex/AGENTS.md".source = agentInstructions;
+          ".claude/CLAUDE.md".source = agentInstructions;
           ".pi/agent/AGENTS.md".source = agentInstructions;
           "${openBrowserUseExtensionDirectory}" = lib.mkIf (!isWsl) {
             source = pkgs.open-browser-use.chromeExtensionUnpacked;
@@ -199,7 +293,60 @@ in {
             force = true;
           };
         }
-        // piSkillFiles;
+        // piSkillFiles
+        // kimiSkillFiles;
+
+      activation.codexConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        config_file="$HOME/.codex/config.toml"
+        config_dir=$(dirname "$config_file")
+        temp_file=$(mktemp)
+
+        if [ -f "$config_file" ]; then
+          ${lib.getExe pkgs.yq-go} eval-all \
+            --input-format toml \
+            --output-format toml \
+            '(select(fileIndex == 0)
+              | del(.model_provider)
+              | del(.model_providers.cliproxyapi))
+            * select(fileIndex == 1)' \
+            "$config_file" \
+            ${lib.escapeShellArg codexConfig} > "$temp_file"
+        else
+          ${lib.getExe' pkgs.uutils-coreutils "uutils-cp"} \
+            ${lib.escapeShellArg codexConfig} \
+            "$temp_file"
+        fi
+
+        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
+          $DRY_RUN_CMD mkdir -p "$config_dir"
+          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
+        fi
+
+        rm -f "$temp_file"
+      '';
+
+      activation.kimiMcpConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        config_file="$HOME/.kimi/mcp.json"
+        config_dir=$(dirname "$config_file")
+        temp_file=$(mktemp)
+
+        if [ -f "$config_file" ]; then
+          ${lib.getExe pkgs.jq} -s '.[0] * .[1]' \
+            "$config_file" \
+            ${lib.escapeShellArg kimiMcpConfig} > "$temp_file"
+        else
+          ${lib.getExe' pkgs.uutils-coreutils "uutils-cp"} \
+            ${lib.escapeShellArg kimiMcpConfig} \
+            "$temp_file"
+        fi
+
+        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
+          $DRY_RUN_CMD mkdir -p "$config_dir"
+          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
+        fi
+
+        rm -f "$temp_file"
+      '';
 
       activation.piConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.pi/agent/settings.json"
@@ -296,6 +443,7 @@ in {
           [
             ".claude"
             ".codex"
+            ".kimi"
             ".pi"
             ".cache/slack-cli"
           ]
