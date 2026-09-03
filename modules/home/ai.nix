@@ -286,6 +286,9 @@ in {
         {
           ".codex/AGENTS.md".source = agentInstructions;
           ".claude/CLAUDE.md".source = agentInstructions;
+          # Claude writes this file itself, so replace its mutable copy when
+          # returning the settings to declarative management.
+          "${config.home.homeDirectory}/.claude/settings.json".force = true;
           ".pi/agent/AGENTS.md".source = agentInstructions;
           "${openBrowserUseExtensionDirectory}" = lib.mkIf (!isWsl) {
             source = pkgs.open-browser-use.chromeExtensionUnpacked;
