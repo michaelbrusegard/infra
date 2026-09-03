@@ -61,7 +61,7 @@ spec:
               mountPath: /data
       containers:
         - name: cliproxyapi
-          image: docker.io/eceasy/cli-proxy-api:v7.2.135@sha256:53162ac4ebf4f399b729a80830ad13e992add2430e1387a54e09a192987f6df3
+          image: docker.io/eceasy/cli-proxy-api:v7.2.149@sha256:0b6ee7f6e871dbbaa9bb072352f48149b3be05078dc2812c67c4fe1871d7d6ce
           command:
             - /CLIProxyAPI/CLIProxyAPI
           args:
