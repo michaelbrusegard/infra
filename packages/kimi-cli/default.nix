@@ -4,6 +4,7 @@
   lib,
   stdenv,
   versionCheckHook,
+  zlib,
 }: let
   version = "1.50.0";
   system = stdenv.hostPlatform.system;
@@ -48,6 +49,7 @@ in
     buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
       stdenv.cc.cc.lib
       stdenv.cc.libc
+      zlib
     ];
 
     installPhase = ''
