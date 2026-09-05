@@ -40,6 +40,22 @@ _: {
           ];
         };
 
+        # Safeway's storefront does not initialize product search when its
+        # Adobe Target or cookie-consent dependencies are DNS-sinkholed.
+        allowlists = {
+          ads_and_trackers = [
+            ''
+              cdn.cookielaw.org
+              safewayinc.tt.omtrdc.net
+            ''
+          ];
+          security = [
+            ''
+              safewayinc.tt.omtrdc.net
+            ''
+          ];
+        };
+
         clientGroupsBlock.default = [
           "ads_and_trackers"
           "security"
