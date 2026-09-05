@@ -66,7 +66,7 @@ spec:
             - name: HINDSIGHT_API_LLM_BASE_URL
               value: http://cliproxyapi.cliproxyapi.svc.cluster.local:8317/v1
             - name: HINDSIGHT_API_LLM_MODEL
-              value: gpt-5.4
+              value: gpt-5.6-luna
             - name: HINDSIGHT_API_LLM_API_KEY
               valueFrom:
                 secretKeyRef:
