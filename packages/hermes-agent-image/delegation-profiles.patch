@@ -11,7 +11,7 @@ index 623773814..bd9ea2178 100644
              action=function_args.get("action"),
              subagent_id=function_args.get("subagent_id"),
 diff --git a/tools/delegate_tool.py b/tools/delegate_tool.py
-index 8699edb98..a86707669 100644
+index 8699edb98..08f26c856 100644
 --- a/tools/delegate_tool.py
 +++ b/tools/delegate_tool.py
 @@ -17,6 +17,7 @@ The parent's context only sees the delegation call and the summary result,
@@ -118,7 +118,27 @@ index 8699edb98..a86707669 100644
      overall_start = time.monotonic()
      results = []
  
-@@ -3826,6 +3846,7 @@ def delegate_task(
+@@ -3794,8 +3814,18 @@ def delegate_task(
+         wrap_progress_callback,
+     )
+
++    # Batch metadata must come from the resolved routes before any child is
++    # built. Mixed profiles must not be attributed to one child's model/provider.
++    _route_models = {route.get("model") for route in task_routes}
++    _route_providers = {route.get("provider") for route in task_routes}
++    _dispatch_model = (
++        next(iter(_route_models)) if len(_route_models) == 1 else "mixed-profiles"
++    )
++    _dispatch_provider = (
++        next(iter(_route_providers)) if len(_route_providers) == 1 else "mixed-profiles"
++    )
+     live_deleg_id, live_writers, live_paths = create_live_transcripts(
+-        task_list, context, model=creds.get("model"), provider=creds.get("provider")
++        task_list, context, model=_dispatch_model, provider=_dispatch_provider
+     )
+
+     # Capture the ORIGINATING session's wake target BEFORE any child agent is
+@@ -3826,6 +3856,7 @@ def delegate_task(
      # subagent-lifecycle API).
      children = []
      for i, t in enumerate(task_list):
@@ -126,7 +146,7 @@ index 8699edb98..a86707669 100644
          # Per-task role beats top-level; normalise again so unknown
          # per-task values warn and degrade to leaf uniformly.
          effective_role = _normalize_role(t.get("role") or top_role)
-@@ -3855,6 +3876,7 @@ def delegate_task(
+@@ -3855,6 +3886,7 @@ def delegate_task(
                  override_api_mode=creds["api_mode"],
                  override_request_overrides=creds.get("request_overrides"),
                  override_max_tokens=creds.get("max_output_tokens"),
@@ -134,18 +154,7 @@ index 8699edb98..a86707669 100644
                  override_acp_command=creds.get("command"),
                  override_acp_args=creds.get("args"),
                  role=effective_role,
-@@ -4241,6 +4263,10 @@ def delegate_task(
-             return tuple(parts), in_tool
- 
-         _goals = [t["goal"] for t in task_list]
-+        _route_models = {route.get("model") for route in task_routes}
-+        _dispatch_model = (
-+            next(iter(_route_models)) if len(_route_models) == 1 else "mixed-profiles"
-+        )
-         dispatch = dispatch_async_delegation_batch(
-             goals=_goals,
-             context=context,
-@@ -4248,7 +4274,7 @@ def delegate_task(
+@@ -4248,7 +4280,7 @@ def delegate_task(
              # parent's toolsets (no model-facing toolsets arg).
              toolsets=None,
              role=top_role,
@@ -154,7 +163,7 @@ index 8699edb98..a86707669 100644
              session_key=_session_key,
              origin_ui_session_id=_origin_ui_session_id,
              origin_session_id=_wake_sid,
-@@ -4414,6 +4440,50 @@ def _resolve_child_credential_pool(
+@@ -4414,6 +4446,50 @@ def _resolve_child_credential_pool(
      return None
  
  
@@ -205,7 +214,7 @@ index 8699edb98..a86707669 100644
  def _resolve_delegation_credentials(cfg: dict, parent_agent) -> dict:
      """Resolve credentials for subagent delegation.
  
-@@ -4647,8 +4717,9 @@ def _build_top_level_description() -> str:
+@@ -4647,8 +4723,9 @@ def _build_top_level_description() -> str:
          "- Leaf children (the default) cannot call delegate_task, clarify, "
          "memory, send_message, or cronjob; orchestrators regain only "
          "delegate_task.\n"
@@ -217,7 +226,7 @@ index 8699edb98..a86707669 100644
          "Results are returned as an array, one entry per task."
      )
  
-@@ -4704,6 +4775,24 @@ def _build_role_param_description() -> str:
+@@ -4704,6 +4781,24 @@ def _build_role_param_description() -> str:
      )
  
  
@@ -242,7 +251,7 @@ index 8699edb98..a86707669 100644
  def _build_dynamic_schema_overrides() -> dict:
      """Return per-call schema overrides reflecting current config.
  
-@@ -4711,15 +4800,28 @@ def _build_dynamic_schema_overrides() -> dict:
+@@ -4711,15 +4806,28 @@ def _build_dynamic_schema_overrides() -> dict:
      get_definitions() pass rewrites the description fields to the user's
      actual limits.
      """
@@ -278,7 +287,7 @@ index 8699edb98..a86707669 100644
  
      return {
          "description": _build_top_level_description(),
-@@ -4776,6 +4878,10 @@ DELEGATE_TASK_SCHEMA = {
+@@ -4776,6 +4884,10 @@ DELEGATE_TASK_SCHEMA = {
                              "enum": ["leaf", "orchestrator"],
                              "description": "Per-task role override. See top-level 'role' for semantics.",
                          },
@@ -289,7 +298,7 @@ index 8699edb98..a86707669 100644
                          "output_schema": {
                              "type": "object",
                              "description": (
-@@ -4802,6 +4908,10 @@ DELEGATE_TASK_SCHEMA = {
+@@ -4802,6 +4914,10 @@ DELEGATE_TASK_SCHEMA = {
                  "enum": ["leaf", "orchestrator"],
                  "description": "(rebuilt at get_definitions() time)",
              },
@@ -300,7 +309,7 @@ index 8699edb98..a86707669 100644
              "output_schema": {
                  "type": "object",
                  "description": (
-@@ -4913,6 +5023,7 @@ registry.register(
+@@ -4913,6 +5029,7 @@ registry.register(
          tasks=_strip_model_hidden_task_fields(args.get("tasks")),
          max_iterations=args.get("max_iterations"),
          role=args.get("role"),

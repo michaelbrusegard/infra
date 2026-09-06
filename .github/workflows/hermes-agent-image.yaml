@@ -12,6 +12,7 @@ name: Hermes Agent Images
       - packages/hermes-browser-image/**
       - packages/chromium-seccomp-profile/**
       - .github/workflows/hermes-agent-image.yaml
+      - gitops/espresso/apps/hermes-agent/tests/*_smoke.py
   pull_request:
     paths:
       - flake.nix
@@ -21,6 +22,7 @@ name: Hermes Agent Images
       - packages/hermes-browser-image/**
       - packages/chromium-seccomp-profile/**
       - .github/workflows/hermes-agent-image.yaml
+      - gitops/espresso/apps/hermes-agent/tests/*_smoke.py
 
 concurrency:
   group: image-digests-${{ github.ref }}
@@ -127,6 +129,7 @@ jobs:
             gitops/espresso/apps/hermes-agent/scripts/android.py \
             gitops/espresso/apps/hermes-agent/scripts/browser-support.py \
             gitops/espresso/apps/hermes-agent/tests/browser_refs_smoke.py \
+            gitops/espresso/apps/hermes-agent/tests/delegation_profiles_smoke.py \
             "$smoke_root/agent-scripts/"
           chmod 0777 \
             "$smoke_root/browser-files" \
@@ -164,8 +167,11 @@ jobs:
           import websocket
           import youtube_transcript_api
           '
-          docker run --rm --entrypoint bash "$AGENT_IMAGE_REF:nix" -c '
+          docker run --rm \
+            --volume "$smoke_root/agent-scripts:/opt/data/scripts:ro" \
+            --entrypoint bash "$AGENT_IMAGE_REF:nix" -euc '
             hermes_python=$(sed -n "s|^export HERMES_PYTHON='"'"'\(.*\)'"'"'$|\1|p" "$(command -v hermes)")
+            "$hermes_python" /opt/data/scripts/delegation_profiles_smoke.py
             "$hermes_python" -c "from tools.browser_tool import BROWSER_TOOL_SCHEMAS; from tools import browser_session_router; schemas={s['"'"'name'"'"']: s for s in BROWSER_TOOL_SCHEMAS}; assert {'"'"'browser_click_at'"'"', '"'"'browser_upload'"'"', '"'"'browser_download'"'"'} <= schemas.keys(); assert '"'"'maxItems'"'"' not in schemas['"'"'browser_upload'"'"']['"'"'parameters'"'"']['"'"'properties'"'"']['"'"'paths'"'"']"
             "$hermes_python" -c "from gateway.run import _normalize_gateway_tool_progress_event as n; assert n('"'"'subagent.tool'"'"') == ('"'"'tool.started'"'"', True); assert n('"'"'subagent.progress'"'"') == (None, False); assert n('"'"'tool.started'"'"') == ('"'"'tool.started'"'"', False)"
             "$hermes_python" -c "import os; from types import SimpleNamespace; from gateway.config import Platform; from gateway.run import _is_stateless_mattermost_source as s; os.environ['"'"'MATTERMOST_STATELESS_CHANNELS'"'"']='"'"'one,two'"'"'; assert s(SimpleNamespace(platform=Platform.MATTERMOST, chat_id='"'"'two'"'"')); assert not s(SimpleNamespace(platform=Platform.MATTERMOST, chat_id='"'"'three'"'"'))"
