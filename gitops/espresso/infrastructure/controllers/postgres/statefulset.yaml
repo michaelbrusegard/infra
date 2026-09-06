@@ -38,10 +38,10 @@ spec:
               name: postgres
           resources:
             requests:
-              cpu: 250m
+              cpu: "1"
               memory: 512Mi
             limits:
-              cpu: "1"
+              cpu: "4"
               memory: 2Gi
           readinessProbe:
             exec:
@@ -51,14 +51,16 @@ spec:
                 - pg_isready -U "$POSTGRES_USER"
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           livenessProbe:
             exec:
               command:
                 - sh
                 - -c
-                - pg_isready -U "$POSTGRES_USER"
+                - pg_isready -t 8 -U "$POSTGRES_USER"
             initialDelaySeconds: 30
             periodSeconds: 30
+            timeoutSeconds: 10
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
