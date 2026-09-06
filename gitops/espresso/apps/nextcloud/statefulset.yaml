@@ -73,6 +73,7 @@ spec:
                 - name: Host
                   value: cloud.asgard.michaelbrusegard.com
             periodSeconds: 30
+            timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /status.php
@@ -81,6 +82,7 @@ spec:
                 - name: Host
                   value: cloud.asgard.michaelbrusegard.com
             periodSeconds: 10
+            timeoutSeconds: 5
           startupProbe:
             httpGet:
               path: /status.php
