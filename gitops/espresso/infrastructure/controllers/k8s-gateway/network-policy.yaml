@@ -20,10 +20,11 @@ spec:
         - fd7a:115c:a1e0:187::/64
         - 100.102.0.0/16
       toPorts:
+        # Cilium enforces after Service translation, at the pod target port.
         - ports:
-            - port: "53"
+            - port: "1053"
               protocol: UDP
-            - port: "53"
+            - port: "1053"
               protocol: TCP
   egress:
     - toEndpoints:
