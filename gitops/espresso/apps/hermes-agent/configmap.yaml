@@ -17,7 +17,8 @@ data:
       profiles:
         operator:
           provider: openai-api
-          model: gpt-5.6-sol
+          model: gpt-6-astra
+          reasoning_effort: medium
         researcher:
           provider: openai-api
           model: kimi-k3
