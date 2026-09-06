@@ -84,6 +84,31 @@ class BrowserSessionRouterTests(unittest.TestCase):
         self.assertFalse(metadata.exists())
         self.assertTrue(events.exists())
 
+    def test_select_target_does_not_reselect_active_target(self) -> None:
+        calls = []
+
+        def raw_run(task_id, command, args, timeout=None):
+            calls.append((task_id, command, args, timeout))
+            return {
+                "success": True,
+                "data": {
+                    "tabs": [
+                        {
+                            "targetId": "target-current",
+                            "tabId": "t7",
+                            "active": True,
+                        }
+                    ]
+                },
+            }
+
+        result = browser_session_router._select_target(
+            "task", {}, raw_run, "target-current", 30
+        )
+
+        self.assertIsNone(result)
+        self.assertEqual(calls, [("task", "tab", [], 30)])
+
     def test_select_target_uses_current_stable_tab_id(self) -> None:
         calls = []
 
@@ -98,7 +123,13 @@ class BrowserSessionRouterTests(unittest.TestCase):
                                 "targetId": "target-current",
                                 "tabId": "t7",
                                 "label": None,
-                            }
+                                "active": False,
+                            },
+                            {
+                                "targetId": "target-other",
+                                "tabId": "t8",
+                                "active": True,
+                            },
                         ]
                     },
                 }

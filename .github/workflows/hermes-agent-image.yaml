@@ -126,6 +126,7 @@ jobs:
           install -m 0644 \
             gitops/espresso/apps/hermes-agent/scripts/android.py \
             gitops/espresso/apps/hermes-agent/scripts/browser-support.py \
+            gitops/espresso/apps/hermes-agent/tests/browser_refs_smoke.py \
             "$smoke_root/agent-scripts/"
           chmod 0777 \
             "$smoke_root/browser-files" \
@@ -417,6 +418,9 @@ jobs:
             "$hermes_python" - <<'"'"'PY'"'"'
           from tools import browser_tool
           from tools import browser_session_router
+          import runpy
+
+          runpy.run_path("/opt/data/scripts/browser_refs_smoke.py", run_name="__main__")
 
           task_ids = [f"parallel-smoke-{index}" for index in range(4)]
           results = [

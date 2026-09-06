@@ -178,6 +178,9 @@ def _select_target(
         listed = raw_run(task_id, "tab", [], timeout=timeout)
         for tab in _tabs(listed):
             if str(tab.get("targetId") or "") == target_id:
+                # Even reselecting the same tab clears agent-browser's snapshot refs.
+                if tab.get("active") is True:
+                    return None
                 tab_reference = _tab_reference(tab)
                 if tab_reference is None:
                     return {
