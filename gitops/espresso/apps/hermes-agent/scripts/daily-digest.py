@@ -62,6 +62,16 @@ def condition_status(item: dict, condition_type: str) -> str:
     return "Unknown"
 
 
+def termination_context(reason: str, exit_code: int | str) -> str:
+    if reason == "OOMKilled":
+        return "; confirmed OOM kill"
+    if exit_code == 137:
+        return "; SIGKILL, not evidence of OOM without corroboration"
+    if reason == "Completed" and exit_code == 0:
+        return "; clean exit, inspect workload intent before treating as unhealthy"
+    return ""
+
+
 def print_section(name: str, lines: list[str]) -> None:
     print(f"\n{name}")
     print("\n".join(lines or ["  none"]))
@@ -118,15 +128,23 @@ def main() -> None:
             elif phase == "Running" and not ready:
                 current_issues.append(f"pod {namespace}/{name} is not Ready")
 
-            for status in statuses:
-                last = status.get("lastState", {}).get("terminated", {})
-                finished = timestamp(last.get("finishedAt"))
-                if status.get("restartCount", 0) and finished and finished >= RECENT:
-                    recent_restarts.append(
-                        f"  {namespace}/{name} container {status['name']}: "
-                        f"{status['restartCount']} total, last {age(finished)} "
-                        f"({last.get('reason', 'unknown')}, exit {last.get('exitCode', '?')})"
-                    )
+            status_groups = (
+                ("container", statuses),
+                ("initContainer", pod.get("status", {}).get("initContainerStatuses", [])),
+            )
+            for status_kind, grouped_statuses in status_groups:
+                for status in grouped_statuses:
+                    last = status.get("lastState", {}).get("terminated", {})
+                    finished = timestamp(last.get("finishedAt"))
+                    if status.get("restartCount", 0) and finished and finished >= RECENT:
+                        reason = last.get("reason", "unknown")
+                        exit_code = last.get("exitCode", "?")
+                        context = termination_context(reason, exit_code)
+                        recent_restarts.append(
+                            f"  {namespace}/{name} {status_kind} {status['name']}: "
+                            f"{status['restartCount']} cumulative, last {age(finished)} "
+                            f"({reason}, exit {exit_code}{context})"
+                        )
 
     pod_issue_count = sum(item.startswith("pod ") for item in current_issues)
     print_section("PODS", [f"  {pod_count} observed", f"  current issues: {pod_issue_count}"])
@@ -189,10 +207,20 @@ def main() -> None:
         for event_time, event in sorted(recent_events, key=lambda item: item[0]):
             regarding = event.get("regarding") or event.get("involvedObject") or {}
             message = event.get("note") or event.get("message") or "no detail"
+            event_count = event.get("series", {}).get("count") or event.get("count") or 1
+            first_observed = timestamp(
+                event.get("firstTimestamp")
+                or event["metadata"].get("creationTimestamp")
+                or event.get("eventTime")
+            )
+            field_path = regarding.get("fieldPath")
+            target = f"{regarding.get('kind', '?')}/{regarding.get('name', '?')}"
+            if field_path:
+                target = f"{target} {field_path}"
             line = (
-                f"  {age(event_time)} {event['metadata']['namespace']} "
-                f"{event.get('reason', 'Warning')} {regarding.get('kind', '?')}/"
-                f"{regarding.get('name', '?')}: {message}"
+                f"  {event['metadata']['namespace']} {event.get('reason', 'Warning')} "
+                f"{target}: {event_count} occurrence(s), first {age(first_observed)}, "
+                f"last {age(event_time)}: {message}"
             )
             warning_lines.append(line)
     print_section("RECENT_WARNING_EVENTS", warning_lines)

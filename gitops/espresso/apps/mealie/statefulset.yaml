@@ -95,8 +95,7 @@ spec:
               port: http
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /api/app/about
+            tcpSocket:
               port: http
             periodSeconds: 30
           securityContext:
