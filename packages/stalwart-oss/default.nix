@@ -2,6 +2,7 @@
   lib,
   callPackage,
   rustPlatform,
+  stdenv,
   fetchFromGitHub,
   pkg-config,
   protobuf,
@@ -67,6 +68,11 @@ in
       {
         OPENSSL_NO_VENDOR = "1";
         ZSTD_SYS_USE_PKG_CONFIG = "1";
+      }
+      # jemalloc otherwise probes the build CPU, producing different binaries
+      # on 48- and 57-bit hosts. Its x86-64 cross-build default covers both.
+      // lib.optionalAttrs (nativeScim && stdenv.hostPlatform.isx86_64) {
+        JEMALLOC_SYS_WITH_LG_VADDR = "57";
       }
       // lib.optionalAttrs nativeScim {
         STALWART_NATIVE_WEBUI_ARCHIVE = callPackage ./webui.nix {};
