@@ -229,6 +229,15 @@
         })
         // secretsTools.${system}
     );
+    checks = lib.forAllSystems (
+      system:
+        nixpkgs.lib.optionalAttrs nixpkgs.legacyPackages.${system}.stdenv.hostPlatform.isLinux {
+          stalwart-native-scim = inputs.self.packages.${system}.stalwart-native-scim;
+          stalwart-native-scim-source = nixpkgs.legacyPackages.${system}.callPackage ./packages/stalwart-oss/source-check.nix {
+            server = inputs.self.packages.${system}.stalwart-native-scim;
+          };
+        }
+    );
     overlays = {
       default = import ./overlays {inherit inputs;};
     };

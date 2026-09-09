@@ -1,0 +1,2 @@
+# Unified-diff context prefixes are patch syntax, not source whitespace.
+*.patch -whitespace

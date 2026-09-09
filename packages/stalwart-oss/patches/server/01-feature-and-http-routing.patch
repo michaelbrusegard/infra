@@ -1,0 +1,74 @@
+--- a/crates/main/Cargo.toml
++++ b/crates/main/Cargo.toml
+@@ -45,6 +45,7 @@
+ tikv-jemallocator = "0.7"
+ 
+ [features]
++independent-scim = ["http/independent-scim", "common/independent-scim", "services/independent-scim"]
+ #default = ["sqlite", "postgres", "mysql", "rocks", "s3", "redis", "azure", "nats", "enterprise", "zenoh", "kafka"]
+ #default = ["sqlite", "postgres", "mysql", "rocks", "s3", "redis", "azure", "nats", "enterprise"]
+ default = ["rocks", "enterprise"]
+--- a/crates/http/Cargo.toml
++++ b/crates/http/Cargo.toml
+@@ -43,6 +43,7 @@
+ flate2 = "1.1"
+ 
+ [features]
++independent-scim = ["common/independent-scim"]
+ test_mode = []
+ dev_mode = []
+ enterprise = ["scim/enterprise"]
+--- a/crates/common/Cargo.toml
++++ b/crates/common/Cargo.toml
+@@ -89,6 +89,7 @@
+ socket2 = "0.6"
+ 
+ [features]
++independent-scim = ["store/independent-scim"]
+ test_mode = []
+ dev_mode = []
+ enterprise = []
+--- a/crates/store/Cargo.toml
++++ b/crates/store/Cargo.toml
+@@ -56,6 +56,7 @@
+ tokio = { version = "1.53", features = ["full"] }
+ 
+ [features]
++independent-scim = []
+ # Data Stores
+ rocks = ["rocksdb", "rayon", "num_cpus"]
+ sqlite = ["rusqlite", "rayon", "r2d2", "num_cpus", "lru-cache"]
+--- a/crates/services/Cargo.toml
++++ b/crates/services/Cargo.toml
+@@ -36,6 +36,7 @@
+ [dev-dependencies]
+ 
+ [features]
++independent-scim = ["common/independent-scim"]
+ test_mode = []
+ enterprise = []
+ 
+--- a/crates/http/src/lib.rs
++++ b/crates/http/src/lib.rs
+@@ -6,6 +6,8 @@
+ 
+ #![warn(clippy::large_futures)]
+ 
++#[cfg(feature = "independent-scim")]
++pub mod independent_scim;
+ pub mod api;
+ pub mod auth;
+ pub mod form;
+--- a/crates/http/src/request.rs
++++ b/crates/http/src/request.rs
+@@ -436,6 +436,10 @@
+                 }
+                 _ => (),
+             },
++            #[cfg(feature = "independent-scim")]
++            "scim" => {
++                return Ok(crate::independent_scim::handle(self, req, &session).await);
++            }
+             "api" => {
+                 // Allow CORS preflight requests
+                 if req.method() == Method::OPTIONS {

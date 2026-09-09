@@ -1,0 +1,290 @@
+--- a/crates/common/src/auth/mod.rs
++++ b/crates/common/src/auth/mod.rs
+@@ -58,6 +58,8 @@
+ 
+ #[derive(Debug, Clone)]
+ pub struct DomainCache {
++    #[cfg(feature = "independent-scim")]
++    pub scim_authoritative: bool,
+     pub names: Box<[Box<str>]>,
+     pub id: u32,
+     pub id_directory: Option<u32>,
+--- a/crates/common/src/cache/principals.rs
++++ b/crates/common/src/cache/principals.rs
+@@ -183,6 +183,8 @@
+                 };
+ 
+                 let cache = Arc::new(DomainCache {
++                    #[cfg(feature = "independent-scim")]
++                    scim_authoritative: domain.allow_scim_provisioning,
+                     names: [domain.name.into_boxed_str()]
+                         .into_iter()
+                         .chain(
+--- a/crates/common/src/cache/directory.rs
++++ b/crates/common/src/cache/directory.rs
+@@ -26,11 +26,153 @@
+ }
+ 
+ impl Server {
++    #[cfg(feature = "independent-scim")]
++    async fn scim_directory_identity(
++        &self, local: &str, domain: &DomainCache,
++    ) -> trc::Result<AccountWithId> {
++        let id = self.account_id_from_parts(local, domain.id).await?
++            .ok_or_else(|| trc::AuthEvent::Error.into_err()
++                .details("SCIM-authoritative domain requires a provisioned account"))?;
++        let value = self.registry()
++            .get(ObjectId::new(ObjectType::Account, id.into())).await?
++            .ok_or_else(|| trc::AuthEvent::Error.into_err()
++                .details("Provisioned identity no longer exists"))?;
++        Ok(AccountWithId { id, account: Account::from(value) })
++    }
++
++    #[cfg(feature = "independent-scim")]
++    async fn scim_domain_authoritative(&self, domain_id: Id) -> trc::Result<bool> {
++        // Never trust a cached policy after capturing the epoch: a domain write
++        // can commit before its asynchronous cache invalidation is delivered.
++        self.registry().object::<registry::schema::structs::Domain>(domain_id).await?
++            .map(|domain| domain.allow_scim_provisioning)
++            .ok_or_else(|| trc::AuthEvent::Error.into_err()
++                .details("Directory domain no longer exists"))
++    }
++
++    #[cfg(feature = "independent-scim")]
++    async fn scim_group_authoritative(&self, group_id: Id) -> trc::Result<bool> {
++        match self.registry().object::<Account>(group_id).await? {
++            Some(Account::Group(group)) => self.scim_domain_authoritative(group.domain_id).await,
++            _ => Err(trc::AuthEvent::Error.into_err()
++                .details("Directory membership target is not an existing group")),
++        }
++    }
++
++    #[cfg(feature = "independent-scim")]
++    async fn scim_directory_memberships(
++        &self, current: &[Id], requested: Vec<Id>,
++    ) -> trc::Result<Vec<Id>> {
++        let mut members = Vec::with_capacity(requested.len().max(current.len()));
++        for id in requested {
++            // An external directory does not own protected group membership:
++            // ignore new claims, but keep ordinary profile synchronization.
++            if (current.contains(&id) || !self.scim_group_authoritative(id).await?)
++                && !members.contains(&id)
++            {
++                members.push(id);
++            }
++        }
++        for id in current {
++            if !members.contains(id) && self.scim_group_authoritative(*id).await? {
++                members.push(*id);
++            }
++        }
++        Ok(members)
++    }
++
++    async fn write_directory_account(
++        &self, write: RegistryWrite<'_>,
++    ) -> trc::Result<RegistryWriteResult> {
++        #[cfg(not(feature = "independent-scim"))]
++        { self.registry().write(write).await }
++
++        #[cfg(feature = "independent-scim")]
++        {
++            // Nested JIT group synchronizations have finished by this point.
++            // Capture once, read policy fresh, and carry this exact epoch into
++            // the commit. A conflict fails closed; never refresh a stale draft.
++            let epoch = self.registry().independent_scim_epoch().await?;
++            let (object, old_object) = match &write {
++                RegistryWrite::Insert { object, .. } => (*object, None),
++                RegistryWrite::Update { object, old_object, .. } => (*object, Some(*old_object)),
++                _ => return Err(trc::AuthEvent::Error.into_err()
++                    .details("Unsupported directory mutation")),
++            };
++            let registry::schema::prelude::ObjectInner::Account(new) = &object.inner else {
++                return Err(trc::AuthEvent::Error.into_err().details("Expected directory account"));
++            };
++            let old = old_object.and_then(|object| match &object.inner {
++                registry::schema::prelude::ObjectInner::Account(account) => Some(account),
++                _ => None,
++            });
++            let (domain_id, aliases) = match new {
++                Account::User(account) => (account.domain_id, &account.aliases),
++                Account::Group(account) => (account.domain_id, &account.aliases),
++            };
++            if self.scim_domain_authoritative(domain_id).await? {
++                return Err(trc::AuthEvent::Error.into_err()
++                    .details("Directory cannot modify a SCIM-authoritative identity"));
++            }
++            let old_aliases = old.map(|account| match account {
++                Account::User(account) => &account.aliases,
++                Account::Group(account) => &account.aliases,
++            });
++            // Check both additions and removals, including metadata changes.
++            for alias in aliases.iter() {
++                if !old_aliases.is_some_and(|old| old.iter().any(|item| item == alias))
++                    && self.scim_domain_authoritative(alias.domain_id).await?
++                {
++                    return Err(trc::AuthEvent::Error.into_err()
++                        .details("Directory cannot change SCIM-authoritative aliases"));
++                }
++            }
++            if let Some(old_aliases) = old_aliases {
++                for alias in old_aliases.iter() {
++                    if !aliases.iter().any(|item| item == alias)
++                        && self.scim_domain_authoritative(alias.domain_id).await?
++                    {
++                        return Err(trc::AuthEvent::Error.into_err()
++                            .details("Directory cannot remove SCIM-authoritative aliases"));
++                    }
++                }
++            }
++            if let Account::User(new) = new {
++                let old_members = match old {
++                    Some(Account::User(old)) => old.member_group_ids.as_slice(),
++                    _ => &[],
++                };
++                for id in new.member_group_ids.iter() {
++                    if !old_members.contains(id) && self.scim_group_authoritative(*id).await? {
++                        return Err(trc::AuthEvent::Error.into_err()
++                            .details("Directory cannot add SCIM-authoritative group membership"));
++                    }
++                }
++                for id in old_members {
++                    if !new.member_group_ids.contains(id) && self.scim_group_authoritative(*id).await? {
++                        return Err(trc::AuthEvent::Error.into_err()
++                            .details("Directory cannot remove SCIM-authoritative group membership"));
++                    }
++                }
++            }
++            self.registry().write_with_independent_scim_epoch(write, epoch).await
++        }
++    }
++
+     pub async fn synchronize_account(
+         &self,
+         account: directory::Account,
+     ) -> trc::Result<AccountWithId> {
+         let (local, domain) = self.validate_address(&account.email).await?;
++        #[cfg(feature = "independent-scim")]
++        if self.scim_domain_authoritative(Id::from(domain.id)).await? {
++            let existing = self.scim_directory_identity(local, &domain).await?;
++            if !matches!(&existing.account, Account::User(_)) {
++                return Err(trc::AuthEvent::Error.into_err()
++                    .details("Provisioned identity has a different account type"));
++            }
++            return Ok(existing);
++        }
+ 
+         match self
+             .account_id_from_parts(local, domain.id)
+@@ -84,6 +226,8 @@
+                             .await?
+                             .is_none()
+                     {
++                        #[cfg(feature = "independent-scim")]
++                        if self.scim_domain_authoritative(Id::from(alias_domain.id)).await? { continue; }
+                         updated_account.aliases.push(EmailAlias {
+                             name: local.to_string(),
+                             domain_id: Id::from(alias_domain.id),
+@@ -106,6 +250,10 @@
+                             .into(),
+                         );
+                     }
++                    #[cfg(feature = "independent-scim")]
++                    let member_group_ids = self.scim_directory_memberships(
++                        updated_account.member_group_ids.as_slice(), member_group_ids,
++                    ).await?;
+                     if updated_account.member_group_ids.len() != member_group_ids.len()
+                         || !updated_account
+                             .member_group_ids
+@@ -120,8 +268,7 @@
+                 if has_changes {
+                     let updated_account = Object::from(Account::User(updated_account));
+                     match self
+-                        .registry()
+-                        .write(RegistryWrite::update(
++                        .write_directory_account(RegistryWrite::update(
+                             Id::from(account_id),
+                             &updated_account,
+                             &current_account,
+@@ -165,6 +312,8 @@
+                             .await?
+                             .is_none()
+                     {
++                        #[cfg(feature = "independent-scim")]
++                        if self.scim_domain_authoritative(Id::from(alias_domain.id)).await? { continue; }
+                         aliases.push(EmailAlias {
+                             name: local.to_string(),
+                             domain_id: Id::from(alias_domain.id),
+@@ -185,6 +334,8 @@
+                         .into(),
+                     );
+                 }
++                #[cfg(feature = "independent-scim")]
++                let member_group_ids = self.scim_directory_memberships(&[], member_group_ids).await?;
+                 let account = Object::from(Account::User(UserAccount {
+                     name: local.to_string(),
+                     domain_id: Id::from(domain.id),
+@@ -206,8 +357,7 @@
+ 
+ 
+                 match self
+-                    .registry()
+-                    .write(RegistryWrite::insert(&account))
++                    .write_directory_account(RegistryWrite::insert(&account))
+                     .await
+                     .caused_by(trc::location!())?
+                 {
+@@ -235,6 +385,15 @@
+ 
+     pub async fn synchronize_group(&self, group: directory::Group) -> trc::Result<u32> {
+         let (local, domain) = self.validate_address(&group.email).await?;
++        #[cfg(feature = "independent-scim")]
++        if self.scim_domain_authoritative(Id::from(domain.id)).await? {
++            let existing = self.scim_directory_identity(local, &domain).await?;
++            if !matches!(&existing.account, Account::Group(_)) {
++                return Err(trc::AuthEvent::Error.into_err()
++                    .details("Provisioned identity has a different account type"));
++            }
++            return Ok(existing.id);
++        }
+ 
+         match self
+             .account_id_from_parts(local, domain.id)
+@@ -280,6 +439,8 @@
+                             .await?
+                             .is_none()
+                     {
++                        #[cfg(feature = "independent-scim")]
++                        if self.scim_domain_authoritative(Id::from(alias_domain.id)).await? { continue; }
+                         updated_account.aliases.push(EmailAlias {
+                             name: local.to_string(),
+                             domain_id: Id::from(alias_domain.id),
+@@ -293,8 +454,7 @@
+                 if has_changes {
+                     let updated_account = Object::from(Account::Group(updated_account));
+                     match self
+-                        .registry()
+-                        .write(RegistryWrite::update(
++                        .write_directory_account(RegistryWrite::update(
+                             Id::from(account_id),
+                             &updated_account,
+                             &current_account,
+@@ -332,6 +492,8 @@
+                             .await?
+                             .is_none()
+                     {
++                        #[cfg(feature = "independent-scim")]
++                        if self.scim_domain_authoritative(Id::from(alias_domain.id)).await? { continue; }
+                         aliases.push(EmailAlias {
+                             name: local.to_string(),
+                             domain_id: Id::from(alias_domain.id),
+@@ -354,8 +516,7 @@
+ 
+ 
+                 match self
+-                    .registry()
+-                    .write(RegistryWrite::insert(&account))
++                    .write_directory_account(RegistryWrite::insert(&account))
+                     .await
+                     .caused_by(trc::location!())?
+                 {

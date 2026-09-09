@@ -1,0 +1,160 @@
+--- a/crates/store/src/registry/write.rs
++++ b/crates/store/src/registry/write.rs
+@@ -30,6 +30,22 @@
+ 
+ const MAX_OBJECT_PAYLOAD_SIZE: usize = 200_000;
+ 
++#[cfg(feature = "independent-scim")]
++pub const INDEPENDENT_SCIM_EPOCH_KEY: &[u8] = b"independent-scim/account-epoch/v1";
++
++#[cfg(feature = "independent-scim")]
++struct IndependentScimEpoch(u64);
++
++#[cfg(feature = "independent-scim")]
++impl crate::Deserialize for IndependentScimEpoch {
++    fn deserialize(bytes: &[u8]) -> trc::Result<Self> {
++        if bytes.len() != 16 || bytes[..8] != u64::MAX.to_be_bytes() {
++            return Err(trc::StoreEvent::DataCorruption.into_err());
++        }
++        <u64 as crate::Deserialize>::deserialize(&bytes[8..]).map(Self)
++    }
++}
++
+ #[derive(Debug, PartialEq, Eq)]
+ pub enum RegistryWriteResult {
+     Success(Id),
+@@ -73,7 +89,64 @@
+ }
+ 
+ impl RegistryStore {
++    #[cfg(feature = "independent-scim")]
++    pub async fn independent_scim_epoch(&self) -> trc::Result<Option<u64>> {
++        let key = ValueClass::InMemory(crate::write::InMemoryClass::Key(
++            INDEPENDENT_SCIM_EPOCH_KEY.to_vec(),
++        ));
++        self.store().get_value::<IndependentScimEpoch>(ValueKey::from(key)).await
++            .map(|epoch| epoch.map(|epoch| epoch.0))
++    }
++
++    #[cfg(feature = "independent-scim")]
++    async fn assert_independent_scim_epoch(
++        &self, batch: &mut BatchBuilder, expected: Option<Option<u64>>,
++    ) -> trc::Result<()> {
++        // Some(None) means the caller observed an absent marker. Never refresh
++        // a supplied guard: the caller's policy reads precede this write.
++        let epoch = match expected {
++            Some(epoch) => epoch,
++            None => self.independent_scim_epoch().await?,
++        };
++        batch.assert_value(
++            ValueClass::InMemory(crate::write::InMemoryClass::Key(
++                INDEPENDENT_SCIM_EPOCH_KEY.to_vec(),
++            )),
++            epoch.map_or(AssertValue::None, AssertValue::U64),
++        );
++        Ok(())
++    }
++
++    #[cfg(feature = "independent-scim")]
++    pub async fn write_with_independent_scim_epoch(
++        &self, write: RegistryWrite<'_>, epoch: Option<u64>,
++    ) -> trc::Result<RegistryWriteResult> {
++        self.write_inner(write, Some(epoch)).await
++    }
++
++    #[cfg(feature = "independent-scim")]
++    pub fn advance_independent_scim_epoch(&self, batch: &mut BatchBuilder) {
++        let mut marker = u64::MAX.to_be_bytes().to_vec();
++        marker.extend_from_slice(&self.assign_id().to_be_bytes());
++        batch.set(
++            ValueClass::InMemory(crate::write::InMemoryClass::Key(
++                INDEPENDENT_SCIM_EPOCH_KEY.to_vec(),
++            )),
++            marker,
++        );
++    }
++
+     pub async fn write(&self, write: RegistryWrite<'_>) -> trc::Result<RegistryWriteResult> {
++        #[cfg(feature = "independent-scim")]
++        { self.write_inner(write, None).await }
++        #[cfg(not(feature = "independent-scim"))]
++        { self.write_inner(write).await }
++    }
++
++    async fn write_inner(
++        &self, write: RegistryWrite<'_>,
++        #[cfg(feature = "independent-scim")] expected_epoch: Option<Option<u64>>,
++    ) -> trc::Result<RegistryWriteResult> {
+         let mut set_index = IndexBuilder::default();
+         let mut clear_index = IndexBuilder::default();
+ 
+@@ -84,6 +157,8 @@
+         let mut item_id;
+ 
+         let mut batch = BatchBuilder::new();
++        #[cfg(feature = "independent-scim")]
++        self.assert_independent_scim_epoch(&mut batch, expected_epoch).await?;
+         let mut write_id = true;
+         let mut generate_id = false;
+ 
+@@ -149,7 +224,12 @@
+                 allowed_orphan_types,
+             } => {
+                 return if object_id.object().flags() & OBJ_SINGLETON == 0 {
+-                    self.delete(object_id, object, allowed_orphan_types).await
++                    {
++                        #[cfg(feature = "independent-scim")]
++                        { self.delete(object_id, object, allowed_orphan_types, expected_epoch).await }
++                        #[cfg(not(feature = "independent-scim"))]
++                        { self.delete(object_id, object, allowed_orphan_types).await }
++                    }
+                 } else {
+                     Ok(RegistryWriteResult::CannotDeleteSingleton)
+                 };
+@@ -338,6 +418,9 @@
+                 out,
+             );
+ 
++        #[cfg(feature = "independent-scim")]
++        self.advance_independent_scim_epoch(&mut batch);
++
+         self.store()
+             .write(batch.build_all())
+             .await
+@@ -349,11 +432,16 @@
+         object_id: ObjectId,
+         object: Option<&Object>,
+         allowed_orphan_types: &[ObjectType],
++        #[cfg(feature = "independent-scim")] expected_epoch: Option<Option<u64>>,
+     ) -> trc::Result<RegistryWriteResult> {
+         let object_type = object_id.object();
+         let object_type_id = object_type.to_id();
+         let id = object_id.id();
+         let item_id = id.id();
++
++        let mut batch = BatchBuilder::new();
++        #[cfg(feature = "independent-scim")]
++        self.assert_independent_scim_epoch(&mut batch, expected_epoch).await?;
+ 
+         // Fetch object
+         let object = if let Some(object) = object {
+@@ -385,8 +473,7 @@
+             }
+         }
+ 
+-        // Build deletion batch
+-        let mut batch = BatchBuilder::new();
++        // Build deletion batch (epoch captured before relationship reads)
+         batch
+             .assert_value(
+                 ValueClass::Registry(RegistryClass::Item {
+@@ -404,6 +491,9 @@
+                 item_id,
+             }))
+             .registry_index(object_type_id, item_id, clear_index.keys.iter(), false);
++
++        #[cfg(feature = "independent-scim")]
++        self.advance_independent_scim_epoch(&mut batch);
+ 
+         self.0
+             .store

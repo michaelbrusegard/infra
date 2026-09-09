@@ -1,0 +1,35 @@
+--- a/crates/http/src/api/mod.rs
++++ b/crates/http/src/api/mod.rs
+@@ -109,8 +109,16 @@
+             "schema" => {
+                 // Authenticate request
+                 let (_in_flight, access_token) = self.authenticate_headers(req, session).await?;
++                #[cfg(feature = "independent-scim")]
++                static SCHEMA_JSON: &[u8] =
++                    include_bytes!("../../../../resources/schema/schema.independent-scim.json.gz");
++                #[cfg(feature = "independent-scim")]
++                const SCHEMA_HASH: &str =
++                    include_str!("../../../../resources/schema/schema.independent-scim.json.sha256");
++                #[cfg(not(feature = "independent-scim"))]
+                 static SCHEMA_JSON: &[u8] =
+                     include_bytes!("../../../../resources/schema/schema.json.gz");
++                #[cfg(not(feature = "independent-scim"))]
+                 const SCHEMA_HASH: &str =
+                     include_str!("../../../../resources/schema/schema.json.sha256");
+ 
+--- a/crates/common/src/manager/defaults.rs
++++ b/crates/common/src/manager/defaults.rs
+@@ -62,10 +62,12 @@
+                     auto_update_frequency: Duration::from_millis(30 * 24 * 60 * 60 * 1000),
+                     description: "Stalwart Web Interface".to_string(),
+                     enabled: true,
+-                    #[cfg(not(feature = "dev_mode"))]
++                    #[cfg(all(not(feature = "dev_mode"), not(feature = "independent-scim")))]
+                     resource_url:
+                         "https://github.com/stalwartlabs/webui/releases/latest/download/webui.zip"
+                             .into(),
++                    #[cfg(all(not(feature = "dev_mode"), feature = "independent-scim"))]
++                    resource_url: concat!("file://", env!("STALWART_NATIVE_WEBUI_ARCHIVE")).into(),
+                     #[cfg(feature = "dev_mode")]
+                     resource_url: "file:///Users/me/code/webui/.ignore/webui.zip".into(),
+                     unpack_directory: None,

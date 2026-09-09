@@ -2,6 +2,10 @@
 pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
   betterbird = pkgs.callPackage ./betterbird {};
   chromium-seccomp-profile = pkgs.callPackage ./chromium-seccomp-profile {};
+  stalwart-oss = pkgs.callPackage ./stalwart-oss {};
+  stalwart-oss-image = pkgs.callPackage ./stalwart-oss/image.nix {};
+  stalwart-native-scim = pkgs.callPackage ./stalwart-oss {nativeScim = true;};
+  stalwart-native-scim-image = pkgs.callPackage ./stalwart-oss/image.nix {nativeScim = true;};
 }
 // {
   codex = pkgs.callPackage ./codex {};

@@ -1,0 +1,233 @@
+--- a/crates/store/src/write/batch.rs
++++ b/crates/store/src/write/batch.rs
+@@ -193,6 +193,32 @@
+     }
+ 
+     pub fn acl_grant(&mut self, grant_account_id: u32, op: Vec<u8>) -> &mut Self {
++        #[cfg(feature = "independent-scim")]
++        {
++            let owner = self.last_account_id();
++            let mut principals = [owner.unwrap_or(u32::MAX), grant_account_id];
++            principals.sort_unstable();
++            for id in principals {
++                self.assert_value(
++                    ValueClass::Registry(super::RegistryClass::Item {
++                        object_id: registry::schema::prelude::ObjectType::Account as u16,
++                        item_id: u64::from(id),
++                    }),
++                    super::assert::AssertValue::Some,
++                );
++            }
++            if owner.is_none() {
++                // Contradict the grantee-existence assertion: an unscoped grant
++                // must fail regardless of whether a reserved ID has a row.
++                self.assert_value(
++                    ValueClass::Registry(super::RegistryClass::Item {
++                        object_id: registry::schema::prelude::ObjectType::Account as u16,
++                        item_id: u64::from(grant_account_id),
++                    }),
++                    super::assert::AssertValue::None,
++                );
++            }
++        }
+         self.batch_size += (U32_LEN * 3) + op.len();
+         self.ops.push(Operation::Value {
+             class: ValueClass::Acl(grant_account_id),
+--- a/crates/services/src/task_manager/destroy_account.rs
++++ b/crates/services/src/task_manager/destroy_account.rs
+@@ -50,8 +50,152 @@
+     }
+ }
+ 
++// BEGIN independent SCIM ACL retry ordering
++#[cfg(feature = "independent-scim")]
++async fn independent_scim_acl_cleanup<R, E>(
++    cleanup: impl std::future::Future<Output = Result<R, E>>,
++    invalidation: impl std::future::Future<Output = Result<(), E>>,
++) -> Result<(), E> {
++    let cleanup_result = cleanup.await;
++    // Also run after partial cleanup failure. If enumeration or eviction fails,
++    // return an error so the durable destruction task retries the entire sweep.
++    invalidation.await?;
++    cleanup_result.map(|_| ())
++}
++
++#[cfg(all(test, feature = "independent-scim"))]
++mod independent_scim_acl_retry_tests {
++    use super::independent_scim_acl_cleanup;
++    use std::{cell::{Cell, RefCell}, collections::BTreeSet, future::Future, task::{Context, Poll, Waker}};
++
++    fn ready<T>(future: impl Future<Output = T>) -> T {
++        match Box::pin(future).as_mut().poll(&mut Context::from_waker(Waker::noop())) {
++            Poll::Ready(result) => result,
++            Poll::Pending => panic!("test future unexpectedly blocked"),
++        }
++    }
++
++    // These exercise the production async ordering helper with faulting futures,
++    // not a native Store or cache backend. The live fixture still owns that proof.
++    #[test]
++    fn partial_cleanup_failure_still_invalidates_and_retry_sweeps_all() {
++        let acl = RefCell::new(BTreeSet::from([1u32, 2]));
++        let live_accounts = [1u32, 2, 3];
++        let cached = RefCell::new(BTreeSet::from(live_accounts));
++        let sweeps = Cell::new(0);
++        let result = ready(independent_scim_acl_cleanup(
++            async {
++                acl.borrow_mut().remove(&1); // first committed chunk
++                Err::<usize, _>("cleanup chunk failed")
++            },
++            async {
++                assert_eq!(*acl.borrow(), BTreeSet::from([2]));
++                for id in live_accounts { cached.borrow_mut().remove(&id); }
++                sweeps.set(sweeps.get() + 1);
++                Ok::<(), &str>(())
++            },
++        ));
++        assert_eq!(result, Err("cleanup chunk failed"));
++        assert!(cached.borrow().is_empty());
++        // Prior recipient 1 is no longer discoverable from ACLs on retry.
++        cached.borrow_mut().extend(live_accounts);
++        let result = ready(independent_scim_acl_cleanup(
++            async {
++                assert!(!acl.borrow().contains(&1));
++                let remaining = acl.borrow().len();
++                acl.borrow_mut().clear();
++                Ok::<usize, &str>(remaining)
++            },
++            async {
++                for id in live_accounts { cached.borrow_mut().remove(&id); }
++                sweeps.set(sweeps.get() + 1);
++                Ok::<(), &str>(())
++            },
++        ));
++        assert_eq!(result, Ok(()));
++        assert_eq!(sweeps.get(), 2);
++        assert!(cached.borrow().is_empty());
++    }
++
++    #[test]
++    fn failed_invalidation_retries_even_when_all_acl_rows_are_gone() {
++        let acl = RefCell::new(BTreeSet::from([1u32]));
++        let cached = RefCell::new(BTreeSet::from([1u32, 2]));
++        let result = ready(independent_scim_acl_cleanup(
++            async { acl.borrow_mut().clear(); Ok::<usize, &str>(1) },
++            async { Err::<(), _>("enumeration or eviction failed") },
++        ));
++        assert_eq!(result, Err("enumeration or eviction failed"));
++        assert!(acl.borrow().is_empty());
++        assert!(!cached.borrow().is_empty());
++        let result = ready(independent_scim_acl_cleanup(
++            async { assert!(acl.borrow().is_empty()); Ok::<usize, &str>(0) },
++            async { cached.borrow_mut().clear(); Ok::<(), &str>(()) },
++        ));
++        assert_eq!(result, Ok(()));
++        assert!(cached.borrow().is_empty());
++    }
++
++    #[test]
++    fn cancelled_partial_cleanup_is_recovered_by_the_next_global_sweep() {
++        let acl = RefCell::new(BTreeSet::from([1u32, 2]));
++        let cached = RefCell::new(BTreeSet::from([1u32, 2]));
++        let sweeps = Cell::new(0);
++        let mut interrupted = Box::pin(independent_scim_acl_cleanup(
++            async {
++                acl.borrow_mut().remove(&1);
++                std::future::pending::<Result<usize, &str>>().await
++            },
++            async {
++                sweeps.set(sweeps.get() + 1);
++                cached.borrow_mut().clear();
++                Ok::<(), &str>(())
++            },
++        ));
++        assert!(interrupted.as_mut().poll(&mut Context::from_waker(Waker::noop())).is_pending());
++        drop(interrupted); // task cancellation before invalidation can execute
++        assert_eq!(sweeps.get(), 0);
++        assert_eq!(*acl.borrow(), BTreeSet::from([2]));
++        let result = ready(independent_scim_acl_cleanup(
++            async { acl.borrow_mut().clear(); Ok::<usize, &str>(1) },
++            async {
++                cached.borrow_mut().clear();
++                sweeps.set(sweeps.get() + 1);
++                Ok::<(), &str>(())
++            },
++        ));
++        assert_eq!(result, Ok(()));
++        assert_eq!(sweeps.get(), 1);
++        assert!(cached.borrow().is_empty());
++    }
++}
++// END independent SCIM ACL retry ordering
++
+ async fn destroy_account(server: &Server, task: &TaskDestroyAccount) -> trc::Result<TaskResult> {
+     let account_id = task.account_id.document_id();
++
++    #[cfg(feature = "independent-scim")]
++    {
++        // ACL cleanup can fail after committing some chunks. Those recipients
++        // disappear from later scans, so never derive eviction from its result.
++        // A retry repeats this global sweep even if no owned ACL rows remain.
++        independent_scim_acl_cleanup(
++            server.store().acl_revoke_all(account_id),
++            async {
++                let accounts = server.registry().query::<Vec<types::id::Id>>(
++                    RegistryQuery::new(ObjectType::Account),
++                ).await?;
++                let mut invalidation = common::cache::invalidate::CacheInvalidationBuilder::default();
++                // The deleted owner is absent from the live-account index but
++                // can still have a cached token after an interrupted attempt.
++                invalidation.invalidate(common::ipc::CacheInvalidation::AccessToken(account_id));
++                for account in accounts {
++                    invalidation.invalidate(common::ipc::CacheInvalidation::AccessToken(account.document_id()));
++                }
++                server.invalidate_caches(invalidation).await
++            },
++        ).await?;
++    }
+ 
+     // Destroy public keys and masked emails
+     for object in [ObjectType::PublicKey, ObjectType::MaskedEmail] {
+--- a/crates/common/src/cache/invalidate.rs
++++ b/crates/common/src/cache/invalidate.rs
+@@ -112,6 +112,10 @@
+             }
+ 
+             (ObjectInner::Domain(current), ObjectInner::Domain(new)) => {
++                #[cfg(feature = "independent-scim")]
++                if current.allow_scim_provisioning != new.allow_scim_provisioning {
++                    self.invalidate(CacheInvalidation::Domain(id));
++                }
+                 if (current.name != new.name)
+                     || (current.aliases != new.aliases)
+                     || (current.directory_id != new.directory_id)
+@@ -259,6 +263,29 @@
+         let mut changes = changes.changes;
+         if changes.is_empty() {
+             return Ok(());
++        }
++
++        #[cfg(feature = "independent-scim")]
++        {
++            // Group ACLs are copied into member access tokens. Evicting only
++            // the group's own token leaves that inherited access cached.
++            let recipients = changes.iter().filter_map(|change| match change {
++                CacheInvalidation::AccessToken(id) => Some(*id),
++                _ => None,
++            }).collect::<Vec<_>>();
++            for recipient in recipients {
++                if matches!(self.registry().object::<Account>(Id::from(recipient)).await?,
++                    Some(Account::Group(_)))
++                {
++                    for linked in self.registry().linked_objects(
++                        ObjectId::new(ObjectType::Account, Id::from(recipient)),
++                    ).await? {
++                        if linked.object() == ObjectType::Account {
++                            changes.insert(CacheInvalidation::AccessToken(linked.id().document_id()));
++                        }
++                    }
++                }
++            }
+         }
+ 
+         // Invalidate objects linking roles
