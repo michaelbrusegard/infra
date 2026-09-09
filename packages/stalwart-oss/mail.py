@@ -34,6 +34,24 @@ from integration import (
     seeded_user_defaults,
 )
 
+MAIL_PERMISSIONS = [
+    "authenticate",
+    "emailSend",
+    "emailReceive",
+    "imapAuthenticate",
+    "imapList",
+    "imapSelect",
+    "imapSearch",
+    "imapFetch",
+    "imapCreate",
+    "imapAppend",
+    "imapStore",
+    "imapCopy",
+    "imapMove",
+    "imapExpunge",
+    "imapStatus",
+]
+
 
 def port():
     with socket.socket() as sock:
@@ -134,7 +152,12 @@ def start_mail(server):
 
 
 def management_account(server, client, domain_id):
-    permissions = ["authenticate", "scimAccess", "actionReloadSettings"]
+    permissions = [
+        "authenticate",
+        "impersonate",
+        "scimAccess",
+        "actionReloadSettings",
+    ]
     for kind, verbs in {
         "Account": ("Get", "Query", "Create", "Update", "Destroy"),
         "Domain": ("Get", "Query"),
@@ -160,7 +183,7 @@ def management_account(server, client, domain_id):
             "encryptionAtRest": {"@type": "Disabled"},
             "credentials": {"0": {"@type": "Password", "secret": server.password}},
             "permissions": {
-                "@type": "Replace",
+                "@type": "Merge",
                 "enabledPermissions": dict.fromkeys(permissions, True),
             },
         },
@@ -169,7 +192,7 @@ def management_account(server, client, domain_id):
     auth = client.redactor.add(
         "Basic " + base64.b64encode((email + ":" + server.password).encode()).decode()
     )
-    return uid, auth
+    return uid, auth, email
 
 
 def configure_backend(server, client, domain="mail.test"):
@@ -245,23 +268,6 @@ def configure_backend(server, client, domain="mail.test"):
     # Zero durations evaluate as unset and fall back to the 30-second tarpit.
     update(client, "MtaStageRcpt", {"waitOnFail": {"else": "1ms"}})
     update(client, "MtaStageData", {"enableSpamFilter": {"else": "false"}})
-    permissions = [
-        "authenticate",
-        "emailSend",
-        "emailReceive",
-        "imapAuthenticate",
-        "imapList",
-        "imapSelect",
-        "imapSearch",
-        "imapFetch",
-        "imapCreate",
-        "imapAppend",
-        "imapStore",
-        "imapCopy",
-        "imapMove",
-        "imapExpunge",
-        "imapStatus",
-    ]
     users = {}
     for name in ("alice", "bob"):
         password = client.redactor.add(secrets.token_urlsafe(32))
@@ -277,7 +283,7 @@ def configure_backend(server, client, domain="mail.test"):
                 "permissions": {
                     "@type": "Merge",
                     "enabledPermissions": {
-                        p: True for p in permissions if p != "authenticate"
+                        p: True for p in MAIL_PERMISSIONS if p != "authenticate"
                     },
                 },
                 "encryptionAtRest": {"@type": "Disabled"},
@@ -291,6 +297,21 @@ def configure_backend(server, client, domain="mail.test"):
             },
         )
         users[name] = {"id": uid, "email": f"{name}@{domain}", "password": password}
+    shared_id = create(
+        client,
+        "Account",
+        {
+            "@type": "Group",
+            "name": "shared",
+            "domainId": domain_id,
+            # A migration-only fixture entitlement. The migration acceptance
+            # restores Inherit after copying and verifies master login closes.
+            "permissions": {
+                "@type": "Merge",
+                "enabledPermissions": dict.fromkeys(MAIL_PERMISSIONS, True),
+            },
+        },
+    )
     create(
         client,
         "MailingList",
@@ -311,12 +332,14 @@ def configure_backend(server, client, domain="mail.test"):
             "useTls": False,
         },
     )
-    admin_id, auth = management_account(server, client, domain_id)
+    admin_id, auth, admin_email = management_account(server, client, domain_id)
     reload(client)
     client.recovery = auth
     start_mail(server)
     return dict(
         admin_id=admin_id,
+        admin_email=admin_email,
+        admin_password=server.password,
         server=server,
         client=client,
         domain=domain,
@@ -326,6 +349,7 @@ def configure_backend(server, client, domain="mail.test"):
         certificate=cert,
         private_key=key,
         users=users,
+        shared={"id": shared_id, "address": f"shared@{domain}"},
     )
 
 

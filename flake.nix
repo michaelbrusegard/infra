@@ -207,6 +207,7 @@
           fluxcd
           gh
           git
+          imapsync
           jq
           kubectl
           kubernetes-helm

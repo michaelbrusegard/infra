@@ -20,6 +20,6 @@ in
     python3 ${source}/test_packaging.py -v
     python3 ${source}/integration.py --self-test
     PYTHONPYCACHEPREFIX="$TMPDIR/pycache" python3 -m py_compile \
-      ${source}/mail.py ${source}/identity.py ${source}/recovery.py
+      ${source}/mail.py ${source}/migration.py ${source}/identity.py ${source}/recovery.py
     touch $out
   ''
