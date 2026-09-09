@@ -87,7 +87,6 @@ data:
         result = subprocess.run(
             [
                 "stalwart-cli",
-                "--insecure",
                 "query",
                 object_type,
                 "--json",
@@ -98,6 +97,7 @@ data:
             capture_output=True,
             text=True,
             env=environment,
+            timeout=30,
         )
         return [
             json.loads(line)

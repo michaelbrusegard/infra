@@ -87,11 +87,11 @@ spec:
             - name: STALWART_CLI_VERSION
               value: v1.0.7
             - name: PERSONAL_SYNC_URL
-              value: https://stalwart-internal.stalwart.svc.cluster.local
+              value: https://mail.asgard.michaelbrusegard.com
             - name: PERSONAL_SYNC_DOMAIN
               value: michaelbrusegard.com
             - name: MANAFISH_SYNC_URL
-              value: https://stalwart-internal.manafishrov-stalwart.svc.cluster.local
+              value: https://backend.manafishrov.com
             - name: MANAFISH_SYNC_DOMAIN
               value: manafishrov.com
           envFrom:

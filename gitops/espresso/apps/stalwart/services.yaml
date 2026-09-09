@@ -51,6 +51,10 @@ spec:
   selector:
     app: stalwart
   ports:
+    # Private delivery through the TLS-named VIP; NetworkPolicy permits only the edge.
+    - name: edge-lmtp
+      port: 24
+      targetPort: edge-lmtp
     - name: https
       port: 443
       targetPort: https
