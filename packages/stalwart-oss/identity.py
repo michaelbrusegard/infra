@@ -126,7 +126,7 @@ def run(server, client, *, pocket_binary, chromium):
                 "POST",
                 "/api/signup/setup",
                 {
-                    "username": "admin@example.test",
+                    "username": "admin",
                     "email": "admin@example.test",
                     "firstName": "Identity",
                     "lastName": "Fixture",
@@ -234,7 +234,7 @@ def run(server, client, *, pocket_binary, chromium):
                 "POST",
                 "/api/users",
                 {
-                    "username": "offboard@example.test",
+                    "username": "offboard",
                     "email": "offboard@example.test",
                     "firstName": "Offboard",
                 },

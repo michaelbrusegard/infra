@@ -122,6 +122,49 @@ fn email(v: &Value) -> Result<String, Error> {
     }
     Ok(s)
 }
+fn user_primary(body: &Value) -> Result<String, Error> {
+    let raw = text(
+        get(body, "userName").unwrap_or(&Value::Null),
+        "userName",
+        true,
+    )?
+    .trim()
+    .to_ascii_lowercase();
+    if raw.contains('@') {
+        return email(&Value::String(raw));
+    }
+    // Pocket ID keeps a short login name but supplies the mailbox identity as
+    // one explicitly primary email. Accept only that unambiguous form and
+    // require the local part to match, so this cannot silently retarget users.
+    email(&Value::String(format!("{raw}@placeholder.invalid")))?;
+    let items = get(body, "emails")
+        .and_then(Value::as_array)
+        .ok_or_else(|| invalid("A short userName requires one primary full email"))?;
+    let mut primaries = items
+        .iter()
+        .filter(|item| {
+            get(item, "primary")
+                .map(boolean)
+                .transpose()
+                .ok()
+                .flatten()
+                == Some(true)
+        })
+        .map(|item| email(get(item, "value").unwrap_or(&Value::Null)));
+    let primary = primaries
+        .next()
+        .transpose()?
+        .ok_or_else(|| invalid("A short userName requires one primary full email"))?;
+    if primaries.next().is_some() {
+        return Err(invalid("A short userName requires one primary full email"));
+    }
+    if primary.split_once('@').map(|(local, _)| local) != Some(raw.as_str()) {
+        return Err(invalid(
+            "A short userName must match the primary email local part",
+        ));
+    }
+    Ok(primary)
+}
 const IGNORED: &[&str] = &[
     "password",
     "phoneNumbers",
@@ -215,7 +258,7 @@ fn start(body: &Value, group: bool) -> Result<Value, Error> {
 }
 pub fn normalize_user(body: &Value) -> Result<Value, Error> {
     let mut result = start(body, false)?;
-    let primary = email(get(body, "userName").unwrap_or(&Value::Null))?;
+    let primary = user_primary(body)?;
     result["userName"] = json!(primary);
     let name = get(body, "name").filter(|v| !v.is_null());
     if let Some(name) = name {
@@ -1698,8 +1741,21 @@ mod tests {
             )
             .is_ok()
         );
+        let pocket = normalize_user(&json!({
+            "schemas": [USER_SCHEMA],
+            "userName": "alice",
+            "emails": [{"value": "Alice@example.org", "primary": true}],
+        }))
+        .unwrap();
+        assert_eq!(pocket["userName"], "alice@example.org");
+        for body in [
+            json!({"schemas":[USER_SCHEMA],"userName":"bare"}),
+            json!({"schemas":[USER_SCHEMA],"userName":"alice","emails":[{"value":"other@example.org","primary":true}]}),
+            json!({"schemas":[USER_SCHEMA],"userName":"alice","emails":[{"value":"alice@example.org","primary":true},{"value":"alice@other.org","primary":true}]}),
+        ] {
+            assert!(normalize_user(&body).is_err());
+        }
         for username in [
-            "bare",
             "a@@example.org",
             ".a@example.org",
             "a@-example.org",
