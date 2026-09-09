@@ -1,4 +1,4 @@
-name: Stalwart Native SCIM Image
+name: Stalwart Native SCIM Candidate
 
 'on':
   workflow_dispatch:
@@ -11,16 +11,15 @@ name: Stalwart Native SCIM Image
       - .github/workflows/stalwart-image.yaml
 
 concurrency:
-  group: stalwart-native-scim-publish
+  group: stalwart-native-scim-build
   cancel-in-progress: false
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions:
       contents: read
-      packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -40,30 +39,16 @@ jobs:
               pkgs = upstream.legacyPackages.x86_64-linux;
             in pkgs.callPackage ./packages/stalwart-oss/image.nix { nativeScim = true; }
           '
-      - name: Verify the previously tested archive
+      - name: Check container entrypoint
         run: |
           sha256sum result
-          echo 'becc6a51256c3c9784a5a8629e50aadba8b0297608f09e8f0196abcb5e39e18c  result' | sha256sum --check
           docker load < result
-          docker run --rm --network none stalwart-native-scim:0.16.21 --version
-      - name: Retain rejected archive for comparison
-        if: failure()
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges:true stalwart-native-scim:0.16.21 --version
+      - name: Retain candidate for acceptance and separate promotion
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: stalwart-image-diagnostic
+          name: stalwart-native-scim-image
           path: result
           compression-level: 0
-          retention-days: 3
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish immutable source-revision tag
-        env:
-          IMAGE: ghcr.io/michaelbrusegard/stalwart-native-scim
-        run: |
-          target="$IMAGE:sha-$GITHUB_SHA"
-          docker tag stalwart-native-scim:0.16.21 "$target"
-          docker push "$target"
-          docker image inspect "$target" --format '{{json .RepoDigests}}'
+          retention-days: 7
