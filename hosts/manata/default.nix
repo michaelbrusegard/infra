@@ -42,20 +42,27 @@
     };
   };
 
-  services.restic.server.initializeRepositories = {
-    n8n = ["pvc"];
-    nextcloud = [
-      "postgres"
-      "pvc"
-    ];
-    pocket-id = ["pvc"];
-    roundcube = ["pvc"];
-    twenty = [
-      "postgres"
-      "pvc"
-      "s3"
-    ];
-    vaultwarden = ["pvc"];
+  services.restic.server = {
+    initializeRepositories = {
+      manafishrov-stalwart = ["pvc"];
+      n8n = ["pvc"];
+      nextcloud = [
+        "postgres"
+        "pvc"
+      ];
+      pocket-id = ["pvc"];
+      roundcube = ["pvc"];
+      twenty = [
+        "postgres"
+        "pvc"
+        "s3"
+      ];
+      vaultwarden = ["pvc"];
+    };
+
+    # The client remains disabled until manata is reachable and a restore has
+    # been proven. Avoid alerting on the intentionally empty repository.
+    maintenance.freshness.excludedRepositories = ["manafishrov-stalwart/pvc"];
   };
 
   system.stateVersion = "26.05";
