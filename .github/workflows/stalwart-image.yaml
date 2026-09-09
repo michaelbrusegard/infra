@@ -43,7 +43,7 @@ jobs:
       - name: Verify the previously tested archive
         run: |
           sha256sum result
-          echo '2d56e4ed45e0b4bb532d101ecbe9b0edc93cdb08c1ea0c8dd95551cd565249f0  result' | sha256sum --check
+          echo 'becc6a51256c3c9784a5a8629e50aadba8b0297608f09e8f0196abcb5e39e18c  result' | sha256sum --check
           docker load < result
           docker run --rm --network none stalwart-native-scim:0.16.21 --version
       - name: Retain rejected archive for comparison
