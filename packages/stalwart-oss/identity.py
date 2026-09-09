@@ -30,6 +30,7 @@ from integration import (
     namespace_id,
     isolated_environment,
     seeded_user_defaults,
+    patch,
     require,
 )
 
@@ -136,6 +137,7 @@ def run(server, client, *, pocket_binary, chromium):
                 "POST",
                 "/api/oidc/clients",
                 {
+                    "id": "stalwart-fixture",
                     "name": "Isolated fixture",
                     "callbackURLs": [pocket.origin + "/callback"],
                     "isPublic": True,
@@ -273,7 +275,13 @@ def run(server, client, *, pocket_binary, chromium):
             )
             result["checks"]["existingMailboxIdsAndSystemIsolation"] = "PASS"
             result["checks"]["browserPkce"] = browser_login(
-                pocket, oidc, discovery, chromium
+                pocket,
+                oidc,
+                discovery,
+                chromium,
+                lambda tokens: stalwart_oidc_login(
+                    client, pocket, oidc, tokens, adopted_user, adopted_group
+                ),
             )
             print(json.dumps(result), flush=True)
             return result
@@ -289,7 +297,91 @@ def run(server, client, *, pocket_binary, chromium):
                 process.wait()
 
 
-def browser_login(pocket, oidc, discovery, chromium):
+def stalwart_oidc_login(client, pocket, oidc, tokens, user_id, group_id):
+    """Exercise the real native OIDC directory with a real issuer access JWT."""
+    token = tokens["access_token"]
+    require(token.count(".") == 2, "Pocket ID did not issue a JWT access token")
+    original_directory = client.jmap("x:Authentication/get", {"ids": ["singleton"]})[
+        "list"
+    ][0].get("directoryId")
+    directory = client.jmap(
+        "x:Directory/set",
+        {
+            "create": {
+                "pocket": {
+                    "@type": "Oidc",
+                    "description": "Disposable real Pocket ID authentication",
+                    "issuerUrl": pocket.origin,
+                    "claimUsername": "email",
+                    "requireAudience": "wrong-fixture-audience",
+                    "requireScopes": {},
+                }
+            }
+        },
+    )["created"]["pocket"]["id"]
+
+    def reload():
+        client.jmap("x:Action/set", {"create": {"reload": {"@type": "ReloadSettings"}}})
+
+    try:
+        client.jmap(
+            "x:Authentication/set",
+            {"update": {"singleton": {"directoryId": directory}}},
+        )
+        reload()
+        for _ in range(60):
+            discovery = client.expect(
+                "GET", "/api/discover/admin@example.test", 200, auth=None
+            ).document()
+            if discovery.get("token_endpoint", "").startswith(pocket.origin + "/"):
+                break
+            time.sleep(0.2)
+        else:
+            raise AssertionError("Native discovery did not select Pocket ID")
+        client.expect("GET", "/api/account", 401, auth="Bearer " + token)
+        client.jmap(
+            "x:Directory/set",
+            {"update": {directory: {"requireAudience": oidc["id"]}}},
+        )
+        reload()
+        for _ in range(40):
+            response = client.request("GET", "/api/account", auth="Bearer " + token)
+            if response.status == 200:
+                break
+            time.sleep(0.25)
+        else:
+            raise AssertionError("Real Pocket ID access token did not authenticate")
+        session = client.expect(
+            "GET", "/jmap/session", 200, auth="Bearer " + token
+        ).document()
+        require(session["accounts"][user_id]["isPersonal"], "OIDC replaced the mailbox")
+        require(group_id in session["accounts"], "OIDC lost shared-mailbox membership")
+        header, payload, signature = token.split(".")
+        invalid = client.redactor.add(
+            ".".join(
+                (header, payload, ("A" if signature[0] != "A" else "B") + signature[1:])
+            )
+        )
+        client.expect("GET", "/api/account", 401, auth="Bearer " + invalid)
+        for active, status in ((False, 403), (True, 200)):
+            client.expect(
+                "PATCH",
+                ROOT + "/Users/" + user_id,
+                200,
+                patch({"op": "replace", "path": "active", "value": active}),
+            )
+            client.expect("GET", "/api/account", status, auth="Bearer " + token)
+        return "PASS (native JWT signature/audience validation, adopted mailbox, shared access, suspension)"
+    finally:
+        client.jmap(
+            "x:Authentication/set",
+            {"update": {"singleton": {"directoryId": original_directory}}},
+        )
+        client.jmap("x:Directory/set", {"destroy": [directory]})
+        reload()
+
+
+def browser_login(pocket, oidc, discovery, chromium, verify_stalwart):
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as playwright:
@@ -390,7 +482,10 @@ def browser_login(pocket, oidc, discovery, chromium):
             require(
                 tokens.get("id_token", "").count(".") == 2, "No signed issuer ID token"
             )
-            return "PASS (real passkey + authorization-code PKCE; JWT verification not independently asserted)"
+            return {
+                "passkeyPkce": "PASS",
+                "stalwartAccountLogin": verify_stalwart(tokens),
+            }
         finally:
             browser.close()
 

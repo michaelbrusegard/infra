@@ -7,7 +7,12 @@ name: Stalwart Native SCIM Candidate
       - publish/stalwart-native-scim
     paths:
       - flake.lock
-      - packages/stalwart-oss/**
+      - packages/stalwart-oss/default.nix
+      - packages/stalwart-oss/image.nix
+      - packages/stalwart-oss/webui.nix
+      - packages/stalwart-oss/apply-native.py
+      - packages/stalwart-oss/native/**
+      - packages/stalwart-oss/patches/**
       - .github/workflows/stalwart-image.yaml
 
 concurrency:
