@@ -154,6 +154,55 @@ def run(server, client, *, pocket_binary, chromium):
                     }
                 },
             )
+            # Adopt existing mailbox identities before allowing Pocket ID to sync.
+            adopted_user = acceptance.create_native_user("admin", acceptance.domain_id)
+            group = pocket.api(
+                "POST",
+                "/api/user-groups",
+                {
+                    "name": "support",
+                    "friendlyName": "Support",
+                },
+                status=201,
+            )
+            pocket.api(
+                "PUT",
+                "/api/user-groups/" + group["id"] + "/users",
+                {"userIds": [admin["id"]]},
+            )
+            client.jmap(
+                "x:Account/set",
+                {
+                    "update": {
+                        adopted_user: {"externalId": admin["id"]},
+                    }
+                },
+            )
+            adopted_group = client.jmap(
+                "x:Account/set",
+                {
+                    "create": {
+                        "support": {
+                            "@type": "Group",
+                            "name": "support",
+                            "domainId": acceptance.domain_id,
+                            "externalId": group["id"],
+                        }
+                    }
+                },
+            )["created"]["support"]["id"]
+            postmaster = client.jmap(
+                "x:MailingList/set",
+                {
+                    "create": {
+                        "postmaster": {
+                            "name": "postmaster",
+                            "domainId": acceptance.domain_id,
+                            "recipients": {"support@example.test": True},
+                        }
+                    }
+                },
+            )["created"]["postmaster"]["id"]
             provider = pocket.api(
                 "POST",
                 "/api/scim/service-provider",
@@ -195,6 +244,34 @@ def run(server, client, *, pocket_binary, chromium):
             pocket.api("POST", syncpath)
             client.expect("GET", ROOT + "/Users/" + target_id, 404)
             result["checks"]["realDeleteOffboarding"] = "PASS"
+            adopted = client.expect(
+                "GET", ROOT + "/Users/" + adopted_user, 200
+            ).document()
+            require(adopted.get("externalId") == admin["id"], "Existing user replaced")
+            shared = client.expect(
+                "GET", ROOT + "/Groups/" + adopted_group, 200
+            ).document()
+            require(
+                {m["value"] for m in shared.get("members", [])} == {adopted_user},
+                "Shared mailbox membership not adopted",
+            )
+            require(
+                acceptance.native(adopted_group)["emailAddress"]
+                == "support@example.test",
+                "Existing shared mailbox address changed",
+            )
+            require(
+                acceptance.native(acceptance.service_id)["domainId"]
+                == acceptance.closed_domain_id,
+                "Unmanaged bootstrap identity changed",
+            )
+            require(
+                client.jmap(
+                    "x:MailingList/get", {"ids": [postmaster], "properties": ["id"]}
+                )["list"],
+                "Postmaster list removed by SCIM",
+            )
+            result["checks"]["existingMailboxIdsAndSystemIsolation"] = "PASS"
             result["checks"]["browserPkce"] = browser_login(
                 pocket, oidc, discovery, chromium
             )
