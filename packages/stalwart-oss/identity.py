@@ -139,7 +139,10 @@ def run(server, client, *, pocket_binary, chromium):
                 {
                     "id": "stalwart-fixture",
                     "name": "Isolated fixture",
-                    "callbackURLs": [pocket.origin + "/callback"],
+                    "callbackURLs": [
+                        pocket.origin + "/callback",
+                        client.origin + "/account/oauth/callback",
+                    ],
                     "isPublic": True,
                     "pkceEnabled": True,
                     "skipConsent": True,
@@ -279,8 +282,18 @@ def run(server, client, *, pocket_binary, chromium):
                 oidc,
                 discovery,
                 chromium,
-                lambda tokens: stalwart_oidc_login(
-                    client, pocket, oidc, tokens, adopted_user, adopted_group
+                client,
+                adopted_user,
+                adopted_group,
+                lambda tokens, ui_check: stalwart_oidc_login(
+                    client,
+                    server,
+                    pocket,
+                    oidc,
+                    tokens,
+                    adopted_user,
+                    adopted_group,
+                    ui_check,
                 ),
             )
             print(json.dumps(result), flush=True)
@@ -297,13 +310,20 @@ def run(server, client, *, pocket_binary, chromium):
                 process.wait()
 
 
-def stalwart_oidc_login(client, pocket, oidc, tokens, user_id, group_id):
+def stalwart_oidc_login(
+    client, server, pocket, oidc, tokens, user_id, group_id, ui_check
+):
     """Exercise the real native OIDC directory with a real issuer access JWT."""
     token = tokens["access_token"]
     require(token.count(".") == 2, "Pocket ID did not issue a JWT access token")
     original_directory = client.jmap("x:Authentication/get", {"ids": ["singleton"]})[
         "list"
     ][0].get("directoryId")
+    application_ids = client.jmap("x:Application/query", {})["ids"]
+    require(len(application_ids) == 1, "Expected one disposable WebUI application")
+    application_id = application_ids[0]
+    application = client.jmap("x:Application/get", {"ids": [application_id]})["list"][0]
+    original_oauth_client_id = application.get("oauthClientId")
     directory = client.jmap(
         "x:Directory/set",
         {
@@ -325,10 +345,16 @@ def stalwart_oidc_login(client, pocket, oidc, tokens, user_id, group_id):
 
     try:
         client.jmap(
+            "x:Application/set",
+            {"update": {application_id: {"oauthClientId": oidc["id"]}}},
+        )
+        client.jmap(
             "x:Authentication/set",
             {"update": {"singleton": {"directoryId": directory}}},
         )
-        reload()
+        # Application oauthClientId is part of an in-memory route bundle and is
+        # not refreshed by ReloadSettings.
+        server.restart()
         for _ in range(60):
             discovery = client.expect(
                 "GET", "/api/discover/admin@example.test", 200, auth=None
@@ -371,17 +397,52 @@ def stalwart_oidc_login(client, pocket, oidc, tokens, user_id, group_id):
                 patch({"op": "replace", "path": "active", "value": active}),
             )
             client.expect("GET", "/api/account", status, auth="Bearer " + token)
-        return "PASS (native JWT signature/audience validation, adopted mailbox, shared access, suspension)"
+        ui_check()
+        return "PASS (native JWT signature/audience validation, adopted mailbox, shared access, suspension, WebUI callback)"
     finally:
+        client.jmap(
+            "x:Application/set",
+            {"update": {application_id: {"oauthClientId": original_oauth_client_id}}},
+        )
         client.jmap(
             "x:Authentication/set",
             {"update": {"singleton": {"directoryId": original_directory}}},
         )
         client.jmap("x:Directory/set", {"destroy": [directory]})
-        reload()
+        server.restart()
 
 
-def browser_login(pocket, oidc, discovery, chromium, verify_stalwart):
+def webui_login(page, context, pocket, client, user_id, group_id):
+    context.clear_cookies()
+    page.goto(client.origin + "/account/login")
+    page.get_by_label("Enter your account name to continue").fill("admin@example.test")
+    page.get_by_role("button", name="Continue", exact=True).click()
+    page.wait_for_url(pocket.origin + "/**", timeout=20000)
+    page.get_by_role("button", name="Sign in", exact=False).first.click(timeout=15000)
+    page.wait_for_url(client.origin + "/**", timeout=20000)
+    page.wait_for_function(
+        """() => {
+          const raw = sessionStorage.getItem('stalwart-auth');
+          if (!raw) return false;
+          const parsed = JSON.parse(raw);
+          return Boolean(parsed?.state?.accessToken);
+        }""",
+        timeout=20000,
+    )
+    require("/login" not in page.url, "WebUI returned to login after OIDC callback")
+    stored = json.loads(page.evaluate("sessionStorage.getItem('stalwart-auth')"))
+    token = client.redactor.add(stored["state"]["accessToken"])
+    client.expect("GET", "/api/account", 200, auth="Bearer " + token)
+    session = client.expect(
+        "GET", "/jmap/session", 200, auth="Bearer " + token
+    ).document()
+    require(session["accounts"][user_id]["isPersonal"], "WebUI lost personal mailbox")
+    require(group_id in session["accounts"], "WebUI lost shared mailbox")
+
+
+def browser_login(
+    pocket, oidc, discovery, chromium, client, user_id, group_id, verify_stalwart
+):
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as playwright:
@@ -484,7 +545,12 @@ def browser_login(pocket, oidc, discovery, chromium, verify_stalwart):
             )
             return {
                 "passkeyPkce": "PASS",
-                "stalwartAccountLogin": verify_stalwart(tokens),
+                "stalwartAccountLogin": verify_stalwart(
+                    tokens,
+                    lambda: webui_login(
+                        page, context, pocket, client, user_id, group_id
+                    ),
+                ),
             }
         finally:
             browser.close()
