@@ -1,0 +1,60 @@
+name: Stalwart Native SCIM Image
+
+'on':
+  workflow_dispatch:
+  push:
+    branches:
+      - publish/stalwart-native-scim
+    paths:
+      - flake.lock
+      - packages/stalwart-oss/**
+      - .github/workflows/stalwart-image.yaml
+
+concurrency:
+  group: stalwart-native-scim-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+        with:
+          extra-conf: |
+            max-jobs = 1
+            cores = 2
+      - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
+      - name: Build without loading the private secrets flake
+        run: |
+          nix build --impure --out-link result --expr '
+            let
+              lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.nixpkgs.locked.rev);
+              pkgs = upstream.legacyPackages.x86_64-linux;
+            in pkgs.callPackage ./packages/stalwart-oss/image.nix { nativeScim = true; }
+          '
+      - name: Verify the previously tested archive
+        run: |
+          echo '2d56e4ed45e0b4bb532d101ecbe9b0edc93cdb08c1ea0c8dd95551cd565249f0  result' | sha256sum --check
+          docker load < result
+          docker run --rm --network none stalwart-native-scim:0.16.21 --version
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish immutable source-revision tag
+        env:
+          IMAGE: ghcr.io/michaelbrusegard/stalwart-native-scim
+        run: |
+          target="$IMAGE:sha-$GITHUB_SHA"
+          docker tag stalwart-native-scim:0.16.21 "$target"
+          docker push "$target"
+          docker image inspect "$target" --format '{{json .RepoDigests}}'
