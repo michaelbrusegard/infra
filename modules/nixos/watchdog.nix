@@ -1,4 +1,43 @@
-_: {
+{pkgs, ...}: let
+  pstoreJournal = pkgs.writeShellApplication {
+    name = "pstore-journal";
+    runtimeInputs = with pkgs; [
+      coreutils
+      findutils
+      gnugrep
+      systemd
+    ];
+    text = ''
+      archive=/var/lib/systemd/pstore
+      state_dir=/var/lib/systemd/pstore-journal
+      seen_file="$state_dir/seen-records"
+
+      [[ -d "$archive" ]] || exit 0
+
+      install -d -m 0700 "$state_dir"
+      touch "$seen_file"
+      chmod 0600 "$seen_file"
+
+      while IFS= read -r -d "" record; do
+        relative="''${record#"$archive"/}"
+        digest="$(sha256sum "$record")"
+        digest="''${digest%% *}"
+        record_id="$relative $digest"
+
+        if grep -Fqx "$record_id" "$seen_file"; then
+          continue
+        fi
+
+        {
+          printf 'Recovered persistent kernel log from %s (sha256=%s)\n' "$record" "$digest"
+          cat "$record"
+        } | systemd-cat --identifier=kernel-pstore --priority=crit
+
+        printf '%s\n' "$record_id" >>"$seen_file"
+      done < <(find "$archive" -type f -name "*.txt" -print0 | sort -z)
+    '';
+  };
+in {
   # Auto-reboot on kernel fault or full hang. Keep timeouts long enough for
   # storage-heavy recovery: Mayastor replica rebuilds, NVMe-TCP stalls, and etcd
   # catch-up can produce multi-minute pressure without being permanent. Still
@@ -23,5 +62,20 @@ _: {
     RuntimeWatchdogSec = "10min";
     RebootWatchdogSec = "10min";
     KExecWatchdogSec = "10min";
+  };
+
+  # Journald cannot flush an interrupt-context kernel panic. systemd-pstore
+  # recovers the firmware-backed record on the next boot; replay each unique
+  # record into the journal so normal log shipping can retain and alert on it.
+  systemd.services.pstore-journal = {
+    description = "Publish persistent kernel logs to the journal";
+    wantedBy = ["multi-user.target"];
+    wants = ["systemd-pstore.service"];
+    after = ["systemd-pstore.service"];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pstoreJournal}/bin/pstore-journal";
+      UMask = "0077";
+    };
   };
 }
