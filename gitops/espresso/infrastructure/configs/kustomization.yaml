@@ -14,6 +14,7 @@ resources:
   - manafishrov-dns-tofu
   - manafishrov-postgres-tofu
   - manafishrov-rustfs-tofu
+  - manafishrov-stalwart-tofu
   - manafishrov-tenant
   - mattermost-tofu
   - netbird

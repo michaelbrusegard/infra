@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: manafishrov-stalwart-tofu-provider
+  namespace: flux-system
+data:
+  tofurc: |
+    provider_installation {
+      filesystem_mirror {
+        path    = "/provider-mirror"
+        include = ["registry.opentofu.org/tahacodes/stalwart"]
+      }
+      direct {
+        exclude = ["registry.opentofu.org/tahacodes/stalwart"]
+      }
+    }

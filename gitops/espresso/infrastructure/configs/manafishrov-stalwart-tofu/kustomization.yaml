@@ -1,0 +1,77 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../manafishrov-tofu-base
+  - provider-config.yaml
+patches:
+  - target:
+      kind: Terraform
+      name: manafishrov-base
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: manafishrov-stalwart
+  - target:
+      kind: Terraform
+      name: manafishrov-stalwart
+    patch: |
+      apiVersion: infra.contrib.fluxcd.io/v1alpha2
+      kind: Terraform
+      metadata:
+        name: manafishrov-stalwart
+      spec:
+        path: ./tofu/stalwart
+        backendConfig:
+          secretSuffix: manafishrov-stalwart
+        runnerPodTemplate:
+          spec:
+            env:
+              - name: TF_CLI_CONFIG_FILE
+                value: /etc/tofu/tofurc
+            envFrom:
+              - secretRef:
+                  name: manafishrov-stalwart-tofu
+            initContainers:
+              - name: install-stalwart-provider
+                image: alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+                command:
+                  - /bin/sh
+                  - -ec
+                  - |
+                    case "$(uname -m)" in
+                      x86_64)
+                        arch=amd64
+                        checksum=9b4b3dc07a73055d7116fc426c6009de86479df7776ab23b6795132eeca8c119
+                        ;;
+                      aarch64)
+                        arch=arm64
+                        checksum=6b68d65e7690aed06ead33307370988034bf1c1aeb28eadf58b5516cf4a2bb0e
+                        ;;
+                      *)
+                        echo "unsupported architecture: $(uname -m)" >&2
+                        exit 1
+                        ;;
+                    esac
+                    version=0.2.3
+                    archive="terraform-provider-stalwart_${version}_linux_${arch}.zip"
+                    wget -q "https://github.com/tahacodes/terraform-provider-stalwart/releases/download/v${version}/${archive}" -O "/tmp/${archive}"
+                    echo "${checksum}  /tmp/${archive}" | sha256sum -c -
+                    destination="/provider-mirror/registry.opentofu.org/tahacodes/stalwart/${version}/linux_${arch}"
+                    mkdir -p "${destination}"
+                    unzip -q "/tmp/${archive}" -d "${destination}"
+                volumeMounts:
+                  - name: provider-mirror
+                    mountPath: /provider-mirror
+            volumeMounts:
+              - name: tofu-cli-config
+                mountPath: /etc/tofu
+                readOnly: true
+              - name: provider-mirror
+                mountPath: /provider-mirror
+                readOnly: true
+            volumes:
+              - name: tofu-cli-config
+                configMap:
+                  name: manafishrov-stalwart-tofu-provider
+              - name: provider-mirror
+                emptyDir: {}
