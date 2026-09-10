@@ -22,10 +22,10 @@ jobs:
       packages: write
     env:
       # Promote the artifact that passed isolated acceptance, not a rebuild.
-      SOURCE_RUN_ID: '34402974892'
-      SOURCE_REVISION: 0943bf6c6339515992c186f4ad9ea468832aad60
+      SOURCE_RUN_ID: '34531138178'
+      SOURCE_REVISION: 53ce35aeeb9bb14a6b304ec13dddbaf9ea64b6dc
       ARTIFACT_NAME: stalwart-native-scim-image
-      ARCHIVE_SHA256: 1dcd268b7d115698f5577405062bc988042b22af77b5506875f6caada4e35ac0
+      ARCHIVE_SHA256: ea6a4bacbc87a2135552987a80d10cfae588f84351c274d4d8733ae3bb9e6a74
       IMAGE: ghcr.io/michaelbrusegard/stalwart-native-scim
     steps:
       - name: Verify candidate source
