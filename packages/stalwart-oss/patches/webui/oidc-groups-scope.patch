@@ -1,0 +1,13 @@
+diff --git a/src/services/auth/oauth.ts b/src/services/auth/oauth.ts
+index da0f4d3..1f2dc7a 100644
+--- a/src/services/auth/oauth.ts
++++ b/src/services/auth/oauth.ts
+@@ -166,7 +166,7 @@ export async function login(username: string): Promise<void> {
+   if (SCOPES && SCOPES.length > 0) {
+     scope = SCOPES;
+   } else if (scopes_supported?.includes('openid')) {
+-    scope = ['openid', 'email', 'profile', 'offline_access'].filter((s) => scopes_supported.includes(s)).join(' ');
++    scope = ['openid', 'email', 'profile', 'offline_access', 'groups'].filter((s) => scopes_supported.includes(s)).join(' ');
+   } else {
+     scope = '';
+   }

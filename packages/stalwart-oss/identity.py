@@ -474,8 +474,18 @@ def webui_login(page, context, pocket, client, user_id, group_id):
     context.clear_cookies()
     page.goto(client.origin + "/account/login")
     page.get_by_label("Enter your account name to continue").fill("admin@example.test")
-    page.get_by_role("button", name="Continue", exact=True).click()
+    with page.expect_request(
+        lambda request: request.url.startswith(pocket.origin + "/authorize?")
+    ) as authorize_request:
+        page.get_by_role("button", name="Continue", exact=True).click()
     page.wait_for_url(pocket.origin + "/**", timeout=20000)
+    authorize_query = urllib.parse.parse_qs(
+        urllib.parse.urlsplit(authorize_request.value.url).query
+    )
+    require(
+        "groups" in authorize_query.get("scope", [""])[0].split(),
+        "WebUI did not request the groups scope",
+    )
     page.get_by_role("button", name="Sign in", exact=False).first.click(timeout=15000)
     page.wait_for_url(client.origin + "/**", timeout=20000)
     page.wait_for_function(
