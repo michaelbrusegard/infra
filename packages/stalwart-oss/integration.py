@@ -484,6 +484,7 @@ class Server:
             "XDG_CACHE_HOME": str(self.root / "cache"),
             "STALWART_RECOVERY_MODE": "true",
             "STALWART_RECOVERY_ADMIN": "fixture:" + self.password,
+            "STALWART_OIDC_ADMIN_GROUP": "admin",
             "STALWART_RECOVERY_MODE_PORT": str(
                 urllib.parse.urlsplit(self.client.origin).port
             ),
@@ -1366,9 +1367,9 @@ class Acceptance:
 
         # The global directory setting is OSS. Per-domain directoryId remains an
         # unrelated Enterprise feature and is deliberately not enabled here.
-        # A recovery-only database may have no default role grants. Create a
-        # temporary authenticate-only User role, rather than assuming User/Admin
-        # labels grant rights. Never alter default Admin roles for this JIT test.
+        # A recovery-only database may have no default role grants. Create
+        # narrow temporary User and Admin roles so the OIDC authorization test
+        # proves only the configured group adds the management permission.
         jit_role = self.c.jmap(
             "x:Role/set",
             {
@@ -1380,6 +1381,17 @@ class Acceptance:
                 }
             },
         )["created"]["fixture"]["id"]
+        jit_admin_role = self.c.jmap(
+            "x:Role/set",
+            {
+                "create": {
+                    "admin": {
+                        "description": "Disposable OIDC JIT administrator",
+                        "enabledPermissions": {"sysNetworkListenerQuery": True},
+                    }
+                }
+            },
+        )["created"]["admin"]["id"]
         with FakeIdP(self.c.redactor) as provider:
             directory = self.c.jmap(
                 "x:Directory/set",
@@ -1405,6 +1417,7 @@ class Acceptance:
                             "singleton": {
                                 "directoryId": directory,
                                 "defaultUserRoleIds": {jit_role: True},
+                                "defaultAdminRoleIds": {jit_admin_role: True},
                             }
                         }
                     },
@@ -1425,6 +1438,54 @@ class Acceptance:
                         provider.hit_count(token) >= 1,
                         "Authentication bypassed the fixture IdP userinfo/JIT path",
                     )
+                    return token
+
+                def expect_admin_query(token, allowed):
+                    response = self.c.request(
+                        "POST",
+                        "/jmap",
+                        {
+                            "using": ["urn:ietf:params:jmap:core", "urn:stalwart:jmap"],
+                            "methodCalls": [["x:NetworkListener/query", {}, "admin"]],
+                        },
+                        auth="Bearer " + token,
+                    )
+                    require(response.status == 200, "Admin permission probe failed")
+                    method, result, _ = response.document()["methodResponses"][0]
+                    if allowed:
+                        require(
+                            method == "x:NetworkListener/query",
+                            f"Configured OIDC admin group was not elevated: {method} {result}",
+                        )
+                    else:
+                        require(
+                            method == "error" and result.get("type") == "forbidden",
+                            "Non-admin OIDC group received management permission",
+                        )
+
+                nonadmin_token = login(
+                    "nonadmin@jit-switch.test",
+                    "Non-admin OIDC profile",
+                    ["administrator"],
+                )
+                expect_admin_query(nonadmin_token, False)
+                admin_token = login(
+                    "oidc-admin@jit-switch.test",
+                    "OIDC admin profile",
+                    ["mail-support", "admin"],
+                )
+                expect_admin_query(admin_token, True)
+                oidc_admin = find_native("oidc-admin", switch_id)
+                require(
+                    oidc_admin is not None
+                    and oidc_admin.get("roles", {}).get("@type") == "User"
+                    and not oidc_admin.get("memberGroupIds"),
+                    "OIDC administration persisted a native role or group membership",
+                )
+                require(
+                    find_native("mail-support", switch_id) is None,
+                    "OIDC authorization groups created a native mailbox group",
+                )
 
                 require(
                     find_native("warm", switch_id) is None,
@@ -1586,7 +1647,9 @@ class Acceptance:
                     "x:Action/set", {"create": {"reload": {"@type": "ReloadSettings"}}}
                 )
                 self.c.jmap("x:Directory/set", {"destroy": [directory]})
-                self.c.jmap("x:Role/set", {"destroy": [jit_role]})
+                self.c.jmap(
+                    "x:Role/set", {"destroy": [jit_role, jit_admin_role]}
+                )
 
     def native_jmap_invalidation(self):
         """Ordinary registry writes must invalidate SCIM snapshots/preconditions."""

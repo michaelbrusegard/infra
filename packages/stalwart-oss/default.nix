@@ -60,7 +60,7 @@ in
     cargoBuildFlags = ["--package" "stalwart"];
     cargoTestFlags =
       if nativeScim
-      then ["--package" "http@${finalAttrs.version}" "--package" "services" "--lib" "independent_scim"]
+      then ["--package" "http@${finalAttrs.version}" "--package" "services" "--package" "directory" "--lib" "independent_scim"]
       else ["--package" "stalwart"];
     nativeBuildInputs = [pkg-config protobuf rustPlatform.bindgenHook] ++ lib.optionals nativeScim [python3 patch];
     buildInputs = [openssl sqlite zstd];

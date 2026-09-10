@@ -16,6 +16,7 @@ buildNpmPackage (finalAttrs: {
   };
   npmDepsHash = "sha256-qe9cSrvs6kWwgbOO0xL7MBaJvICOvyuLFVi9R0dgnXQ=";
   nativeBuildInputs = [python3 zip];
+  VITE_OAUTH_SCOPES = "openid email profile offline_access groups";
 
   # Cosmetic only: retain all edition checks and feature authorization. Our
   # server's schema exposes its independently implemented SCIM capabilities.

@@ -1,0 +1,222 @@
+diff --git a/crates/common/src/auth/access_token.rs b/crates/common/src/auth/access_token.rs
+index 4c6ce2d..a3a486a 100644
+--- a/crates/common/src/auth/access_token.rs
++++ b/crates/common/src/auth/access_token.rs
+@@ -9,7 +9,7 @@ use crate::{
+     Server,
+     auth::{
+         AccessScope, AccessTo, AccessTokenInner, AccountTenantIds, Permissions, RECOVERY_ADMIN_ID,
+-        permissions::{BuildPermissions, PermissionsListBuilder},
++        permissions::{BuildPermissions, DefaultPermissions, PermissionsListBuilder},
+     },
+     network::limiter::{ConcurrencyLimiter, LimiterResult},
+ };
+@@ -379,6 +379,25 @@ impl AccessToken {
+         .assert_is_valid(remote_ip)
+     }
+ 
++    pub(crate) fn new_with_superuser_permissions(
++        inner: Arc<AccessTokenInner>,
++        remote_ip: IpAddr,
++    ) -> trc::Result<Self> {
++        // OIDC-backed accounts have no native primary credential, so validity
++        // checking first applies the normal password-change downgrade. Add the
++        // session-only permissions after that check without changing its IP/expiry.
++        let mut token = Self::new(inner, remote_ip)?;
++        if token.has_permission(Permission::Authenticate) {
++            let permissions =
++                Permissions::from_permission(&DefaultPermissions::default().superuser);
++            let scope_idx = token.scope_idx;
++            Arc::make_mut(&mut token.inner).scopes[scope_idx]
++                .permissions
++                .union(&permissions);
++        }
++        Ok(token)
++    }
++
+     pub fn new_maybe_invalid(inner: Arc<AccessTokenInner>) -> Self {
+         AccessToken {
+             scope_idx: 0,
+diff --git a/crates/common/src/auth/authentication.rs b/crates/common/src/auth/authentication.rs
+index d24568c..455a6de 100644
+--- a/crates/common/src/auth/authentication.rs
++++ b/crates/common/src/auth/authentication.rs
+@@ -506,10 +506,20 @@ impl Server {
+         account: directory::Account,
+         remote_ip: IpAddr,
+     ) -> trc::Result<AccessToken> {
++        let is_oidc_admin = std::env::var("STALWART_OIDC_ADMIN_GROUP")
++            .ok()
++            .filter(|group| !group.is_empty())
++            .is_some_and(|admin_group| account.has_authorization_group(&admin_group));
+         let account = Box::pin(self.synchronize_account(account)).await?;
+-        self.access_token_from_account(account.id, account.account)
+-            .await
+-            .and_then(|token| AccessToken::new(token, remote_ip))
++        let token = self
++            .access_token_from_account(account.id, account.account)
++            .await?;
++
++        if is_oidc_admin {
++            AccessToken::new_with_superuser_permissions(token, remote_ip)
++        } else {
++            AccessToken::new(token, remote_ip)
++        }
+     }
+ 
+     pub async fn get_directory_for_domain(
+diff --git a/crates/directory/src/backend/oidc/lookup.rs b/crates/directory/src/backend/oidc/lookup.rs
+index 91ff6cb..85bdf28 100644
+--- a/crates/directory/src/backend/oidc/lookup.rs
++++ b/crates/directory/src/backend/oidc/lookup.rs
+@@ -228,25 +228,23 @@ impl OpenIdDirectory {
+         email: String,
+         claims: &serde_json::Value,
+     ) -> Result<Account, OidcError> {
++        let authorization_groups = self
++            .config
++            .claim_groups
++            .as_ref()
++            .and_then(|groups_claim| claims.get(groups_claim))
++            .and_then(extract_string_list)
++            .unwrap_or_default();
++
+         Ok(Account {
+             email,
+             email_aliases: Vec::new(),
+             secret: None,
+-            groups: self
+-                .config
+-                .claim_groups
+-                .as_ref()
+-                .and_then(|groups_claim| claims.get(groups_claim))
+-                .and_then(extract_string_list)
+-                .map(|groups| {
+-                    groups
+-                        .into_iter()
+-                        .map(|group| match &self.config.default_domain {
+-                            Some(domain) if !group.contains('@') => format!("{group}@{domain}"),
+-                            _ => group,
+-                        })
+-                        .collect()
+-                }),
++            // SCIM remains authoritative for persistent group membership.
++            // OIDC groups are evaluated only for the current authenticated
++            // session and must never create or mutate native mailbox groups.
++            groups: None,
++            authorization_groups,
+             description: self
+                 .config
+                 .claim_name
+diff --git a/crates/directory/src/lib.rs b/crates/directory/src/lib.rs
+index 3522613..935a25e 100644
+--- a/crates/directory/src/lib.rs
++++ b/crates/directory/src/lib.rs
+@@ -48,6 +48,9 @@ pub struct Account {
+     pub email_aliases: Vec<String>,
+     pub secret: Option<String>,
+     pub groups: Option<Vec<String>>,
++    /// Authorization-only groups asserted by the identity provider. Unlike
++    /// `groups`, these are never synchronized into native account membership.
++    pub authorization_groups: Vec<String>,
+     pub description: Option<String>,
+ }
+ 
+@@ -58,6 +61,32 @@ pub struct Group {
+     pub description: Option<String>,
+ }
+ 
++impl Account {
++    pub fn has_authorization_group(&self, expected: &str) -> bool {
++        !expected.is_empty()
++            && self
++                .authorization_groups
++                .iter()
++                .any(|group| group.eq_ignore_ascii_case(expected))
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::Account;
++
++    #[test]
++    fn independent_scim_oidc_authorization_groups_are_exact_and_case_insensitive() {
++        let account = Account {
++            authorization_groups: vec!["mail-support".into(), "Admin".into()],
++            ..Default::default()
++        };
++        assert!(account.has_authorization_group("admin"));
++        assert!(!account.has_authorization_group("min"));
++        assert!(!account.has_authorization_group(""));
++    }
++}
++
+ #[derive(Clone, Debug)]
+ pub struct Directories {
+     pub default_directory: Option<Arc<Directory>>,
+diff --git a/crates/http/src/auth/authenticate.rs b/crates/http/src/auth/authenticate.rs
+index 5d9f271..e4cdf08 100644
+--- a/crates/http/src/auth/authenticate.rs
++++ b/crates/http/src/auth/authenticate.rs
+@@ -4,7 +4,7 @@
+  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
+  */
+ 
+-use common::auth::AccessToken;
++use common::auth::{AccessToken, credential::ApiKey};
+ use common::{HttpAuthCache, Server, auth::AuthRequest, network::limiter::InFlight};
+ use directory::Credentials;
+ use http_proto::{HttpRequest, HttpSessionData};
+@@ -28,8 +28,19 @@ impl Authenticator for Server {
+         session: &HttpSessionData,
+     ) -> trc::Result<(Option<InFlight>, AccessToken)> {
+         if let Some((mechanism, token)) = req.authorization() {
++            // External OIDC claims can change effective session permissions.
++            // Re-evaluate those claims on every request instead of rebuilding a
++            // native-only token from the account id stored in this cache.
++            let cache_credentials = !mechanism.eq_ignore_ascii_case("bearer")
++                || ApiKey::parse(token).is_some()
++                || !self
++                    .get_default_directory()
++                    .is_some_and(|directory| directory.has_bearer_token_support());
++
+             // Check if the credentials are cached
+-            if let Some(http_cache) = self.inner.cache.http_auth.get(token) {
++            if cache_credentials
++                && let Some(http_cache) = self.inner.cache.http_auth.get(token)
++            {
+                 // Make sure the revision is still valid
+                 if http_cache.expires > Instant::now() {
+                     let access_token = AccessToken::renew(
+@@ -90,17 +101,19 @@ impl Authenticator for Server {
+                 ))
+                 .await?;
+ 
+-            // Cache credentials
+-            self.inner.cache.http_auth.insert(
+-                token.into(),
+-                HttpAuthCache {
+-                    account_id: access_token.account_id(),
+-                    revision: access_token.revision(),
+-                    credential_id: access_token.credential_id(),
+-                    expires: Instant::now()
+-                        + Duration::from_secs(self.core.oauth.oauth_expiry_token),
+-                },
+-            );
++            // Cache credentials unless authorization depends on current OIDC claims.
++            if cache_credentials {
++                self.inner.cache.http_auth.insert(
++                    token.into(),
++                    HttpAuthCache {
++                        account_id: access_token.account_id(),
++                        revision: access_token.revision(),
++                        credential_id: access_token.credential_id(),
++                        expires: Instant::now()
++                            + Duration::from_secs(self.core.oauth.oauth_expiry_token),
++                    },
++                );
++            }
+ 
+             // Enforce authenticated rate limit
+             self.is_http_authenticated_request_allowed(&access_token, session.remote_ip)

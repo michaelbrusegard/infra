@@ -146,6 +146,7 @@ def run(server, client, *, pocket_binary, chromium):
                     "isPublic": True,
                     "pkceEnabled": True,
                     "skipConsent": True,
+                    "isGroupRestricted": True,
                 },
                 status=201,
             )
@@ -166,7 +167,7 @@ def run(server, client, *, pocket_binary, chromium):
                 "/api/user-groups",
                 {
                     "name": "support",
-                    "friendlyName": "Support",
+                    "friendlyName": "support@example.test",
                 },
                 status=201,
             )
@@ -174,6 +175,24 @@ def run(server, client, *, pocket_binary, chromium):
                 "PUT",
                 "/api/user-groups/" + group["id"] + "/users",
                 {"userIds": [admin["id"]]},
+            )
+            admin_group = pocket.api(
+                "POST",
+                "/api/user-groups",
+                {"name": "admin", "friendlyName": "Administrators"},
+                status=201,
+            )
+            pocket.api(
+                "PUT",
+                "/api/user-groups/" + admin_group["id"] + "/users",
+                {"userIds": [admin["id"]]},
+            )
+            # Keep SCIM limited to mailbox groups while the OIDC token can
+            # still assert all of the user's groups for session authorization.
+            pocket.api(
+                "PUT",
+                "/api/oidc/clients/" + oidc["id"] + "/allowed-user-groups",
+                {"userGroupIds": [group["id"]]},
             )
             client.jmap(
                 "x:Account/set",
@@ -239,6 +258,11 @@ def run(server, client, *, pocket_binary, chromium):
                     "firstName": "Offboard",
                 },
                 status=201,
+            )
+            pocket.api(
+                "PUT",
+                "/api/user-groups/" + group["id"] + "/users",
+                {"userIds": [admin["id"], target["id"]]},
             )
             pocket.api("POST", syncpath)
             synced = client.expect("GET", ROOT + "/Users", 200).document()["Resources"]
@@ -333,8 +357,9 @@ def stalwart_oidc_login(
                     "description": "Disposable real Pocket ID authentication",
                     "issuerUrl": pocket.origin,
                     "claimUsername": "email",
+                    "claimGroups": "groups",
                     "requireAudience": "wrong-fixture-audience",
-                    "requireScopes": {},
+                    "requireScopes": {"groups": True},
                 }
             }
         },
@@ -377,6 +402,39 @@ def stalwart_oidc_login(
             time.sleep(0.25)
         else:
             raise AssertionError("Real Pocket ID access token did not authenticate")
+        admin_probe = client.request(
+            "POST",
+            "/jmap",
+            {
+                "using": ["urn:ietf:params:jmap:core", "urn:stalwart:jmap"],
+                "methodCalls": [["x:NetworkListener/query", {}, "admin"]],
+            },
+            auth="Bearer " + token,
+        )
+        require(admin_probe.status == 200, "Pocket ID admin probe failed")
+        require(
+            admin_probe.document()["methodResponses"][0][0]
+            == "x:NetworkListener/query",
+            "Pocket ID admin group did not grant session administration",
+        )
+        native_user = client.jmap(
+            "x:Account/get", {"ids": [user_id]}
+        )["list"][0]
+        require(
+            native_user.get("roles", {}).get("@type") == "User",
+            "Pocket ID administration persisted a native Admin role",
+        )
+        require(
+            native_user.get("memberGroupIds") == {group_id: True},
+            "OIDC authorization claims changed SCIM mailbox membership",
+        )
+        require(
+            not any(
+                account.get("@type") == "Group" and account.get("name") == "admin"
+                for account in client.jmap("x:Account/get", {})["list"]
+            ),
+            "Pocket ID admin authorization created a shared mailbox",
+        )
         session = client.expect(
             "GET", "/jmap/session", 200, auth="Bearer " + token
         ).document()
@@ -506,7 +564,7 @@ def browser_login(
                         "client_id": oidc["id"],
                         "redirect_uri": callback,
                         "response_type": "code",
-                        "scope": "openid email profile",
+                        "scope": "openid email profile groups",
                         "state": state,
                         "code_challenge": challenge,
                         "code_challenge_method": "S256",
