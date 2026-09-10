@@ -39,6 +39,10 @@ rules:
     resources:
       - httproutes
     verbs: ["*"]
+  - apiGroups: ["externaldns.k8s.io"]
+    resources:
+      - dnsendpoints
+    verbs: ["*"]
   - apiGroups: ["cilium.io"]
     resources:
       - ciliumnetworkpolicies
