@@ -4,7 +4,7 @@ name: Stalwart Native SCIM Candidate
   workflow_dispatch:
   push:
     branches:
-      - publish/stalwart-native-scim
+      - main
     paths:
       - flake.lock
       - packages/stalwart-oss/default.nix
