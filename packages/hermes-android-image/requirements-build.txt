@@ -13,5 +13,5 @@ PyYAML==6.0.3
 requests==2.34.2
 six==1.17.0
 textwrap3==0.9.2
-tqdm==4.70.0
+tqdm==4.70.1
 urllib3==2.7.0
