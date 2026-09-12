@@ -36,6 +36,7 @@
       packages = with pkgs; [
         postgresql
         vite-plus
+        nodejs_24
         deno
       ];
 
