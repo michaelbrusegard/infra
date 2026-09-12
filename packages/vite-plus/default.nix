@@ -1,20 +1,20 @@
 {pkgs}: let
   inherit (pkgs) lib stdenv;
 
-  version = "0.1.20";
+  version = "0.3.1";
 
   sources = {
     aarch64-darwin = {
       platform = "darwin-arm64";
-      hash = "sha256-0VNOBxDghcx6vGvKjlULvDP/dPh06Zt0byMOImoMCOg=";
+      hash = "sha256-erSnHmwDq57N4UP8eop3m6fcsJnZYEESHtZMniZBz44=";
     };
     x86_64-linux = {
       platform = "linux-x64-gnu";
-      hash = "sha256-/MDydTrk58cwC1E/d9nA30YLWgH47W9LY3xu0jw9A50=";
+      hash = "sha256-XhNxY1lIfZh+PUN/zAvveKUvfbaboSiDYTWs5r4n5fU=";
     };
     aarch64-linux = {
       platform = "linux-arm64-gnu";
-      hash = "sha256-5PMto59l+qUDyCn1HZ0p+/twxFZRp7qZFstTYaWGxUc=";
+      hash = "sha256-6eKPD1DOlIWuIYiOquoHP/DMAi4QkXSIjONooReUmkg=";
     };
   };
 
