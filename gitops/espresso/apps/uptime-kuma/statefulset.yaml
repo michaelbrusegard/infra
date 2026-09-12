@@ -17,7 +17,7 @@ spec:
       initContainers:
         - name: uptime-kuma
           restartPolicy: Always
-          image: louislam/uptime-kuma:2.5.0@sha256:bf913b6751c5bcf357c36c03cd8e89ca0d5710c29993aa803a9cbc18ee258824
+          image: louislam/uptime-kuma:2.5.4@sha256:50a107108f28ee2f761b6a9a7063f8a53af10c318af8ef64a14e34d95cbc57a3
           ports:
             - containerPort: 3001
               name: http

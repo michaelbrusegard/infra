@@ -2,7 +2,7 @@ FROM tensorchord/vchord-scratch:pg18-v1.1.1@sha256:bdea43bed2a414e21bbf71767bf6f
 FROM postgres:18-bookworm@sha256:1c59e2c3c818eaa0f0628f695b36e7c9e362d6b219b36a54a32df645cbd7e1af
 
 # renovate: suite=bookworm-pgdg depName=postgresql-18-cron
-ARG POSTGRESQL_18_CRON_VERSION=1.6.7-3.pgdg12+1
+ARG POSTGRESQL_18_CRON_VERSION=1.6.8-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-hll
 ARG POSTGRESQL_18_HLL_VERSION=2.21-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-hypopg
