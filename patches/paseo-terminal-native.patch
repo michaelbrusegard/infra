@@ -1,0 +1,38 @@
+--- a/scripts/trace-daemon.mjs
++++ b/scripts/trace-daemon.mjs
+@@ -13,7 +13,8 @@
+ // node_modules populated (the Nix build invokes this post-configHook).
+
+ import { nodeFileTrace } from "@vercel/nft";
+-import { glob } from "node:fs/promises";
++import { access, glob } from "node:fs/promises";
++import { createRequire } from "node:module";
+ import path from "node:path";
+ import { pathToFileURL } from "node:url";
+
+@@ -29,6 +30,16 @@
+ );
+
+ const traceDesktop = process.env.PASEO_TRACE_DESKTOP === "1";
++
++// Resolve from the consumer workspace: npm need not hoist node-pty to the root.
++const serverRequire = createRequire(path.join(REPO_ROOT, "packages/server/package.json"));
++const nodePtyRoot = path.dirname(serverRequire.resolve("node-pty/package.json"));
++const nodePtyPrebuilds = path.relative(
++  REPO_ROOT,
++  path.join(nodePtyRoot, "prebuilds", `${process.platform}-${process.arch}`),
++);
++// A missing native addon must fail packaging, not leave a daemon whose worker dies.
++await access(path.join(REPO_ROOT, nodePtyPrebuilds, "pty.node"));
+
+ // Daemon entry points. Workers forked into their own Node processes have
+ // independent require trees; nft does not follow fork boundaries, so trace
+@@ -66,7 +77,7 @@
+   // with a runtime-computed platform suffix. Pin to the host platform —
+   // the Nix derivation builds for one platform at a time and ships only
+   // its own binaries.
+-  `node_modules/node-pty/prebuilds/${process.platform}-${process.arch}/**`,
++  `${nodePtyPrebuilds}/**`,
+   // sherpa-onnx-node dynamically resolves a platform-specific native package.
+   // Copy the wrapper plus the host platform package explicitly.
+   "node_modules/sherpa-onnx-node/**",
