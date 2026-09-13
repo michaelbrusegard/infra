@@ -5,7 +5,11 @@
   services.resolved.enable = true;
 
   networking = {
-    wireless.iwd.enable = true;
+    wireless.iwd = {
+      enable = true;
+      # The iwd backend ignores NetworkManager's wifi.powersave setting.
+      settings.DriverQuirks.PowerSaveDisable = "mt7925e";
+    };
     networkmanager = {
       enable = true;
       dns = "systemd-resolved";
