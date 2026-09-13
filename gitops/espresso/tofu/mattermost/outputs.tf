@@ -35,7 +35,7 @@ output "hermes_free_response_channel_ids" {
     "assistant",
     "code",
     "scratchpad",
-    "finance",
+    "groceries",
     "homelab",
   ] : mattermost_channel.channels[name].id])
 }

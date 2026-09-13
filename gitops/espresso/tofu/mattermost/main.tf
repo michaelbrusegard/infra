@@ -15,10 +15,10 @@ locals {
       display_name = "Code"
       header       = "Coding and software development with Hermes."
     }
-    finance = {
-      name         = "finance"
-      display_name = "Finance"
-      header       = "Personal finance planning and tracking."
+    groceries = {
+      name         = "groceries"
+      display_name = "Groceries"
+      header       = "Grocery planning, shopping lists, and store research with Hermes."
     }
     homelab = {
       name         = "homelab"
@@ -66,6 +66,11 @@ resource "mattermost_channel" "channels" {
   }
 }
 
+moved {
+  from = mattermost_channel.channels["finance"]
+  to   = mattermost_channel.channels["groceries"]
+}
+
 import {
   to = mattermost_channel.channels["assistant"]
   id = var.mattermost_town_square_channel_id
@@ -111,6 +116,16 @@ resource "mattermost_channel_member" "admin" {
 
   channel_id = each.value.id
   user_id    = data.mattermost_user.admin.id
+}
+
+moved {
+  from = mattermost_channel_member.hermes_bot["finance"]
+  to   = mattermost_channel_member.hermes_bot["groceries"]
+}
+
+moved {
+  from = mattermost_channel_member.admin["finance"]
+  to   = mattermost_channel_member.admin["groceries"]
 }
 
 import {
