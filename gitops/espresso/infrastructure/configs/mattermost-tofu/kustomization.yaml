@@ -29,9 +29,6 @@ patches:
             varsKeys:
               - mattermost_admin_token
               - mattermost_admin_username
-              - mattermost_team_id
-              - mattermost_town_square_channel_id
-              - mattermost_off_topic_channel_id
         writeOutputsToSecret:
           name: mattermost-outputs
           outputs:
