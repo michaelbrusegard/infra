@@ -35,7 +35,7 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" > source-run.json
           test "$(jq -r .head_sha source-run.json)" = "$SOURCE_REVISION"
           test "$(jq -r .head_repository.full_name source-run.json)" = "$GITHUB_REPOSITORY"
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: candidate
