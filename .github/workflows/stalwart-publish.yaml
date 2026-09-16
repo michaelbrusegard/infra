@@ -22,10 +22,10 @@ jobs:
       packages: write
     env:
       # Promote the artifact that passed isolated acceptance, not a rebuild.
-      SOURCE_RUN_ID: '34544192418'
-      SOURCE_REVISION: 5870a57bdf686020cccdc94ab770f9aaa2226fc5
+      SOURCE_RUN_ID: '35146302224'
+      SOURCE_REVISION: f5918b808ac9f481f63deeeb8a9c0a526faf57a5
       ARTIFACT_NAME: stalwart-native-scim-image
-      ARCHIVE_SHA256: 5b5bb5f182e694880a8280a0b6764c20c2193500a57a32e000d2d7257dbe4fe8
+      ARCHIVE_SHA256: 670b02fc450a2f52b57bfca20221d82902b3137877f5860059a74a56737fb556
       IMAGE: ghcr.io/michaelbrusegard/stalwart-native-scim
     steps:
       - name: Verify candidate source
@@ -34,6 +34,7 @@ jobs:
         run: |
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" > source-run.json
           test "$(jq -r .head_sha source-run.json)" = "$SOURCE_REVISION"
+          test "$(jq -r .conclusion source-run.json)" = success
           test "$(jq -r .head_repository.full_name source-run.json)" = "$GITHUB_REPOSITORY"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
