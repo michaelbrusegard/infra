@@ -117,7 +117,7 @@ def certificate(root):
     return cert, key, context
 
 
-def start_mail(server):
+def start_mail(server, *, oidc_admin_group=None):
     """Start the same Server in normal mode; recovery mode disables mail listeners."""
     isolated()
     server.stop()
@@ -128,6 +128,8 @@ def start_mail(server):
         "TMPDIR": str(server.root),
         "LANG": "C.UTF-8",
     }
+    if oidc_admin_group is not None:
+        env["STALWART_OIDC_ADMIN_GROUP"] = oidc_admin_group
     server.process = subprocess.Popen(
         [str(server.binary), "--config", str(server.config)],
         env=env,

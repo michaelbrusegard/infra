@@ -155,8 +155,63 @@ index 3522613..935a25e 100644
  #[derive(Clone, Debug)]
  pub struct Directories {
      pub default_directory: Option<Arc<Directory>>,
+diff --git a/crates/common/src/lib.rs b/crates/common/src/lib.rs
+--- a/crates/common/src/lib.rs
++++ b/crates/common/src/lib.rs
+@@ -256,6 +256,10 @@
+ 
+ #[derive(Debug, Clone)]
+ pub struct HttpAuthCache {
++    /// External bearer entries only admit requests to full reauthentication.
++    /// Never reconstruct a native access token from these entries, even after
++    /// the configured directory changes away from OIDC.
++    pub oidc_rate_only: bool,
+     pub account_id: u32,
+     pub revision: u64,
+     pub credential_id: Option<u32>,
+diff --git a/crates/common/src/auth/rate_limit.rs b/crates/common/src/auth/rate_limit.rs
+--- a/crates/common/src/auth/rate_limit.rs
++++ b/crates/common/src/auth/rate_limit.rs
+@@ -65,6 +65,38 @@
+         }
+     }
+ 
++    /// A known external token is not authorization. Before revalidating it at
++    /// the IdP, check its last verified account's budget without incrementing:
++    /// successful authentication below still charges the normal account limit.
++    /// This guard also applies to privileged OIDC sessions to bound IdP work.
++    pub async fn is_http_oidc_revalidation_allowed(
++        &self,
++        account_id: u32,
++        addr: IpAddr,
++    ) -> trc::Result<()> {
++        if let Some(rate) = &self.core.network.http.rate_authenticated
++            && !self.is_ip_allowed(addr)
++            && let Some(reset) = self
++                .core
++                .storage
++                .memory
++                .is_rate_allowed(
++                    KV_RATE_LIMIT_HTTP_AUTHENTICATED,
++                    &account_id.to_be_bytes(),
++                    rate,
++                    true,
++                )
++                .await
++                .caused_by(trc::location!())?
++        {
++            return Err(trc::LimitEvent::TooManyRequests
++                .into_err()
++                .ctx(trc::Key::Expires, reset)
++                .ctx(trc::Key::Limit, rate.count));
++        }
++        Ok(())
++    }
++
+     pub async fn is_http_anonymous_request_allowed(&self, addr: IpAddr) -> trc::Result<()> {
+         if let Some(rate) = &self.core.network.http.rate_anonymous
+             && !self.is_ip_allowed(addr)
 diff --git a/crates/http/src/auth/authenticate.rs b/crates/http/src/auth/authenticate.rs
-index 5d9f271..e4cdf08 100644
 --- a/crates/http/src/auth/authenticate.rs
 +++ b/crates/http/src/auth/authenticate.rs
 @@ -4,7 +4,7 @@
@@ -168,10 +223,12 @@ index 5d9f271..e4cdf08 100644
  use common::{HttpAuthCache, Server, auth::AuthRequest, network::limiter::InFlight};
  use directory::Credentials;
  use http_proto::{HttpRequest, HttpSessionData};
-@@ -28,8 +28,19 @@ impl Authenticator for Server {
+@@ -28,10 +28,33 @@
          session: &HttpSessionData,
      ) -> trc::Result<(Option<InFlight>, AccessToken)> {
          if let Some((mechanism, token)) = req.authorization() {
+-            // Check if the credentials are cached
+-            if let Some(http_cache) = self.inner.cache.http_auth.get(token) {
 +            // External OIDC claims can change effective session permissions.
 +            // Re-evaluate those claims on every request instead of rebuilding a
 +            // native-only token from the account id stored in this cache.
@@ -181,42 +238,67 @@ index 5d9f271..e4cdf08 100644
 +                    .get_default_directory()
 +                    .is_some_and(|directory| directory.has_bearer_token_support());
 +
-             // Check if the credentials are cached
--            if let Some(http_cache) = self.inner.cache.http_auth.get(token) {
++            // For external OIDC this entry is rate admission ONLY. Never use
++            // it to reconstruct authorization: issuer claims, expiration and
++            // native account permissions are revalidated on every request.
++            let known_oidc_account = if !cache_credentials {
++                self.inner.cache.http_auth.get(token).and_then(|entry| {
++                    (entry.oidc_rate_only && entry.expires > Instant::now())
++                        .then_some(entry.account_id)
++                })
++            } else {
++                None
++            };
++
++            // Native credentials may reuse their revision-checked access token.
 +            if cache_credentials
 +                && let Some(http_cache) = self.inner.cache.http_auth.get(token)
 +            {
                  // Make sure the revision is still valid
-                 if http_cache.expires > Instant::now() {
+-                if http_cache.expires > Instant::now() {
++                if !http_cache.oidc_rate_only && http_cache.expires > Instant::now() {
                      let access_token = AccessToken::renew(
-@@ -90,17 +101,19 @@ impl Authenticator for Server {
+                         self.access_token(http_cache.account_id).await?,
+                         http_cache.credential_id,
+@@ -61,9 +84,16 @@
+                         .caused_by(trc::location!())
+                 })?
+             } else if mechanism.eq_ignore_ascii_case("bearer") {
+-                // Enforce anonymous rate limit
+-                self.is_http_anonymous_request_allowed(session.remote_ip)
+-                    .await?;
++                // Only unknown credentials consume the IP-based anonymous
++                // budget. Known OIDC tokens still authenticate below and always
++                // consume the account-based budget after successful validation.
++                if let Some(account_id) = known_oidc_account {
++                    self.is_http_oidc_revalidation_allowed(account_id, session.remote_ip)
++                        .await?;
++                } else {
++                    self.is_http_anonymous_request_allowed(session.remote_ip)
++                        .await?;
++                }
+ 
+                 Credentials::Bearer {
+                     username: None,
+@@ -88,12 +118,19 @@
+                     session.session_id,
+                     session.remote_ip,
                  ))
-                 .await?;
+-                .await?;
++                .await
++                .inspect_err(|_| {
++                    // A revoked/expired token or suspended account must lose
++                    // rate admission too; subsequent attempts are anonymous.
++                    self.inner.cache.http_auth.remove(token);
++                })?;
  
 -            // Cache credentials
--            self.inner.cache.http_auth.insert(
--                token.into(),
--                HttpAuthCache {
--                    account_id: access_token.account_id(),
--                    revision: access_token.revision(),
--                    credential_id: access_token.credential_id(),
--                    expires: Instant::now()
--                        + Duration::from_secs(self.core.oauth.oauth_expiry_token),
--                },
--            );
-+            // Cache credentials unless authorization depends on current OIDC claims.
-+            if cache_credentials {
-+                self.inner.cache.http_auth.insert(
-+                    token.into(),
-+                    HttpAuthCache {
-+                        account_id: access_token.account_id(),
-+                        revision: access_token.revision(),
-+                        credential_id: access_token.credential_id(),
-+                        expires: Instant::now()
-+                            + Duration::from_secs(self.core.oauth.oauth_expiry_token),
-+                    },
-+                );
-+            }
- 
-             // Enforce authenticated rate limit
-             self.is_http_authenticated_request_allowed(&access_token, session.remote_ip)
++            // For OIDC store only rate admission; the lookup above never uses
++            // these account fields to authorize an external bearer request.
+             self.inner.cache.http_auth.insert(
+                 token.into(),
+                 HttpAuthCache {
++                    oidc_rate_only: !cache_credentials,
+                     account_id: access_token.account_id(),
+                     revision: access_token.revision(),
+                     credential_id: access_token.credential_id(),

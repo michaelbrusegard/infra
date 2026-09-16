@@ -11,6 +11,9 @@ name: Stalwart Native SCIM Candidate
       - packages/stalwart-oss/image.nix
       - packages/stalwart-oss/webui.nix
       - packages/stalwart-oss/apply-native.py
+      - packages/stalwart-oss/rate_limit.py
+      - packages/stalwart-oss/integration.py
+      - packages/stalwart-oss/mail.py
       - packages/stalwart-oss/native/**
       - packages/stalwart-oss/patches/**
       - .github/workflows/stalwart-image.yaml
@@ -50,6 +53,15 @@ jobs:
           docker load < result
           docker run --rm --network none --read-only --cap-drop ALL \
             --security-opt no-new-privileges:true stalwart-native-scim:0.16.21 --version
+      - name: Verify OIDC rate accounting in isolated normal mode
+        run: |
+          binary=$(docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges:true --entrypoint /bin/readlink \
+            stalwart-native-scim:0.16.21 /usr/local/bin/stalwart)
+          test -x "$binary"
+          # Root only creates a disposable, loopback-only user/network namespace.
+          # No live identity provider, cluster, or mail is accessed by the fixture.
+          sudo python3 packages/stalwart-oss/rate_limit.py "$binary"
       - name: Retain candidate for acceptance and separate promotion
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
