@@ -187,7 +187,7 @@ def run(server, client):
                 }
             },
         )
-        request(token, "192.0.2.12", 401)
+        request(token, "192.0.2.12", 403)
         client.jmap(
             "x:Account/set",
             {
