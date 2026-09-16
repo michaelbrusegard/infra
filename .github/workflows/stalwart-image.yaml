@@ -59,9 +59,15 @@ jobs:
             --security-opt no-new-privileges:true --entrypoint /bin/readlink \
             stalwart-native-scim:0.16.21 /usr/local/bin/stalwart)
           test -x "$binary"
+          # Namespace root cannot bypass runner-owned checkout permissions.
+          # Stage only public test code in a traversable temporary directory.
+          fixture=$(mktemp -d /tmp/stalwart-rate.XXXXXX)
+          trap 'rm -rf "$fixture"' EXIT
+          chmod 755 "$fixture"
+          install -m 644 packages/stalwart-oss/*.py "$fixture/"
           # Root only creates a disposable, loopback-only user/network namespace.
           # No live identity provider, cluster, or mail is accessed by the fixture.
-          sudo python3 packages/stalwart-oss/rate_limit.py "$binary"
+          sudo python3 "$fixture/rate_limit.py" "$binary"
       - name: Retain candidate for acceptance and separate promotion
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
