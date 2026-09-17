@@ -129,22 +129,6 @@ spec:
         - ports:
             - port: "24"
               protocol: TCP
-    # ReloadSettings also validates the existing Pocket ID directory. Permit
-    # its split-DNS HTTPS route and translated backend port, not all cluster APIs.
-    - toFQDNs:
-        - matchName: id.manafishrov.com
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: manafishrov-pocket-id
-            k8s:app: pocket-id
-      toPorts:
-        - ports:
-            - port: "1411"
-              protocol: TCP
     # Outbound SMTP delivery to the world (port 25) + TLS lookups (443) for
     # MTA-STS policy fetching / WebPKI revocation.
     - toEntities:

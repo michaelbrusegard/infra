@@ -89,8 +89,9 @@ data:
     # plaintext is hashed only on create; sending it again on update
     # appears to store it verbatim, breaking subsequent auth - strip it
     # so the create-time hash survives. Password rotation is then via
-    # admin UI or a direct one-off `stalwart-cli apply` update.
-    UPDATE_STRIP_FIELDS = ('name', 'credentials')
+    # admin UI or a direct one-off `stalwart-cli apply` update. An explicit
+    # empty map is safe to retain: it revokes credentials rather than hashing.
+    UPDATE_STRIP_FIELDS = ('name',)
 
     QUERY_FIELDS = {
         'Certificate': 'id,certificate',
@@ -194,6 +195,8 @@ data:
                 if isinstance(value, dict):
                     for f in UPDATE_STRIP_FIELDS:
                         value.pop(f, None)
+                    if value.get('credentials') != {}:
+                        value.pop('credentials', None)
                 out_lines.append(json.dumps({
                     '@type': 'update',
                     'object': obj_type,

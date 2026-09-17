@@ -19,8 +19,10 @@ in
   } ''
     python3 ${source}/test_packaging.py -v
     python3 ${source}/integration.py --self-test
+    STALWART_RECONCILER_FILE=${../../gitops/espresso/apps/stalwart/reconciler.yaml} \
+      python3 ${source}/test_retirement.py -v
     PYTHONPYCACHEPREFIX="$TMPDIR/pycache" python3 -m py_compile \
       ${source}/mail.py ${source}/migration.py ${source}/identity.py ${source}/recovery.py \
-      ${source}/rate_limit.py ${source}/routing.py
+      ${source}/rate_limit.py ${source}/routing.py ${source}/retirement.py
     touch $out
   ''
