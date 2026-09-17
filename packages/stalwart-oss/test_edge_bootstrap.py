@@ -13,6 +13,8 @@ class FakeClient:
 
     def call(self, kind, operation, arguments):
         self.calls.append((kind, operation, arguments))
+        if kind == "Application" and operation == "query":
+            return {"ids": ["bundled-ui"]}
         if operation == "query":
             return {"ids": ["existing"] if self.occupied else []}
         return {}
@@ -55,6 +57,8 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(len(listeners), 1)
         self.assertEqual(listeners[0]["bind"], {"[::]:443": True})
         self.assertEqual(config[0]["metadata"]["namespace"], "flux-system")
+        self.assertEqual(config[0]["stringData"]["bootstrap_webui_id"], "bundled-ui")
+        self.assertFalse(any(key.startswith("TF_VAR_") for key in config[0]["stringData"]))
         self.assertEqual(readiness[0]["metadata"]["namespace"], "stalwart-edge")
         self.assertNotIn("STALWART_TOKEN", readiness[0]["stringData"])
 

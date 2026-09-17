@@ -25,6 +25,14 @@ patches:
         path: ./gitops/espresso/tofu/stalwart-edge
         backendConfig:
           secretSuffix: stalwart-edge
+        varsFrom:
+          - kind: Secret
+            name: stalwart-edge-tofu
+            varsKeys:
+              - bootstrap_internal_domain_id
+              - bootstrap_certificate_id
+              - bootstrap_https_listener_id
+              - bootstrap_webui_id
         runnerPodTemplate:
           spec:
             # The audited local provider lock is Linux amd64 only.
@@ -33,12 +41,14 @@ patches:
             env:
               - name: TF_CLI_CONFIG_FILE
                 value: /etc/tofu/tofurc
-            # Encrypted bootstrap output in flux-system: STALWART_TOKEN plus
-            # TF_VAR_bootstrap_{internal_domain,certificate,https_listener}_id.
+              - name: STALWART_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: stalwart-edge-tofu
+                    key: STALWART_TOKEN
+            # tf-controller supplies bootstrap variables through varsFrom;
+            # manually injecting TF_VAR_* environment variables is forbidden.
             # Never mount this configuration-writer identity in the mail pod.
-            envFrom:
-              - secretRef:
-                  name: stalwart-edge-tofu
             initContainers:
               - name: install-stalwart-provider
                 image: alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b

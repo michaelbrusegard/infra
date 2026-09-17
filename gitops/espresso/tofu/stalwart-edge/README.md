@@ -39,7 +39,9 @@ optional Application. Do not also bootstrap the SMTP listener, routes, hook,
 lookup store or script: this stack creates them. The imported domain, certificate
 and HTTPS listener have `prevent_destroy` guards.
 
-Inject `STALWART_TOKEN` into the runner. Do not set provider basic-auth variables.
+Inject only `STALWART_TOKEN` into the runner environment. Supply bootstrap IDs
+as plain Secret keys through controller `varsFrom`, not manual `TF_VAR_*`
+environment variables. Do not set provider basic-auth variables.
 Inject `STALWART_RESEND_API_KEY` into Stalwart, not the runner; TF stores only its
 environment-variable name. Bootstrap retains ownership of the machine User and
 API key. Use native `User.role = "User"`, API-key-only authentication and:
@@ -173,7 +175,7 @@ Secret wiring is explicit; the obsolete broad `stalwart-edge-env` is unused:
 | `stalwart-edge` | `stalwart-edge-bootstrap` (optional, ephemeral) | `STALWART_RECOVERY_ADMIN` -> initial main only |
 | `stalwart-edge` | `stalwart-edge-reader` | `token` -> policy `STALWART_MANAFISH_SYNC_TOKEN` |
 | `stalwart-edge` | `stalwart-edge-readiness` | `token` -> probe `STALWART_EDGE_READINESS_TOKEN` |
-| `flux-system` | `stalwart-edge-tofu` | `STALWART_TOKEN`, `TF_VAR_bootstrap_internal_domain_id`, `TF_VAR_bootstrap_certificate_id`, `TF_VAR_bootstrap_https_listener_id`; optional `TF_VAR_bootstrap_webui_id` -> runner only |
+| `flux-system` | `stalwart-edge-tofu` | `STALWART_TOKEN` -> runner env; `bootstrap_internal_domain_id`, `bootstrap_certificate_id`, `bootstrap_https_listener_id`, `bootstrap_webui_id` -> controller varsFrom |
 
 The runtime ConfigMap contains qualification `1` after native acceptance tests.
 The reviewed inventory comes from encrypted Secret `stalwart-edge-inventory`,

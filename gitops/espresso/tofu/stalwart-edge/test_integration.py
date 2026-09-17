@@ -119,7 +119,12 @@ class IntegrationContract(unittest.TestCase):
         self.assertEqual(tf["spec"]["path"], "./gitops/espresso/tofu/stalwart-edge")
         runner = tf["spec"]["runnerPodTemplate"]["spec"]
         self.assertEqual(runner["nodeSelector"]["kubernetes.io/arch"], "amd64")
-        self.assertEqual(runner["envFrom"], [{"secretRef": {"name": "stalwart-edge-tofu"}}])
+        self.assertNotIn("envFrom", runner)
+        token = next(e for e in runner["env"] if e["name"] == "STALWART_TOKEN")
+        self.assertEqual(token["valueFrom"]["secretKeyRef"], {"name": "stalwart-edge-tofu", "key": "STALWART_TOKEN"})
+        self.assertEqual(tf["spec"]["varsFrom"], [{"kind": "Secret", "name": "stalwart-edge-tofu", "varsKeys": [
+            "bootstrap_internal_domain_id", "bootstrap_certificate_id", "bootstrap_https_listener_id", "bootstrap_webui_id",
+        ]}])
         script = runner["initContainers"][0]["command"][-1]
         self.assertIn("version=0.2.3", script)
         self.assertIn("9b4b3dc07a73055d7116fc426c6009de86479df7776ab23b6795132eeca8c119", script)

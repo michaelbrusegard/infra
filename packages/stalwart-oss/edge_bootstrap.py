@@ -135,6 +135,8 @@ def bootstrap(client, config_permissions, readiness_permissions, save_config, sa
             for row in routes), "unexpected routes in bootstrap store")
         result = client.call("MtaRoute", "set", {"destroy": route_ids})
         require(set(result.get("destroyed", [])) == set(route_ids), "factory route removal failed")
+    applications = client.call("Application", "query", {})["ids"]
+    require(len(applications) == 1, "expected one bundled Application for import")
     domain = client.create("Domain", {
         "name": DOMAIN, "aliases": {}, "isEnabled": False, "allowRelaying": False,
         "directoryId": None, "catchAllAddress": None,
@@ -158,9 +160,10 @@ def bootstrap(client, config_permissions, readiness_permissions, save_config, sa
     owner = machine(client, "tofu", domain, config_permissions)
     save_config(secret("stalwart-edge-tofu", "flux-system", {
         "STALWART_TOKEN": client.key(owner),
-        "TF_VAR_bootstrap_internal_domain_id": domain,
-        "TF_VAR_bootstrap_certificate_id": certificate,
-        "TF_VAR_bootstrap_https_listener_id": listener,
+        "bootstrap_internal_domain_id": domain,
+        "bootstrap_certificate_id": certificate,
+        "bootstrap_https_listener_id": listener,
+        "bootstrap_webui_id": applications[0],
     }))
     reader = machine(client, "readiness", domain, readiness_permissions)
     save_readiness(secret("stalwart-edge-readiness", "stalwart-edge", {"token": client.key(reader)}))
