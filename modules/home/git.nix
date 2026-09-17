@@ -115,7 +115,7 @@
           user = "michaelbrusegard";
         };
       };
-      extensions = with pkgs; [gh-eco gh-poi gh-dash gh-skyline];
+      extensions = with pkgs; [gh-eco gh-poi gh-dash gh-skyline gh-stack];
     };
 
     gh-dash = {
