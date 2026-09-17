@@ -15,7 +15,7 @@
     ipv4 = "10.0.188.2";
     ipv6 = "fd7a:115c:a1e0:188::2";
   };
-  stalwart = {
+  stalwartEdge = {
     ipv4 = "10.0.188.12";
     ipv6 = "fd7a:115c:a1e0:188::12";
   };
@@ -40,11 +40,8 @@
     # Gateway API
     (forward publicGateway "tcp" 80)
     (forward publicGateway "tcp" 443)
-    # Stalwart
-    (forward stalwart "tcp" 25)
-    (forward stalwart "tcp" 465)
-    (forward stalwart "tcp" 587)
-    (forward stalwart "tcp" 993)
+    # Shared server-to-server SMTP edge. Clients use JMAP through HTTPS.
+    (forward stalwartEdge "tcp" 25)
     # NetBird coturn
     (forward netbirdCoturn "udp" 3478)
     # mc-router fans out by handshake hostname (*.eldians.com).
@@ -312,6 +309,8 @@ in {
   services = {
     cloudflare-dyndns.domains = [
       routerDomain
+      "mx.manafishrov.com"
+      # Compatibility for senders retaining the previous MX hostname.
       "mail.${baseDomain}"
     ];
 
@@ -481,7 +480,8 @@ in {
       };
       customDNS.mapping = {
         "${routerDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-        # mail + WebUI listeners are on the stalwart LB, not the HTTP gateway
+        # SMTP uses the shared edge; webmail uses the HTTP gateway.
+        "mx.manafishrov.com" = "10.0.188.12,fd7a:115c:a1e0:188::12";
         "mail.${baseDomain}" = "10.0.188.12,fd7a:115c:a1e0:188::12";
       };
     };
