@@ -34,7 +34,5 @@ patches:
             - manafishrov_nextcloud_pocketid_client_secret
             - manafishrov_n8n_pocketid_client_id
             - manafishrov_n8n_pocketid_client_secret
-            - manafishrov_roundcube_pocketid_client_id
-            - manafishrov_roundcube_pocketid_client_secret
             - manafishrov_twenty_pocketid_client_id
             - manafishrov_twenty_pocketid_client_secret
