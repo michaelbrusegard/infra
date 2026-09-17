@@ -15,6 +15,5 @@ resources:
   - mattermost
   - mealie
   - searxng
-  - stalwart
   - stalwart-edge
   - uptime-kuma

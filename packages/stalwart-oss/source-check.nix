@@ -26,7 +26,7 @@ in
   } ''
     python3 ${source}/test_packaging.py -v
     python3 ${source}/integration.py --self-test
-    STALWART_RECONCILER_FILE=${../../gitops/espresso/apps/stalwart/reconciler.yaml} \
+    STALWART_RECONCILER_FILE=${./fixtures/legacy-reconciler.yaml} \
       python3 ${source}/test_retirement.py -v
     export PYTHONPYCACHEPREFIX="$TMPDIR/pycache"
     python3 ${edgePolicy}/test_policy.py -v

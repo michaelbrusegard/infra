@@ -1,4 +1,4 @@
-"""Exercise the deployed reconciler's credential-update policy without a server."""
+"""Regression-test the archived legacy reconciler's credential retirement."""
 
 import json
 import os
@@ -14,8 +14,7 @@ class CredentialRetirement(unittest.TestCase):
         path = Path(
             os.environ.get(
                 "STALWART_RECONCILER_FILE",
-                Path(__file__).resolve().parents[2]
-                / "gitops/espresso/apps/stalwart/reconciler.yaml",
+                Path(__file__).resolve().parent / "fixtures/legacy-reconciler.yaml",
             )
         )
         source = path.read_text().split("    rewrite_plan() {", 1)[1]

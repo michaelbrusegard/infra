@@ -1,6 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - namespace.yaml
-  # Retired ingress: retain only its namespace and existing PVC for rollback.
-  # Historical Restic repositories are not deleted by this retirement.
