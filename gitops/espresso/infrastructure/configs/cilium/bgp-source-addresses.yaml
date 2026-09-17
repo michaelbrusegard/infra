@@ -1,0 +1,34 @@
+# Bind IPv6 BGP sessions to the static addresses configured as FRR neighbors.
+# Otherwise Linux can select a SLAAC source that FRR does not recognize.
+apiVersion: cilium.io/v2
+kind: CiliumBGPNodeConfigOverride
+metadata:
+  name: espresso-0
+spec:
+  bgpInstances:
+    - name: instance-65001
+      peers:
+        - name: macchiato-v6
+          localAddress: fd7a:115c:a1e0:187::2
+---
+apiVersion: cilium.io/v2
+kind: CiliumBGPNodeConfigOverride
+metadata:
+  name: espresso-1
+spec:
+  bgpInstances:
+    - name: instance-65001
+      peers:
+        - name: macchiato-v6
+          localAddress: fd7a:115c:a1e0:187::3
+---
+apiVersion: cilium.io/v2
+kind: CiliumBGPNodeConfigOverride
+metadata:
+  name: espresso-2
+spec:
+  bgpInstances:
+    - name: instance-65001
+      peers:
+        - name: macchiato-v6
+          localAddress: fd7a:115c:a1e0:187::4
