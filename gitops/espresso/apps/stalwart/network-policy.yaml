@@ -131,6 +131,15 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
+    # The shared SMTP ingress forwards Manafish mail to its dedicated backend.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: manafishrov-stalwart
+            k8s:app: stalwart
+      toPorts:
+        - ports:
+            - port: "24"
+              protocol: TCP
     # Outbound SMTP delivery to the world (port 25) + TLS lookups (443) for
     # MTA-STS policy fetching / WebPKI revocation.
     - toEntities:

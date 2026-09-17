@@ -35,6 +35,11 @@ data:
   60-route-resend.ndjson.tmpl: |
     {"@type":"create","object":"MtaRoute","value":{"mx":{"@type":"Relay","name":"mx","address":"smtp.resend.com","port":465,"protocol":"smtp","authUsername":"resend","authSecret":{"@type":"Value","secret":${RESEND_API_KEY_JSON}},"implicitTls":true,"allowInvalidCerts":false,"description":"Resend smarthost for all external outbound"}}}
 
+  # Staged before activating the domain override. Keep certificate validation
+  # enabled and retain the source mailboxes for recovery, not local delivery.
+  65-route-manafishrov.ndjson.tmpl: |
+    {"@type":"create","object":"MtaRoute","value":{"to-manafishrov":{"@type":"Relay","name":"to-manafishrov","address":"backend.manafishrov.com","port":24,"protocol":"lmtp","implicitTls":true,"allowInvalidCerts":false,"authSecret":{"@type":"None"},"description":"Deliver Manafish mail to its dedicated backend; queue if unavailable"}}}
+
   # The edge has already evaluated the original Internet sender. Do not repeat
   # sender authentication or spam filtering against the edge pod's address.
   70-trusted-edge-delivery.ndjson.tmpl: |
