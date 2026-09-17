@@ -11,11 +11,6 @@ spec:
     - fromEntities:
         - host
         - remote-node
-      toPorts:
-        - ports:
-            - port: "25"
-              protocol: TCP
-    - fromEntities:
         - world
       toPorts:
         - ports:
@@ -29,10 +24,20 @@ spec:
         - ports:
             - port: "25"
               protocol: TCP
+    # Management remains reachable for configuration repair while SMTP is not
+    # ready. Neither LAN/world nor other application namespaces may use 443.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: flux-system
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
       toPorts:
         - ports:
             - port: "53"
@@ -44,9 +49,6 @@ spec:
               - matchPattern: "*"
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: stalwart
-            k8s:app: stalwart
-        - matchLabels:
             k8s:io.kubernetes.pod.namespace: manafishrov-stalwart
             k8s:app: stalwart
       toPorts:
@@ -55,13 +57,20 @@ spec:
               protocol: TCP
             - port: "443"
               protocol: TCP
-    - toEntities:
-        - world
+    # Also cover the private backend DNS target when outside this cluster.
+    - toFQDNs:
+        - matchName: backend.manafishrov.com
       toPorts:
         - ports:
-            - port: "25"
+            - port: "24"
               protocol: TCP
             - port: "443"
               protocol: TCP
-            - port: "80"
+    - toFQDNs:
+        - matchName: smtp.resend.com
+      toPorts:
+        - ports:
+            - port: "465"
               protocol: TCP
+    # Sender authentication and default DNSBL checks use cluster DNS above.
+    # No world:25, remote asset downloads, or blanket world:80/443 allowance.

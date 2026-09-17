@@ -10,7 +10,6 @@ spec:
       sectionName: https
   hostnames:
     - mta-sts.michaelbrusegard.com
-    - mta-sts.manafishrov.com
   rules:
     - matches:
         - path:

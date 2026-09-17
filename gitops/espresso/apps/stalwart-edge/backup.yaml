@@ -4,6 +4,8 @@ metadata:
   name: stalwart-edge-data-backup
   namespace: stalwart-edge
 spec:
+  # Enable after edge qualification and backup repository readiness checks.
+  paused: true
   sourcePVC: data-stalwart-edge-0
   trigger:
     schedule: "40 */6 * * *"

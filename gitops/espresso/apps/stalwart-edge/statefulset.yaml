@@ -4,8 +4,8 @@ metadata:
   name: stalwart-edge
   namespace: stalwart-edge
   annotations:
-    configmap.reloader.stakater.com/reload: stalwart-edge-plan,stalwart-edge-reconciler,stalwart-edge-entrypoint,stalwart-edge-directory-sync
-    secret.reloader.stakater.com/reload: stalwart-edge-env,wildcard-tls
+    configmap.reloader.stakater.com/reload: stalwart-edge-config,stalwart-edge-entrypoint,stalwart-edge-policy,stalwart-edge-policy-runtime
+    secret.reloader.stakater.com/reload: stalwart-edge-resend,stalwart-edge-reader,stalwart-edge-readiness,stalwart-edge-inventory,wildcard-tls
 spec:
   replicas: 1
   selector:
@@ -17,45 +17,87 @@ spec:
       labels:
         app: stalwart-edge
     spec:
-      shareProcessNamespace: true
+      automountServiceAccountToken: false
       securityContext:
+        runAsNonRoot: true
         runAsUser: 2000
         runAsGroup: 2000
         fsGroup: 2000
         fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: routing-directory
+          image: docker.io/library/python:3.14-slim@sha256:810da6270e43d30a1f3e0e1eabbeb6fbd9d78ad9dd2e754d5297a3d6cb42df46
+          command:
+            - python3
+            - -c
+            - "from pathlib import Path; Path('/var/lib/stalwart/routing').mkdir(mode=0o700, exist_ok=True)"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - mountPath: /var/lib/stalwart
+              name: data
       containers:
         - name: stalwart
-          image: stalwartlabs/stalwart:v0.16.17@sha256:a8108e19bd927e172d4d8c128907b8dfc93fd180ae8ee07dccdd42cb97eb9dfa
+          # Exact approved OSS artifact, despite the historical registry name.
+          image: ghcr.io/michaelbrusegard/stalwart-native-scim:sha-f5918b808ac9f481f63deeeb8a9c0a526faf57a5-670b02fc450a@sha256:ee91efd83fd1c4ab51d1462e7b0188546449093e7960ead09f4917c068dbbd2d
           command:
             - /entrypoint/entrypoint.sh
-          envFrom:
-            - secretRef:
-                name: stalwart-edge-env
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+              add: [NET_BIND_SERVICE]
+          env:
+            - name: STALWART_RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-edge-resend
+                  key: api-key
+            # Parent creates temporarily, then removes after the normal restart.
+            # Entrypoint unsets this even if the Secret was accidentally retained.
+            - name: STALWART_RECOVERY_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-edge-bootstrap
+                  key: STALWART_RECOVERY_ADMIN
+                  optional: true
           ports:
             - containerPort: 25
               name: smtp
+            - containerPort: 443
+              name: https
           startupProbe:
             exec:
-              command:
-                - /bin/sh
-                - -c
-                - curl -fsS --max-time 3 http://127.0.0.1:8080/healthz/live >/dev/null || curl -fsS --max-time 3 http://127.0.0.1:8080/ >/dev/null
+              command: [/entrypoint/health.sh]
             periodSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 30
           livenessProbe:
             exec:
-              command:
-                - /bin/sh
-                - -c
-                - curl -fsS --max-time 3 http://127.0.0.1:8080/healthz/live >/dev/null || curl -fsS --max-time 3 http://127.0.0.1:8080/ >/dev/null
+              command: [/entrypoint/health.sh]
             periodSeconds: 30
+            timeoutSeconds: 5
           readinessProbe:
             exec:
               command:
                 - /bin/sh
-                - -c
-                - test -f /var/lib/stalwart/routing/.recipients-ready && (curl -fsS --max-time 3 http://127.0.0.1:8080/healthz/live >/dev/null || curl -fsS --max-time 3 http://127.0.0.1:8080/ >/dev/null)
+                - -ec
+                - test -f /var/lib/stalwart/.bootstrapped && /entrypoint/health.sh
             periodSeconds: 10
+            timeoutSeconds: 5
           resources:
             requests:
               cpu: 100m
@@ -76,45 +118,81 @@ spec:
             - mountPath: /entrypoint
               name: entrypoint
               readOnly: true
-        - name: reconciler
-          image: alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
-          command:
-            - /reconciler/reconciler.sh
+            - mountPath: /tmp
+              name: stalwart-temp
+        - name: policy
+          image: docker.io/library/python:3.14-slim@sha256:810da6270e43d30a1f3e0e1eabbeb6fbd9d78ad9dd2e754d5297a3d6cb42df46
+          command: [python3, /policy/policy.py, serve]
           securityContext:
-            runAsUser: 0
-            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
           env:
-            - name: STALWART_CLI_VERSION
-              value: v1.0.7
-            - name: PERSONAL_SYNC_URL
-              value: https://mail.asgard.michaelbrusegard.com
-            - name: PERSONAL_SYNC_DOMAIN
-              value: michaelbrusegard.com
-            - name: MANAFISH_SYNC_URL
-              value: https://backend.manafishrov.com
-            - name: MANAFISH_SYNC_DOMAIN
-              value: manafishrov.com
-          envFrom:
-            - secretRef:
-                name: stalwart-edge-env
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: STALWART_EDGE_POLICY_DB
+              value: /var/lib/stalwart/routing/recipients.sqlite3
+            - name: STALWART_EDGE_POLICY_QUALIFIED
+              valueFrom:
+                configMapKeyRef:
+                  name: stalwart-edge-policy-runtime
+                  key: STALWART_EDGE_POLICY_QUALIFIED
+            - name: STALWART_EDGE_POLICY_INVENTORY
+              valueFrom:
+                configMapKeyRef:
+                  name: stalwart-edge-policy-runtime
+                  key: STALWART_EDGE_POLICY_INVENTORY
+            - name: STALWART_EDGE_POLICY_SOURCES
+              valueFrom:
+                configMapKeyRef:
+                  name: stalwart-edge-policy-runtime
+                  key: STALWART_EDGE_POLICY_SOURCES
+            - name: STALWART_MANAFISH_SYNC_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-edge-reader
+                  key: token
+            - name: STALWART_EDGE_READINESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-edge-readiness
+                  key: token
+                  # Bootstrap creates this through the recovery port-forward.
+                  # Missing credentials still fail the mandatory readiness check.
+                  optional: true
+          # Parent-owned script checks native config AND actual SMTP behavior.
+          # Never substitute a marker-only or policy-/healthz-only check.
+          readinessProbe:
+            exec:
+              command: [python3, /policy/readiness.py]
+            periodSeconds: 20
+            timeoutSeconds: 15
+            failureThreshold: 2
           resources:
             requests:
-              cpu: 20m
-              memory: 64Mi
+              cpu: 50m
+              memory: 128Mi
             limits:
+              cpu: "1"
               memory: 256Mi
           volumeMounts:
             - mountPath: /var/lib/stalwart
               name: data
-            - mountPath: /plan
-              name: plan
               readOnly: true
-            - mountPath: /reconciler
-              name: reconciler
+            - mountPath: /var/lib/stalwart/routing
+              name: data
+              subPath: routing
+            - mountPath: /policy
+              name: policy
               readOnly: true
-            - mountPath: /sync
-              name: directory-sync
+            - mountPath: /policy-inventory
+              name: policy-inventory
               readOnly: true
+            - mountPath: /tmp
+              name: policy-temp
       volumes:
         - name: config
           configMap:
@@ -126,17 +204,18 @@ spec:
           configMap:
             name: stalwart-edge-entrypoint
             defaultMode: 0555
-        - name: plan
+        - name: policy
           configMap:
-            name: stalwart-edge-plan
-        - name: reconciler
-          configMap:
-            name: stalwart-edge-reconciler
-            defaultMode: 0555
-        - name: directory-sync
-          configMap:
-            name: stalwart-edge-directory-sync
-            defaultMode: 0555
+            name: stalwart-edge-policy
+        - name: policy-inventory
+          secret:
+            secretName: stalwart-edge-inventory
+        - name: stalwart-temp
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: policy-temp
+          emptyDir:
+            sizeLimit: 64Mi
   volumeClaimTemplates:
     - metadata:
         name: data
