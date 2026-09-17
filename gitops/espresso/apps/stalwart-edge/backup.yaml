@@ -4,11 +4,13 @@ metadata:
   name: stalwart-edge-data-backup
   namespace: stalwart-edge
 spec:
-  # Enable after edge qualification and backup repository readiness checks.
-  paused: true
+  # Separate repository under the shared mail infrastructure's Freddo identity.
+  # The retired server's /stalwart/pvc repository is left untouched.
+  paused: false
   sourcePVC: data-stalwart-edge-0
   trigger:
     schedule: "40 */6 * * *"
+    manual: edge-cutover-20260917
   restic:
     repository: freddo-restic-stalwart-edge-pvc
     pruneIntervalDays: 30

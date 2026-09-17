@@ -29,7 +29,9 @@ those operations atomic.
   duration zero is invalid and falls back to the default delay.
 - Preserve the PVC and committed recipient database across restarts. A fresh
   database needs successful native verification before becoming Ready.
-- Freddo backup is not activated yet; backup.yaml is excluded from the bundle.
+- Snapshots are scheduled every six hours to Freddo's separate
+  `/stalwart/edge-pvc` repository. The retired `/stalwart/pvc` repository and
+  historical backups remain untouched.
 
 ## Qualification and accepted limitation
 

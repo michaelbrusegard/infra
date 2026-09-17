@@ -2,14 +2,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  # Add backup.yaml after the Freddo repository and pause behavior are verified.
+  - backup.yaml
   - statefulset.yaml
   - services.yaml
   - network-policy.yaml
   - config.yaml
   - entrypoint.yaml
-# Bootstrap/readiness are parent-owned. Do not re-add the legacy plan,
-# downloaded-CLI reconciler, or SQL Directory synchronizer.
+# tf-controller owns native settings. Do not add a second configuration
+# writer or a SQL Directory that creates recipient accounts on the edge.
 configMapGenerator:
   - name: stalwart-edge-policy
     namespace: stalwart-edge
