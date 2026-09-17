@@ -10,7 +10,7 @@
     filter = path: type:
       if type == "directory"
       then baseNameOf path != "__pycache__"
-      else lib.any (suffix: lib.hasSuffix suffix path) [".py" ".sql"];
+      else lib.any (suffix: lib.hasSuffix suffix path) [".py" ".sql" ".sieve"];
   };
   source = lib.cleanSourceWith {
     src = ./.;
@@ -45,6 +45,6 @@ in
     python3 -m py_compile \
       ${source}/mail.py ${source}/migration.py ${source}/identity.py ${source}/recovery.py \
       ${source}/rate_limit.py ${source}/routing.py ${source}/retirement.py \
-      ${source}/edge.py ${source}/edge_bootstrap.py
+      ${source}/edge.py ${source}/edge_bootstrap.py ${source}/edge_dns.py
     touch $out
   ''

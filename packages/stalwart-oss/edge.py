@@ -13,10 +13,18 @@ both HTTPS discovery and LMTP. There is no fabricated positive seed. Production
 TLS and deployment readiness remain separate gates; this exercise never sets
 an operator attestation. Hook-success/native-SQL-read failure can still produce
 residual 550 on this image.
+
+--group filtering --filter-inventory /path/to/id-stripped-rules.json also exercises
+native SPF/DKIM/DMARC using private authoritative DNS (installed named required),
+header forgery controls and backend Junk placement. filtering-proof.json contains
+exact fixture-native bridge settings and the limits of this score-only bridge.
 """
 from __future__ import annotations
 
 import argparse
+from email.parser import BytesParser
+from email.utils import formatdate
+from email.policy import SMTP, default as email_policy
 import hashlib
 import importlib.util
 import ipaddress
@@ -116,7 +124,7 @@ def passwordless(client, server, account):
     client.recovery = client.redactor.add('Bearer ' + token)
 
 
-def configure_edge(server, client, backend, index, sql):
+def configure_edge(server, client, backend, index, sql, *, filtering=False):
     update(client, 'SpamPyzor', {'enable': False})
     create(client, 'Tracer', {'@type': 'Stdout', 'level': 'debug', 'ansi': False})
     cert, key, context = certificate(server.root)
@@ -136,6 +144,11 @@ def configure_edge(server, client, backend, index, sql):
         'permissions': {'@type': 'Replace', 'enabledPermissions': dict.fromkeys([
             'authenticate', 'actionReloadSettings', 'sysActionCreate',
             'sysMtaHookUpdate', 'sysMtaStageRcptUpdate', 'sysMtaStageRcptGet',
+            *(['sysMtaStageDataUpdate', 'sysSpamSettingsGet', 'sysSpamSettingsUpdate',
+               'sysSpamPyzorUpdate', 'sysSpamLlmUpdate', 'sysSieveSystemScriptCreate',
+               'sysSieveSystemScriptUpdate', 'sysSenderAuthUpdate', 'sysDnsResolverUpdate',
+               'sysMtaConnectionStrategyCreate', 'sysMtaOutboundStrategyUpdate',
+               'sysQueuedMessageQuery'] if filtering else []),
             *('sys' + kind + verb for kind in (
                 'Account', 'Domain', 'Directory', 'MtaHook', 'SieveSystemScript'
             ) for verb in ('Get', 'Query')),
@@ -482,7 +495,393 @@ def limiter_test(edge, backend, app, refresher, policy, root, stage):
     }, indent=2))
 
 
-def run(root, report, group='all'):
+VERDICT_HEADER = 'X-Edge-Auth'
+VERDICT_SCRIPT = 'edge-auth-verdict'
+
+
+AUTH_RESULTS = ('pass', 'fail', 'softfail', 'neutral', 'temperror', 'permerror', 'none')
+AUTH_TAGS = {
+    'spf': dict(zip(AUTH_RESULTS, ('SPF_ALLOW', 'SPF_FAIL', 'SPF_SOFTFAIL', 'SPF_NEUTRAL',
+                                 'SPF_DNSFAIL', 'SPF_PERMFAIL', 'SPF_NA'))),
+    'dkim': {'pass': 'DKIM_ALLOW', 'fail': 'DKIM_REJECT', 'neutral': 'DKIM_NA',
+             'temperror': 'DKIM_TEMPFAIL', 'permerror': 'DKIM_PERMFAIL', 'none': 'DKIM_NA'},
+    'dmarc': {'pass': 'DMARC_POLICY_ALLOW', 'temperror': 'DMARC_DNSFAIL',
+              'permerror': 'DMARC_BAD_POLICY', 'none': 'DMARC_NA'},
+}
+
+
+AUTH_PATTERN = ('^spf=(pass|fail|softfail|neutral|temperror|permerror|none); '
+                'dkim=(pass|fail|neutral|temperror|permerror|none); '
+                'dmarc=(pass|fail|temperror|permerror|none); '
+                'policy=(reject|quarantine|none|unspecified);$')
+MALFORMED_AUTH = {
+    'garbage': 'garbage',
+    'missing': 'spf=pass; dkim=pass; dmarc=pass;',
+    'duplicate': 'spf=pass; spf=fail; dkim=pass; dmarc=pass; policy=none;',
+    'xspf': 'xspf=pass; dkim=pass; dmarc=pass; policy=none;',
+    'suffix': 'spf=pass; dkim=pass; dmarc=pass; policy=none; junk',
+    'enum': 'spf=excellent; dkim=pass; dmarc=pass; policy=none;',
+}
+
+
+def verdict_script():
+    """Native DATA variables, not message headers; never a forced fixture verdict.
+
+    Enumerated output prevents unexpected values injecting syntax. Empty/disabled
+    results mean none; pass, fail and none remain distinct.
+    """
+    lines = ['require ["editheader", "variables"];', f'deleteheader "{VERDICT_HEADER}";',
+             'deleteheader "Authentication-Results";']
+    for field in ('spf', 'dkim', 'dmarc', 'policy'):
+        variable = 'dmarc.policy' if field == 'policy' else field + '.result'
+        values = (('reject', 'quarantine', 'none', 'unspecified') if field == 'policy'
+                  else tuple(AUTH_TAGS[field]) + (('fail',) if field == 'dmarc' else ()))
+        lines.append(f'set "{field}" "none";')
+        for value in values:
+            lines.append(f'if string :is "${{env.{variable}}}" "{value}" {{ set "{field}" "{value}"; }}')
+    lines.append(f'addheader "{VERDICT_HEADER}" "spf=${{spf}}; dkim=${{dkim}}; dmarc=${{dmarc}}; policy=${{policy}};";')
+    return '\n'.join(lines) + '\n'
+
+
+def auth_header_rules(peer, weights):
+    """Score bridge on edge-only private LMTP, NOT backend native auth input.
+
+    Disable backend auth on the edge-only LMTP listener: checking the relay IP
+    is wrong, and editheader can invalidate DKIM. Offset native DMARC_NA only.
+    Override STWT_AUTH_NA separately: a numeric offset leaves a false AUTH_NA
+    tag that activates downstream rules (notably BOUNCE_NO_AUTH).
+    Exact peer IP is a fixture guard; production uses exclusive private LMTP,
+    Cilium namespace+app identity and listener-scoped spam enablement.
+    ARC/DKIM2 and client-IP reputation are not transported by this bridge.
+    """
+    peer = str(ipaddress.ip_address(peer))
+    gate = (f"remote_ip == '{peer}' && name_lower == '{VERDICT_HEADER.lower()}' "
+            f"&& matches('{AUTH_PATTERN}', value)")
+    def has(field, value):
+        return f"contains(value_lower, '{field}={value};')"
+    def rule(name, branches):
+        return {'@type': 'Header', 'name': 'EDGE_AUTH_' + name, 'enable': True, 'priority': 0,
+                'condition': {'match': {str(i): {'if': f'({gate}) && ({condition})',
+                                               'then': repr(tag)}
+                                        for i, (condition, tag) in enumerate(branches)}, 'else': 'false'}}
+    mappings = {field: [(has(field, value), tag) for value, tag in mapping.items()]
+                for field, mapping in AUTH_TAGS.items()}
+    # Policy only matters on a real DMARC alignment failure, not an SPF failure.
+    mappings['dmarc'] += [(f"{has('dmarc', 'fail')} && ({condition})", tag)
+        for condition, tag in [
+            (has('policy', 'reject'), 'DMARC_POLICY_REJECT'),
+            (has('policy', 'quarantine'), 'DMARC_POLICY_QUARANTINE'),
+            (f"!({has('policy', 'reject')} || {has('policy', 'quarantine')})", 'DMARC_POLICY_SOFTFAIL')]]
+    rules = [rule(field.upper(), branches) for field, branches in mappings.items()]
+    all_na = f"({has('spf', 'none')} && ({has('dkim', 'none')} || {has('dkim', 'neutral')}) && {has('dmarc', 'none')})"
+    rules += [rule('DMARC_NA_OFFSET', [(f"!{has('dmarc', 'none')}", 'EDGE_DMARC_NA_OFFSET')]),
+              rule('NA', [(all_na, 'AUTH_NA')]),
+              rule('VALID', [('true', 'EDGE_AUTH_VALID')]),
+              rule('NA_OR_FAIL', [(f"!{all_na} && ({has('spf', 'none')} || {has('spf', 'temperror')}) && "
+                  f"({has('dkim', 'none')} || {has('dkim', 'neutral')} || {has('dkim', 'temperror')} || {has('dkim', 'permerror')}) && "
+                  f"{has('dmarc', 'none')}", 'AUTH_NA_OR_FAIL')])]
+    tags = [{'@type': 'Score', 'tag': 'EDGE_DMARC_NA_OFFSET', 'score': -weights['DMARC_NA']},
+            {'@type': 'Score', 'tag': 'EDGE_AUTH_VALID', 'score': 0.0}]
+    return rules, tags
+
+
+def auth_na_override():
+    # Header rules run before Any rules. Preserve native fallback for absent,
+    # malformed or untrusted verdicts; canonical trusted verdicts set AUTH_NA
+    # themselves only when their actual auth results are all NA.
+    return {'@type': 'Any', 'name': 'STWT_AUTH_NA', 'enable': True, 'priority': 1004,
+            'condition': {'match': {'0': {
+                'if': '!$EDGE_AUTH_VALID && $DKIM_NA && $SPF_NA && $DMARC_NA && $ARC_NA',
+                'then': "'AUTH_NA'"}}, 'else': 'false'}}
+
+
+def load_filter_inventory(client, path):
+    """Load production-shaped, ID-stripped, non-secret SpamTag/SpamRule metadata.
+
+    Reject/Discard tag actions become high scores (Junk-only). Never deletes tags,
+    matching the native update task that only inserts on primary-key conflict.
+    """
+    inventory = json.loads(Path(path).read_text())
+    existing = {t['tag']: t for t in objects(client, 'SpamTag')}
+    converted = []
+    for tag in inventory['SpamTag']:
+        require(tag['@type'] in ('Score', 'Reject', 'Discard'), 'Unknown tag variant')
+        body = {'@type': 'Score', 'tag': tag['tag'], 'score': float(tag.get('score', 1000.0))}
+        if tag['@type'] in ('Reject', 'Discard'):
+            body['score'] = 1000.0
+            converted.append(tag['tag'])
+        if tag['tag'] in existing:
+            # Variant conversion reconstructs the object and requires tag;
+            # same-variant patches must not write that immutable primary key.
+            values = body if existing[tag['tag']]['@type'] != 'Score' else {'score': body['score']}
+            client.jmap('x:SpamTag/set', {'update': {existing[tag['tag']]['id']: values}})
+        else:
+            create(client, 'SpamTag', body)
+    existing_rules = {r['name']: r['id'] for r in objects(client, 'SpamRule')}
+    for rule in inventory['SpamRule']:
+        require('id' not in rule and rule['enable'], 'Inventory must be ID-stripped enabled rules')
+        if rule['name'] in existing_rules:
+            change(client, 'SpamRule', existing_rules[rule['name']],
+                   {key: value for key, value in rule.items() if key != 'name'})
+        else:
+            create(client, 'SpamRule', rule)
+    actual = {tag['tag']: tag for tag in objects(client, 'SpamTag')}
+    require(set(actual) == {tag['tag'] for tag in inventory['SpamTag']}, 'Unexpected native SpamTag inventory')
+    for tag in inventory['SpamTag']:
+        expected = tag['score'] if tag['@type'] == 'Score' else 1000.0
+        require(actual[tag['tag']]['@type'] == 'Score' and actual[tag['tag']]['score'] == expected,
+                'SpamTag action/weight readback mismatch: ' + tag['tag'])
+    return {'tags': len(inventory['SpamTag']), 'rules': len(inventory['SpamRule']),
+            'convertedToScore': converted}
+
+
+def deterministic_spam_settings(client, enable_expression):
+    update(client, 'SpamSettings', {'enable': True, 'scoreSpam': 5.0, 'scoreReject': 0.0,
+                                    'scoreDiscard': 0.0, 'trustContacts': True, 'trustReplies': True,
+                                    'spamFilterRulesUrl': None})
+    update(client, 'SpamPyzor', {'enable': False})
+    update(client, 'SpamLlm', {'@type': 'Disable'})
+    update(client, 'MtaStageData', {'enableSpamFilter': {'else': enable_expression, 'match': {}}})
+
+
+def where(fixture, tag):
+    for folder in ('INBOX', 'Junk Mail'):
+        try:
+            return folder, fetch_message(fixture, tag, folder=folder, timeout=12)
+        except AssertionError as error:
+            if 'not delivered' not in str(error):
+                raise
+    raise AssertionError('Message ' + tag + ' not found in Inbox or Junk Mail')
+
+
+def verdict_lines(raw):
+    return [str(value) for value in BytesParser(policy=email_policy).parsebytes(raw).get_all(VERDICT_HEADER, [])]
+
+
+def filtering_test(edge, backend, root, stage, inventory_path):
+    from edge_dns import AuthDNS, RESOLVER
+    ec, bc = edge['client'], backend['client']
+    # Reproduce the live variant migration on this fresh disposable backend:
+    # native API update must convert an existing Reject, not only create Score.
+    create(bc, 'SpamTag', {'@type': 'Reject', 'tag': 'BLOCKED_DOMAIN'})
+    report = {'inventory': load_filter_inventory(bc, inventory_path), 'messages': {}, 'limits': [
+        'Score bridge does not restore native DMARC-pass flag or DMARC-gated contact ham trust/learning',
+        'Trusted-reply trust/learning has a separate branch and is not lost solely from missing DMARC flag',
+        'Protocol NA tags remain; DMARC_NA offset preserves its score, not identical native auth context',
+        'No client-IP reputation, ARC or DKIM2 transport; trained production classifier not exported',
+        'Production requires exclusive private LMTP via Cilium namespace+app identity and spam enabled only on listener=edge-lmtp (else false); exact peer IP is fixture-only',
+        'BLOCKED_DOMAIN variant needs one-off API Score1000 conversion before Terraform import',
+        'Existing trusted-reply classification/learning exception remains enabled; it can override spam placement',
+    ]}
+    deterministic_spam_settings(ec, 'false')
+    deterministic_spam_settings(bc, 'true')
+    update(bc, 'MtaStageData', {'enableSpamFilter': {
+        'match': {'0': {'if': "listener == 'fixture-lmtp'", 'then': 'true'}}, 'else': 'false'}})
+    auth_fields = ('spfEhloVerify', 'spfFromVerify', 'dkimVerify', 'dmarcVerify', 'arcVerify', 'reverseIpVerify')
+    update(ec, 'SenderAuth', {key: {'else': 'relaxed', 'match': {}} for key in auth_fields})
+    # This fixture backend is dedicated to edge LMTP. Production must scope this
+    # to the edge-only listener/peer, preserving unrelated authenticated flows.
+    update(bc, 'SenderAuth', {key: {'else': 'disable', 'match': {}} for key in auth_fields})
+    create(ec, 'SieveSystemScript', {'name': VERDICT_SCRIPT, 'isActive': True, 'contents': verdict_script()})
+    update(ec, 'MtaStageData', {'script': {'else': repr(VERDICT_SCRIPT), 'match': {}}})
+    create(ec, 'MtaConnectionStrategy', {'name': 'fixture-auth', 'ehloHostname': 'edge.auth.example.com',
+           'sourceIps': {'0': {'sourceIp': RELAY}}})
+    update(ec, 'MtaOutboundStrategy', {'connection': {'else': "'fixture-auth'", 'match': {}}})
+    weights = {tag['tag']: tag['score'] for tag in objects(bc, 'SpamTag')}
+    rules, tags = auth_header_rules(RELAY, weights)
+    for tag in tags:
+        create(bc, 'SpamTag', tag)
+    for rule in rules:
+        create(bc, 'SpamRule', rule)
+    original = next(rule for rule in objects(bc, 'SpamRule') if rule['name'] == 'STWT_AUTH_NA')
+    require(original['priority'] == 1004 and original['condition']['match']['0']['if'] ==
+            '$DKIM_NA && $SPF_NA && $DMARC_NA && $ARC_NA', 'Inventory AUTH_NA rule changed; review override')
+    change(bc, 'SpamRule', original['id'], {key: value for key, value in auth_na_override().items() if key != 'name'})
+    create(bc, 'MemoryLookupKey', {'namespace': 'blocked-domains', 'key': 'blocked.auth.example.com',
+                                  'isGlobPattern': False})
+    report['nativeBridgeConfig'] = {
+        'edgeScript': {'name': VERDICT_SCRIPT, 'isActive': True, 'contents': verdict_script()},
+        'edgeMtaStageData': {'enableSpamFilter': {'else': 'false', 'match': {}},
+                             'script': {'else': repr(VERDICT_SCRIPT), 'match': {}}},
+        'edgeSenderAuth': {key: {'else': 'relaxed', 'match': {}} for key in auth_fields},
+        'backendRules': rules, 'backendRuleOverrides': [auth_na_override()], 'backendTags': tags,
+        'backendTagOverrides': [{'@type': 'Score', 'tag': tag, 'score': weights[tag]}
+                                for tag in report['inventory']['convertedToScore']],
+    }
+    subprocess.run(['ip', 'address', 'add', '192.0.2.10/32', 'dev', 'lo'], check=True, timeout=10)
+    before = len(email_ids(bc, backend['users']['alice']['id']))
+
+    with AuthDNS(root / 'dns', backend['private_key']) as dns:
+        for client in (ec, bc):
+            update(client, 'DnsResolver', RESOLVER)
+            reload(client)
+        bc.jmap('x:Action/set', {'create': {'lookup': {'@type': 'ReloadLookupStores'}}})
+        report['blockedDomainLookup'] = objects(bc, 'MemoryLookupKey')
+        report['backendSettings'] = {kind: bc.jmap(f'x:{kind}/get', {'ids': ['singleton']})['list'][0]
+            for kind in ('SpamSettings', 'SpamPyzor', 'SpamLlm', 'MtaStageData', 'SenderAuth')}
+        require(report['backendSettings']['SpamSettings']['scoreReject'] == 0
+                and report['backendSettings']['SpamSettings']['scoreDiscard'] == 0, 'Unsafe thresholds')
+
+        def send(tag, sender='pass', author='pass', sign=False, gtube=False, direct=False,
+                 trusted=False, header_value=None, bounce=False, missing_key=False, after_accept=None,
+                 null_sender=False):
+            time.sleep(0.3)  # Respect native 5/second connection throttle; do not disable it.
+            message = known_message(tag)
+            message.replace_header('From', f'sender@{author}.auth.example.com')
+            message.replace_header('Date', formatdate(localtime=False, usegmt=True))
+            if gtube:
+                message.replace_header('Subject', 'XJS*C4JDBQADN1.NSBN3*2IDNEN*GTUBE-STANDARD-ANTI-UBE-TEST-EMAIL*C.34X')
+            if bounce:
+                message.replace_header('Subject', 'Delivery status report')
+            # Edge cases carry contradictory, duplicated, case-variant claims;
+            # trusted-peer bypass cases isolate malformed-value rejection.
+            headers = ([(VERDICT_HEADER, header_value)] if header_value is not None else [
+                (VERDICT_HEADER, 'spf=fail; dkim=fail; dmarc=fail; policy=reject;'),
+                (VERDICT_HEADER.lower(), 'spf=pass; dkim=pass; dmarc=pass; policy=none;'),
+                (VERDICT_HEADER.upper(), 'spf=none; dkim=none; dmarc=none; policy=none;')])
+            for name, value in headers:
+                message[name] = value
+            message['Authentication-Results'] = 'forged.test; spf=pass; dkim=pass; dmarc=pass'
+            raw = message.as_bytes(policy=SMTP)
+            if sign:
+                raw = dns.sign(raw)
+                if missing_key:
+                    raw = raw.replace(b's=fixture;', b's=missing;', 1)  # Real DNS NXDOMAIN, not forced verdict.
+            connection = (SourceLMTP(backend, RELAY if trusted else '192.0.2.10') if direct else smtplib.SMTP_SSL(
+                '127.0.0.1', edge['ports']['smtp'], context=edge['context'],
+                local_hostname='pass.auth.example.com', source_address=('192.0.2.10', 0), timeout=20))
+            with connection as smtp:
+                require(smtp.ehlo('pass.auth.example.com')[0] == 250, 'SMTP/LHLO failed')
+                envelope_sender = '' if null_sender else f'sender@{sender}.auth.example.com'
+                require(not smtp.sendmail(envelope_sender, ['alice@mail.test'], raw), 'SMTP refused')
+            if after_accept is not None:
+                after_accept()
+            folder, raw = where(backend, tag)
+            (root / (tag + '.eml')).write_bytes(raw)
+            parsed = BytesParser(policy=email_policy).parsebytes(raw)
+            result = {'folder': folder, 'verdicts': verdict_lines(raw),
+                      'path': 'trusted-bypass' if trusted else 'untrusted-bypass' if direct else 'edge',
+                      'authenticationResults': [str(value) for value in parsed.get_all('Authentication-Results', [])],
+                      'spamStatus': str(parsed.get('X-Spam-Status', '')),
+                      'spamResult': str(parsed.get('X-Spam-Result', ''))}
+            if not direct:
+                require(not any('forged.test' in value for value in result['authenticationResults']),
+                        'Attacker Authentication-Results survived edge sanitation')
+            report['messages'][tag] = result
+            (root / 'filtering-proof.json').write_text(json.dumps(report, indent=2))
+            print(tag, json.dumps(result), flush=True)
+            return result
+
+        def check(tag, expected, folder='INBOX', **kwargs):
+            result = send(tag, **kwargs)
+            require(result['folder'] == folder, f'{tag}: expected {folder}, got {result}')
+            expected_tags = {
+                'filter-pass': ('SPF_ALLOW (-0.20)', 'DMARC_POLICY_ALLOW (-0.50)', 'EDGE_DMARC_NA_OFFSET (-1.00)', 'EDGE_AUTH_VALID (0.00)'),
+                'filter-none': ('DMARC_NA (1.00)', 'AUTH_NA (1.00)'),
+                'filter-dmarcfail': ('DMARC_POLICY_REJECT (4.00)',),
+                'filter-forwarded': ('SPF_FAIL (1.00)', 'DKIM_ALLOW (-0.20)', 'DMARC_POLICY_ALLOW (-0.50)'),
+                'filter-gtube': ('GTUBE_TEST (1000.00)',),
+                'filter-blocked': ('BLOCKED_DOMAIN (1000.00)', 'SPF_ALLOW (-0.20)', 'DMARC_POLICY_ALLOW (-0.50)'),
+            }.get(tag, ())
+            require(all(value in result['spamResult'] for value in expected_tags),
+                    f'{tag}: native auth/content weights not applied: {result}')
+            if tag in ('filter-pass', 'filter-forwarded'):
+                require('DMARC_POLICY_REJECT' not in result['spamResult'], 'SPF failure overrode DMARC pass')
+            if tag == 'filter-none':
+                require('_OFFSET' not in result['spamResult'], 'No-auth incorrectly received a baseline offset')
+            if expected is not None:
+                require(result['verdicts'] == [expected], f'{tag}: forged header survived or native verdict wrong')
+            return result
+
+        stage('genuineSpfDmarcPassAndForgedDuplicatesRemoved', lambda: check('filter-pass',
+            'spf=pass; dkim=none; dmarc=pass; policy=reject;'))
+        stage('genuineNoAuthDistinctFromPass', lambda: check('filter-none',
+            'spf=none; dkim=none; dmarc=none; policy=none;', sender='na', author='na'))
+        stage('genuineDmarcStrictAlignmentFail', lambda: check('filter-dmarcfail',
+            'spf=pass; dkim=none; dmarc=fail; policy=reject;', author='fail'))
+        stage('genuineForwardingSpfFailDkimDmarcPassIsHam', lambda: check('filter-forwarded',
+            'spf=fail; dkim=pass; dmarc=pass; policy=reject;', sender='fail', author='fail', sign=True))
+        stage('productionRulesGtubeJunkNoReject', lambda: check('filter-gtube',
+            'spf=pass; dkim=none; dmarc=pass; policy=reject;', gtube=True, folder='Junk Mail'))
+        def untrusted():
+            result = check('filter-untrusted', None, direct=True, sender='na', author='na')
+            require(len(result['verdicts']) == 3, 'Negative control did not retain forged headers')
+            require('EDGE_' not in result['spamResult'] and 'DMARC_POLICY_REJECT' not in result['spamResult'],
+                    'Untrusted backend peer injected a trusted auth score')
+        stage('backendUntrustedLmtpPeerCannotUseAuthBridge', untrusted)
+
+        def malformed():
+            for name, value in MALFORMED_AUTH.items():
+                result = send('filter-malformed-' + name, direct=True, trusted=True,
+                              sender='na', author='na', header_value=value)
+                require(result['verdicts'] == [value], 'Malformed control header was changed')
+                require(result['folder'] == 'INBOX', 'Malformed value affected placement')
+                require(not any(tag in result['spamResult'] for tag in (
+                    'EDGE_', 'SPF_ALLOW', 'SPF_FAIL', 'DKIM_ALLOW', 'DKIM_REJECT', 'DMARC_POLICY_')),
+                    'Malformed trusted-peer verdict received a mapping or credit: ' + name)
+                require('AUTH_NA (1.00)' in result['spamResult'], 'Malformed verdict disabled native fallback')
+        stage('malformedTrustedPeerHeadersGetNoMappingsOrCredits', malformed)
+
+        def bounce(tag, authenticated, **kwargs):
+            result = send(tag, bounce=True, **kwargs)
+            require('SUBJ_BOUNCE_WORDS' in result['spamResult'], 'Bounce-shaped control not recognized')
+            require(('AUTH_NA (1.00)' in result['spamResult']) != authenticated, 'Incorrect actual AUTH_NA tag')
+            require(('BOUNCE_NO_AUTH' in result['spamResult']) != authenticated, 'False/missing BOUNCE_NO_AUTH')
+            if authenticated:
+                require('AUTH_NA_OR_FAIL' not in result['spamResult'], 'False AUTH_NA_OR_FAIL')
+                require(result['folder'] == 'INBOX', 'Authenticated bounce wrongly junked')
+        stage('genuineSpfAuthenticatedBounceNoFalseAuthNa', lambda: bounce('filter-bounce-spf', True))
+        stage('genuineDkimAuthenticatedBounceNoFalseAuthNa', lambda: bounce(
+            'filter-bounce-dkim', True, sender='fail', author='fail', sign=True))
+        stage('nullEnvelopeAuthenticatedBounceNoFalseAuthNa', lambda: bounce(
+            'filter-bounce-null', True, sender='fail', author='fail', sign=True, null_sender=True))
+        stage('unauthenticatedBounceRetainsAuthNa', lambda: bounce(
+            'filter-bounce-none', False, sender='na', author='na'))
+        def auth_error():
+            result = send('filter-bounce-autherror', sender='na', author='na', sign=True,
+                          missing_key=True, bounce=True)
+            require(result['verdicts'] == ['spf=none; dkim=permerror; dmarc=none; policy=none;'],
+                    'Missing DKIM DNS key did not produce genuine native permerror')
+            require('AUTH_NA_OR_FAIL (1.00)' in result['spamResult'] and 'BOUNCE_NO_AUTH (1.00)' in result['spamResult'],
+                    'Auth error failed to retain native bounce classification')
+            require('AUTH_NA (1.00)' not in result['spamResult'], 'Auth error incorrectly marked all-NA')
+        stage('genuineDkimDnsErrorRetainsAuthNaOrFail', auth_error)
+        stage('blockedDomainLookupWithPassingAuthStillJunk', lambda: check('filter-blocked',
+            'spf=pass; dkim=none; dmarc=pass; policy=reject;', sender='blocked', author='blocked', folder='Junk Mail'))
+
+        def queued_restart():
+            backend['server'].stop()
+            def resume():
+                time.sleep(3)
+                require('(delivery.connect-error)' in (edge['server'].root / 'server.log').read_text(),
+                        'No evidence of queued delivery while backend was offline')
+                start_mail(edge['server'])
+                start_mail(backend['server'])
+            check('filter-queued-restart', 'spf=fail; dkim=pass; dmarc=pass; policy=reject;',
+                  sender='fail', author='fail', sign=True, after_accept=resume)
+            result = report['messages']['filter-queued-restart']['spamResult']
+            require('DKIM_ALLOW (-0.20)' in result and 'AUTH_NA (1.00)' not in result,
+                    'Queued authentication context or AUTH_NA override lost across restart')
+        stage('queuedForwardingVerdictSurvivesBothNativeRestarts', queued_restart)
+        stage('nativeVerdictProductionAndJunkPlacementAfterRestart', lambda: check('filter-restarted-gtube',
+            'spf=pass; dkim=none; dmarc=pass; policy=reject;', gtube=True, folder='Junk Mail'))
+
+        def accounting():
+            time.sleep(3)
+            require(len(email_ids(bc, backend['users']['alice']['id'])) - before == 20, 'Delivery/discard count wrong')
+            log = (edge['server'].root / 'server.log').read_text()
+            require(log.count('(delivery.delivered)') == 13, 'Edge queue did not drain exactly once')
+            queue = ec.jmap('x:QueuedMessage/query', {'limit': 1, 'calculateTotal': True})
+            require(queue['ids'] == [] and queue.get('total') == 0, 'Queue metadata is not empty')
+            report['queueEmptyReadback'] = {'ids': queue['ids'], 'total': queue['total']}
+            require(not any('delivery.dsn-' in line and 'dsn-success' not in line for line in log.splitlines()),
+                    'Edge generated failure DSN')
+            require(all(tag['@type'] == 'Score' for tag in objects(bc, 'SpamTag')), 'Action tag survived')
+        stage('noRejectDiscardOrDsnAcrossBothHops', accounting)
+    (root / 'filtering-proof.json').write_text(json.dumps(report, indent=2))
+
+
+def run(root, report, group='all', filter_inventory=None):
     isolated()
     verify_binary()
     subprocess.run([shutil.which('ip'), 'address', 'add', RELAY + '/32', 'dev', 'lo'],
@@ -578,7 +977,8 @@ def run(root, report, group='all'):
         http = policy.Server(app)
         thread = threading.Thread(target=http.serve_forever, daemon=True)
         thread.start()
-        edge = configure_edge(edge_server, edge_server.client, backend, index, policy.RECIPIENT_SQL)
+        edge = configure_edge(edge_server, edge_server.client, backend, index, policy.RECIPIENT_SQL,
+                              filtering=group == 'filtering')
         client = edge['client']
         before = assert_mailbox_free(client)
         (root / 'guard-readback.json').write_text(json.dumps({
@@ -588,6 +988,17 @@ def run(root, report, group='all'):
             'indexHealthy': index.healthy(),
         }, indent=2))
         stage('bothGuardsAndSnapshotReady', lambda: require(readiness(client), 'Readiness failed'))
+        if group == 'filtering':
+            require(filter_inventory is not None, '--filter-inventory is required for --group filtering')
+            report['filterInventorySha256'] = hashlib.sha256(Path(filter_inventory).read_bytes()).hexdigest()
+            report['dnsHelperSha256'] = hashlib.sha256(Path(__file__).with_name('edge_dns.py').read_bytes()).hexdigest()
+            filtering_test(edge, backend, root, stage, filter_inventory)
+            report['filteringProof'] = str(root / 'filtering-proof.json')
+            report['blockers'].extend(json.loads((root / 'filtering-proof.json').read_text())['limits'])
+            stage('noPublicNativeAccountsBeforeAfter', lambda: require(
+                assert_mailbox_free(client) == before, 'Native account set changed'))
+            report['nativeExercise'] = 'PASS'
+            return
         if group == 'limiter':
             limiter_test(edge, backend, app, refresher, policy, root, stage)
             stage('noPublicNativeAccountsBeforeAfter', lambda: require(
@@ -709,7 +1120,9 @@ def main():
     global BINARY
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=Path, default=BINARY)
-    parser.add_argument('--group', choices=('all', 'remaining', 'queue', 'abuse', 'limiter'), default='all')
+    parser.add_argument('--group', choices=('all', 'remaining', 'queue', 'abuse', 'limiter', 'filtering'), default='all')
+    parser.add_argument('--filter-inventory', type=Path,
+                        help='ID-stripped non-secret SpamTag/SpamRule JSON for --group filtering')
     parser.add_argument('--isolated', nargs=3, metavar=('EVIDENCE', 'NETNS', 'USERNS'), help=argparse.SUPPRESS)
     args = parser.parse_args()
     BINARY = args.binary.resolve()
@@ -717,6 +1130,8 @@ def main():
     if args.isolated is None:
         root = Path(tempfile.mkdtemp(prefix='stalwart-edge-', dir='/tmp'))
         command = [sys.executable, str(Path(__file__).resolve()), '--binary', str(BINARY), '--group', args.group]
+        if args.filter_inventory is not None:
+            command += ['--filter-inventory', str(args.filter_inventory.resolve())]
         report = {'qualified': False, 'binary': str(BINARY), 'approvedSha256': APPROVED_SHA256,
                   'tests': {}, 'blockers': list(LIMITS), 'evidence': str(root), 'reproduce': command}
         try:
@@ -756,7 +1171,7 @@ def main():
     try:
         check_namespace(int(args.isolated[1]), int(args.isolated[2]))
         report['group'] = args.group
-        run(root, report, args.group)
+        run(root, report, args.group, args.filter_inventory)
     except (Exception, KeyboardInterrupt) as error:
         report['blockers'].insert(0, str(error))
         traceback.print_exc()

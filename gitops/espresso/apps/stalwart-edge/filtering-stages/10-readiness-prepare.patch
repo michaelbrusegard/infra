@@ -1,0 +1,11 @@
+--- a/gitops/espresso/apps/stalwart-edge/statefulset.yaml
++++ b/gitops/espresso/apps/stalwart-edge/statefulset.yaml
+@@ -133,6 +133,8 @@
+               value: "1"
+             - name: PYTHONUNBUFFERED
+               value: "1"
++            - name: STALWART_EDGE_FILTERING_STAGE
++              value: prepare
+             - name: STALWART_EDGE_POLICY_DB
+               value: /var/lib/stalwart/routing/recipients.sqlite3
+             - name: STALWART_EDGE_POLICY_QUALIFIED
