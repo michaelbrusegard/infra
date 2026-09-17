@@ -184,13 +184,13 @@ Bootstrap uses separate internal Users `tofu` and `readiness`. The readonly
 readiness identity's permissions come from the parent script, not the writer
 permission list. No writer token enters the mail pod.
 
-SMTP and management are separate LoadBalancer Services sharing staging VIPs
-`10.0.188.13` / `fd7a:115c:a1e0:188::13`. SMTP is Ready-only; management publishes
+SMTP and management are separate LoadBalancer Services sharing production VIPs
+`10.0.188.12` / `fd7a:115c:a1e0:188::12`. SMTP is Ready-only; management publishes
 unready endpoints so failed configuration can still be repaired. Both use
 `lbipam.cilium.io/sharing-key: stalwart-edge`, `externalTrafficPolicy: Local`
 and the same selector. Cilium v1.20.0 requires matching traffic policies and,
 for Local, selectors (verified in `operator/pkg/lbipam/service_store.go`). Ports
-25 and 443 do not overlap. Moving to `.12` is a separate cutover.
+25 and 443 do not overlap. The former ingress releases this VIP at cutover.
 
 Only management carries the internal k8s-gateway hostname annotation. The
 external-dns controller has `sources: [crd]`, so this does not publish a public

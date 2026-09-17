@@ -19,8 +19,8 @@ metadata:
   name: stalwart-edge
   namespace: stalwart-edge
   annotations:
-    # Staging only. Transfer .12/::12 in the separately approved cutover.
-    lbipam.cilium.io/ips: 10.0.188.13,fd7a:115c:a1e0:188::13
+    # Shared public SMTP destination; management shares the VIP privately.
+    lbipam.cilium.io/ips: 10.0.188.12,fd7a:115c:a1e0:188::12
     lbipam.cilium.io/sharing-key: stalwart-edge
 spec:
   type: LoadBalancer
@@ -44,7 +44,7 @@ metadata:
   name: stalwart-edge-management
   namespace: stalwart-edge
   annotations:
-    lbipam.cilium.io/ips: 10.0.188.13,fd7a:115c:a1e0:188::13
+    lbipam.cilium.io/ips: 10.0.188.12,fd7a:115c:a1e0:188::12
     lbipam.cilium.io/sharing-key: stalwart-edge
     # Consumed by internal k8s-gateway. external-dns uses only CRD sources.
     external-dns.alpha.kubernetes.io/hostname: edge.asgard.michaelbrusegard.com

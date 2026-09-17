@@ -39,15 +39,13 @@ kind: Service
 metadata:
   name: stalwart
   namespace: stalwart
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.12,fd7a:115c:a1e0:188::12
 spec:
-  type: LoadBalancer
+  # Keep the drained legacy workload private until external edge delivery is verified.
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
     - IPv6
-  externalTrafficPolicy: Local
   selector:
     app: stalwart
   ports:
