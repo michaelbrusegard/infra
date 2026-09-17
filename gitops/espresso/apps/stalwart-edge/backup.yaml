@@ -10,7 +10,6 @@ spec:
   sourcePVC: data-stalwart-edge-0
   trigger:
     schedule: "40 */6 * * *"
-    manual: edge-cutover-20260917
   restic:
     repository: freddo-restic-stalwart-edge-pvc
     pruneIntervalDays: 30
