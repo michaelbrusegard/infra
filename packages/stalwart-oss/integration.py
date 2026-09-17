@@ -458,8 +458,9 @@ class Client:
 
 
 class Server:
-    def __init__(self, binary, root, client):
+    def __init__(self, binary, root, client, *, expected_edition="oss"):
         self.binary, self.root, self.client = binary, root, client
+        self.expected_edition = expected_edition
         self.process = None
         self.log = None
         self.password = client.redactor.add(secrets.token_urlsafe(40))
@@ -483,7 +484,7 @@ class Server:
             "XDG_CONFIG_HOME": str(self.root / "config"),
             "XDG_CACHE_HOME": str(self.root / "cache"),
             "STALWART_RECOVERY_MODE": "true",
-            "STALWART_RECOVERY_ADMIN": "fixture:" + self.password,
+            "STALWART_RECOVERY_ADMIN": "fixture:{PLAIN}" + self.password,
             "STALWART_OIDC_ADMIN_GROUP": "admin",
             "STALWART_RECOVERY_MODE_PORT": str(
                 urllib.parse.urlsplit(self.client.origin).port
@@ -506,10 +507,15 @@ class Server:
                         "GET", "/api/account", auth="recovery"
                     )
                     if response.status == 200:
-                        require(
-                            response.document().get("edition") == "oss",
-                            "Fixture binary is not OSS edition",
-                        )
+                        # Legacy source binaries do not share the patched OSS
+                        # metadata contract. New-server qualification still
+                        # requires the OSS edition unless explicitly overridden.
+                        if self.expected_edition is not None:
+                            require(
+                                response.document().get("edition")
+                                == self.expected_edition,
+                                "Fixture binary has an unexpected edition",
+                            )
                         return
                 except (OSError, ValueError):
                     pass
@@ -1647,9 +1653,7 @@ class Acceptance:
                     "x:Action/set", {"create": {"reload": {"@type": "ReloadSettings"}}}
                 )
                 self.c.jmap("x:Directory/set", {"destroy": [directory]})
-                self.c.jmap(
-                    "x:Role/set", {"destroy": [jit_role, jit_admin_role]}
-                )
+                self.c.jmap("x:Role/set", {"destroy": [jit_role, jit_admin_role]})
 
     def native_jmap_invalidation(self):
         """Ordinary registry writes must invalidate SCIM snapshots/preconditions."""

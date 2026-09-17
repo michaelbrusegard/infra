@@ -32,6 +32,11 @@ data:
   40-accounts-michaelbrusegard.ndjson.tmpl: |
     {"@type":"create","object":"Account","value":{"admin":{"@type":"User","name":${ADMIN_LOCAL_JSON},"domainId":"#d-michaelbrusegard","credentials":{"0":{"@type":"Password","secret":${ADMIN_PASSWORD_JSON}}},"memberGroupIds":{},"roles":{"@type":"Admin"},"permissions":{"@type":"Inherit"},"quotas":{},"aliases":{},"encryptionAtRest":{"@type":"Disabled"}},"mail-master":{"@type":"User","name":"mail-master","domainId":"#d-michaelbrusegard","credentials":{"0":{"@type":"Password","secret":${MAIL_MASTER_PASSWORD_JSON}}},"memberGroupIds":{},"roles":{"@type":"User"},"permissions":{"@type":"Replace","enabledPermissions":{"authenticate":true,"impersonate":true}},"quotas":{},"aliases":{},"encryptionAtRest":{"@type":"Disabled"}}}}
 
+  # Match the dedicated backend's postmaster list without creating a second
+  # mailbox. Existing group membership and stored mail remain untouched.
+  45-manafishrov-postmaster.ndjson.tmpl: |
+    {"@type":"create","object":"Account","value":{"manafishrov-support":{"@type":"Group","name":"support","domainId":"#d-manafishrov","aliases":{"0":{"name":"postmaster","domainId":"#d-manafishrov","enabled":true}}}}}
+
   60-route-resend.ndjson.tmpl: |
     {"@type":"create","object":"MtaRoute","value":{"mx":{"@type":"Relay","name":"mx","address":"smtp.resend.com","port":465,"protocol":"smtp","authUsername":"resend","authSecret":{"@type":"Value","secret":${RESEND_API_KEY_JSON}},"implicitTls":true,"allowInvalidCerts":false,"description":"Resend smarthost for all external outbound"}}}
 
@@ -39,6 +44,12 @@ data:
   # enabled and retain the source mailboxes for recovery, not local delivery.
   65-route-manafishrov.ndjson.tmpl: |
     {"@type":"create","object":"MtaRoute","value":{"to-manafishrov":{"@type":"Relay","name":"to-manafishrov","address":"backend.manafishrov.com","port":24,"protocol":"lmtp","implicitTls":true,"allowInvalidCerts":false,"authSecret":{"@type":"None"},"description":"Deliver Manafish mail to its dedicated backend; queue if unavailable"}}}
+
+  # Keep this before local-domain routing: personal submissions and application
+  # mail to Manafish must follow the same path as Internet mail. The old native
+  # directory remains the recipient gate until a separate ingress is qualified.
+  67-manafishrov-delivery.ndjson.tmpl: |
+    {"@type":"update","object":"MtaOutboundStrategy","value":{"route":{"match":{"0":{"if":"rcpt_domain == 'manafishrov.com'","then":"'to-manafishrov'"},"1":{"if":"is_local_domain(rcpt_domain)","then":"'local'"}},"else":"'mx'"}}}
 
   # The edge has already evaluated the original Internet sender. Do not repeat
   # sender authentication or spam filtering against the edge pod's address.
