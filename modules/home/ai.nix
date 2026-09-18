@@ -285,6 +285,12 @@ in {
           with pkgs; [
             paseo
             paseo-desktop
+            (t3code.override {
+              # Preserve project environments instead of using unwrapped providers.
+              enableClaude = true;
+              claude-code = config.programs.claude-code.package;
+              codex = config.programs.codex.package;
+            })
           ]
         );
 
@@ -470,6 +476,8 @@ in {
           ++ lib.optionals (!isWsl) [
             ".config/Paseo"
             ".paseo"
+            ".config/t3code"
+            ".t3"
           ];
         files = [
           ".claude.json"

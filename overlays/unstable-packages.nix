@@ -23,6 +23,7 @@ in {
     neovim-unwrapped
     vimPlugins
     pi-coding-agent
+    t3code
     uv
     ty
     oxlint
