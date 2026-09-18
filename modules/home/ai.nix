@@ -69,6 +69,15 @@
         recursive = true;
       })
     skills;
+  # All skills are directories. Declare them without Home Manager inspecting
+  # fetched sources during evaluation, which cannot build Darwin paths on Linux.
+  # Codex needs directory symlinks rather than individually symlinked files.
+  codexSkillFiles = lib.mapAttrs (_: file: file // {recursive = false;}) (skillFilesFor (
+    if config.home.preferXdgDirectories
+    then "${config.xdg.configHome}/codex/skills"
+    else ".codex/skills"
+  ));
+  claudeSkillFiles = skillFilesFor "${config.programs.claude-code.configDir}/skills";
   piSkillFiles = skillFilesFor ".pi/agent/skills";
   kimiSkillFiles = skillFilesFor ".kimi/skills";
   cliProxyApi = {
@@ -229,13 +238,17 @@
   };
 in {
   programs = {
+    # T3 creates fresh worktrees for threads; trust their project environments.
+    direnv.config.whitelist.prefix = lib.optionals (!isWsl) [
+      "${config.home.homeDirectory}/.t3/worktrees"
+    ];
+
     codex = {
       enable = true;
       package = direnvWrapped pkgs.codex "codex";
       # Codex persists project trust and other TUI settings here, so an
       # activation script maintains a writable config instead of a store link.
       settings = {};
-      inherit skills;
     };
 
     claude-code = {
@@ -253,7 +266,6 @@ in {
           args = ["mcp"];
         };
       };
-      inherit skills;
       settings = {
         autoMemoryEnabled = false;
         disableRemoteControl = true;
@@ -285,6 +297,13 @@ in {
           with pkgs; [
             paseo
             paseo-desktop
+            (t3code.override {
+              # Preserve project environments instead of using unwrapped providers.
+              enableClaude = true;
+              claude-code = config.programs.claude-code.package;
+              codex = config.programs.codex.package;
+              gh = config.programs.gh.package;
+            })
           ]
         );
 
@@ -302,6 +321,8 @@ in {
             force = true;
           };
         }
+        // codexSkillFiles
+        // claudeSkillFiles
         // piSkillFiles
         // kimiSkillFiles;
 
@@ -470,6 +491,8 @@ in {
           ++ lib.optionals (!isWsl) [
             ".config/Paseo"
             ".paseo"
+            ".config/t3code"
+            ".t3"
           ];
         files = [
           ".claude.json"
