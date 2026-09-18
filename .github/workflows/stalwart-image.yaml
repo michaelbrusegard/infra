@@ -55,9 +55,20 @@ jobs:
             --security-opt no-new-privileges:true stalwart-native-scim:0.16.21 --version
       - name: Verify OIDC rate accounting in isolated normal mode
         run: |
-          binary=$(docker run --rm --network none --read-only --cap-drop ALL \
+          # A cached image does not install its embedded closure on the runner.
+          # Realize the server using the same pin and settings as image.nix.
+          server=$(nix build --impure --no-link --print-out-paths --expr '
+            let
+              lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.nixpkgs.locked.rev);
+              pkgs = upstream.legacyPackages.x86_64-linux;
+            in pkgs.callPackage ./packages/stalwart-oss/default.nix { nativeScim = true; }
+          ')
+          binary="$server/bin/stalwart"
+          image_binary=$(docker run --rm --network none --read-only --cap-drop ALL \
             --security-opt no-new-privileges:true --entrypoint /bin/readlink \
             stalwart-native-scim:0.16.21 /usr/local/bin/stalwart)
+          test "$binary" = "$image_binary"
           test -x "$binary"
           # Namespace root cannot bypass runner-owned checkout permissions.
           # Stage only public test code in a traversable temporary directory.
