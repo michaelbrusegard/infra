@@ -5,7 +5,21 @@
   "registryManifestDigest": "sha256:efebce10cc82ee5085d50036bd4abafff335dada54f8d2f8fae52618a755e203",
   "productionEvidence": {
     "date": "2026-09-18",
-    "publicAddressProbeVantage": "local host using public DNS A/AAAA answers",
+    "publicAddressProbeVantage": "independent cortado WAN, following initial local public-address checks",
+    "externalOriginalClientIpAndEhloPreserved": true,
+    "externalSyntheticJunkIngestion": [
+      {"messageId": "smtp-edge-external-ipv4-20260918@manafishrov.com", "time": "2026-09-18T09:19:37Z", "edgeQueueId": "BBF8E100023", "backendQueueId": "330182273884226560", "accountId": 6, "documentId": 12, "mailboxId": 2},
+      {"messageId": "smtp-edge-external-ipv6-20260918@manafishrov.com", "time": "2026-09-18T09:19:41Z", "edgeQueueId": "BEAA8100023", "backendQueueId": "330182280131642880", "accountId": 6, "documentId": 13, "mailboxId": 2}
+    ],
+    "externalNullSenderRelayProbe": {
+      "time": "2026-09-18T09:20:57Z",
+      "verifiedTls": "TLSv1.3",
+      "authenticationCode": 235,
+      "nonemptySenderControlCode": 250,
+      "nullSenderCode": 550,
+      "dataSent": false,
+      "supported": false
+    },
     "publicIpv4AndIpv6VerifiedStartTls": true,
     "publicAuthNotAdvertised": true,
     "publicUndefinedPlusRejected550": true,
@@ -54,7 +68,7 @@
     "edge_dns.py": "935cf3e254bba736ddcb0139b7d3c6212af964b83820a92a8dff4319bc20f18c"
   },
   "limits": [
-    "Public-address probes used a local vantage, not an independent external host. Live Junk evidence is native ingestion/delivery telemetry; Email/query remains forbidden and no production message bodies were fetched.",
+    "Independent external IPv4/IPv6 messages reached native Junk with original peer IP/EHLO preserved. Live Junk evidence is ingestion/delivery telemetry; Email/query remains forbidden and no production message bodies were fetched.",
     "Postfix queue recovery does not qualify the separately paused backend/Bulwark backup paths or activate the separately staged DKIM custody/DNS handoff.",
     "External null-envelope DSNs remain unsupported by Resend; this was deferred in the prior cutover.",
     "Positive cache expiry is one hour plus any remaining native 1000-second pending-probe grace; negative refresh does not revoke an unexpired positive.",
