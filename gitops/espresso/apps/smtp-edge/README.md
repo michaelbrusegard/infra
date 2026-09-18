@@ -58,8 +58,10 @@ recovery can redeliver already delivered mail; there is no exactly-once claim.
 Live recovery of snapshot `93ee1e08` preserved the held queue file byte-for-byte,
 including hold/expiry state and protected attributes. The recovered synthetic
 message reached native Junk before its original held duplicate was removed.
-Earlier trial snapshots are not qualified recovery points. The retired edge PVC
-and `/stalwart/edge-pvc` history remain protected in `../stalwart-edge`.
+Earlier trial snapshots are not qualified recovery points. The retired Stalwart
+edge namespace and volumes have been removed. Historical Freddo repositories
+`/stalwart/pvc` and `/stalwart/edge-pvc` remain untouched; neither is an active
+backup destination.
 
 ## Validation and operations
 

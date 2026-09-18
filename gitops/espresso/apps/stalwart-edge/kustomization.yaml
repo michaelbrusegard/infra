@@ -1,7 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - namespace.yaml
-  - retained-pvc.yaml
-  - backup.yaml
-  - network-policy.yaml
