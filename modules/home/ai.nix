@@ -92,6 +92,11 @@
     approval_policy = "never";
     sandbox_mode = "danger-full-access";
     apps._default.enabled = false;
+    features.memories = false;
+    memories = {
+      generate_memories = false;
+      use_memories = false;
+    };
     mcp_servers = {
       open_browser_use = {
         command = openBrowserUseCommand;
@@ -250,6 +255,7 @@ in {
       };
       inherit skills;
       settings = {
+        autoMemoryEnabled = false;
         disableRemoteControl = true;
         enableAllProjectMcpServers = true;
         enableArtifact = false;
@@ -303,16 +309,27 @@ in {
         config_file="$HOME/.codex/config.toml"
         config_dir=$(dirname "$config_file")
         temp_file=$(mktemp)
+        sanitized_file=$(mktemp)
 
         if [ -f "$config_file" ]; then
+          # Older activations could serialize these managed root keys beneath
+          # the preceding TOML table. Remove every copy before restoring them
+          # from codexConfig, which also repairs duplicate-key parse failures.
+          ${lib.getExe pkgs.gnused} -E \
+            '/^[[:space:]]*(approval_policy|sandbox_mode|model_provider)[[:space:]]*=/d' \
+            "$config_file" > "$sanitized_file"
+
           ${lib.getExe pkgs.yq-go} eval-all \
             --input-format toml \
             --output-format toml \
             '(select(fileIndex == 0)
               | del(.model_provider)
               | del(.model_providers.cliproxyapi))
-            * select(fileIndex == 1)' \
-            "$config_file" \
+            * select(fileIndex == 1)
+            | (to_entries
+              | sort_by(.value | tag == "!!map")
+              | from_entries)' \
+            "$sanitized_file" \
             ${lib.escapeShellArg codexConfig} > "$temp_file"
         else
           ${lib.getExe' pkgs.uutils-coreutils "uutils-cp"} \
@@ -325,7 +342,7 @@ in {
           $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
         fi
 
-        rm -f "$temp_file"
+        rm -f "$temp_file" "$sanitized_file"
       '';
 
       activation.kimiMcpConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
