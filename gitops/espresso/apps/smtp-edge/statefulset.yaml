@@ -7,7 +7,8 @@ metadata:
     secret.reloader.stakater.com/reload: smtp-edge-resend,wildcard-tls
 spec:
   # Pending registry digest, secret provisioning and cutover approval; see README.
-  replicas: 1
+  # Internal trial paused while persistent PID files are migrated off the PVC.
+  replicas: 0
   serviceName: smtp-edge-internal
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Retain
@@ -93,6 +94,10 @@ spec:
               mountPath: /var/lib/postfix
             - name: run
               mountPath: /run
+            # Root-owned PID locks are ephemeral, not part of the queue backup.
+            - name: run
+              mountPath: /var/lib/postfix/queue/pid
+              subPath: postfix-pid
             - name: tmp
               mountPath: /tmp
             - name: tls

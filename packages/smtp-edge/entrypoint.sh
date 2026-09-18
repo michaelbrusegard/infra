@@ -27,8 +27,12 @@ for name in BACKEND_CA_FILE INBOUND_TLS_CERT_FILE INBOUND_TLS_KEY_FILE RESEND_PA
   [[ ${!name} =~ ^/[A-Za-z0-9_./-]+$ && -r ${!name} ]] || fail "invalid or unreadable $name"
 done
 
-install -d -m 0755 /run/postfix /var/lib/postfix /var/lib/postfix/queue
+install -d -m 0755 -o root -g root /run/postfix /var/lib/postfix /var/lib/postfix/queue
 install -d -m 0700 -o postfix -g postfix /var/lib/postfix/data
+# A non-root restore preserves queue files but cannot restore mixed ownership.
+# Normalize only directory ownership; queue-file mode bits carry native flags.
+install -d -m 0730 -o postfix -g postdrop /var/lib/postfix/queue/maildrop
+install -d -m 0710 -o postfix -g postdrop /var/lib/postfix/queue/public
 cp /opt/smtp-edge/main.cf /run/postfix/main.cf
 master=$(</opt/smtp-edge/master.cf)
 master=${master//@BACKEND_HOST@/$BACKEND_HOST}

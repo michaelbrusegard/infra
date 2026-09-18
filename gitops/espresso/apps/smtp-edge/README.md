@@ -49,7 +49,7 @@ port, AUTH listener, readiness writer or second configuration writer.
    current `pending-immutable-pin` tag is a deliberate placeholder, not a release.
    Replace it with `ghcr.io/michaelbrusegard/smtp-edge@sha256:<registry digest>`
    after qualifying the published artifact. Docker config ID
-   `sha256:e9ef01374dec4b5f970bed05e5818e666f2a8af304a04554557a43b50e01fcc1`
+   `sha256:4c1fb94ebd501c519dee3808bf9915a9f56b42548e26902c77128705c26380fc`
    is NOT an OCI registry digest and must not be used as the production pin.
 3. **Provision parent-owned secrets.** Reflect the existing wildcard certificate
    into `smtp-edge/wildcard-tls` (`tls.crt`, `tls.key`) by updating the source
@@ -60,7 +60,7 @@ port, AUTH listener, readiness writer or second configuration writer.
    or new reflector source are defined here. Confirm GHCR pull visibility or
    provision an approved imagePullSecret before starting.
 4. **Qualify the actual Kubernetes security/storage path.** Parent-supplied native
-   evidence at `/tmp/smtp-edge-postfix-w7ckwaab/report.json` reports 19 passing
+   evidence at `/tmp/smtp-edge-postfix-yf03trfj/report.json` reports 19 passing
    native stages and 15 deliveries through Postfix 3.11.3/curl 8.20. Postfix uses
    default seccomp, no-new-privileges, exact capabilities and root-owned 0400 TLS
    mounts; only the separate native fixture helper uses unconfined seccomp.

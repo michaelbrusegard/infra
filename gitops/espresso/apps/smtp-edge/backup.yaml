@@ -4,7 +4,6 @@ metadata:
   name: smtp-edge-data-backup
   namespace: smtp-edge
 spec:
-  # Parent provisions a NEW repository Secret, then unpauses after PVC creation.
   paused: true
   sourcePVC: data-smtp-edge-0
   trigger:
@@ -18,9 +17,11 @@ spec:
       weekly: 8
       monthly: 12
     moverSecurityContext:
-      # Preserve Postfix's mixed root/100/101 ownership, including private queue.
-      runAsUser: 0
-      runAsGroup: 0
+      # Queue owner can read the spool without capabilities. PID files live
+      # on an emptyDir, not this PVC. Never set fsGroup here: its recursive
+      # chmod changes queue-file bits used by Postfix as delivery flags.
+      runAsUser: 100
+      runAsGroup: 100
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-single-replica

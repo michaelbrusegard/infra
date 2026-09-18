@@ -50,7 +50,7 @@ sys.path.insert(0, str(HERE.parent / 'stalwart-oss'))
 from integration import Client, Redactor, Server, check_namespace, namespace_id, require  # noqa: E402
 from mail import (certificate, configure_backend, create, fetch_message, isolated, known_message,  # noqa: E402
                   mailbox, port, reload, start_mail, update)
-from edge import change, deterministic_spam_settings, email_ids, load_filter_inventory, objects, where  # noqa: E402
+from smtp_fixture import change, deterministic_spam_settings, email_ids, load_filter_inventory, objects, where  # noqa: E402
 from edge_dns import RESOLVER, AuthDNS  # noqa: E402
 
 BINARY = Path('/tmp/stalwart-edge-qualification/stalwart')
@@ -101,6 +101,7 @@ def verify_tools(binary):
     return {'binarySha256': actual, 'curl': version.split('\n')[0], 'curlPath': curl,
             'deliverSha256': hashlib.sha256(DELIVER.read_bytes()).hexdigest(),
             'fixtureSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            'sharedFixtureSha256': binary_hash(HERE.parent / 'stalwart-oss' / 'smtp_fixture.py'),
             'inventorySha256': hashlib.sha256(INVENTORY.read_bytes()).hexdigest()}
 
 
@@ -301,7 +302,7 @@ def run(root, report, binary, *, postfix_control=None, postfix_port=None):
         server.stop()
         start_mail(server)
         client.jmap('x:Action/set', {'create': {'lookup': {'@type': 'ReloadLookupStores'}}})
-        wrong_ca = certificate(root)[0]
+        wrong_ca_cert = certificate(root)[0]
         report['messages'] = {}
         alice = fixture['users']['alice']['email']
 
@@ -465,8 +466,18 @@ def run(root, report, binary, *, postfix_control=None, postfix_port=None):
             stage('localGeneratedPort26NoProxyNoAuthNoFilter', local)
 
             def wrong_ca():
-                r = send('direct-wrong-ca', client_ip=PASS_IP, ca=wrong_ca, expect_exit=75)
+                r = send('direct-wrong-ca', client_ip=PASS_IP, ca=wrong_ca_cert, expect_exit=75)
                 require(r['stdout'].startswith('4.3.0 '), r)
+                # The production adapter deliberately uses curl --silent. Prove
+                # this is a real CA rejection with a separate no-DATA TLS probe.
+                require(wrong_ca_cert.is_file(), 'Wrong-CA certificate is missing')
+                probe = subprocess.run(['curl', '--disable', '-sS', '--max-time', '5',
+                                        '--proxy', '', '--ssl-reqd', '--cacert', str(wrong_ca_cert),
+                                        '--haproxy-protocol', '--haproxy-clientip', PASS_IP,
+                                        f'smtp://{BACKEND_HOST}:{ports["edge"]}/pass.auth.example.com'],
+                                       capture_output=True, text=True, timeout=10)
+                require(probe.returncode == 60, 'Expected actual TLS certificate verification failure')
+                report['wrongCaTlsProbeExit'] = probe.returncode
                 require(len(objects(client, 'QueuedMessage')) == 0, 'Wrong CA reached the queue')
             stage('wrongCaDefers430NoDelivery', wrong_ca)
 
@@ -673,9 +684,15 @@ def run(root, report, binary, *, postfix_control=None, postfix_port=None):
                     bob = fixture['users']['bob']['email']
                     require(recipient_probe(bob) == 250, 'Cannot create short-lived positive')
                     server.stop()
-                    # Alice has an outstanding failed refresh from the outage
-                    # proof. Postfix's fixed 1000-second probe grace keeps that
-                    # positive usable, even beyond the shortened test expiry.
+                    # Establish a failed refresh explicitly while the old
+                    # positive is still unexpired. A preceding outage does not
+                    # guarantee that precondition: a successful retry clears it.
+                    control('refresh-cache')
+                    time.sleep(2)
+                    require(recipient_probe(alice) == 250, 'Cannot initiate refresh of an unexpired positive')
+                    control('short-cache')
+                    # The failed refresh preserves its probe timestamp, so the
+                    # native 1000-second grace now covers the shortened expiry.
                     require(recipient_probe(alice) == 250, 'Pending-probe grace behavior changed')
                     require(recipient_probe(f'unseen-during-outage@{DOMAIN}') == 451,
                             'Unseen recipient did not defer during outage')

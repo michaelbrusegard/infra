@@ -48,7 +48,8 @@ from integration import CORE, ROOT, Acceptance, Client, Redactor, Server, check_
 from mail import (TLSLMTP, certificate, configure_backend, create, fetch_message, isolated,
                   known_message, port, reload, smtp_connection, smtp_send,
                   start_mail, update)
-from retirement import ids as email_ids
+from smtp_fixture import change, deterministic_spam_settings, email_ids, objects, query, where
+from smtp_fixture import load_filter_inventory as _load_filter_inventory
 
 BINARY = Path('/nix/store/cldpjs1kzadx6hcxdr8v305jkh9kx1kp-stalwart-native-scim-0.16.21/bin/stalwart')
 APPROVED_SHA256 = '02030a8334e3bc62bae1fa4a9139f498df0a7e105bd97ec5beacfdfa1be8b614'
@@ -99,18 +100,6 @@ def relay_expression(sql):
     return {'match': {'0': {'if': f"rcpt_domain == '{DOMAIN}'",
                            'then': f"sql_query('edge-recipients', \"{sql}\", [rcpt]) == 1"}},
             'else': 'false'}
-
-
-def change(client, kind, ident, values):
-    return client.jmap(f'x:{kind}/set', {'update': {ident: values}})
-
-
-def query(client, kind):
-    return client.jmap(f'x:{kind}/query', {})['ids']
-
-
-def objects(client, kind):
-    return client.jmap(f'x:{kind}/get', {'ids': query(client, kind)})['list']
 
 
 def passwordless(client, server, account):
@@ -596,62 +585,8 @@ def auth_na_override():
 
 
 def load_filter_inventory(client, path):
-    """Load production-shaped, ID-stripped, non-secret SpamTag/SpamRule metadata.
-
-    Reject/Discard tag actions become high scores (Junk-only). Never deletes tags,
-    matching the native update task that only inserts on primary-key conflict.
-    """
-    inventory = json.loads(Path(path).read_text())
-    existing = {t['tag']: t for t in objects(client, 'SpamTag')}
-    converted = []
-    for tag in inventory['SpamTag']:
-        require(tag['@type'] in ('Score', 'Reject', 'Discard'), 'Unknown tag variant')
-        body = {'@type': 'Score', 'tag': tag['tag'], 'score': float(tag.get('score', 1000.0))}
-        if tag['@type'] in ('Reject', 'Discard'):
-            body['score'] = 1000.0
-            converted.append(tag['tag'])
-        if tag['tag'] in existing:
-            # Variant conversion reconstructs the object and requires tag;
-            # same-variant patches must not write that immutable primary key.
-            values = body if existing[tag['tag']]['@type'] != 'Score' else {'score': body['score']}
-            client.jmap('x:SpamTag/set', {'update': {existing[tag['tag']]['id']: values}})
-        else:
-            create(client, 'SpamTag', body)
-    existing_rules = {r['name']: r['id'] for r in objects(client, 'SpamRule')}
-    for rule in inventory['SpamRule']:
-        require('id' not in rule and rule['enable'], 'Inventory must be ID-stripped enabled rules')
-        if rule['name'] in existing_rules:
-            change(client, 'SpamRule', existing_rules[rule['name']],
-                   {key: value for key, value in rule.items() if key != 'name'})
-        else:
-            create(client, 'SpamRule', rule)
-    actual = {tag['tag']: tag for tag in objects(client, 'SpamTag')}
-    require(set(actual) == {tag['tag'] for tag in inventory['SpamTag']}, 'Unexpected native SpamTag inventory')
-    for tag in inventory['SpamTag']:
-        expected = tag['score'] if tag['@type'] == 'Score' else 1000.0
-        require(actual[tag['tag']]['@type'] == 'Score' and actual[tag['tag']]['score'] == expected,
-                'SpamTag action/weight readback mismatch: ' + tag['tag'])
-    return {'tags': len(inventory['SpamTag']), 'rules': len(inventory['SpamRule']),
-            'convertedToScore': converted}
-
-
-def deterministic_spam_settings(client, enable_expression):
-    update(client, 'SpamSettings', {'enable': True, 'scoreSpam': 5.0, 'scoreReject': 0.0,
-                                    'scoreDiscard': 0.0, 'trustContacts': True, 'trustReplies': True,
-                                    'spamFilterRulesUrl': None})
-    update(client, 'SpamPyzor', {'enable': False})
-    update(client, 'SpamLlm', {'@type': 'Disable'})
-    update(client, 'MtaStageData', {'enableSpamFilter': {'else': enable_expression, 'match': {}}})
-
-
-def where(fixture, tag):
-    for folder in ('INBOX', 'Junk Mail'):
-        try:
-            return folder, fetch_message(fixture, tag, folder=folder, timeout=12)
-        except AssertionError as error:
-            if 'not delivered' not in str(error):
-                raise
-    raise AssertionError('Message ' + tag + ' not found in Inbox or Junk Mail')
+    # Preserve the legacy unit tests' edge.objects patch point until retirement.
+    return _load_filter_inventory(client, path, get_objects=objects)
 
 
 def verdict_lines(raw):
