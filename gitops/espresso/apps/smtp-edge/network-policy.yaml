@@ -8,8 +8,9 @@ spec:
     matchLabels:
       app: smtp-edge
   ingress:
-    # Staging has no public Service or world ingress. Add world:25 only at cutover.
+    # Public SMTP only; preserve the peer address with Service Local policy.
     - fromEntities:
+        - world
         - host
         - remote-node
       toPorts:

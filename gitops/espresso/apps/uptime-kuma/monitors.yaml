@@ -498,7 +498,7 @@ data:
         "name": "Shared SMTP Edge",
         "type": "port",
         "parent_name": "mail[0]",
-        "hostname": "stalwart-edge.stalwart-edge.svc.cluster.local",
+        "hostname": "smtp-edge.smtp-edge.svc.cluster.local",
         "port": 25,
         "interval": 60,
         "max_retries": 3,

@@ -20,10 +20,17 @@ kind: Service
 metadata:
   name: smtp-edge
   namespace: smtp-edge
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.12,fd7a:115c:a1e0:188::12
+    # Internal k8s-gateway name; MX and router DDNS remain unchanged.
+    external-dns.alpha.kubernetes.io/hostname: edge.asgard.michaelbrusegard.com
 spec:
-  # Internal staging only. No LB annotations, external IPs or DNS publication.
-  type: ClusterIP
+  type: LoadBalancer
+  externalTrafficPolicy: Local
   ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
   publishNotReadyAddresses: false
   selector:
     app: smtp-edge

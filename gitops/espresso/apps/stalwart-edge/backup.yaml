@@ -4,9 +4,9 @@ metadata:
   name: stalwart-edge-data-backup
   namespace: stalwart-edge
 spec:
-  # Separate repository under the shared mail infrastructure's Freddo identity.
-  # The retired server's /stalwart/pvc repository is left untouched.
-  paused: false
+  # Retired queue archive. Preserve existing snapshots without scheduled pruning.
+  # Final quiesced snapshot: 7c590f8e (2026-09-18); live queue was empty.
+  paused: true
   sourcePVC: data-stalwart-edge-0
   trigger:
     schedule: "40 */6 * * *"

@@ -2,20 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
+  - retained-pvc.yaml
   - backup.yaml
-  - statefulset.yaml
-  - services.yaml
   - network-policy.yaml
-  - config.yaml
-  - entrypoint.yaml
-# tf-controller owns native settings. Do not add a second configuration
-# writer or a SQL Directory that creates recipient accounts on the edge.
-configMapGenerator:
-  - name: stalwart-edge-policy
-    namespace: stalwart-edge
-    files:
-      - policy.py
-      - policy.sql
-      - readiness.py
-    options:
-      disableNameSuffixHash: true
