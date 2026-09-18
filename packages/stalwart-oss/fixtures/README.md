@@ -3,6 +3,9 @@
 `legacy-reconciler.yaml` preserves the retired ingress bootstrap for regression
 tests; it is not an active deployment.
 
+`legacy-auth-verdict.sieve` preserves the superseded header-score bridge's
+regression fixture. It is not mounted into the edge or part of the Postfix path.
+
 `spam-rules-v3.0.1.json` contains only `SpamTag` and `SpamRule` from Stalwart's
 [v3.0.1 release](https://github.com/stalwartlabs/spam-filter/releases/tag/v3.0.1).
 The downloaded `spam-filter-rules.json.gz` has SHA-256

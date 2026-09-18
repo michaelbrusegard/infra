@@ -26,14 +26,11 @@ OBJECTS = (
 SINGLETONS = (
     "Authentication", "MtaStageRcpt", "MtaStageAuth", "MtaOutboundStrategy", "Http",
 )
-FILTERING_SINGLETONS = ("MtaStageData", "SenderAuth")
-AUTH_VERDICT_NAME = "edge-auth-verdict"
-AUTH_VERDICT_PATH = Path(__file__).with_name("auth-verdict.sieve")
 READINESS_PERMISSIONS = ["authenticate"] + [
     "sys" + kind + operation
     for kind in OBJECTS
     for operation in ("Query", "Get")
-] + ["sys" + kind + "Get" for kind in SINGLETONS + FILTERING_SINGLETONS]
+] + ["sys" + kind + "Get" for kind in SINGLETONS]
 
 
 def require(condition):
@@ -51,15 +48,7 @@ class LoopbackHTTPS(http.client.HTTPSConnection):
             raise
 
 
-def filtering_stage():
-    stage = os.environ.get("STALWART_EDGE_FILTERING_STAGE", "legacy")
-    require(stage in ("legacy", "prepare", "backend"))
-    return stage
-
-
 def read_registry():
-    # Existing credentials keep working until the explicit permission upgrade.
-    singletons = SINGLETONS + (FILTERING_SINGLETONS if filtering_stage() != "legacy" else ())
     calls = []
     for kind in OBJECTS:
         calls.extend([
@@ -68,7 +57,7 @@ def read_registry():
               "name": f"x:{kind}/query", "path": "/ids"}}, kind],
         ])
     calls.extend([f"x:{kind}/get", {"ids": ["singleton"]}, kind]
-                 for kind in singletons)
+                 for kind in SINGLETONS)
     responses = []
     # Keep each query/get pair together, below the native per-request call cap.
     for offset in range(0, len(calls), 8):
@@ -98,10 +87,10 @@ def read_registry():
         require(query.get("total") == len(query["ids"]) < 100)
         require(not rows.get("notFound"))
         require({row["id"] for row in rows["list"]} == set(query["ids"]))
-    for kind in singletons:
+    for kind in SINGLETONS:
         require(not result[kind].get("notFound"))
         require(len(result[kind]["list"]) == 1)
-    return {kind: result[kind]["list"] for kind in OBJECTS + singletons}
+    return {kind: result[kind]["list"] for kind in OBJECTS + SINGLETONS}
 
 
 def expression(value, otherwise, matches=()):
@@ -116,41 +105,6 @@ def enabled_keys(value):
     if isinstance(value, dict):
         return {key for key, enabled in value.items() if enabled}
     return set(value or [])
-
-
-def check_filtering(objects):
-    """Allow only the enumerated rollout states; never filter-off without metadata."""
-    stage = filtering_stage()
-    rows = objects["SieveSystemScript"]
-    scripts = {row["name"]: row for row in rows}
-    require(len(scripts) == len(rows))
-    guard = {"edge-rcpt-domain-guard"}
-    if stage == "legacy":
-        require(set(scripts) == guard)
-        return scripts
-
-    require(set(scripts) in (guard, guard | {AUTH_VERDICT_NAME}))
-    auth = scripts.get(AUTH_VERDICT_NAME)
-    if auth is not None:
-        require(auth["isActive"] is True)
-        require(auth["contents"].strip() == AUTH_VERDICT_PATH.read_text().strip())
-    data = objects["MtaStageData"][0]
-    script = data["script"]
-    if script.get("else") == "false":
-        require(stage == "prepare")
-        expression(script, "false")
-        expression(data["enableSpamFilter"], "local_port == 25")
-    else:
-        require(auth is not None)
-        expression(script, repr(AUTH_VERDICT_NAME))
-        enabled = data["enableSpamFilter"].get("else")
-        require(enabled in (("local_port == 25", "false") if stage == "prepare" else ("false",)))
-        expression(data["enableSpamFilter"], enabled)
-    sender = objects["SenderAuth"][0]
-    for field in ("spfEhloVerify", "spfFromVerify", "dkimVerify", "dmarcVerify", "reverseIpVerify"):
-        expression(sender[field], "relaxed")
-    expression(sender["dkimSignDomain"], "false")
-    return scripts
 
 
 def check_registry(objects):
@@ -181,8 +135,9 @@ def check_registry(objects):
         require(row["useTls"] is True and row["tlsImplicit"] is (name == "https"))
         require(not row.get("overrideProxyTrustedNetworks"))
 
-    scripts = check_filtering(objects)
-    script = scripts["edge-rcpt-domain-guard"]
+    scripts = objects["SieveSystemScript"]
+    require(len(scripts) == 1)
+    script = scripts[0]
     require(script["name"] == "edge-rcpt-domain-guard" and script["isActive"] is True)
     expected = ('require ["envelope", "reject"];\n'
                 'if not envelope :domain :is "to" "manafishrov.com" {\n'

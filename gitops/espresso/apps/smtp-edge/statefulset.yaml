@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: smtp-edge
+  namespace: smtp-edge
+  annotations:
+    secret.reloader.stakater.com/reload: smtp-edge-resend,wildcard-tls
+spec:
+  # Pending registry digest, secret provisioning and cutover approval; see README.
+  replicas: 0
+  serviceName: smtp-edge-internal
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  selector:
+    matchLabels:
+      app: smtp-edge
+  template:
+    metadata:
+      labels:
+        app: smtp-edge
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 660
+      securityContext:
+        # Root master drops to postfix:100, postdrop:101 and mailforward:102.
+        # No fsGroup: queue ownership is managed by native Postfix.
+        runAsUser: 0
+        runAsGroup: 0
+        runAsNonRoot: false
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postfix
+          # Deliberate non-release placeholder, NOT an approved image or digest.
+          # Replace with ghcr.io/michaelbrusegard/smtp-edge@sha256:<registry digest>.
+          image: ghcr.io/michaelbrusegard/smtp-edge:pending-immutable-pin
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+              add: [CHOWN, SETUID, SETGID, DAC_OVERRIDE, FOWNER, KILL, NET_BIND_SERVICE]
+          env:
+            - name: POSTFIX_HOSTNAME
+              value: edge.asgard.michaelbrusegard.com
+            - name: BACKEND_HOST
+              value: backend.manafishrov.com
+            - name: BACKEND_TLS_SERVERNAME
+              value: backend.manafishrov.com
+            - name: BACKEND_LMTP_PORT
+              value: "24"
+            - name: BACKEND_SMTP_PORT
+              value: "25"
+            - name: BACKEND_LOCAL_SMTP_PORT
+              value: "26"
+            - name: INBOUND_TLS_CERT_FILE
+              value: /run/secrets/smtp-edge/tls/tls.crt
+            - name: INBOUND_TLS_KEY_FILE
+              value: /run/secrets/smtp-edge/tls/tls.key
+            - name: RESEND_PASSWORD_FILE
+              value: /run/secrets/smtp-edge/resend/api-key
+          ports:
+            - name: smtp
+              containerPort: 25
+          # Do not call the entrypoint's check mode: it rebuilds runtime maps.
+          # These native checks need no backend, mail submission or API writer.
+          startupProbe:
+            exec:
+              command: [/bin/bash, -ec, "postfix check && postfix status"]
+            periodSeconds: 5
+            timeoutSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: [/bin/bash, -ec, "postfix check && postfix status"]
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+          # No backend-coupled liveness restart loop; PID 1 is postfix start-fg.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+              ephemeral-storage: 256Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+              ephemeral-storage: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postfix
+            - name: run
+              mountPath: /run
+            - name: tmp
+              mountPath: /tmp
+            - name: tls
+              mountPath: /run/secrets/smtp-edge/tls
+              readOnly: true
+            - name: resend
+              mountPath: /run/secrets/smtp-edge/resend
+              readOnly: true
+      volumes:
+        - name: run
+          emptyDir:
+            sizeLimit: 128Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: tls
+          secret:
+            secretName: wildcard-tls
+            defaultMode: 0400
+            items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+        - name: resend
+          secret:
+            secretName: smtp-edge-resend
+            defaultMode: 0400
+            items:
+              - key: api-key
+                path: api-key
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: ssd-ha
+        resources:
+          requests:
+            storage: 20Gi

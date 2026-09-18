@@ -17,7 +17,7 @@
     filter = path: type:
       if type == "directory"
       then baseNameOf path != "__pycache__"
-      else lib.any (suffix: lib.hasSuffix suffix path) [".py" ".rs" ".patch"];
+      else lib.any (suffix: lib.hasSuffix suffix path) [".py" ".rs" ".patch" ".sieve"];
   };
 in
   runCommand "stalwart-native-scim-source-check" {

@@ -1,0 +1,27 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: smtp-edge-data-backup
+  namespace: smtp-edge
+spec:
+  # Parent provisions a NEW repository Secret, then unpauses after PVC creation.
+  paused: true
+  sourcePVC: data-smtp-edge-0
+  trigger:
+    schedule: "50 */6 * * *"
+  restic:
+    # New /stalwart/smtp-edge-pvc repository under the existing private identity.
+    repository: freddo-restic-smtp-edge-pvc
+    pruneIntervalDays: 30
+    retain:
+      daily: 14
+      weekly: 8
+      monthly: 12
+    moverSecurityContext:
+      # Preserve Postfix's mixed root/100/101 ownership, including private queue.
+      runAsUser: 0
+      runAsGroup: 0
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: openebs-single-replica
+    cacheCapacity: 2Gi

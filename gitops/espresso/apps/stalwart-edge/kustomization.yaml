@@ -17,9 +17,5 @@ configMapGenerator:
       - policy.py
       - policy.sql
       - readiness.py
-      - auth-verdict.sieve
     options:
       disableNameSuffixHash: true
-      annotations:
-        # Sieve ${...} expressions belong to Stalwart, not Flux substitution.
-        kustomize.toolkit.fluxcd.io/substitute: disabled

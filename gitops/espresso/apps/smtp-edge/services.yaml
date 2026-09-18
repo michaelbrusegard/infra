@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: smtp-edge-internal
+  namespace: smtp-edge
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ipFamilyPolicy: PreferDualStack
+  publishNotReadyAddresses: false
+  selector:
+    app: smtp-edge
+  ports:
+    - name: smtp
+      port: 25
+      targetPort: smtp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smtp-edge
+  namespace: smtp-edge
+spec:
+  # Internal staging only. No LB annotations, external IPs or DNS publication.
+  type: ClusterIP
+  ipFamilyPolicy: PreferDualStack
+  publishNotReadyAddresses: false
+  selector:
+    app: smtp-edge
+  ports:
+    - name: smtp
+      port: 25
+      targetPort: smtp

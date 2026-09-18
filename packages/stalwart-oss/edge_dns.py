@@ -65,19 +65,29 @@ class AuthDNS:
         if self.log is not None:
             self.log.close()
 
-    def sign(self, raw):
+    def sign(self, raw, names=None):
         """RSA-SHA256 relaxed/relaxed; signs only newly generated fixture mail."""
         headers, body = raw.split(b'\r\n\r\n', 1)
         body = b'\r\n'.join(re.sub(rb'[ \t]+', b' ', line).rstrip(b' ')
                             for line in body.split(b'\r\n')).rstrip(b'\r\n') + b'\r\n'
-        names = (b'from', b'to', b'subject', b'date', b'message-id')
+        names = names or (b'from', b'to', b'subject', b'date', b'message-id')
         fields = []
         for field in re.split(rb'\r\n(?![ \t])', headers):
             name, value = field.split(b':', 1)
             value = re.sub(rb'[ \t\r\n]+', b' ', value).strip()
             if name.lower() in names:
                 fields.append((name.lower(), name.lower() + b':' + value))
-        signed = [next(value for key, value in fields if key == name) for name in names]
+        # DKIM selects repeated fields from the bottom, consuming each match.
+        # An absent occurrence is allowed in h= (oversigning) but contributes
+        # no canonicalized header bytes to the signature input.
+        remaining = list(reversed(fields))
+        signed = []
+        for name in names:
+            for index, (key, value) in enumerate(remaining):
+                if key == name:
+                    signed.append(value)
+                    remaining.pop(index)
+                    break
         signature = (b'v=1; a=rsa-sha256; c=relaxed/relaxed; d=fail.auth.example.com; s=fixture; h='
                      + b':'.join(names) + b'; bh=' + base64.b64encode(hashlib.sha256(body).digest()) + b'; b=')
         data = b'\r\n'.join(signed) + b'\r\ndkim-signature:' + signature

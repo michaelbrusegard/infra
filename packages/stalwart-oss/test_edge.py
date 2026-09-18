@@ -79,7 +79,7 @@ class FixtureTests(unittest.TestCase):
             self.assertFalse(edge.guard_settings_ready(client))
 
     def test_declarative_auth_script_matches_qualified_native_fixture(self):
-        self.assertEqual(edge.POLICY_PATH.with_name('auth-verdict.sieve').read_text(),
+        self.assertEqual((Path(edge.__file__).parent / 'fixtures/legacy-auth-verdict.sieve').read_text(),
                          edge.verdict_script())
 
     def test_auth_script_uses_only_native_enumerated_variables(self):

@@ -1,0 +1,62 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: smtp-edge
+  namespace: smtp-edge
+spec:
+  endpointSelector:
+    matchLabels:
+      app: smtp-edge
+  ingress:
+    # Staging has no public Service or world ingress. Add world:25 only at cutover.
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "25"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "25"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              # Includes resolver search paths; only cluster DNS is reachable.
+              - matchPattern: "*"
+    # DNS resolves the private Service, but authorization is by pod identity.
+    # Do not add a backend FQDN/world fallback that bypasses this restriction.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: manafishrov-stalwart
+            k8s:app: stalwart
+      toPorts:
+        - ports:
+            - port: "24"
+              protocol: TCP
+            - port: "25"
+              protocol: TCP
+            - port: "26"
+              protocol: TCP
+    - toFQDNs:
+        - matchName: smtp.resend.com
+      toPorts:
+        - ports:
+            - port: "465"
+              protocol: TCP
+    # No management API, JMAP, HTTPS, arbitrary SMTP or DNSBL egress.
