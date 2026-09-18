@@ -1,4 +1,4 @@
-"""Disposable authoritative DNS and DKIM signing, only for edge.py's netns fixture."""
+"""Disposable authoritative DNS and DKIM signing for isolated SMTP fixtures."""
 import base64
 import hashlib
 from pathlib import Path

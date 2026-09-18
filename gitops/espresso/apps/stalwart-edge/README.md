@@ -9,8 +9,9 @@ Retained deliberately:
 - `data-stalwart-edge-0`, bound to
   `pvc-eb11adef-5e42-40af-a01a-6f6059f6fc78`; namespace/PVC pruning disabled.
 - Freddo repository `/stalwart/edge-pvc` and its historical snapshots.
-- Final quiesced backup `7c590f8e` on 2026-09-18, after complete old-edge and
+- Quiesced manual backup `7c590f8e` on 2026-09-18, after complete old-edge and
   backend queue inventories were empty and existing SMTP sessions had closed.
+  The final scheduled snapshot before pausing is `a3ae254e` at 06:40 UTC.
 - A paused backup declaration and its encrypted repository credentials; no
   scheduled retention/pruning of the retired archive.
 

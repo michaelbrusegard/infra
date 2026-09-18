@@ -1,7 +1,36 @@
 {
   "fixtureQualified": true,
-  "productionActivated": false,
-  "evidence": "/tmp/smtp-edge-postfix-dcygjr8p",
+  "productionActivated": true,
+  "evidence": "/tmp/smtp-edge-postfix-0cm3n5cu",
+  "registryManifestDigest": "sha256:efebce10cc82ee5085d50036bd4abafff335dada54f8d2f8fae52618a755e203",
+  "productionEvidence": {
+    "date": "2026-09-18",
+    "publicAddressProbeVantage": "local host using public DNS A/AAAA answers",
+    "publicIpv4AndIpv6VerifiedStartTls": true,
+    "publicAuthNotAdvertised": true,
+    "publicUndefinedPlusRejected550": true,
+    "publicExternalRelayRejected554": true,
+    "publicSyntheticJunkIngestion": [
+      {"messageId": "smtp-edge-public-ipv4-20260918@manafishrov.com", "time": "2026-09-18T07:26:59Z", "accountId": 6, "documentId": 10, "mailboxId": 2},
+      {"messageId": "smtp-edge-public-ipv6-20260918@manafishrov.com", "time": "2026-09-18T07:27:01Z", "accountId": 6, "documentId": 11, "mailboxId": 2}
+    ],
+    "wrongNamespaceAndWrongAppDenied": true,
+    "globalProxyTrustEmpty": true,
+    "useXForwarded": false,
+    "backendPlanNoChangesRevision": "ce6d6b107062115eec5c3fcffb8280171110bcd6",
+    "restoredSnapshot": "93ee1e08",
+    "restoredQueueFileSha256": "d21794d329140bbf10cc8551f5a84d40a1a21ea07a86cd307786bd3bdaaa6502",
+    "restoredHoldAndExpiryFlagsPreserved": true,
+    "restoredSyntheticDeliveredToNativeJunk": true,
+    "sourceMoverUidGid": 100,
+    "sourceMoverFsGroup": null,
+    "scheduledBackupSnapshot": "8fbe41ec",
+    "retiredEdgeFinalSnapshot": "a3ae254e",
+    "retiredEdgePvReclaimPolicy": "Retain",
+    "retiredEdgeBackupPaused": true,
+    "retiredRuntimeAndControllerRemoved": true,
+    "retiredNamespaceSecrets": ["freddo-restic-stalwart-edge-pvc"]
+  },
   "postfixSecurityProfile": "default Docker seccomp, no-new-privileges, exact capabilities, readonly root, root-owned 0400 TLS mounts",
   "dockerConfigId": "sha256:f68b5395118222e6457228d5aab83fb036dfc1357f50a6cc72deaccc1956add8",
   "docker29ManifestId": "sha256:8073c80ee903205fc9b2ad1096fbc57565d81441f7adc623156f478c6e505da0",
@@ -22,10 +51,11 @@
     "integration.py": "6bf99c26bbf9b47955c924bbbf45288c0e68023d3e53bb3b243c58c7488c3f33",
     "mail.py": "d10e3a0df2f14ac63ab74a3b244c8c7ed3a097854f7432cd3d05ae0134fcc823",
     "smtp_fixture.py": "f1a963424a7bb27f13ea2bc108d4eea0fcd330a3c1556bc6df9c37c983dbe07f",
-    "edge_dns.py": "369308703202dfa26a79992924c831588867b88e4132198de223e19e6405917b"
+    "edge_dns.py": "935cf3e254bba736ddcb0139b7d3c6212af964b83820a92a8dff4319bc20f18c"
   },
   "limits": [
-    "Production registry pin, Kubernetes/Cilium acceptance, queue accounting and backup restore remain rollout gates.",
+    "Public-address probes used a local vantage, not an independent external host. Live Junk evidence is native ingestion/delivery telemetry; Email/query remains forbidden and no production message bodies were fetched.",
+    "Postfix queue recovery does not qualify the separately paused backend/Bulwark backup paths or activate the separately staged DKIM custody/DNS handoff.",
     "External null-envelope DSNs remain unsupported by Resend; this was deferred in the prior cutover.",
     "Positive cache expiry is one hour plus any remaining native 1000-second pending-probe grace; negative refresh does not revoke an unexpired positive.",
     "Exact native recipient verification requires disabling domain-wide automatic sub-addressing; explicit plus aliases remain accepted.",
