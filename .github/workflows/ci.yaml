@@ -52,7 +52,7 @@ jobs:
         run: nix fmt -- --fail-on-change --no-cache
       - name: Validate flake (Nix)
         run: nix flake check --show-trace
-  validate-nix:
+  validate-nix-hosts:
     needs: filter
     if: needs.filter.outputs.nix == 'true'
     runs-on: ${{ matrix.os }}
@@ -109,7 +109,7 @@ jobs:
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             -verbose
-  validate-tofu:
+  validate-tofu-stacks:
     needs: filter
     if: needs.filter.outputs.tofu == 'true'
     runs-on: ubuntu-24.04
@@ -131,3 +131,34 @@ jobs:
         run: tofu -chdir=${{ matrix.tofu-dir }} init -backend=false
       - name: Validate OpenTofu
         run: tofu -chdir=${{ matrix.tofu-dir }} validate
+  # Branch protection requires these stable names, not matrix-expanded names.
+  validate-nix:
+    needs: [filter, validate-nix-hosts]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require all relevant host checks
+        env:
+          FILTER_RESULT: ${{ needs.filter.result }}
+          REQUESTED: ${{ needs.filter.outputs.nix }}
+          MATRIX_RESULT: ${{ needs.validate-nix-hosts.result }}
+        run: |
+          case "$FILTER_RESULT:$REQUESTED:$MATRIX_RESULT" in
+            success:true:success|success:false:skipped) ;;
+            *) echo "::error::Host checks did not complete as required"; exit 1 ;;
+          esac
+  validate-tofu:
+    needs: [filter, validate-tofu-stacks]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require all relevant OpenTofu checks
+        env:
+          FILTER_RESULT: ${{ needs.filter.result }}
+          REQUESTED: ${{ needs.filter.outputs.tofu }}
+          MATRIX_RESULT: ${{ needs.validate-tofu-stacks.result }}
+        run: |
+          case "$FILTER_RESULT:$REQUESTED:$MATRIX_RESULT" in
+            success:true:success|success:false:skipped) ;;
+            *) echo "::error::OpenTofu checks did not complete as required"; exit 1 ;;
+          esac
