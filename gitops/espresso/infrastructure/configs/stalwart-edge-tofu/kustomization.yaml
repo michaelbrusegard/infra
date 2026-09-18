@@ -21,7 +21,7 @@ patches:
         name: stalwart-edge
       spec:
         # Bootstrap and native qualification completed; adopt existing state.
-        suspend: false
+        suspend: true
         path: ./gitops/espresso/tofu/stalwart-edge
         backendConfig:
           secretSuffix: stalwart-edge
