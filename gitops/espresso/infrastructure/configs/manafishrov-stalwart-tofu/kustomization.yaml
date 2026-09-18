@@ -24,6 +24,10 @@ patches:
         # Review preparation/activation plans before changing the running backend.
         approvePlan: ""
         vars:
+          - name: smtp_edge_activation_ready
+            value: true
+          - name: smtp_edge_exact_recipients_ready
+            value: false
           - name: smtp_edge_proxy_networks
             value: ["10.42.0.0/16", "fd42::/56"]
         backendConfig:

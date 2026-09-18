@@ -49,7 +49,7 @@ port, AUTH listener, readiness writer or second configuration writer.
    current `pending-immutable-pin` tag is a deliberate placeholder, not a release.
    Replace it with `ghcr.io/michaelbrusegard/smtp-edge@sha256:<registry digest>`
    after qualifying the published artifact. Docker config ID
-   `sha256:5ef910d682ff9aabb1da23b8896eedaf023d1dbc1c95019abab6fea605d6c7f3`
+   `sha256:e9ef01374dec4b5f970bed05e5818e666f2a8af304a04554557a43b50e01fcc1`
    is NOT an OCI registry digest and must not be used as the production pin.
 3. **Provision parent-owned secrets.** Reflect the existing wildcard certificate
    into `smtp-edge/wildcard-tls` (`tls.crt`, `tls.key`) by updating the source

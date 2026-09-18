@@ -61,11 +61,14 @@ jobs:
           docker load < candidate/smtp-edge.tar.gz
           # Read the exported tag; never treat Docker's config ID as a manifest digest.
           source=$(tar -xOf candidate/smtp-edge.tar.gz manifest.json | jq -er 'if length == 1 then .[0].RepoTags | select(length == 1) | .[0] else error("expected one image") end')
-          actual_id=$(docker image inspect "$source" --format '{{.Id}}')
+          # Docker 29's containerd store can expose a manifest digest as .Id.
+          # Hash the archive's actual config JSON, independent of engine version.
+          config_path=$(tar -xOf candidate/smtp-edge.tar.gz manifest.json | jq -er '.[0].Config')
+          actual_id="sha256:$(tar -xOf candidate/smtp-edge.tar.gz "$config_path" | sha256sum | cut -d ' ' -f 1)"
           expected_id=$(jq -r '.dockerConfigId' "$record")
           printf 'Built config ID: %s\nQualified config ID: %s\n' "$actual_id" "$expected_id"
           if [[ "$actual_id" != "$expected_id" ]]; then
-            nix derivation show --recursive result > candidate/derivations.json
+            nix derivation show --recursive ./result > candidate/derivations.json
             exit 1
           fi
           cp "$record" candidate/qualification.json
