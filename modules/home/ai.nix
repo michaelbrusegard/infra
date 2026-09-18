@@ -229,6 +229,11 @@
   };
 in {
   programs = {
+    # T3 creates fresh worktrees for threads; trust their project environments.
+    direnv.config.whitelist.prefix = lib.optionals (!isWsl) [
+      "${config.home.homeDirectory}/.t3/worktrees"
+    ];
+
     codex = {
       enable = true;
       package = direnvWrapped pkgs.codex "codex";
@@ -290,6 +295,7 @@ in {
               enableClaude = true;
               claude-code = config.programs.claude-code.package;
               codex = config.programs.codex.package;
+              gh = config.programs.gh.package;
             })
           ]
         );
