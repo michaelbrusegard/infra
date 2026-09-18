@@ -35,6 +35,6 @@ spec:
   selector:
     app: smtp-edge
   ports:
-    - name: smtp
+    - name: smtp-public
       port: 25
       targetPort: smtp
