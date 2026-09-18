@@ -27,7 +27,7 @@ for name in BACKEND_CA_FILE INBOUND_TLS_CERT_FILE INBOUND_TLS_KEY_FILE RESEND_PA
   [[ ${!name} =~ ^/[A-Za-z0-9_./-]+$ && -r ${!name} ]] || fail "invalid or unreadable $name"
 done
 
-install -d -m 0755 -o root -g root /run/postfix /var/lib/postfix /var/lib/postfix/queue
+install -d -m 0755 -o root -g root /run/postfix /var/lib/postfix /var/lib/postfix/queue /var/lib/postfix/queue/pid
 install -d -m 0700 -o postfix -g postfix /var/lib/postfix/data
 # A non-root restore preserves queue files but cannot restore mixed ownership.
 # Normalize only directory ownership; queue-file mode bits carry native flags.

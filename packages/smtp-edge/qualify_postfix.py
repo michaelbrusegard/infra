@@ -32,7 +32,7 @@ import time
 import uuid
 
 HERE = Path(__file__).resolve().parent
-IMAGE = 'sha256:1120ba341af03fd7bc19df6b53016458df357a7772cf9fc21f37a8595b10b663'
+IMAGE = 'sha256:8073c80ee903205fc9b2ad1096fbc57565d81441f7adc623156f478c6e505da0'
 BINARY = Path('/tmp/stalwart-edge-qualification/stalwart')
 BINARY_SHA256 = '02030a8334e3bc62bae1fa4a9139f498df0a7e105bd97ec5beacfdfa1be8b614'
 CAPS = ['CHOWN', 'SETUID', 'SETGID', 'DAC_OVERRIDE', 'FOWNER', 'KILL', 'NET_BIND_SERVICE']
