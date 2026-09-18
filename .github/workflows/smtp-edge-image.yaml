@@ -93,7 +93,7 @@ jobs:
           printf 'Source: %s\n\nRegistry pin: %s\n\nPublication does not authorize deployment. Qualify the published image before replacing the staged placeholder.\n' "$GITHUB_SHA" "$pinned" >> "$GITHUB_STEP_SUMMARY"
       - name: Retain exported image and registry pin
         if: always()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: smtp-edge-image
           path: candidate/
