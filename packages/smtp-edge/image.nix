@@ -13,6 +13,11 @@
   gnused,
   gawk,
 }: let
+  # Store individual file contents, not paths rooted in a checkout/flake source.
+  # Otherwise unrelated repository changes alter the image's store closure.
+  files = lib.genAttrs ["main.cf" "master.cf" "deliver.sh" "entrypoint.sh"] (
+    name: builtins.toFile name (builtins.readFile (./. + "/${name}"))
+  );
   layout = runCommand "smtp-edge-layout" {} ''
     mkdir -p $out/{bin,etc,opt/smtp-edge,var/lib/postfix,run,tmp}
     chmod 1777 $out/tmp
@@ -35,7 +40,7 @@
     nogroup:x:65534:
     EOF
     printf 'passwd: files\ngroup: files\nhosts: files dns\n' > $out/etc/nsswitch.conf
-    cp ${./main.cf} $out/opt/smtp-edge/main.cf
+    cp ${files."main.cf"} $out/opt/smtp-edge/main.cf
     chmod u+w $out/opt/smtp-edge/main.cf
     cat >> $out/opt/smtp-edge/main.cf <<'EOF'
     command_directory = ${postfix}/bin
@@ -46,9 +51,9 @@
     mailq_path = ${postfix}/bin/mailq
     newaliases_path = ${postfix}/bin/newaliases
     EOF
-    cp ${./master.cf} $out/opt/smtp-edge/master.cf
-    cp ${./deliver.sh} $out/opt/smtp-edge/deliver.sh
-    cp ${./entrypoint.sh} $out/bin/smtp-edge-entrypoint
+    cp ${files."master.cf"} $out/opt/smtp-edge/master.cf
+    cp ${files."deliver.sh"} $out/opt/smtp-edge/deliver.sh
+    cp ${files."entrypoint.sh"} $out/bin/smtp-edge-entrypoint
     chmod 0555 $out/bin/smtp-edge-entrypoint $out/opt/smtp-edge/deliver.sh
     substituteInPlace $out/bin/smtp-edge-entrypoint \
       --replace-fail '#!/usr/bin/env bash' '#!${bash}/bin/bash'

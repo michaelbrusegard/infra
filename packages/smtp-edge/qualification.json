@@ -1,15 +1,15 @@
 {
   "fixtureQualified": true,
   "productionActivated": false,
-  "evidence": "/tmp/smtp-edge-postfix-emlk1j4p",
+  "evidence": "/tmp/smtp-edge-postfix-w7ckwaab",
   "postfixSecurityProfile": "default Docker seccomp, no-new-privileges, exact capabilities, readonly root, root-owned 0400 TLS mounts",
-  "dockerConfigId": "sha256:e7d8aec26c1de0cdcdef1b7509b05da8fe5b969540b68cbbc4ea888149878a5f",
+  "dockerConfigId": "sha256:5ef910d682ff9aabb1da23b8896eedaf023d1dbc1c95019abab6fea605d6c7f3",
   "stalwartBinarySha256": "02030a8334e3bc62bae1fa4a9139f498df0a7e105bd97ec5beacfdfa1be8b614",
   "nativeStages": 19,
   "deliveredMessages": 15,
   "postfixQueueEmpty": true,
   "sourceSha256": {
-    "qualify_postfix.py": "d2b959913640a5096d20da6b0fe62a07929cbb6c12711955bc98c9197b295b9c",
+    "qualify_postfix.py": "fbb199d35e965e38f3c8a300f16c5a42680387f9fc9daa02d10571c93210511b",
     "qualify.py": "e2fe47d00f60a9339cae0937c2d67b1153b4adeaaac2c126c23415f1b562360b",
     "deliver.sh": "18b8b2fde11b81659fd4de73ebca679a5a7859219a3fc6662463e936d383d6fa",
     "main.cf": "c05df4417eae9f4945a08dbd60c39112d44318bb3765cd78c48da95ea17095e3",
