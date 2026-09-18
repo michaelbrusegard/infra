@@ -4,7 +4,7 @@ metadata:
   name: smtp-edge-data-backup
   namespace: smtp-edge
 spec:
-  paused: true
+  paused: false
   sourcePVC: data-smtp-edge-0
   trigger:
     schedule: "50 */6 * * *"

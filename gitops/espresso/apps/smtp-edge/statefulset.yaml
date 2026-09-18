@@ -7,8 +7,7 @@ metadata:
     secret.reloader.stakater.com/reload: smtp-edge-resend,wildcard-tls
 spec:
   # Pending registry digest, secret provisioning and cutover approval; see README.
-  # Internal trial paused while persistent PID files are migrated off the PVC.
-  replicas: 0
+  replicas: 1
   serviceName: smtp-edge-internal
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Retain
@@ -35,7 +34,7 @@ spec:
         - name: postfix
           # Deliberate non-release placeholder, NOT an approved image or digest.
           # Replace with ghcr.io/michaelbrusegard/smtp-edge@sha256:<registry digest>.
-          image: ghcr.io/michaelbrusegard/smtp-edge@sha256:e5acbbd8f83ce605da1cf5c35d574dba71ffd5c6c31cdae78da669e783f71aa4
+          image: ghcr.io/michaelbrusegard/smtp-edge@sha256:efebce10cc82ee5085d50036bd4abafff335dada54f8d2f8fae52618a755e203
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
