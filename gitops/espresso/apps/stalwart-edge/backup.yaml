@@ -5,7 +5,7 @@ metadata:
   namespace: stalwart-edge
 spec:
   # Retired queue archive. Preserve existing snapshots without scheduled pruning.
-  # Final quiesced snapshot: 7c590f8e (2026-09-18); live queue was empty.
+  # Quiesced snapshots: manual 7c590f8e, final scheduled a3ae254e (2026-09-18).
   paused: true
   sourcePVC: data-stalwart-edge-0
   trigger:
