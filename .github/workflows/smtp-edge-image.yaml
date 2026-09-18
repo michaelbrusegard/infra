@@ -61,7 +61,13 @@ jobs:
           docker load < candidate/smtp-edge.tar.gz
           # Read the exported tag; never treat Docker's config ID as a manifest digest.
           source=$(tar -xOf candidate/smtp-edge.tar.gz manifest.json | jq -er 'if length == 1 then .[0].RepoTags | select(length == 1) | .[0] else error("expected one image") end')
-          [[ "$(docker image inspect "$source" --format '{{.Id}}')" == "$(jq -r '.dockerConfigId' "$record")" ]]
+          actual_id=$(docker image inspect "$source" --format '{{.Id}}')
+          expected_id=$(jq -r '.dockerConfigId' "$record")
+          printf 'Built config ID: %s\nQualified config ID: %s\n' "$actual_id" "$expected_id"
+          if [[ "$actual_id" != "$expected_id" ]]; then
+            nix derivation show --recursive result > candidate/derivations.json
+            exit 1
+          fi
           cp "$record" candidate/qualification.json
           archive_sha=$(sha256sum candidate/smtp-edge.tar.gz | cut -d ' ' -f 1)
           target="$IMAGE:sha-$GITHUB_SHA-${archive_sha:0:12}"
@@ -83,6 +89,7 @@ jobs:
           printf '%s\n' "$pinned" > candidate/image-ref.txt
           printf 'Source: %s\n\nRegistry pin: %s\n\nPublication does not authorize deployment. Qualify the published image before replacing the staged placeholder.\n' "$GITHUB_SHA" "$pinned" >> "$GITHUB_STEP_SUMMARY"
       - name: Retain exported image and registry pin
+        if: always()
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: smtp-edge-image
