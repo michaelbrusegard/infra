@@ -4,24 +4,24 @@
   stdenvNoCC,
   versionCheckHook,
 }: let
-  version = "0.152.1";
+  version = "0.155.1";
   system = stdenvNoCC.hostPlatform.system;
   sources = {
     aarch64-darwin = {
       target = "aarch64-apple-darwin";
-      hash = "sha256-Cl3/5aSrZ2nnDZYnCNKhlbKtz4y5bnudlposldIjhXU=";
+      hash = "sha256-5uCHF9qeNbcjMu/3U1J/55qa6HYIEDPFxoIKjl9YuUM=";
     };
     x86_64-darwin = {
       target = "x86_64-apple-darwin";
-      hash = "sha256-o23D9bk/hybrO+h0eW9CPW8Ch5gKENt3C/KJBG1y2SQ=";
+      hash = "sha256-vnUq67KsAixb/tP6FPRpQ9Ed2zapULVTsFh5SroiSWo=";
     };
     aarch64-linux = {
       target = "aarch64-unknown-linux-musl";
-      hash = "sha256-+T/HAVrxOsKiSGryNimUbZqt5fiLQMLMfhqh/KLJPvg=";
+      hash = "sha256-cYV9vJvqNhNBDoppz7RrB8BALW0g/sGIQ9uv/XV2NL0=";
     };
     x86_64-linux = {
       target = "x86_64-unknown-linux-musl";
-      hash = "sha256-Ku6mgjm02WCBs+f+kdDWTkh1siRmjDgZhdIrsx11Zrk=";
+      hash = "sha256-pluJXGrBpzYpu+S4ZGQMhhM+lKQ7TWezEDBE4aMG1aI=";
     };
   };
   source = sources.${system} or (throw "codex: unsupported system ${system}");
