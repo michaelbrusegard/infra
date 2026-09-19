@@ -498,6 +498,8 @@ in {
             ".paseo"
             ".config/t3code"
             ".t3"
+            ".local/share/loc"
+            ".local/state/loc"
           ];
         files = [
           ".claude.json"
