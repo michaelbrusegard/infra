@@ -23,7 +23,7 @@ in {
     neovim-unwrapped
     vimPlugins
     pi-coding-agent
-    t3code
+    chatgpt
     uv
     ty
     oxlint

@@ -52,4 +52,7 @@ in {
   dsearch = inputs.dsearch.packages.${system}.default;
   paseo = paseoPackage;
   paseo-desktop = paseoDesktopPackage;
+  t3code-nightly = prev.callPackage ../packages/t3code-nightly {
+    nightly = inputs.t3code.packages.${system}.t3-code-nightly;
+  };
 }
