@@ -297,13 +297,17 @@ in {
           with pkgs; [
             paseo
             paseo-desktop
-            (t3code.override {
+            (t3code-nightly.override {
               # Preserve project environments instead of using unwrapped providers.
-              enableClaude = true;
               claude-code = config.programs.claude-code.package;
               codex = config.programs.codex.package;
               gh = config.programs.gh.package;
             })
+            (
+              if stdenv.hostPlatform.isLinux
+              then chatgpt-desktop
+              else chatgpt
+            )
           ]
         );
 
@@ -489,6 +493,7 @@ in {
             ".cache/slack-cli"
           ]
           ++ lib.optionals (!isWsl) [
+            ".config/Codex"
             ".config/Paseo"
             ".paseo"
             ".config/t3code"

@@ -43,7 +43,7 @@ spec:
         # traffic before removing the direct defaults. Without the tunnel,
         # application traffic therefore has no fallback path to the internet.
         - name: preserve-cluster-routes
-          image: netbirdio/netbird:0.79.0@sha256:9d8480d87b7f7c10d67b820eecf332ecca5c2756792d4bdfa532182b4fc3005f
+          image: netbirdio/netbird:0.77.1@sha256:66f408b0c423e9c3376deea7bc0da78024d32494dd0f957344993015b74c4451
           command:
             - sh
             - -ec
@@ -208,7 +208,7 @@ spec:
             allowPrivilegeEscalation: false
       containers:
         - name: gateway
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-acb9370672b586eec3d872df165a34ac3ad5df6e@sha256:1ad81f0ec02b843a2697e09ef9bd622d26be24c15154d992af479d062a75659d
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-0f8b45d40c832a73ae3e7f3a8cfe695368f2537c@sha256:ebb55a135a7d392686e6ab110758c87d046bd8d8f3d4695264ec04c8d109388d
           args:
             - gateway
             - run
@@ -403,7 +403,7 @@ spec:
               drop:
                 - ALL
         - name: browser
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-acb9370672b586eec3d872df165a34ac3ad5df6e@sha256:9dc33dda0606ae13a806abb30d0b84a0796af7f97c9e6b0f27bdf3a71b4894f2
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-0f8b45d40c832a73ae3e7f3a8cfe695368f2537c@sha256:9dc33dda0606ae13a806abb30d0b84a0796af7f97c9e6b0f27bdf3a71b4894f2
           command:
             - chromium
           args:
@@ -573,7 +573,7 @@ spec:
             seccompProfile:
               type: RuntimeDefault
         - name: android-companion
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-acb9370672b586eec3d872df165a34ac3ad5df6e@sha256:1ad81f0ec02b843a2697e09ef9bd622d26be24c15154d992af479d062a75659d
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-0f8b45d40c832a73ae3e7f3a8cfe695368f2537c@sha256:ebb55a135a7d392686e6ab110758c87d046bd8d8f3d4695264ec04c8d109388d
           command:
             - /opt/data/scripts/android-companion
           env:
@@ -647,7 +647,7 @@ spec:
               drop:
                 - ALL
         - name: android-viewer
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-acb9370672b586eec3d872df165a34ac3ad5df6e@sha256:9dc33dda0606ae13a806abb30d0b84a0796af7f97c9e6b0f27bdf3a71b4894f2
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-0f8b45d40c832a73ae3e7f3a8cfe695368f2537c@sha256:9dc33dda0606ae13a806abb30d0b84a0796af7f97c9e6b0f27bdf3a71b4894f2
           command:
             - android-viewer
           env:

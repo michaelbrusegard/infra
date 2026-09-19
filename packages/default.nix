@@ -1,6 +1,7 @@
 {pkgs}:
 pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
   betterbird = pkgs.callPackage ./betterbird {};
+  chatgpt-desktop = pkgs.callPackage ./chatgpt-desktop {};
   chromium-seccomp-profile = pkgs.callPackage ./chromium-seccomp-profile {};
   smtp-edge-image = pkgs.callPackage ./smtp-edge/image.nix {};
   stalwart-oss = pkgs.callPackage ./stalwart-oss {};

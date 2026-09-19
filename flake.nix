@@ -103,6 +103,10 @@
       url = "github:getpaseo/paseo/v0.5.2";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+    t3code = {
+      url = "github:omarcresp/t3code-flake";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
     zen-browser = {
       url = "github:0xc000022070/zen-browser-flake";
       inputs = {
@@ -226,7 +230,10 @@
     packages = lib.forAllSystems (
       system:
         (import ./packages {
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfreePredicate = pkg: nixpkgs.lib.getName pkg == "chatgpt-desktop";
+          };
         })
         // secretsTools.${system}
     );

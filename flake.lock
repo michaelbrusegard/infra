@@ -1214,6 +1214,7 @@
         "quickshell": "quickshell_2",
         "secrets": "secrets",
         "sops-nix": "sops-nix",
+        "t3code": "t3code",
         "treefmt-nix": "treefmt-nix",
         "yazi": "yazi",
         "zen-browser": "zen-browser"
@@ -1345,6 +1346,26 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "t3code": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789799394,
+        "narHash": "sha256-F9w2wVft0epDKVlWT+3TFdCC14IemtllqCptL62UXUY=",
+        "owner": "omarcresp",
+        "repo": "t3code-flake",
+        "rev": "d8e35d837517d24d0bf1ceb004fadf4b6bf76bb3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "omarcresp",
+        "repo": "t3code-flake",
         "type": "github"
       }
     },

@@ -23,7 +23,7 @@ in {
     neovim-unwrapped
     vimPlugins
     pi-coding-agent
-    t3code
+    chatgpt
     uv
     ty
     oxlint
@@ -40,18 +40,40 @@ in {
     nextcloud-client
     nextcloud-talk-desktop
     signal-desktop
+    gh-eco
+    gh-dash
+    gh-skyline
     ;
 
-  # claude-fable-5-1 requires Claude Code 2.1.251 or newer, while
-  # nixpkgs-unstable is still on 2.1.245.
+  gh-poi = pkgs-unstable.gh-poi.overrideAttrs {
+    version = "0.18.4";
+    src = prev.fetchFromGitHub {
+      owner = "seachicken";
+      repo = "gh-poi";
+      rev = "v0.18.4";
+      hash = "sha256-L4FL9FJMojBdHmsWCIPTtWLoIDeZSU1Kt52URmS8PTw=";
+    };
+  };
+
+  gh-stack = pkgs-unstable.gh-stack.overrideAttrs {
+    version = "0.1.1";
+    src = prev.fetchFromGitHub {
+      owner = "github";
+      repo = "gh-stack";
+      tag = "v0.1.1";
+      hash = "sha256-jwfqiCnCOOW0AKA52hbgvCCoLzfFX+QfM+vXABkzZgw=";
+    };
+  };
+
+  # Keep Claude Code current while nixpkgs-unstable is still on 2.1.245.
   claude-code = pkgs-unstable.claude-code.override {
     manifest = {
-      version = "2.1.258";
+      version = "2.1.278";
       platforms = {
-        "darwin-arm64".checksum = "b63136194160791c27cfa7b0403060d85eb0752991625fde8c09f9acacb17c78";
-        "darwin-x64".checksum = "c857db5cd712865623bd61e806cf3f7e8e279c9e5c7c0af5eca06ca6717fc7fb";
-        "linux-arm64".checksum = "43dc490af55262edcb3e9b1cb315de22cc09ccb08bd52a4c39bc5eabaa63100f";
-        "linux-x64".checksum = "704f1334ac65d3e89e1c6c1d7663293ad786a6166afdb71b5075337df630f976";
+        "darwin-arm64".checksum = "bd245662fb8a0e321b3bf133e930371d6563c387527885f30b2613aef3ba14d6";
+        "darwin-x64".checksum = "c522425e3d42275d2ac2238757ef8ba7f80d165a934044ec5a7a5fd7d7b9950b";
+        "linux-arm64".checksum = "7de6cab134e48321148e30182c98614118e8f4666819412bead45865190b34ed";
+        "linux-x64".checksum = "5c4735937844e84f8a93306e841a5b0e12252909b07870f789b190468da147ab";
       };
     };
   };
