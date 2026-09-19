@@ -19,6 +19,8 @@ patches:
       metadata:
         name: manafishrov-rustfs
       spec:
+        # Review provider upgrades before changing company IAM resources.
+        approvePlan: ""
         path: ./tofu/rustfs
         backendConfig:
           secretSuffix: manafishrov-rustfs
@@ -29,6 +31,12 @@ patches:
         # this stack's runner 4Gi; the nodes have ample headroom.
         runnerPodTemplate:
           spec:
+            # RustFS exposes the MinIO v3 admin API. Newer madmin-go clients
+            # default to v4 and only fall back on HTTP 426, which RustFS does
+            # not return for unsupported routes.
+            env:
+              - name: MADMIN_API_VERSION
+                value: v3
             resources:
               requests:
                 cpu: 100m

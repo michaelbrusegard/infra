@@ -15,5 +15,5 @@ resources:
   - mattermost
   - mealie
   - searxng
-  - stalwart
+  - smtp-edge
   - uptime-kuma

@@ -153,13 +153,14 @@ def start_mail(server, *, oidc_admin_group=None):
     raise AssertionError("Normal-mode management listener not ready")
 
 
-def management_account(server, client, domain_id):
+def management_account(server, client, domain_id, *, native_scim=True):
     permissions = [
         "authenticate",
         "impersonate",
-        "scimAccess",
         "actionReloadSettings",
     ]
+    if native_scim:
+        permissions.append("scimAccess")
     for kind, verbs in {
         "Account": ("Get", "Query", "Create", "Update", "Destroy"),
         "Domain": ("Get", "Query"),
@@ -197,7 +198,9 @@ def management_account(server, client, domain_id):
     return uid, auth, email
 
 
-def configure_backend(server, client, domain="mail.test"):
+def configure_backend(
+    server, client, domain="mail.test", *, native_scim=True, lmtp_address=None
+):
     """Configure a fresh native Server; caller starts/stops it and owns its root.
 
     Return dict: server/client/domain, ports (smtp/lmtp/imap), context,
@@ -230,7 +233,7 @@ def configure_backend(server, client, domain="mail.test"):
         "Domain",
         {
             "name": domain,
-            "allowScimProvisioning": True,
+            **({"allowScimProvisioning": True} if native_scim else {}),
             "certificateManagement": {"@type": "Manual"},
             "dkimManagement": {"@type": "Manual"},
             "dnsManagement": {"@type": "Manual"},
@@ -247,13 +250,16 @@ def configure_backend(server, client, domain="mail.test"):
     )
     ports = {name: port() for name in ("smtp", "lmtp", "imap")}
     for name, number in ports.items():
+        bind = {f"127.0.0.1:{number}": True}
+        if name == "lmtp" and lmtp_address is not None:
+            bind[f"{lmtp_address}:{number}"] = True
         create(
             client,
             "NetworkListener",
             {
                 "name": "fixture-" + name,
                 "protocol": name,
-                "bind": {f"127.0.0.1:{number}": True},
+                "bind": bind,
                 "useTls": True,
                 "tlsImplicit": True,
             },
@@ -334,7 +340,9 @@ def configure_backend(server, client, domain="mail.test"):
             "useTls": False,
         },
     )
-    admin_id, auth, admin_email = management_account(server, client, domain_id)
+    admin_id, auth, admin_email = management_account(
+        server, client, domain_id, native_scim=native_scim
+    )
     reload(client)
     client.recovery = auth
     start_mail(server)

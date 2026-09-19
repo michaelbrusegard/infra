@@ -1,22 +1,18 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: stalwart-edge
-  namespace: stalwart-edge
+  name: smtp-edge
+  namespace: smtp-edge
 spec:
   endpointSelector:
     matchLabels:
-      app: stalwart-edge
+      app: smtp-edge
   ingress:
-    - fromEntities:
-        - host
-        - remote-node
-      toPorts:
-        - ports:
-            - port: "25"
-              protocol: TCP
+    # Public SMTP only; preserve the peer address with Service Local policy.
     - fromEntities:
         - world
+        - host
+        - remote-node
       toPorts:
         - ports:
             - port: "25"
@@ -33,6 +29,7 @@ spec:
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
       toPorts:
         - ports:
             - port: "53"
@@ -41,11 +38,11 @@ spec:
               protocol: TCP
           rules:
             dns:
+              # Includes resolver search paths; only cluster DNS is reachable.
               - matchPattern: "*"
+    # DNS resolves the private Service, but authorization is by pod identity.
+    # Do not add a backend FQDN/world fallback that bypasses this restriction.
     - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: stalwart
-            k8s:app: stalwart
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: manafishrov-stalwart
             k8s:app: stalwart
@@ -53,15 +50,14 @@ spec:
         - ports:
             - port: "24"
               protocol: TCP
-            - port: "443"
-              protocol: TCP
-    - toEntities:
-        - world
-      toPorts:
-        - ports:
             - port: "25"
               protocol: TCP
-            - port: "443"
+            - port: "26"
               protocol: TCP
-            - port: "80"
+    - toFQDNs:
+        - matchName: smtp.resend.com
+      toPorts:
+        - ports:
+            - port: "465"
               protocol: TCP
+    # No management API, JMAP, HTTPS, arbitrary SMTP or DNSBL egress.

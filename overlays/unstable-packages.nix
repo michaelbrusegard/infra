@@ -23,6 +23,7 @@ in {
     neovim-unwrapped
     vimPlugins
     pi-coding-agent
+    t3code
     uv
     ty
     oxlint
@@ -39,7 +40,30 @@ in {
     nextcloud-client
     nextcloud-talk-desktop
     signal-desktop
+    gh-eco
+    gh-dash
+    gh-skyline
     ;
+
+  gh-poi = pkgs-unstable.gh-poi.overrideAttrs {
+    version = "0.18.4";
+    src = prev.fetchFromGitHub {
+      owner = "seachicken";
+      repo = "gh-poi";
+      rev = "v0.18.4";
+      hash = "sha256-L4FL9FJMojBdHmsWCIPTtWLoIDeZSU1Kt52URmS8PTw=";
+    };
+  };
+
+  gh-stack = pkgs-unstable.gh-stack.overrideAttrs {
+    version = "0.1.1";
+    src = prev.fetchFromGitHub {
+      owner = "github";
+      repo = "gh-stack";
+      tag = "v0.1.1";
+      hash = "sha256-jwfqiCnCOOW0AKA52hbgvCCoLzfFX+QfM+vXABkzZgw=";
+    };
+  };
 
   # claude-fable-5-1 requires Claude Code 2.1.251 or newer, while
   # nixpkgs-unstable is still on 2.1.245.

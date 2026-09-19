@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: smtp-edge-internal
+  namespace: smtp-edge
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ipFamilyPolicy: PreferDualStack
+  publishNotReadyAddresses: false
+  selector:
+    app: smtp-edge
+  ports:
+    - name: smtp
+      port: 25
+      targetPort: smtp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smtp-edge
+  namespace: smtp-edge
+  annotations:
+    lbipam.cilium.io/ips: 10.0.188.12,fd7a:115c:a1e0:188::12
+    # Internal k8s-gateway name; MX and router DDNS remain unchanged.
+    external-dns.alpha.kubernetes.io/hostname: edge.asgard.michaelbrusegard.com
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  publishNotReadyAddresses: false
+  selector:
+    app: smtp-edge
+  ports:
+    - name: smtp-public
+      port: 25
+      targetPort: smtp

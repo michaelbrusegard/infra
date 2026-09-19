@@ -1,26 +1,22 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: stalwart-edge-reconciler
-  namespace: stalwart-edge
+  name: stalwart-reconciler
+  namespace: stalwart
 data:
   reconciler.sh: |
     #!/bin/sh
     set -u
 
-    log() { printf '[edge-reconciler %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
+    log() { printf '[reconciler %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 
     : "${STALWART_CLI_VERSION:?}"
     : "${STALWART_ADMIN_PASSWORD:?}"
     : "${STALWART_RECOVERY_ADMIN:?}"
-    : "${STALWART_PERSONAL_SYNC_TOKEN:?}"
-    : "${STALWART_MANAFISH_SYNC_TOKEN:?}"
-    : "${PERSONAL_SYNC_URL:?}"
-    : "${PERSONAL_SYNC_DOMAIN:?}"
-    : "${MANAFISH_SYNC_URL:?}"
-    : "${MANAFISH_SYNC_DOMAIN:?}"
+    : "${STALWART_RESEND_API_KEY:?}"
+    : "${STALWART_MAIL_MASTER_PASSWORD:?}"
 
-    apk add --no-cache curl xz python3 gettext procps ca-certificates su-exec >/dev/null
+    apk add --no-cache curl xz python3 gettext procps ca-certificates >/dev/null
 
     if [ ! -x /usr/local/bin/stalwart-cli ]; then
       ARCH=$(uname -m)
@@ -34,10 +30,6 @@ data:
         | tar -xJ -C /usr/local/bin/ --strip-components=1 "stalwart-cli-${TARGET}/stalwart-cli"
       chmod +x /usr/local/bin/stalwart-cli
     fi
-
-    install -d -o 2000 -g 2000 -m 0770 /var/lib/stalwart/routing /tmp/edge-sync
-    su-exec 2000:2000 env HOME=/tmp/edge-sync XDG_CACHE_HOME=/tmp/edge-sync/cache \
-      python3 /sync/sync.py --init
 
     export STALWART_URL=http://localhost:8080
     MARKER=/var/lib/stalwart/.bootstrapped
@@ -58,7 +50,7 @@ data:
     resolve_creds() {
       if [ -f "$MARKER" ]; then
         MODE=reconcile
-        export STALWART_USER=infra@edge.asgard.michaelbrusegard.com
+        export STALWART_USER=infra@michaelbrusegard.com
         export STALWART_PASSWORD="$STALWART_ADMIN_PASSWORD"
       else
         MODE=bootstrap
@@ -71,103 +63,103 @@ data:
       jsonenc() { printf '%s' "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
       ADMIN_LOCAL_JSON=$(jsonenc "infra")
       ADMIN_PASSWORD_JSON=$(jsonenc "$STALWART_ADMIN_PASSWORD")
-      export ADMIN_LOCAL_JSON ADMIN_PASSWORD_JSON
+      RESEND_API_KEY_JSON=$(jsonenc "$STALWART_RESEND_API_KEY")
+      MAIL_MASTER_PASSWORD_JSON=$(jsonenc "$STALWART_MAIL_MASTER_PASSWORD")
+      export ADMIN_LOCAL_JSON ADMIN_PASSWORD_JSON \
+             RESEND_API_KEY_JSON MAIL_MASTER_PASSWORD_JSON
 
       : > /tmp/plan.raw.ndjson
       for f in /plan/*.ndjson.tmpl; do
-        envsubst '${ADMIN_LOCAL_JSON} ${ADMIN_PASSWORD_JSON}' < "$f" >> /tmp/plan.raw.ndjson
+        envsubst '${ADMIN_LOCAL_JSON} ${ADMIN_PASSWORD_JSON} ${RESEND_API_KEY_JSON} ${MAIL_MASTER_PASSWORD_JSON}' < "$f" >> /tmp/plan.raw.ndjson
         printf '\n' >> /tmp/plan.raw.ndjson
       done
     }
 
+    # stalwart-cli assigns its own ids on create, so plan aliases don't
+    # become stored ids. To make subsequent applies idempotent we match
+    # each desired object against live state by its natural key, then
+    # emit `update` with the live id (+ refs in the spec rewritten to
+    # live ids). Objects with no natural key fall through as `create`.
     rewrite_plan() {
       python3 - <<'PY'
-    import json
-    import subprocess
+    import json, subprocess, sys
 
-    UPDATE_STRIP_FIELDS = ('name', 'credentials')
+    # `name` is read-only after create on several types and is also the
+    # natural key so it doesn't belong in updates anyway. `credentials`
+    # plaintext is hashed only on create; sending it again on update
+    # appears to store it verbatim, breaking subsequent auth - strip it
+    # so the create-time hash survives. Password rotation is then via
+    # admin UI or a direct one-off `stalwart-cli apply` update. An explicit
+    # empty map is safe to retain: it revokes credentials rather than hashing.
+    UPDATE_STRIP_FIELDS = ('name',)
+
     QUERY_FIELDS = {
         'Certificate': 'id,certificate',
-        'Directory': 'id,@type,description,store',
-        'Application': 'id,resourceUrl',
-        'Tracer': 'id,@type',
+        'Directory':   'id,issuerUrl',
+        'Tracer':      'id,@type',
     }
-    LIVE_TYPES = (
-        'Domain', 'NetworkListener', 'MtaRoute', 'Account', 'Certificate',
-        'Directory', 'Application', 'Tracer',
-    )
+
+    LIVE_TYPES = ('Domain', 'NetworkListener', 'MtaRoute',
+                  'Account', 'DkimSignature', 'Certificate',
+                  'Directory', 'Tracer')
 
     def query_live(obj_type):
         args = ['stalwart-cli', 'query', obj_type, '--json']
         fields = QUERY_FIELDS.get(obj_type)
         if fields:
             args += ['--fields', fields]
-        result = subprocess.run(args, capture_output=True, text=True)
-        if result.returncode != 0:
+        r = subprocess.run(args, capture_output=True, text=True)
+        if r.returncode != 0:
             return []
-        objects = []
-        for line in result.stdout.splitlines():
+        out = []
+        for line in r.stdout.splitlines():
             line = line.strip()
-            if not line:
-                continue
-            try:
-                objects.append(json.loads(line))
-            except json.JSONDecodeError:
-                pass
-        return objects
+            if line:
+                try: out.append(json.loads(line))
+                except: pass
+        return out
 
-    with open('/tmp/plan.raw.ndjson') as handle:
-        plan_ops = [json.loads(line) for line in handle if line.strip()]
+    with open('/tmp/plan.raw.ndjson') as fh:
+        plan_ops = [json.loads(l) for l in fh if l.strip()]
 
+    # Pass 1: plan-side alias -> domain name (Domain creates only).
     plan_domain_name_by_alias = {}
     for op in plan_ops:
         if op.get('@type') == 'create' and op.get('object') == 'Domain':
             for alias, spec in op.get('value', {}).items():
                 plan_domain_name_by_alias[alias.lstrip('#')] = spec.get('name')
 
-    live_domain_id_by_name = {
-        domain.get('name'): domain['id']
-        for domain in query_live('Domain')
-        if domain.get('name')
-    }
+    # Pass 2: live state per relevant type, indexed by natural key.
+    live_domain_id_by_name = {d.get('name'): d['id'] for d in query_live('Domain') if d.get('name')}
     alias_to_live_domain_id = {
-        alias: live_domain_id_by_name[name]
-        for alias, name in plan_domain_name_by_alias.items()
-        if name in live_domain_id_by_name
+        a: live_domain_id_by_name[n]
+        for a, n in plan_domain_name_by_alias.items()
+        if n in live_domain_id_by_name
     }
 
-    plan_directory_key_by_alias = {}
-    for op in plan_ops:
-        if op.get('@type') == 'create' and op.get('object') == 'Directory':
-            for alias, spec in op.get('value', {}).items():
-                plan_directory_key_by_alias[alias.lstrip('#')] = spec.get('description')
-
-    plan_certificate_key_by_alias = {}
-    for op in plan_ops:
-        if op.get('@type') == 'create' and op.get('object') == 'Certificate':
-            for alias, spec in op.get('value', {}).items():
-                certificate = spec.get('certificate') or {}
-                plan_certificate_key_by_alias[alias.lstrip('#')] = certificate.get('filePath')
-
-    def natural_key(obj_type, spec, *, is_plan_spec):
+    def natural_key(obj_type, spec_or_live, *, is_plan_spec):
         if obj_type in ('Domain', 'NetworkListener', 'MtaRoute'):
-            return spec.get('name')
+            return spec_or_live.get('name')
         if obj_type == 'Account':
             if is_plan_spec:
-                alias = (spec.get('domainId') or '').lstrip('#')
-                return f"{spec.get('name')}@{alias_to_live_domain_id.get(alias, alias)}"
-            email = spec.get('emailAddress', '')
+                alias = (spec_or_live.get('domainId') or '').lstrip('#')
+                return f"{spec_or_live.get('name')}@{alias_to_live_domain_id.get(alias, alias)}"
+            email = spec_or_live.get('emailAddress', '')
             local, _, domain_name = email.partition('@')
             domain_id = live_domain_id_by_name.get(domain_name)
             return f"{local}@{domain_id}" if domain_id else email
+        if obj_type == 'DkimSignature':
+            if is_plan_spec:
+                alias = (spec_or_live.get('domainId') or '').lstrip('#')
+                return f"{spec_or_live.get('selector')}@{alias_to_live_domain_id.get(alias, alias)}"
+            return f"{spec_or_live.get('selector')}@{spec_or_live.get('domainId')}"
         if obj_type == 'Certificate':
-            return (spec.get('certificate') or {}).get('filePath')
+            cert = spec_or_live.get('certificate') or {}
+            return cert.get('filePath')
         if obj_type == 'Directory':
-            return spec.get('description')
-        if obj_type == 'Application':
-            return spec.get('resourceUrl')
+            return spec_or_live.get('issuerUrl')
         if obj_type == 'Tracer':
-            return spec.get('@type')
+            return spec_or_live.get('@type')
         return None
 
     live_id_by_key = {}
@@ -177,37 +169,21 @@ data:
             if key is not None:
                 live_id_by_key[(obj_type, key)] = obj['id']
 
-    alias_to_live_directory_id = {
-        alias: live_id_by_key[('Directory', key)]
-        for alias, key in plan_directory_key_by_alias.items()
-        if ('Directory', key) in live_id_by_key
-    }
-    alias_to_live_certificate_id = {
-        alias: live_id_by_key[('Certificate', key)]
-        for alias, key in plan_certificate_key_by_alias.items()
-        if ('Certificate', key) in live_id_by_key
-    }
-    alias_to_live_id = (
-        alias_to_live_domain_id
-        | alias_to_live_directory_id
-        | alias_to_live_certificate_id
-    )
-
     def resolve_refs(node):
         if isinstance(node, str):
             if node.startswith('#'):
-                return alias_to_live_id.get(node[1:], node)
+                return alias_to_live_domain_id.get(node[1:], node)
             return node
         if isinstance(node, dict):
-            return {key: resolve_refs(value) for key, value in node.items()}
+            return {k: resolve_refs(v) for k, v in node.items()}
         if isinstance(node, list):
-            return [resolve_refs(value) for value in node]
+            return [resolve_refs(v) for v in node]
         return node
 
-    output = []
+    out_lines = []
     for op in plan_ops:
         if op.get('@type') != 'create':
-            output.append(json.dumps(resolve_refs(op)))
+            out_lines.append(json.dumps(op))
             continue
         obj_type = op['object']
         remaining = {}
@@ -217,9 +193,11 @@ data:
             if live_id:
                 value = resolve_refs(spec)
                 if isinstance(value, dict):
-                    for field in UPDATE_STRIP_FIELDS:
-                        value.pop(field, None)
-                output.append(json.dumps({
+                    for f in UPDATE_STRIP_FIELDS:
+                        value.pop(f, None)
+                    if value.get('credentials') != {}:
+                        value.pop('credentials', None)
+                out_lines.append(json.dumps({
                     '@type': 'update',
                     'object': obj_type,
                     'id': live_id,
@@ -228,14 +206,14 @@ data:
             else:
                 remaining[alias] = resolve_refs(spec)
         if remaining:
-            output.append(json.dumps({
+            out_lines.append(json.dumps({
                 '@type': 'create',
                 'object': obj_type,
                 'value': remaining,
             }))
 
-    with open('/tmp/plan.final.ndjson', 'w') as handle:
-        handle.write('\n'.join(output) + '\n')
+    with open('/tmp/plan.final.ndjson', 'w') as fh:
+        fh.write('\n'.join(out_lines) + '\n')
     PY
     }
 
@@ -246,24 +224,13 @@ data:
 
     post_bootstrap() {
       touch "$MARKER"
+      # shareProcessNamespace=true exposes the main container's pid to us.
       pkill -TERM -f '/usr/local/bin/stalwart' || true
       sleep 5
       wait_for_stalwart || log "stalwart did not return after restart"
     }
 
-    sync_recipients() {
-      if su-exec 2000:2000 env HOME=/tmp/edge-sync XDG_CACHE_HOME=/tmp/edge-sync/cache \
-        python3 /sync/sync.py --once; then
-        log "recipient directory synchronized"
-      else
-        log "one or more recipient sources failed; retaining last-known rows"
-      fi
-      if ! stalwart-cli create action/invalidate-caches >/dev/null; then
-        log "could not invalidate recipient caches"
-      fi
-    }
-
-    log "edge reconciler starting"
+    log "reconciler starting"
     if ! wait_for_stalwart; then
       log "stalwart never came up; exiting"
       exit 1
@@ -276,8 +243,6 @@ data:
         if [ "$MODE" = bootstrap ]; then
           log "bootstrap complete; signalling main restart"
           post_bootstrap
-        else
-          sync_recipients
         fi
       else
         log "apply had non-zero exit (drift or schema issue)"

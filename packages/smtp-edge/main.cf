@@ -1,0 +1,79 @@
+compatibility_level = 3.11
+mail_owner = postfix
+setgid_group = postdrop
+default_privs = nobody
+queue_directory = /var/lib/postfix/queue
+data_directory = /var/lib/postfix/data
+maillog_file = /dev/stdout
+inet_interfaces = all
+inet_protocols = all
+mydestination =
+mynetworks =
+relay_domains = manafishrov.com
+parent_domain_matches_subdomains =
+relay_recipient_maps =
+local_recipient_maps =
+virtual_alias_domains =
+virtual_alias_maps =
+virtual_mailbox_domains =
+alias_maps =
+alias_database =
+canonical_maps =
+recipient_canonical_maps =
+recipient_delimiter =
+enable_original_recipient = yes
+smtputf8_enable = yes
+message_size_limit = 104857600
+
+smtpd_relay_before_recipient_restrictions = yes
+smtpd_relay_restrictions = check_recipient_access regexp:/etc/postfix/served-domains, reject_unauth_destination
+smtpd_reject_unlisted_recipient = yes
+smtpd_recipient_restrictions = reject_unverified_recipient
+smtpd_sasl_auth_enable = no
+smtpd_helo_required = yes
+disable_vrfy_command = yes
+smtpd_tls_security_level = may
+
+relay_transport = forward
+forward_destination_recipient_limit = 1
+forward_destination_concurrency_limit = 2
+local_transport = error:local delivery disabled
+virtual_transport = error:virtual delivery disabled
+
+# Finite optimistic cache: failed refreshes do not revoke unexpired positives.
+address_verify_map = lmdb:$data_directory/verify_cache
+address_verify_sender = <>
+address_verify_positive_expire_time = 1h
+address_verify_positive_refresh_time = 1m
+address_verify_negative_expire_time = 1m
+address_verify_negative_refresh_time = 15s
+address_verify_cache_cleanup_interval = 1m
+address_verify_pending_request_limit = 100
+address_verify_poll_count = 3
+address_verify_poll_delay = 1s
+unverified_recipient_defer_code = 451
+unverified_recipient_reject_code = 550
+unverified_recipient_tempfail_action = defer
+lmtp_address_verify_target = rcpt
+lmtp_tls_wrappermode = yes
+lmtp_tls_security_level = secure
+lmtp_tls_policy_maps = lmdb:/etc/postfix/lmtp-tls
+lmtp_sasl_auth_enable = no
+lmtp_fallback_relay =
+
+# Only locally generated mail can reach this route; SMTP relaying is forbidden.
+default_transport = smtp
+relayhost = [smtp.resend.com]:465
+smtp_fallback_relay =
+smtp_tls_wrappermode = yes
+smtp_tls_security_level = secure
+smtp_tls_secure_cert_match = nexthop
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = lmdb:/etc/postfix/sasl-passwd
+smtp_sasl_security_options = noanonymous
+smtp_sasl_tls_security_options = noanonymous
+
+maximal_queue_lifetime = 5d
+bounce_queue_lifetime = 5d
+import_environment = MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C POSTLOG_SERVICE POSTLOG_HOSTNAME PATH=/bin
+export_environment = TZ MAIL_CONFIG LANG PATH

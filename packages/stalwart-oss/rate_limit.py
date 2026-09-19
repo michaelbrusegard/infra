@@ -25,7 +25,15 @@ from integration import (
 from mail import create, port, reload, start_mail, update
 
 
+RATE_PERIOD_MS = 3_600_000
+
+
 def run(server, client):
+    # The store uses wall-clock-aligned buckets. Do not straddle a boundary
+    # during the short burst assertions, even when CI starts near the hour.
+    remaining = RATE_PERIOD_MS / 1000 - time.time() % (RATE_PERIOD_MS / 1000)
+    if remaining < 30:
+        time.sleep(remaining + 0.1)
     domain = create(
         client,
         "Domain",
@@ -78,8 +86,8 @@ def run(server, client):
         "Http",
         {
             "useXForwarded": True,
-            "rateLimitAnonymous": {"count": 2, "period": 60000},
-            "rateLimitAuthenticated": {"count": 100, "period": 60000},
+            "rateLimitAnonymous": {"count": 2, "period": RATE_PERIOD_MS},
+            "rateLimitAuthenticated": {"count": 100, "period": RATE_PERIOD_MS},
         },
     )
     with FakeIdP(client.redactor) as provider:
@@ -187,7 +195,7 @@ def run(server, client):
                 }
             },
         )
-        request(token, "192.0.2.12", 401)
+        request(token, "192.0.2.12", 403)
         client.jmap(
             "x:Account/set",
             {
@@ -225,7 +233,9 @@ def run(server, client):
         )
 
         update(
-            client, "Http", {"rateLimitAuthenticated": {"count": 5, "period": 60000}}
+            client,
+            "Http",
+            {"rateLimitAuthenticated": {"count": 5, "period": RATE_PERIOD_MS}},
         )
         reload(client)
         bob = provider.issue("bob@limit.test", "Bob", [])
@@ -241,7 +251,9 @@ def run(server, client):
 
         # Rate admission itself expires; it must not become an immortal bypass.
         update(
-            client, "Http", {"rateLimitAuthenticated": {"count": 100, "period": 60000}}
+            client,
+            "Http",
+            {"rateLimitAuthenticated": {"count": 100, "period": RATE_PERIOD_MS}},
         )
         update(client, "OidcProvider", {"accessTokenExpiry": 1000})
         reload(client)

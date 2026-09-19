@@ -1,0 +1,3066 @@
+{
+  "SpamTag": [
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "ABUSE_FROM_INJECTOR"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "ABUSE_SURBL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "ARC_ALLOW"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "ARC_DNSFAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "ARC_INVALID"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "ARC_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "ARC_REJECT"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "ARC_SIGNED"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "AUTH_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "AUTH_NA_OR_FAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "AUTOGEN_PHP_SPAMMY"
+    },
+    {
+      "@type": "Score",
+      "score": 3.5,
+      "tag": "BAD_CTE_7BIT"
+    },
+    {
+      "@type": "Reject",
+      "tag": "BLOCKED_DOMAIN"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "BODY_URI_ONLY"
+    },
+    {
+      "@type": "Score",
+      "score": 10.0,
+      "tag": "BOGUS_ENCRYPTED_AND_TEXT"
+    },
+    {
+      "@type": "Score",
+      "score": -0.1,
+      "tag": "BOUNCE"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "BOUNCE_NO_AUTH"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "BROKEN_CONTENT_TYPE"
+    },
+    {
+      "@type": "Score",
+      "score": 7.0,
+      "tag": "COMPLETELY_EMPTY"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "COMPROMISED_ACCT_BULK"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "CRACKED_SURBL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "CTE_CASE"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "CTYPE_MISSING_DISPOSITION"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "CTYPE_MIXED_BOGUS"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "CT_EXTRA_SEMI"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "DATA_URI_OBFU"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "DATE_IN_FUTURE"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "DATE_IN_PAST"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "DBL_ABUSE"
+    },
+    {
+      "@type": "Score",
+      "score": 6.5,
+      "tag": "DBL_ABUSE_BOTNET"
+    },
+    {
+      "@type": "Score",
+      "score": 6.5,
+      "tag": "DBL_ABUSE_MALWARE"
+    },
+    {
+      "@type": "Score",
+      "score": 6.5,
+      "tag": "DBL_ABUSE_PHISH"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "DBL_ABUSE_REDIR"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DBL_BLOCKED"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DBL_BLOCKED_OPENRESOLVER"
+    },
+    {
+      "@type": "Score",
+      "score": 7.5,
+      "tag": "DBL_BOTNET"
+    },
+    {
+      "@type": "Score",
+      "score": 7.5,
+      "tag": "DBL_MALWARE"
+    },
+    {
+      "@type": "Score",
+      "score": 7.5,
+      "tag": "DBL_PHISH"
+    },
+    {
+      "@type": "Score",
+      "score": 4.5,
+      "tag": "DBL_SPAM"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "DCC_BULK"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "DIRECT_TO_MX"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DISPOSABLE_CC"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "DISPOSABLE_DNT"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DISPOSABLE_ENV_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DISPOSABLE_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DISPOSABLE_REPLYTO"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DISPOSABLE_TO"
+    },
+    {
+      "@type": "Score",
+      "score": -0.2,
+      "tag": "DKIM_ALLOW"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DKIM_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DKIM_PERMFAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "DKIM_REJECT"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DKIM_SIGNED"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DKIM_TEMPFAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "DMARC_BAD_POLICY"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DMARC_DNSFAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "DMARC_NA"
+    },
+    {
+      "@type": "Score",
+      "score": -0.5,
+      "tag": "DMARC_POLICY_ALLOW"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DMARC_POLICY_ALLOW_WITH_FAILURES"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "DMARC_POLICY_QUARANTINE"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "DMARC_POLICY_REJECT"
+    },
+    {
+      "@type": "Score",
+      "score": 0.1,
+      "tag": "DMARC_POLICY_SOFTFAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DNSWL_BLOCKED"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DWL_DNSWL_BLOCKED"
+    },
+    {
+      "@type": "Score",
+      "score": -3.5,
+      "tag": "DWL_DNSWL_HI"
+    },
+    {
+      "@type": "Score",
+      "score": -1.0,
+      "tag": "DWL_DNSWL_LOW"
+    },
+    {
+      "@type": "Score",
+      "score": -2.0,
+      "tag": "DWL_DNSWL_MED"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "DWL_DNSWL_NONE"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "EMPTY_SUBJECT"
+    },
+    {
+      "@type": "Score",
+      "score": -0.5,
+      "tag": "ENCRYPTED_PGP"
+    },
+    {
+      "@type": "Score",
+      "score": -0.5,
+      "tag": "ENCRYPTED_SMIME"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "ENV_FROM_INVALID"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "EXT_CSS"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "FAKE_REPLY"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "FORGED_RCVD_TRAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "FORGED_RECIPIENTS"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FORGED_RECIPIENTS_MAILLIST"
+    },
+    {
+      "@type": "Score",
+      "score": 0.3,
+      "tag": "FORGED_SENDER"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FORGED_SENDER_MAILLIST"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "FREEMAIL_AFF"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FREEMAIL_CC"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FREEMAIL_DNT"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FREEMAIL_ENV_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FREEMAIL_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FREEMAIL_REPLY_TO"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "FREEMAIL_REPLY_TO_NEQ_FROM_DOM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FREEMAIL_TO"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "FROMHOST_NORES_A_OR_MX"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FROM_BOUNCE"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "FROM_DN_EQ_ADDR"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FROM_EQ_ENV_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "FROM_EXCESS_BASE64"
+    },
+    {
+      "@type": "Score",
+      "score": 1.2,
+      "tag": "FROM_EXCESS_QP"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FROM_HAS_DN"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "FROM_INVALID"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "FROM_NAME_EXCESS_SPACE"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "FROM_NAME_HAS_TITLE"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "FROM_NEEDS_ENCODING"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "FROM_NEQ_DISPLAY_NAME"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FROM_NEQ_ENV_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "FROM_NO_DN"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "FROM_SERVICE_ACCT"
+    },
+    {
+      "@type": "Score",
+      "score": 1000.0,
+      "tag": "GTUBE_TEST"
+    },
+    {
+      "@type": "Score",
+      "score": 4.5,
+      "tag": "HACKED_WP_PHISHING"
+    },
+    {
+      "@type": "Score",
+      "score": 0.1,
+      "tag": "HAS_ANON_DOMAIN"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_ATTACHMENT"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_DATA_URI"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "HAS_GOOGLE_FIREBASE_URL"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "HAS_GOOGLE_REDIR"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "HAS_GUC_PROXY_URI"
+    },
+    {
+      "@type": "Score",
+      "score": 6.0,
+      "tag": "HAS_IPFS_GATEWAY_URL"
+    },
+    {
+      "@type": "Score",
+      "score": -0.01,
+      "tag": "HAS_LIST_UNSUB"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_ONION_URI"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_PHPMAILER_SIG"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_REPLYTO"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_SEO_WORD"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_WP_URI"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_X_AS"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_X_GMSV"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_X_PRIO_FIVE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_X_PRIO_ONE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_X_PRIO_THREE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_X_PRIO_TWO"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "HAS_X_PRIO_ZERO"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "HEADER_EMPTY_DELIMITER"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "HEADER_FORGED_MDN"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "HEADER_RCONFIRM_MISMATCH"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "HELO_BAREIP"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "HELO_IPREV_MISMATCH"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "HELO_IP_A"
+    },
+    {
+      "@type": "Score",
+      "score": 0.3,
+      "tag": "HELO_NORES_A_OR_MX"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "HELO_NOT_FQDN"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "HIDDEN_SOURCE_OBJ"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "HOMOGRAPH_URL"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "HTML_META_REFRESH_URL"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "HTML_SHORT_LINK_IMG_1"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "HTML_SHORT_LINK_IMG_2"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "HTML_SHORT_LINK_IMG_3"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "HTML_TEXT_IMG_RATIO"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "HTML_UNBALANCED_TAG"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "HTTP_TO_HTTPS"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "HTTP_TO_IP"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "INFO_TO_INFO_LU"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "INVALID_DATE"
+    },
+    {
+      "@type": "Score",
+      "score": 6.0,
+      "tag": "INVALID_FROM_8BIT"
+    },
+    {
+      "@type": "Score",
+      "score": 1.7,
+      "tag": "INVALID_MSGID"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "KLMS_SPAM"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "LLM_COMMERCIAL_HIGH"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "LLM_COMMERCIAL_LOW"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "LLM_COMMERCIAL_MEDIUM"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "LLM_HARMFUL_HIGH"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "LLM_HARMFUL_LOW"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "LLM_HARMFUL_MEDIUM"
+    },
+    {
+      "@type": "Score",
+      "score": -3.0,
+      "tag": "LLM_LEGITIMATE_HIGH"
+    },
+    {
+      "@type": "Score",
+      "score": -0.5,
+      "tag": "LLM_LEGITIMATE_LOW"
+    },
+    {
+      "@type": "Score",
+      "score": -2.0,
+      "tag": "LLM_LEGITIMATE_MEDIUM"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "LLM_UNSOLICITED_HIGH"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "LLM_UNSOLICITED_LOW"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "LLM_UNSOLICITED_MEDIUM"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "LONG_SUBJ"
+    },
+    {
+      "@type": "Score",
+      "score": -0.2,
+      "tag": "MAILLIST"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MANY_INVISIBLE_PARTS"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "MID_BARE_IP"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MID_CONTAINS_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MID_CONTAINS_TO"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MID_MISSING_BRACKETS"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MID_RHS_IP_LITERAL"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MID_RHS_MATCH_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "MID_RHS_MATCH_FROMTLD"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MID_RHS_MATCH_TO"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "MID_RHS_NOT_FQDN"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "MID_RHS_WWW"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "MIME_ARCHIVE_IN_ARCHIVE"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MIME_BAD"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "MIME_BAD_ATTACHMENT"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "MIME_BAD_EXTENSION"
+    },
+    {
+      "@type": "Score",
+      "score": 8.0,
+      "tag": "MIME_BAD_EXT_WITH_BAD_UNICODE"
+    },
+    {
+      "@type": "Score",
+      "score": 8.0,
+      "tag": "MIME_BAD_UNICODE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.1,
+      "tag": "MIME_BASE64_TEXT"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MIME_BASE64_TEXT_BOGUS"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "MIME_DOUBLE_BAD_EXTENSION"
+    },
+    {
+      "@type": "Score",
+      "score": -0.1,
+      "tag": "MIME_GOOD"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "MIME_HEADER_CTYPE_ONLY"
+    },
+    {
+      "@type": "Score",
+      "score": 0.2,
+      "tag": "MIME_HTML_ONLY"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MIME_MA_MISSING_HTML"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "MIME_MA_MISSING_TEXT"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "MISSING_CHARSET"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "MISSING_DATE"
+    },
+    {
+      "@type": "Score",
+      "score": 7.0,
+      "tag": "MISSING_ESSENTIAL_HEADERS"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "MISSING_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 2.5,
+      "tag": "MISSING_MID"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "MISSING_MIME_VERSION"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "MISSING_SUBJECT"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "MISSING_TO"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "MIXED_CHARSET"
+    },
+    {
+      "@type": "Score",
+      "score": 7.0,
+      "tag": "MIXED_CHARSET_URL"
+    },
+    {
+      "@type": "Score",
+      "score": 7.5,
+      "tag": "MSBL_EBL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "MSBL_EBL_GREY"
+    },
+    {
+      "@type": "Score",
+      "score": 8.0,
+      "tag": "MULTIPLE_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 7.0,
+      "tag": "MULTIPLE_UNIQUE_HEADERS"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "MV_CASE"
+    },
+    {
+      "@type": "Score",
+      "score": 7.5,
+      "tag": "MW_SURBL_MULTI"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "NO_SPACE_IN_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "PARTS_DIFFER"
+    },
+    {
+      "@type": "Score",
+      "score": 7.0,
+      "tag": "PHISHED_OPENPHISH"
+    },
+    {
+      "@type": "Score",
+      "score": 7.0,
+      "tag": "PHISHED_PHISHTANK"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "PHISHING"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "PHISH_EMOTION"
+    },
+    {
+      "@type": "Score",
+      "score": 7.5,
+      "tag": "PH_SURBL_MULTI"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "PRECEDENCE_BULK"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "PREVIOUSLY_DELIVERED"
+    },
+    {
+      "@type": "Score",
+      "score": -8.0,
+      "tag": "PROB_HAM_HIGH"
+    },
+    {
+      "@type": "Score",
+      "score": -2.0,
+      "tag": "PROB_HAM_LOW"
+    },
+    {
+      "@type": "Score",
+      "score": -6.0,
+      "tag": "PROB_HAM_MEDIUM"
+    },
+    {
+      "@type": "Score",
+      "score": 8.0,
+      "tag": "PROB_SPAM_HIGH"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "PROB_SPAM_LOW"
+    },
+    {
+      "@type": "Score",
+      "score": 6.0,
+      "tag": "PROB_SPAM_MEDIUM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "PROB_SPAM_UNCERTAIN"
+    },
+    {
+      "@type": "Score",
+      "score": 3.5,
+      "tag": "PYZOR"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "RBL_BARRACUDA"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "RBL_BLOCKLISTDE"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "RBL_MAILSPIKE_BAD"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "RBL_MAILSPIKE_VERYBAD"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RBL_MAILSPIKE_WORST"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "RBL_SEM"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "RBL_SEM_IPV6"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RBL_SENDERSCORE_BLOCKED"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RBL_SENDERSCORE_BOT"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RBL_SENDERSCORE_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "RBL_SENDERSCORE_NA_BOT"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RBL_SENDERSCORE_PRST"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "RBL_SENDERSCORE_PRST_BOT"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RBL_SENDERSCORE_PRST_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "RBL_SENDERSCORE_PRST_NA_BOT"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "RBL_SENDERSCORE_REPUT_0"
+    },
+    {
+      "@type": "Score",
+      "score": 3.5,
+      "tag": "RBL_SENDERSCORE_REPUT_1"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "RBL_SENDERSCORE_REPUT_2"
+    },
+    {
+      "@type": "Score",
+      "score": 2.5,
+      "tag": "RBL_SENDERSCORE_REPUT_3"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RBL_SENDERSCORE_REPUT_4"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "RBL_SENDERSCORE_REPUT_5"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "RBL_SENDERSCORE_REPUT_6"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "RBL_SENDERSCORE_REPUT_7"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RBL_SENDERSCORE_REPUT_8"
+    },
+    {
+      "@type": "Score",
+      "score": -1.0,
+      "tag": "RBL_SENDERSCORE_REPUT_9"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RBL_SENDERSCORE_REPUT_BLOCKED"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RBL_SENDERSCORE_REPUT_UNKNOWN"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RBL_SENDERSCORE_SCORE"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RBL_SENDERSCORE_SCORE_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "RBL_SENDERSCORE_SCORE_PRST"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "RBL_SENDERSCORE_SCORE_PRST_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "RBL_SENDERSCORE_SCORE_SUS_ATT_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "RBL_SENDERSCORE_SUS_ATT"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "RBL_SENDERSCORE_SUS_ATT_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "RBL_SENDERSCORE_SUS_ATT_NA_BOT"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "RBL_SENDERSCORE_SUS_ATT_PRST_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 3.5,
+      "tag": "RBL_SENDERSCORE_SUS_ATT_PRST_NA_BOT"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "RBL_SPAMCOP"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RBL_SPAMHAUS_BLOCKED"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RBL_SPAMHAUS_BLOCKED_OPENRESOLVER"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RBL_SPAMHAUS_CSS"
+    },
+    {
+      "@type": "Score",
+      "score": 7.0,
+      "tag": "RBL_SPAMHAUS_DROP"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RBL_SPAMHAUS_PBL"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "RBL_SPAMHAUS_SBL"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "RBL_SPAMHAUS_XBL"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RBL_VIRUSFREE_BOTNET"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "RCPT_BOUNCEMOREONE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCPT_COUNT_FIVE"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "RCPT_COUNT_GT_50"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCPT_COUNT_ONE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCPT_COUNT_SEVEN"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCPT_COUNT_THREE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCPT_COUNT_TWELVE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCPT_COUNT_TWO"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCPT_COUNT_ZERO"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RCPT_DOMAIN_IN_MESSAGE"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RCPT_DOMAIN_IN_SUBJECT"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "RCPT_IN_SUBJECT"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RCPT_LOCAL_IN_SUBJECT"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCVD_COUNT_FIVE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCVD_COUNT_ONE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCVD_COUNT_SEVEN"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCVD_COUNT_THREE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCVD_COUNT_TWELVE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCVD_COUNT_TWO"
+    },
+    {
+      "@type": "Score",
+      "score": 0.1,
+      "tag": "RCVD_COUNT_ZERO"
+    },
+    {
+      "@type": "Score",
+      "score": -1.0,
+      "tag": "RCVD_DKIM_ARC_DNSWL_HI"
+    },
+    {
+      "@type": "Score",
+      "score": -0.5,
+      "tag": "RCVD_DKIM_ARC_DNSWL_MED"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RCVD_DOUBLE_IP_SPAM"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "RCVD_HELO_USER"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "RCVD_ILLEGAL_CHARS"
+    },
+    {
+      "@type": "Score",
+      "score": -0.5,
+      "tag": "RCVD_IN_DNSWL_HI"
+    },
+    {
+      "@type": "Score",
+      "score": -0.1,
+      "tag": "RCVD_IN_DNSWL_LOW"
+    },
+    {
+      "@type": "Score",
+      "score": -0.2,
+      "tag": "RCVD_IN_DNSWL_MED"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCVD_IN_DNSWL_NONE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.1,
+      "tag": "RCVD_NO_TLS_LAST"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCVD_TLS_ALL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCVD_TLS_LAST"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RCVD_UNAUTH_PBL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RCVD_VIA_SMTP_AUTH"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RDNS_DNSFAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "RDNS_NONE"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "RECEIVED_BLOCKLISTDE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RECEIVED_SPAMHAUS_BLOCKED"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "RECEIVED_SPAMHAUS_CSS"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RECEIVED_SPAMHAUS_PBL"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "RECEIVED_SPAMHAUS_SBL"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "RECEIVED_SPAMHAUS_XBL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "REDIRECTOR_URL"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "REDIRECTOR_URL_ONLY"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "REPLYTO_ADDR_EQ_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "REPLYTO_DN_EQ_FROM_DN"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "REPLYTO_DOM_EQ_FROM_DOM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "REPLYTO_DOM_NEQ_FROM_DOM"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "REPLYTO_EMAIL_HAS_TITLE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "REPLYTO_EQ_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "REPLYTO_EQ_TO_ADDR"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "REPLYTO_EXCESS_BASE64"
+    },
+    {
+      "@type": "Score",
+      "score": 1.2,
+      "tag": "REPLYTO_EXCESS_QP"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "REPLYTO_UNPARSABLE"
+    },
+    {
+      "@type": "Score",
+      "score": -0.4,
+      "tag": "RWL_MAILSPIKE_EXCELLENT"
+    },
+    {
+      "@type": "Score",
+      "score": -0.1,
+      "tag": "RWL_MAILSPIKE_GOOD"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RWL_MAILSPIKE_NEUTRAL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "RWL_MAILSPIKE_POSSIBLE"
+    },
+    {
+      "@type": "Score",
+      "score": -0.2,
+      "tag": "RWL_MAILSPIKE_VERYGOOD"
+    },
+    {
+      "@type": "Score",
+      "score": 3.5,
+      "tag": "SEM_URIBL"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "SEM_URIBL_FRESH15"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "SEO_SPAM"
+    },
+    {
+      "@type": "Score",
+      "score": 7.0,
+      "tag": "SHORT_PART_BAD_HEADERS"
+    },
+    {
+      "@type": "Score",
+      "score": -2.0,
+      "tag": "SIGNED_PGP"
+    },
+    {
+      "@type": "Score",
+      "score": -2.0,
+      "tag": "SIGNED_SMIME"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SINGLE_SHORT_PART"
+    },
+    {
+      "@type": "Score",
+      "score": 3.5,
+      "tag": "SORTED_RECIPS"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "SPAM_FLAG"
+    },
+    {
+      "@type": "Score",
+      "score": 15.0,
+      "tag": "SPAM_TRAP"
+    },
+    {
+      "@type": "Score",
+      "score": -0.2,
+      "tag": "SPF_ALLOW"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SPF_DNSFAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "SPF_FAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SPF_NA"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SPF_NEUTRAL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SPF_PERMFAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SPF_SOFTFAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 8.0,
+      "tag": "SPOOF_DISPLAY_NAME"
+    },
+    {
+      "@type": "Score",
+      "score": 6.0,
+      "tag": "SPOOF_REPLYTO"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SUBJECT_ENDS_EXCLAIM"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "SUBJECT_ENDS_QUESTION"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "SUBJECT_ENDS_SPACES"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "SUBJECT_HAS_CURRENCY"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SUBJECT_HAS_EXCLAIM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SUBJECT_HAS_QUESTION"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "SUBJECT_NEEDS_ENCODING"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "SUBJ_ALL_CAPS"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SUBJ_BOUNCE_WORDS"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "SUBJ_EXCESS_BASE64"
+    },
+    {
+      "@type": "Score",
+      "score": 1.2,
+      "tag": "SUBJ_EXCESS_QP"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SURBL_BLOCKED"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "SURBL_HASHBL_ABUSE"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "SURBL_HASHBL_CRACKED"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "SURBL_HASHBL_EMAIL"
+    },
+    {
+      "@type": "Score",
+      "score": 6.5,
+      "tag": "SURBL_HASHBL_MALWARE"
+    },
+    {
+      "@type": "Score",
+      "score": 6.5,
+      "tag": "SURBL_HASHBL_PHISH"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "SUSPICIOUS_AUTH_ORIGIN"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "SUSPICIOUS_MDN"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "SUSPICIOUS_RECIPS"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "SUSPICIOUS_URL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TAGGED_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TAGGED_RCPT"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "THREAD_HIJACKING_FROM_INJECTOR"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TO_DN_ALL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TO_DN_EQ_ADDR_ALL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TO_DN_EQ_ADDR_SOME"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TO_DN_NONE"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "TO_DN_RECIPIENTS"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TO_DN_SOME"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TO_DOM_EQ_FROM_DOM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TO_EQ_FROM"
+    },
+    {
+      "@type": "Score",
+      "score": 1.5,
+      "tag": "TO_EXCESS_BASE64"
+    },
+    {
+      "@type": "Score",
+      "score": 1.2,
+      "tag": "TO_EXCESS_QP"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TO_MATCH_ENVRCPT_ALL"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "TO_MATCH_ENVRCPT_SOME"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "TO_NEEDS_ENCODING"
+    },
+    {
+      "@type": "Score",
+      "score": 2.0,
+      "tag": "TO_WRAPPED_IN_SPACES"
+    },
+    {
+      "@type": "Score",
+      "score": -7.0,
+      "tag": "TRUSTED_DOMAIN"
+    },
+    {
+      "@type": "Score",
+      "score": -7.0,
+      "tag": "TRUSTED_REPLY"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "UNDISC_RCPT"
+    },
+    {
+      "@type": "Score",
+      "score": 3.0,
+      "tag": "UNDISC_RCPTS_BULK"
+    },
+    {
+      "@type": "Score",
+      "score": 5.0,
+      "tag": "UNITEDINTERNET_SPAM"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "UNPARSABLE_URL"
+    },
+    {
+      "@type": "Score",
+      "score": 7.5,
+      "tag": "URIBL_BLACK"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "URIBL_BLOCKED"
+    },
+    {
+      "@type": "Score",
+      "score": 2.5,
+      "tag": "URIBL_GREY"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "URIBL_RED"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "URI_COUNT_ODD"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "URI_HIDDEN_PATH"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "URL_IN_SUBJECT"
+    },
+    {
+      "@type": "Score",
+      "score": 2.2,
+      "tag": "URL_ONLY"
+    },
+    {
+      "@type": "Score",
+      "score": 1.0,
+      "tag": "URL_REDIRECTOR_NESTED"
+    },
+    {
+      "@type": "Score",
+      "score": 3.5,
+      "tag": "VIOLATED_DIRECT_SPF"
+    },
+    {
+      "@type": "Score",
+      "score": 0.0,
+      "tag": "WP_COMPROMISED"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "WWW_DOT_DOMAIN"
+    },
+    {
+      "@type": "Score",
+      "score": 0.5,
+      "tag": "XM_CASE"
+    },
+    {
+      "@type": "Score",
+      "score": 0.01,
+      "tag": "XM_UA_NO_VERSION"
+    },
+    {
+      "@type": "Score",
+      "score": 4.0,
+      "tag": "X_PHP_EVAL"
+    },
+    {
+      "@type": "Score",
+      "score": 7.0,
+      "tag": "ZERO_WIDTH_SPACE_URL"
+    }
+  ],
+  "SpamRule": [
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$MISSING_ESSENTIAL_HEADERS && $SINGLE_SHORT_PART",
+            "then": "'SHORT_PART_BAD_HEADERS'"
+          }
+        }
+      },
+      "name": "STWT_SHORT_BAD_HEADERS",
+      "enable": true,
+      "priority": 1000
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$FORGED_RECIPIENTS && $MAILLIST",
+            "then": "'FORGED_RECIPIENTS_MAILLIST'"
+          }
+        }
+      },
+      "name": "STWT_FORGED_RCPT_LIST",
+      "enable": true,
+      "priority": 1001
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$FORGED_SENDER && $MAILLIST",
+            "then": "'FORGED_SENDER_MAILLIST'"
+          }
+        }
+      },
+      "name": "STWT_FORGED_SENDER_LIST",
+      "enable": true,
+      "priority": 1002
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$DMARC_POLICY_ALLOW && ($SPF_SOFTFAIL || $SPF_FAIL || $DKIM_REJECT)",
+            "then": "'DMARC_POLICY_ALLOW_WITH_FAILURES'"
+          }
+        }
+      },
+      "name": "STWT_DMARC_ALLOW_WITH_FAIL",
+      "enable": true,
+      "priority": 1003
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$DKIM_NA && $SPF_NA && $DMARC_NA && $ARC_NA",
+            "then": "'AUTH_NA'"
+          }
+        }
+      },
+      "name": "STWT_AUTH_NA",
+      "enable": true,
+      "priority": 1004
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "!($DKIM_NA && $SPF_NA && $DMARC_NA && $ARC_NA) && ($DKIM_NA || $DKIM_TEMPFAIL || $DKIM_PERMFAIL) && ($SPF_NA || $SPF_DNSFAIL) && $DMARC_NA && ($ARC_NA || $ARC_DNSFAIL)",
+            "then": "'AUTH_NA_OR_FAIL'"
+          }
+        }
+      },
+      "name": "STWT_AUTH_NA_FAIL",
+      "enable": true,
+      "priority": 1005
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($AUTH_NA || $AUTH_NA_OR_FAIL) && ($BOUNCE || $SUBJ_BOUNCE_WORDS)",
+            "then": "'BOUNCE_NO_AUTH'"
+          }
+        }
+      },
+      "name": "STWT_BOUNCE_NO_AUTH",
+      "enable": true,
+      "priority": 1006
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($X_HDR_X_PHP_ORIGINATING_SCRIPT || $HAS_PHPMAILER_SIG) && $HAS_WP_URI && ($PHISHING || $CRACKED_SURBL || $PH_SURBL_MULTI || $DBL_PHISH || $DBL_ABUSE_PHISH || $URIBL_BLACK || $PHISHED_OPENPHISH || $PHISHED_PHISHTANK)",
+            "then": "'HACKED_WP_PHISHING'"
+          }
+        }
+      },
+      "name": "STWT_HACKED_WP_PHISHING",
+      "enable": true,
+      "priority": 1007
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($X_HDR_X_ORIGINATING_IP || $RCVD_VIA_SMTP_AUTH) && $DCC_BULK",
+            "then": "'COMPROMISED_ACCT_BULK'"
+          }
+        }
+      },
+      "name": "STWT_COMPROMISED_ACCT_BULK",
+      "enable": true,
+      "priority": 1008
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$DCC_BULK && ($MISSING_TO || $UNDISC_RCPT)",
+            "then": "'UNDISC_RCPTS_BULK'"
+          }
+        }
+      },
+      "name": "STWT_UNDISC_RCPTS_BULK",
+      "enable": true,
+      "priority": 1009
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$RECEIVED_SPAMHAUS_PBL && !$RCVD_VIA_SMTP_AUTH",
+            "then": "'RCVD_UNAUTH_PBL'"
+          }
+        }
+      },
+      "name": "STWT_RCVD_UNAUTH_PBL",
+      "enable": true,
+      "priority": 1010
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($DKIM_ALLOW || $ARC_ALLOW) && $RCVD_IN_DNSWL_MED",
+            "then": "'RCVD_DKIM_ARC_DNSWL_MED'"
+          }
+        }
+      },
+      "name": "STWT_RCVD_DKIM_ARC_DNSWL_MED",
+      "enable": true,
+      "priority": 1011
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($DKIM_ALLOW || $ARC_ALLOW) && $RCVD_IN_DNSWL_HI",
+            "then": "'RCVD_DKIM_ARC_DNSWL_HI'"
+          }
+        }
+      },
+      "name": "STWT_RCVD_DKIM_ARC_DNSWL_HI",
+      "enable": true,
+      "priority": 1012
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($X_HDR_X_PHP_ORIGINATING_SCRIPT || $HAS_PHPMAILER_SIG || $X_HDR_X_PHP_SCRIPT) && ($SUBJECT_ENDS_QUESTION || $SUBJECT_ENDS_EXCLAIM || $MANY_INVISIBLE_PARTS)",
+            "then": "'AUTOGEN_PHP_SPAMMY'"
+          }
+        }
+      },
+      "name": "STWT_AUTOGEN_PHP_SPAMMY",
+      "enable": true,
+      "priority": 1013
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($PHISHING || $DBL_PHISH || $PHISHED_OPENPHISH || $PHISHED_PHISHTANK) && ($SUBJECT_ENDS_QUESTION || $SUBJECT_ENDS_EXCLAIM)",
+            "then": "'PHISH_EMOTION'"
+          }
+        }
+      },
+      "name": "STWT_PHISH_EMOTION",
+      "enable": true,
+      "priority": 1014
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$HAS_GUC_PROXY_URI || $URIBL_RED || $DBL_ABUSE_REDIR || $HAS_ONION_URI",
+            "then": "'HAS_ANON_DOMAIN'"
+          }
+        }
+      },
+      "name": "STWT_HAS_ANON_DOMAIN",
+      "enable": true,
+      "priority": 1015
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($SPF_FAIL || $SPF_SOFTFAIL) && ($RCVD_COUNT_ZERO || $RCVD_NO_TLS_LAST)",
+            "then": "'VIOLATED_DIRECT_SPF'"
+          }
+        }
+      },
+      "name": "STWT_VIOLATED_DIRECT_SPF",
+      "enable": true,
+      "priority": 1016
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($FREEMAIL_FROM || $FREEMAIL_ENV_FROM || $FREEMAIL_REPLY_TO) && ($TO_DN_RECIPIENTS || $UNDISC_RCPT) && ($FROM_NAME_HAS_TITLE || $FREEMAIL_REPLY_TO_NEQ_FROM_DOM)",
+            "then": "'FREEMAIL_AFF'"
+          }
+        }
+      },
+      "name": "STWT_FREEMAIL_AFF",
+      "enable": true,
+      "priority": 1017
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$URL_ONLY && $REDIRECTOR_URL",
+            "then": "'REDIRECTOR_URL_ONLY'"
+          }
+        }
+      },
+      "name": "STWT_REDIRECTOR_URL_ONLY",
+      "enable": true,
+      "priority": 1018
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$FAKE_REPLY && $RCVD_VIA_SMTP_AUTH && (!$RECEIVED_SPAMHAUS_PBL || $RECEIVED_SPAMHAUS_XBL || $RECEIVED_SPAMHAUS_SBL)",
+            "then": "'THREAD_HIJACKING_FROM_INJECTOR'"
+          }
+        }
+      },
+      "name": "STWT_THREAD_HIJACKING",
+      "enable": true,
+      "priority": 1019
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$X_HDR_DKIM_SIGNATURE",
+            "then": "'DKIM_SIGNED'"
+          }
+        }
+      },
+      "name": "STWT_DKIM_SIGNED",
+      "enable": true,
+      "priority": 1020
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$X_HDR_ARC_SEAL",
+            "then": "'ARC_SIGNED'"
+          }
+        }
+      },
+      "name": "STWT_ARC_SIGNED",
+      "enable": true,
+      "priority": 1021
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$FREEMAIL_REPLY_TO && from.domain != reply_to.domain",
+            "then": "'FREEMAIL_REPLY_TO_NEQ_FROM_DOM'"
+          }
+        }
+      },
+      "name": "STWT_FREEMAIL_RTO_NEQ_DOM",
+      "enable": true,
+      "priority": 1022
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($FREEMAIL_DNT || $DISPOSABLE_DNT) && !($FREEMAIL_FROM || $FREEMAIL_ENV_FROM)",
+            "then": "'SUSPICIOUS_MDN'"
+          }
+        }
+      },
+      "name": "STWT_SUSPICIOUS_MDN",
+      "enable": true,
+      "priority": 1023
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "($X_HDR_X_ORIGINATING_IP || $RCVD_VIA_SMTP_AUTH) && ($RECEIVED_SPAMHAUS_PBL || $RECEIVED_SPAMHAUS_XBL || $RECEIVED_SPAMHAUS_SBL || $RECEIVED_BLOCKLISTDE)",
+            "then": "'SUSPICIOUS_AUTH_ORIGIN'"
+          }
+        }
+      },
+      "name": "STWT_SUSPICIOUS_AUTH_ORIGIN",
+      "enable": true,
+      "priority": 1024
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$SUSPICIOUS_AUTH_ORIGIN && ($RCVD_HELO_USER || $FAKE_REPLY || $HAS_IPFS_GATEWAY_URL || $HTML_SHORT_LINK_IMG_1)",
+            "then": "'ABUSE_FROM_INJECTOR'"
+          }
+        }
+      },
+      "name": "STWT_SABUSE_FROM_INJECTOR",
+      "enable": true,
+      "priority": 1025
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$MIME_BAD_EXTENSION && $MIME_BAD_UNICODE",
+            "then": "'MIME_BAD_EXT_WITH_BAD_UNICODE'"
+          }
+        }
+      },
+      "name": "STWT_MIME_BAD_EXT_WITH_BAD_UNICODE",
+      "enable": true,
+      "priority": 1026
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(subject.words, 'SEO') || contains(body.words, 'SEO')",
+            "then": "'HAS_SEO_WORD'"
+          }
+        }
+      },
+      "name": "STWT_HAS_SEO_WORD",
+      "enable": true,
+      "priority": 1027
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$HAS_SEO_WORD && ($RCPT_DOMAIN_IN_BODY || $RCPT_IN_BODY || $FREEMAIL_FROM)",
+            "then": "'SEO_SPAM'"
+          }
+        }
+      },
+      "name": "STWT_SEO_SPAM",
+      "enable": true,
+      "priority": 1028
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$RCVD_COUNT_ZERO && !$RCVD_VIA_SMTP_AUTH && ($X_HDR_USER_AGENT || $X_HDR_X_MAILER)",
+            "then": "'DIRECT_TO_MX'"
+          }
+        }
+      },
+      "name": "STWT_DIRECT_TO_MX",
+      "enable": true,
+      "priority": 1029
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "!$HAS_LINK_TO_LARGE_IMG",
+            "then": "false"
+          },
+          "1": {
+            "if": "$HTML_SHORT_1",
+            "then": "'HTML_SHORT_LINK_IMG_1'"
+          },
+          "2": {
+            "if": "$HTML_SHORT_2",
+            "then": "'HTML_SHORT_LINK_IMG_2'"
+          },
+          "3": {
+            "if": "$HTML_SHORT_3",
+            "then": "'HTML_SHORT_LINK_IMG_3'"
+          }
+        }
+      },
+      "name": "STWT_SHORT_LINK_IMG",
+      "enable": true,
+      "priority": 1030
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "is_intersect(['www-data', 'anonymous', 'ftp', 'apache', 'nobody', 'guest', 'nginx', 'web', 'www'], [from.local, env_from.local, reply_to.local])",
+            "then": "'FROM_SERVICE_ACCT'"
+          },
+          "1": {
+            "if": "contains(from.local, '+')",
+            "then": "'TAGGED_FROM'"
+          }
+        }
+      },
+      "name": "STWT_SVC_OR_TAGGED",
+      "enable": true,
+      "priority": 10
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "starts_with(from.domain, 'www.') || starts_with(reply_to.domain, 'www.')",
+            "then": "'WWW_DOT_DOMAIN'"
+          }
+        }
+      },
+      "name": "STWT_WWW_DOMAIN",
+      "enable": true,
+      "priority": 11
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "is_intersect(['mr.', 'mrs.', 'ms.', 'dr.', 'prof.', 'rev.', 'hon.'], split(to_lowercase(from.name), ' '))",
+            "then": "'FROM_NAME_HAS_TITLE'"
+          },
+          "1": {
+            "if": "is_intersect(['mr.', 'mrs.', 'ms.', 'dr.', 'prof.', 'rev.', 'hon.'], split(to_lowercase(reply_to.name), ' '))",
+            "then": "'REPLYTO_EMAIL_HAS_TITLE'"
+          }
+        }
+      },
+      "name": "STWT_HAS_TITLE",
+      "enable": true,
+      "priority": 12
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(from.name, '  ')",
+            "then": "'FROM_NAME_EXCESS_SPACE'"
+          }
+        }
+      },
+      "name": "STWT_FROM_NAME_SPACE",
+      "enable": true,
+      "priority": 13
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "is_empty(env_from) && ($IS_DSN || $HAS_MESSAGE_PARTS || ($X_HDR_X_MDDSN_MESSAGE && contains_ignore_case(from.name, 'mdaemon')))",
+            "then": "'BOUNCE'"
+          }
+        }
+      },
+      "name": "STWT_BOUNCE",
+      "enable": true,
+      "priority": 14
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$RCPT_DOMAIN_IN_SUBJECT && ($RCPT_DOMAIN_IN_BODY || $RCPT_IN_BODY)",
+            "then": "'RCPT_DOMAIN_IN_MESSAGE'"
+          }
+        }
+      },
+      "name": "STWT_RCPT_DOMAIN_IN_MESSAGE",
+      "enable": true,
+      "priority": 15
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "$DMARC_POLICY_ALLOW && key_exists('trusted-domains', from.domain)",
+            "then": "'TRUSTED_DOMAIN'"
+          }
+        }
+      },
+      "name": "STWT_TRUSTED_DOMAIN",
+      "enable": true,
+      "priority": 16
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "key_exists('blocked-domains', from.domain)",
+            "then": "'BLOCKED_DOMAIN'"
+          }
+        }
+      },
+      "name": "STWT_BLOCKED_DOMAIN",
+      "enable": true,
+      "priority": 17
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(['to', 'cc', 'bcc'], name_lower) && contains(raw_lower, 'undisclosed')",
+            "then": "'UNDISC_RCPT'"
+          }
+        }
+      },
+      "name": "STWT_R_UNDISC_RCPT",
+      "enable": true,
+      "priority": 60
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "name_lower == 'x-authenticated-sender' && contains(value, ': ')",
+            "then": "'HAS_X_AS'"
+          }
+        }
+      },
+      "name": "STWT_HAS_X_AS",
+      "enable": true,
+      "priority": 61
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "name_lower == 'x-get-message-sender-via' && contains(value_lower, 'authenticated_id:')",
+            "then": "'HAS_X_GMSV'"
+          }
+        }
+      },
+      "name": "STWT_HAS_X_GMSV",
+      "enable": true,
+      "priority": 62
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(['x-source', 'x-source-args', 'x-source-dir'], name_lower) && contains(value, '../')",
+            "then": "'HIDDEN_SOURCE_OBJ'"
+          }
+        }
+      },
+      "name": "STWT_HIDDEN_SOURCE_OBJ",
+      "enable": true,
+      "priority": 63
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(value_lower, 'eval()') && contains(['x-php-originating-script', 'x-php-script'], name_lower)",
+            "then": "'X_PHP_EVAL'"
+          }
+        }
+      },
+      "name": "STWT_X_PHP_EVAL",
+      "enable": true,
+      "priority": 64
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(value, '../') && contains(['x-php-originating-script', 'x-php-script'], name_lower)",
+            "then": "'HIDDEN_SOURCE_OBJ'"
+          }
+        }
+      },
+      "name": "STWT_HIDDEN_SOURCE_PHP",
+      "enable": true,
+      "priority": 65
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(['x-ui-filterresults', 'x-ui-out-filterresults', 'x-source-dir'], name_lower) && contains(value_lower, 'junk')",
+            "then": "'UNITEDINTERNET_SPAM'"
+          }
+        }
+      },
+      "name": "STWT_UNITEDINTERNET_SPAM",
+      "enable": true,
+      "priority": 66
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(['x-spam', 'x-spam-flag', 'x-spam-status'], name_lower) && (contains(value_lower, 'yes') || contains(value_lower, 'true') || contains(value_lower, 'spam'))",
+            "then": "'SPAM_FLAG'"
+          }
+        }
+      },
+      "name": "STWT_SPAM_FLAG",
+      "enable": true,
+      "priority": 67
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "name_lower == 'x-klms-antispam-status' && contains(value_lower, 'spam')",
+            "then": "'KLMS_SPAM'"
+          }
+        }
+      },
+      "name": "STWT_KLMS_SPAM",
+      "enable": true,
+      "priority": 68
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "name_lower == 'x-mailer' && name != 'X-Mailer'",
+            "then": "'XM_CASE'"
+          }
+        }
+      },
+      "name": "STWT_XM_CASE",
+      "enable": true,
+      "priority": 69
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "(name_lower == 'user_agent' || name_lower == 'x-mailer') && !is_empty(value) && !has_digits(value)",
+            "then": "'XM_UA_NO_VERSION'"
+          }
+        }
+      },
+      "name": "STWT_XM_UA_NO_VERSION",
+      "enable": true,
+      "priority": 70
+    },
+    {
+      "@type": "Header",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "name_lower == 'x-mailer' && contains(value_lower, 'phpmailer')",
+            "then": "'HAS_PHPMAILER_SIG'"
+          }
+        }
+      },
+      "name": "STWT_HAS_PHPMAILER_SIG",
+      "enable": true,
+      "priority": 71
+    },
+    {
+      "@type": "Email",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(['to', 'cc', 'bcc'], location) && contains_ignore_case(name, 'recipient')",
+            "then": "'TO_DN_RECIPIENTS'"
+          }
+        }
+      },
+      "name": "STWT_TO_DN_RECIPIENTS",
+      "enable": true,
+      "priority": 60
+    },
+    {
+      "@type": "Email",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(['to', 'cc', 'bcc'], location) && local == 'info' && from.local == 'info' && $X_HDR_LIST_UNSUBSCRIBE",
+            "then": "'INFO_TO_INFO_LU'"
+          }
+        }
+      },
+      "name": "STWT_INFO_INFO_LU",
+      "enable": true,
+      "priority": 61
+    },
+    {
+      "@type": "Email",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(['to', 'cc', 'bcc'], location) && contains(local, '+')",
+            "then": "'TAGGED_RCPT'"
+          }
+        }
+      },
+      "name": "STWT_TAGGED_RCPT",
+      "enable": true,
+      "priority": 62
+    },
+    {
+      "@type": "Email",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "!contains(['env_from', 'from', 'reply_to', 'to', 'cc', 'bcc', 'dnt'], location) || is_empty(sld)",
+            "then": "false"
+          },
+          "1": {
+            "if": "key_exists('stwt_free_domains', domain)",
+            "then": "'FREEMAIL_' + to_uppercase(location)"
+          },
+          "2": {
+            "if": "key_exists('stwt_disposable_domains', domain)",
+            "then": "'DISPOSABLE_' + to_uppercase(location)"
+          }
+        }
+      },
+      "name": "STWT_FREE_OR_DISP",
+      "enable": true,
+      "priority": 63
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "(contains(subject, 'delivery') &&              (contains(subject, 'failed') ||               contains(subject, 'report') ||               contains(subject, 'status') ||               contains(subject, 'warning'))) ||          (contains(subject, 'failure') &&              (contains(subject, 'delivery') ||               contains(subject, 'notice') ||               contains(subject, 'mail') )) ||          (contains(subject, 'delivered') &&             (contains(subject, 'couldn\\'t be') ||               contains(subject, 'could not be') ||               contains(subject, 'hasn\\'t been') ||               contains(subject, 'has not been'))) ||          contains(subject, 'returned mail') ||          contains(subject, 'undeliverable') ||           contains(subject, 'undelivered')",
+            "then": "'SUBJ_BOUNCE_WORDS'"
+          }
+        }
+      },
+      "name": "STWT_SUBJ_BOUNCE_WORDS",
+      "enable": true,
+      "priority": 20
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "!$BOUNCE && is_empty(env_from) && $SUBJ_BOUNCE_WORDS && (contains(from.local, 'postmaster') || contains(from.local, 'mailer-daemon'))",
+            "then": "'BOUNCE'"
+          }
+        }
+      },
+      "name": "STWT_BOUNCE_SUBJECT",
+      "enable": true,
+      "priority": 21
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "ends_with(trim(subject), '!')",
+            "then": "'SUBJECT_ENDS_EXCLAIM'"
+          },
+          "1": {
+            "if": "ends_with(trim(subject), '?')",
+            "then": "'SUBJECT_ENDS_QUESTION'"
+          },
+          "2": {
+            "if": "contains(subject, '!')",
+            "then": "'SUBJECT_HAS_EXCLAIM'"
+          },
+          "3": {
+            "if": "contains(subject, '?')",
+            "then": "'SUBJECT_HAS_QUESTION'"
+          }
+        }
+      },
+      "name": "STWT_SUBJECT_HAS_SYMBOLS",
+      "enable": true,
+      "priority": 22
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "len(subject) > 200",
+            "then": "'LONG_SUBJ'"
+          }
+        }
+      },
+      "name": "STWT_LONG_SUBJ",
+      "enable": true,
+      "priority": 23
+    },
+    {
+      "@type": "Any",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains_ignore_case(['re', 'aw', 'antw', 'sv'], split_once(subject, ':')[0]) && !$X_HDR_IN_REPLY_TO && !$X_HDR_REFERENCES",
+            "then": "'FAKE_REPLY'"
+          }
+        }
+      },
+      "name": "STWT_FAKE_REPLY",
+      "enable": true,
+      "priority": 24
+    },
+    {
+      "@type": "Url",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "key_exists('stwt_openphish', url)",
+            "then": "'PHISHED_OPENPHISH'"
+          }
+        }
+      },
+      "name": "STWT_PHISHED_OPEN",
+      "enable": true,
+      "priority": 50
+    },
+    {
+      "@type": "Url",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "key_exists('stwt_phishtank', url)",
+            "then": "'PHISHED_PHISHTANK'"
+          }
+        }
+      },
+      "name": "STWT_PHISHED_TANK",
+      "enable": true,
+      "priority": 51
+    },
+    {
+      "@type": "Url",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "ends_with(host, 'googleusercontent.com') && starts_with(path_query, '/proxy/')",
+            "then": "'HAS_GUC_PROXY_URI'"
+          },
+          "1": {
+            "if": "ends_with(host, 'firebasestorage.googleapis.com')",
+            "then": "'HAS_GOOGLE_FIREBASE_URL'"
+          },
+          "2": {
+            "if": "starts_with(sld, 'google.') && contains(path_query, 'url?')",
+            "then": "'HAS_GOOGLE_REDIR'"
+          }
+        }
+      },
+      "name": "STWT_HAS_GOOGLE_URL",
+      "enable": true,
+      "priority": 52
+    },
+    {
+      "@type": "Url",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "(contains(host, 'ipfs.') || contains(path_query, '/ipfs')) && contains(path_query, '/qm')",
+            "then": "'HAS_IPFS_GATEWAY_URL'"
+          },
+          "1": {
+            "if": "ends_with(host, '.onion')",
+            "then": "'HAS_ONION_URI'"
+          }
+        }
+      },
+      "name": "STWT_IPFS_OR_ONION",
+      "enable": true,
+      "priority": 53
+    },
+    {
+      "@type": "Url",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "starts_with(path, '/wp-content') || starts_with(path, '/wp-includes')",
+            "then": "'WP_COMPROMISED'"
+          },
+          "1": {
+            "if": "starts_with(path, '/wp-')",
+            "then": "'HAS_WP_URI'"
+          }
+        }
+      },
+      "name": "STWT_WP_COMPROMISED",
+      "enable": true,
+      "priority": 54
+    },
+    {
+      "@type": "Url",
+      "condition": {
+        "else": "false",
+        "match": {
+          "0": {
+            "if": "contains(path_query, '/../') && !contains(path_query, '/well-known') && !contains(path_query, '/well_known')",
+            "then": "'URI_HIDDEN_PATH'"
+          }
+        }
+      },
+      "name": "STWT_URI_HIDDEN_PATH",
+      "enable": true,
+      "priority": 55
+    }
+  ]
+}

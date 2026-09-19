@@ -69,6 +69,15 @@
         recursive = true;
       })
     skills;
+  # All skills are directories. Declare them without Home Manager inspecting
+  # fetched sources during evaluation, which cannot build Darwin paths on Linux.
+  # Codex needs directory symlinks rather than individually symlinked files.
+  codexSkillFiles = lib.mapAttrs (_: file: file // {recursive = false;}) (skillFilesFor (
+    if config.home.preferXdgDirectories
+    then "${config.xdg.configHome}/codex/skills"
+    else ".codex/skills"
+  ));
+  claudeSkillFiles = skillFilesFor "${config.programs.claude-code.configDir}/skills";
   piSkillFiles = skillFilesFor ".pi/agent/skills";
   kimiSkillFiles = skillFilesFor ".kimi/skills";
   cliProxyApi = {
@@ -92,6 +101,11 @@
     approval_policy = "never";
     sandbox_mode = "danger-full-access";
     apps._default.enabled = false;
+    features.memories = false;
+    memories = {
+      generate_memories = false;
+      use_memories = false;
+    };
     mcp_servers = {
       open_browser_use = {
         command = openBrowserUseCommand;
@@ -224,13 +238,17 @@
   };
 in {
   programs = {
+    # T3 creates fresh worktrees for threads; trust their project environments.
+    direnv.config.whitelist.prefix = lib.optionals (!isWsl) [
+      "${config.home.homeDirectory}/.t3/worktrees"
+    ];
+
     codex = {
       enable = true;
       package = direnvWrapped pkgs.codex "codex";
       # Codex persists project trust and other TUI settings here, so an
       # activation script maintains a writable config instead of a store link.
       settings = {};
-      inherit skills;
     };
 
     claude-code = {
@@ -248,8 +266,8 @@ in {
           args = ["mcp"];
         };
       };
-      inherit skills;
       settings = {
+        autoMemoryEnabled = false;
         disableRemoteControl = true;
         enableAllProjectMcpServers = true;
         enableArtifact = false;
@@ -279,6 +297,13 @@ in {
           with pkgs; [
             paseo
             paseo-desktop
+            (t3code.override {
+              # Preserve project environments instead of using unwrapped providers.
+              enableClaude = true;
+              claude-code = config.programs.claude-code.package;
+              codex = config.programs.codex.package;
+              gh = config.programs.gh.package;
+            })
           ]
         );
 
@@ -296,6 +321,8 @@ in {
             force = true;
           };
         }
+        // codexSkillFiles
+        // claudeSkillFiles
         // piSkillFiles
         // kimiSkillFiles;
 
@@ -303,16 +330,27 @@ in {
         config_file="$HOME/.codex/config.toml"
         config_dir=$(dirname "$config_file")
         temp_file=$(mktemp)
+        sanitized_file=$(mktemp)
 
         if [ -f "$config_file" ]; then
+          # Older activations could serialize these managed root keys beneath
+          # the preceding TOML table. Remove every copy before restoring them
+          # from codexConfig, which also repairs duplicate-key parse failures.
+          ${lib.getExe pkgs.gnused} -E \
+            '/^[[:space:]]*(approval_policy|sandbox_mode|model_provider)[[:space:]]*=/d' \
+            "$config_file" > "$sanitized_file"
+
           ${lib.getExe pkgs.yq-go} eval-all \
             --input-format toml \
             --output-format toml \
             '(select(fileIndex == 0)
               | del(.model_provider)
               | del(.model_providers.cliproxyapi))
-            * select(fileIndex == 1)' \
-            "$config_file" \
+            * select(fileIndex == 1)
+            | (to_entries
+              | sort_by(.value | tag == "!!map")
+              | from_entries)' \
+            "$sanitized_file" \
             ${lib.escapeShellArg codexConfig} > "$temp_file"
         else
           ${lib.getExe' pkgs.uutils-coreutils "uutils-cp"} \
@@ -325,7 +363,7 @@ in {
           $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
         fi
 
-        rm -f "$temp_file"
+        rm -f "$temp_file" "$sanitized_file"
       '';
 
       activation.kimiMcpConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -453,6 +491,8 @@ in {
           ++ lib.optionals (!isWsl) [
             ".config/Paseo"
             ".paseo"
+            ".config/t3code"
+            ".t3"
           ];
         files = [
           ".claude.json"

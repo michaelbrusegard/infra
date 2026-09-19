@@ -32,12 +32,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
         with:
           extra-conf: |
             max-jobs = 1
             cores = 2
-      - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
+      - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
       - name: Build without loading the private secrets flake
         run: |
           nix build --impure --out-link result --expr '
@@ -55,15 +55,32 @@ jobs:
             --security-opt no-new-privileges:true stalwart-native-scim:0.16.21 --version
       - name: Verify OIDC rate accounting in isolated normal mode
         run: |
-          binary=$(docker run --rm --network none --read-only --cap-drop ALL \
+          # A cached image does not install its embedded closure on the runner.
+          # Realize the server using the same pin and settings as image.nix.
+          server=$(nix build --impure --no-link --print-out-paths --expr '
+            let
+              lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.nixpkgs.locked.rev);
+              pkgs = upstream.legacyPackages.x86_64-linux;
+            in pkgs.callPackage ./packages/stalwart-oss/default.nix { nativeScim = true; }
+          ')
+          binary="$server/bin/stalwart"
+          image_binary=$(docker run --rm --network none --read-only --cap-drop ALL \
             --security-opt no-new-privileges:true --entrypoint /bin/readlink \
             stalwart-native-scim:0.16.21 /usr/local/bin/stalwart)
+          test "$binary" = "$image_binary"
           test -x "$binary"
+          # Namespace root cannot bypass runner-owned checkout permissions.
+          # Stage only public test code in a traversable temporary directory.
+          fixture=$(mktemp -d /tmp/stalwart-rate.XXXXXX)
+          trap 'sudo rm -rf -- "$fixture"' EXIT
+          chmod 755 "$fixture"
+          install -m 644 packages/stalwart-oss/*.py "$fixture/"
           # Root only creates a disposable, loopback-only user/network namespace.
           # No live identity provider, cluster, or mail is accessed by the fixture.
-          sudo python3 packages/stalwart-oss/rate_limit.py "$binary"
+          sudo env PYTHONDONTWRITEBYTECODE=1 python3 "$fixture/rate_limit.py" "$binary"
       - name: Retain candidate for acceptance and separate promotion
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: stalwart-native-scim-image
           path: result

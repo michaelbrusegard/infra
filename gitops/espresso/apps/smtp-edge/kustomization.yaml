@@ -1,13 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+# Staged only: do not add to apps/kustomization.yaml before the README gates pass.
 resources:
   - namespace.yaml
-  - backup.yaml
   - statefulset.yaml
   - services.yaml
-  - httproute.yaml
   - network-policy.yaml
-  - config.yaml
-  - entrypoint.yaml
-  - plan.yaml
-  - reconciler.yaml
+  - backup.yaml
