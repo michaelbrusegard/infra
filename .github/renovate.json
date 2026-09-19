@@ -181,6 +181,21 @@
       "matchPackageNames": [
         "registry.k8s.io/pause"
       ]
+    },
+    {
+      "description": "Review k8s-gateway chart updates separately: chart patches can change the application image and registry.",
+      "matchManagers": [
+        "flux"
+      ],
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "k8s-gateway"
+      ],
+      "groupName": "k8s-gateway chart",
+      "groupSlug": "k8s-gateway-chart",
+      "automerge": false
     }
   ]
 }
