@@ -279,13 +279,18 @@ jobs:
 
           wait_for_boot() {
             for attempt in $(seq 1 90); do
-              docker exec hermes-android-smoke \
-                /android/sdk/platform-tools/adb connect 127.0.0.1:5555 \
-                >/dev/null 2>&1 || true
-              if [ "$(docker exec hermes-android-smoke \
-                /android/sdk/platform-tools/adb -s 127.0.0.1:5555 \
-                shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; then
-                return 0
+              # Let the launcher start ADB before probes can auto-start a
+              # competing server. A TCP probe does not start an ADB daemon.
+              if docker exec hermes-android-smoke bash -c \
+                'true </dev/tcp/127.0.0.1/5037' 2>/dev/null; then
+                docker exec hermes-android-smoke \
+                  /android/sdk/platform-tools/adb connect 127.0.0.1:5555 \
+                  >/dev/null 2>&1 || true
+                if [ "$(docker exec hermes-android-smoke \
+                  /android/sdk/platform-tools/adb -s 127.0.0.1:5555 \
+                  shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; then
+                  return 0
+                fi
               fi
               if [ "$(docker inspect --format '{{.State.Running}}' \
                 hermes-android-smoke 2>/dev/null || true)" != true ]; then

@@ -70,6 +70,16 @@
   ],
   "packageRules": [
     {
+      "description": "Keep PocketID below 2.14 until the official Terraform provider is compatible; 2.13 is qualified.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/pocket-id/pocket-id"
+      ],
+      "allowedVersions": "<2.14.0"
+    },
+    {
       "matchDatasources": [
         "docker"
       ],

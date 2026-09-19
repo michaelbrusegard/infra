@@ -43,7 +43,7 @@ spec:
         # traffic before removing the direct defaults. Without the tunnel,
         # application traffic therefore has no fallback path to the internet.
         - name: preserve-cluster-routes
-          image: netbirdio/netbird:0.77.1@sha256:66f408b0c423e9c3376deea7bc0da78024d32494dd0f957344993015b74c4451
+          image: netbirdio/netbird:0.79.0@sha256:9d8480d87b7f7c10d67b820eecf332ecca5c2756792d4bdfa532182b4fc3005f
           command:
             - sh
             - -ec
