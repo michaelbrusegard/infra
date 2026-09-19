@@ -1,17 +1,18 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: stalwart-edge
-  namespace: stalwart-edge
+  name: smtp-edge
+  namespace: smtp-edge
 spec:
   endpointSelector:
     matchLabels:
-      app: stalwart-edge
+      app: smtp-edge
   ingress:
+    # Public SMTP only; preserve the peer address with Service Local policy.
     - fromEntities:
+        - world
         - host
         - remote-node
-        - world
       toPorts:
         - ports:
             - port: "25"
@@ -23,15 +24,6 @@ spec:
       toPorts:
         - ports:
             - port: "25"
-              protocol: TCP
-    # Management remains reachable for configuration repair while SMTP is not
-    # ready. Neither LAN/world nor other application namespaces may use 443.
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: flux-system
-      toPorts:
-        - ports:
-            - port: "443"
               protocol: TCP
   egress:
     - toEndpoints:
@@ -46,7 +38,10 @@ spec:
               protocol: TCP
           rules:
             dns:
+              # Includes resolver search paths; only cluster DNS is reachable.
               - matchPattern: "*"
+    # DNS resolves the private Service, but authorization is by pod identity.
+    # Do not add a backend FQDN/world fallback that bypasses this restriction.
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: manafishrov-stalwart
@@ -55,16 +50,9 @@ spec:
         - ports:
             - port: "24"
               protocol: TCP
-            - port: "443"
+            - port: "25"
               protocol: TCP
-    # Also cover the private backend DNS target when outside this cluster.
-    - toFQDNs:
-        - matchName: backend.manafishrov.com
-      toPorts:
-        - ports:
-            - port: "24"
-              protocol: TCP
-            - port: "443"
+            - port: "26"
               protocol: TCP
     - toFQDNs:
         - matchName: smtp.resend.com
@@ -72,5 +60,4 @@ spec:
         - ports:
             - port: "465"
               protocol: TCP
-    # Sender authentication and default DNSBL checks use cluster DNS above.
-    # No world:25, remote asset downloads, or blanket world:80/443 allowance.
+    # No management API, JMAP, HTTPS, arbitrary SMTP or DNSBL egress.

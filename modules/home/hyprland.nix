@@ -88,7 +88,7 @@
       workspace = 3;
     }
     {
-      class = "^(paseo-desktop)$";
+      class = "^(paseo-desktop|t3code)$";
       workspace = 1;
     }
     {

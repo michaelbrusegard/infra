@@ -56,7 +56,7 @@
     radarr = ["repo-config"];
     seerr = ["repo-config"];
     sonarr = ["repo-config"];
-    stalwart = ["pvc"];
+    stalwart = ["pvc" "edge-pvc" "smtp-edge-pvc"];
     transmission = ["repo-config"];
   };
 

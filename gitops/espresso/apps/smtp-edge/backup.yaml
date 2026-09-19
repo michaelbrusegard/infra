@@ -1,0 +1,28 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: smtp-edge-data-backup
+  namespace: smtp-edge
+spec:
+  paused: false
+  sourcePVC: data-smtp-edge-0
+  trigger:
+    schedule: "50 */6 * * *"
+  restic:
+    # New /stalwart/smtp-edge-pvc repository under the existing private identity.
+    repository: freddo-restic-smtp-edge-pvc
+    pruneIntervalDays: 30
+    retain:
+      daily: 14
+      weekly: 8
+      monthly: 12
+    moverSecurityContext:
+      # Queue owner can read the spool without capabilities. PID files live
+      # on an emptyDir, not this PVC. Never set fsGroup here: its recursive
+      # chmod changes queue-file bits used by Postfix as delivery flags.
+      runAsUser: 100
+      runAsGroup: 100
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: openebs-single-replica
+    cacheCapacity: 2Gi

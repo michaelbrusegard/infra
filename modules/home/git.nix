@@ -110,12 +110,29 @@
     };
     gh = {
       enable = true;
+      package =
+        if config.secrets ? keys && config.secrets.keys ? githubTokenFile
+        then
+          pkgs.symlinkJoin {
+            name = "gh-authenticated-${pkgs.gh.version}";
+            inherit (pkgs.gh) version meta;
+            paths = [pkgs.gh];
+            nativeBuildInputs = [pkgs.makeWrapper];
+            postBuild = ''
+              wrapProgram "$out/bin/gh" --run ${lib.escapeShellArg ''
+                if [ -z "''${GH_TOKEN:-}" ] && [ -z "''${GITHUB_TOKEN:-}" ] && [ -r ${lib.escapeShellArg config.secrets.keys.githubTokenFile} ]; then
+                  export GH_TOKEN="$( ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${lib.escapeShellArg config.secrets.keys.githubTokenFile} )"
+                fi
+              ''}
+            '';
+          }
+        else pkgs.gh;
       hosts = {
         "github.com" = {
           user = "michaelbrusegard";
         };
       };
-      extensions = with pkgs; [gh-eco gh-poi gh-dash gh-skyline];
+      extensions = with pkgs; [gh-eco gh-poi gh-dash gh-skyline gh-stack];
     };
 
     gh-dash = {

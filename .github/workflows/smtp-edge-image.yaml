@@ -1,0 +1,102 @@
+name: Publish SMTP Edge Image
+
+'on':
+  workflow_dispatch:
+    inputs:
+      authorize_publish:
+        description: 'Explicitly authorize building and publishing this revision to GHCR'
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: smtp-edge-image-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' && inputs.authorize_publish == true && github.repository == 'michaelbrusegard/infra'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/michaelbrusegard/smtp-edge
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+        with:
+          extra-conf: |
+            max-jobs = 1
+            cores = 2
+      - name: Build and export without loading the private secrets flake
+        run: |
+          set -euo pipefail
+          nix build --impure --out-link result --expr '
+            let
+              lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.nixpkgs.locked.rev);
+              pkgs = upstream.legacyPackages.x86_64-linux;
+            in pkgs.callPackage ./packages/smtp-edge/image.nix {}
+          '
+          # Publish only the locally qualified source and image, not a new
+          # untested runtime after a dependency/configuration change.
+          record=packages/smtp-edge/qualification.json
+          jq -e '.fixtureQualified == true and .postfixQueueEmpty == true' "$record" >/dev/null
+          while IFS=$'\t' read -r name expected; do
+            path="packages/smtp-edge/$name"
+            [[ -f "$path" ]] || path="packages/stalwart-oss/$name"
+            actual=$(sha256sum "$path" | cut -d ' ' -f 1)
+            [[ "$actual" == "$expected" ]] || { echo "Unqualified source: $path" >&2; exit 1; }
+          done < <(jq -r '.sourceSha256 | to_entries[] | [.key, .value] | @tsv' "$record")
+          mkdir -p candidate
+          cp --dereference result candidate/smtp-edge.tar.gz
+          (cd candidate && sha256sum smtp-edge.tar.gz > SHA256SUMS)
+          docker load < candidate/smtp-edge.tar.gz
+          # Read the exported tag; never treat Docker's config ID as a manifest digest.
+          source=$(tar -xOf candidate/smtp-edge.tar.gz manifest.json | jq -er 'if length == 1 then .[0].RepoTags | select(length == 1) | .[0] else error("expected one image") end')
+          # Docker 29's containerd store can expose a manifest digest as .Id.
+          # Hash the archive's actual config JSON, independent of engine version.
+          config_path=$(tar -xOf candidate/smtp-edge.tar.gz manifest.json | jq -er '.[0].Config')
+          actual_id="sha256:$(tar -xOf candidate/smtp-edge.tar.gz "$config_path" | sha256sum | cut -d ' ' -f 1)"
+          expected_id=$(jq -r '.dockerConfigId' "$record")
+          printf 'Built config ID: %s\nQualified config ID: %s\n' "$actual_id" "$expected_id"
+          if [[ "$actual_id" != "$expected_id" ]]; then
+            nix derivation show --recursive ./result > candidate/derivations.json
+            exit 1
+          fi
+          cp "$record" candidate/qualification.json
+          archive_sha=$(sha256sum candidate/smtp-edge.tar.gz | cut -d ' ' -f 1)
+          target="$IMAGE:sha-$GITHUB_SHA-${archive_sha:0:12}"
+          docker tag "$source" "$target"
+          printf 'TARGET=%s\n' "$target" >> "$GITHUB_ENV"
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Publish and record registry manifest digest
+        run: |
+          set -euo pipefail
+          docker push "$TARGET"
+          # RepoDigests after push contains the registry manifest digest, not .Id.
+          docker image inspect "$TARGET" --format '{{json .RepoDigests}}' > candidate/repo-digests.json
+          pinned=$(jq -er --arg prefix "$IMAGE@sha256:" '[.[] | select(startswith($prefix))] | unique | if length == 1 then .[0] else error("expected one registry digest") end' candidate/repo-digests.json)
+          [[ "$pinned" =~ @sha256:[0-9a-f]{64}$ ]]
+          printf '%s\n' "$pinned" > candidate/image-ref.txt
+          printf 'Source: %s\n\nRegistry pin: %s\n\nPublication does not authorize deployment. Qualify the published image before replacing the staged placeholder.\n' "$GITHUB_SHA" "$pinned" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain exported image and registry pin
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: smtp-edge-image
+          path: candidate/
+          compression-level: 0
+          retention-days: 7
+      # No manifest edits, commits, pushes, Flux reconciliation or deployment.
