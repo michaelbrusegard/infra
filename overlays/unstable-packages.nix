@@ -24,6 +24,7 @@ in {
     vimPlugins
     pi-coding-agent
     chatgpt
+    rustdesk-flutter
     uv
     ty
     oxlint
