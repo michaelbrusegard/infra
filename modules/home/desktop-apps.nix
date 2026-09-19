@@ -50,6 +50,7 @@ in {
         ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
           mattermost-desktop
           fluffychat
+          rustdesk-flutter
           imv
           gthumb
           legcord
@@ -73,6 +74,7 @@ in {
         ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           ice-bar
           brewCasks.raycast
+          brewCasks.rustdesk
           brewCasks.mattermost
 
           brewCasks.linearmouse
@@ -132,6 +134,7 @@ in {
           ".local/share/Jellyfin Media Player"
           ".config/transmission"
           ".config/feishin"
+          ".config/rustdesk"
           "Manafish"
         ];
       };
