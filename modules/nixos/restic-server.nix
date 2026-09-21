@@ -413,7 +413,10 @@
         MemoryMax = "3G";
         MemorySwapMax = "512M";
         OOMPolicy = "stop";
-        TimeoutStartSec = "24h";
+        # Metadata-only checks (restic check without --read-data) still hold
+        # the repository lock for the duration; killing them mid-run leaves a
+        # stale lock that breaks backups. Give them room to finish instead.
+        TimeoutStartSec = "72h";
       }
       // lib.optionalAttrs (mode != "unlock") {
         # A stopped restic process can leave a repository lock behind. Run a
@@ -551,9 +554,11 @@ in {
         restic-check = {
           wantedBy = ["timers.target"];
           timerConfig = {
-            OnCalendar = "Sun 08:00";
+            # Sunday evening, clear of the overnight backup windows: the check
+            # and backup movers must not contend for the repository lock.
+            OnCalendar = "Sun 20:00";
             Persistent = true;
-            RandomizedDelaySec = "2h";
+            RandomizedDelaySec = "1h";
           };
         };
 
