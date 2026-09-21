@@ -7,26 +7,11 @@
   paseoHostnames,
   ...
 }: let
-  openBrowserUseVersion = "0.1.41";
-  openBrowserUseSource = pkgs.fetchFromGitHub {
-    owner = "iFurySt";
-    repo = "open-browser-use";
-    rev = "v${openBrowserUseVersion}";
-    hash = "sha256-126y3P32bqa0tH1+3l/HfZbxItrKOCA/S66AFjueivs=";
-  };
-  openBrowserUseSkill = "${openBrowserUseSource}/skills/open-browser-use";
   openBrowserUseCommand = lib.getExe pkgs.open-browser-use;
   openBrowserUseExtensionDirectory =
     if pkgs.stdenv.hostPlatform.isDarwin
     then "Library/Application Support/OpenBrowserUse/chrome-extension/release"
     else ".local/share/open-browser-use/chrome-extension/release";
-  openComputerUseSource = pkgs.fetchFromGitHub {
-    owner = "iFurySt";
-    repo = "open-codex-computer-use";
-    rev = "v0.3.1";
-    hash = "sha256-e3JUiCNFl5nCQph4exBf+BH/6UdRgVTwUJzZE/eGY2s=";
-  };
-  openComputerUseSkill = "${openComputerUseSource}/skills/open-computer-use";
   openComputerUseCommand = lib.getExe pkgs.open-computer-use;
   skills = {
     babysit-pr = "${../../config/skills/babysit-pr}";
@@ -37,17 +22,11 @@
     file-pr = "${../../config/skills/file-pr}";
     frontend-design = "${../../config/skills/frontend-design}";
     grill = "${../../config/skills/grill}";
-    incident-brief = "${../../config/skills/incident-brief}";
-    open-browser-use = openBrowserUseSkill;
-    open-computer-use = openComputerUseSkill;
     recall-work = "${../../config/skills/recall-work}";
-    reflect-workflow = "${../../config/skills/reflect-workflow}";
     review-pr = "${../../config/skills/review-pr}";
     self-review = "${../../config/skills/self-review}";
-    show-work = "${../../config/skills/show-work}";
     slack = "${../../config/skills/slack}";
     unslop = "${../../config/skills/unslop}";
-    wizard = "${../../config/skills/wizard}";
     write-agent-instructions = "${../../config/skills/write-agent-instructions}";
   };
   agentInstructions = ../../config/AGENTS.md;
@@ -69,9 +48,8 @@
         recursive = true;
       })
     skills;
-  # All skills are directories. Declare them without Home Manager inspecting
-  # fetched sources during evaluation, which cannot build Darwin paths on Linux.
-  # Codex needs directory symlinks rather than individually symlinked files.
+  # All skills are directories, and Codex needs directory symlinks rather than
+  # individually symlinked files.
   codexSkillFiles = lib.mapAttrs (_: file: file // {recursive = false;}) (skillFilesFor (
     if config.home.preferXdgDirectories
     then "${config.xdg.configHome}/codex/skills"

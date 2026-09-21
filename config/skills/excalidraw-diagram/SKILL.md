@@ -1,6 +1,7 @@
 ---
 name: excalidraw-diagram
 description: Create or edit Excalidraw JSON diagrams that make relationships, sequence, hierarchy, ownership, or system boundaries easier to understand. Use when the user asks for an Excalidraw diagram or when a visual materially clarifies a concept that prose cannot explain as well.
+disable-model-invocation: true
 ---
 
 # Excalidraw Diagram
