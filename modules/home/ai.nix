@@ -97,19 +97,6 @@
       exec ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} "$api_key_file"
     '';
   };
-  openaiApiKey = pkgs.writeShellApplication {
-    name = "openai-api-key";
-    text = ''
-      api_key_file=${lib.escapeShellArg config.secrets.keys.openaiApiKeyFile}
-
-      if [ ! -r "$api_key_file" ]; then
-        echo "OpenAI API key is unavailable at $api_key_file" >&2
-        exit 1
-      fi
-
-      exec ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} "$api_key_file"
-    '';
-  };
   codexSettings = {
     approval_policy = "never";
     sandbox_mode = "danger-full-access";
@@ -161,22 +148,6 @@
       '';
     }).overrideAttrs (_: {
       inherit (pkgs.kimi-cli) version;
-    });
-  # Paseo launches Codex from the desktop app, which never sources the shell
-  # session variables, so resolve the key from sops at exec time instead.
-  codexOpenaiApiKey =
-    (pkgs.writeShellApplication {
-      name = "codex";
-      text = ''
-        if [ -z "''${OPENAI_API_KEY:-}" ]; then
-          OPENAI_API_KEY="$(${lib.getExe openaiApiKey})"
-          export OPENAI_API_KEY
-        fi
-
-        exec ${lib.getExe pkgs.codex} "$@"
-      '';
-    }).overrideAttrs (_: {
-      inherit (pkgs.codex) version;
     });
   piCliProxyApi =
     (pkgs.writeShellApplication {
@@ -274,7 +245,7 @@ in {
 
     codex = {
       enable = true;
-      package = direnvWrapped codexOpenaiApiKey "codex";
+      package = direnvWrapped pkgs.codex "codex";
       # Codex persists project trust and other TUI settings here, so an
       # activation script maintains a writable config instead of a store link.
       settings = {};
