@@ -208,7 +208,7 @@ spec:
             allowPrivilegeEscalation: false
       containers:
         - name: gateway
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-0f8b45d40c832a73ae3e7f3a8cfe695368f2537c@sha256:ebb55a135a7d392686e6ab110758c87d046bd8d8f3d4695264ec04c8d109388d
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-a129d5a1dce0983e0358b8a0c0deedf035c1ccbc@sha256:ea7e7477cc9b8c381a1db4093945421047d2b8a644d92fd3cc2d1fb776e2a79e
           args:
             - gateway
             - run
@@ -403,7 +403,7 @@ spec:
               drop:
                 - ALL
         - name: browser
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-0f8b45d40c832a73ae3e7f3a8cfe695368f2537c@sha256:9dc33dda0606ae13a806abb30d0b84a0796af7f97c9e6b0f27bdf3a71b4894f2
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-a129d5a1dce0983e0358b8a0c0deedf035c1ccbc@sha256:9dc33dda0606ae13a806abb30d0b84a0796af7f97c9e6b0f27bdf3a71b4894f2
           command:
             - chromium
           args:
@@ -573,7 +573,7 @@ spec:
             seccompProfile:
               type: RuntimeDefault
         - name: android-companion
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-0f8b45d40c832a73ae3e7f3a8cfe695368f2537c@sha256:ebb55a135a7d392686e6ab110758c87d046bd8d8f3d4695264ec04c8d109388d
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-a129d5a1dce0983e0358b8a0c0deedf035c1ccbc@sha256:ea7e7477cc9b8c381a1db4093945421047d2b8a644d92fd3cc2d1fb776e2a79e
           command:
             - /opt/data/scripts/android-companion
           env:
@@ -647,7 +647,7 @@ spec:
               drop:
                 - ALL
         - name: android-viewer
-          image: ghcr.io/michaelbrusegard/hermes-browser:sha-0f8b45d40c832a73ae3e7f3a8cfe695368f2537c@sha256:9dc33dda0606ae13a806abb30d0b84a0796af7f97c9e6b0f27bdf3a71b4894f2
+          image: ghcr.io/michaelbrusegard/hermes-browser:sha-a129d5a1dce0983e0358b8a0c0deedf035c1ccbc@sha256:9dc33dda0606ae13a806abb30d0b84a0796af7f97c9e6b0f27bdf3a71b4894f2
           command:
             - android-viewer
           env:
