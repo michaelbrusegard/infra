@@ -56,12 +56,16 @@
     radarr = ["repo-config"];
     seerr = ["repo-config"];
     sonarr = ["repo-config"];
-    stalwart = ["pvc" "edge-pvc" "smtp-edge-pvc"];
     transmission = ["repo-config"];
   };
 
   services.restic.server.maintenance.keepTags = ["legacy-minecraft"];
-  services.restic.server.maintenance.pruneExcludeGroups = ["nextcloud"];
+  # The personal Stalwart mail stack was retired in the cutover; keep its
+  # historical snapshots but stop creating or monitoring new backups.
+  services.restic.server.maintenance.pruneExcludeGroups = [
+    "nextcloud"
+    "stalwart"
+  ];
 
   # Minecraft worlds are backed up only after player activity, so snapshot age
   # does not indicate backup health for these repositories.
