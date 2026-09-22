@@ -6,6 +6,14 @@ data "cloudflare_zone" "michaelbrusegard" {
 
 locals {
   dns_records = {
+    # external-dns owns the asgard CNAMEs, but midgard has no cluster to run
+    # it, so cortado's relay name is a static CNAME onto the dyndns record
+    # that already tracks that site's WAN address.
+    netbird_midgard = {
+      name    = "netbird.midgard"
+      type    = "CNAME"
+      content = "router.midgard.michaelbrusegard.com"
+    }
     dkim_rsa = {
       name    = "stalwart-rsa._domainkey"
       type    = "TXT"

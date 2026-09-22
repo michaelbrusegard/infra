@@ -19,6 +19,15 @@
   netbirdInterface = "vpn_clients";
   baseDomain = "midgard.michaelbrusegard.com";
   routerDomain = "router.${baseDomain}";
+  netbirdDomain = "netbird.${baseDomain}";
+  relayPort = 33080;
+
+  # The relay needs the WAN open on 443, which is also Caddy's port, so every
+  # other vhost has to say no to the internet itself.
+  internalOnly = ''
+    @external not remote_ip 10.0.15.0/24 10.0.17.0/24 100.64.0.0/10 fd7a:115c:a1e0::/48 fdaf:859e:7392::/48
+    respond @external 403
+  '';
 in {
   boot.kernel.sysctl = {
     "net.ipv6.conf.all.forwarding" = 1;
@@ -128,6 +137,12 @@ in {
           allowedTCPPorts = [53];
           allowedUDPPorts = [53 67];
         };
+        # The NetBird relay has to be reachable from the internet to be of any
+        # use. Caddy shares the port, so its other vhosts refuse non-local
+        # clients themselves.
+        "${wanInterface}" = {
+          allowedTCPPorts = [443];
+        };
       };
     };
   };
@@ -231,6 +246,7 @@ in {
         "unifi.${baseDomain}" = {
           useACMEHost = baseDomain;
           extraConfig = ''
+            ${internalOnly}
             reverse_proxy https://127.0.0.1:8443 {
               transport http {
                 tls_insecure_skip_verify
@@ -247,12 +263,23 @@ in {
         "home-assistant.${baseDomain}" = {
           useACMEHost = baseDomain;
           extraConfig = ''
+            ${internalOnly}
             reverse_proxy 127.0.0.1:8123
+          '';
+        };
+        # Mirrors the paths the espresso relay is served on, so both relays
+        # look identical to clients apart from the hostname.
+        ${netbirdDomain} = {
+          useACMEHost = baseDomain;
+          extraConfig = ''
+            reverse_proxy /relay* 127.0.0.1:${toString relayPort}
+            reverse_proxy /ws-proxy* 127.0.0.1:${toString relayPort}
           '';
         };
         "valetudo.${baseDomain}" = {
           useACMEHost = baseDomain;
           extraConfig = ''
+            ${internalOnly}
             reverse_proxy 10.0.17.54:80
           '';
         };
@@ -274,5 +301,14 @@ in {
         };
       };
     };
+  };
+
+  # Second relay for the mesh. Peers pick the lowest-latency one, so anything
+  # in San Francisco stops hairpinning its traffic through Norway.
+  local.netbirdRelay = {
+    enable = true;
+    exposedAddress = "rels://${netbirdDomain}:443";
+    listenAddress = "127.0.0.1:${toString relayPort}";
+    inherit (config.secrets.netbird) environmentFile;
   };
 }
