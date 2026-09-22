@@ -101,6 +101,14 @@ Keys. If the Karabiner DriverKit VirtualHIDDevice appears there, select it as
 the keyboard. It may not appear immediately after driver activation alone; the
 virtual device is created when a root client such as Kanata requests it.
 
+### Screen Sharing
+
+Enable Screen Sharing by hand under System Settings, General -> Sharing.
+nix-darwin has no module for it and driving the launchd job from an activation
+script does not take. The other hosts then reach it at
+`lungo.netbird.selfhosted` with Apple Remote Desktop authentication, using the
+account's own login credentials.
+
 ## Ristretto (NixOS/Windows Desktop)
 
 Create an installer by downloading the minimal ISO image from
