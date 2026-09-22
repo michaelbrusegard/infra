@@ -98,6 +98,7 @@
     };
   };
   codexConfig = (pkgs.formats.toml {}).generate "codex-config" codexSettings;
+  codexConfigJson = (pkgs.formats.json {}).generate "codex-config.json" codexSettings;
   kimiAgent = (pkgs.formats.yaml {}).generate "kimi-agent.yaml" {
     version = 1;
     agent = {
@@ -313,6 +314,8 @@ in {
         config_dir=$(dirname "$config_file")
         temp_file=$(mktemp)
         sanitized_file=$(mktemp)
+        user_json=$(mktemp)
+        merged_json=$(mktemp)
 
         if [ -f "$config_file" ]; then
           # Older activations could serialize these managed root keys beneath
@@ -322,18 +325,34 @@ in {
             '/^[[:space:]]*(approval_policy|sandbox_mode|model_provider)[[:space:]]*=/d' \
             "$config_file" > "$sanitized_file"
 
-          ${lib.getExe pkgs.yq-go} eval-all \
-            --input-format toml \
-            --output-format toml \
-            '(select(fileIndex == 0)
+          # TOML puts every root scalar ahead of the first table, and yq
+          # honours neither half of that: its writer follows map order and
+          # its merge does not hoist scalars, so managed keys were appended
+          # after the last [projects.*] header and codex read them as that
+          # project's settings. The sort meant to prevent it never ran
+          # either, because TOML tables come back with an empty tag rather
+          # than !!map. Order the document in jq, where `type` tells tables
+          # apart and object key order is dependable, and leave yq to
+          # convert between formats.
+          ${lib.getExe pkgs.yq-go} -p=toml -o=json '.' \
+            "$sanitized_file" > "$user_json"
+
+          ${lib.getExe pkgs.jq} -s '
+            ((.[0]
+              | del(.approval_policy)
+              | del(.sandbox_mode)
               | del(.model_provider)
-              | del(.model_providers.cliproxyapi))
-            * select(fileIndex == 1)
-            | (to_entries
-              | sort_by(.value | tag == "!!map")
-              | from_entries)' \
-            "$sanitized_file" \
-            ${lib.escapeShellArg codexConfig} > "$temp_file"
+              | del(.model_providers.cliproxyapi)) * .[1]) as $raw
+            | (if ($raw.model_providers // {}) == {}
+               then ($raw | del(.model_providers))
+               else $raw
+               end) as $merged
+            | ($merged | with_entries(select(.value | type != "object")))
+              + ($merged | with_entries(select(.value | type == "object")))
+          ' "$user_json" ${lib.escapeShellArg codexConfigJson} > "$merged_json"
+
+          ${lib.getExe pkgs.yq-go} -p=json -o=toml '.' \
+            "$merged_json" > "$temp_file"
         else
           ${lib.getExe' pkgs.uutils-coreutils "uutils-cp"} \
             ${lib.escapeShellArg codexConfig} \
@@ -345,7 +364,7 @@ in {
           $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
         fi
 
-        rm -f "$temp_file" "$sanitized_file"
+        rm -f "$temp_file" "$sanitized_file" "$user_json" "$merged_json"
       '';
 
       activation.kimiMcpConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
