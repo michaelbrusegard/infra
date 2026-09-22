@@ -23,6 +23,7 @@
     inputs.self.homeManagerModules.neovim
     inputs.self.homeManagerModules.nix-tools
     inputs.self.homeManagerModules.pentest
+    inputs.self.homeManagerModules.remote-desktop
     inputs.self.homeManagerModules.scripts
     inputs.self.homeManagerModules.shell
     inputs.self.homeManagerModules.slicer
