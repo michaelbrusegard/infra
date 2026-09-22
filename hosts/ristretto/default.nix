@@ -42,6 +42,7 @@
       inputs.self.nixosModules.netbird
       inputs.self.nixosModules.pipewire
       inputs.self.nixosModules.plymouth
+      inputs.self.nixosModules.rustdesk
       inputs.self.nixosModules.udisks2
       inputs.self.nixosModules.wooting
       inputs.self.nixosModules.xdg-portal

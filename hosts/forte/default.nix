@@ -30,6 +30,7 @@
     inputs.self.nixosModules.openssh
     inputs.self.nixosModules.pipewire
     inputs.self.nixosModules.plymouth
+    inputs.self.nixosModules.rustdesk
     inputs.self.nixosModules.security
     inputs.self.nixosModules.ssh-agent
     inputs.self.nixosModules.udisks2
