@@ -92,6 +92,10 @@ spec:
   ipFamilies:
     - IPv4
     - IPv6
+  # STUN must see the peer's real source address: the default Cluster policy
+  # SNATs to the ingress node, so every peer was told its public address was
+  # a cluster node and ICE could never form a candidate pair.
+  externalTrafficPolicy: Local
   selector:
     app: netbird-coturn
   ports:
