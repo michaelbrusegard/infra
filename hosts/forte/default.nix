@@ -34,7 +34,6 @@
     inputs.self.nixosModules.ssh-agent
     inputs.self.nixosModules.udisks2
     inputs.self.nixosModules.virtualisation
-    inputs.self.nixosModules.wayvnc
     inputs.self.nixosModules.wooting
     inputs.self.nixosModules.xdg-portal
     ./disko.nix
