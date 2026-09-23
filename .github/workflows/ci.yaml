@@ -100,6 +100,10 @@ jobs:
           nix-shell \
             -p 'python3.withPackages (ps: [ ps.requests ps.websocket-client ])' \
             --run "python3 -m unittest discover -s gitops/espresso/apps/hermes-agent/tests -p 'test_*.py'"
+      - name: Test Hermes tunnel routing and fail-closed behavior
+        # Root avoids Ubuntu's unprivileged user-namespace restrictions. The
+        # test changes routes only inside disposable network namespaces.
+        run: sudo python3 gitops/espresso/apps/hermes-agent/tests/netbird_egress_smoke.py -v
       - name: Validate Kubernetes Manifests
         run: |
           kustomize build gitops/espresso | \

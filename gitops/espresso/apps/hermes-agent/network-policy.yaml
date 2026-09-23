@@ -168,7 +168,8 @@ spec:
     - toEntities:
         - kube-apiserver
     # NetBird registration is hairpinned through the internal Gateway and can
-    # receive a non-world Cilium identity. Routing remains fail closed because
-    # the pod's direct defaults are removed before application containers start.
+    # receive a non-world Cilium identity. The only public underlay routes
+    # require NetBird's socket mark; application containers cannot set it and
+    # have no direct default route when the tunnel is unavailable.
     - toEntities:
         - all

@@ -38,23 +38,32 @@ spec:
         fsGroup: 10000
         fsGroupChangePolicy: OnRootMismatch
       initContainers:
-        # The operator prepends its restartable NetBird init sidecar. Wait for
-        # its policy route, then preserve cluster-local and NetBird control
-        # traffic before removing the direct defaults. Without the tunnel,
-        # application traffic therefore has no fallback path to the internet.
+        # The operator prepends its restartable NetBird init sidecar. Preserve
+        # cluster-local routes and give only NetBird-marked transport packets
+        # an underlay default before removing the main-table defaults. Public
+        # application traffic has no fallback when the tunnel is unavailable.
         - name: preserve-cluster-routes
           image: netbirdio/netbird:0.77.1@sha256:66f408b0c423e9c3376deea7bc0da78024d32494dd0f957344993015b74c4451
           command:
             - sh
             - -ec
             - |
-              until ip rule show | grep -q "lookup 7120"; do
+              until ip -4 rule show | grep -q "not from all fwmark 0x1bd00 lookup 7120" &&
+                    ip -6 rule show | grep -q "not from all fwmark 0x1bd00 lookup 7120"; do
                 sleep 0.2
               done
               gateway4="$(ip route show default | head -n1 | cut -d' ' -f3)"
               gateway6="$(ip -6 route show default | head -n1 | cut -d' ' -f3)"
               test -n "$gateway4"
               test -n "$gateway6"
+              # NetBird v0.77.1 sets ControlPlaneMark (0x1bd00) on its own
+              # sockets. Its relay needs this route even before a tunnel exists.
+              # Keep table 7121 separate from NetBird's managed table 7120 so
+              # transport survives sidecar routing cleanup and reconnection.
+              ip route replace default via "$gateway4" dev eth0 onlink table 7121
+              ip -6 route replace default via "$gateway6" dev eth0 onlink table 7121
+              ip -4 rule add pref 115 fwmark 0x1bd00 lookup 7121
+              ip -6 rule add pref 115 fwmark 0x1bd00 lookup 7121
               ip route replace 10.0.188.0/24 via "$gateway4" dev eth0
               ip route replace 10.42.0.0/16 via "$gateway4" dev eth0
               ip route replace 10.43.0.0/16 via "$gateway4" dev eth0
@@ -570,6 +579,11 @@ spec:
             runAsUser: 0
             runAsGroup: 0
             allowPrivilegeEscalation: false
+            # CAP_NET_RAW also permits SO_MARK on current Linux kernels.
+            # Only the NetBird sidecar may mark packets for the underlay.
+            capabilities:
+              drop:
+                - NET_RAW
             seccompProfile:
               type: RuntimeDefault
         - name: android-companion
