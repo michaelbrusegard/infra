@@ -6,24 +6,24 @@
   versionCheckHook,
   zlib,
 }: let
-  version = "1.50.0";
+  version = "1.52.0";
   system = stdenv.hostPlatform.system;
   sources = {
     aarch64-darwin = {
       target = "aarch64-apple-darwin";
-      hash = "sha256-VoT5A8/ByhvkE1omNPfbEIx4eCfAhLQd9qmOsByQEt8=";
+      hash = "sha256-Q/4JH3C7+IYJdCAPkCGgVomgIIV8yZJtVvFQXw0NXLg=";
     };
     x86_64-darwin = {
       target = "x86_64-apple-darwin";
-      hash = "sha256-+cvZgPVegoHANbeMeQCNNcVDNBfKTTBV/mjgcpgqqUQ=";
+      hash = "sha256-fU+hXCj5ku+LzjGlIoLteOK4hgqZlOjRnVe8b7BmD3I=";
     };
     aarch64-linux = {
       target = "aarch64-unknown-linux-gnu";
-      hash = "sha256-3iNTIvSKvmPnqNc3858MAP7Pck8d+qGuAkkbt3OugHA=";
+      hash = "sha256-ngbuqWJzYArtSFsfC+3albcITbTyLPKGFP4gE4kzUHo=";
     };
     x86_64-linux = {
       target = "x86_64-unknown-linux-gnu";
-      hash = "sha256-EMyqJu5/W7Q/fAW6+AjBHNAWBxCwesQiOC0dGSPz2rY=";
+      hash = "sha256-pnYgT3gE7V2uh2UqnWb1eOBxjVAmycsb+jK5perOQgg=";
     };
   };
   source = sources.${system} or (throw "kimi-cli: unsupported system ${system}");

@@ -22,8 +22,9 @@ in {
     jankyborders
     neovim-unwrapped
     vimPlugins
-    pi-coding-agent
-    opencode
+    # opencode is pinned locally in packages/, but its build wants the newer
+    # models-dev that exposes a jsonschema output.
+    models-dev
     chatgpt
     rustdesk-flutter
     uv
@@ -70,12 +71,12 @@ in {
   # Keep Claude Code current while nixpkgs-unstable is still on 2.1.245.
   claude-code = pkgs-unstable.claude-code.override {
     manifest = {
-      version = "2.1.280";
+      version = "2.1.281";
       platforms = {
-        "darwin-arm64".checksum = "387a5c5dcdbb815085edf0baf79591f9d8894efe922bceaf3d75b1b08055229d";
-        "darwin-x64".checksum = "c1d32d87630482250633208ab77855429b24010ae3086a7ff7539b57b93168d4";
-        "linux-arm64".checksum = "92f2b4fd05d0bdcf7b9a0d4e0ecef4a1e4b368b290cd8fd07cff9a50013f45a2";
-        "linux-x64".checksum = "1e08503dbdf3c2cb0d706d32f3408277388d1c76ef108673e8fe42c1b322925b";
+        "darwin-arm64".checksum = "a922981f6f3b55a251ef9f9dbaa0621a5f99cbcb5ca67f8a797476ccfc83f626";
+        "darwin-x64".checksum = "a9355cbb0d291ce948efcf61a6ef397401672f64fa5e5e67bca092fed6cd9088";
+        "linux-arm64".checksum = "dd27b36438a4fed1670cd29bad2fda6a73b628b6da55443e5c2f647fe6ed328f";
+        "linux-x64".checksum = "56fe3da88458465fb27d7e9299dddb3fead55750fb9c2de795f233b5eea6dce1";
       };
     };
   };
