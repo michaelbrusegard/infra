@@ -217,9 +217,11 @@
   };
 in {
   programs = {
-    # T3 creates fresh worktrees for threads; trust their project environments.
+    # T3 and Loc create fresh worktrees for threads; trust their project
+    # environments so the direnv-wrapped agents can start inside them.
     direnv.config.whitelist.prefix = lib.optionals (!isWsl) [
       "${config.home.homeDirectory}/.t3/worktrees"
+      "${config.home.homeDirectory}/.local/share/loc/workspaces"
     ];
 
     codex = {
