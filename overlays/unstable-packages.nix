@@ -23,6 +23,7 @@ in {
     neovim-unwrapped
     vimPlugins
     pi-coding-agent
+    opencode
     chatgpt
     rustdesk-flutter
     uv

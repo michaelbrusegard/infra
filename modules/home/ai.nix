@@ -58,6 +58,8 @@
   claudeSkillFiles = skillFilesFor "${config.programs.claude-code.configDir}/skills";
   piSkillFiles = skillFilesFor ".pi/agent/skills";
   kimiSkillFiles = skillFilesFor ".kimi/skills";
+  # OpenCode registers <config dir>/skill as a skill source, singular.
+  opencodeSkillFiles = skillFilesFor "${config.xdg.configHome}/opencode/skill";
   cliProxyApi = {
     baseUrl = "https://llm.asgard.michaelbrusegard.com";
     piProviderPackage = "npm:@router-for-me/pi-cliproxyapi-provider@1.4.15";
@@ -232,6 +234,28 @@ in {
       settings = {};
     };
 
+    opencode = {
+      enable = true;
+      package = direnvWrapped pkgs.opencode "opencode";
+      # The module writes this straight to the config dir as AGENTS.md.
+      context = agentInstructions;
+      settings = {
+        permission = "allow";
+        mcp = {
+          open-browser-use = {
+            type = "local";
+            command = [openBrowserUseCommand "mcp"];
+            enabled = true;
+          };
+          open-computer-use = {
+            type = "local";
+            command = [openComputerUseCommand "mcp"];
+            enabled = true;
+          };
+        };
+      };
+    };
+
     claude-code = {
       enable = true;
       package = direnvWrapped pkgs.claude-code "claude";
@@ -309,7 +333,8 @@ in {
         // codexSkillFiles
         // claudeSkillFiles
         // piSkillFiles
-        // kimiSkillFiles;
+        // kimiSkillFiles
+        // opencodeSkillFiles;
 
       activation.codexConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.codex/config.toml"
@@ -489,6 +514,10 @@ in {
             ".codex"
             ".kimi"
             ".pi"
+            # OpenCode keeps auth and project state under the XDG data and
+            # state dirs rather than a dotfile of its own.
+            ".local/share/opencode"
+            ".local/state/opencode"
             ".cache/slack-cli"
           ]
           ++ lib.optionals (!isWsl) [
