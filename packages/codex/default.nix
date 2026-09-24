@@ -11,10 +11,6 @@
       target = "aarch64-apple-darwin";
       hash = "sha256-/qQvliUJHwEeOPBZ2pdNUuV7oxgxZIuxx/Cxo4X95Uc=";
     };
-    x86_64-darwin = {
-      target = "x86_64-apple-darwin";
-      hash = "sha256-YY281VQZ+gQYcfd3oUsQfOs/4tM574HiHmq1N0Qg3HE=";
-    };
     aarch64-linux = {
       target = "aarch64-unknown-linux-musl";
       hash = "sha256-/dR+1qreA2B5b9P2+VpFCW8yfBXhnoxzOfncVjMEF4Y=";
