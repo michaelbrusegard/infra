@@ -223,7 +223,7 @@ in {
     # environments so the direnv-wrapped agents can start inside them.
     direnv.config.whitelist.prefix = lib.optionals (!isWsl) [
       "${config.home.homeDirectory}/.t3/worktrees"
-      "${config.home.homeDirectory}/.local/share/loc/workspaces"
+      "${config.home.homeDirectory}/.local/share/loc"
     ];
 
     codex = {
