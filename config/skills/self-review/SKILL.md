@@ -1,11 +1,12 @@
 ---
 name: self-review
-description: Review the current branch and working tree against repository instructions, then let the user choose improvements to apply. Use when the user asks to self-review, check the diff, or find problems in the agent's own work.
+description: Review the current branch and working tree against repository instructions and fix what is wrong. Use when the user asks to self-review, check the diff, or find problems in the agent's own work.
 ---
 
 # Self review
 
-Treat the current implementation as untrusted.
+Treat the current implementation as untrusted. Fix confirmed problems; do not
+ask the user to pick.
 
 ## Process
 
@@ -28,23 +29,20 @@ authorization errors, data loss, races, compatibility breaks, unproven claims,
 needless generated abstraction, narrating comments, debug residue, accidental
 files, and unrelated cleanup.
 
-Run focused tests and static checks. A candidate must have evidence and a
+Run focused tests and static checks. A finding must have evidence and a
 specific improvement, not exist merely to make the review look productive.
 
-### 3. Present candidates
+### 3. Fix
 
-Show all candidates as a numbered list with a short title, affected path, and
-one-line explanation. Then walk them one by one:
+Apply each confirmed finding as its own coherent edit, run the relevant
+verification, and commit it. Do not batch independent fixes into one opaque
+edit. Preserve user-owned changes and leave the branch untouched when there are
+no confirmed issues.
 
-- **Apply.** Make the edit, run the relevant verification, summarize it, and
-  commit the coherent improvement before moving on.
-- **Skip.** Drop the candidate.
-- **Show details.** Explain the proposed change, then ask again.
-
-Do not batch independent improvements into one opaque edit. Preserve user-owned
-changes and leave the branch untouched when there are no confirmed issues.
+Do not fix a finding that needs a product decision, changes scope, or would
+rewrite published history. List it instead.
 
 ## Output
 
-Report applied improvements and commits, verification results, skipped
-candidates with the user's reason when useful, and residual risk.
+Report each fix with its commit and verification result, findings left for the
+user with the reason, and residual risk.
