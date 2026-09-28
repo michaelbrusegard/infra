@@ -18,7 +18,7 @@ spec:
         kubernetes.io/hostname: espresso-1
       initContainers:
         - name: init-dirs
-          image: busybox:1.38.0@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8
+          image: busybox:1.38.0@sha256:f97baa533a26513c453a362be331a43eb60214302f449c16571b23cea141dce4
           command:
             - sh
             - -c
@@ -34,7 +34,7 @@ spec:
               name: config
       containers:
         - name: musicgrabber
-          image: g33kphr33k/musicgrabber:latest@sha256:f56f82eb7b0a4434e4a781d4f0377af34443c0b6b07b4d120e1372df68afdb10
+          image: g33kphr33k/musicgrabber:latest@sha256:76509d111ddd1861e76b486f5945d1c97fc2a75a57491a03b08c975650c82bc7
           ports:
             - containerPort: 8080
               name: http
