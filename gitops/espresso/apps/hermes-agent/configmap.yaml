@@ -7,17 +7,17 @@ data:
   config.yaml: |
     model:
       provider: openai-api
-      default: claude-opus-5
+      default: claude-opus-5-5
 
     delegation:
       provider: openai-api
-      model: gpt-5.6-sol
+      model: gpt-6.1-sol
       reasoning_effort: xhigh
       default_profile: operator
       profiles:
         operator:
           provider: openai-api
-          model: gpt-6-astra
+          model: gpt-6.1-sol
           reasoning_effort: medium
         researcher:
           provider: openai-api
@@ -32,11 +32,11 @@ data:
     auxiliary:
       compression:
         provider: openai-api
-        model: gpt-5.6-luna
+        model: gpt-6-luna
         reasoning_effort: medium
       web_extract:
         provider: openai-api
-        model: gpt-5.6-luna
+        model: gpt-6-luna
         reasoning_effort: medium
       vision:
         provider: openai-api
@@ -96,7 +96,7 @@ data:
           "__MATTERMOST_SCRATCHPAD_CHANNEL_ID__":
             model: kimi-k3
           "__MATTERMOST_CODE_CHANNEL_ID__":
-            model: gpt-5.6-sol
+            model: gpt-6.1-sol
       webhook:
         enabled: true
         extra:
@@ -136,9 +136,9 @@ data:
         kimi-k2.7-code-highspeed: high
         kimi-k3: xhigh
         kimi-k3-256k: xhigh
-        claude-opus-5: high
-        gpt-5.6-luna: medium
-        gpt-5.6-sol: high
+        claude-opus-5-5: high
+        gpt-6-luna: medium
+        gpt-6.1-sol: high
 
     approvals:
       mode: off
