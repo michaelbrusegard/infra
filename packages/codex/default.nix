@@ -4,20 +4,20 @@
   stdenvNoCC,
   versionCheckHook,
 }: let
-  version = "0.156.1";
+  version = "0.159.1";
   system = stdenvNoCC.hostPlatform.system;
   sources = {
     aarch64-darwin = {
       target = "aarch64-apple-darwin";
-      hash = "sha256-/qQvliUJHwEeOPBZ2pdNUuV7oxgxZIuxx/Cxo4X95Uc=";
+      hash = "sha256-qPx2zLUjDdl/ttsBhz+pwSteHv3zLRPCun9uhInM2JM=";
     };
     aarch64-linux = {
       target = "aarch64-unknown-linux-musl";
-      hash = "sha256-/dR+1qreA2B5b9P2+VpFCW8yfBXhnoxzOfncVjMEF4Y=";
+      hash = "sha256-Y7O1pOdrQXTWUdLTY6wCj9tJYbpH7KmUbaPDUmeZmuw=";
     };
     x86_64-linux = {
       target = "x86_64-unknown-linux-musl";
-      hash = "sha256-i3EVIL7d84VGe42k0sk3NmN8a6HkaBHPDYYGt8SQtvY=";
+      hash = "sha256-mi3/jh65utg/Uu22+RF17+tcaKMW+IDJXXdw+Ho0/Fw=";
     };
   };
   source = sources.${system} or (throw "codex: unsupported system ${system}");

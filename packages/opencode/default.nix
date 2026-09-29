@@ -17,22 +17,22 @@
   artifacts = {
     x86_64-linux = {
       target = "linux-x64";
-      hash = "sha512-FB/rRN+Lwbipw1eIFWXUSRzGejk13Hh3yP3kKK8hbe62rK5kmvCVnwRxRa3zxqwA6y6iLnPMKrez2uHvpvjW3w==";
+      hash = "sha512-C47hADWv2MD6OzwMhn2iBXcQVjvwDTkzpB7kKlL8J+vJQxLzws580vfgpTRYB7JItFG1VUt6IHqqi00VCmrPRg==";
     };
     aarch64-linux = {
       target = "linux-arm64";
-      hash = "sha512-i0HOHovWgm8QK6MzEos6V5rDj3dHOOafUdP3cNH4Mc4djULWMAQwfNoygp6QXmlWXatVgUzQt65XHkdCF7VAPA==";
+      hash = "sha512-JLHDgEPmThZjbQEIwZNBdwLddvxYFIssDaDbDb/nF7aw4D5xt9xGUa1o6nF1IW1Ck+px8kV465W2AuThKRU3sg==";
     };
     aarch64-darwin = {
       target = "darwin-arm64";
-      hash = "sha512-0uY/cQqUWOrY0YqGC3islJAEtpseKo7L0aqLWugca6HjLFH4acXdvXf26mIs7lL3tjTd0dzKChlCErKJ4Ebz0g==";
+      hash = "sha512-haK35da6HYSnDu8pMdh47SvSWRQKXi5OBU5qostb4QlRe3xZgqr7P47irrvdRzBCHD/m5luh3AkjRWx+9P9BIg==";
     };
   };
   artifact = artifacts.${stdenvNoCC.hostPlatform.system};
 in
   stdenvNoCC.mkDerivation (finalAttrs: {
     pname = "opencode";
-    version = "2.0.19";
+    version = "2.0.20";
 
     src = fetchurl {
       url = "https://registry.npmjs.org/@opencode/cli-${artifact.target}/-/cli-${artifact.target}-${finalAttrs.version}.tgz";

@@ -62,7 +62,7 @@
   opencodeSkillFiles = skillFilesFor "${config.xdg.configHome}/opencode/skill";
   cliProxyApi = {
     baseUrl = "https://llm.asgard.michaelbrusegard.com";
-    piProviderPackage = "npm:@router-for-me/pi-cliproxyapi-provider@1.4.15";
+    piProviderPackage = "npm:@router-for-me/pi-cliproxyapi-provider@1.4.20";
   };
   cliProxyApiKey = pkgs.writeShellApplication {
     name = "cliproxyapi-api-key";
