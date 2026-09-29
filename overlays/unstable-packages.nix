@@ -22,9 +22,6 @@ in {
     jankyborders
     neovim-unwrapped
     vimPlugins
-    # opencode is pinned locally in packages/, but its build wants the newer
-    # models-dev that exposes a jsonschema output.
-    models-dev
     chatgpt
     rustdesk-flutter
     uv

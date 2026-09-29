@@ -514,8 +514,9 @@ in {
             ".codex"
             ".kimi"
             ".pi"
-            # OpenCode keeps auth and project state under the XDG data and
-            # state dirs rather than a dotfile of its own.
+            # V2 also writes cli.json and service credentials in the config
+            # directory alongside Home Manager's declarative files.
+            ".config/opencode"
             ".local/share/opencode"
             ".local/state/opencode"
             ".cache/slack-cli"
