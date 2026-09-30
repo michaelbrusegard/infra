@@ -1,0 +1,47 @@
+diff --git a/Sources/AppBundle/tree/MacApp.swift b/Sources/AppBundle/tree/MacApp.swift
+index 22d9bde..9de4f4a 100644
+--- a/Sources/AppBundle/tree/MacApp.swift
++++ b/Sources/AppBundle/tree/MacApp.swift
+@@ -56,0 +57,3 @@ final class MacApp: AbstractApp {
++        // Loc desktop previews render on a virtual display managed by Loc.
++        // Managing their windows here moves them onto the user's desktop.
++        if isLocPreviewProcess(pid) { return nil }
+diff --git a/Sources/AppBundle/util/isLocPreviewProcess.swift b/Sources/AppBundle/util/isLocPreviewProcess.swift
+new file mode 100644
+index 0000000..bd21222
+--- /dev/null
++++ b/Sources/AppBundle/util/isLocPreviewProcess.swift
+@@ -0,0 +1,33 @@
++import Darwin
++
++/// Check the environment set by Loc before its preview app is launched.
++/// `KERN_PROCARGS2` is also used by ps(1); failure leaves normal AeroSpace
++/// management in place rather than ignoring an unrelated application.
++func isLocPreviewProcess(_ pid: pid_t) -> Bool {
++    var mib = [Int32(CTL_KERN), Int32(KERN_PROCARGS2), pid]
++    var size = 0
++    guard unsafe sysctl(&mib, 3, nil, &size, nil, 0) == 0, size >= MemoryLayout<Int32>.size else { return false }
++    var bytes = [UInt8](repeating: 0, count: size)
++    guard unsafe sysctl(&mib, 3, &bytes, &size, nil, 0) == 0 else { return false }
++
++    let argc = Int32(bitPattern: UInt32(bytes[0]) | (UInt32(bytes[1]) << 8) |
++        (UInt32(bytes[2]) << 16) | (UInt32(bytes[3]) << 24))
++    guard argc >= 0, argc < 4096 else { return false }
++    var cursor = MemoryLayout<Int32>.size
++    while cursor < size && bytes[cursor] != 0 { cursor += 1 } // executable path
++    while cursor < size && bytes[cursor] == 0 { cursor += 1 }
++    for _ in 0..<Int(argc) {
++        while cursor < size && bytes[cursor] != 0 { cursor += 1 }
++        cursor += 1
++    }
++    let marker = Array("LOC_PREVIEW_ID=".utf8)
++    while cursor < size {
++        let start = cursor
++        while cursor < size && bytes[cursor] != 0 { cursor += 1 }
++        if cursor > start + marker.count && bytes[start..<(start + marker.count)].elementsEqual(marker) {
++            return true
++        }
++        cursor += 1
++    }
++    return false
++}
