@@ -221,10 +221,16 @@ in {
   programs = {
     # T3 and Loc create fresh worktrees for threads; trust their project
     # environments so the direnv-wrapped agents can start inside them.
-    direnv.config.whitelist.prefix = lib.optionals (!isWsl) [
-      "${config.home.homeDirectory}/.t3/worktrees"
-      "${config.home.homeDirectory}/.local/share/loc"
-    ];
+    direnv.config.whitelist.prefix = lib.optionals (!isWsl) (
+      [
+        "${config.home.homeDirectory}/.t3/worktrees"
+        "${config.home.homeDirectory}/.local/share/loc"
+      ]
+      # Loc keeps its thread worktrees in Application Support on macOS.
+      ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+        "${config.home.homeDirectory}/Library/Application Support/loc/workspaces"
+      ]
+    );
 
     codex = {
       enable = true;
