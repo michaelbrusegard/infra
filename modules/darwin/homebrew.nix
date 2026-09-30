@@ -47,6 +47,7 @@
     ];
     brews = [
       "mas"
+      "xcodes"
     ];
     casks = [
       # TODO: re-enable once the upstream homebrew-cask scribus definition
@@ -72,7 +73,6 @@
       "Wipr" = 1662217862;
       "Developer" = 640199958;
       "TestFlight" = 899247664;
-      "Xcode" = 497799835;
       "DaVinci Resolve" = 571213070;
     };
   };
