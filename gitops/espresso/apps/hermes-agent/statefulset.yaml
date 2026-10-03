@@ -755,7 +755,7 @@ spec:
               drop:
                 - ALL
         - name: android-viewer-auth
-          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4@sha256:b1b2021fe8f4004573e8d690dec6c7bb29cc44364572cf8510a05bf3a0ae2ded
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.5@sha256:8498b0d0ef0a7b29686414000a08aee467f02d0299c9ed1e006a8f33fc017916
           args:
             - --provider=oidc
             - --provider-display-name=Pocket ID
@@ -844,7 +844,7 @@ spec:
               drop:
                 - ALL
         - name: browser-viewer-auth
-          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4@sha256:b1b2021fe8f4004573e8d690dec6c7bb29cc44364572cf8510a05bf3a0ae2ded
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.5@sha256:8498b0d0ef0a7b29686414000a08aee467f02d0299c9ed1e006a8f33fc017916
           args:
             - --provider=oidc
             - --provider-display-name=Pocket ID
