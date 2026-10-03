@@ -23,7 +23,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: healthlog
-          image: ghcr.io/mbombeck/healthlog:v1.38.10@sha256:c3971e563f6f491092e63ae3326a11fe46b9a1f1e33bf313108fb576b1a990a0
+          image: ghcr.io/mbombeck/healthlog:v1.39.9@sha256:ce8c91bd6627185f76f724e853688c9fd3272c626fa3ac036a97a854c0c1dbd4
           env:
             - name: DB_PASSWORD
               valueFrom:
