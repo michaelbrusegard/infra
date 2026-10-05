@@ -21,8 +21,6 @@ patches:
         name: manafishrov-stalwart
       spec:
         path: ./tofu/stalwart
-        # Review preparation/activation plans before changing the running backend.
-        approvePlan: ""
         vars:
           - name: smtp_edge_activation_ready
             value: true

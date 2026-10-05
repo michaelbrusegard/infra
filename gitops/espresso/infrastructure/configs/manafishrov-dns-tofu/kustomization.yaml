@@ -19,8 +19,6 @@ patches:
       metadata:
         name: manafishrov-dns
       spec:
-        # Review the DKIM ownership transfer; never auto-apply a stale owner.
-        approvePlan: ""
         path: ./tofu/dns
         backendConfig:
           secretSuffix: manafishrov-dns

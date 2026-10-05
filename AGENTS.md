@@ -77,6 +77,7 @@ colmena build --on <node>
 When touching `gitops/`:
 
 ```sh
+bash gitops/espresso/tests/tofu-approval.sh
 kustomize build gitops/espresso | kubeconform -strict -ignore-missing-schemas \
   -schema-location default \
   -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
