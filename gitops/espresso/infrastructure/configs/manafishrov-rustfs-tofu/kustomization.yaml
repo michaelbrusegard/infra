@@ -19,8 +19,6 @@ patches:
       metadata:
         name: manafishrov-rustfs
       spec:
-        # Review provider upgrades before changing company IAM resources.
-        approvePlan: ""
         path: ./tofu/rustfs
         backendConfig:
           secretSuffix: manafishrov-rustfs
