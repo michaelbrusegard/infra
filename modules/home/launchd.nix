@@ -29,6 +29,18 @@ lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
       };
     };
 
+    rustdesk = {
+      enable = true;
+      config = {
+        ProgramArguments = [
+          "/usr/bin/open"
+          "${pkgs.brewCasks.rustdesk}/Applications/RustDesk.app"
+        ];
+        RunAtLoad = true;
+        LimitLoadToSessionType = "Aqua";
+      };
+    };
+
     linearmouse = {
       enable = true;
       config = {
