@@ -408,15 +408,20 @@
         # Keep index-heavy maintenance from exhausting zram and making the
         # backup host unreachable. OOMPolicy stops the whole unit so the
         # cleanup below can release any repository locks.
-        Environment = ["GOMEMLIMIT=2GiB"];
+        # Leave room below MemoryHigh for allocations outside the Go heap.
+        Environment = ["GOMEMLIMIT=1536MiB"];
         MemoryHigh = "2G";
         MemoryMax = "3G";
         MemorySwapMax = "512M";
         OOMPolicy = "stop";
-        # Metadata-only checks (restic check without --read-data) still hold
-        # the repository lock for the duration; killing them mid-run leaves a
-        # stale lock that breaks backups. Give them room to finish instead.
-        TimeoutStartSec = "72h";
+        # Checks hold an exclusive repository lock even while loading indexes.
+        # Bound them to the maintenance window so a repository that outgrows
+        # the host cannot prevent several days of backups. Prunes need longer
+        # to finish repacking; interrupted checks only leave a removable lock.
+        TimeoutStartSec =
+          if mode == "check"
+          then "2h"
+          else "72h";
       }
       // lib.optionalAttrs (mode != "unlock") {
         # A stopped restic process can leave a repository lock behind. Run a
