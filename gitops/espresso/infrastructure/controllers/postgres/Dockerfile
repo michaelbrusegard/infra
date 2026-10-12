@@ -1,5 +1,5 @@
 FROM tensorchord/vchord-scratch:pg18-v1.1.1@sha256:bdea43bed2a414e21bbf71767bf6f0739747ac480b267b51772dc214ac28dcb3 AS vchord
-FROM postgres:18-bookworm@sha256:3725f4e2499eef5134592b3b4ab79a543ed7f8e533b05b5b637af926630f6650
+FROM postgres:18-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c
 
 # renovate: suite=bookworm-pgdg depName=postgresql-18-cron
 ARG POSTGRESQL_18_CRON_VERSION=1.6.8-1.pgdg12+1

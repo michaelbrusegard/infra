@@ -24,7 +24,7 @@ spec:
               type: RuntimeDefault
           initContainers:
             - name: dump-postgres
-              image: postgres:18-bookworm@sha256:3725f4e2499eef5134592b3b4ab79a543ed7f8e533b05b5b637af926630f6650
+              image: postgres:18-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c
               command:
                 - sh
                 - -c

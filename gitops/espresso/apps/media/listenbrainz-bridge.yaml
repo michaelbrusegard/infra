@@ -35,7 +35,7 @@ spec:
             kubernetes.io/hostname: espresso-1
           containers:
             - name: bridge
-              image: docker.io/library/python:3.14-slim@sha256:65a94bb37b630c482dfd31e5fb9b449cb26c31eab1b7a125cd6bd624acfe3b30
+              image: docker.io/library/python:3.14-slim@sha256:cfe2e24a75302a15934d37c2d86412893c0aa934dc3a97cbb439d04c01890ca9
               command:
                 - python
                 - /scripts/bridge.py
