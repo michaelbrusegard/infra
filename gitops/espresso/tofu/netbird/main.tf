@@ -192,6 +192,10 @@ resource "netbird_group" "users" {
   name = "Users"
 }
 
+resource "netbird_group" "quest" {
+  name = "Quest"
+}
+
 # Network routers select every peer in their group, so these stay per-site: a
 # peer in the wrong one becomes an equal-metric router for a network it cannot
 # reach.
@@ -310,6 +314,23 @@ resource "netbird_policy" "hermes_egress_access" {
     protocol      = "all"
     sources       = [netbird_group.hermes_egress.id]
     destinations  = [netbird_group.midgard_routing_peers.id]
+  }
+}
+
+resource "netbird_policy" "quest_hermes_access" {
+  name        = "Quest Hermes Access"
+  description = "Allow Quest to reach only the Hermes API over NetBird"
+  enabled     = true
+
+  rule {
+    name          = "Quest to Hermes API"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "tcp"
+    ports         = ["8642"]
+    sources       = [netbird_group.quest.id]
+    destinations  = [netbird_group.hermes_egress.id]
   }
 }
 
