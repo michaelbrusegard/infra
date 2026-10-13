@@ -1,11 +1,11 @@
 apiVersion: netbird.io/v1alpha1
 kind: SetupKey
 metadata:
-  name: hermes-egress
+  name: hermes-agent
   namespace: hermes-agent
 spec:
-  name: hermes-egress
-  allowExtraDnsLabels: false
+  name: hermes-agent
+  allowExtraDnsLabels: true
   autoGroups:
     - name: Hermes Egress
   ephemeral: true
@@ -17,7 +17,7 @@ metadata:
   namespace: hermes-agent
 spec:
   setupKeyRef:
-    name: hermes-egress
+    name: hermes-agent
   podSelector:
     matchLabels:
       app: hermes-agent
@@ -28,7 +28,7 @@ spec:
       - name: NB_SETUP_KEY
         valueFrom:
           secretKeyRef:
-            name: setup-key-hermes-egress
+            name: setup-key-hermes-agent
             key: setup-key
       - name: NB_MANAGEMENT_URL
         value: https://netbird.asgard.michaelbrusegard.com
@@ -43,6 +43,9 @@ spec:
       - name: NB_FORCE_RELAY
         value: "true"
       - name: NB_HOSTNAME
+        value: hermes-agent
+      # Ephemeral peers get IP-suffixed primary names; publish a stable alias.
+      - name: NB_EXTRA_DNS_LABELS
         value: hermes-agent
       - name: NB_DAEMON_ADDR
         value: unix:///var/run/netbird/netbird.sock

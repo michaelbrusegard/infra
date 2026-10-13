@@ -491,9 +491,12 @@ in {
       clients.default = {
         interface = "vpn_clients";
         port = 51820;
-        config.ManagementURL = {
-          Scheme = "https";
-          Host = "${netbirdPublicDomain}:443";
+        config = {
+          DNSLabels = [config.networking.hostName];
+          ManagementURL = {
+            Scheme = "https";
+            Host = "${netbirdPublicDomain}:443";
+          };
         };
         login = {
           enable = true;

@@ -18,6 +18,7 @@ spec:
       annotations:
         configmap.reloader.stakater.com/reload: hermes-agent-bootstrap,hermes-agent-skills
         hermes.michaelbrusegard.com/android-image-rollout: "ready"
+        hermes.michaelbrusegard.com/netbird-setup-key: hermes-agent
         secret.reloader.stakater.com/reload: cliproxyapi,hermes-agent-env,hermes-alert-webhook,hermes-media-client,hermes-viewer-auth,hindsight,mattermost-integrations,mattermost-outputs,mealie-api
       labels:
         app: hermes-agent

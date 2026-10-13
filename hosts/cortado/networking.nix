@@ -291,9 +291,12 @@ in {
       clients.default = {
         interface = netbirdInterface;
         port = 51820;
-        config.ManagementURL = {
-          Scheme = "https";
-          Host = "netbird.asgard.michaelbrusegard.com:443";
+        config = {
+          DNSLabels = [config.networking.hostName];
+          ManagementURL = {
+            Scheme = "https";
+            Host = "netbird.asgard.michaelbrusegard.com:443";
+          };
         };
         login = {
           enable = true;
