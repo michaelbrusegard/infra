@@ -165,6 +165,10 @@
         pkgs.iproute2
       ];
     text = ''
+      # Give the background listener its own process group so its connection
+      # workers cannot retain the listening socket after a restart.
+      set -m
+
       get_netbird_ip() {
         if command -v ip >/dev/null 2>&1; then
           ip -o -4 addr show scope global | awk '
@@ -181,9 +185,9 @@
       forward_pid=""
 
       stop_forwarder() {
-        if [ -n "$forward_pid" ] && kill -0 "$forward_pid" 2>/dev/null; then
-          kill "$forward_pid"
-          wait "$forward_pid" || true
+        if [ -n "$forward_pid" ]; then
+          kill -- "-$forward_pid" 2>/dev/null || true
+          wait "$forward_pid" 2>/dev/null || true
         fi
         forward_pid=""
       }
@@ -214,6 +218,7 @@
         done
 
         stop_forwarder
+        sleep 5
       done
     '';
   };
