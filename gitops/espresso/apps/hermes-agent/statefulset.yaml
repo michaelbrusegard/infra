@@ -44,7 +44,7 @@ spec:
         # an underlay default before removing the main-table defaults. Public
         # application traffic has no fallback when the tunnel is unavailable.
         - name: preserve-cluster-routes
-          image: netbirdio/netbird:0.77.1@sha256:66f408b0c423e9c3376deea7bc0da78024d32494dd0f957344993015b74c4451
+          image: netbirdio/netbird:0.81.2@sha256:6242a1fbaf6b611c00c26a914cbbea512c30c18a45de0646ce7b0e5d93a21e67
           command:
             - sh
             - -ec
