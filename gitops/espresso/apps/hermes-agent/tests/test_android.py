@@ -1066,7 +1066,7 @@ class AndroidScriptTests(unittest.TestCase):
         )
         self.assertIn("- name: android-viewer-auth", statefulset)
         self.assertIn("- name: browser-viewer-auth", statefulset)
-        self.assertIn("oauth2-proxy:v7.15.4@sha256:", statefulset)
+        self.assertRegex(statefulset, r"oauth2-proxy:v\d+\.\d+\.\d+@sha256:[0-9a-f]{64}")
         self.assertIn("--upstream=http://127.0.0.1:6081", statefulset)
         self.assertIn("--upstream=http://127.0.0.1:6080", statefulset)
         self.assertIn("--http-address=0.0.0.0:4181", statefulset)
