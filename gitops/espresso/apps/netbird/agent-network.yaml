@@ -228,6 +228,22 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
+            k8s:io.kubernetes.pod.namespace: netbird
+            k8s:app: netbird-signal
+      toPorts:
+        - ports:
+            - port: "10000"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: netbird
+            k8s:app: netbird-relay
+      toPorts:
+        - ports:
+            - port: "33080"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
             k8s:io.kubernetes.pod.namespace: cliproxyapi
             k8s:app: cliproxyapi
       toPorts:
