@@ -160,6 +160,21 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(len(self.api.tokens), 3)
         self.assertEqual(self.token.read_text().splitlines()[1], "token2")
 
+    def test_truncated_registration_is_recreated_without_resetting_controls(self):
+        self.run_bootstrap()
+        self.api.policies[0]["enabled"] = False
+        self.token.write_text("truncated-registration\n")
+        self.api.calls.clear()
+        self.run_bootstrap()
+        self.assertEqual(len(self.api.tokens), 2)
+        self.assertEqual(self.token.read_text().splitlines()[1], "token1")
+        self.assertEqual(stat.S_IMODE(self.token.stat().st_mode), 0o600)
+        self.assertFalse(self.api.policies[0]["enabled"])
+        self.assertEqual(
+            [(method, path) for method, path, _ in self.api.calls if method != "GET"],
+            [("POST", "/reverse-proxies/proxy-tokens")],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

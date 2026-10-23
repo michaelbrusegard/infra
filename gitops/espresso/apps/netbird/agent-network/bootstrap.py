@@ -70,6 +70,21 @@ def configure_provider(api, desired, upstream_key, state_path):
     return provider
 
 
+def registration_is_valid(token_path, tokens):
+    try:
+        token, token_id = token_path.read_text().splitlines()
+    except (FileNotFoundError, ValueError):
+        return False
+    existing = next((item for item in tokens if item["id"] == token_id), None)
+    if not token or not existing or existing["revoked"]:
+        return False
+    expires = existing.get("expires_at")
+    return not expires or (
+        datetime.fromisoformat(expires.replace("Z", "+00:00"))
+        > datetime.now(timezone.utc)
+    )
+
+
 def reconcile(api, config, upstream_key, token_path):
     groups = {group["name"]: group["id"] for group in api("GET", "/groups")}
     required = set(config["source_groups"])
@@ -108,21 +123,9 @@ def reconcile(api, config, upstream_key, token_path):
     # Proxy tokens are returned only once. Keep one on the PVC, reuse it on
     # restarts, and recreate it if it has been revoked or expired server-side.
     tokens = api("GET", "/reverse-proxies/proxy-tokens")
-    if token_path.exists():
-        token, token_id = token_path.read_text().splitlines()
-        for existing in tokens:
-            expires = existing.get("expires_at")
-            valid_until = (
-                datetime.fromisoformat(expires.replace("Z", "+00:00"))
-                if expires else None
-            )
-            if (
-                existing["id"] == token_id and not existing["revoked"]
-                and (valid_until is None or valid_until > datetime.now(timezone.utc))
-                and token
-            ):
-                print("Agent Network reconciled; reusing proxy registration")
-                return
+    if registration_is_valid(token_path, tokens):
+        print("Agent Network reconciled; reusing proxy registration")
+        return
     created = api("POST", "/reverse-proxies/proxy-tokens", {
         "name": "espresso-agent-network", "expires_in": 0,
     })
