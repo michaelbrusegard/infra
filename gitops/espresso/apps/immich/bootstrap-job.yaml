@@ -15,7 +15,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: bootstrap
-          image: curlimages/curl:8.21.0@sha256:7c12af72ceb38b7432ab85e1a265cff6ae58e06f95539d539b654f2cfa64bb13
+          image: curlimages/curl:8.23.0@sha256:11e64e28c5f58c8d93ee95fcf22ac055f48b0bc440e0ce7d8013bbb5ad6aa8ac
           env:
             - name: IMMICH_ADMIN_NAME
               valueFrom:

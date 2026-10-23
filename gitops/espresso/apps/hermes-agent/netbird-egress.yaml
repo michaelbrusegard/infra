@@ -23,7 +23,7 @@ spec:
       app: hermes-agent
   injectionMode: Sidecar
   containerOverride:
-    image: netbirdio/netbird:0.77.1@sha256:66f408b0c423e9c3376deea7bc0da78024d32494dd0f957344993015b74c4451
+    image: netbirdio/netbird:0.81.3@sha256:f8a4ea01da9f2351d5c9436209ee9caf35dd118fc9c1fc2ce7859f0c6e44781c
     env:
       - name: NB_SETUP_KEY
         valueFrom:
