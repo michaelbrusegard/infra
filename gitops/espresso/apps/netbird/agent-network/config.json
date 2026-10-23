@@ -3,13 +3,18 @@
   "policies": [
     {
       "name": "Shared AI Access",
-      "description": "Allow AI users and admins to use CLIProxyAPI over NetBird",
-      "source_groups": ["Admins", "AI"]
+      "description": "Allow AI users to use CLIProxyAPI over NetBird",
+      "source_groups": ["AI"]
     },
     {
       "name": "Hermes AI Access",
       "description": "Allow the Hermes agent to use CLIProxyAPI over NetBird",
       "source_groups": ["Hermes Egress"]
+    },
+    {
+      "name": "Admin AI Access",
+      "description": "Allow admins unrestricted access to CLIProxyAPI over NetBird",
+      "source_groups": ["Admins"]
     }
   ],
   "provider": {

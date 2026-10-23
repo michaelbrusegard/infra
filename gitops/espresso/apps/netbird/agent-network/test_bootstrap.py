@@ -77,19 +77,23 @@ class BootstrapTests(unittest.TestCase):
         provider = self.api.providers[0]
         self.assertEqual(provider["api_key"], "test-upstream-secret")
         self.assertEqual(provider["models"], [])
-        self.assertEqual(self.api.policies[0]["source_groups"], ["admins", "ai"])
+        self.assertEqual(self.api.policies[0]["source_groups"], ["ai"])
         self.assertEqual(self.api.policies[1]["name"], "Hermes AI Access")
         self.assertEqual(self.api.policies[1]["source_groups"], ["hermes"])
         self.assertEqual(
             self.api.policies[1]["destination_provider_ids"], [provider["id"]],
         )
         self.assertNotIn("limits", self.api.policies[0])
+        self.assertEqual(self.api.policies[2]["name"], "Admin AI Access")
+        self.assertEqual(self.api.policies[2]["source_groups"], ["admins"])
+        self.assertNotIn("limits", self.api.policies[2])
+        self.assertEqual(self.api.policies[2]["guardrail_ids"], [])
         self.assertEqual(stat.S_IMODE(self.token.stat().st_mode), 0o600)
         self.assertNotIn("test-upstream-secret", self.token.read_text())
         self.api.calls.clear()
         self.run_bootstrap()
         self.assertEqual(len(self.api.providers), 1)
-        self.assertEqual(len(self.api.policies), 2)
+        self.assertEqual(len(self.api.policies), 3)
         self.assertEqual(len(self.api.tokens), 1)
         self.assert_no_mutation()
 
@@ -121,7 +125,7 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual((self.api.providers, self.api.policies), before)
         self.assert_no_mutation()
 
-    def test_add_hermes_policy_without_resetting_existing_human_policy(self):
+    def test_add_missing_policies_without_resetting_existing_human_policy(self):
         self.config["policies"] = self.config["policies"][:1]
         self.run_bootstrap()
         self.api.policies[0].update({"enabled": False, "guardrail_ids": ["human-only"]})
@@ -131,9 +135,10 @@ class BootstrapTests(unittest.TestCase):
         self.run_bootstrap()
         self.assertEqual(self.api.policies[0], human_policy)
         self.assertEqual(self.api.policies[1]["source_groups"], ["hermes"])
+        self.assertEqual(self.api.policies[2]["source_groups"], ["admins"])
         self.assertEqual(
             [(method, path) for method, path, _ in self.api.calls if method != "GET"],
-            [("POST", "/agent-network/policies")],
+            [("POST", "/agent-network/policies"), ("POST", "/agent-network/policies")],
         )
 
     def test_key_rotation_preserves_provider_settings_and_policy(self):
