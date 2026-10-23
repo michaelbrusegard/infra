@@ -64,6 +64,7 @@ in {
           brewCasks.raycast
           brewCasks.rustdesk
           brewCasks.mattermost
+          brewCasks.whatsapp
 
           brewCasks.linearmouse
           brewCasks.legcord
