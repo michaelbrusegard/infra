@@ -196,7 +196,7 @@ spec:
             - name: bootstrap-skills
               mountPath: /bootstrap-skills
         - name: prepare-android
-          image: ghcr.io/michaelbrusegard/hermes-android:sha-f63d41255aa98566f3919e3bf1ad5c597f6f4afe@sha256:9f6e075d8f9753078db46a8ec402adfcf0c714c1063edc0ae9188263440f1efe
+          image: ghcr.io/michaelbrusegard/hermes-android:sha-2708c8e73c86b15a1ed8c259d82c50e8432529de@sha256:39a8a7f05bc120824e498a0782a9c35eb30f083faa851499e281ca2f6b1395c9
           command:
             - bash
             - -euc
@@ -514,7 +514,7 @@ spec:
               drop:
                 - ALL
         - name: android-emulator
-          image: ghcr.io/michaelbrusegard/hermes-android:sha-f63d41255aa98566f3919e3bf1ad5c597f6f4afe@sha256:9f6e075d8f9753078db46a8ec402adfcf0c714c1063edc0ae9188263440f1efe
+          image: ghcr.io/michaelbrusegard/hermes-android:sha-2708c8e73c86b15a1ed8c259d82c50e8432529de@sha256:39a8a7f05bc120824e498a0782a9c35eb30f083faa851499e281ca2f6b1395c9
           command:
             - bash
             - /bootstrap-skills/android-emulator-launch.sh
