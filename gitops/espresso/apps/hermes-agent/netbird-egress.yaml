@@ -40,6 +40,10 @@ spec:
         value: "false"
       - name: NB_DISABLE_DNS
         value: "true"
+      # Keep system DNS management disabled; expose NetBird's resolver at the
+      # fixed loopback address used by the pod's dnsConfig instead.
+      - name: NB_DNS_RESOLVER_ADDRESS
+        value: 127.0.0.153:53
       - name: NB_FORCE_RELAY
         value: "true"
       - name: NB_HOSTNAME

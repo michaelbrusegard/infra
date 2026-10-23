@@ -1,6 +1,17 @@
 {
   "endpoint": "ai.asgard.michaelbrusegard.com",
-  "source_groups": ["Admins", "AI"],
+  "policies": [
+    {
+      "name": "Shared AI Access",
+      "description": "Allow AI users and admins to use CLIProxyAPI over NetBird",
+      "source_groups": ["Admins", "AI"]
+    },
+    {
+      "name": "Hermes AI Access",
+      "description": "Allow the Hermes agent to use CLIProxyAPI over NetBird",
+      "source_groups": ["Hermes Egress"]
+    }
+  ],
   "provider": {
     "name": "CLIProxyAPI",
     "provider_id": "custom",

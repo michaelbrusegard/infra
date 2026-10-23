@@ -37,9 +37,6 @@ spec:
             k8s:io.kubernetes.pod.namespace: netbird
             k8s:app: netbird-agent-network
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: hermes-agent
-            k8s:app: hermes-agent
-        - matchLabels:
             k8s:io.kubernetes.pod.namespace: hindsight
             k8s:app: hindsight
         - matchLabels:

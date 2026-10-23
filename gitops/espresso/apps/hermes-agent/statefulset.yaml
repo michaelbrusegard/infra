@@ -19,12 +19,31 @@ spec:
         configmap.reloader.stakater.com/reload: hermes-agent-bootstrap,hermes-agent-skills
         hermes.michaelbrusegard.com/android-image-rollout: "ready"
         hermes.michaelbrusegard.com/netbird-setup-key: hermes-agent
-        secret.reloader.stakater.com/reload: cliproxyapi,hermes-agent-env,hermes-alert-webhook,hermes-media-client,hermes-viewer-auth,hindsight,mattermost-integrations,mattermost-outputs,mealie-api
+        secret.reloader.stakater.com/reload: hermes-agent-env,hermes-alert-webhook,hermes-media-client,hermes-viewer-auth,hindsight,mattermost-integrations,mattermost-outputs,mealie-api
       labels:
         app: hermes-agent
     spec:
       serviceAccountName: hermes-agent
       automountServiceAccountToken: false
+      # Resolve the tunnel-only AI endpoint locally. CoreDNS remains available
+      # during NetBird bootstrap; the Hermes-scoped NetBird nameserver group
+      # forwards other queries to CoreDNS once the sidecar has connected.
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 127.0.0.153
+          - 10.43.0.10
+        searches:
+          - hermes-agent.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
+        options:
+          - name: ndots
+            value: "1"
+          - name: timeout
+            value: "1"
+          - name: attempts
+            value: "2"
       terminationGracePeriodSeconds: 75
       affinity:
         nodeAffinity:
@@ -237,12 +256,11 @@ spec:
             - name: LANG
               value: en_US.UTF-8
             - name: OPENAI_BASE_URL
-              value: http://cliproxyapi.cliproxyapi.svc.cluster.local:8317/v1
+              value: https://ai.asgard.michaelbrusegard.com/v1
             - name: OPENAI_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: cliproxyapi
-                  key: API_KEY
+              # Required by the SDK; NetBird strips client authorization and
+              # authenticates the request using the pod's tunnel identity.
+              value: netbird
             - name: HINDSIGHT_API_URL
               value: http://hindsight.hindsight.svc.cluster.local:8888
             - name: HINDSIGHT_MODE

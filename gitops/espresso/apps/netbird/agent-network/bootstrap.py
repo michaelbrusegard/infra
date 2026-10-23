@@ -87,7 +87,7 @@ def registration_is_valid(token_path, tokens):
 
 def reconcile(api, config, upstream_key, token_path):
     groups = {group["name"]: group["id"] for group in api("GET", "/groups")}
-    required = set(config["source_groups"])
+    required = {group for policy in config["policies"] for group in policy["source_groups"]}
     missing = required - groups.keys()
     if missing:
         raise RuntimeError("Waiting for OpenTofu groups: " + ", ".join(sorted(missing)))
@@ -108,17 +108,18 @@ def reconcile(api, config, upstream_key, token_path):
     provider = configure_provider(
         api, config["provider"], upstream_key, token_path.with_name("provider-key.sha256"),
     )
-    # Seed the policy once. Dashboard edits, including disabling access, survive
+    # Seed each policy once. Dashboard edits, including disabling access, survive
     # proxy restarts and certificate/key rotation.
-    if named(api("GET", "/agent-network/policies"), "Shared AI Access") is None:
-        api("POST", "/agent-network/policies", {
-            "name": "Shared AI Access",
-            "description": "Allow AI users and admins to use CLIProxyAPI over NetBird",
-            "enabled": True,
-            "source_groups": [groups[name] for name in config["source_groups"]],
-            "destination_provider_ids": [provider["id"]],
-            "guardrail_ids": [],
-        })
+    policies = api("GET", "/agent-network/policies")
+    for desired in config["policies"]:
+        if named(policies, desired["name"]) is None:
+            api("POST", "/agent-network/policies", {
+                **desired,
+                "enabled": True,
+                "source_groups": [groups[name] for name in desired["source_groups"]],
+                "destination_provider_ids": [provider["id"]],
+                "guardrail_ids": [],
+            })
 
     # Proxy tokens are returned only once. Keep one on the PVC, reuse it on
     # restarts, and recreate it if it has been revoked or expired server-side.

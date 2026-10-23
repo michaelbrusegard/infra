@@ -647,6 +647,26 @@ resource "netbird_policy" "dns_access_tcp" {
   }
 }
 
+# NetBird serves the private AI endpoint locally. Every other DNS query from
+# Hermes must retain Kubernetes service discovery and the cluster's upstreams.
+resource "netbird_nameserver_group" "hermes_cluster_dns" {
+  name        = "Hermes Cluster DNS"
+  description = "Kubernetes DNS for the Hermes NetBird sidecar"
+  enabled     = true
+  primary     = true
+  groups      = [netbird_group.hermes_egress.id]
+
+  nameservers = [
+    {
+      ip      = "10.43.0.10"
+      ns_type = "udp"
+      port    = 53
+    }
+  ]
+
+  search_domains_enabled = false
+}
+
 resource "netbird_nameserver_group" "router_public_dns" {
   name        = "Bootstrap Public DNS"
   description = "Public DNS for router and NetBird control-plane domains to avoid tunnel bootstrap and hairpin loops"
