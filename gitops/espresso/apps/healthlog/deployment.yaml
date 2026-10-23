@@ -23,7 +23,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: healthlog
-          image: ghcr.io/mbombeck/healthlog:v1.45.0@sha256:97b6105a49b333e939263010f11ee6f6d31ce8ba97a3bba2d0e60e91acdadc1f
+          # Run the location encryption backfill before migration 0409 in v1.45.
+          image: ghcr.io/mbombeck/healthlog:v1.42.4@sha256:a5e8caa42e0edd08a7607fc0f1db3852d01f0c43d5d14448ab49181799f013c7
           env:
             - name: DB_PASSWORD
               valueFrom:
