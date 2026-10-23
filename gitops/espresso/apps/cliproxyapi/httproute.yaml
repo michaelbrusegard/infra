@@ -11,6 +11,44 @@ spec:
   hostnames:
     - llm.asgard.michaelbrusegard.com
   rules:
-    - backendRefs:
+    - matches:
+        - path:
+            type: Exact
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /management.html
+            statusCode: 302
+    # Client inference goes through ai.asgard and NetBird's AI policies.
+    # Keep the management panel and its OAuth callbacks on the admin route.
+    - matches:
+        - path:
+            type: Exact
+            value: /management.html
+        - path:
+            type: PathPrefix
+            value: /v8/management
+        - path:
+            type: PathPrefix
+            value: /v0/management
+        - path:
+            type: Exact
+            value: /anthropic/callback
+        - path:
+            type: Exact
+            value: /codex/callback
+        - path:
+            type: Exact
+            value: /antigravity/callback
+        - path:
+            type: Exact
+            value: /devin/callback
+        - path:
+            type: Exact
+            value: /callback
+      backendRefs:
         - name: cliproxyapi
           port: 8317

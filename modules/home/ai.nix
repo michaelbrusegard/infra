@@ -61,21 +61,8 @@
   # OpenCode registers <config dir>/skill as a skill source, singular.
   opencodeSkillFiles = skillFilesFor "${config.xdg.configHome}/opencode/skill";
   cliProxyApi = {
-    baseUrl = "https://llm.asgard.michaelbrusegard.com";
-    piProviderPackage = "npm:@router-for-me/pi-cliproxyapi-provider@1.4.20";
-  };
-  cliProxyApiKey = pkgs.writeShellApplication {
-    name = "cliproxyapi-api-key";
-    text = ''
-      api_key_file=${lib.escapeShellArg config.secrets.keys.cliProxyApiKeyFile}
-
-      if [ ! -r "$api_key_file" ]; then
-        echo "CLIProxyAPI API key is unavailable at $api_key_file" >&2
-        exit 1
-      fi
-
-      exec ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} "$api_key_file"
-    '';
+    baseUrl = "https://ai.asgard.michaelbrusegard.com";
+    piProviderPackage = "${pkgs.pi-cliproxyapi-provider}";
   };
   codexSettings = {
     approval_policy = "never";
@@ -135,9 +122,12 @@
       name = "pi";
       runtimeInputs = [pkgs.nodejs];
       text = ''
-        cli_proxy_api_key="$(${lib.getExe cliProxyApiKey})"
-        export CLIPROXYAPI_API_KEY="$cli_proxy_api_key"
+        # Pi requires a nonempty key; NetBird authenticates the peer instead.
+        export CLIPROXYAPI_API_KEY=netbird
         export CLIPROXYAPI_BASE_URL=${lib.escapeShellArg cliProxyApi.baseUrl}
+        export CLIPROXYAPI_RESPONSES_URL=${lib.escapeShellArg "${cliProxyApi.baseUrl}/v1/responses"}
+        # WebSocket handshakes have no model body for NetBird to authorize.
+        export CLIPROXYAPI_TRANSPORT=sse
 
         exec ${lib.getExe pkgs.pi-coding-agent} "$@"
       '';
@@ -444,7 +434,7 @@ in {
               end;
             def is_cliproxyapi:
               package_source
-              | test("^(npm:)?@router-for-me/pi-cliproxyapi-provider(@.*)?$");
+              | test("^(npm:)?@router-for-me/pi-cliproxyapi-provider(@.*)?$|^/nix/store/[^/]+-pi-cliproxyapi-provider-[^/]+$");
             def is_pi_loop:
               package_source
               | test("^(npm:)?@koltmcbride/pi-loop(@.*)?$");
