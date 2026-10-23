@@ -13,6 +13,7 @@ resources:
   - agent-network.yaml
 configMapGenerator:
   - name: netbird-agent-network
+    namespace: netbird
     files:
       - agent-network/bootstrap.py
       - agent-network/config.json
