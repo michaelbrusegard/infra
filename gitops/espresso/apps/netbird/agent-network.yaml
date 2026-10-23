@@ -218,6 +218,16 @@ spec:
               - matchPattern: "*"
     - toEndpoints:
         - matchLabels:
+            k8s:io.kubernetes.pod.namespace: netbird
+            k8s:app: netbird-server
+      # Cilium also checks the backend leg after Envoy terminates management
+      # HTTPS. Without this rule the HTTPS request receives an Envoy 403.
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
             k8s:io.kubernetes.pod.namespace: cliproxyapi
             k8s:app: cliproxyapi
       toPorts:
