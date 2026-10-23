@@ -91,7 +91,7 @@ spec:
                           - sh
                           - -ec
                           - |
-                            # ARM firmware may omit product_uuid. Reuse the
+                            # Firmware may omit product_uuid. Reuse the
                             # live identity so mounted volumes stay connected.
                             identity=/csi/host-identity/product_uuid
                             mkdir -p /csi/host-identity

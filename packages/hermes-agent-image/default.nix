@@ -89,7 +89,7 @@
     pname = "hermes-agent-node-tools";
     version = "1.0.0";
     src = ./node-tools;
-    npmDepsHash = "sha256-gM0SR+I5ZWsIQbo4QHi3N8E/hdD3XLmtVXGca9uvb+s=";
+    npmDepsHash = "sha256-+dwJvgdFprK9KzswtIOZXuAFPpM1B7FLPWDQVglhBAU=";
     dontNpmBuild = true;
     installPhase = ''
       runHook preInstall
