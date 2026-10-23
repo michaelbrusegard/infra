@@ -18,6 +18,8 @@ spec:
     crds: CreateReplace
   upgrade:
     crds: CreateReplace
+    # The io-engine uses OnDelete; its managed drain/upgrade runs after Helm.
+    disableWait: true
   values:
     engines:
       replicated:
