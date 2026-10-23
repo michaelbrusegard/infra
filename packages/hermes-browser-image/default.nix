@@ -7,7 +7,7 @@
     owner = "google";
     repo = "android-emulator-container-scripts";
     rev = "0654f694b46794fae4b178f1e1a17cb60c5d2d34";
-    sha256 = "1l3yqphfcl6z6pb6xflwf9sfzw9679jh98r90s5d8hl23kbmgxrl";
+    hash = "sha256-nCGHC/sFHhThyvVnW0y6W6wt8F7u4YQtD+zy+J+7BaI=";
   };
   androidViewerLogger = pkgs.writeText "android-viewer-logger.ts" ''
     const logger = {
