@@ -279,14 +279,20 @@ jobs:
 
           wait_for_boot() {
             for attempt in $(seq 1 90); do
-              docker exec hermes-android-smoke \
-                /android/sdk/platform-tools/adb connect 127.0.0.1:5555 \
-                >/dev/null 2>&1 || true
-              if [ "$(docker exec hermes-android-smoke \
-                /android/sdk/platform-tools/adb -s 127.0.0.1:5555 \
-                shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; then
-                return 0
-              fi
+              # The launcher writes this after starting its ADB server. Calling
+              # ADB earlier races two server processes for the same listener.
+              case "$(jq -r '.state // empty' "$smoke_root/data/status/launcher.json" 2>/dev/null)" in
+                starting|running)
+                  docker exec hermes-android-smoke \
+                    /android/sdk/platform-tools/adb connect 127.0.0.1:5555 \
+                    >/dev/null 2>&1 || true
+                  if [ "$(docker exec hermes-android-smoke \
+                    /android/sdk/platform-tools/adb -s 127.0.0.1:5555 \
+                    shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; then
+                    return 0
+                  fi
+                  ;;
+              esac
               if [ "$(docker inspect --format '{{.State.Running}}' \
                 hermes-android-smoke 2>/dev/null || true)" != true ]; then
                 docker logs hermes-android-smoke 2>&1 || true
