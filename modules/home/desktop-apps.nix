@@ -39,6 +39,7 @@ in {
         ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
           mattermost-desktop
           fluffychat
+          zapzap
           rustdesk-flutter
           imv
           gthumb
@@ -109,6 +110,8 @@ in {
           ".config/scribus"
           ".config/inkscape"
           ".config/Signal"
+          ".config/ZapZap"
+          ".local/share/ZapZap"
           ".config/Mattermost"
           ".config/Slack"
           ".config/Proton Mail"
