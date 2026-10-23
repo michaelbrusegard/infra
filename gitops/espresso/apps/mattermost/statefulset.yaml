@@ -45,7 +45,7 @@ spec:
               memory: 32Mi
       containers:
         - name: mattermost
-          image: docker.io/mattermost/mattermost-team-edition:11.11.3@sha256:e743b074894133fe131e2274ef8b5295859084641d6657c0e24fb9b0c26c32c0
+          image: docker.io/mattermost/mattermost-team-edition:12.0.1@sha256:8ca1050cb8a2ec1ec0be5aff90ee40aa03e134f48443f7526b7b2b18872cf31b
           env:
             - name: MM_SQLSETTINGS_DRIVERNAME
               value: postgres
