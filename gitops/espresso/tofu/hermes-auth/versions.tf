@@ -4,11 +4,11 @@ terraform {
   required_providers {
     pocketid = {
       source  = "trozz/pocketid"
-      version = "2.3.0"
+      version = "2.5.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = "3.7.2"
+      version = "3.9.1"
     }
   }
 }

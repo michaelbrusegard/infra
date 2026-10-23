@@ -16,7 +16,7 @@ spec:
     spec:
       initContainers:
         - name: model-pull
-          image: ollama/ollama:0.32.14@sha256:b23b01ffcfbcf197571b0c8b0b0e73e437be02fc2d2786badea8a5734e047188
+          image: ollama/ollama:0.40.10@sha256:ca389885d4c03971d9bdc1c082452c128819b48425b5633c73d7b208b1e3d11a
           command:
             - sh
             - -c
@@ -40,7 +40,7 @@ spec:
               mountPath: /root/.ollama
       containers:
         - name: ollama
-          image: ollama/ollama:0.32.14@sha256:b23b01ffcfbcf197571b0c8b0b0e73e437be02fc2d2786badea8a5734e047188
+          image: ollama/ollama:0.40.10@sha256:ca389885d4c03971d9bdc1c082452c128819b48425b5633c73d7b208b1e3d11a
           env:
             - name: OLLAMA_HOST
               value: 0.0.0.0:11434

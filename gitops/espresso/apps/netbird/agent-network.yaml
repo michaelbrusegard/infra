@@ -89,7 +89,7 @@ spec:
               mountPath: /state
       containers:
         - name: proxy
-          image: docker.io/netbirdio/reverse-proxy:0.77.0@sha256:ef14d701bc5e2c1a664aa7496e83a82ece9845906f05c98caada6a2533b93e2d
+          image: docker.io/netbirdio/reverse-proxy:0.81.3@sha256:5da714cd47a66a7c74ddbacc54a6a90d35c1959b77d1744a149b082e69659b45
           command:
             - /busybox/sh
             - -ec
