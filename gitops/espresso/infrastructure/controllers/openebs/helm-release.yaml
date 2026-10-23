@@ -74,6 +74,63 @@ spec:
           - target:
               group: apps
               version: v1
+              kind: DaemonSet
+              name: openebs-csi-node
+            patch: |
+              apiVersion: apps/v1
+              kind: DaemonSet
+              metadata:
+                name: openebs-csi-node
+              spec:
+                template:
+                  spec:
+                    initContainers:
+                      - name: persist-nvme-host-id
+                        image: docker.io/openebs/alpine-sh:4.6.0
+                        command:
+                          - sh
+                          - -ec
+                          - |
+                            # ARM firmware may omit product_uuid. Reuse the
+                            # live identity so mounted volumes stay connected.
+                            identity=/csi/host-identity/product_uuid
+                            mkdir -p /csi/host-identity
+                            if [ ! -s "$identity" ]; then
+                              for controller in /host-sys/class/nvme/nvme*; do
+                                [ "$(cat "$controller/hostnqn" 2>/dev/null)" = "nqn.2019-05.io.openebs:node-name:$MY_NODE_NAME" ] || continue
+                                cat "$controller/hostid" > "$identity"
+                                break
+                              done
+                            fi
+                            if [ ! -s "$identity" ]; then
+                              if [ -s /host-sys/class/dmi/id/product_uuid ]; then
+                                cat /host-sys/class/dmi/id/product_uuid > "$identity"
+                              else
+                                cat /proc/sys/kernel/random/uuid > "$identity"
+                              fi
+                            fi
+                        env:
+                          - name: MY_NODE_NAME
+                            valueFrom:
+                              fieldRef:
+                                fieldPath: spec.nodeName
+                        volumeMounts:
+                          - name: plugin-dir
+                            mountPath: /csi
+                          - name: sys
+                            mountPath: /host-sys
+                            readOnly: true
+                    containers:
+                      - name: csi-node
+                        volumeMounts:
+                          # nvmeadm reads this path once at startup.
+                          - name: plugin-dir
+                            mountPath: /sys/class/dmi/id
+                            subPath: host-identity
+                            readOnly: true
+          - target:
+              group: apps
+              version: v1
               kind: Deployment
               name: openebs-csi-controller
             patch: |
