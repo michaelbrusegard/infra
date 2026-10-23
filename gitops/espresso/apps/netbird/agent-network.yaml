@@ -1,0 +1,258 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: netbird-agent-network
+  namespace: netbird
+spec:
+  secretName: netbird-agent-network-tls
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+  dnsNames:
+    - ai.asgard.michaelbrusegard.com
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbird-agent-network
+  namespace: netbird
+spec:
+  clusterIP: None
+  selector:
+    app: netbird-agent-network
+  ports:
+    - name: health
+      port: 8080
+      targetPort: health
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: netbird-agent-network
+  namespace: netbird
+spec:
+  serviceName: netbird-agent-network
+  replicas: 1
+  selector:
+    matchLabels:
+      app: netbird-agent-network
+  template:
+    metadata:
+      labels:
+        app: netbird-agent-network
+      annotations:
+        secret.reloader.stakater.com/reload: netbird-credentials,cliproxyapi,netbird-agent-network-tls
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: bootstrap
+          image: docker.io/library/python:3.14-slim@sha256:cfe2e24a75302a15934d37c2d86412893c0aa934dc3a97cbb439d04c01890ca9
+          command:
+            - python
+            - /config/bootstrap.py
+          env:
+            - name: NETBIRD_API_URL
+              value: http://netbird-server.netbird.svc.cluster.local/api
+            - name: NETBIRD_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: netbird-credentials
+                  key: netbird_token
+            - name: UPSTREAM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cliproxyapi
+                  key: API_KEY
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: data
+              mountPath: /state
+      containers:
+        - name: proxy
+          image: docker.io/netbirdio/reverse-proxy:0.77.0@sha256:ef14d701bc5e2c1a664aa7496e83a82ece9845906f05c98caada6a2533b93e2d
+          command:
+            - /busybox/sh
+            - -ec
+            - |
+              IFS= read -r NB_PROXY_TOKEN < /var/lib/netbird/proxy-token
+              export NB_PROXY_TOKEN
+              exec /go/bin/netbird-proxy
+          env:
+            - name: NB_PROXY_MANAGEMENT_ADDRESS
+              value: http://netbird-server.netbird.svc.cluster.local:80
+            - name: NB_PROXY_ALLOW_INSECURE
+              value: "true"
+            - name: NB_PROXY_DOMAIN
+              value: ai.asgard.michaelbrusegard.com
+            - name: NB_PROXY_PRIVATE
+              value: "true"
+            # Public HTTP listeners stay on loopback. Clients use the embedded
+            # WireGuard listener on port 443; NetBird supplies its private DNS.
+            - name: NB_PROXY_ADDRESS
+              value: 127.0.0.1:8443
+            - name: NB_PROXY_HEALTH_ADDRESS
+              value: 0.0.0.0:8080
+            - name: NB_PROXY_WG_PORT
+              value: "51820"
+            - name: NB_PROXY_CERTIFICATE_DIRECTORY
+              value: /certs
+            - name: NB_PROXY_ACME_CERTIFICATES
+              value: "false"
+            - name: NB_PROXY_SUPPORTS_CUSTOM_PORTS
+              value: "false"
+            - name: NB_PROXY_PREALLOCATED_BUFFERS
+              value: "512"
+            - name: NB_PROXY_MAX_BATCH_SIZE
+              value: "32"
+          ports:
+            - name: health
+              containerPort: 8080
+            - name: wireguard
+              containerPort: 51820
+              protocol: UDP
+          startupProbe:
+            httpGet:
+              path: /healthz/startup
+              port: health
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: health
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: health
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/netbird
+            - name: tls
+              mountPath: /certs
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: netbird-agent-network
+        - name: tls
+          secret:
+            secretName: netbird-agent-network-tls
+        - name: tmp
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: nvme-ha
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: netbird-agent-network
+  namespace: netbird
+spec:
+  endpointSelector:
+    matchLabels:
+      app: netbird-agent-network
+  ingress:
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    - fromEntities:
+        - all
+      toPorts:
+        - ports:
+            - port: "51820"
+              protocol: UDP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toEndpoints:
+        - matchLabels:
+            app: netbird-server
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: cliproxyapi
+            k8s:app: cliproxyapi
+      toPorts:
+        - ports:
+            - port: "8317"
+              protocol: TCP
+    # Control-plane endpoints may resolve to either the gateway or WAN address.
+    - toCIDR:
+        - 10.0.188.0/24
+        - fd7a:115c:a1e0:188::/64
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP
+    # ICE/STUN and encrypted WireGuard traffic use peer-selected UDP ports.
+    - toEntities:
+        - all
+      toPorts:
+        - ports:
+            - port: "0"
+              protocol: UDP

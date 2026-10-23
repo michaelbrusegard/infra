@@ -10,3 +10,9 @@ resources:
   - services.yaml
   - httproute.yaml
   - network-policy.yaml
+  - agent-network.yaml
+configMapGenerator:
+  - name: netbird-agent-network
+    files:
+      - agent-network/bootstrap.py
+      - agent-network/config.json

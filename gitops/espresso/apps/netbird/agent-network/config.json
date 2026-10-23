@@ -1,0 +1,13 @@
+{
+  "endpoint": "ai.asgard.michaelbrusegard.com",
+  "source_groups": ["Admins", "AI"],
+  "provider": {
+    "name": "CLIProxyAPI",
+    "provider_id": "custom",
+    "upstream_url": "http://cliproxyapi.cliproxyapi.svc.cluster.local:8317",
+    "enabled": true,
+    "models": [],
+    "metadata_disabled": true,
+    "skip_tls_verification": false
+  }
+}

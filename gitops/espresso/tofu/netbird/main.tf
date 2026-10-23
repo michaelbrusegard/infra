@@ -227,6 +227,10 @@ resource "netbird_group" "infra" {
   name = "Infra"
 }
 
+resource "netbird_group" "ai" {
+  name = "AI"
+}
+
 resource "netbird_group" "media" {
   name = "Media"
 }
