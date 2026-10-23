@@ -31,6 +31,7 @@ address, preventing its credential from being forwarded to another service.
 
 The existing management PAT is available through the reflected
 `netbird-credentials` Secret and is mounted only into the init container. The
+bootstrap and proxy use the existing HTTPS management endpoint. The
 upstream key is reflected from the existing `cliproxyapi` Secret into NetBird's
 namespace. Rotating that one source updates both consumers, and the bootstrap
 updates the provider key without resetting dashboard controls. Neither key is

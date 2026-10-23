@@ -59,7 +59,7 @@ spec:
             - /config/bootstrap.py
           env:
             - name: NETBIRD_API_URL
-              value: http://netbird-server.netbird.svc.cluster.local/api
+              value: https://netbird.asgard.michaelbrusegard.com/api
             - name: NETBIRD_API_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -99,9 +99,7 @@ spec:
               exec /go/bin/netbird-proxy
           env:
             - name: NB_PROXY_MANAGEMENT_ADDRESS
-              value: http://netbird-server.netbird.svc.cluster.local:80
-            - name: NB_PROXY_ALLOW_INSECURE
-              value: "true"
+              value: https://netbird.asgard.michaelbrusegard.com:443
             - name: NB_PROXY_DOMAIN
               value: ai.asgard.michaelbrusegard.com
             - name: NB_PROXY_PRIVATE
@@ -220,23 +218,22 @@ spec:
               - matchPattern: "*"
     - toEndpoints:
         - matchLabels:
-            app: netbird-server
-      toPorts:
-        - ports:
-            - port: "80"
-              protocol: TCP
-    - toEndpoints:
-        - matchLabels:
             k8s:io.kubernetes.pod.namespace: cliproxyapi
             k8s:app: cliproxyapi
       toPorts:
         - ports:
             - port: "8317"
               protocol: TCP
-    # Control-plane endpoints may resolve to either the gateway or WAN address.
+    # The management endpoint may resolve to its gateway VIP or WAN address.
     - toCIDR:
-        - 10.0.188.0/24
-        - fd7a:115c:a1e0:188::/64
+        - 10.0.188.2/32
+        - fd7a:115c:a1e0:188::2/128
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toEntities:
+        - ingress
       toPorts:
         - ports:
             - port: "443"
@@ -246,8 +243,6 @@ spec:
       toPorts:
         - ports:
             - port: "443"
-              protocol: TCP
-            - port: "80"
               protocol: TCP
     # ICE/STUN and encrypted WireGuard traffic use peer-selected UDP ports.
     - toEntities:

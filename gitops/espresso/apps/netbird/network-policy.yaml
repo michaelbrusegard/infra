@@ -8,13 +8,6 @@ spec:
     matchLabels:
       app: netbird-server
   ingress:
-    - fromEndpoints:
-        - matchLabels:
-            app: netbird-agent-network
-      toPorts:
-        - ports:
-            - port: "80"
-              protocol: TCP
     - fromEntities:
         - host
         - remote-node
