@@ -9,7 +9,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - llm.asgard.michaelbrusegard.com
+    - cliproxy.asgard.michaelbrusegard.com
   rules:
     - matches:
         - path:

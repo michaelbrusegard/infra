@@ -44,7 +44,7 @@ locals {
     }
     cliproxyapi = {
       name    = "CLIProxyAPI"
-      address = "llm.${local.domain}"
+      address = "cliproxy.${local.domain}"
       group   = "infra"
     }
     hindsight = {
