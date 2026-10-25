@@ -26,6 +26,9 @@ in {
     uv
     ty
     oxlint
+    oxfmt
+    prettier
+    biome
     vtsls
     postgresql
     lazysql
@@ -106,14 +109,5 @@ in {
   ruff-unstable = pkgs-unstable.ruff;
   eslint = pkgs-unstable.eslint.overrideAttrs (old: {
     meta = (old.meta or {}) // {mainProgram = "eslint";};
-  });
-  prettier = pkgs-unstable.prettier.overrideAttrs (old: {
-    meta = (old.meta or {}) // {mainProgram = "prettier";};
-  });
-  oxfmt = pkgs-unstable.oxfmt.overrideAttrs (old: {
-    meta = (old.meta or {}) // {mainProgram = "oxfmt";};
-  });
-  biome = pkgs-unstable.biome.overrideAttrs (old: {
-    meta = (old.meta or {}) // {mainProgram = "biome";};
   });
 }
