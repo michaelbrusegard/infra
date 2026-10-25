@@ -374,7 +374,10 @@ in {
           ' "$config_file" > "$temp_file"
 
           if ! cmp -s "$temp_file" "$config_file"; then
-            $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
+            # Persisted files can be bind mounts; update their contents without
+            # unlinking the mount point as install would do.
+            $DRY_RUN_CMD chmod 0600 "$config_file"
+            $DRY_RUN_CMD cp "$temp_file" "$config_file"
           fi
           rm -f "$temp_file"
         done
