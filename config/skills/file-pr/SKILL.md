@@ -1,67 +1,49 @@
 ---
 name: file-pr
-description: Write, improve, or open a focused pull request from the current branch. Use when the user asks to draft, file, open, submit, create, or improve a PR or pull request.
+description: File a concise pull request. Use when the user asks to file, open, or create a PR.
 ---
 
 # File PR
 
-Write for the reviewer. Give enough background to understand the change, then
-stop. Use `unslop` on the title, description, and commit bodies.
+Before filing, check whether a PR for this branch already exists. Review the
+diff locally against the base branch (usually `origin/main`) to make sure its
+contents match the goal.
 
-## Before writing
+PR titles usually become commit messages, so follow the repository's title
+conventions. Look at recently merged PRs and Git history for examples. Prefer a
+concise, human-readable title that explains why the change matters:
 
-1. Establish the primary reason for the PR from the conversation. Ask only when
-   it is still unclear.
-2. Read repository instructions, full diff, commit history, current branch,
-   base, working tree, and real test evidence. Do not write from commit subjects
-   alone or silently include unrelated work.
-3. Resolve whether a PR already exists for the branch. Update it rather than
-   creating a duplicate.
-4. Check repository and remote rules before committing, pushing, or creating a
-   public artifact. An explicit request to file or open the PR authorizes that
-   PR, not unrelated external actions.
-5. Shape the work into small, ordered commits and focused PRs. Independent work
-   branches from the normal base. Dependent slices form a visible stack in the
-   repository's stacking tool. Ask before reorganizing published history or
-   making a substantial split.
-6. Bring the branch up to date only when it is safe and does not require an
-   unauthorized force-push. Otherwise state the stale-base risk.
-7. Run required checks and inspect the final diff for generated complexity,
-   narrating comments, debug residue, accidental files, and scope creep.
+BAD
 
-## Title
+> ❌ perf(server): negotiate permessage-deflate on the websocket
 
-Follow the repository's established convention. When none exists, use a
-Conventional Commit-style title with an imperative, specific subject. Keep it
-under 72 characters when practical and mark breaking behavior clearly.
+GOOD
 
-## Description
+> ✅ perf(server): cut websocket frame size by 70%+ with gzipping
 
-Lead with why the change matters, then state the net change and its boundary.
-Explain only choices the diff cannot. Contrast old and new behavior when that
-makes the scope clearer.
+Open the description with a simple explanation of the problem based on the
+user's original prompt, then briefly explain the solution. Do not lead with an
+implementation inventory:
 
-Use structure that helps this PR. Do not force `Summary`, `Test plan`, or a
-fixed template onto a small change. Include only sections with content:
+BAD
 
-- actual behavioral or end-to-end verification, not a dump of routine lint and
-  typecheck commands;
-- screenshots or a short recording for visible UI changes;
-- related issues or conversations when the relationship is verified;
-- breaking behavior, required manual action, known risk, secret handling, or
-  infrastructure apply details when relevant.
+> ❌ Removed implicit workspace carry-over from every "new thread" entry point (cmd+n / cmd+shift+o, sidebar v1/v2 buttons, command palette). New threads inherit only the project from context; branch, worktree, and env mode always come from the configured defaults. Deleted buildContextualThreadOptions, startNewThreadInProjectFromContext, and the v1 sidebar's seed-context machinery.
 
-Never claim a test that was not run. If meaningful end-to-end verification was
-not performed, say so plainly. Preserve the provenance required by the global
-agent instructions.
+GOOD
 
-## File and hand off
+> ✅ My "new worktree" default was ignored when starting new threads on existing worktrees. Super unintuitive. Now your preferences always apply.
 
-Show the title, base, and full description before creation when the user asked
-for a draft or the destination is ambiguous. Otherwise create or update the PR
-requested by the user.
+End the description with the provenance line from the global agent
+instructions, after a horizontal rule. Name subagent models that wrote part
+of the change. Omit it only when the user asked for no attribution.
 
-Return the URL, title, base and head, draft state, verification evidence, and
-known follow-up. Suggest reviewers only when code ownership or recent work gives
-a real reason. Continue into `babysit-pr` only when the user asked for ongoing
-monitoring.
+Before submission, check the title, description, quotes, and attachments for
+secrets and private details.
+
+Open a real PR rather than a draft so review bots run. If `gh pr create` fails
+because the GraphQL rate limit is used up, open it through REST with
+`gh api repos/<owner>/<repo>/pulls -f title=... -f head=... -f base=... -F body=@<file>`. If the user also asked
+to babysit it, continue with the `babysit-pr` skill.
+
+Do not post a follow-up PR comment unless it serves the user's request. When a
+comment is needed, use the `leaving-pr-comments` skill.
