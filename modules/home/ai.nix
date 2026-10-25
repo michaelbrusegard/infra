@@ -301,40 +301,18 @@ in {
       activation.codexConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.codex/config.toml"
         config_dir=$(dirname "$config_file")
-        migration_file="${config.xdg.stateHome}/infra/ai-defaults-v1"
         temp_file=$(mktemp)
-        sanitized_file=$(mktemp)
         user_json=$(mktemp)
         merged_json=$(mktemp)
 
         if [ -f "$config_file" ]; then
-          # Clear retired defaults once, including copies misplaced beneath
-          # TOML tables by older activations. Later model choices remain local.
-          retired_keys="model_provider"
-          if [ ! -e "$migration_file" ]; then
-            retired_keys="$retired_keys|model|approval_policy|sandbox_mode"
-          fi
-          ${lib.getExe pkgs.gnused} -E \
-            "/^[[:space:]]*($retired_keys)[[:space:]]*=/d" \
-            "$config_file" > "$sanitized_file"
-
-          # TOML puts every root scalar ahead of the first table, and yq
-          # honours neither half of that: its writer follows map order and
-          # its merge does not hoist scalars, so managed keys were appended
-          # after the last [projects.*] header and codex read them as that
-          # project's settings. The sort meant to prevent it never ran
-          # either, because TOML tables come back with an empty tag rather
-          # than !!map. Order the document in jq, where `type` tells tables
-          # apart and object key order is dependable, and leave yq to
-          # convert between formats.
+          # TOML root values must precede tables. Sort them in jq because yq
+          # preserves JSON key order when converting back to TOML.
           ${lib.getExe pkgs.yq-go} -p=toml -o=json '.' \
-            "$sanitized_file" > "$user_json"
+            "$config_file" > "$user_json"
 
           ${lib.getExe pkgs.jq} -s '
             ((.[0]
-              | del(.model_provider)
-              | del(.mcp_servers.open_browser_use, .mcp_servers.open_computer_use,
-                    .mcp_servers."open-browser-use", .mcp_servers."open-computer-use")
               | del(.model_providers.cliproxyapi)) * .[1]) as $merged
             | ($merged | with_entries(select(.value | type != "object")))
               + ($merged | with_entries(select(.value | type == "object")))
@@ -353,34 +331,7 @@ in {
           $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
         fi
 
-        if [ ! -e "$migration_file" ]; then
-          $DRY_RUN_CMD mkdir -p "$(dirname "$migration_file")"
-          $DRY_RUN_CMD touch "$migration_file"
-        fi
-
-        rm -f "$temp_file" "$sanitized_file" "$user_json" "$merged_json"
-      '';
-
-      activation.removeDesktopAutomationMcp = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        for config_file in "$HOME/.pi/agent/mcp.json" "$HOME/.claude.json"; do
-          if [ ! -f "$config_file" ]; then
-            continue
-          fi
-
-          temp_file=$(mktemp)
-          ${lib.getExe pkgs.jq} '
-            del(.mcpServers."open-browser-use", .mcpServers."open-computer-use",
-                .mcpServers.open_browser_use, .mcpServers.open_computer_use)
-          ' "$config_file" > "$temp_file"
-
-          if ! cmp -s "$temp_file" "$config_file"; then
-            # Persisted files can be bind mounts; update their contents without
-            # unlinking the mount point as install would do.
-            $DRY_RUN_CMD chmod 0600 "$config_file"
-            $DRY_RUN_CMD cp "$temp_file" "$config_file"
-          fi
-          rm -f "$temp_file"
-        done
+        rm -f "$temp_file" "$user_json" "$merged_json"
       '';
 
       activation.piConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -400,13 +351,10 @@ in {
             def is_cliproxy:
               package_source
               | test("^(npm:)?@router-for-me/pi-cliproxyapi-provider(@.*)?$|^/nix/store/[^/]+-pi-cliproxyapi-provider-[^/]+$");
-            def is_pi_loop:
-              package_source
-              | test("^(npm:)?@koltmcbride/pi-loop(@.*)?$");
             .npmCommand = [$npm]
             | .defaultProvider = "cliproxyapi"
             | .packages = (
-                [(.packages // [])[] | select((is_cliproxy or is_pi_loop) | not)]
+                [(.packages // [])[] | select(is_cliproxy | not)]
                 + [$provider_package]
               )
           ' "$config_file" > "$temp_file"
@@ -439,14 +387,6 @@ in {
             .daemon = ((.daemon // {}) + {
               hostnames: (((.daemon.hostnames // []) + $hostnames) | unique)
             })
-            | if ((.daemon.appendSystemPrompt // "")
-                  | startswith("Prefer Paseo tools for agent delegation,"))
-              then
-                del(.daemon.appendSystemPrompt,
-                    .daemon.mcp.enabled, .daemon.mcp.injectIntoAgents)
-                | if .daemon.mcp == {} then del(.daemon.mcp) else . end
-              else .
-              end
           ' "$config_file" > "$temp_file"
         else
           ${lib.getExe pkgs.jq} \
