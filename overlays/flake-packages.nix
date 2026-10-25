@@ -6,7 +6,14 @@ inputs: _: prev: let
   };
   paseoElectron = inputs.paseo.inputs.nixpkgs.legacyPackages.${system}.electron;
   paseoTerminalSmoke = ../packages/paseo/terminal-worker-smoke.mjs;
-  paseoPackage = paseoBase.overrideAttrs (_: {
+  # Upstream installs with --ignore-scripts, which skips the root postinstall
+  # that applies patches/. The app depends on those patched exports, e.g.
+  # BottomSheetModalInternalProvider, and renders nothing without them.
+  paseoApplyDependencyPatches = ''
+    PATH="$PWD/node_modules/.bin:$PATH" node scripts/postinstall-patches.mjs
+  '';
+  paseoPackage = paseoBase.overrideAttrs (old: {
+    preBuild = (old.preBuild or "") + paseoApplyDependencyPatches;
     doInstallCheck = prev.stdenv.buildPlatform.canExecute prev.stdenv.hostPlatform;
     installCheckPhase = ''
       runHook preInstallCheck
@@ -26,6 +33,7 @@ inputs: _: prev: let
         (old.buildInputs or [])
         ++ prev.lib.optionals prev.stdenv.hostPlatform.isLinux [prev.stdenv.cc.cc.lib];
       autoPatchelfIgnoreMissingDeps = ["libc.musl-x86_64.so.1"];
+      preBuild = (old.preBuild or "") + paseoApplyDependencyPatches;
       patches =
         (old.patches or [])
         ++ [
