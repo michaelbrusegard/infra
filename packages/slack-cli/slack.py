@@ -378,11 +378,6 @@ class Cache:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False)
             os.replace(tmp, self.path(name))
-            for legacy in ("users.json", "channels.json", "team_url"):  # slack.sh caches
-                try:
-                    os.remove(os.path.join(CACHE_DIR, legacy))
-                except OSError:
-                    pass
         except OSError as e:
             warn(f"could not write cache {name}: {e}")
 
