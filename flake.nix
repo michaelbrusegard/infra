@@ -209,7 +209,6 @@
           age
           bind
           fluxcd
-          gh
           git
           imapsync
           jq

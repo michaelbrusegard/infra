@@ -57,7 +57,11 @@ side:
 
 `.envrc` runs `use flake`, so direnv auto-loads the dev shell on `cd` into
 the repo. Without direnv, run `nix develop`. Either way you get `age`, `sops`,
-`kubectl`, `kustomize`, `fluxcd`, `opentofu`, `gh`, `jq`, `yq-go`.
+`kubectl`, `kustomize`, `fluxcd`, `opentofu`, `jq`, `yq-go`.
+
+`gh` is deliberately not in the dev shell: the Home Manager `gh` wraps the
+binary to read `GH_TOKEN` from the sops-managed token file, and a plain `gh`
+from the dev shell would shadow it and run unauthenticated.
 
 ### Quality
 
