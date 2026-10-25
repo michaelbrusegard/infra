@@ -17,6 +17,7 @@ inputs: _: prev: let
 in {
   inherit
     (pkgs-unstable)
+    aerospace
     dgop
     jankyborders
     neovim-unwrapped
@@ -42,10 +43,6 @@ in {
     gh-dash
     gh-skyline
     ;
-
-  aerospace = pkgs-unstable.callPackage ../packages/aerospace-loc {
-    upstream = pkgs-unstable.aerospace;
-  };
 
   gh-poi = pkgs-unstable.gh-poi.overrideAttrs {
     version = "0.18.4";
