@@ -50,19 +50,19 @@
     piProviderPackage = "${pkgs.pi-cliproxyapi-provider}";
   };
   codexSettings = {
-    model = "gpt-6.1-sol";
     model_provider = "cliproxyapi";
     model_providers.cliproxyapi = {
       name = "Asgard";
       base_url = "${cliProxyApi.baseUrl}/v1";
-      http_headers.Authorization = "Bearer ${cliProxyApi.apiKey}";
+      model_catalog_url = "${cliProxyApi.baseUrl}/v1/models";
+      # The placeholder enables API-key discovery without shell credentials.
+      experimental_bearer_token = cliProxyApi.apiKey;
       wire_api = "responses";
       requires_openai_auth = false;
       supports_websockets = false;
     };
-    approval_policy = "never";
-    sandbox_mode = "danger-full-access";
     apps._default.enabled = false;
+    features.api_key_model_discovery = true;
     features.memories = false;
     memories = {
       generate_memories = false;
@@ -203,11 +203,10 @@ in {
       # The module writes this straight to the config dir as AGENTS.md.
       context = agentInstructions;
       settings = {
-        permission = "allow";
-        model = "asgard-openai/gpt-6.1-sol";
-        # Separate identities keep saved provider logins from overriding the
-        # gateway. Canonical providers supply native model capabilities.
-        enabled_providers = ["asgard-openai" "asgard-anthropic" "asgard-kimi"];
+        # Native providers inherit new models and capabilities from models.dev.
+        # Disable the OAuth plugins that can replace the configured gateway.
+        plugins = ["-opencode.provider.openai" "-opencode.provider.chatgpt"];
+        enabled_providers = ["openai" "anthropic" "moonshotai"];
         providers = lib.mapAttrs (_: provider:
           provider
           // {
@@ -217,20 +216,14 @@ in {
               transport = "http";
             };
           }) {
-          asgard-openai = {
+          openai = {
             name = "Asgard / OpenAI";
-            canonical = "openai";
-            models = lib.genAttrs ["gpt-6.1-sol" "gpt-6-astra" "gpt-6-sol" "gpt-6-luna"] (_: {});
           };
-          asgard-anthropic = {
+          anthropic = {
             name = "Asgard / Claude";
-            canonical = "anthropic";
-            models = lib.genAttrs ["claude-opus-5-5" "claude-sonnet-5-5" "claude-haiku-5-5"] (_: {});
           };
-          asgard-kimi = {
+          moonshotai = {
             name = "Asgard / Kimi";
-            canonical = "moonshotai";
-            models = lib.genAttrs ["kimi-k3.1-pro" "kimi-k3.1-pro-highspeed"] (_: {});
           };
         };
       };
@@ -243,17 +236,11 @@ in {
         env = {
           ANTHROPIC_BASE_URL = cliProxyApi.baseUrl;
           ANTHROPIC_AUTH_TOKEN = cliProxyApi.apiKey;
-          ANTHROPIC_DEFAULT_OPUS_MODEL = "claude-opus-5-5";
-          ANTHROPIC_DEFAULT_SONNET_MODEL = "claude-sonnet-5-5";
-          ANTHROPIC_DEFAULT_HAIKU_MODEL = "claude-haiku-5-5";
+          CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
         };
         autoMemoryEnabled = false;
         disableRemoteControl = true;
-        enableAllProjectMcpServers = true;
         enableArtifact = false;
-        permissions.defaultMode = "bypassPermissions";
-        sandbox.enabled = false;
-        skipDangerousModePermissionPrompt = true;
         attribution = {
           commit = "";
           pr = "";
@@ -307,17 +294,21 @@ in {
       activation.codexConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.codex/config.toml"
         config_dir=$(dirname "$config_file")
+        migration_file="${config.xdg.stateHome}/infra/ai-defaults-v1"
         temp_file=$(mktemp)
         sanitized_file=$(mktemp)
         user_json=$(mktemp)
         merged_json=$(mktemp)
 
         if [ -f "$config_file" ]; then
-          # Older activations could serialize these managed root keys beneath
-          # the preceding TOML table. Remove every copy before restoring them
-          # from codexConfig, which also repairs duplicate-key parse failures.
+          # Clear retired defaults once, including copies misplaced beneath
+          # TOML tables by older activations. Later user choices remain local.
+          retired_keys="model_provider"
+          if [ ! -e "$migration_file" ]; then
+            retired_keys="$retired_keys|model|approval_policy|sandbox_mode"
+          fi
           ${lib.getExe pkgs.gnused} -E \
-            '/^[[:space:]]*(approval_policy|sandbox_mode|model_provider)[[:space:]]*=/d' \
+            "/^[[:space:]]*($retired_keys)[[:space:]]*=/d" \
             "$config_file" > "$sanitized_file"
 
           # TOML puts every root scalar ahead of the first table, and yq
@@ -334,8 +325,6 @@ in {
 
           ${lib.getExe pkgs.jq} -s '
             ((.[0]
-              | del(.approval_policy)
-              | del(.sandbox_mode)
               | del(.model_provider)
               | del(.mcp_servers.open_browser_use, .mcp_servers.open_computer_use,
                     .mcp_servers."open-browser-use", .mcp_servers."open-computer-use")
@@ -355,6 +344,11 @@ in {
         if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
           $DRY_RUN_CMD mkdir -p "$config_dir"
           $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
+        fi
+
+        if [ ! -e "$migration_file" ]; then
+          $DRY_RUN_CMD mkdir -p "$(dirname "$migration_file")"
+          $DRY_RUN_CMD touch "$migration_file"
         fi
 
         rm -f "$temp_file" "$sanitized_file" "$user_json" "$merged_json"
