@@ -37,6 +37,9 @@ env:
 jobs:
   build-and-publish:
     runs-on: ubuntu-26.04
+    # The digest-bump deploy key bypasses the main ruleset, so it lives in
+    # the image-bump environment (main only) and never reaches PR runs.
+    environment: ${{ github.event_name != 'pull_request' && 'image-bump' || '' }}
     permissions:
       contents: read
       packages: write
@@ -44,7 +47,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-          ssh-key: ${{ secrets.IMAGE_BUMP_DEPLOY_KEY }}
+          ssh-key: ${{ github.event_name != 'pull_request' && secrets.IMAGE_BUMP_DEPLOY_KEY || '' }}
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
