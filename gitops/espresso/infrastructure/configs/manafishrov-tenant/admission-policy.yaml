@@ -32,6 +32,39 @@ spec:
         request.resource.resource != "namespaces" ||
         request.name.startsWith("manafishrov")
       message: "manafishrov SA may only manage namespaces matching manafishrov*"
+    # Namespaces must enforce baseline or restricted Pod Security, otherwise
+    # the SA could run privileged pods and own the node. Talk needs
+    # hostNetwork, so manafishrov-nextcloud alone may stay privileged; the
+    # manafishrov-nextcloud-pods policy below covers what PSA no longer does.
+    - expression: |
+        request.resource.resource != "namespaces" ||
+        request.operation == "DELETE" ||
+        (has(object.metadata.labels) &&
+         "pod-security.kubernetes.io/enforce" in object.metadata.labels &&
+         (object.metadata.labels["pod-security.kubernetes.io/enforce"] in ["baseline", "restricted"] ||
+          (object.metadata.name == "manafishrov-nextcloud" &&
+           object.metadata.labels["pod-security.kubernetes.io/enforce"] == "privileged")))
+      message: "manafishrov namespaces must set pod-security.kubernetes.io/enforce to baseline or restricted"
+    # HTTPRoutes must name their hostnames, and only on manafishrov.com. A
+    # route without hostnames matches every hostname on the listener.
+    - expression: |
+        request.resource.resource != "httproutes" ||
+        request.operation == "DELETE" ||
+        (has(object.spec.hostnames) && size(object.spec.hostnames) > 0 &&
+         object.spec.hostnames.all(h, h == "manafishrov.com" || h.endsWith(".manafishrov.com")))
+      message: "manafishrov HTTPRoutes must set hostnames under manafishrov.com"
+    - expression: |
+        request.resource.resource != "dnsendpoints" ||
+        request.operation == "DELETE" ||
+        !has(object.spec.endpoints) ||
+        object.spec.endpoints.all(e, e.dnsName == "manafishrov.com" || e.dnsName.endsWith(".manafishrov.com"))
+      message: "manafishrov DNSEndpoints may only publish names under manafishrov.com"
+    - expression: |
+        request.resource.resource != "secrets" ||
+        request.operation == "DELETE" ||
+        !has(object.type) ||
+        object.type != "kubernetes.io/service-account-token"
+      message: "manafishrov SA may not mint service account token Secrets"
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicyBinding
@@ -39,4 +72,62 @@ metadata:
   name: manafishrov-sa-namespace-scope
 spec:
   policyName: manafishrov-sa-namespace-scope
+  validationActions: [Deny]
+---
+# manafishrov-nextcloud runs with privileged Pod Security so Talk can use
+# hostNetwork. Re-impose the baseline checks that matter for node escape,
+# allowing only hostNetwork and hostPorts. Matches every creator, since pods
+# come from the ReplicaSet/Job controllers rather than the tenant SA.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: manafishrov-nextcloud-pods
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: manafishrov-nextcloud
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  variables:
+    - name: containers
+      expression: |
+        object.spec.containers +
+        (has(object.spec.initContainers) ? object.spec.initContainers : [])
+  validations:
+    - expression: |
+        !(has(object.spec.hostPID) && object.spec.hostPID) &&
+        !(has(object.spec.hostIPC) && object.spec.hostIPC)
+      message: "hostPID and hostIPC are not allowed in manafishrov-nextcloud"
+    - expression: |
+        !has(object.spec.volumes) ||
+        object.spec.volumes.all(v, !has(v.hostPath))
+      message: "hostPath volumes are not allowed in manafishrov-nextcloud"
+    - expression: |
+        variables.containers.all(c,
+          !has(c.securityContext) ||
+          ((!has(c.securityContext.privileged) || !c.securityContext.privileged) &&
+           (!has(c.securityContext.procMount) || c.securityContext.procMount == "Default")))
+      message: "privileged containers and unmasked procMount are not allowed in manafishrov-nextcloud"
+    - expression: |
+        variables.containers.all(c,
+          !has(c.securityContext) ||
+          !has(c.securityContext.capabilities) ||
+          !has(c.securityContext.capabilities.add) ||
+          c.securityContext.capabilities.add.all(cap, cap in [
+            "AUDIT_WRITE", "CHOWN", "DAC_OVERRIDE", "FOWNER", "FSETID", "KILL",
+            "MKNOD", "NET_BIND_SERVICE", "SETFCAP", "SETGID", "SETPCAP",
+            "SETUID", "SYS_CHROOT"]))
+      message: "only baseline capabilities may be added in manafishrov-nextcloud"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: manafishrov-nextcloud-pods
+spec:
+  policyName: manafishrov-nextcloud-pods
   validationActions: [Deny]
