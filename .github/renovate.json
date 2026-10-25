@@ -96,7 +96,9 @@
       ],
       "groupName": "container & action digests",
       "automerge": true,
-      "platformAutomerge": true
+      "platformAutomerge": true,
+      "minimumReleaseAge": "3 days",
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
       "matchUpdateTypes": [
@@ -104,7 +106,9 @@
       ],
       "groupName": "all patch dependencies",
       "automerge": true,
-      "platformAutomerge": true
+      "platformAutomerge": true,
+      "minimumReleaseAge": "3 days",
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
       "matchUpdateTypes": [
@@ -126,7 +130,9 @@
       ],
       "groupName": "github actions",
       "automerge": true,
-      "platformAutomerge": true
+      "platformAutomerge": true,
+      "minimumReleaseAge": "3 days",
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
       "matchManagers": [
