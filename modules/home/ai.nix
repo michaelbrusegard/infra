@@ -40,14 +40,26 @@
   ));
   claudeSkillFiles = skillFilesFor "${config.programs.claude-code.configDir}/skills";
   piSkillFiles = skillFilesFor ".pi/agent/skills";
-  kimiSkillFiles = skillFilesFor ".kimi/skills";
   # OpenCode registers <config dir>/skill as a skill source, singular.
   opencodeSkillFiles = skillFilesFor "${config.xdg.configHome}/opencode/skill";
   cliProxyApi = {
     baseUrl = "https://ai.asgard.michaelbrusegard.com";
+    # A non-secret placeholder: NetBird authenticates the device and injects
+    # the upstream credential. GUI apps must not depend on shell exports.
+    apiKey = "netbird";
     piProviderPackage = "${pkgs.pi-cliproxyapi-provider}";
   };
   codexSettings = {
+    model = "gpt-6.1-sol";
+    model_provider = "cliproxyapi";
+    model_providers.cliproxyapi = {
+      name = "Asgard";
+      base_url = "${cliProxyApi.baseUrl}/v1";
+      http_headers.Authorization = "Bearer ${cliProxyApi.apiKey}";
+      wire_api = "responses";
+      requires_openai_auth = false;
+      supports_websockets = false;
+    };
     approval_policy = "never";
     sandbox_mode = "danger-full-access";
     apps._default.enabled = false;
@@ -59,30 +71,13 @@
   };
   codexConfig = (pkgs.formats.toml {}).generate "codex-config" codexSettings;
   codexConfigJson = (pkgs.formats.json {}).generate "codex-config.json" codexSettings;
-  kimiAgent = (pkgs.formats.yaml {}).generate "kimi-agent.yaml" {
-    version = 1;
-    agent = {
-      extend = "default";
-      system_prompt_args.ROLE_ADDITIONAL = builtins.readFile agentInstructions;
-    };
-  };
-  kimiConfigured =
-    (pkgs.writeShellApplication {
-      name = "kimi";
-      text = ''
-        exec ${lib.getExe pkgs.kimi-cli} \
-          --agent-file ${lib.escapeShellArg kimiAgent} "$@"
-      '';
-    }).overrideAttrs (_: {
-      inherit (pkgs.kimi-cli) version;
-    });
   piCliProxyApi =
     (pkgs.writeShellApplication {
       name = "pi";
       runtimeInputs = [pkgs.nodejs];
       text = ''
         # Pi requires a nonempty key; NetBird authenticates the peer instead.
-        export CLIPROXYAPI_API_KEY=netbird
+        export CLIPROXYAPI_API_KEY=${lib.escapeShellArg cliProxyApi.apiKey}
         export CLIPROXYAPI_BASE_URL=${lib.escapeShellArg cliProxyApi.baseUrl}
         export CLIPROXYAPI_RESPONSES_URL=${lib.escapeShellArg "${cliProxyApi.baseUrl}/v1/responses"}
         # WebSocket handshakes have no model body for NetBird to authorize.
@@ -209,6 +204,35 @@ in {
       context = agentInstructions;
       settings = {
         permission = "allow";
+        model = "asgard-openai/gpt-6.1-sol";
+        # Separate identities keep saved provider logins from overriding the
+        # gateway. Canonical providers supply native model capabilities.
+        enabled_providers = ["asgard-openai" "asgard-anthropic" "asgard-kimi"];
+        providers = lib.mapAttrs (_: provider:
+          provider
+          // {
+            settings = {
+              baseURL = "${cliProxyApi.baseUrl}/v1";
+              inherit (cliProxyApi) apiKey;
+              transport = "http";
+            };
+          }) {
+          asgard-openai = {
+            name = "Asgard / OpenAI";
+            canonical = "openai";
+            models = lib.genAttrs ["gpt-6.1-sol" "gpt-6-astra" "gpt-6-sol" "gpt-6-luna"] (_: {});
+          };
+          asgard-anthropic = {
+            name = "Asgard / Claude";
+            canonical = "anthropic";
+            models = lib.genAttrs ["claude-opus-5-5" "claude-sonnet-5-5" "claude-haiku-5-5"] (_: {});
+          };
+          asgard-kimi = {
+            name = "Asgard / Kimi";
+            canonical = "moonshotai";
+            models = lib.genAttrs ["kimi-k3.1-pro" "kimi-k3.1-pro-highspeed"] (_: {});
+          };
+        };
       };
     };
 
@@ -216,6 +240,13 @@ in {
       enable = true;
       package = direnvWrapped pkgs.claude-code "claude";
       settings = {
+        env = {
+          ANTHROPIC_BASE_URL = cliProxyApi.baseUrl;
+          ANTHROPIC_AUTH_TOKEN = cliProxyApi.apiKey;
+          ANTHROPIC_DEFAULT_OPUS_MODEL = "claude-opus-5-5";
+          ANTHROPIC_DEFAULT_SONNET_MODEL = "claude-sonnet-5-5";
+          ANTHROPIC_DEFAULT_HAIKU_MODEL = "claude-haiku-5-5";
+        };
         autoMemoryEnabled = false;
         disableRemoteControl = true;
         enableAllProjectMcpServers = true;
@@ -236,7 +267,6 @@ in {
     {
       packages =
         [
-          (direnvWrapped kimiConfigured "kimi")
           (direnvWrapped piCliProxyApi "pi")
           pkgs.slack-cli
         ]
@@ -248,6 +278,7 @@ in {
               # Preserve project environments instead of using unwrapped providers.
               claude-code = config.programs.claude-code.package;
               codex = config.programs.codex.package;
+              pi-coding-agent = direnvWrapped piCliProxyApi "pi";
               gh = config.programs.gh.package;
             })
             (
@@ -270,7 +301,6 @@ in {
         // codexSkillFiles
         // claudeSkillFiles
         // piSkillFiles
-        // kimiSkillFiles
         // opencodeSkillFiles;
 
       activation.codexConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -308,11 +338,7 @@ in {
               | del(.model_provider)
               | del(.mcp_servers.open_browser_use, .mcp_servers.open_computer_use,
                     .mcp_servers."open-browser-use", .mcp_servers."open-computer-use")
-              | del(.model_providers.cliproxyapi)) * .[1]) as $raw
-            | (if ($raw.model_providers // {}) == {}
-               then ($raw | del(.model_providers))
-               else $raw
-               end) as $merged
+              | del(.model_providers.cliproxyapi)) * .[1]) as $merged
             | ($merged | with_entries(select(.value | type != "object")))
               + ($merged | with_entries(select(.value | type == "object")))
           ' "$user_json" ${lib.escapeShellArg codexConfigJson} > "$merged_json"
@@ -373,6 +399,7 @@ in {
               package_source
               | test("^(npm:)?@koltmcbride/pi-loop(@.*)?$");
             .npmCommand = [$npm]
+            | .defaultProvider = "cliproxyapi"
             | .packages = (
                 [(.packages // [])[] | select((is_cliproxyapi or is_pi_loop) | not)]
                 + [$provider_package]
@@ -383,6 +410,7 @@ in {
             --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
             --arg provider_package ${lib.escapeShellArg cliProxyApi.piProviderPackage} '{
               npmCommand: [$npm],
+              defaultProvider: "cliproxyapi",
               packages: [$provider_package]
             }' > "$temp_file"
         fi
@@ -440,6 +468,7 @@ in {
           [
             ".claude"
             ".codex"
+            # Preserve historical sessions after removing the Kimi CLI.
             ".kimi"
             ".pi"
             # V2 also writes cli.json and service credentials in the config

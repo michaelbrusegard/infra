@@ -5,6 +5,7 @@
   nightly,
   claude-code,
   codex,
+  pi-coding-agent,
   gh,
   git,
 }:
@@ -18,7 +19,7 @@ symlinkJoin {
   postBuild = ''
     for program in "$out/bin/"*; do
       wrapProgram "$program" \
-        --prefix PATH : ${lib.makeBinPath [claude-code codex gh git]}
+        --prefix PATH : ${lib.makeBinPath [claude-code codex pi-coding-agent gh git]}
     done
   '';
 }
