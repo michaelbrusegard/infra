@@ -24,6 +24,18 @@
       sha256 = old.src.outputHash;
     };
   });
+  # WhatsApp no longer serves the release pinned by brew-api.
+  whatsappDarwin = let
+    version = "26.42.19";
+  in
+    pkgs.brewCasks.whatsapp.overrideAttrs {
+      inherit version;
+      src = pkgs.fetchurl {
+        name = "whatsapp-${version}.zip";
+        url = "https://web.whatsapp.com/desktop/mac_native/release/?version=2.${version}&extension=zip&configuration=Release&branch=master&is_buck=true";
+        hash = "sha256-DmKCETIPy0n8Yq/XhwhgPN0vPDTwYu8in37wG6UDWPY=";
+      };
+    };
 in {
   home =
     {
@@ -65,7 +77,7 @@ in {
           brewCasks.raycast
           brewCasks.rustdesk
           brewCasks.mattermost
-          brewCasks.whatsapp
+          whatsappDarwin
 
           brewCasks.linearmouse
           brewCasks.legcord
