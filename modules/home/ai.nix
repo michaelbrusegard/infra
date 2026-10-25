@@ -38,6 +38,9 @@
     piProviderPackage = "${pkgs.pi-cliproxyapi-provider}";
   };
   codexSettings = {
+    # Codex is the reviewer harness; Claude Code writes the code.
+    model = "gpt-6.1-sol";
+    model_reasoning_effort = "high";
     model_provider = "cliproxyapi";
     model_providers.cliproxyapi = {
       name = "Asgard";
@@ -224,6 +227,8 @@ in {
       enable = true;
       package = direnvWrapped pkgs.claude-code "claude";
       settings = {
+        model = "claude-opus-5-5";
+        effortLevel = "high";
         env = {
           ANTHROPIC_BASE_URL = cliproxy.baseUrl;
           ANTHROPIC_AUTH_TOKEN = cliproxy.apiKey;
@@ -302,7 +307,8 @@ in {
 
           ${lib.getExe pkgs.jq} -s '
             ((.[0]
-              | del(.model_providers.cliproxyapi)) * .[1]) as $merged
+              | del(.model_providers.cliproxyapi)
+              | if .mcp_servers == {} then del(.mcp_servers) else . end) * .[1]) as $merged
             | ($merged | with_entries(select(.value | type != "object")))
               + ($merged | with_entries(select(.value | type == "object")))
           ' "$user_json" ${lib.escapeShellArg codexConfigJson} > "$merged_json"
@@ -342,6 +348,8 @@ in {
               | test("^(npm:)?@router-for-me/pi-cliproxyapi-provider(@.*)?$|^/nix/store/[^/]+-pi-cliproxyapi-provider-[^/]+$");
             .npmCommand = [$npm]
             | .defaultProvider = "cliproxyapi"
+            | .defaultModel = "claude-opus-5-5"
+            | .defaultThinkingLevel = "high"
             | .packages = (
                 [(.packages // [])[] | select(is_cliproxy | not)]
                 + [$provider_package]
@@ -353,6 +361,8 @@ in {
             --arg provider_package ${lib.escapeShellArg cliproxy.piProviderPackage} '{
               npmCommand: [$npm],
               defaultProvider: "cliproxyapi",
+              defaultModel: "claude-opus-5-5",
+              defaultThinkingLevel: "high",
               packages: [$provider_package]
             }' > "$temp_file"
         fi
