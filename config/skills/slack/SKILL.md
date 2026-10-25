@@ -36,7 +36,8 @@ channels if a name does not resolve.
 
 ## Draft and format
 
-Follow the writing style in the global agent instructions.
+Follow the writing style and conversational provenance rules in the global
+agent instructions. Treat the provenance header as part of the Slack message.
 
 Use Slack mrkdwn: `*bold*`, `_italic_`, backticks for code, `> quote`, and
 `<url|label>`. Do not use Markdown headings or double-asterisk bold.
@@ -50,8 +51,8 @@ When asking a specific person for something, resolve their user ID with
 - An explicit request to send a message or add a reaction authorizes that exact
   action. A request to draft does not.
 - If the destination, thread, or intended content is materially ambiguous, show
-  the complete draft and resolve the ambiguity before sending.
+  the complete attributed draft and resolve the ambiguity before sending.
 - Reply with `--thread <ts>` when responding to an existing message.
-- Immediately before sending, verify the destination, thread, mentions, and
-  links.
+- Immediately before sending, verify the destination, thread, mentions, links,
+  and required provenance.
 - Report the resulting permalink after a successful send.

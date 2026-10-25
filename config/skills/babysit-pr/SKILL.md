@@ -80,4 +80,5 @@ state, when another actor completed the queue, or when a conflict, permission,
 product decision, or persistent external failure requires the user.
 
 Report the mode, frontier and stack state, exact head SHA, fixes and dismissals
-with reasons, pending blockers, and the user's next decision.
+with reasons, pending blockers, and the user's next decision. Apply the global
+provenance rule to every posted reply.

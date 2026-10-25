@@ -48,7 +48,8 @@ candidates one by one:
 - **Show details.** Show the exact proposed comment, then ask again.
 
 Leave the review pending. Do not submit, approve, or request changes unless the
-user explicitly asks for that disposition.
+user explicitly asks for that disposition. Apply the global provenance rule to
+every posted comment.
 
 ### 5. Recheck the head
 

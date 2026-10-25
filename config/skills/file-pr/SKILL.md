@@ -52,7 +52,8 @@ fixed template onto a small change. Include only sections with content:
   infrastructure apply details when relevant.
 
 Never claim a test that was not run. If meaningful end-to-end verification was
-not performed, say so plainly.
+not performed, say so plainly. Preserve the provenance required by the global
+agent instructions.
 
 ## File and hand off
 

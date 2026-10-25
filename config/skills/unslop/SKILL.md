@@ -13,6 +13,7 @@ Edit text to remove AI patterns and add human voice.
 2. Rewrite while preserving meaning and matching the intended tone.
 3. Add soul.
 4. Ask, "What makes this obviously AI-generated?" Fix the remaining tells.
+5. Preserve any provenance line required by the global agent instructions.
 
 ## Add soul
 

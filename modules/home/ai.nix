@@ -61,6 +61,8 @@
       requires_openai_auth = false;
       supports_websockets = false;
     };
+    approval_policy = "never";
+    sandbox_mode = "danger-full-access";
     apps._default.enabled = false;
     features.api_key_model_discovery = true;
     features.memories = false;
@@ -203,6 +205,7 @@ in {
       # The module writes this straight to the config dir as AGENTS.md.
       context = agentInstructions;
       settings = {
+        permission = "allow";
         # Native providers inherit new models and capabilities from models.dev.
         # Disable the OAuth plugins that can replace the configured gateway.
         plugins = ["-opencode.provider.openai" "-opencode.provider.chatgpt"];
@@ -240,7 +243,11 @@ in {
         };
         autoMemoryEnabled = false;
         disableRemoteControl = true;
+        enableAllProjectMcpServers = true;
         enableArtifact = false;
+        permissions.defaultMode = "bypassPermissions";
+        sandbox.enabled = false;
+        skipDangerousModePermissionPrompt = true;
         attribution = {
           commit = "";
           pr = "";
@@ -302,7 +309,7 @@ in {
 
         if [ -f "$config_file" ]; then
           # Clear retired defaults once, including copies misplaced beneath
-          # TOML tables by older activations. Later user choices remain local.
+          # TOML tables by older activations. Later model choices remain local.
           retired_keys="model_provider"
           if [ ! -e "$migration_file" ]; then
             retired_keys="$retired_keys|model|approval_policy|sandbox_mode"
