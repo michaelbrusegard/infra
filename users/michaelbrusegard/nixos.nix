@@ -5,6 +5,8 @@
   isWsl,
   ...
 }: {
+  imports = [../../modules/common/codex.nix];
+
   users.users.michaelbrusegard = {
     isNormalUser = true;
     extraGroups = ["wheel" "networkmanager" "docker" "libvirtd" "i2c" "input"];

@@ -36,33 +36,6 @@
     # the upstream credential. GUI apps must not depend on shell exports.
     apiKey = "netbird";
   };
-  codexSettings = {
-    # Codex is the reviewer harness; Claude Code writes the code.
-    model = "gpt-6.1-sol";
-    model_reasoning_effort = "high";
-    model_provider = "cliproxyapi";
-    model_providers.cliproxyapi = {
-      name = "Asgard";
-      base_url = "${cliproxy.baseUrl}/v1";
-      model_catalog_url = "${cliproxy.baseUrl}/v1/models";
-      # The placeholder enables API-key discovery without shell credentials.
-      experimental_bearer_token = cliproxy.apiKey;
-      wire_api = "responses";
-      requires_openai_auth = false;
-      supports_websockets = false;
-    };
-    approval_policy = "never";
-    sandbox_mode = "danger-full-access";
-    apps._default.enabled = false;
-    features.api_key_model_discovery = true;
-    features.memories = false;
-    memories = {
-      generate_memories = false;
-      use_memories = false;
-    };
-  };
-  codexConfig = (pkgs.formats.toml {}).generate "codex-config" codexSettings;
-  codexConfigJson = (pkgs.formats.json {}).generate "codex-config.json" codexSettings;
   # Route Pi's built-in providers through the gateway, keeping their catalogs.
   piModels.providers =
     lib.mapAttrs (_: baseUrl: {
@@ -174,12 +147,11 @@ in {
       ]
     );
 
+    # Defaults live in /etc/codex/config.toml (modules/common/codex.nix), so
+    # Codex keeps ~/.codex/config.toml for project trust and TUI state.
     codex = {
       enable = true;
       package = direnvWrapped pkgs.codex "codex";
-      # Codex persists project trust and other TUI settings here, so an
-      # activation script maintains a writable config instead of a store link.
-      settings = {};
     };
 
     opencode = {
@@ -280,43 +252,6 @@ in {
         // claudeSkillFiles
         // piSkillFiles
         // opencodeSkillFiles;
-
-      activation.codexConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        config_file="$HOME/.codex/config.toml"
-        config_dir=$(dirname "$config_file")
-        temp_file=$(mktemp)
-        user_json=$(mktemp)
-        merged_json=$(mktemp)
-
-        if [ -f "$config_file" ]; then
-          # TOML root values must precede tables. Sort them in jq because yq
-          # preserves JSON key order when converting back to TOML.
-          ${lib.getExe pkgs.yq-go} -p=toml -o=json '.' \
-            "$config_file" > "$user_json"
-
-          ${lib.getExe pkgs.jq} -s '
-            ((.[0]
-              | del(.model_providers.cliproxyapi)
-              | if .mcp_servers == {} then del(.mcp_servers) else . end) * .[1]) as $merged
-            | ($merged | with_entries(select(.value | type != "object")))
-              + ($merged | with_entries(select(.value | type == "object")))
-          ' "$user_json" ${lib.escapeShellArg codexConfigJson} > "$merged_json"
-
-          ${lib.getExe pkgs.yq-go} -p=json -o=toml '.' \
-            "$merged_json" > "$temp_file"
-        else
-          ${lib.getExe' pkgs.uutils-coreutils "uutils-cp"} \
-            ${lib.escapeShellArg codexConfig} \
-            "$temp_file"
-        fi
-
-        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
-          $DRY_RUN_CMD mkdir -p "$config_dir"
-          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
-        fi
-
-        rm -f "$temp_file" "$user_json" "$merged_json"
-      '';
 
       activation.piConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.pi/agent/settings.json"

@@ -3,6 +3,8 @@
   config,
   ...
 }: {
+  imports = [../../modules/common/codex.nix];
+
   users.users.michaelbrusegard = {
     home = "/Users/michaelbrusegard";
     shell = pkgs.zsh;
