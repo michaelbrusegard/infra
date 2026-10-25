@@ -2,16 +2,17 @@ locals {
   # capsctrl (Mathias). Rulesets take the numeric user ID as bypass actor.
   mathias_user_id = 104485760
 
-  # Existing main rulesets, keyed by repository. self_merge lets Mathias
-  # merge his own PRs without approval; direct pushes still need a PR.
-  manafishrov_rulesets = {
-    infra        = { ruleset_id = 20110863, self_merge = false }
-    ui           = { ruleset_id = 20110857, self_merge = false }
-    workspace    = { ruleset_id = 20110845, self_merge = false }
-    app          = { ruleset_id = 20110855, self_merge = true }
-    firmware     = { ruleset_id = 10309196, self_merge = true }
-    esc-firmware = { ruleset_id = 20110862, self_merge = true }
-    mcu-firmware = { ruleset_id = 10597861, self_merge = true }
+  # The main rulesets, keyed by repository. true gives Mathias a pull request
+  # bypass: he can merge any PR without approval or passing checks, but
+  # direct pushes still need a PR.
+  manafishrov_self_merge = {
+    infra        = false
+    ui           = false
+    workspace    = false
+    app          = true
+    firmware     = true
+    esc-firmware = true
+    mcu-firmware = true
   }
 
   # Mathias's explicit role per repository. The org base permission is
@@ -42,12 +43,6 @@ resource "github_repository_deploy_key" "flux_espresso_manafishrov_secrets" {
   read_only  = true
 }
 
-import {
-  for_each = local.mathias_permissions
-  to       = github_repository_collaborators.manafishrov[each.key]
-  id       = each.key
-}
-
 # Authoritative: any other direct collaborator or team on these
 # repositories is removed on apply.
 resource "github_repository_collaborators" "manafishrov" {
@@ -61,14 +56,8 @@ resource "github_repository_collaborators" "manafishrov" {
   }
 }
 
-import {
-  for_each = local.manafishrov_rulesets
-  to       = github_repository_ruleset.manafishrov_main[each.key]
-  id       = "${each.key}:${each.value.ruleset_id}"
-}
-
 resource "github_repository_ruleset" "manafishrov_main" {
-  for_each    = local.manafishrov_rulesets
+  for_each    = local.manafishrov_self_merge
   provider    = github.manafishrov
   repository  = each.key
   name        = "main"
@@ -81,7 +70,7 @@ resource "github_repository_ruleset" "manafishrov_main" {
   }
 
   dynamic "bypass_actors" {
-    for_each = each.value.self_merge ? [local.mathias_user_id] : []
+    for_each = each.value ? [local.mathias_user_id] : []
     content {
       actor_id    = bypass_actors.value
       actor_type  = "User"

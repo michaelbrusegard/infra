@@ -38,11 +38,6 @@ resource "github_repository_environment_deployment_policy" "image_bump_main" {
   branch_pattern = "main"
 }
 
-import {
-  to = github_repository_ruleset.infra_main
-  id = "infra:16082575"
-}
-
 resource "github_repository_ruleset" "infra_main" {
   repository  = "infra"
   name        = "main"
@@ -101,11 +96,6 @@ resource "github_repository_ruleset" "infra_main" {
       }
     }
   }
-}
-
-import {
-  to = github_repository_ruleset.infra_secrets_main
-  id = "infra-secrets:16082576"
 }
 
 resource "github_repository_ruleset" "infra_secrets_main" {
