@@ -361,7 +361,7 @@ in {
       '';
 
       activation.removeDesktopAutomationMcp = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        for config_file in "$HOME/.kimi/mcp.json" "$HOME/.pi/agent/mcp.json" "$HOME/.claude.json"; do
+        for config_file in "$HOME/.pi/agent/mcp.json" "$HOME/.claude.json"; do
           if [ ! -f "$config_file" ]; then
             continue
           fi
@@ -469,8 +469,6 @@ in {
           [
             ".claude"
             ".codex"
-            # Preserve historical sessions after removing the Kimi CLI.
-            ".kimi"
             ".pi"
             # V2 also writes cli.json and service credentials in the config
             # directory alongside Home Manager's declarative files.
