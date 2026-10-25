@@ -7,12 +7,6 @@
   paseoHostnames,
   ...
 }: let
-  openBrowserUseCommand = lib.getExe pkgs.open-browser-use;
-  openBrowserUseExtensionDirectory =
-    if pkgs.stdenv.hostPlatform.isDarwin
-    then "Library/Application Support/OpenBrowserUse/chrome-extension/release"
-    else ".local/share/open-browser-use/chrome-extension/release";
-  openComputerUseCommand = lib.getExe pkgs.open-computer-use;
   skills = {
     babysit-pr = "${../../config/skills/babysit-pr}";
     blast-radius = "${../../config/skills/blast-radius}";
@@ -30,17 +24,6 @@
     write-agent-instructions = "${../../config/skills/write-agent-instructions}";
   };
   agentInstructions = ../../config/AGENTS.md;
-  paseoAgentInstructions = ''
-    Prefer Paseo tools for agent delegation, workspace lifecycle, heartbeats,
-    schedules, and Paseo browser tabs. Use Paseo's create_agent instead of a
-    provider-native subagent when both can perform the task. A created agent must
-    use the same Paseo provider as its parent; the model may differ, but the
-    provider must not. Before delegating, call list_profiles and consider only
-    profiles matching the current provider. Follow the selected profile's notes,
-    and use provider discovery only when no matching profile fits. Use the paseo
-    CLI only when an equivalent Paseo tool is unavailable. Keep direct coding
-    work in the current workspace on the harness's local file and shell tools.
-  '';
   skillFilesFor = directory:
     lib.mapAttrs' (name: source:
       lib.nameValuePair "${directory}/${name}" {
@@ -73,18 +56,6 @@
       generate_memories = false;
       use_memories = false;
     };
-    mcp_servers = {
-      open_browser_use = {
-        command = openBrowserUseCommand;
-        args = ["mcp"];
-        default_tools_approval_mode = "approve";
-      };
-      open_computer_use = {
-        command = openComputerUseCommand;
-        args = ["mcp"];
-        default_tools_approval_mode = "approve";
-      };
-    };
   };
   codexConfig = (pkgs.formats.toml {}).generate "codex-config" codexSettings;
   codexConfigJson = (pkgs.formats.json {}).generate "codex-config.json" codexSettings;
@@ -95,18 +66,6 @@
       system_prompt_args.ROLE_ADDITIONAL = builtins.readFile agentInstructions;
     };
   };
-  kimiMcpConfig = pkgs.writeText "kimi-mcp.json" (builtins.toJSON {
-    mcpServers = {
-      open-browser-use = {
-        command = openBrowserUseCommand;
-        args = ["mcp"];
-      };
-      open-computer-use = {
-        command = openComputerUseCommand;
-        args = ["mcp"];
-      };
-    };
-  });
   kimiConfigured =
     (pkgs.writeShellApplication {
       name = "kimi";
@@ -144,74 +103,82 @@
     }).overrideAttrs (_: {
       inherit (package) version;
     });
-  paseoNetbirdForward = pkgs.writeShellApplication {
-    name = "paseo-netbird-forward";
-    runtimeInputs =
-      [
-        pkgs.gawk
-        pkgs.nmap
-      ]
-      ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-        pkgs.iproute2
-      ];
-    text = ''
-      # Give the background listener its own process group so its connection
-      # workers cannot retain the listening socket after a restart.
-      set -m
-
-      get_netbird_ip() {
-        if command -v ip >/dev/null 2>&1; then
-          ip -o -4 addr show scope global | awk '
-            $4 ~ /^100\./ { split($4, parts, "/"); print parts[1]; exit }
-          '
-        else
-          /sbin/ifconfig | awk '
-            /^utun[0-9]+:/ { iface = $1; sub(":", "", iface) }
-            iface != "" && $1 == "inet" && $2 ~ /^100\./ { print $2; exit }
-          '
-        fi
-      }
-
-      forward_pid=""
-
-      stop_forwarder() {
-        if [ -n "$forward_pid" ]; then
-          kill -- "-$forward_pid" 2>/dev/null || true
-          wait "$forward_pid" 2>/dev/null || true
-        fi
-        forward_pid=""
-      }
-
-      trap stop_forwarder EXIT
-      trap 'exit 0' INT TERM
-
-      while true; do
-        netbird_ip=$(get_netbird_ip)
-
-        if [ -z "$netbird_ip" ]; then
-          sleep 5
-          continue
-        fi
-
-        echo "Forwarding $netbird_ip:6767 to 127.0.0.1:6767"
-        ncat -4 --listen --keep-open "$netbird_ip" 6767 \
-          --sh-exec "ncat -4 127.0.0.1 6767" &
-        forward_pid=$!
-
-        while kill -0 "$forward_pid" 2>/dev/null; do
-          sleep 5
-          current_ip=$(get_netbird_ip)
-          if [ "$current_ip" != "$netbird_ip" ]; then
-            echo "NetBird address changed from $netbird_ip to ''${current_ip:-unavailable}"
-            break
-          fi
-        done
-
-        stop_forwarder
-        sleep 5
-      done
-    '';
+  # Desktop apps own their localhost servers; expose only their default ports
+  # on NetBird without starting a second daemon or exposing LAN interfaces.
+  agentUiPorts = {
+    paseo = 6767;
+    t3code = 3773;
   };
+  netbirdForwarders = lib.mapAttrs (name: port:
+    pkgs.writeShellApplication {
+      name = "${name}-netbird-forward";
+      runtimeInputs =
+        [
+          pkgs.gawk
+          pkgs.nmap
+        ]
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+          pkgs.iproute2
+        ];
+      text = ''
+        # Give the background listener its own process group so its connection
+        # workers cannot retain the listening socket after a restart.
+        set -m
+
+        get_netbird_ip() {
+          if command -v ip >/dev/null 2>&1; then
+            ip -o -4 addr show scope global | awk '
+              $4 ~ /^100\./ { split($4, parts, "/"); print parts[1]; exit }
+            '
+          else
+            /sbin/ifconfig | awk '
+              /^utun[0-9]+:/ { iface = $1; sub(":", "", iface) }
+              iface != "" && $1 == "inet" && $2 ~ /^100\./ { print $2; exit }
+            '
+          fi
+        }
+
+        forward_pid=""
+
+        stop_forwarder() {
+          if [ -n "$forward_pid" ]; then
+            kill -- "-$forward_pid" 2>/dev/null || true
+            wait "$forward_pid" 2>/dev/null || true
+          fi
+          forward_pid=""
+        }
+
+        trap stop_forwarder EXIT
+        trap 'exit 0' INT TERM
+
+        while true; do
+          netbird_ip=$(get_netbird_ip)
+
+          if [ -z "$netbird_ip" ]; then
+            sleep 5
+            continue
+          fi
+
+          echo "Forwarding $netbird_ip:${toString port} to 127.0.0.1:${toString port}"
+          ncat -4 --listen --keep-open "$netbird_ip" ${toString port} \
+            --sh-exec "ncat -4 127.0.0.1 ${toString port}" &
+          forward_pid=$!
+
+          while kill -0 "$forward_pid" 2>/dev/null; do
+            sleep 5
+            current_ip=$(get_netbird_ip)
+            if [ "$current_ip" != "$netbird_ip" ]; then
+              echo "NetBird address changed from $netbird_ip to ''${current_ip:-unavailable}"
+              break
+            fi
+          done
+
+          stop_forwarder
+          sleep 5
+        done
+      '';
+    })
+  agentUiPorts;
 in {
   programs = {
     # T3 and Loc create fresh worktrees for threads; trust their project
@@ -242,36 +209,12 @@ in {
       context = agentInstructions;
       settings = {
         permission = "allow";
-        mcp = {
-          open-browser-use = {
-            type = "local";
-            command = [openBrowserUseCommand "mcp"];
-            enabled = true;
-          };
-          open-computer-use = {
-            type = "local";
-            command = [openComputerUseCommand "mcp"];
-            enabled = true;
-          };
-        };
       };
     };
 
     claude-code = {
       enable = true;
       package = direnvWrapped pkgs.claude-code "claude";
-      mcpServers = {
-        open-browser-use = {
-          type = "stdio";
-          command = openBrowserUseCommand;
-          args = ["mcp"];
-        };
-        open-computer-use = {
-          type = "stdio";
-          command = openComputerUseCommand;
-          args = ["mcp"];
-        };
-      };
       settings = {
         autoMemoryEnabled = false;
         disableRemoteControl = true;
@@ -295,8 +238,6 @@ in {
         [
           (direnvWrapped kimiConfigured "kimi")
           (direnvWrapped piCliProxyApi "pi")
-          pkgs.open-browser-use
-          pkgs.open-computer-use
           pkgs.slack-cli
         ]
         ++ lib.optionals (!isWsl) (
@@ -325,11 +266,6 @@ in {
           # returning the settings to declarative management.
           "${config.home.homeDirectory}/.claude/settings.json".force = true;
           ".pi/agent/AGENTS.md".source = agentInstructions;
-          "${openBrowserUseExtensionDirectory}" = lib.mkIf (!isWsl) {
-            source = pkgs.open-browser-use.chromeExtensionUnpacked;
-            recursive = true;
-            force = true;
-          };
         }
         // codexSkillFiles
         // claudeSkillFiles
@@ -370,6 +306,8 @@ in {
               | del(.approval_policy)
               | del(.sandbox_mode)
               | del(.model_provider)
+              | del(.mcp_servers.open_browser_use, .mcp_servers.open_computer_use,
+                    .mcp_servers."open-browser-use", .mcp_servers."open-computer-use")
               | del(.model_providers.cliproxyapi)) * .[1]) as $raw
             | (if ($raw.model_providers // {}) == {}
                then ($raw | del(.model_providers))
@@ -395,27 +333,23 @@ in {
         rm -f "$temp_file" "$sanitized_file" "$user_json" "$merged_json"
       '';
 
-      activation.kimiMcpConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        config_file="$HOME/.kimi/mcp.json"
-        config_dir=$(dirname "$config_file")
-        temp_file=$(mktemp)
+      activation.removeDesktopAutomationMcp = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        for config_file in "$HOME/.kimi/mcp.json" "$HOME/.pi/agent/mcp.json" "$HOME/.claude.json"; do
+          if [ ! -f "$config_file" ]; then
+            continue
+          fi
 
-        if [ -f "$config_file" ]; then
-          ${lib.getExe pkgs.jq} -s '.[0] * .[1]' \
-            "$config_file" \
-            ${lib.escapeShellArg kimiMcpConfig} > "$temp_file"
-        else
-          ${lib.getExe' pkgs.uutils-coreutils "uutils-cp"} \
-            ${lib.escapeShellArg kimiMcpConfig} \
-            "$temp_file"
-        fi
+          temp_file=$(mktemp)
+          ${lib.getExe pkgs.jq} '
+            del(.mcpServers."open-browser-use", .mcpServers."open-computer-use",
+                .mcpServers.open_browser_use, .mcpServers.open_computer_use)
+          ' "$config_file" > "$temp_file"
 
-        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
-          $DRY_RUN_CMD mkdir -p "$config_dir"
-          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
-        fi
-
-        rm -f "$temp_file"
+          if ! cmp -s "$temp_file" "$config_file"; then
+            $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
+          fi
+          rm -f "$temp_file"
+        done
       '';
 
       activation.piConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -468,33 +402,26 @@ in {
 
         if [ -f "$config_file" ]; then
           ${lib.getExe pkgs.jq} \
-            --argjson hostnames '${builtins.toJSON paseoHostnames}' \
-            --arg append_system_prompt ${lib.escapeShellArg paseoAgentInstructions} '
+            --argjson hostnames '${builtins.toJSON paseoHostnames}' '
             .daemon = ((.daemon // {}) + {
-              hostnames: (((.daemon.hostnames // []) + $hostnames) | unique),
-              mcp: ((.daemon.mcp // {}) + {
-                enabled: true,
-                injectIntoAgents: true
-              }),
-              appendSystemPrompt: $append_system_prompt
+              hostnames: (((.daemon.hostnames // []) + $hostnames) | unique)
             })
-            | del(.agents.providers.kimi)
-            | if .agents.providers? == {} then del(.agents.providers) else . end
-            | if .agents? == {} then del(.agents) else . end
+            | if ((.daemon.appendSystemPrompt // "")
+                  | startswith("Prefer Paseo tools for agent delegation,"))
+              then
+                del(.daemon.appendSystemPrompt,
+                    .daemon.mcp.enabled, .daemon.mcp.injectIntoAgents)
+                | if .daemon.mcp == {} then del(.daemon.mcp) else . end
+              else .
+              end
           ' "$config_file" > "$temp_file"
         else
           ${lib.getExe pkgs.jq} \
             --argjson hostnames '${builtins.toJSON paseoHostnames}' \
-            --arg append_system_prompt ${lib.escapeShellArg paseoAgentInstructions} \
             '{
               version: 1,
               daemon: {
-                hostnames: $hostnames,
-                mcp: {
-                  enabled: true,
-                  injectIntoAgents: true
-                },
-                appendSystemPrompt: $append_system_prompt
+                hostnames: $hostnames
               }
             }' > "$temp_file"
         fi
@@ -537,38 +464,31 @@ in {
       };
     };
 
-  programs.chromium = lib.mkIf (!isWsl) {
-    enable = true;
-    package =
-      if pkgs.stdenv.hostPlatform.isDarwin
-      then pkgs.brewCasks.ungoogled-chromium
-      else pkgs.ungoogled-chromium;
-    nativeMessagingHosts = [pkgs.open-browser-use];
-  };
+  launchd.agents = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.mapAttrs' (name: forwarder:
+    lib.nameValuePair "${name}-netbird-forward" {
+      enable = true;
+      config = {
+        ProgramArguments = [(lib.getExe forwarder)];
+        RunAtLoad = true;
+        KeepAlive = true;
+        StandardOutPath = "/tmp/${name}-netbird-forward.log";
+        StandardErrorPath = "/tmp/${name}-netbird-forward.log";
+      };
+    })
+  netbirdForwarders);
 
-  launchd.agents.paseo-netbird-forward = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
-    enable = true;
-    config = {
-      ProgramArguments = [
-        "${lib.getExe paseoNetbirdForward}"
-      ];
-      RunAtLoad = true;
-      KeepAlive = true;
-      StandardOutPath = "/tmp/paseo-netbird-forward.log";
-      StandardErrorPath = "/tmp/paseo-netbird-forward.log";
-    };
-  };
-
-  systemd.user.services.paseo-netbird-forward = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
-    Unit = {
-      Description = "Expose Paseo localhost daemon on NetBird";
-      After = ["network-online.target"];
-    };
-    Service = {
-      ExecStart = "${lib.getExe paseoNetbirdForward}";
-      Restart = "always";
-      RestartSec = 5;
-    };
-    Install.WantedBy = ["default.target"];
-  };
+  systemd.user.services = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) (lib.mapAttrs' (name: forwarder:
+    lib.nameValuePair "${name}-netbird-forward" {
+      Unit = {
+        Description = "Expose ${name} localhost server on NetBird";
+        After = ["network-online.target"];
+      };
+      Service = {
+        ExecStart = "${lib.getExe forwarder}";
+        Restart = "always";
+        RestartSec = 5;
+      };
+      Install.WantedBy = ["default.target"];
+    })
+  netbirdForwarders);
 }
