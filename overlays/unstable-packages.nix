@@ -23,7 +23,6 @@ in {
     neovim-unwrapped
     vimPlugins
     chatgpt
-    rustdesk-flutter
     uv
     ty
     oxlint
