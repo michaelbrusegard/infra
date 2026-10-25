@@ -7,22 +7,10 @@
   paseoHostnames,
   ...
 }: let
-  skills = {
-    babysit-pr = "${../../config/skills/babysit-pr}";
-    blast-radius = "${../../config/skills/blast-radius}";
-    diagnose = "${../../config/skills/diagnose}";
-    domain-context = "${../../config/skills/domain-context}";
-    excalidraw-diagram = "${../../config/skills/excalidraw-diagram}";
-    file-pr = "${../../config/skills/file-pr}";
-    frontend-design = "${../../config/skills/frontend-design}";
-    grill = "${../../config/skills/grill}";
-    recall-work = "${../../config/skills/recall-work}";
-    review-pr = "${../../config/skills/review-pr}";
-    self-review = "${../../config/skills/self-review}";
-    slack = "${../../config/skills/slack}";
-    unslop = "${../../config/skills/unslop}";
-    write-agent-instructions = "${../../config/skills/write-agent-instructions}";
-  };
+  # Every directory under config/skills is a skill.
+  skills =
+    lib.mapAttrs (name: _: "${../../config/skills + "/${name}"}")
+    (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ../../config/skills));
   agentInstructions = ../../config/AGENTS.md;
   skillFilesFor = directory:
     lib.mapAttrs' (name: source:
