@@ -42,7 +42,7 @@
   piSkillFiles = skillFilesFor ".pi/agent/skills";
   # OpenCode registers <config dir>/skill as a skill source, singular.
   opencodeSkillFiles = skillFilesFor "${config.xdg.configHome}/opencode/skill";
-  cliProxyApi = {
+  cliproxy = {
     baseUrl = "https://ai.asgard.michaelbrusegard.com";
     # A non-secret placeholder: NetBird authenticates the device and injects
     # the upstream credential. GUI apps must not depend on shell exports.
@@ -53,10 +53,10 @@
     model_provider = "cliproxyapi";
     model_providers.cliproxyapi = {
       name = "Asgard";
-      base_url = "${cliProxyApi.baseUrl}/v1";
-      model_catalog_url = "${cliProxyApi.baseUrl}/v1/models";
+      base_url = "${cliproxy.baseUrl}/v1";
+      model_catalog_url = "${cliproxy.baseUrl}/v1/models";
       # The placeholder enables API-key discovery without shell credentials.
-      experimental_bearer_token = cliProxyApi.apiKey;
+      experimental_bearer_token = cliproxy.apiKey;
       wire_api = "responses";
       requires_openai_auth = false;
       supports_websockets = false;
@@ -73,15 +73,15 @@
   };
   codexConfig = (pkgs.formats.toml {}).generate "codex-config" codexSettings;
   codexConfigJson = (pkgs.formats.json {}).generate "codex-config.json" codexSettings;
-  piCliProxyApi =
+  piCliproxy =
     (pkgs.writeShellApplication {
       name = "pi";
       runtimeInputs = [pkgs.nodejs];
       text = ''
         # Pi requires a nonempty key; NetBird authenticates the peer instead.
-        export CLIPROXYAPI_API_KEY=${lib.escapeShellArg cliProxyApi.apiKey}
-        export CLIPROXYAPI_BASE_URL=${lib.escapeShellArg cliProxyApi.baseUrl}
-        export CLIPROXYAPI_RESPONSES_URL=${lib.escapeShellArg "${cliProxyApi.baseUrl}/v1/responses"}
+        export CLIPROXYAPI_API_KEY=${lib.escapeShellArg cliproxy.apiKey}
+        export CLIPROXYAPI_BASE_URL=${lib.escapeShellArg cliproxy.baseUrl}
+        export CLIPROXYAPI_RESPONSES_URL=${lib.escapeShellArg "${cliproxy.baseUrl}/v1/responses"}
         # WebSocket handshakes have no model body for NetBird to authorize.
         export CLIPROXYAPI_TRANSPORT=sse
 
@@ -214,8 +214,8 @@ in {
           provider
           // {
             settings = {
-              baseURL = "${cliProxyApi.baseUrl}/v1";
-              inherit (cliProxyApi) apiKey;
+              baseURL = "${cliproxy.baseUrl}/v1";
+              inherit (cliproxy) apiKey;
               transport = "http";
             };
           }) {
@@ -237,8 +237,8 @@ in {
       package = direnvWrapped pkgs.claude-code "claude";
       settings = {
         env = {
-          ANTHROPIC_BASE_URL = cliProxyApi.baseUrl;
-          ANTHROPIC_AUTH_TOKEN = cliProxyApi.apiKey;
+          ANTHROPIC_BASE_URL = cliproxy.baseUrl;
+          ANTHROPIC_AUTH_TOKEN = cliproxy.apiKey;
           CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
         };
         autoMemoryEnabled = false;
@@ -261,7 +261,7 @@ in {
     {
       packages =
         [
-          (direnvWrapped piCliProxyApi "pi")
+          (direnvWrapped piCliproxy "pi")
           pkgs.slack-cli
         ]
         ++ lib.optionals (!isWsl) (
@@ -273,7 +273,7 @@ in {
               claude-code = config.programs.claude-code.package;
               codex = config.programs.codex.package;
               opencode = config.programs.opencode.package;
-              pi-coding-agent = direnvWrapped piCliProxyApi "pi";
+              pi-coding-agent = direnvWrapped piCliproxy "pi";
               gh = config.programs.gh.package;
             })
             (
@@ -388,13 +388,13 @@ in {
         if [ -f "$config_file" ]; then
           ${lib.getExe pkgs.jq} \
             --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
-            --arg provider_package ${lib.escapeShellArg cliProxyApi.piProviderPackage} '
+            --arg provider_package ${lib.escapeShellArg cliproxy.piProviderPackage} '
             def package_source:
               if type == "string" then .
               elif type == "object" then (.source // "")
               else ""
               end;
-            def is_cliproxyapi:
+            def is_cliproxy:
               package_source
               | test("^(npm:)?@router-for-me/pi-cliproxyapi-provider(@.*)?$|^/nix/store/[^/]+-pi-cliproxyapi-provider-[^/]+$");
             def is_pi_loop:
@@ -403,14 +403,14 @@ in {
             .npmCommand = [$npm]
             | .defaultProvider = "cliproxyapi"
             | .packages = (
-                [(.packages // [])[] | select((is_cliproxyapi or is_pi_loop) | not)]
+                [(.packages // [])[] | select((is_cliproxy or is_pi_loop) | not)]
                 + [$provider_package]
               )
           ' "$config_file" > "$temp_file"
         else
           ${lib.getExe pkgs.jq} -n \
             --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
-            --arg provider_package ${lib.escapeShellArg cliProxyApi.piProviderPackage} '{
+            --arg provider_package ${lib.escapeShellArg cliproxy.piProviderPackage} '{
               npmCommand: [$npm],
               defaultProvider: "cliproxyapi",
               packages: [$provider_package]
