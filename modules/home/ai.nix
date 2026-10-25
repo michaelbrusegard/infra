@@ -7,9 +7,16 @@
   paseoHostnames,
   ...
 }: let
+  # Skill scripts such as babysit-pr's pr-wait use `#!/usr/bin/env python3`,
+  # which NixOS cannot resolve outside a dev shell.
+  skillsDir = pkgs.runCommand "agent-skills" {buildInputs = [pkgs.python3];} ''
+    cp -r ${../../config/skills} "$out"
+    chmod -R u+w "$out"
+    patchShebangs "$out"
+  '';
   # Every directory under config/skills is a skill.
   skills =
-    lib.mapAttrs (name: _: "${../../config/skills + "/${name}"}")
+    lib.mapAttrs (name: _: "${skillsDir}/${name}")
     (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ../../config/skills));
   agentInstructions = ../../config/AGENTS.md;
   skillFilesFor = directory:
