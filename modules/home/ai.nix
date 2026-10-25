@@ -350,6 +350,10 @@ in {
             | .defaultProvider = "cliproxyapi"
             | .defaultModel = "claude-opus-5-5"
             | .defaultThinkingLevel = "high"
+            # Agent apps start Pi without a UI in fresh worktrees, where the
+            # trust prompt cannot appear and repo skills would be skipped.
+            | .defaultProjectTrust = "always"
+            | .retry = ((.retry // {}) + {maxRetries: 6})
             | .packages = (
                 [(.packages // [])[] | select(is_cliproxy | not)]
                 + [$provider_package]
@@ -363,6 +367,8 @@ in {
               defaultProvider: "cliproxyapi",
               defaultModel: "claude-opus-5-5",
               defaultThinkingLevel: "high",
+              defaultProjectTrust: "always",
+              retry: {maxRetries: 6},
               packages: [$provider_package]
             }' > "$temp_file"
         fi
