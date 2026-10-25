@@ -1,58 +1,104 @@
 ---
 name: slack
-description: Read, search, summarize, draft, and send Slack messages with the authenticated `slack` CLI. Use whenever the user asks about Slack channels, threads, DMs, unreads, a past discussion or decision, or a Slack message or reaction.
+description: Read, search, summarize, draft, and send Slack messages with the authenticated `slack` CLI. Use whenever the user mentions Slack or pastes a Slack permalink, or asks about a channel, thread, DM, group DM, unreads, alerts, a bot message, a file or screenshot, a canvas, a Slack List, a reaction, a mention, a past discussion or decision, or posting, replying, scheduling, editing, or uploading to Slack.
 ---
 
 # Slack
 
-A `slack` command is on `PATH` and authenticated as the user. Run `slack help`
-when a flag or subcommand is unclear.
+The `slack` command is on `PATH`, authenticated as Michael with a user token.
+Run `slack help` for the command list and `slack help <command>` (or
+`<command> --help`) for flags. Do not guess flags.
+
+Most used:
 
 ```text
-slack search <query> [--count N]
-slack history <#chan|@user|ID> [--since 2d] [--limit N]
-slack thread <permalink>
-slack unreads
-slack send <#chan|@user|ID> <text> [--thread <ts>]
-slack react <permalink> <emoji-name>
-slack whois <@user>
-slack channels [--refresh]
-slack file <url_private> [outfile]
+slack thread <permalink>                 whole thread, even from a reply link
+slack history <#chan|@user> --since 1d   oldest first; --all, --replies, --until
+slack search '<query>' [--count N]       in:#chan from:@user after:YYYY-MM-DD ...
+slack unreads [--channel C] [--limit N]
+slack file <F-ID|permalink>              text prints; other files save to a path
+slack user <name|email>                  prints the <@U...> mention to use
+slack send <dest> --file F --dry-run     then the same without --dry-run
 ```
 
-Search supports Slack filters such as `in:#channel`, `from:@user`, and
-`after:2026-08-01`. Output has the form `[ts] author: text <permalink>`; `⏎`
-marks a line break. Read the full thread when a result reports replies. Refresh
-channels if a name does not resolve.
+## Reading
 
-## Read and summarize
+- Output is one message per line: `[ts time] author: text [markers]  <permalink>`.
+  `⏎` is a line break. `--long` prints multi-line bodies.
+- Add `--json` to any read command for normalized JSON (rendered `text`,
+  `author`, `files`, `reactions`, `reply_count`, `permalink`). Prefer it over
+  parsing text.
+- Bot and alert content (CloudWatch, Amazon Q, Linear, and others) comes from
+  blocks and attachments, and it is already in `text`. Files show as
+  `[file F… "name" mimetype url]`. Fetch them with `slack file <F-ID>`. For
+  images, read the saved path. Canvases: `slack canvas read <ID>`.
+- A reply permalink (`?thread_ts=`) opens the whole thread. `»` (JSON
+  `"linked": true`) marks the message the link pointed at. Read the thread
+  before you summarize a message that has replies.
+- Names resolve fuzzily and case-insensitively. When a result is ambiguous,
+  the CLI lists the candidates; pick one by ID.
+- `slack unreads` omits unread thread replies. Slack has no public API for
+  them. Do not use `--mark` unless Michael asks to mark messages read.
+- For anything without a command, use `slack api <method> key=value ...`. It
+  prints the JSON response. Never read the token file, and never call Slack with
+  curl. `slack api` can also write. Use write methods only as the send rules
+  below allow, and try `--dry-run` first.
+- On `missing_scope`, tell Michael which scope the error names. He must add it
+  and reinstall the slack-cli app from `packages/slack-cli/manifest.json`. Do
+  not work around it.
+
+When summarizing:
 
 1. Narrow the channel, people, and time window before broad searches.
-2. Read linked threads rather than treating the parent message as the complete
-   discussion.
-3. Distinguish decisions, proposals, unresolved questions, and your inference.
-4. Include permalinks for claims the user may need to verify.
-5. Do not expose unrelated private messages or secrets in summaries.
+2. Separate decisions, proposals, open questions, and your own inference.
+3. Include permalinks for claims Michael may want to check.
+4. Leave out unrelated private messages and secrets.
 
-## Draft and format
+## Drafting
 
-Follow the writing style and conversational provenance rules in the global
-agent instructions. Treat the provenance header as part of the Slack message.
+Use Slack mrkdwn: `*bold*`, `_italic_`, backticks, `> quote`, `<url|label>`.
+Do not use `**`, Markdown headings, or `[label](url)`. To notify someone, use
+`<@USERID>` from `slack user <name>`; plain `@name` notifies nobody. Follow
+Michael's writing style from the global instructions.
 
-Use Slack mrkdwn: `*bold*`, `_italic_`, backticks for code, `> quote`, and
-`<url|label>`. Do not use Markdown headings or double-asterisk bold.
+Attribution follows the global conversational provenance rule. End the message
+with this footer:
 
-When asking a specific person for something, resolve their user ID with
-`slack whois` and mention `<@USERID>`. Never notify `@channel`, `@here`, or
-`@everyone` unless Michael explicitly asks and confirms that exact notification.
+```text
+<message>
 
-## Send safely
+---
+MODEL-SLUG · responding on behalf of Michael
+```
 
-- An explicit request to send a message or add a reaction authorizes that exact
-  action. A request to draft does not.
-- If the destination, thread, or intended content is materially ambiguous, show
-  the complete attributed draft and resolve the ambiguity before sending.
-- Reply with `--thread <ts>` when responding to an existing message.
-- Immediately before sending, verify the destination, thread, mentions, links,
-  and required provenance.
-- Report the resulting permalink after a successful send.
+- MODEL-SLUG is the exact model ID that your runtime exposes. Examples are the
+  model ID in your system prompt, or Pi's `PI_MODEL`. Drop any gateway or
+  provider prefix: `cliproxyapi/claude-opus-5-5` becomes `claude-opus-5-5`.
+  Never guess a slug. If the runtime exposes none, use `UNKNOWN-MODEL`.
+- Leave the footer off only when Michael asks for that message to have no
+  attribution.
+- When Michael wants a draft to send himself, give him the text and do not send
+  it.
+
+## Sending safely
+
+Writes include `send`, `schedule`, `edit`, `delete`, `react`, `upload`,
+`create-channel`, `open`, `invite`, canvas and list writes, `unreads --mark`,
+and write methods through `slack api`.
+
+- Only an explicit request to perform that exact action authorizes a write. A
+  request to draft is not authorization.
+- If the destination, thread, or content is materially ambiguous, show the
+  complete draft, with its footer, and resolve the ambiguity first.
+- Reply in the thread when you are responding to an existing message. Use
+  `--thread <permalink>`; a reply link posts into its parent thread. Add
+  `--broadcast` only when Michael asks for the reply to go to the channel too.
+- Never use `@here`, `@channel`, `@everyone`, or a usergroup mention unless
+  Michael explicitly confirms that exact notification. The CLI refuses the
+  first three without `--allow-broadcast`.
+- Write multi-line messages to a file and pass `--file`. That avoids quoting
+  accidents.
+- Run with `--dry-run` first. It sends nothing and prints the exact payload,
+  destination, thread, resolved mentions, and warnings, such as a missing
+  footer or `**`. Check them, then run the same command without `--dry-run`.
+- After sending, report the permalink that the CLI prints.
