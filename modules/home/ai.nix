@@ -35,7 +35,6 @@
     # A non-secret placeholder: NetBird authenticates the device and injects
     # the upstream credential. GUI apps must not depend on shell exports.
     apiKey = "netbird";
-    piProviderPackage = "${pkgs.pi-cliproxyapi-provider}";
   };
   codexSettings = {
     # Codex is the reviewer harness; Claude Code writes the code.
@@ -64,23 +63,16 @@
   };
   codexConfig = (pkgs.formats.toml {}).generate "codex-config" codexSettings;
   codexConfigJson = (pkgs.formats.json {}).generate "codex-config.json" codexSettings;
-  piCliproxy =
-    (pkgs.writeShellApplication {
-      name = "pi";
-      runtimeInputs = [pkgs.nodejs];
-      text = ''
-        # Pi requires a nonempty key; NetBird authenticates the peer instead.
-        export CLIPROXYAPI_API_KEY=${lib.escapeShellArg cliproxy.apiKey}
-        export CLIPROXYAPI_BASE_URL=${lib.escapeShellArg cliproxy.baseUrl}
-        export CLIPROXYAPI_RESPONSES_URL=${lib.escapeShellArg "${cliproxy.baseUrl}/v1/responses"}
-        # WebSocket handshakes have no model body for NetBird to authorize.
-        export CLIPROXYAPI_TRANSPORT=sse
-
-        exec ${lib.getExe pkgs.pi-coding-agent} "$@"
-      '';
-    }).overrideAttrs (_: {
-      inherit (pkgs.pi-coding-agent) version;
-    });
+  # Route Pi's built-in providers through the gateway, keeping their catalogs.
+  piModels.providers =
+    lib.mapAttrs (_: baseUrl: {
+      inherit baseUrl;
+      inherit (cliproxy) apiKey;
+    }) {
+      anthropic = cliproxy.baseUrl;
+      openai = "${cliproxy.baseUrl}/v1";
+      moonshotai = "${cliproxy.baseUrl}/v1";
+    };
   direnvWrapped = package: executable:
     (pkgs.writeShellApplication {
       name = executable;
@@ -254,7 +246,7 @@ in {
     {
       packages =
         [
-          (direnvWrapped piCliproxy "pi")
+          (direnvWrapped pkgs.pi-coding-agent "pi")
           pkgs.slack-cli
         ]
         ++ lib.optionals (!isWsl) (
@@ -266,7 +258,7 @@ in {
               claude-code = config.programs.claude-code.package;
               codex = config.programs.codex.package;
               opencode = config.programs.opencode.package;
-              pi-coding-agent = direnvWrapped piCliproxy "pi";
+              pi-coding-agent = direnvWrapped pkgs.pi-coding-agent "pi";
               gh = config.programs.gh.package;
               backendPort = agentUiPorts.t3code;
             })
@@ -282,6 +274,7 @@ in {
           # returning the settings to declarative management.
           "${config.home.homeDirectory}/.claude/settings.json".force = true;
           ".pi/agent/AGENTS.md".source = agentInstructions;
+          ".pi/agent/models.json".text = builtins.toJSON piModels;
         }
         // codexSkillFiles
         // claudeSkillFiles
@@ -332,8 +325,7 @@ in {
 
         if [ -f "$config_file" ]; then
           ${lib.getExe pkgs.jq} \
-            --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
-            --arg provider_package ${lib.escapeShellArg cliproxy.piProviderPackage} '
+            --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} '
             def package_source:
               if type == "string" then .
               elif type == "object" then (.source // "")
@@ -343,29 +335,28 @@ in {
               package_source
               | test("^(npm:)?@router-for-me/pi-cliproxyapi-provider(@.*)?$|^/nix/store/[^/]+-pi-cliproxyapi-provider-[^/]+$");
             .npmCommand = [$npm]
-            | .defaultProvider = "cliproxyapi"
+            | .defaultProvider = "anthropic"
             | .defaultModel = "claude-opus-5-5"
             | .defaultThinkingLevel = "high"
             # Agent apps start Pi without a UI in fresh worktrees, where the
             # trust prompt cannot appear and repo skills would be skipped.
             | .defaultProjectTrust = "always"
             | .retry = ((.retry // {}) + {maxRetries: 6})
-            | .packages = (
-                [(.packages // [])[] | select(is_cliproxy | not)]
-                + [$provider_package]
-              )
+            # WebSocket handshakes have no model body for NetBird to authorize.
+            | .transport = "sse"
+            # The gateway now goes through models.json, not a provider package.
+            | .packages = [(.packages // [])[] | select(is_cliproxy | not)]
           ' "$config_file" > "$temp_file"
         else
           ${lib.getExe pkgs.jq} -n \
-            --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} \
-            --arg provider_package ${lib.escapeShellArg cliproxy.piProviderPackage} '{
+            --arg npm ${lib.escapeShellArg (lib.getExe' pkgs.nodejs "npm")} '{
               npmCommand: [$npm],
-              defaultProvider: "cliproxyapi",
+              defaultProvider: "anthropic",
               defaultModel: "claude-opus-5-5",
               defaultThinkingLevel: "high",
               defaultProjectTrust: "always",
               retry: {maxRetries: 6},
-              packages: [$provider_package]
+              transport: "sse"
             }' > "$temp_file"
         fi
 

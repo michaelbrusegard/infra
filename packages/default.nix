@@ -10,8 +10,6 @@ pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
   stalwart-native-scim-image = pkgs.callPackage ./stalwart-oss/image.nix {nativeScim = true;};
 }
 // {
-  pi-coding-agent = pkgs.callPackage ./pi-coding-agent {};
-  pi-cliproxyapi-provider = pkgs.callPackage ./pi-cliproxyapi-provider {};
   slack-cli = pkgs.callPackage ./slack-cli {};
   vite-plus = import ./vite-plus {inherit pkgs;};
 }
