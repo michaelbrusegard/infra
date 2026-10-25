@@ -14,29 +14,17 @@
     chmod -R u+w "$out"
     patchShebangs "$out"
   '';
-  # Every directory under config/skills is a skill.
-  skills =
-    lib.mapAttrs (name: _: "${skillsDir}/${name}")
+  # Codex, Pi, and OpenCode read ~/.agents/skills; Claude Code reads only its
+  # own directory. Link skills one by one to leave room for unmanaged ones,
+  # and avoid the modules' skills options, which read the store at eval time.
+  skillFilesIn = directory: recursive:
+    lib.mapAttrs' (name: _:
+      lib.nameValuePair "${directory}/${name}" {
+        source = "${skillsDir}/${name}";
+        inherit recursive;
+      })
     (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ../../config/skills));
   agentInstructions = ../../config/AGENTS.md;
-  skillFilesFor = directory:
-    lib.mapAttrs' (name: source:
-      lib.nameValuePair "${directory}/${name}" {
-        inherit source;
-        recursive = true;
-      })
-    skills;
-  # All skills are directories, and Codex needs directory symlinks rather than
-  # individually symlinked files.
-  codexSkillFiles = lib.mapAttrs (_: file: file // {recursive = false;}) (skillFilesFor (
-    if config.home.preferXdgDirectories
-    then "${config.xdg.configHome}/codex/skills"
-    else ".codex/skills"
-  ));
-  claudeSkillFiles = skillFilesFor "${config.programs.claude-code.configDir}/skills";
-  piSkillFiles = skillFilesFor ".pi/agent/skills";
-  # OpenCode registers <config dir>/skill as a skill source, singular.
-  opencodeSkillFiles = skillFilesFor "${config.xdg.configHome}/opencode/skill";
   cliproxy = {
     baseUrl = "https://ai.asgard.michaelbrusegard.com";
     # A non-secret placeholder: NetBird authenticates the device and injects
@@ -159,6 +147,7 @@ in {
     codex = {
       enable = true;
       package = direnvWrapped pkgs.codex "codex";
+      context = agentInstructions;
     };
 
     opencode = {
@@ -197,6 +186,7 @@ in {
     claude-code = {
       enable = true;
       package = direnvWrapped pkgs.claude-code "claude";
+      context = agentInstructions;
       settings = {
         model = "claude-opus-5-5";
         effortLevel = "high";
@@ -247,18 +237,15 @@ in {
 
       file =
         {
-          ".codex/AGENTS.md".source = agentInstructions;
-          ".claude/CLAUDE.md".source = agentInstructions;
           # Claude writes this file itself, so replace its mutable copy when
           # returning the settings to declarative management.
           "${config.home.homeDirectory}/.claude/settings.json".force = true;
           ".pi/agent/AGENTS.md".source = agentInstructions;
           ".pi/agent/models.json".text = builtins.toJSON piModels;
         }
-        // codexSkillFiles
-        // claudeSkillFiles
-        // piSkillFiles
-        // opencodeSkillFiles;
+        # Codex ignores symlinked SKILL.md files, so link whole directories.
+        // skillFilesIn ".agents/skills" false
+        // skillFilesIn "${config.programs.claude-code.configDir}/skills" true;
 
       activation.piConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.pi/agent/settings.json"
