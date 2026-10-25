@@ -59,9 +59,8 @@ side:
 the repo. Without direnv, run `nix develop`. Either way you get `age`, `sops`,
 `kubectl`, `kustomize`, `fluxcd`, `opentofu`, `jq`, `yq-go`.
 
-`gh` is deliberately not in the dev shell: the Home Manager `gh` wraps the
-binary to read `GH_TOKEN` from the sops-managed token file, and a plain `gh`
-from the dev shell would shadow it and run unauthenticated.
+`gh` comes from Home Manager, not the dev shell. It authenticates through
+`~/.config/gh/hosts.yml`, which sops-nix renders from the GitHub token.
 
 ### Quality
 

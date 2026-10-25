@@ -3,7 +3,10 @@
   config,
   lib,
   ...
-}: {
+}: let
+  hasGithubToken = config.secrets ? keys && config.secrets.keys ? githubTokenFile;
+  githubToken = config.sops.placeholder."keys/github-token";
+in {
   programs = {
     git = {
       enable = true;
@@ -110,28 +113,6 @@
     };
     gh = {
       enable = true;
-      package =
-        if config.secrets ? keys && config.secrets.keys ? githubTokenFile
-        then
-          pkgs.symlinkJoin {
-            name = "gh-authenticated-${pkgs.gh.version}";
-            inherit (pkgs.gh) version meta;
-            paths = [pkgs.gh];
-            nativeBuildInputs = [pkgs.makeWrapper];
-            postBuild = ''
-              wrapProgram "$out/bin/gh" --run ${lib.escapeShellArg ''
-                if [ -z "''${GH_TOKEN:-}" ] && [ -z "''${GITHUB_TOKEN:-}" ] && [ -r ${lib.escapeShellArg config.secrets.keys.githubTokenFile} ]; then
-                  export GH_TOKEN="$( ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${lib.escapeShellArg config.secrets.keys.githubTokenFile} )"
-                fi
-              ''}
-            '';
-          }
-        else pkgs.gh;
-      hosts = {
-        "github.com" = {
-          user = "michaelbrusegard";
-        };
-      };
       extensions = with pkgs; [gh-eco gh-poi gh-dash gh-skyline gh-stack];
     };
 
@@ -160,9 +141,27 @@
       git-filter-repo
       git-lfs
     ];
+  };
 
-    sessionVariables = lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? githubTokenFile) {
-      GH_TOKEN = "$( [ -f ${config.secrets.keys.githubTokenFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.githubTokenFile} )";
+  # gh, its extensions, and its git credential helper all read the token from
+  # hosts.yml, so it never has to be exported into every shell.
+  sops.templates = lib.mkIf hasGithubToken {
+    "gh-hosts.yml" = {
+      path = "${config.xdg.configHome}/gh/hosts.yml";
+      content = ''
+        github.com:
+            users:
+                michaelbrusegard:
+                    oauth_token: ${githubToken}
+            oauth_token: ${githubToken}
+            user: michaelbrusegard
+      '';
+    };
+    npmrc = {
+      path = "${config.home.homeDirectory}/.npmrc";
+      content = ''
+        //npm.pkg.github.com/:_authToken=${githubToken}
+      '';
     };
   };
 }

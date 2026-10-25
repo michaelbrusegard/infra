@@ -39,10 +39,6 @@
         nodejs_24
         deno
       ];
-
-      file.".npmrc" = lib.mkIf (config.secrets ? keys && config.secrets.keys ? githubTokenFile) {
-        text = "//npm.pkg.github.com/:_authToken=\${GH_TOKEN}\n";
-      };
     }
     // lib.optionalAttrs (homePersistenceRoot != null) {
       persistence.${homePersistenceRoot}.directories = [
