@@ -275,6 +275,7 @@ in {
               opencode = config.programs.opencode.package;
               pi-coding-agent = direnvWrapped piCliproxy "pi";
               gh = config.programs.gh.package;
+              backendPort = agentUiPorts.t3code;
             })
             (
               if stdenv.hostPlatform.isLinux
