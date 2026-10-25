@@ -22,7 +22,6 @@ in {
     jankyborders
     neovim-unwrapped
     vimPlugins
-    chatgpt
     uv
     ty
     oxlint
@@ -64,19 +63,6 @@ in {
       repo = "gh-stack";
       tag = "v0.1.1";
       hash = "sha256-jwfqiCnCOOW0AKA52hbgvCCoLzfFX+QfM+vXABkzZgw=";
-    };
-  };
-
-  # Keep Claude Code current while nixpkgs-unstable lags the published release.
-  claude-code = pkgs-unstable.claude-code.override {
-    manifest = {
-      version = "2.1.285";
-      platforms = {
-        "darwin-arm64".checksum = "51f09bd1e021d9fa8a1864c179799bd37cb39962a937935c5cf6823398e86db4";
-        "darwin-x64".checksum = "24835f7ca4b4338c33ad21c98a3402d9c22f89b8055075d18828e97973844ec3";
-        "linux-arm64".checksum = "24fac77749bed3d91365d6b6915aa4b824e14318ecb6bc17adbc192f01c9173d";
-        "linux-x64".checksum = "33dad1ec615a2e08cc78b494f05c110e49916de2c79d78ec8799ebf46b233d29";
-      };
     };
   };
 

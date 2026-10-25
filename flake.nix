@@ -103,6 +103,8 @@
       url = "github:omarcresp/t3code-flake";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+    # Daily-updated agent harnesses. Its own nixpkgs keeps the binary cache.
+    llm-agents.url = "github:numtide/llm-agents.nix";
     zen-browser = {
       url = "github:0xc000022070/zen-browser-flake";
       inputs = {
@@ -221,10 +223,7 @@
     packages = lib.forAllSystems (
       system:
         (import ./packages {
-          pkgs = import nixpkgs {
-            inherit system;
-            config.allowUnfreePredicate = pkg: nixpkgs.lib.getName pkg == "chatgpt-desktop";
-          };
+          pkgs = nixpkgs.legacyPackages.${system};
         })
         // secretsTools.${system}
     );

@@ -57,6 +57,8 @@ in {
   dms-shell = inputs.dms.packages.${system}.default;
   dms-greeter = inputs.dms.packages.${system}.default;
   dsearch = inputs.dsearch.packages.${system}.default;
+  inherit (inputs.llm-agents.packages.${system}) chatgpt claude-code codex;
+  opencode = inputs.llm-agents.packages.${system}.opencode2;
   paseo = paseoPackage;
   paseo-desktop = paseoDesktopPackage;
   t3code-nightly = prev.callPackage ../packages/t3code-nightly {

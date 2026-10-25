@@ -86,7 +86,7 @@
       name = executable;
       runtimeInputs = [pkgs.direnv];
       text = ''
-        exec direnv exec "$PWD" ${lib.getExe' package executable} "$@"
+        exec direnv exec "$PWD" ${lib.getExe package} "$@"
       '';
     }).overrideAttrs (_: {
       inherit (package) version;
@@ -270,11 +270,7 @@ in {
               gh = config.programs.gh.package;
               backendPort = agentUiPorts.t3code;
             })
-            (
-              if stdenv.hostPlatform.isLinux
-              then chatgpt-desktop
-              else chatgpt
-            )
+            chatgpt
           ]
         );
 
