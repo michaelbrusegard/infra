@@ -1,53 +1,132 @@
 diff --git a/packages/app/src/keyboard/keyboard-shortcuts.ts b/packages/app/src/keyboard/keyboard-shortcuts.ts
-index 6653e412..63751c44 100644
 --- a/packages/app/src/keyboard/keyboard-shortcuts.ts
 +++ b/packages/app/src/keyboard/keyboard-shortcuts.ts
-@@ -440 +440 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+@@ -536,27 +536,27 @@
+   {
+     id: "workspace-navigate-index-cmd-digit-mac",
+     action: "workspace.navigate.index",
 -    combo: "Cmd+Digit",
 +    combo: "Ctrl+Digit",
-@@ -447 +447 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: true, desktop: true, commandCenter: false },
+     payload: { type: "index" },
+     help: {
+       id: "workspace-jump-index",
+       section: "workspaces",
+       label: "Jump to workspace",
 -      defaultDisplayKeys: ["mod", "1-9"],
 +      defaultDisplayKeys: ["ctrl", "1-9"],
-@@ -453 +453 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+     id: "workspace-navigate-index-ctrl-digit-non-mac",
+     action: "workspace.navigate.index",
 -    combo: "Ctrl+Digit",
 +    combo: "Cmd+Digit",
-@@ -460 +460 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: false, desktop: true, commandCenter: false, terminal: false },
+     payload: { type: "index" },
+     help: {
+       id: "workspace-jump-index",
+       section: "workspaces",
+       label: "Jump to workspace",
 -      defaultDisplayKeys: ["mod", "1-9"],
 +      defaultDisplayKeys: ["meta", "1-9"],
-@@ -481 +481 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+@@ -577,27 +577,27 @@
+   {
+     id: "workspace-tab-navigate-index-cmd-alt-digit-mac-desktop",
+     action: "workspace.tab.navigate.index",
 -    combo: "Cmd+Alt+Digit",
 +    combo: "Cmd+Digit",
-@@ -488 +488 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: true, desktop: true, commandCenter: false },
+     payload: { type: "index" },
+     help: {
+       id: "workspace-tab-jump-index",
+       section: "tabs-panes",
+       label: "Jump to tab",
 -      defaultDisplayKeys: ["mod", "alt", "1-9"],
 +      defaultDisplayKeys: ["mod", "1-9"],
-@@ -494 +494 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+     id: "workspace-tab-navigate-index-alt-digit-desktop",
+     action: "workspace.tab.navigate.index",
 -    combo: "Alt+Digit",
 +    combo: "Ctrl+Digit",
-@@ -501 +501 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: false, desktop: true, commandCenter: false },
+     payload: { type: "index" },
+     help: {
+       id: "workspace-tab-jump-index",
+       section: "tabs-panes",
+       label: "Jump to tab",
 -      defaultDisplayKeys: ["alt", "1-9"],
 +      defaultDisplayKeys: ["ctrl", "1-9"],
-@@ -522 +522 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+@@ -618,49 +618,53 @@
+   {
+     id: "workspace-navigate-relative-cmd-left-mac",
+     action: "workspace.navigate.relative",
 -    combo: "Cmd+[",
 +    combo: "Ctrl+[",
-@@ -528,0 +529 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: true, desktop: true, commandCenter: false },
+     payload: { type: "delta", delta: -1 },
+     help: {
+       id: "workspace-prev",
+       section: "workspaces",
+       label: "Previous workspace",
 +      defaultDisplayKeys: ["ctrl", "["],
-@@ -534 +535 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+     id: "workspace-navigate-relative-ctrl-left-non-mac",
+     action: "workspace.navigate.relative",
 -    combo: "Ctrl+[",
 +    combo: "Cmd+[",
-@@ -540,0 +542 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: false, desktop: true, commandCenter: false, terminal: false },
+     payload: { type: "delta", delta: -1 },
+     help: {
+       id: "workspace-prev",
+       section: "workspaces",
+       label: "Previous workspace",
 +      defaultDisplayKeys: ["meta", "["],
-@@ -546 +548 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+     id: "workspace-navigate-relative-cmd-right-mac",
+     action: "workspace.navigate.relative",
 -    combo: "Cmd+]",
 +    combo: "Ctrl+]",
-@@ -552,0 +555 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: true, desktop: true, commandCenter: false },
+     payload: { type: "delta", delta: 1 },
+     help: {
+       id: "workspace-next",
+       section: "workspaces",
+       label: "Next workspace",
 +      defaultDisplayKeys: ["ctrl", "]"],
-@@ -558 +561 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+     id: "workspace-navigate-relative-ctrl-right-non-mac",
+     action: "workspace.navigate.relative",
 -    combo: "Ctrl+]",
 +    combo: "Cmd+]",
-@@ -564,0 +568 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: false, desktop: true, commandCenter: false, terminal: false },
+     payload: { type: "delta", delta: 1 },
+     help: {
+       id: "workspace-next",
+       section: "workspaces",
+       label: "Next workspace",
 +      defaultDisplayKeys: ["meta", "]"],
-@@ -592,0 +597,26 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
-+  {
+     },
+   },
+   {
+@@ -690,31 +694,85 @@
+ 
+   // --- Tab relative navigation ---
+   {
 +    id: "workspace-tab-navigate-relative-cmd-shift-left-mac-desktop",
 +    action: "workspace.tab.navigate.relative",
 +    combo: "Cmd+Shift+[",
@@ -73,10 +152,17 @@ index 6653e412..63751c44 100644
 +      defaultDisplayKeys: ["ctrl", "shift", "["],
 +    },
 +  },
-@@ -597 +627 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
++  {
+     id: "workspace-tab-navigate-relative-alt-shift-left",
+     action: "workspace.tab.navigate.relative",
+     combo: "Alt+Shift+[",
 -    when: { commandCenter: false },
 +    when: { desktop: false, commandCenter: false },
-@@ -602,0 +633,27 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     payload: { type: "delta", delta: -1 },
+     help: {
+       id: "workspace-tab-prev",
+       section: "tabs-panes",
+       label: "Previous tab",
 +      defaultDisplayKeys: ["alt", "shift", "["],
 +    },
 +  },
@@ -104,16 +190,35 @@ index 6653e412..63751c44 100644
 +      section: "tabs-panes",
 +      label: "Next tab",
 +      defaultDisplayKeys: ["ctrl", "shift", "]"],
-@@ -609 +666 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+     id: "workspace-tab-navigate-relative-alt-shift-right",
+     action: "workspace.tab.navigate.relative",
+     combo: "Alt+Shift+]",
 -    when: { commandCenter: false },
 +    when: { desktop: false, commandCenter: false },
-@@ -614,0 +672 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
-+      defaultDisplayKeys: ["alt", "shift", "]"],
-@@ -618 +676 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     payload: { type: "delta", delta: 1 },
+     help: {
+       id: "workspace-tab-next",
+       section: "tabs-panes",
+       label: "Next tab",
+-    },
+-  },
+-
 -  // --- Pane management (mac only) ---
++      defaultDisplayKeys: ["alt", "shift", "]"],
++    },
++  },
++
 +  // --- Pane management ---
-@@ -629,0 +688,12 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
-+  {
+   {
+     id: "workspace-pane-split-right-cmd-backslash",
+     action: "workspace.pane.split.right",
+@@ -727,6 +785,18 @@
+     },
+   },
+   {
 +    id: "workspace-pane-split-right-ctrl-backslash-non-mac",
 +    action: "workspace.pane.split.right",
 +    combo: "Ctrl+\\",
@@ -125,8 +230,14 @@ index 6653e412..63751c44 100644
 +      defaultDisplayKeys: ["ctrl", "\\"],
 +    },
 +  },
-@@ -640,0 +711,14 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
 +  {
+     id: "workspace-pane-split-down-cmd-shift-backslash",
+     action: "workspace.pane.split.down",
+     combo: "Cmd+Shift+\\",
+@@ -738,47 +808,113 @@
+     },
+   },
+   {
 +    id: "workspace-pane-split-down-ctrl-shift-backslash-non-mac",
 +    action: "workspace.pane.split.down",
 +    combo: "Ctrl+Shift+\\",
@@ -140,10 +251,16 @@ index 6653e412..63751c44 100644
 +  },
 +  // Cmd+H is reserved by Electron's standard macOS Hide application role.
 +  // Use the same Alt+H/J/K/L pane navigation family as the window managers.
-@@ -644 +728 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
++  {
+     id: "workspace-pane-focus-left-cmd-shift-left",
+     action: "workspace.pane.focus.left",
 -    combo: "Cmd+Shift+ArrowLeft",
 +    combo: "Alt+H",
-@@ -649,0 +734,13 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: true, commandCenter: false, editable: false },
+     help: {
+       id: "workspace-pane-focus-left",
+       section: "tabs-panes",
+       label: "Focus pane left",
 +      defaultDisplayKeys: ["alt", "H"],
 +    },
 +  },
@@ -157,10 +274,18 @@ index 6653e412..63751c44 100644
 +      section: "tabs-panes",
 +      label: "Focus pane left",
 +      defaultDisplayKeys: ["alt", "H"],
-@@ -655 +752 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+     id: "workspace-pane-focus-right-cmd-shift-right",
+     action: "workspace.pane.focus.right",
 -    combo: "Cmd+Shift+ArrowRight",
 +    combo: "Alt+L",
-@@ -660,0 +758,13 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: true, commandCenter: false, editable: false },
+     help: {
+       id: "workspace-pane-focus-right",
+       section: "tabs-panes",
+       label: "Focus pane right",
 +      defaultDisplayKeys: ["alt", "L"],
 +    },
 +  },
@@ -174,10 +299,18 @@ index 6653e412..63751c44 100644
 +      section: "tabs-panes",
 +      label: "Focus pane right",
 +      defaultDisplayKeys: ["alt", "L"],
-@@ -666 +776 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+     id: "workspace-pane-focus-up-cmd-shift-up",
+     action: "workspace.pane.focus.up",
 -    combo: "Cmd+Shift+ArrowUp",
 +    combo: "Alt+K",
-@@ -671,0 +782,13 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: true, commandCenter: false, editable: false },
+     help: {
+       id: "workspace-pane-focus-up",
+       section: "tabs-panes",
+       label: "Focus pane up",
 +      defaultDisplayKeys: ["alt", "K"],
 +    },
 +  },
@@ -191,10 +324,18 @@ index 6653e412..63751c44 100644
 +      section: "tabs-panes",
 +      label: "Focus pane up",
 +      defaultDisplayKeys: ["alt", "K"],
-@@ -677 +800 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     },
+   },
+   {
+     id: "workspace-pane-focus-down-cmd-shift-down",
+     action: "workspace.pane.focus.down",
 -    combo: "Cmd+Shift+ArrowDown",
 +    combo: "Alt+J",
-@@ -682,0 +806,13 @@ const SHORTCUT_BINDINGS: readonly ShortcutBinding[] = [
+     when: { mac: true, commandCenter: false, editable: false },
+     help: {
+       id: "workspace-pane-focus-down",
+       section: "tabs-panes",
+       label: "Focus pane down",
 +      defaultDisplayKeys: ["alt", "J"],
 +    },
 +  },
@@ -208,11 +349,16 @@ index 6653e412..63751c44 100644
 +      section: "tabs-panes",
 +      label: "Focus pane down",
 +      defaultDisplayKeys: ["alt", "J"],
+     },
+   },
+   {
 diff --git a/packages/app/src/terminal/runtime/terminal-emulator-runtime.ts b/packages/app/src/terminal/runtime/terminal-emulator-runtime.ts
-index 56350ef9..66069353 100644
 --- a/packages/app/src/terminal/runtime/terminal-emulator-runtime.ts
 +++ b/packages/app/src/terminal/runtime/terminal-emulator-runtime.ts
-@@ -130,0 +131,29 @@ const isMac =
+@@ -156,6 +156,35 @@
+     maxTouchPoints: navigator.maxTouchPoints,
+   });
+ 
 +const metaToCtrlKeys = new Set([
 +  ..."abcdefghijklmnopqrstuvwxyz0123456789",
 +  " ",
@@ -232,7 +378,7 @@ index 56350ef9..66069353 100644
 +  "Enter",
 +]);
 +
-+function shouldTranslateMetaToCtrl(event: KeyboardEvent, key: string): boolean {
++function shouldTranslateMetaToCtrl(event: KeyboardEvent, key: string, isMac: boolean): boolean {
 +  if (isMac || !event.metaKey || event.ctrlKey || event.altKey) {
 +    return false;
 +  }
@@ -242,8 +388,16 @@ index 56350ef9..66069353 100644
 +  return metaToCtrlKeys.has(key);
 +}
 +
-@@ -449,0 +479,13 @@ export class TerminalEmulatorRuntime {
-+      if (shouldTranslateMetaToCtrl(event, normalizedKey)) {
+ const DEFAULT_TOUCH_SCROLL_LINE_HEIGHT_PX = 18;
+ const FIT_TIMEOUT_DELAYS_MS = [0, 16, 48, 120, 250, 500, 1_000, 2_000];
+ const OUTPUT_OPERATION_TIMEOUT_MS = 5_000;
+@@ -395,6 +424,19 @@
+       const normalizedKey = normalizeDomTerminalKey(event.key);
+       if (!normalizedKey || isTerminalModifierDomKey(event.key)) {
+         return true;
++      }
++
++      if (shouldTranslateMetaToCtrl(event, normalizedKey, this.options.isMac)) {
 +        this.callbacks.onTerminalKey?.({
 +          key: normalizeTerminalTransportKey(normalizedKey),
 +          ctrl: true,
@@ -254,5 +408,6 @@ index 56350ef9..66069353 100644
 +        event.preventDefault();
 +        event.stopPropagation();
 +        return false;
-+      }
-+
+       }
+ 
+       if (

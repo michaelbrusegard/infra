@@ -1,12 +1,12 @@
 inputs: _: prev: let
   inherit (prev.stdenv.hostPlatform) system;
   paseoBase = inputs.paseo.packages.${system}.paseo.override {
-    npmDepsHash = "sha256-TRZej2L43C3go4NWe496Dqs/4A+0GivCRtGzt3pX2dw=";
+    # fetchNpmDeps differs from the revision used by upstream's hash updater.
+    npmDepsHash = "sha256-DZOPOf81PkUxdD65BrfkTZhs6/DkfDWCFZ/SU+QrZbg=";
   };
   paseoElectron = inputs.paseo.inputs.nixpkgs.legacyPackages.${system}.electron;
   paseoTerminalSmoke = ../packages/paseo/terminal-worker-smoke.mjs;
-  paseoPackage = paseoBase.overrideAttrs (old: {
-    patches = (old.patches or []) ++ [../patches/paseo-terminal-native.patch];
+  paseoPackage = paseoBase.overrideAttrs (_: {
     doInstallCheck = prev.stdenv.buildPlatform.canExecute prev.stdenv.hostPlatform;
     installCheckPhase = ''
       runHook preInstallCheck
@@ -32,7 +32,6 @@ inputs: _: prev: let
           ../patches/paseo-keybinds.patch
           ../patches/paseo-fonts.patch
           ../patches/paseo-full-access-mcp-elicitations.patch
-          ../patches/paseo-terminal-native.patch
         ];
       # Darwin's app bundle uses electron-builder rather than the runtime trace.
       doInstallCheck = prev.stdenv.hostPlatform.isLinux && prev.stdenv.buildPlatform.canExecute prev.stdenv.hostPlatform;
