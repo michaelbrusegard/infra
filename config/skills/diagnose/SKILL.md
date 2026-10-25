@@ -9,8 +9,6 @@ Build a red-capable feedback loop before forming a theory. Skip a phase only
 with an explicit reason. A request to diagnose is read-only unless the user also
 asks for a fix.
 
-Read `CONTEXT.md` and relevant ADRs when they exist.
-
 ## Redact
 
 Commands, outputs, and captured artifacts may contain credentials, auth
