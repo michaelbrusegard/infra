@@ -89,6 +89,7 @@ spec:
               mountPath: /state
       containers:
         - name: proxy
+          # Promoted to the tested custom image by netbird-proxy-image.yaml.
           image: docker.io/netbirdio/reverse-proxy:0.81.3@sha256:5da714cd47a66a7c74ddbacc54a6a90d35c1959b77d1744a149b082e69659b45
           command:
             - /busybox/sh

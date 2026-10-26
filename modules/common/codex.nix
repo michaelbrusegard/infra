@@ -1,9 +1,15 @@
 # Codex reads /etc/codex/config.toml as its lowest-priority layer, so these
 # defaults apply to every Codex client while ~/.codex/config.toml stays
 # Codex's own file for project trust and TUI state.
-{pkgs, ...}: let
+{
+  pkgs,
+  lib,
+  ...
+}: let
   gateway = "https://ai.asgard.michaelbrusegard.com";
+  aiImages = pkgs.callPackage ../../packages/ai-images {};
 in {
+  environment.systemPackages = [aiImages];
   environment.etc."codex/config.toml".source = (pkgs.formats.toml {}).generate "codex-config.toml" {
     # Codex is the reviewer harness; Claude Code writes the code.
     model = "gpt-6.1-sol";
@@ -25,6 +31,13 @@ in {
     apps._default.enabled = false;
     features.api_key_model_discovery = true;
     features.memories = false;
+    # Codex's native image tool requires first-party provider/auth metadata.
+    # Keep device authentication and expose the gateway's Images API via MCP.
+    mcp_servers.ai_images = {
+      command = lib.getExe aiImages;
+      args = ["serve"];
+      tool_timeout_sec = 660;
+    };
     memories = {
       generate_memories = false;
       use_memories = false;
