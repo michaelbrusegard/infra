@@ -121,6 +121,8 @@ Commit the resulting `flake.lock` change as `chore(flake): bump secrets`
 - Commit freely; **never push without being asked**. Pushes to `main` trigger
   CI for the whole flake and roll out `gitops/espresso/` to the cluster via
   FluxCD.
+- Merging a PR into `main` deploys the same way, so treat it as a production
+  change. Under `full-send`, stop before merging and ask, as `full-stop` would.
 - **Never create public GitHub artifacts without being asked.** This covers
   issues, pull requests, comments, releases, gists, and discussions on any
   repo — mine or third-party. Read operations (`gh api …`, `gh issue list`,
