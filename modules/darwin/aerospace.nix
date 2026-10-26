@@ -56,7 +56,7 @@ in {
             run = "move-node-to-workspace 3";
           }
           {
-            "if".app-name-regex-substring = "^(Proton Mail|Betterbird|LibreOffice)$";
+            "if".app-name-regex-substring = "^(Proton Mail|LibreOffice)$";
             run = "move-node-to-workspace 4";
           }
           {

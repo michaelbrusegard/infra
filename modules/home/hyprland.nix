@@ -96,10 +96,6 @@
       workspace = 3;
     }
     {
-      class = "^(Betterbird)$";
-      workspace = 4;
-    }
-    {
       class = "^(proton-mail)$";
       workspace = 4;
     }
