@@ -1,10 +1,23 @@
-name: Stalwart Native SCIM Candidate
+name: Stalwart Image
 
 'on':
   workflow_dispatch:
   push:
     branches:
       - main
+    paths:
+      - flake.lock
+      - packages/stalwart-oss/default.nix
+      - packages/stalwart-oss/image.nix
+      - packages/stalwart-oss/webui.nix
+      - packages/stalwart-oss/apply-native.py
+      - packages/stalwart-oss/rate_limit.py
+      - packages/stalwart-oss/integration.py
+      - packages/stalwart-oss/mail.py
+      - packages/stalwart-oss/native/**
+      - packages/stalwart-oss/patches/**
+      - .github/workflows/stalwart-image.yaml
+  pull_request:
     paths:
       - flake.lock
       - packages/stalwart-oss/default.nix
@@ -28,6 +41,12 @@ jobs:
     timeout-minutes: 120
     permissions:
       contents: read
+      packages: write
+    env:
+      IMAGE_REF: ghcr.io/michaelbrusegard/stalwart-native-scim
+      DEPLOY_REPO: manafishrov/infra
+      DEPLOY_PATH: apps/stalwart/statefulset.yaml
+      DEPLOY_BRANCH: automation/stalwart-image
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -43,16 +62,18 @@ jobs:
           nix build --impure --out-link result --expr '
             let
               lock = builtins.fromJSON (builtins.readFile ./flake.lock);
-              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.nixpkgs.locked.rev);
+              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.${lock.nodes.root.inputs.nixpkgs}.locked.rev);
               pkgs = upstream.legacyPackages.x86_64-linux;
             in pkgs.callPackage ./packages/stalwart-oss/image.nix { nativeScim = true; }
           '
+          tag=$(tar -xOf result manifest.json | jq -er '.[0].RepoTags | if length == 1 then .[0] else error("expected one tag") end')
+          echo "IMAGE_TAG=$tag" >> "$GITHUB_ENV"
       - name: Check container entrypoint
         run: |
           sha256sum result
           docker load < result
           docker run --rm --network none --read-only --cap-drop ALL \
-            --security-opt no-new-privileges:true stalwart-native-scim:0.16.21 --version
+            --security-opt no-new-privileges:true "$IMAGE_TAG" --version
       - name: Verify OIDC rate accounting in isolated normal mode
         run: |
           # A cached image does not install its embedded closure on the runner.
@@ -60,14 +81,14 @@ jobs:
           server=$(nix build --impure --no-link --print-out-paths --expr '
             let
               lock = builtins.fromJSON (builtins.readFile ./flake.lock);
-              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.nixpkgs.locked.rev);
+              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.${lock.nodes.root.inputs.nixpkgs}.locked.rev);
               pkgs = upstream.legacyPackages.x86_64-linux;
             in pkgs.callPackage ./packages/stalwart-oss/default.nix { nativeScim = true; }
           ')
           binary="$server/bin/stalwart"
           image_binary=$(docker run --rm --network none --read-only --cap-drop ALL \
             --security-opt no-new-privileges:true --entrypoint /bin/readlink \
-            stalwart-native-scim:0.16.21 /usr/local/bin/stalwart)
+            "$IMAGE_TAG" /usr/local/bin/stalwart)
           test "$binary" = "$image_binary"
           test -x "$binary"
           # Namespace root cannot bypass runner-owned checkout permissions.
@@ -79,10 +100,79 @@ jobs:
           # Root only creates a disposable, loopback-only user/network namespace.
           # No live identity provider, cluster, or mail is accessed by the fixture.
           sudo env PYTHONDONTWRITEBYTECODE=1 python3 "$fixture/rate_limit.py" "$binary"
-      - name: Retain candidate for acceptance and separate promotion
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        if: github.event_name != 'pull_request'
         with:
-          name: stalwart-native-scim-image
-          path: result
-          compression-level: 0
-          retention-days: 7
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Publish image
+        id: publish
+        if: github.event_name != 'pull_request'
+        run: |
+          # Tag by the image's Nix output hash: the same inputs reuse the
+          # published image instead of pushing a byte-distinct rebuild.
+          store_hash=$(basename "$(readlink result)" | cut -c1-32)
+          target="$IMAGE_REF:${IMAGE_TAG#*:}-nix-$store_hash"
+          if digest=$(docker buildx imagetools inspect "$target" --format '{{json .Manifest.Digest}}' 2>/dev/null | jq -er .); then
+            echo "Reusing published $target"
+          else
+            docker tag "$IMAGE_TAG" "$target"
+            docker push "$target"
+            digest=$(docker image inspect "$target" --format '{{json .RepoDigests}}' \
+              | jq -er --arg prefix "$IMAGE_REF@" '[.[] | select(startswith($prefix))] | unique | if length == 1 then .[0] | sub(".*@"; "") else error("expected one registry digest") end')
+          fi
+          echo "image=$target@$digest" >> "$GITHUB_OUTPUT"
+
+      # manafishrov/infra deploys Stalwart, so the rollout goes through a PR
+      # there. The token needs contents and pull-request write on that repo.
+      - name: Propose rollout to manafishrov/infra
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.MANAFISHROV_INFRA_TOKEN }}
+          IMAGE: ${{ steps.publish.outputs.image }}
+          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::warning::MANAFISHROV_INFRA_TOKEN is not set; $IMAGE was published but not proposed"
+            exit 0
+          fi
+          git clone --quiet --depth 1 "https://x-access-token:$GH_TOKEN@github.com/$DEPLOY_REPO.git" deploy
+          cd deploy
+          if grep -qF "image: $IMAGE" "$DEPLOY_PATH"; then
+            echo "$DEPLOY_REPO already runs $IMAGE"
+            exit 0
+          fi
+          if git fetch --quiet --depth 1 origin "$DEPLOY_BRANCH" 2>/dev/null \
+            && git show "FETCH_HEAD:$DEPLOY_PATH" | grep -qF "image: $IMAGE"; then
+            echo "$DEPLOY_BRANCH already proposes $IMAGE"
+            exit 0
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path = Path(os.environ["DEPLOY_PATH"])
+          content, replacements = re.subn(
+              r"(?m)^(\s*image:\s*)ghcr\.io/michaelbrusegard/stalwart-native-scim[:@].*$",
+              lambda match: match.group(1) + os.environ["IMAGE"],
+              path.read_text(),
+          )
+          if replacements != 1:
+              raise SystemExit("Failed to update the Stalwart image reference")
+          path.write_text(content)
+          PY
+          git switch --quiet -c "$DEPLOY_BRANCH"
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet -am "chore(stalwart): update image" \
+            -m "Built and tested from $SOURCE_URL."
+          git push --quiet --force origin "$DEPLOY_BRANCH"
+          if [[ -z "$(gh pr list --repo "$DEPLOY_REPO" --head "$DEPLOY_BRANCH" --state open --json number --jq '.[].number')" ]]; then
+            gh pr create --repo "$DEPLOY_REPO" --base main --head "$DEPLOY_BRANCH" \
+              --title "chore(stalwart): update image" \
+              --body "$(printf 'Updates Stalwart to `%s`.\n\nBuilt from %s. The image passed the entrypoint and OIDC rate-limit checks in %s.\n\nMerging rolls it out through Flux.' "$IMAGE" "$SOURCE_URL" "$RUN_URL")"
+          fi
