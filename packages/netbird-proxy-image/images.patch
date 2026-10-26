@@ -1,13 +1,30 @@
 diff --git a/proxy/internal/llm/openai.go b/proxy/internal/llm/openai.go
-index 86ee307..28c8682 100644
+index 86ee307..32c26c9 100644
 --- a/proxy/internal/llm/openai.go
 +++ b/proxy/internal/llm/openai.go
-@@ -29,6 +29,8 @@ var openAIPathHints = []string{
+@@ -8,7 +8,8 @@ import (
+ 
+ // OpenAIParser implements the Parser interface for OpenAI-compatible APIs.
+ // It recognizes chat.completions, completions, embeddings, and the newer
+-// responses endpoint; any proxy path-prefix stripping is tolerated by the
++// responses, image, speech, video, and standalone search endpoints. Any
++// proxy path-prefix stripping is tolerated by the
+ // substring match in DetectFromURL.
+ type OpenAIParser struct{}
+ 
+@@ -29,6 +30,15 @@ var openAIPathHints = []string{
  	"/v1/completions",
  	"/v1/embeddings",
  	"/v1/responses",
 +	"/v1/images/generations",
 +	"/v1/images/edits",
++	"/v1/audio/speech",
++	"/v1/tts",
++	"/v1/videos",
++	"/v1/alpha/search",
++	"/v1beta/interactions",
++	"/backend-api/codex/responses",
++	"/backend-api/codex/alpha/search",
  	"/chat/completions",
  }
  
@@ -217,10 +234,10 @@ index 0000000..22b472c
 +}
 diff --git a/proxy/internal/proxy/images_test.go b/proxy/internal/proxy/images_test.go
 new file mode 100644
-index 0000000..09ea2f1
+index 0000000..d445702
 --- /dev/null
 +++ b/proxy/internal/proxy/images_test.go
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,135 @@
 +package proxy
 +
 +import (
@@ -247,7 +264,7 @@ index 0000000..09ea2f1
 +// Exercise the production capture -> policy chain -> HTTP forwarding path.
 +// Authentication has already supplied the caller's groups at this boundary.
 +func TestImagesHTTPForwarding(t *testing.T) {
-+	for _, form := range []string{"generate-json", "edit-json", "edit-multipart", "claude", "responses"} {
++	for _, form := range []string{"generate-json", "edit-json", "edit-multipart", "claude", "responses", "speech", "tts", "videos", "video-edit", "video-extension", "openai-video", "search", "codex-search", "codex-responses", "compact", "interactions"} {
 +		for _, access := range []string{"allow", "model-denied", "group-denied"} {
 +			t.Run(form+"/"+access, func(t *testing.T) {
 +				model := "gpt-image-2.5-sunburst"
@@ -276,6 +293,17 @@ index 0000000..09ea2f1
 +					}
 +					model = "existing-text-model"
 +					body = []byte(`{"model":"` + model + `","messages":[],"input":[]}`)
++				}
++				paths := map[string]string{
++					"speech": "/v1/audio/speech", "tts": "/v1/tts",
++					"videos": "/v1/videos/generations", "video-edit": "/v1/videos/edits",
++					"video-extension": "/v1/videos/extensions", "openai-video": "/openai/v1/videos",
++					"search": "/v1/alpha/search", "codex-search": "/backend-api/codex/alpha/search",
++					"codex-responses": "/backend-api/codex/responses", "compact": "/v1/responses/compact",
++					"interactions": "/v1beta/interactions",
++				}
++				if endpoint, ok := paths[form]; ok {
++					path = endpoint
 +				}
 +				hits := 0
 +				upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -96,7 +96,8 @@ def request_image(prompt, output_path, reference_images=None, *, model=DEFAULT_M
         with (opener or build_opener(NoRedirect())).open(request, timeout=600) as response:
             raw = response.read(MAX_RESPONSE_BYTES + 1)
     except HTTPError as error:
-        message = error.read(4096).decode("utf-8", errors="replace")
+        with error:
+            message = error.read(4096).decode("utf-8", errors="replace")
         raise RuntimeError(f"AI gateway returned HTTP {error.code}: {message}") from None
     if len(raw) > MAX_RESPONSE_BYTES:
         raise ValueError("Image response exceeds 64 MiB")

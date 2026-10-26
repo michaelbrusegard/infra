@@ -24,11 +24,13 @@ in {
       experimental_bearer_token = "netbird";
       wire_api = "responses";
       requires_openai_auth = false;
+      # NetBird checks HTTP requests, not subsequent WebSocket messages.
+      # Keep Responses on SSE until per-message model checks are available.
       supports_websockets = false;
+      supports_standalone_web_search = true;
     };
     approval_policy = "never";
     sandbox_mode = "danger-full-access";
-    apps._default.enabled = false;
     features.api_key_model_discovery = true;
     features.memories = false;
     # Codex's native image tool requires first-party provider/auth metadata.
