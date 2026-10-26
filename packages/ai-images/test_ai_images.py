@@ -56,6 +56,8 @@ class ImageClientTests(unittest.TestCase):
         self.assertEqual(body["prompt"], "Paint a beach")
         self.assertEqual(self.output.read_bytes(), PNG)
         self.assertEqual(result["path"], str(self.output))
+        self.assertEqual(result["size"], "1x1")
+        self.assertEqual(result["requested_size"], "3840x2160")
 
     def test_edit_uploads_ordered_local_references_as_json(self):
         first = self.output.with_name("target.png")

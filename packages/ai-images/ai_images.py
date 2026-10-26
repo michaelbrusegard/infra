@@ -4,6 +4,7 @@ import argparse
 import base64
 import binascii
 import json
+import struct
 import sys
 from pathlib import Path
 from typing import Literal
@@ -108,10 +109,16 @@ def request_image(prompt, output_path, reference_images=None, *, model=DEFAULT_M
         raise ValueError("The gateway did not return a base64 image") from None
     if image_type(data) != "image/png":
         raise ValueError("The gateway returned a different format than the requested PNG")
+    if len(data) < 24 or data[12:16] != b"IHDR":
+        raise ValueError("The gateway returned an invalid PNG header")
+    width, height = struct.unpack(">II", data[16:24])
+    if not width or not height:
+        raise ValueError("The gateway returned invalid PNG dimensions")
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("xb") as output:
         output.write(data)
-    return {"path": str(target), "model": model, "size": size, "quality": quality,
+    return {"path": str(target), "model": model, "size": f"{width}x{height}",
+            "requested_size": size, "requested_quality": quality,
             "reference_images": len(references), "bytes": len(data)}
 
 
