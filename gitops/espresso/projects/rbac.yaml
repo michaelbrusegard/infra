@@ -26,6 +26,12 @@ rules:
       - deployments
       - statefulsets
     verbs: ["*"]
+  # helm-controller waits on Deployments and StatefulSets through these.
+  - apiGroups: ["apps"]
+    resources:
+      - replicasets
+      - controllerrevisions
+    verbs: ["get", "list", "watch"]
   - apiGroups: ["batch"]
     resources:
       - jobs
