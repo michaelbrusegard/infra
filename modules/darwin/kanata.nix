@@ -12,6 +12,36 @@
   stableKeyboardWatcherDir = "/Library/Application Support/Kanata";
   stableKeyboardWatcher = "${stableKeyboardWatcherDir}/keyboard-watcher";
   kanataConfig = inputs.self + "/config/kanata/darwin.kbd";
+  openssl = lib.getExe pkgs.openssl;
+  # An ad-hoc signature pins the Input Monitoring grant to the binary's
+  # cdhash, so every kanata rebuild silently revoked it. Sign with a
+  # machine-local self-signed certificate instead: the designated requirement
+  # becomes identifier + certificate, which survives rebuilds. The key is
+  # generated on first activation and only lives in the System keychain.
+  signingKeychain = "/Library/Keychains/System.keychain";
+  signingIdentity = "Kanata Local Code Signing";
+  ensureSigningIdentity = ''
+    if ! security find-identity -p codesigning ${signingKeychain} \
+      | grep -F '"${signingIdentity}"' >/dev/null; then
+      echo "creating kanata code signing identity..." >&2
+      (
+        umask 077
+        tmp=$(mktemp -d)
+        pass=$(${openssl} rand -hex 16)
+        ${openssl} req -x509 -newkey rsa:2048 -nodes -days 36500 \
+          -subj ${lib.escapeShellArg "/CN=${signingIdentity}"} \
+          -addext "basicConstraints=critical,CA:false" \
+          -addext "keyUsage=critical,digitalSignature" \
+          -addext "extendedKeyUsage=critical,codeSigning" \
+          -keyout "$tmp/key.pem" -out "$tmp/cert.pem" 2>/dev/null
+        ${openssl} pkcs12 -export -legacy -inkey "$tmp/key.pem" -in "$tmp/cert.pem" \
+          -out "$tmp/identity.p12" -passout "pass:$pass"
+        security import "$tmp/identity.p12" -k ${signingKeychain} \
+          -P "$pass" -T /usr/bin/codesign
+        rm -rf "$tmp"
+      )
+    fi
+  '';
   forceActivateKarabiner = ''
     primary_uid=$(/usr/bin/id -u ${primaryUser})
     launchctl asuser "$primary_uid" sudo -u ${primaryUser} \
@@ -109,7 +139,9 @@ in {
     </dict>
     </plist>
     EOF
-    codesign --force --deep --sign - ${lib.escapeShellArg kanataApp} >/dev/null
+    ${ensureSigningIdentity}
+    codesign --force --deep --keychain ${signingKeychain} \
+      --sign ${lib.escapeShellArg signingIdentity} ${lib.escapeShellArg kanataApp} >/dev/null
 
     chmod 755 /Library/Logs/Kanata
 
