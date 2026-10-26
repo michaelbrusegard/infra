@@ -51,6 +51,8 @@
   togglefloating = mkLuaInline ''hl.dsp.window.float({ action = "toggle" })'';
   fullscreenToggle = mkLuaInline ''hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" })'';
   resizeactive = x: y: mkLuaInline "hl.dsp.window.resize({ x = ${toString x}, y = ${toString y}, relative = true })";
+  # Toggles whether the focused window (RustDesk) can capture Hyprland binds.
+  toggleShortcutsInhibit = mkLuaInline ''hl.dsp.window.set_prop({ prop = "no_shortcuts_inhibit", value = "toggle" })'';
   closewindow = mkLuaInline "hl.dsp.window.close()";
   killwindow = mkLuaInline "hl.dsp.window.kill()";
   drag = mkLuaInline "hl.dsp.window.drag()";
@@ -65,6 +67,7 @@
     repeating = true;
   };
   bindMouse = bindFlags {mouse = true;};
+  bindUninhibited = bindFlags {dont_inhibit = true;};
 
   workspaces = lib.range 1 9;
 
@@ -302,6 +305,7 @@ in
             (bind "CTRL + SUPER + S" (exec "dms ipc call lock lock && ${systemctl} suspend"))
             (bind "CTRL + SUPER + F" fullscreenToggle)
             (bind "CTRL + SHIFT + G" (exec gamingModeToggle))
+            (bindUninhibited "MOD5 + ESCAPE" toggleShortcutsInhibit)
             (bind "CTRL + SHIFT + 3" (exec "dms screenshot full -d ~/Pictures/screenshots"))
             (bind "CTRL + SHIFT + 4" (exec "dms screenshot -d ~/Pictures/screenshots"))
 
