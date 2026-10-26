@@ -297,6 +297,8 @@ in {
         rm -f "$temp_file"
       '';
 
+      # An empty skill selection stops the daemon from installing its own
+      # skills into ~/.agents, ~/.claude and ~/.codex.
       activation.paseoConfig = lib.mkIf (paseoHostnames != []) (lib.hm.dag.entryAfter ["writeBoundary"] ''
         config_file="$HOME/.paseo/config.json"
         config_dir=$(dirname "$config_file")
@@ -308,6 +310,7 @@ in {
             .daemon = ((.daemon // {}) + {
               hostnames: (((.daemon.hostnames // []) + $hostnames) | unique)
             })
+            | .agents.skills.selection = {mode: "custom", skills: []}
           ' "$config_file" > "$temp_file"
         else
           ${lib.getExe pkgs.jq} \
@@ -316,7 +319,8 @@ in {
               version: 1,
               daemon: {
                 hostnames: $hostnames
-              }
+              },
+              agents: {skills: {selection: {mode: "custom", skills: []}}}
             }' > "$temp_file"
         fi
 
