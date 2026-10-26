@@ -29,7 +29,7 @@ locals {
     # Cloudflare flattens the CNAME, so it can sit next to the apex MX and
     # TXT records. The gateway redirects it to old.michaelbrusegard.com.
     apex = {
-      name    = "@"
+      name    = "michaelbrusegard.com"
       type    = "CNAME"
       content = "router.asgard.michaelbrusegard.com"
       proxied = true
