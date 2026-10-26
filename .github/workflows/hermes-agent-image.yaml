@@ -563,17 +563,23 @@ jobs:
           agent_image = f"{agent_ref}:sha-{git_sha}@{os.environ['AGENT_DIGEST']}"
           browser_image = f"{browser_ref}:sha-{git_sha}@{os.environ['BROWSER_DIGEST']}"
           content = path.read_text()
+
+          # Keep the current reference when the digest is unchanged. Its tag
+          # names a commit, so rewriting it would restart Hermes for nothing.
+          def pin(image, digest):
+              return lambda match: match.group(0) if match.group(2).endswith("@" + digest) else f"{match.group(1)} {image}"
+
           if os.environ["ROLLOUT_AGENT_IMAGE"] == "true":
               content, agent_replacements = re.subn(
-                  r"(?m)^(\s*- name: (?:gateway|android-companion)\n\s*image:)\s*.*$",
-                  lambda match: f"{match.group(1)} {agent_image}",
+                  r"(?m)^(\s*- name: (?:gateway|android-companion)\n\s*image:)\s*(.*)$",
+                  pin(agent_image, os.environ["AGENT_DIGEST"]),
                   content,
               )
               if agent_replacements != 2:
                   raise SystemExit("Failed to update Hermes Agent image reference")
           content, browser_replacements = re.subn(
-              r"(?m)^(\s*- name: (?:browser|android-viewer)\n\s*image:)\s*.*$",
-              lambda match: f"{match.group(1)} {browser_image}",
+              r"(?m)^(\s*- name: (?:browser|android-viewer)\n\s*image:)\s*(.*)$",
+              pin(browser_image, os.environ["BROWSER_DIGEST"]),
               content,
           )
           if browser_replacements != 2:
