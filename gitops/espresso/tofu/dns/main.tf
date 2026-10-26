@@ -24,6 +24,16 @@ locals {
       type    = "TXT"
       content = "v=DKIM1; k=ed25519; p=${var.dkim_ed25519_pub_michaelbrusegard}"
     }
+    # external-dns can't own the apex: its TXT ownership record
+    # (_externaldns.cname-michaelbrusegard.com) would fall outside the zone.
+    # Cloudflare flattens the CNAME, so it can sit next to the apex MX and
+    # TXT records. The gateway redirects it to old.michaelbrusegard.com.
+    apex = {
+      name    = "@"
+      type    = "CNAME"
+      content = "router.asgard.michaelbrusegard.com"
+      proxied = true
+    }
     tlsrpt = {
       name    = "_smtp._tls"
       type    = "TXT"
@@ -68,6 +78,7 @@ locals {
   }
 }
 
+# Cloudflare only accepts automatic TTL (1) on proxied records.
 resource "cloudflare_dns_record" "safe" {
   for_each = local.dns_records
 
@@ -75,7 +86,7 @@ resource "cloudflare_dns_record" "safe" {
   name     = each.value.name
   type     = each.value.type
   content  = each.value.content
-  ttl      = 300
-  proxied  = false
+  ttl      = try(each.value.proxied, false) ? 1 : 300
+  proxied  = try(each.value.proxied, false)
   priority = try(each.value.priority, null)
 }

@@ -21,3 +21,12 @@ spec:
       recordType: CNAME
       targets:
         - router.asgard.michaelbrusegard.com
+    # Proxied like the apex record in tofu/dns, so Cloudflare's edge answers
+    # for the redirect to old.michaelbrusegard.com.
+    - dnsName: www.michaelbrusegard.com
+      recordType: CNAME
+      targets:
+        - router.asgard.michaelbrusegard.com
+      providerSpecific:
+        - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
+          value: "true"

@@ -1,0 +1,91 @@
+# michaelbrusegard/personal-website, archived as a static site on
+# old.michaelbrusegard.com. The repo's deploy/ folder is applied as the
+# namespace's deployer; michaelbrusegard.com and www stay with infra and
+# redirect here (infrastructure/configs/gateway/public-redirects.yaml).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: personal-website
+  labels:
+    gateway-access: public
+    pod-security.kubernetes.io/enforce: restricted
+    projects.michaelbrusegard.com/managed: "true"
+  annotations:
+    projects.michaelbrusegard.com/hostnames: old.michaelbrusegard.com
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: deployer
+  namespace: personal-website
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deployer
+  namespace: personal-website
+subjects:
+  - kind: ServiceAccount
+    name: deployer
+    namespace: personal-website
+roleRef:
+  kind: ClusterRole
+  name: project-deployer
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: defaults
+  namespace: personal-website
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 10m
+        memory: 32Mi
+      default:
+        memory: 256Mi
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: project
+  namespace: personal-website
+spec:
+  hard:
+    pods: "5"
+    requests.cpu: 500m
+    requests.memory: 512Mi
+    limits.memory: 1Gi
+    persistentvolumeclaims: "0"
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: personal-website
+  namespace: personal-website
+spec:
+  interval: 5m
+  ref:
+    branch: main
+  url: https://github.com/michaelbrusegard/personal-website
+  # Only deploy/ is applied; skip the 50M of site assets in the artifact.
+  ignore: |
+    /*
+    !/deploy/
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: personal-website
+  namespace: personal-website
+spec:
+  interval: 10m
+  path: ./deploy
+  prune: true
+  serviceAccountName: deployer
+  targetNamespace: personal-website
+  sourceRef:
+    kind: GitRepository
+    name: personal-website

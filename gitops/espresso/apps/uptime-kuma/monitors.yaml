@@ -488,6 +488,53 @@ data:
         "active": true
       }
     ]
+  projects.json: |
+    [
+      {
+        "name": "Projects",
+        "type": "group"
+      },
+      {
+        "name": "Personal Website",
+        "type": "http",
+        "parent_name": "projects[0]",
+        "url": "http://personal-website.personal-website.svc.cluster.local:8080",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "old.michaelbrusegard.com",
+        "type": "http",
+        "parent_name": "projects[0]",
+        "url": "https://old.michaelbrusegard.com",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "michaelbrusegard.com",
+        "type": "http",
+        "parent_name": "projects[0]",
+        "url": "https://michaelbrusegard.com",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "www.michaelbrusegard.com",
+        "type": "http",
+        "parent_name": "projects[0]",
+        "url": "https://www.michaelbrusegard.com",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      }
+    ]
   mail.json: |
     [
       {

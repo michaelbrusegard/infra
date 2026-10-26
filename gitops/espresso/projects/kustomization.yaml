@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - rbac.yaml
   - admission-policy.yaml
+  - personal-website.yaml
