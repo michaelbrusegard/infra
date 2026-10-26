@@ -12,5 +12,6 @@ resources:
   - netbird-cluster-proxy.yaml
   - apps.yaml
   - apps-secrets.yaml
+  - projects.yaml
   - manafishrov.yaml
   - manafishrov-secrets.yaml

@@ -1,0 +1,113 @@
+# Guard rails for everything a project's `deployer` ServiceAccount creates,
+# including what helm-controller renders while impersonating it. RBAC already
+# keeps it inside its own namespace; this stops it from claiming hostnames or
+# DNS names it wasn't given, exposing itself outside the gateways, or handing
+# a HelmRelease to helm-controller's own cluster-admin account.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: project-deployer
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        projects.michaelbrusegard.com/managed: "true"
+    resourceRules:
+      - apiGroups: ["*"]
+        apiVersions: ["*"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["*"]
+  matchConditions:
+    - name: only-project-deployer
+      expression: 'request.userInfo.username == "system:serviceaccount:" + request.namespace + ":deployer"'
+  variables:
+    # Hostnames the project may use, set by infra on its Namespace.
+    - name: hostnames
+      expression: |
+        has(namespaceObject.metadata.annotations) &&
+        "projects.michaelbrusegard.com/hostnames" in namespaceObject.metadata.annotations ?
+          namespaceObject.metadata.annotations["projects.michaelbrusegard.com/hostnames"].split(",").map(h, h.trim()) :
+          []
+  validations:
+    # A route without hostnames matches every hostname on the listener.
+    # Plain-HTTP listeners are left to the infra https redirect.
+    - expression: |
+        request.resource.resource != "httproutes" ||
+        (has(object.spec.hostnames) && size(object.spec.hostnames) > 0 &&
+         object.spec.hostnames.all(h, h in variables.hostnames) &&
+         object.spec.parentRefs.all(p,
+           (!has(p.kind) || p.kind == "Gateway") &&
+           has(p.namespace) && p.namespace == "gateway" &&
+           p.name in ["public", "internal"] &&
+           has(p.sectionName) && p.sectionName == "https"))
+      message: "project HTTPRoutes must use the namespace's allowed hostnames and the https listener of the public or internal gateway"
+    - expression: |
+        request.resource.resource != "dnsendpoints" ||
+        !has(object.spec.endpoints) ||
+        object.spec.endpoints.all(e,
+          e.dnsName in variables.hostnames &&
+          e.recordType == "CNAME" &&
+          e.targets == ["router.asgard.michaelbrusegard.com"])
+      message: "project DNSEndpoints may only point the namespace's allowed hostnames at router.asgard.michaelbrusegard.com"
+    # Traffic comes in through the gateways only.
+    - expression: |
+        request.resource.resource != "services" ||
+        ((!has(object.spec.type) || object.spec.type == "ClusterIP") &&
+         (!has(object.spec.externalIPs) || size(object.spec.externalIPs) == 0))
+      message: "project Services must be ClusterIP without externalIPs"
+    # Without serviceAccountName helm-controller installs the chart as itself.
+    - expression: |
+        request.resource.resource != "helmreleases" ||
+        (has(object.spec.serviceAccountName) && object.spec.serviceAccountName == "deployer" &&
+         !has(object.spec.kubeConfig) &&
+         (!has(object.spec.targetNamespace) || object.spec.targetNamespace == request.namespace) &&
+         (!has(object.spec.storageNamespace) || object.spec.storageNamespace == request.namespace) &&
+         (!has(object.spec.chartRef) || !has(object.spec.chartRef.namespace) ||
+          object.spec.chartRef.namespace == request.namespace) &&
+         (!has(object.spec.chart) || !has(object.spec.chart.spec.sourceRef.namespace) ||
+          object.spec.chart.spec.sourceRef.namespace == request.namespace))
+      message: "project HelmReleases must run as deployer and keep their chart and release in the project namespace"
+    - expression: |
+        request.resource.resource != "secrets" ||
+        !has(object.type) ||
+        object.type != "kubernetes.io/service-account-token"
+      message: "projects may not mint service account token Secrets"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: project-deployer
+spec:
+  policyName: project-deployer
+  validationActions: [Deny]
+---
+# Pods come from the ReplicaSet/Job controllers rather than the deployer, so
+# this matches every creator: app code must never run with deploy rights.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: project-pods
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        projects.michaelbrusegard.com/managed: "true"
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  validations:
+    - expression: |
+        !has(object.spec.serviceAccountName) || object.spec.serviceAccountName != "deployer"
+      message: "project pods may not run as the deployer ServiceAccount"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: project-pods
+spec:
+  policyName: project-pods
+  validationActions: [Deny]

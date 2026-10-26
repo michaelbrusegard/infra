@@ -1,0 +1,62 @@
+# What a project's repo may deploy into its own namespace. Each project binds
+# this with a RoleBinding to its `deployer` ServiceAccount, which applies the
+# repo's deploy/ folder and runs its HelmReleases. admission-policy.yaml
+# narrows what those objects may contain.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: project-deployer
+rules:
+  - apiGroups: [""]
+    resources:
+      - configmaps
+      - secrets
+      - services
+      - serviceaccounts
+      - persistentvolumeclaims
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - events
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - statefulsets
+    verbs: ["*"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["*"]
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+    verbs: ["*"]
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - networkpolicies
+    verbs: ["*"]
+  - apiGroups: ["cilium.io"]
+    resources:
+      - ciliumnetworkpolicies
+    verbs: ["*"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources:
+      - httproutes
+    verbs: ["*"]
+  - apiGroups: ["externaldns.k8s.io"]
+    resources:
+      - dnsendpoints
+    verbs: ["*"]
+  - apiGroups: ["helm.toolkit.fluxcd.io"]
+    resources:
+      - helmreleases
+    verbs: ["*"]
+  - apiGroups: ["source.toolkit.fluxcd.io"]
+    resources:
+      - ocirepositories
+      - helmrepositories
+    verbs: ["*"]
