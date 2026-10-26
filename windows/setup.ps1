@@ -161,9 +161,9 @@ function Set-LockScreen {
 # WALLPAPER SETUP
 # =============================================================================
 Invoke-Section "Wallpaper Setup" {
-  $wslWallpaperPath  = Join-Path $wslRepoUnc "wallpapers\twilight-peaks.png"
+  $wslWallpaperPath  = Join-Path $wslRepoUnc "wallpapers\golden-gate.png"
   $script:localWallpaperDir  = Join-Path $env:USERPROFILE "Pictures\Wallpapers"
-  $script:localWallpaperPath = Join-Path $localWallpaperDir "twilight-peaks.png"
+  $script:localWallpaperPath = Join-Path $localWallpaperDir "golden-gate.png"
 
   if (Test-Path $wslWallpaperPath) {
     if (-not (Test-Path $localWallpaperDir)) {

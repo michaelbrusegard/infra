@@ -7,7 +7,7 @@
   ...
 }: let
   dmsConfig = "${config.home.homeDirectory}/Projects/infra/config/dms";
-  wallpaper = ../../wallpapers/twilight-peaks.png;
+  wallpaper = ../../wallpapers/golden-gate.png;
 in {
   home =
     {

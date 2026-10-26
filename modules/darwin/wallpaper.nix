@@ -3,7 +3,7 @@
   inputs,
   ...
 }: let
-  wallpaper = inputs.self + "/wallpapers/twilight-peaks.png";
+  wallpaper = inputs.self + "/wallpapers/golden-gate.png";
   inherit (config.system) primaryUser;
 in {
   # macOS keeps the desktop picture as per-user GUI state, so set it as the
