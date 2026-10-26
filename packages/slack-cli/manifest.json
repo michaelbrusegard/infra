@@ -34,6 +34,12 @@
         "reactions:read",
         "reactions:write",
         "search:read",
+        "search:read.files",
+        "search:read.im",
+        "search:read.mpim",
+        "search:read.private",
+        "search:read.public",
+        "search:read.users",
         "usergroups:read",
         "users:read",
         "users:read.email"

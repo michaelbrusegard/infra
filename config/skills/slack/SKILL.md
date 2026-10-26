@@ -15,6 +15,7 @@ Most used:
 slack thread <permalink>                 whole thread, even from a reply link
 slack history <#chan|@user> --since 1d   oldest first; --all, --replies, --until
 slack search '<query>' [--count N]       in:#chan from:@user after:YYYY-MM-DD ...
+slack search '<question>' --sort score --context   relevance ranking, with nearby messages
 slack unreads [--channel C] [--limit N]
 slack file <F-ID|permalink>              text prints; other files save to a path
 slack user <name|email>                  prints the <@U...> mention to use

@@ -51,7 +51,7 @@ WORKERS = 8
 # is not retried after an ambiguous timeout and SLACK_CLI_DRY_RUN=1
 # intercepts it.
 READ_METHOD_RE = re.compile(
-    r"(^auth\.test$|^search\.|^users\.conversations$|^users\.profile\.get$"
+    r"(^auth\.test$|^search\.|^assistant\.search\.|^users\.conversations$|^users\.profile\.get$"
     r"|^users\.lookupByEmail$|\.list$|\.info$|\.history$|\.replies$|\.members$"
     r"|\.get$|\.getPermalink$|\.lookup$)"
 )
@@ -1626,8 +1626,12 @@ def cmd_emoji(ctx, a):
 # --------------------------------------------------------------------------
 
 
-def search_rewrite(ctx, query):
-    """Resolve in:#name, in:@user and from:@user operators to real names/IDs."""
+def search_rewrite(ctx, query, ids=False):
+    """Resolve in:#name, in:@user and from:@user operators to real names/IDs.
+
+    Real-time Search only understands <#C…> and <@U…>, so ids=True always
+    writes channel IDs instead of names.
+    """
 
     def fix_in(m):
         ref = m.group(1)
@@ -1643,7 +1647,7 @@ def search_rewrite(ctx, query):
             warn(str(e))
             return m.group(0)
         c = ctx.conv(cid)
-        return f"in:#{c['name']}" if c and c["name"] else f"in:<#{cid}>"
+        return f"in:#{c['name']}" if c and c["name"] and not ids else f"in:<#{cid}>"
 
     def fix_from(m):
         ref = m.group(1)
@@ -1658,7 +1662,110 @@ def search_rewrite(ctx, query):
     return query
 
 
+RTS_FALLBACK_ERRORS = {"missing_scope", "not_allowed_token_type", "feature_not_enabled", "unknown_method"}
+
+
 def cmd_search(ctx, a):
+    if not a.legacy and a.page == 1 and search_rts(ctx, a) is not None:
+        return
+    if a.cursor:
+        raise UsageError("--cursor needs Real-time Search; drop --legacy/--page", "search")
+    search_legacy(ctx, a)
+
+
+def search_rts(ctx, a):
+    """Search with assistant.search.context. Returns None to fall back to search.messages."""
+    query = search_rewrite(ctx, " ".join(a.query), ids=True)
+    channel_types = ["public_channel"]
+    if not a.public:
+        channel_types += ["private_channel", "mpim", "im"]
+    params = {
+        "query": query,
+        "content_types": ["messages"],
+        "channel_types": channel_types,
+        "sort": a.sort,
+        "sort_dir": "asc" if a.asc else "desc",
+        "include_bots": True,
+        "include_message_blocks": True,
+        "include_context_messages": a.context,
+        "disable_semantic_search": a.keyword or None,
+        "cursor": a.cursor,
+    }
+    want = max(1, min(a.count, 100))
+    hits = []
+    cursor = None
+    while len(hits) < want:
+        params["limit"] = min(20, want - len(hits))
+        r = ctx.client.call("assistant.search.context", params, json_body=True, allow_error=True)
+        if not r.get("ok"):
+            err = r.get("error")
+            if not hits and not a.cursor and err in RTS_FALLBACK_ERRORS:
+                warn(f"Real-time Search unavailable ({err}); using search.messages")
+                return None
+            raise SlackError(format_api_error("assistant.search.context", r))
+        page = (r.get("results") or {}).get("messages") or []
+        hits.extend(page)
+        cursor = (r.get("response_metadata") or {}).get("next_cursor") or None
+        if not cursor or not page:
+            break
+        params["cursor"] = cursor
+    msgs = [rts_message(h) for h in hits]
+    rend = Renderer(ctx)
+    rend.prefetch(msgs)
+    rows = []
+    for h, m in zip(hits, msgs):
+        n = rend.message(m, h.get("channel_id"))
+        thread = None
+        if h.get("permalink"):
+            q = urllib.parse.parse_qs(urllib.parse.urlsplit(h["permalink"]).query)
+            thread = (q.get("thread_ts") or [None])[0]
+        n["thread_ts"] = thread
+        n["is_reply"] = bool(thread and thread != n["ts"])
+        n["channel_name"] = ctx.conv_label(h["channel_id"]) if h.get("channel_id") else "?"
+        if a.context:
+            around = h.get("context_messages") or {}
+            n["context"] = {
+                side: [rend.message(rts_message(c), h.get("channel_id")) for c in around.get(side) or []]
+                for side in ("before", "after")
+            }
+        rows.append(n)
+    if ctx.json:
+        emit_json(
+            {"query": query, "backend": "assistant.search.context", "next_cursor": cursor, "matches": rows}
+        )
+        return rows
+    if query != " ".join(a.query):
+        out(f"-- query: {query} --")
+    out(f"-- {len(rows)} matches" + (" (public only)" if a.public else "") + " --")
+    for n in rows:
+        for c in (n.get("context") or {}).get("before") or []:
+            out(rend.line(c, "    "))
+        line = rend.line(n)
+        head, sep, rest = line.partition("] ")
+        out(f"{head}] {n['channel_name']} {rest}" if sep else line)
+        for c in (n.get("context") or {}).get("after") or []:
+            out(rend.line(c, "    "))
+    if cursor:
+        out(f"-- more: slack search {json.dumps(' '.join(a.query))} --cursor {cursor} --")
+    return rows
+
+
+def rts_message(h):
+    """Shape a Real-time Search hit like a conversations.history message."""
+    m = {
+        "ts": h.get("message_ts") or h.get("ts"),
+        "user": h.get("author_user_id") or h.get("user_id"),
+        "text": h.get("content") or h.get("text") or "",
+        "blocks": h.get("blocks") or [],
+        "permalink": h.get("permalink"),
+    }
+    if h.get("is_author_bot"):
+        m["subtype"] = "bot_message"
+        m["username"] = h.get("author_name")
+    return m
+
+
+def search_legacy(ctx, a):
     query = search_rewrite(ctx, " ".join(a.query))
     params = {
         "query": query,
@@ -1712,7 +1819,7 @@ def cmd_search(ctx, a):
         head, sep, rest = line.partition("] ")
         out(f"{head}] {n['channel_name']} {rest}" if sep else line)
     if a.page < pages:
-        out(f"-- more: slack search {json.dumps(' '.join(a.query))} --page {a.page + 1} --")
+        out(f"-- more: slack search {json.dumps(' '.join(a.query))} --legacy --page {a.page + 1} --")
 
 
 def cmd_search_files(ctx, a):
@@ -3298,10 +3405,14 @@ def build_parser(name):
     if name == "search":
         p.add_argument("query", nargs="+")
         p.add_argument("--count", "-n", type=int, default=20)
+        p.add_argument("--cursor")
         p.add_argument("--page", type=int, default=1)
         p.add_argument("--sort", choices=["timestamp", "score"], default="timestamp")
         p.add_argument("--asc", action="store_true")
         p.add_argument("--public", action="store_true")
+        p.add_argument("--context", action="store_true")
+        p.add_argument("--keyword", action="store_true")
+        p.add_argument("--legacy", action="store_true")
     elif name == "search-files":
         p.add_argument("query", nargs="+")
         p.add_argument("--count", "-n", type=int, default=20)
@@ -3459,10 +3570,16 @@ command(
     "search",
     "search messages (public, private, DMs; Slack search operators)",
     """\
-Usage: slack search <query...> [--count N] [--page N] [--sort timestamp|score] [--asc] [--public]
+Usage: slack search <query...> [--count N] [--cursor C] [--sort timestamp|score] [--asc]
+                    [--public] [--context] [--keyword] [--legacy [--page N]]
 
 Searches everything you can see: public and private channels, DMs and group DMs.
---public keeps only public-channel results (filtered client-side on the page).
+Uses Slack's Real-time Search API (assistant.search.context). When the token lacks
+the search:read.* scopes, it falls back to search.messages with a warning.
+--sort score ranks by relevance, semantically on plans that support it (--keyword
+turns that off); timestamp is keyword search, newest first.
+--context also prints the messages around each hit. --public searches only public
+channels. --legacy forces search.messages, whose --page paginates.
 Operators: in:#channel  in:@user  from:@user  to:@user  before:YYYY-MM-DD  after:YYYY-MM-DD
            on:YYYY-MM-DD  during:month  has:link  has:pin  is:thread  "exact phrase"  -word
 in:#name and from:@name are resolved fuzzily first (in:#general -> in:#0-general).
@@ -3470,6 +3587,7 @@ Defaults: --count 20 (max 100), newest first. Reply results show [in thread TS].
 
 Examples:
   slack search 'in:#3-prod-alerts after:2026-10-20 backup'
+  slack search 'why did we pick postfix' --sort score --context
   slack search 'from:@thomas deploy' --count 50 --json""",
 )(cmd_search)
 
