@@ -34,9 +34,13 @@ jobs:
       - name: Update agent inputs
         run: nix flake update llm-agents t3code
 
+      - name: Update vite-plus
+        run: packages/vite-plus/update.sh
+
       - name: Validate hosts
         run: |
-          git diff --quiet -- flake.lock && exit 0
+          git diff --quiet -- flake.lock packages/vite-plus && exit 0
+          nix build --no-link .#packages.x86_64-linux.vite-plus
           nix eval --raw .#nixosConfigurations.forte.config.system.build.toplevel.drvPath
           nix eval --raw .#darwinConfigurations.lungo.system.drvPath
 
@@ -47,11 +51,11 @@ jobs:
           GIT_COMMITTER_NAME: github-actions[bot]
           GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: |
-          if git diff --quiet -- flake.lock; then
+          if git diff --quiet -- flake.lock packages/vite-plus; then
             exit 0
           fi
 
-          git add flake.lock
+          git add flake.lock packages/vite-plus
           git commit -m "chore(flake): update agent harnesses"
           git pull --rebase origin main
           git push

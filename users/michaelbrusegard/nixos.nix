@@ -14,5 +14,10 @@
     hashedPasswordFile = lib.mkIf (!isWsl) config.secrets.users.michaelbrusegard.hashedPasswordFile;
     openssh.authorizedKeys.keys = config.secrets.users.michaelbrusegard.openssh.authorizedKeys.keys;
   };
-  programs.zsh.enable = true;
+  programs = {
+    zsh.enable = true;
+    # Runs binaries built for other distributions, such as the Node runtime
+    # that vite-plus downloads for itself.
+    nix-ld.enable = true;
+  };
 }
