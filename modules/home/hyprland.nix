@@ -53,6 +53,7 @@
   resizeactive = x: y: mkLuaInline "hl.dsp.window.resize({ x = ${toString x}, y = ${toString y}, relative = true })";
   # Toggles whether the focused window (RustDesk) can capture Hyprland binds.
   toggleShortcutsInhibit = mkLuaInline ''hl.dsp.window.set_prop({ prop = "no_shortcuts_inhibit", value = "toggle" })'';
+  global = action: mkLuaInline ''hl.dsp.global("${action}")'';
   closewindow = mkLuaInline "hl.dsp.window.close()";
   killwindow = mkLuaInline "hl.dsp.window.kill()";
   drag = mkLuaInline "hl.dsp.window.drag()";
@@ -308,6 +309,11 @@ in
             (bindUninhibited "MOD5 + ESCAPE" toggleShortcutsInhibit)
             (bind "CTRL + SHIFT + 3" (exec "dms screenshot full -d ~/Pictures/screenshots"))
             (bind "CTRL + SHIFT + 4" (exec "dms screenshot -d ~/Pictures/screenshots"))
+            # T3 Code snapshot on Ctrl+Ctrl, matching Cmd+Cmd on macOS. A key is
+            # not yet a modifier when its own press is matched, so these fire
+            # only when the other Ctrl is already held.
+            (bind "CTRL + Control_L" (global "com.t3tools.T3Code:capture-window"))
+            (bind "CTRL + Control_R" (global "com.t3tools.T3Code:capture-window"))
 
             # Resize
             (bindRepeat "MOD5 + left" (resizeactive (-20) 0))
