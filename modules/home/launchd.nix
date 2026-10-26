@@ -41,6 +41,18 @@ lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
       };
     };
 
+    bluebubbles = {
+      enable = true;
+      config = {
+        ProgramArguments = [
+          "/usr/bin/open"
+          "${pkgs.brewCasks.bluebubbles}/Applications/BlueBubbles.app"
+        ];
+        RunAtLoad = true;
+        LimitLoadToSessionType = "Aqua";
+      };
+    };
+
     linearmouse = {
       enable = true;
       config = {
