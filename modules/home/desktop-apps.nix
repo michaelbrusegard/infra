@@ -78,7 +78,6 @@ in {
           brewCasks.rustdesk
           brewCasks.mattermost
           whatsappDarwin
-          brewCasks.bluebubbles
 
           brewCasks.linearmouse
           brewCasks.legcord
