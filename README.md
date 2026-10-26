@@ -90,11 +90,15 @@ Items & Extensions -> Driver Extensions (At the bottom).
 
 The Darwin module copies Kanata into `/Applications/Kanata.app` so macOS Privacy
 grants are attached to a stable app bundle instead of a changing Nix Store path.
-Add that app as an allowed application under Privacy & Security -> Input
-Monitoring. If Kanata logs
+It is signed with a machine-local certificate (`Kanata Local Code Signing` in
+the System keychain, created on first activation) so the grants survive kanata
+rebuilds. Add that app as an allowed application under Privacy & Security ->
+Input Monitoring. If Kanata logs
 `IOHIDDeviceOpen error: (iokit/common) not permitted`, remove any existing
 Kanata entries, re-add `/Applications/Kanata.app` with Cmd+Shift+G in the file
-picker, and also allow it under Privacy & Security -> Accessibility.
+picker, and also allow it under Privacy & Security -> Accessibility. Kanata only
+opens keyboards at startup, so restart it after granting:
+`sudo launchctl kickstart -k system/org.nixos.kanata`.
 
 After Kanata is running, go to Keyboard -> Keyboard Shortcuts... -> Modifier
 Keys. If the Karabiner DriverKit VirtualHIDDevice appears there, select it as
