@@ -18,9 +18,15 @@ spec:
         apiVersions: ["*"]
         operations: ["CREATE", "UPDATE"]
         resources: ["*"]
+        # Cluster-scoped requests have no namespace and must never reach
+        # the policy: with failurePolicy Fail an error here would block
+        # them for every user.
+        scope: Namespaced
   matchConditions:
     - name: only-project-deployer
-      expression: 'request.userInfo.username == "system:serviceaccount:" + request.namespace + ":deployer"'
+      expression: |
+        has(request.namespace) &&
+        request.userInfo.username == "system:serviceaccount:" + request.namespace + ":deployer"
   variables:
     # Hostnames the project may use, set by infra on its Namespace.
     - name: hostnames
