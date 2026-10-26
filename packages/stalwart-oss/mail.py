@@ -445,7 +445,7 @@ def fetch_message(fixture, tag, user="alice", folder="INBOX", timeout=25):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         with mailbox(fixture, user) as imap:
-            require(imap.select(folder)[0] == "OK", "Cannot select mailbox")
+            require(imap.select(f'"{folder}"')[0] == "OK", "Cannot select mailbox")
             # Delivery smoke checks should not depend on asynchronous FTS indexing.
             status, rows = imap.search(None, "ALL")
             require(status == "OK", "IMAP search failed")
