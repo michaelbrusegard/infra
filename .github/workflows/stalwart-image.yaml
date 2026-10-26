@@ -44,9 +44,6 @@ jobs:
       packages: write
     env:
       IMAGE_REF: ghcr.io/michaelbrusegard/stalwart-native-scim
-      DEPLOY_REPO: manafishrov/infra
-      DEPLOY_PATH: apps/stalwart/statefulset.yaml
-      DEPLOY_BRANCH: automation/stalwart-image
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -107,14 +104,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      # manafishrov/infra deploys Stalwart and pins <version>@<digest>; its
+      # Renovate proposes the rollout when the version tag moves.
       - name: Publish image
-        id: publish
         if: github.event_name != 'pull_request'
         run: |
           # Tag by the image's Nix output hash: the same inputs reuse the
           # published image instead of pushing a byte-distinct rebuild.
           store_hash=$(basename "$(readlink result)" | cut -c1-32)
-          target="$IMAGE_REF:${IMAGE_TAG#*:}-nix-$store_hash"
+          version=${IMAGE_TAG#*:}
+          target="$IMAGE_REF:$version-nix-$store_hash"
           if digest=$(docker buildx imagetools inspect "$target" --format '{{json .Manifest.Digest}}' 2>/dev/null | jq -er .); then
             echo "Reusing published $target"
           else
@@ -123,56 +122,9 @@ jobs:
             digest=$(docker image inspect "$target" --format '{{json .RepoDigests}}' \
               | jq -er --arg prefix "$IMAGE_REF@" '[.[] | select(startswith($prefix))] | unique | if length == 1 then .[0] | sub(".*@"; "") else error("expected one registry digest") end')
           fi
-          echo "image=$target@$digest" >> "$GITHUB_OUTPUT"
-
-      # manafishrov/infra deploys Stalwart, so the rollout goes through a PR
-      # there. The token needs contents and pull-request write on that repo.
-      - name: Propose rollout to manafishrov/infra
-        if: github.event_name != 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.MANAFISHROV_INFRA_TOKEN }}
-          IMAGE: ${{ steps.publish.outputs.image }}
-          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          if [[ -z "$GH_TOKEN" ]]; then
-            echo "::warning::MANAFISHROV_INFRA_TOKEN is not set; $IMAGE was published but not proposed"
-            exit 0
-          fi
-          git clone --quiet --depth 1 "https://x-access-token:$GH_TOKEN@github.com/$DEPLOY_REPO.git" deploy
-          cd deploy
-          if grep -qF "image: $IMAGE" "$DEPLOY_PATH"; then
-            echo "$DEPLOY_REPO already runs $IMAGE"
-            exit 0
-          fi
-          if git fetch --quiet --depth 1 origin "$DEPLOY_BRANCH" 2>/dev/null \
-            && git show "FETCH_HEAD:$DEPLOY_PATH" | grep -qF "image: $IMAGE"; then
-            echo "$DEPLOY_BRANCH already proposes $IMAGE"
-            exit 0
-          fi
-          python3 - <<'PY'
-          from pathlib import Path
-          import os
-          import re
-
-          path = Path(os.environ["DEPLOY_PATH"])
-          content, replacements = re.subn(
-              r"(?m)^(\s*image:\s*)ghcr\.io/michaelbrusegard/stalwart-native-scim[:@].*$",
-              lambda match: match.group(1) + os.environ["IMAGE"],
-              path.read_text(),
-          )
-          if replacements != 1:
-              raise SystemExit("Failed to update the Stalwart image reference")
-          path.write_text(content)
-          PY
-          git switch --quiet -c "$DEPLOY_BRANCH"
-          git -c user.name="github-actions[bot]" \
-            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit --quiet -am "chore(stalwart): update image" \
-            -m "Built and tested from $SOURCE_URL."
-          git push --quiet --force origin "$DEPLOY_BRANCH"
-          if [[ -z "$(gh pr list --repo "$DEPLOY_REPO" --head "$DEPLOY_BRANCH" --state open --json number --jq '.[].number')" ]]; then
-            gh pr create --repo "$DEPLOY_REPO" --base main --head "$DEPLOY_BRANCH" \
-              --title "chore(stalwart): update image" \
-              --body "$(printf 'Updates Stalwart to `%s`.\n\nBuilt from %s. The image passed the entrypoint and OIDC rate-limit checks in %s.\n\nMerging rolls it out through Flux.' "$IMAGE" "$SOURCE_URL" "$RUN_URL")"
-          fi
+          # Retag remotely so the version tag keeps the exact manifest digest.
+          rev=$(jq -r '.nodes[.nodes.root.inputs.nixpkgs].locked.rev' flake.lock)
+          crane() { nix run "github:NixOS/nixpkgs/$rev#crane" -- "$@"; }
+          crane tag "$IMAGE_REF@$digest" "$version"
+          test "$(crane digest "$IMAGE_REF:$version")" = "$digest"
+          echo "Published $IMAGE_REF:$version@$digest"
