@@ -2,7 +2,7 @@
 """Disposable direct curl -> native Stalwart proof for the Postfix pipe adapter.
 
 Run: python packages/smtp-edge/qualify.py [--binary /approved/stalwart]
-Only the pinned Stalwart SHA-256 and curl 8.20.0 are accepted. Everything runs
+Only the pinned Stalwart SHA-256 and curl 8.22.0 are accepted. Everything runs
 inside a fresh unshare -Urn namespace with loopback only: private authoritative
 DNS (installed named), a disposable native backend, and curl invoked exactly as
 deliver.sh invokes it (PROXY v1 client IP, EHLO as URL path, STARTTLS with a
@@ -54,8 +54,8 @@ from smtp_fixture import change, deterministic_spam_settings, email_ids, load_fi
 from edge_dns import RESOLVER, AuthDNS  # noqa: E402
 
 BINARY = Path('/tmp/stalwart-edge-qualification/stalwart')
-APPROVED_SHA256 = '02030a8334e3bc62bae1fa4a9139f498df0a7e105bd97ec5beacfdfa1be8b614'
-CURL_VERSION = '8.20.0'
+APPROVED_SHA256 = 'ea6bb3b14d39c4a208918d53463a592e6afef0b70c3e8108d64b35f0e4d1b80c'
+CURL_VERSION = '8.22.0'
 INVENTORY = HERE.parent / 'stalwart-oss' / 'fixtures' / 'spam-rules-v3.0.1.json'
 DELIVER = HERE / 'deliver.sh'
 DOMAIN = 'manafishrov.com'

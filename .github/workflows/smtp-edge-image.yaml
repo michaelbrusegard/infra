@@ -41,7 +41,7 @@ jobs:
           nix build --impure --out-link result --expr '
             let
               lock = builtins.fromJSON (builtins.readFile ./flake.lock);
-              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.nixpkgs.locked.rev);
+              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.${lock.nodes.root.inputs.nixpkgs}.locked.rev);
               pkgs = upstream.legacyPackages.x86_64-linux;
             in pkgs.callPackage ./packages/smtp-edge/image.nix {}
           '

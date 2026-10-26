@@ -32,9 +32,9 @@ import time
 import uuid
 
 HERE = Path(__file__).resolve().parent
-IMAGE = 'sha256:8073c80ee903205fc9b2ad1096fbc57565d81441f7adc623156f478c6e505da0'
+IMAGE = 'sha256:1fd2a06263a388aa0064639c0de7a872431653924476a2c07ca77eb5e0c8f897'
 BINARY = Path('/tmp/stalwart-edge-qualification/stalwart')
-BINARY_SHA256 = '02030a8334e3bc62bae1fa4a9139f498df0a7e105bd97ec5beacfdfa1be8b614'
+BINARY_SHA256 = 'ea6bb3b14d39c4a208918d53463a592e6afef0b70c3e8108d64b35f0e4d1b80c'
 CAPS = ['CHOWN', 'SETUID', 'SETGID', 'DAC_OVERRIDE', 'FOWNER', 'KILL', 'NET_BIND_SERVICE']
 CAP_MASK = sum(1 << bit for bit in (0, 1, 3, 5, 6, 7, 10))
 ADDRESSES = ['192.0.2.10/32', '192.0.2.11/32', '2001:db8::10/128']
@@ -251,7 +251,7 @@ def main():
                 'Image/source mismatch: main.cf')
         report['versions'] = {'postfix': execute('postconf', '-dh', 'mail_version').stdout.strip(),
                               'curl': execute('curl', '--version').stdout.splitlines()[0]}
-        require(report['versions']['postfix'] == '3.11.3' and report['versions']['curl'].startswith('curl 8.20.0 '),
+        require(report['versions']['postfix'] == '3.11.7' and report['versions']['curl'].startswith('curl 8.22.0 '),
                 'Unexpected executable version')
         env = {'POSTFIX_HOSTNAME': 'edge.fixture.test', 'BACKEND_HOST': ready['backendHost'],
                'BACKEND_TLS_SERVERNAME': 'localhost', 'BACKEND_LMTP_PORT': ready['lmtpPort'],

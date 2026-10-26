@@ -42,29 +42,11 @@ in {
     nextcloud-talk-desktop
     signal-desktop
     gh-eco
+    gh-poi
     gh-dash
     gh-skyline
+    gh-stack
     ;
-
-  gh-poi = pkgs-unstable.gh-poi.overrideAttrs {
-    version = "0.18.4";
-    src = prev.fetchFromGitHub {
-      owner = "seachicken";
-      repo = "gh-poi";
-      rev = "v0.18.4";
-      hash = "sha256-L4FL9FJMojBdHmsWCIPTtWLoIDeZSU1Kt52URmS8PTw=";
-    };
-  };
-
-  gh-stack = pkgs-unstable.gh-stack.overrideAttrs {
-    version = "0.1.1";
-    src = prev.fetchFromGitHub {
-      owner = "github";
-      repo = "gh-stack";
-      tag = "v0.1.1";
-      hash = "sha256-jwfqiCnCOOW0AKA52hbgvCCoLzfFX+QfM+vXABkzZgw=";
-    };
-  };
 
   netbird = pkgs-unstable.netbird.overrideAttrs (old: {
     version = netbirdVersion;

@@ -9,7 +9,7 @@
   alsa-lib,
   gtk3,
 }: let
-  version = "140.12.0esr-bb24";
+  version = "140.13.0esr-bb25";
 
   betterbird-unwrapped = stdenv.mkDerivation {
     pname = "betterbird-unwrapped";
@@ -17,7 +17,7 @@
 
     src = fetchurl {
       url = "https://www.betterbird.eu/downloads/LinuxArchive/betterbird-${version}.en-US.linux-x86_64.tar.xz";
-      hash = "sha256-ChJWJKS7y8NxFmVBtZtD+yRc5jMxo0HN7AaWmUl7RuA=";
+      hash = "sha256-00bAxsT43N4gT5fy14DWhVMLkWPYZLzNXBSUVjlLocA=";
     };
 
     nativeBuildInputs = [

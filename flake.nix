@@ -89,7 +89,8 @@
     };
     dms = {
       url = "github:AvengeMedia/DankMaterialShell/stable";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      # Its go.mod still asks for Go 1.25, which unstable has dropped.
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     dsearch = {
       url = "github:AvengeMedia/danksearch";

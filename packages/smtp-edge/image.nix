@@ -59,8 +59,8 @@
       --replace-fail '#!/usr/bin/env bash' '#!${bash}/bin/bash'
   '';
 in
-  assert lib.assertMsg (postfix.version == "3.11.3") "smtp-edge requires qualified Postfix 3.11.3";
-  assert lib.assertMsg (curl.version == "8.20.0") "smtp-edge requires qualified curl 8.20.0";
+  assert lib.assertMsg (postfix.version == "3.11.7") "smtp-edge requires qualified Postfix 3.11.7";
+  assert lib.assertMsg (curl.version == "8.22.0") "smtp-edge requires qualified curl 8.22.0";
     dockerTools.buildLayeredImage {
       name = "smtp-edge";
       tag = "postfix-${postfix.version}-curl-${curl.version}";
