@@ -4,16 +4,6 @@ inputs: _: prev: let
     inherit system;
     config.allowUnfree = true;
   };
-  # NetBird 0.77.1's loopback XDP multi-buffer support can panic Linux 6.3+.
-  # Keep the client and UI aligned on the last release before the regression.
-  netbirdVersion = "0.77.0";
-  netbirdSrc = prev.fetchFromGitHub {
-    owner = "netbirdio";
-    repo = "netbird";
-    rev = "v${netbirdVersion}";
-    hash = "sha256-w72ylRblfC20X4h1E7vuycWziLfWE+cCHuIaf7czFb8=";
-  };
-  netbirdVendorHash = "sha256-kbVBjQUZUp9VZ67Ug4VWtmp2qZw5hLtxLg8utyNCNGg=";
 in {
   inherit
     (pkgs-unstable)
@@ -46,12 +36,11 @@ in {
     gh-dash
     gh-skyline
     gh-stack
+    netbird-ui
     ;
 
+  # `netbird kubernetes` aborts on the first peer without reverse DNS.
   netbird = pkgs-unstable.netbird.overrideAttrs (old: {
-    version = netbirdVersion;
-    src = netbirdSrc;
-    vendorHash = netbirdVendorHash;
     postPatch =
       (old.postPatch or "")
       + ''
@@ -60,11 +49,6 @@ in {
                          $'\t\tif err != nil {\n\t\t\tlog.Debugf("could not resolve reverse DNS for peer %s: %v", peer.IP, err)\n\t\t\tcontinue\n\t\t}'
       '';
   });
-  netbird-ui = pkgs-unstable.netbird-ui.overrideAttrs {
-    version = netbirdVersion;
-    src = netbirdSrc;
-    vendorHash = netbirdVendorHash;
-  };
   feishin = prev.feishin.overrideAttrs (old: {
     postFixup =
       (old.postFixup or "")

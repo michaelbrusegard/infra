@@ -1,10 +1,16 @@
 {
   config,
   lib,
+  inputs,
   isWsl,
   users,
   ...
 }: {
+  # The client package comes from unstable, and 26.05's module rewrites the
+  # desktop file NetBird shipped before its Wails UI. Use the matching module.
+  disabledModules = ["services/networking/netbird.nix"];
+  imports = ["${inputs.nixpkgs-unstable}/nixos/modules/services/networking/netbird.nix"];
+
   # Split DNS needs systemd-resolved, which hosts enable themselves: a router
   # running its own resolver on port 53 wants nothing to do with it.
   services.netbird = {
