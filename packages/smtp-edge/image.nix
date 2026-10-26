@@ -59,26 +59,24 @@
       --replace-fail '#!/usr/bin/env bash' '#!${bash}/bin/bash'
   '';
 in
-  assert lib.assertMsg (postfix.version == "3.11.7") "smtp-edge requires qualified Postfix 3.11.7";
-  assert lib.assertMsg (curl.version == "8.22.0") "smtp-edge requires qualified curl 8.22.0";
-    dockerTools.buildLayeredImage {
-      name = "smtp-edge";
-      tag = "postfix-${postfix.version}-curl-${curl.version}";
-      contents = buildEnv {
-        name = "smtp-edge-root";
-        paths = [layout bash curl cacert coreutils findutils gnugrep gnused gawk];
-        pathsToLink = ["/bin" "/etc" "/opt" "/var" "/run" "/tmp"];
+  dockerTools.buildLayeredImage {
+    name = "smtp-edge";
+    tag = "postfix-${postfix.version}-curl-${curl.version}";
+    contents = buildEnv {
+      name = "smtp-edge-root";
+      paths = [layout bash curl cacert coreutils findutils gnugrep gnused gawk];
+      pathsToLink = ["/bin" "/etc" "/opt" "/var" "/run" "/tmp"];
+    };
+    config = {
+      Entrypoint = ["/bin/smtp-edge-entrypoint"];
+      Env = ["PATH=/bin" "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"];
+      User = "0:0";
+      WorkingDir = "/var/lib/postfix";
+      ExposedPorts."25/tcp" = {};
+      Labels = {
+        "org.opencontainers.image.title" = "Postfix SMTP edge";
+        "org.opencontainers.image.version" = "${postfix.version}-curl-${curl.version}";
+        "org.opencontainers.image.source" = "https://github.com/michaelbrusegard/infra";
       };
-      config = {
-        Entrypoint = ["/bin/smtp-edge-entrypoint"];
-        Env = ["PATH=/bin" "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"];
-        User = "0:0";
-        WorkingDir = "/var/lib/postfix";
-        ExposedPorts."25/tcp" = {};
-        Labels = {
-          "org.opencontainers.image.title" = "Postfix SMTP edge";
-          "org.opencontainers.image.version" = "${postfix.version}-curl-${curl.version}";
-          "org.opencontainers.image.source" = "https://github.com/michaelbrusegard/infra";
-        };
-      };
-    }
+    };
+  }

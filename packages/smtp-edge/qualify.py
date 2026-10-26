@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Disposable direct curl -> native Stalwart proof for the Postfix pipe adapter.
 
-Run: python packages/smtp-edge/qualify.py [--binary /approved/stalwart]
-Only the pinned Stalwart SHA-256 and curl 8.22.0 are accepted. Everything runs
+Run: python packages/smtp-edge/qualify.py --binary STALWART --binary-sha256 HEX --curl-version V
+Only the given Stalwart SHA-256 and curl version are accepted. Everything runs
 inside a fresh unshare -Urn namespace with loopback only: private authoritative
 DNS (installed named), a disposable native backend, and curl invoked exactly as
 deliver.sh invokes it (PROXY v1 client IP, EHLO as URL path, STARTTLS with a
@@ -53,9 +53,6 @@ from mail import (certificate, configure_backend, create, fetch_message, isolate
 from smtp_fixture import change, deterministic_spam_settings, email_ids, load_filter_inventory, objects, where  # noqa: E402
 from edge_dns import RESOLVER, AuthDNS  # noqa: E402
 
-BINARY = Path('/tmp/stalwart-edge-qualification/stalwart')
-APPROVED_SHA256 = 'ea6bb3b14d39c4a208918d53463a592e6afef0b70c3e8108d64b35f0e4d1b80c'
-CURL_VERSION = '8.22.0'
 INVENTORY = HERE.parent / 'stalwart-oss' / 'fixtures' / 'spam-rules-v3.0.1.json'
 DELIVER = HERE / 'deliver.sh'
 DOMAIN = 'manafishrov.com'
@@ -90,13 +87,13 @@ def binary_hash(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def verify_tools(binary):
+def verify_tools(binary, approved_sha256, curl_version):
     actual = binary_hash(binary)
-    require(actual == APPROVED_SHA256, f'Approved binary hash mismatch: expected {APPROVED_SHA256}; actual {actual}')
+    require(actual == approved_sha256, f'Approved binary hash mismatch: expected {approved_sha256}; actual {actual}')
     curl = shutil.which('curl')
     require(curl is not None, 'curl is required')
     version = subprocess.run([curl, '--version'], capture_output=True, text=True, timeout=10, check=True).stdout
-    require(version.startswith('curl ' + CURL_VERSION + ' '), 'Qualified curl ' + CURL_VERSION + ' required: ' + version.split('\n')[0])
+    require(version.startswith('curl ' + curl_version + ' '), 'Qualified curl ' + curl_version + ' required: ' + version.split('\n')[0])
     require(shutil.which('named') is not None, 'Installed named is required for private authoritative DNS')
     return {'binarySha256': actual, 'curl': version.split('\n')[0], 'curlPath': curl,
             'deliverSha256': hashlib.sha256(DELIVER.read_bytes()).hexdigest(),
@@ -252,7 +249,7 @@ def contact(client, fixture, address):
 
 def run(root, report, binary, *, postfix_control=None, postfix_port=None):
     isolated()
-    report['tools'] = verify_tools(binary)
+    report['tools'] = verify_tools(binary, report['approvedSha256'], report['curlVersion'])
     ip = shutil.which('ip')
     if postfix_control is None:
         for address in (PASS_IP + '/32', FAIL_IP + '/32', PASS_IP6 + '/128'):
@@ -740,7 +737,9 @@ def run(root, report, binary, *, postfix_control=None, postfix_port=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--binary', type=Path, default=BINARY)
+    parser.add_argument('--binary', type=Path, required=True, help='Native Stalwart binary')
+    parser.add_argument('--binary-sha256', required=True, help='Approved SHA-256 of the native Stalwart binary')
+    parser.add_argument('--curl-version', required=True, help='Approved curl version, as in curl --version')
     parser.add_argument('--isolated', nargs=3, metavar=('EVIDENCE', 'NETNS', 'USERNS'), help=argparse.SUPPRESS)
     parser.add_argument('--postfix-control', type=Path, help=argparse.SUPPRESS)
     parser.add_argument('--postfix-port', type=int, help=argparse.SUPPRESS)
@@ -750,11 +749,13 @@ def main():
     require(args.postfix_control is None or args.isolated is not None, 'Postfix mode requires the isolated orchestrator')
     if args.isolated is None:
         root = Path(tempfile.mkdtemp(prefix='smtp-edge-qualify-', dir='/tmp'))
-        command = [sys.executable, str(Path(__file__).resolve()), '--binary', str(binary)]
-        report = {'qualified': False, 'binary': str(binary), 'approvedSha256': APPROVED_SHA256, 'tests': {},
+        command = [sys.executable, str(Path(__file__).resolve()), '--binary', str(binary),
+                   '--binary-sha256', args.binary_sha256, '--curl-version', args.curl_version]
+        report = {'qualified': False, 'binary': str(binary), 'approvedSha256': args.binary_sha256,
+                  'curlVersion': args.curl_version, 'tests': {},
                   'blockers': list(LIMITS), 'evidence': str(root), 'reproduce': command}
         try:
-            report['tools'] = verify_tools(binary)
+            report['tools'] = verify_tools(binary, args.binary_sha256, args.curl_version)
         except Exception as error:
             report['blockers'].insert(0, str(error))
             (root / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -779,8 +780,8 @@ def main():
         return code
     root = Path(args.isolated[0])
     require(root.parent == Path('/tmp') and root.name.startswith('smtp-edge-qualify-'), 'Unsafe evidence path')
-    report = {'qualified': False, 'binary': str(binary), 'approvedSha256': APPROVED_SHA256, 'tests': {},
-              'blockers': list(LIMITS)}
+    report = {'qualified': False, 'binary': str(binary), 'approvedSha256': args.binary_sha256,
+              'curlVersion': args.curl_version, 'tests': {}, 'blockers': list(LIMITS)}
 
     def interrupted(signum, frame):
         raise KeyboardInterrupt('Fixture interrupted; native qualification incomplete')

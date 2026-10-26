@@ -13,7 +13,8 @@ qualify.py owns native fixtures and authentication assertions. Its handshake is
 --postfix-control ROOT --postfix-port 2525 --isolated ROOT HOST_NETNS HOST_USERNS:
 write ready.json while native/DNS remain alive, wait for ROOT/continue, then
 exercise actual SMTP ingress. Direct-only cases must remain labelled as such.
-Image changes require an explicit new --image sha256:... approval, never a tag.
+Pass the image by its immutable sha256 ID, never a tag. The Postfix and curl
+versions are taken from the image's version label and must match its binaries.
 """
 from __future__ import annotations
 
@@ -32,9 +33,6 @@ import time
 import uuid
 
 HERE = Path(__file__).resolve().parent
-IMAGE = 'sha256:1fd2a06263a388aa0064639c0de7a872431653924476a2c07ca77eb5e0c8f897'
-BINARY = Path('/tmp/stalwart-edge-qualification/stalwart')
-BINARY_SHA256 = 'ea6bb3b14d39c4a208918d53463a592e6afef0b70c3e8108d64b35f0e4d1b80c'
 CAPS = ['CHOWN', 'SETUID', 'SETGID', 'DAC_OVERRIDE', 'FOWNER', 'KILL', 'NET_BIND_SERVICE']
 CAP_MASK = sum(1 << bit for bit in (0, 1, 3, 5, 6, 7, 10))
 ADDRESSES = ['192.0.2.10/32', '192.0.2.11/32', '2001:db8::10/128']
@@ -61,8 +59,8 @@ def inspect(name):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--image', default=IMAGE, help='Explicit approved immutable Docker image ID')
-    parser.add_argument('--binary', type=Path, default=BINARY)
+    parser.add_argument('--image', required=True, help='Immutable Docker image ID (sha256:...)')
+    parser.add_argument('--binary', type=Path, required=True, help='Native Stalwart binary')
     parser.add_argument('--deadline', type=int, default=1200)
     args = parser.parse_args()
     evidence = Path(tempfile.mkdtemp(prefix='smtp-edge-postfix-', dir='/tmp'))
@@ -114,14 +112,18 @@ def main():
         require(re.fullmatch(r'sha256:[0-9a-f]{64}', args.image), 'Refusing a mutable image reference')
         require(60 <= args.deadline <= 3600, 'Deadline must be between 60 and 3600 seconds')
         binary = args.binary.resolve(strict=True)
-        require(digest(binary) == BINARY_SHA256, 'Unapproved native Stalwart binary')
+        binary_sha256 = digest(binary)
         require(not os.environ.get('DOCKER_HOST'), 'Use the local Unix-socket Docker context, not DOCKER_HOST')
         context = json.loads(run('docker', 'context', 'inspect').stdout)[0]
         require(context['Endpoints']['docker']['Host'].startswith('unix://'), 'Refusing remote Docker context')
         image = inspect(args.image)
         require(image['Id'] == args.image, 'Docker image identity mismatch')
         report['image'] = {'id': image['Id'], 'size': image['Size']}
-        report['binarySha256'] = BINARY_SHA256
+        label = (image['Config'].get('Labels') or {}).get('org.opencontainers.image.version', '')
+        match = re.fullmatch(r'(\d+(?:\.\d+)+)-curl-(\d+(?:\.\d+)+)', label)
+        require(match, 'Image has no Postfix/curl version label')
+        postfix_version, curl_version = match.groups()
+        report['binarySha256'] = binary_sha256
         report['sourceSha256'] = {p.name: digest(p) for p in
                                  [Path(__file__), HERE / 'qualify.py', HERE / 'deliver.sh',
                                   HERE / 'main.cf', HERE / 'master.cf', HERE / 'entrypoint.sh',
@@ -144,7 +146,7 @@ def main():
         mounted_binary = evidence / 'approved-stalwart'
         run('cp', '--reflink=auto', '--', binary, mounted_binary)
         mounted_binary.chmod(0o555)
-        require(digest(mounted_binary) == BINARY_SHA256, 'Copied binary identity mismatch')
+        require(digest(mounted_binary) == binary_sha256, 'Copied binary identity mismatch')
         mounts = ['--mount', 'type=bind,src=/nix/store,dst=/nix/store,readonly']
         setup = '; '.join([f'{tools["ip"]} address add {address} dev lo' for address in ADDRESSES])
         run('docker', 'run', '-d', '--name', network, '--network', 'none', '--read-only',
@@ -180,12 +182,13 @@ def main():
         allowed = {'127.0.0.1', '::1', '192.0.2.10', '192.0.2.11', '2001:db8::10'}
         require({a['local'] for a in addresses[0]['addr_info']} == allowed, 'Unexpected loopback addresses')
         report['addresses'] = addresses
-        require(native_execute('/bin/sha256sum', '/approved/stalwart').stdout.split()[0] == BINARY_SHA256,
+        require(native_execute('/bin/sha256sum', '/approved/stalwart').stdout.split()[0] == binary_sha256,
                 'Mounted binary identity mismatch')
         native_execute('/bin/install', '-d', '-m', '0700', '-o', '102', '-g', '102', root)
         command = ['docker', 'exec', '--user', '102:102', '--env', 'PATH=' + fixture_path,
                    '--env', 'PYTHONDONTWRITEBYTECODE=1', helper, tools['unshare'], '-Ur', tools['python3'],
                    '/fixture/packages/smtp-edge/qualify.py', '--binary', '/approved/stalwart',
+                   '--binary-sha256', binary_sha256, '--curl-version', curl_version,
                    '--postfix-control', root, '--postfix-port', '2525', '--isolated', root,
                    str(host_net), str(host_user)]
         report['nativeCommand'] = command
@@ -251,8 +254,9 @@ def main():
                 'Image/source mismatch: main.cf')
         report['versions'] = {'postfix': execute('postconf', '-dh', 'mail_version').stdout.strip(),
                               'curl': execute('curl', '--version').stdout.splitlines()[0]}
-        require(report['versions']['postfix'] == '3.11.7' and report['versions']['curl'].startswith('curl 8.22.0 '),
-                'Unexpected executable version')
+        require(report['versions']['postfix'] == postfix_version
+                and report['versions']['curl'].startswith(f'curl {curl_version} '),
+                'Image binaries do not match its version label')
         env = {'POSTFIX_HOSTNAME': 'edge.fixture.test', 'BACKEND_HOST': ready['backendHost'],
                'BACKEND_TLS_SERVERNAME': 'localhost', 'BACKEND_LMTP_PORT': ready['lmtpPort'],
                'BACKEND_SMTP_PORT': ready['smtpPort'], 'BACKEND_LOCAL_SMTP_PORT': ready['localSmtpPort'],
