@@ -68,7 +68,6 @@
       cask "netbirdio/tap/netbird-ui"
     '';
     masApps = {
-      "Amphetamine" = 937984704;
       "Proton Pass for Safari" = 6502835663;
       "Wipr" = 1662217862;
       "Developer" = 640199958;
