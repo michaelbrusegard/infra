@@ -515,7 +515,8 @@
     "hslHue": -1,
     "hslSaturation": 0,
     "hslLightness": 1,
-    "valid": true
+    "valid": true,
+    "rgba": -1
   },
   "desktopClockShowDate": true,
   "desktopClockShowAnalogNumbers": false,
@@ -542,7 +543,8 @@
     "hslHue": -1,
     "hslSaturation": 0,
     "hslLightness": 1,
-    "valid": true
+    "valid": true,
+    "rgba": -1
   },
   "systemMonitorShowCpu": true,
   "systemMonitorShowCpuGraph": true,
