@@ -1,6 +1,6 @@
 ansiwrap==0.8.4
 appdirs==1.4.4
-certifi==2026.10.19
+certifi==2026.10.23
 charset-normalizer==3.5.2
 click==8.5.0
 colorlog==6.12.0
