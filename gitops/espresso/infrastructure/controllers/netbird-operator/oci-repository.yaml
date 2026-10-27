@@ -7,5 +7,5 @@ spec:
   interval: 1h0m0s
   url: oci://ghcr.io/netbirdio/helm-charts/netbird-operator
   ref:
-    tag: "0.9.0"
-    digest: sha256:f0beed15aa959403a08c098c7eaf81a98e4cabde1fd5d7703f8210b50083cf01
+    tag: "0.8.0"
+    digest: sha256:d836ce83f06e7749f826a2ebe680bbec17a9545c7ed4645c4d6217a472d94b8d
