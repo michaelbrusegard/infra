@@ -6,7 +6,7 @@ ARG POSTGRESQL_18_CRON_VERSION=1.6.8-1.pgdg12+2
 # renovate: suite=bookworm-pgdg depName=postgresql-18-hll
 ARG POSTGRESQL_18_HLL_VERSION=2.21-1.pgdg12+2
 # renovate: suite=bookworm-pgdg depName=postgresql-18-hypopg
-ARG POSTGRESQL_18_HYPOPG_VERSION=1.4.3-1.pgdg12+2
+ARG POSTGRESQL_18_HYPOPG_VERSION=1.4.4-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-partman
 ARG POSTGRESQL_18_PARTMAN_VERSION=5.5.0-1.pgdg12+1
 # renovate: suite=bookworm-pgdg depName=postgresql-18-pgaudit
