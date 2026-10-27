@@ -41,6 +41,56 @@
       openai = "${cliproxy.baseUrl}/v1";
       moonshotai = "${cliproxy.baseUrl}/v1";
     };
+  # The gateway translates Anthropic Messages for its other models, but
+  # Claude Code's discovery keeps only IDs containing "claude".
+  claudeGatewayModels = [
+    {
+      model = "gpt-6.1-sol";
+      label = "GPT-6.1 Sol";
+    }
+    {
+      model = "kimi-k3.1-pro";
+      label = "Kimi K3.1 Pro";
+    }
+  ];
+  # T3 only lists custom Claude models that declare capabilities, and passes
+  # effort through only when the model offers it.
+  t3ClaudeCustomModels =
+    map (entry: {
+      slug = entry.model;
+      name = entry.label;
+      capabilities.optionDescriptors = [
+        {
+          id = "effort";
+          label = "Reasoning";
+          type = "select";
+          options = [
+            {
+              id = "low";
+              label = "Low";
+            }
+            {
+              id = "medium";
+              label = "Medium";
+            }
+            {
+              id = "high";
+              label = "High";
+              isDefault = true;
+            }
+            {
+              id = "xhigh";
+              label = "Extra High";
+            }
+            {
+              id = "max";
+              label = "Max";
+            }
+          ];
+        }
+      ];
+    })
+    claudeGatewayModels;
   direnvWrapped = package: executable:
     (pkgs.writeShellApplication {
       name = executable;
@@ -194,7 +244,10 @@ in {
           ANTHROPIC_BASE_URL = cliproxy.baseUrl;
           ANTHROPIC_AUTH_TOKEN = cliproxy.apiKey;
           CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
+          # Claude Code otherwise drops effort for model IDs it doesn't know.
+          CLAUDE_CODE_ALWAYS_ENABLE_EFFORT = "1";
         };
+        modelPicker.options = claudeGatewayModels;
         autoMemoryEnabled = false;
         disableRemoteControl = true;
         enableAllProjectMcpServers = true;
@@ -296,6 +349,35 @@ in {
 
         rm -f "$temp_file"
       '';
+
+      # T3 owns its settings file, so replace only the gateway models and keep
+      # any custom models added in the app.
+      activation.t3codeConfig = lib.mkIf (!isWsl) (lib.hm.dag.entryAfter ["writeBoundary"] ''
+        config_file="$HOME/.t3/userdata/settings.json"
+        config_dir=$(dirname "$config_file")
+        temp_file=$(mktemp)
+
+        { [ -f "$config_file" ] && cat "$config_file" || echo '{}'; } | ${lib.getExe pkgs.jq} \
+          --argjson models '${builtins.toJSON t3ClaudeCustomModels}' '
+          ($models | map(.slug)) as $slugs
+          | .providerInstances.claudeAgent = (
+              (.providerInstances.claudeAgent // {driver: "claudeAgent"})
+              | .config.customModels = (
+                  [(.config.customModels // [])[]
+                    | select((if type == "string" then . else .slug end) as $slug
+                        | $slugs | index($slug) | not)]
+                  + $models
+                )
+            )
+        ' > "$temp_file"
+
+        if [ ! -f "$config_file" ] || ! cmp -s "$temp_file" "$config_file"; then
+          $DRY_RUN_CMD mkdir -p "$config_dir"
+          $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
+        fi
+
+        rm -f "$temp_file"
+      '');
 
       # An empty skill selection stops the daemon from installing its own
       # skills into ~/.agents, ~/.claude and ~/.codex.
