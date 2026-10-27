@@ -1148,7 +1148,7 @@ class AndroidScriptTests(unittest.TestCase):
         )
         self.assertIn("name: prepare-android", manifest_updater_source)
         self.assertIn(
-            r"(?m)^(\s*- name: (?:gateway|android-companion)\n\s*image:)\s*.*$",
+            r"(?m)^(\s*- name: (?:gateway|android-companion)\n\s*image:)\s*(.*)$",
             agent_workflow,
         )
         self.assertIn("if agent_replacements != 2:", agent_workflow)
