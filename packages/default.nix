@@ -8,6 +8,9 @@ pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
   stalwart-native-scim = pkgs.callPackage ./stalwart-oss {nativeScim = true;};
   stalwart-native-scim-image = pkgs.callPackage ./stalwart-oss/image.nix {nativeScim = true;};
 }
+// pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
+  openbubbles = pkgs.callPackage ./openbubbles {};
+}
 // {
   ai-images = pkgs.callPackage ./ai-images {};
   slack-cli = pkgs.callPackage ./slack-cli {};

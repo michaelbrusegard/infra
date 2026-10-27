@@ -49,6 +49,7 @@ in {
           audacity
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+          openbubbles
           mattermost-desktop
           fluffychat
           zapzap
@@ -122,6 +123,8 @@ in {
           ".config/scribus"
           ".config/inkscape"
           ".config/Signal"
+          # Upstream retains the BlueBubbles app ID for its XDG data.
+          ".local/share/app.bluebubbles.BlueBubbles"
           ".config/ZapZap"
           ".local/share/ZapZap"
           ".config/Mattermost"
