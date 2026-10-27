@@ -23,7 +23,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: hindsight
-          image: ghcr.io/vectorize-io/hindsight:0.10.3@sha256:b5da1a9aece1f53a15f12821fb1470f358ed6c74dfaa0c4b1a39c3f3ae93e002
+          image: ghcr.io/vectorize-io/hindsight:1.1.0@sha256:50311d02b4d5d2b7c5242bd336edf8735df8374eaad496a92f49c83b37d2aa06
           env:
             - name: HINDSIGHT_ENABLE_API
               value: "true"
