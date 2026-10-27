@@ -74,7 +74,6 @@ in {
           nextcloud-talk-desktop
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-          ice-bar
           brewCasks.raycast
           brewCasks.rustdesk
           brewCasks.mattermost

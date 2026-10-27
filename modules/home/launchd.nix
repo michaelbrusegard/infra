@@ -5,18 +5,6 @@
 }:
 lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
   launchd.agents = {
-    ice = {
-      enable = true;
-      config = {
-        ProgramArguments = [
-          "/usr/bin/open"
-          "${pkgs.ice-bar}/Applications/Ice.app"
-        ];
-        RunAtLoad = true;
-        LimitLoadToSessionType = "Aqua";
-      };
-    };
-
     raycast = {
       enable = true;
       config = {
