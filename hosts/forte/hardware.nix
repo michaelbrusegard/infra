@@ -219,6 +219,16 @@ in {
       ExecStop = lib.mkForce (lib.getExe' pkgs.coreutils "true");
     };
 
+    # asus-shutdown ignores SIGTERM until logind announces a shutdown and ships
+    # with SendSIGKILL=no, so a switch that restarts it can never stop it and
+    # the new instance refuses to start next to the old one. Its work happens
+    # on PrepareForShutdown, before units are stopped, so pick up changes at
+    # boot and let systemd kill an instance stopped by asusd's PartOf.
+    services.asus-shutdown = {
+      restartIfChanged = false;
+      serviceConfig.SendSIGKILL = true;
+    };
+
     services.systemd-hibernate.serviceConfig.ExecStartPre = "${ecHealthCheck}";
     services.systemd-hybrid-sleep.serviceConfig.ExecStartPre = "${ecHealthCheck}";
   };
