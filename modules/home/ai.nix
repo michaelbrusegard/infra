@@ -49,6 +49,14 @@
       label = "GPT-6.1 Sol";
     }
     {
+      model = "gpt-6-luna";
+      label = "GPT-6 Luna";
+    }
+    {
+      model = "gpt-6-astra";
+      label = "GPT-6 Astra";
+    }
+    {
       model = "kimi-k3.1-pro";
       label = "Kimi K3.1 Pro";
     }
