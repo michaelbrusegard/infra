@@ -8,6 +8,19 @@
 }: let
   dmsConfig = "${config.home.homeDirectory}/Projects/infra/config/dms";
   wallpaper = ../../wallpapers/golden-gate.png;
+  # Only seed the default wallpaper; a wallpaper picked in DMS should survive
+  # restarts, so leave it alone unless it is unset or no longer exists.
+  setDefaultWallpaper = lib.getExe (pkgs.writeShellApplication {
+    name = "dms-set-default-wallpaper";
+    runtimeInputs = [pkgs.dms-shell pkgs.jq];
+    text = ''
+      session="''${XDG_STATE_HOME:-$HOME/.local/state}/DankMaterialShell/session.json"
+      current=$(jq -r '.wallpaperPath // ""' "$session" 2>/dev/null || true)
+      if [ -z "$current" ] || [ ! -e "$current" ]; then
+        dms ipc wallpaper set ${wallpaper}
+      fi
+    '';
+  });
 in {
   home =
     {
@@ -90,7 +103,7 @@ in {
     };
     Service = {
       Type = "oneshot";
-      ExecStart = "${lib.getExe pkgs.dms-shell} ipc wallpaper set ${wallpaper}";
+      ExecStart = setDefaultWallpaper;
     };
     Install.WantedBy = ["dms.service"];
   };
