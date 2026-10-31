@@ -6,8 +6,6 @@
 }: let
   home = config.users.users.${config.system.primaryUser}.home;
   kitty = lib.getExe pkgs.kitty;
-  sh = lib.getExe' pkgs.bash "sh";
-  yazi = lib.getExe pkgs.yazi;
 in {
   services = {
     aerospace = {
@@ -117,9 +115,9 @@ in {
           # Toggle floating window
           alt-0 = "layout floating tiling";
 
-          # Open Kitty
+          # Open Kitty and Nimble Commander
           alt-enter = "exec-and-forget ${kitty} --working-directory ${home}";
-          alt-shift-enter = "exec-and-forget ${kitty} --working-directory ${home} ${sh} -c '${yazi}'";
+          alt-shift-enter = "exec-and-forget /usr/bin/open '${pkgs.brewCasks.nimble-commander}/Applications/Nimble Commander.app'";
         };
       };
     };

@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  inputs,
   isWsl,
   homePersistenceRoot ? null,
   ...
@@ -14,7 +15,7 @@
     name = "dms-set-default-wallpaper";
     runtimeInputs = [pkgs.dms-shell pkgs.jq];
     text = ''
-      session="''${XDG_STATE_HOME:-$HOME/.local/state}/DankMaterialShell/session.json"
+      session="''${XDG_STATE_HOME:-$HOME/.local/state}/dms/session.json"
       current=$(jq -r '.wallpaperPath // ""' "$session" 2>/dev/null || true)
       if [ -z "$current" ] || [ ! -e "$current" ]; then
         dms ipc wallpaper set ${wallpaper}
@@ -22,6 +23,12 @@
     '';
   });
 in {
+  imports = [
+    inputs.dsearch.homeModules.default
+  ];
+
+  programs.dsearch.enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
+
   home =
     {
       sessionVariables = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
@@ -40,8 +47,8 @@ in {
     }
     // lib.optionalAttrs (homePersistenceRoot != null) {
       persistence.${homePersistenceRoot}.directories = [
-        ".local/state/DankMaterialShell"
-        ".cache/DankMaterialShell"
+        ".local/state/dms"
+        ".cache/dms"
       ];
     };
 
@@ -92,7 +99,7 @@ in {
   };
 
   xdg.configFile = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
-    "DankMaterialShell".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
+    "dms".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
   };
 
   systemd.user.services.dms-wallpaper = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {

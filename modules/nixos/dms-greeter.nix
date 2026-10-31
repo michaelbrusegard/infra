@@ -1,15 +1,20 @@
 {
   pkgs,
+  inputs,
   users,
   ...
 }: {
+  imports = [
+    inputs.dms-greeter.nixosModules.default
+  ];
+
   environment.systemPackages = [pkgs.bibata-cursors];
 
   environment.persistence."/persistent".directories = [
     "/var/lib/dms-greeter"
   ];
 
-  services.displayManager.dms-greeter = {
+  programs.dms-greeter = {
     enable = true;
     configHome = "/home/${builtins.head users}";
     compositor.name = "hyprland";

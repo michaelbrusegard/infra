@@ -9,6 +9,7 @@
     inputs.self.homeManagerModules.desktop-apps
     inputs.self.homeManagerModules.dev
     inputs.self.homeManagerModules.dms
+    inputs.self.homeManagerModules.dux-files
     inputs.self.homeManagerModules.freecad
     inputs.self.homeManagerModules.gaming
     inputs.self.homeManagerModules.git
@@ -28,7 +29,6 @@
     inputs.self.homeManagerModules.slicer
     inputs.self.homeManagerModules.ssh
     inputs.self.homeManagerModules.xdg
-    inputs.self.homeManagerModules.yazi
     inputs.self.homeManagerModules.zathura
     inputs.self.homeManagerModules.zen-browser
   ];

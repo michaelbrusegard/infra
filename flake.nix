@@ -87,13 +87,22 @@
       url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+    # Dux Shell (formerly DankMaterialShell). The stable-X.Y branches carry the
+    # fixes ported from master between releases; `stable` only moves on tags.
     dms = {
-      url = "github:AvengeMedia/DankMaterialShell/stable";
-      # Its go.mod still asks for Go 1.25, which unstable has dropped.
-      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:duxlabs-dev/dux-shell/stable-2.0";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+    dms-greeter = {
+      url = "github:duxlabs-dev/dux-greeter/stable-2.0";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     dsearch = {
-      url = "github:AvengeMedia/danksearch";
+      url = "github:duxlabs-dev/dux-search";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+    dux-files = {
+      url = "github:duxlabs-dev/dux-files";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     paseo = {

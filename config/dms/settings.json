@@ -1,7 +1,7 @@
 {
   "currentThemeName": "custom",
   "currentThemeCategory": "custom",
-  "customThemeFile": "/home/michaelbrusegard/.config/DankMaterialShell/theme.json",
+  "customThemeFile": "/home/michaelbrusegard/.config/dms/theme.json",
   "registryThemeVariants": {},
   "matugenScheme": "scheme-tonal-spot",
   "runUserMatugenTemplates": false,

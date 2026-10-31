@@ -8,8 +8,6 @@
   inherit (lib.generators) mkLuaInline;
 
   kitty = lib.getExe pkgs.kitty;
-  sh = lib.getExe' pkgs.bash "sh";
-  yazi = lib.getExe pkgs.yazi;
   systemctl = lib.getExe' pkgs.systemd "systemctl";
   brightnessctl = lib.getExe pkgs.brightnessctl;
   kbdBacklightCycle = pkgs.writeShellScript "kbd-backlight-cycle" ''
@@ -296,8 +294,7 @@ in
 
             # System
             (bind "MOD5 + RETURN" (exec kitty))
-            (bind "MOD5 + SHIFT + RETURN"
-              (execRaw "${kitty} ${sh} -c '${yazi}'"))
+            (bind "MOD5 + SHIFT + RETURN" (exec "dfiles open"))
             (bind "CTRL + SPACE" (exec "dms ipc call spotlight toggle"))
             (bind "CTRL + SHIFT + V" (exec "dms ipc call clipboard toggle"))
             (bind "CTRL + Q" closewindow)

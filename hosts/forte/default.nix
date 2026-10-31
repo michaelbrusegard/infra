@@ -9,7 +9,6 @@
     inputs.self.nixosModules.disko
     inputs.self.nixosModules.dms-greeter
     inputs.self.nixosModules.dms-shell
-    inputs.self.nixosModules.dsearch
     inputs.self.nixosModules.fonts
     inputs.self.nixosModules.flatpak
     inputs.self.nixosModules.gaming

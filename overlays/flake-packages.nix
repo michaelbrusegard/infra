@@ -55,8 +55,6 @@ in {
 
   quickshell = inputs.quickshell.packages.${system}.default;
   dms-shell = inputs.dms.packages.${system}.default;
-  dms-greeter = inputs.dms.packages.${system}.default;
-  dsearch = inputs.dsearch.packages.${system}.default;
   bubbles = inputs.bubbles.packages.${system}.default;
   inherit (inputs.llm-agents.packages.${system}) chatgpt claude-code codex;
   opencode = inputs.llm-agents.packages.${system}.opencode2;

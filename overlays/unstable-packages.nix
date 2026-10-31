@@ -8,7 +8,6 @@ in {
   inherit
     (pkgs-unstable)
     aerospace
-    dgop
     jankyborders
     neovim-unwrapped
     vimPlugins
