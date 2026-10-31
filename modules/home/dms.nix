@@ -34,6 +34,9 @@ in {
       sessionVariables = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
         ELECTRON_OZONE_PLATFORM_HINT = "auto";
         GTK_THEME = "Catppuccin-GTK-Dark";
+        # Send GTK 3/4 file dialogs through the portal, i.e. Dux Files.
+        GTK_USE_PORTAL = "1";
+        GDK_DEBUG = "portals";
       };
 
       pointerCursor = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {

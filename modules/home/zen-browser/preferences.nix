@@ -1,6 +1,11 @@
 _: {
   programs.zen-browser.policies.Preferences = {
     # UI/UX Preferences
+    # Route open/save dialogs through xdg-desktop-portal (Dux Files on Linux).
+    "widget.use-xdg-desktop-portal.file-picker" = {
+      Value = 1;
+      Status = "locked";
+    };
     "browser.aboutConfig.showWarning" = {
       Value = false;
       Status = "locked";

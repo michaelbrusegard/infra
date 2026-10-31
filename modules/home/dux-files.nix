@@ -14,6 +14,7 @@ in {
 
   programs.dux-files = {
     inherit enable;
+    package = pkgs.dux-files;
     systemd.enable = true;
   };
 

@@ -7,12 +7,13 @@
     enable = true;
     xdgOpenUsePortal = true;
     extraPortals = lib.mkForce [
-      pkgs.kdePackages.xdg-desktop-portal-kde
+      pkgs.dux-files
+      pkgs.xdg-desktop-portal-gtk
       pkgs.xdg-desktop-portal-hyprland
     ];
     config.common = {
-      default = ["kde" "hyprland"];
-      "org.freedesktop.impl.portal.FileChooser" = ["kde"];
+      default = ["hyprland" "gtk"];
+      "org.freedesktop.impl.portal.FileChooser" = ["dfiles" "gtk"];
       "org.freedesktop.impl.portal.ScreenCast" = ["hyprland"];
       "org.freedesktop.impl.portal.Screenshot" = ["hyprland"];
     };
