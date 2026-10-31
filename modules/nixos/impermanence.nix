@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   lib,
   users,
@@ -12,6 +13,13 @@
     "/var/lib/systemd"
     "/var/log"
   ];
+
+  # BlueZ keeps pairing link keys here; without it every boot forgets
+  # paired devices.
+  bluetoothDirectories = lib.optional config.hardware.bluetooth.enable {
+    directory = "/var/lib/bluetooth";
+    mode = "0700";
+  };
 
   # App-owned user state is colocated in the owning home-manager modules
   # (via the homePersistenceRoot guard). Only identity material and the
@@ -50,7 +58,7 @@ in {
 
   environment.persistence.${persistPath} = {
     hideMounts = true;
-    directories = baseDirectories;
+    directories = baseDirectories ++ bluetoothDirectories;
     files = persistedFiles;
     users = lib.filterAttrs (user: _: builtins.elem user users) userPersistence;
   };
