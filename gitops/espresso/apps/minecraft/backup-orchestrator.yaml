@@ -442,7 +442,7 @@ spec:
           serviceAccountName: minecraft-backup
           containers:
             - name: backup
-              image: docker.io/library/python:3.15-slim@sha256:b23bb42e5298783f81e7e6f09e1175f68eb46000a789b3ee272ac231c212c4cf
+              image: docker.io/library/python:3.15-slim@sha256:3053ea19f29305df68292b41291d621e0cbc9c1c826822c631713891ea0b64e9
               command:
                 - python
                 - /scripts/backup.py
