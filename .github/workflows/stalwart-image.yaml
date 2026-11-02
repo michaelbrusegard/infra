@@ -97,7 +97,7 @@ jobs:
           # Root only creates a disposable, loopback-only user/network namespace.
           # No live identity provider, cluster, or mail is accessed by the fixture.
           sudo env PYTHONDONTWRITEBYTECODE=1 python3 "$fixture/rate_limit.py" "$binary"
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         if: github.event_name != 'pull_request'
         with:
           registry: ghcr.io
