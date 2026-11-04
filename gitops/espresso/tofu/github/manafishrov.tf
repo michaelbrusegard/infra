@@ -6,7 +6,7 @@ locals {
   # bypass: he can merge any PR without approval or passing checks, but
   # direct pushes still need a PR.
   manafishrov_self_merge = {
-    infra        = false
+    infra        = true
     ui           = false
     workspace    = false
     app          = true
