@@ -669,11 +669,11 @@
     "homebrew-netbird": {
       "flake": false,
       "locked": {
-        "lastModified": 1787330812,
-        "narHash": "sha256-KDooS36Itm/eYX+ISEsm2qPKDgg51IEsKiske8j++NQ=",
+        "lastModified": 1793286037,
+        "narHash": "sha256-QmQ/LY8Y3JGAUjGpTduXY70Ugty5+qRUSv8MVjI+O98=",
         "owner": "netbirdio",
         "repo": "homebrew-tap",
-        "rev": "a9af7e0570ed8d1cd51a3a7199944709976ca94c",
+        "rev": "44adef122c0b615e4b61aec9926f3dfaa49abe68",
         "type": "github"
       },
       "original": {
