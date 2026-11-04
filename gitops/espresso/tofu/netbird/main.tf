@@ -270,9 +270,8 @@ locals {
 }
 
 resource "netbird_policy" "health_access" {
-  name        = "Health Access"
-  description = "Allow admins to access private health resources"
-  enabled     = true
+  name    = "Health Access"
+  enabled = true
 
   rule {
     name          = "Admins to health"
@@ -306,9 +305,8 @@ resource "netbird_setup_key" "cortado" {
 }
 
 resource "netbird_policy" "hermes_egress_access" {
-  name        = "Hermes Egress Access"
-  description = "Allow Hermes to reach the Cortado exit peer"
-  enabled     = true
+  name    = "Hermes Egress Access"
+  enabled = true
 
   rule {
     name          = "Hermes to Cortado"
@@ -322,9 +320,8 @@ resource "netbird_policy" "hermes_egress_access" {
 }
 
 resource "netbird_policy" "quest_hermes_access" {
-  name        = "Quest Hermes Access"
-  description = "Allow Quest to reach only the Hermes API over NetBird"
-  enabled     = true
+  name    = "Quest Hermes Access"
+  enabled = true
 
   rule {
     name          = "Quest to Hermes API"
@@ -365,13 +362,11 @@ resource "netbird_route" "hermes_cortado_exit_ipv6" {
 }
 
 resource "netbird_network" "asgard" {
-  name        = "Asgard"
-  description = "Routed internal services at Asgard"
+  name = "Asgard"
 }
 
 resource "netbird_network" "midgard" {
-  name        = "Midgard"
-  description = "Routed internal services at Midgard"
+  name = "Midgard"
 }
 
 resource "netbird_network_router" "cortado" {
@@ -385,12 +380,11 @@ resource "netbird_network_router" "cortado" {
 # Just cortado's service address, not the LAN: Blocky, Caddy, and the UIs all
 # listen there, and nothing else at Midgard is exposed.
 resource "netbird_network_resource" "cortado_services" {
-  network_id  = netbird_network.midgard.id
-  name        = "Cortado Services"
-  description = "Blocky DNS and the Caddy-published UIs on cortado"
-  address     = "${var.cortado_services_ip}/32"
-  groups      = [netbird_group.midgard.id]
-  enabled     = true
+  network_id = netbird_network.midgard.id
+  name       = "Cortado Services"
+  address    = "${var.cortado_services_ip}/32"
+  groups     = [netbird_group.midgard.id]
+  enabled    = true
 }
 
 resource "netbird_network_router" "macchiato" {
@@ -404,18 +398,16 @@ resource "netbird_network_router" "macchiato" {
 resource "netbird_network_resource" "resources" {
   for_each = local.resources
 
-  network_id  = netbird_network.asgard.id
-  name        = each.value.name
-  description = "${each.value.name} at Asgard"
-  address     = each.value.address
-  groups      = [local.resource_group_ids[each.value.group]]
-  enabled     = true
+  network_id = netbird_network.asgard.id
+  name       = each.value.name
+  address    = each.value.address
+  groups     = [local.resource_group_ids[each.value.group]]
+  enabled    = true
 }
 
 resource "netbird_policy" "media_admin_access" {
-  name        = "Media Admin Access"
-  description = "Allow admins to access media admin resources"
-  enabled     = true
+  name    = "Media Admin Access"
+  enabled = true
 
   rule {
     name          = "Admins to media admin"
@@ -429,9 +421,8 @@ resource "netbird_policy" "media_admin_access" {
 }
 
 resource "netbird_policy" "media_access" {
-  name        = "Media Access"
-  description = "Allow users to access media resources"
-  enabled     = true
+  name    = "Media Access"
+  enabled = true
 
   rule {
     name          = "Users to media"
@@ -445,9 +436,8 @@ resource "netbird_policy" "media_access" {
 }
 
 resource "netbird_policy" "mealie_access" {
-  name        = "Mealie Access"
-  description = "Allow users to access Mealie"
-  enabled     = true
+  name    = "Mealie Access"
+  enabled = true
 
   rule {
     name          = "Users to Mealie"
@@ -474,9 +464,8 @@ resource "netbird_account_settings" "main" {
 }
 
 resource "netbird_policy" "infra_access" {
-  name        = "Infra Access"
-  description = "Allow admins to access infra resources and the Midgard routing peers"
-  enabled     = true
+  name    = "Infra Access"
+  enabled = true
 
   rule {
     name          = "Admins to infra"
@@ -493,9 +482,8 @@ resource "netbird_policy" "infra_access" {
 }
 
 resource "netbird_policy" "public_access" {
-  name        = "Public Access"
-  description = "Allow users to access public resources"
-  enabled     = true
+  name    = "Public Access"
+  enabled = true
 
   rule {
     name          = "Users to public"
@@ -509,9 +497,8 @@ resource "netbird_policy" "public_access" {
 }
 
 resource "netbird_policy" "manafish_access" {
-  name        = "Manafish Access"
-  description = "Allow admins to access Manafish resources"
-  enabled     = true
+  name    = "Manafish Access"
+  enabled = true
 
   rule {
     name          = "Admins to Manafish"
@@ -525,9 +512,8 @@ resource "netbird_policy" "manafish_access" {
 }
 
 resource "netbird_policy" "home_access" {
-  name        = "Home Access"
-  description = "Allow admins to access home resources"
-  enabled     = true
+  name    = "Home Access"
+  enabled = true
 
   rule {
     name          = "Admins to home"
@@ -541,9 +527,8 @@ resource "netbird_policy" "home_access" {
 }
 
 resource "netbird_policy" "midgard_access" {
-  name        = "Midgard Access"
-  description = "Allow admins to access services at Midgard"
-  enabled     = true
+  name    = "Midgard Access"
+  enabled = true
 
   rule {
     name          = "Admins to Midgard"
@@ -557,9 +542,8 @@ resource "netbird_policy" "midgard_access" {
 }
 
 resource "netbird_policy" "personal_device_mesh" {
-  name        = "Personal Device Mesh"
-  description = "Allow personal admin devices to communicate with each other over NetBird"
-  enabled     = true
+  name    = "Personal Device Mesh"
+  enabled = true
 
   rule {
     name          = "Personal devices full mesh"
@@ -577,9 +561,8 @@ resource "netbird_policy" "personal_device_mesh" {
 # peer-directed ACLs — the Blocky DNS network resource only provides the
 # client-side route. Both these policies and the resource are required.
 resource "netbird_policy" "routing_peer_dns_udp" {
-  name        = "Routing Peer DNS UDP"
-  description = "Allow DNS to Blocky, which is hosted on the routing peer"
-  enabled     = true
+  name    = "Routing Peer DNS UDP"
+  enabled = true
 
   rule {
     name          = "Peers to routing peer DNS (udp)"
@@ -594,9 +577,8 @@ resource "netbird_policy" "routing_peer_dns_udp" {
 }
 
 resource "netbird_policy" "routing_peer_dns_tcp" {
-  name        = "Routing Peer DNS TCP"
-  description = "Allow truncated DNS retries over TCP to Blocky on the routing peer"
-  enabled     = true
+  name    = "Routing Peer DNS TCP"
+  enabled = true
 
   rule {
     name          = "Peers to routing peer DNS (tcp)"
@@ -614,9 +596,8 @@ resource "netbird_policy" "routing_peer_dns_tcp" {
 # resource (macchiato's stable LAN address routed via the routing peer);
 # NetBird ACLs are default-deny, so DNS needs its own policies.
 resource "netbird_policy" "dns_access_udp" {
-  name        = "DNS Access UDP"
-  description = "Allow peers to query Blocky DNS"
-  enabled     = true
+  name    = "DNS Access UDP"
+  enabled = true
 
   rule {
     name          = "Peers to Blocky DNS (udp)"
@@ -631,9 +612,8 @@ resource "netbird_policy" "dns_access_udp" {
 }
 
 resource "netbird_policy" "dns_access_tcp" {
-  name        = "DNS Access TCP"
-  description = "Allow truncated DNS retries over TCP to Blocky DNS"
-  enabled     = true
+  name    = "DNS Access TCP"
+  enabled = true
 
   rule {
     name          = "Peers to Blocky DNS (tcp)"
@@ -650,11 +630,10 @@ resource "netbird_policy" "dns_access_tcp" {
 # NetBird serves the private AI endpoint locally. Every other DNS query from
 # Hermes must retain Kubernetes service discovery and the cluster's upstreams.
 resource "netbird_nameserver_group" "hermes_cluster_dns" {
-  name        = "Hermes Cluster DNS"
-  description = "Kubernetes DNS for the Hermes NetBird sidecar"
-  enabled     = true
-  primary     = true
-  groups      = [netbird_group.hermes_egress.id]
+  name    = "Hermes Cluster DNS"
+  enabled = true
+  primary = true
+  groups  = [netbird_group.hermes_egress.id]
 
   nameservers = [
     {
@@ -667,11 +646,12 @@ resource "netbird_nameserver_group" "hermes_cluster_dns" {
   search_domains_enabled = false
 }
 
+# Resolve the router and NetBird control plane publicly so the tunnel can
+# bootstrap without depending on itself, and to avoid hairpin loops.
 resource "netbird_nameserver_group" "router_public_dns" {
-  name        = "Bootstrap Public DNS"
-  description = "Public DNS for router and NetBird control-plane domains to avoid tunnel bootstrap and hairpin loops"
-  enabled     = true
-  primary     = false
+  name    = "Bootstrap Public DNS"
+  enabled = true
+  primary = false
   domains = [
     "router.${local.domain}",
     "netbird.${local.domain}",
@@ -690,12 +670,11 @@ resource "netbird_nameserver_group" "router_public_dns" {
 }
 
 resource "netbird_nameserver_group" "macchiato_blocky_dns" {
-  name        = "Macchiato Blocky DNS"
-  description = "Blocky DNS on macchiato for Asgard domain"
-  enabled     = true
-  primary     = false
-  domains     = [local.domain]
-  groups      = [netbird_group.users.id]
+  name    = "Macchiato Blocky DNS"
+  enabled = true
+  primary = false
+  domains = [local.domain]
+  groups  = [netbird_group.users.id]
 
   nameservers = [
     {
@@ -711,12 +690,11 @@ resource "netbird_nameserver_group" "macchiato_blocky_dns" {
 # Scoped to admins: they are the only peers with a route into Midgard, so
 # handing this resolver to anyone else would stall their midgard lookups.
 resource "netbird_nameserver_group" "cortado_blocky_dns" {
-  name        = "Cortado Blocky DNS"
-  description = "Blocky DNS on cortado for the Midgard domain"
-  enabled     = true
-  primary     = false
-  domains     = ["midgard.michaelbrusegard.com"]
-  groups      = [netbird_group.admins.id]
+  name    = "Cortado Blocky DNS"
+  enabled = true
+  primary = false
+  domains = ["midgard.michaelbrusegard.com"]
+  groups  = [netbird_group.admins.id]
 
   nameservers = [
     {
