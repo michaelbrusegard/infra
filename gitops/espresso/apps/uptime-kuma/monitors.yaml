@@ -384,7 +384,7 @@ data:
         "active": true
       },
       {
-        "name": "CLIProxyAPI",
+        "name": "CLIProxy",
         "type": "port",
         "parent_name": "apps[0]",
         "hostname": "cliproxyapi.cliproxyapi.svc.cluster.local",

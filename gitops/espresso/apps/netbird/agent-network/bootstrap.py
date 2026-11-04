@@ -49,7 +49,7 @@ def configure_provider(api, desired, upstream_key, state_path):
     if provider is None:
         provider = api("POST", path, {**desired, "api_key": upstream_key})
     else:
-        # Never send the CLIProxyAPI credential to a different upstream.
+        # Never send the CLIProxy credential to a different upstream.
         if any(provider[key] != desired[key] for key in ("provider_id", "upstream_url")):
             raise RuntimeError("Existing provider points elsewhere; refusing to send credentials")
         if last_digest == key_digest:

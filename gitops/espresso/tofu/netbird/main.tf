@@ -42,8 +42,8 @@ locals {
       address = "browser.${local.domain}"
       group   = "infra"
     }
-    cliproxyapi = {
-      name    = "CLIProxyAPI"
+    cliproxy = {
+      name    = "CLIProxy"
       address = "cliproxy.${local.domain}"
       group   = "infra"
     }
@@ -737,4 +737,9 @@ removed {
   lifecycle {
     destroy = false
   }
+}
+
+moved {
+  from = netbird_network_resource.resources["cliproxyapi"]
+  to   = netbird_network_resource.resources["cliproxy"]
 }

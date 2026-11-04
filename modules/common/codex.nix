@@ -14,8 +14,8 @@ in {
     # Codex is the reviewer harness; Claude Code writes the code.
     model = "gpt-6.1-sol";
     model_reasoning_effort = "high";
-    model_provider = "cliproxyapi";
-    model_providers.cliproxyapi = {
+    model_provider = "cliproxy";
+    model_providers.cliproxy = {
       name = "Asgard";
       base_url = "${gateway}/v1";
       model_catalog_url = "${gateway}/v1/models";

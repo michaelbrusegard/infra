@@ -74,7 +74,7 @@ MODEL-SLUG · responding on behalf of Michael
 
 - MODEL-SLUG is the exact model ID that your runtime exposes. Examples are the
   model ID in your system prompt, or Pi's `PI_MODEL`. Drop any gateway or
-  provider prefix: `cliproxyapi/claude-opus-5-5` becomes `claude-opus-5-5`.
+  provider prefix: `cliproxy/claude-opus-5-5` becomes `claude-opus-5-5`.
   Never guess a slug. If the runtime exposes none, use `UNKNOWN-MODEL`.
 - Leave the footer off only when Michael asks for that message to have no
   attribution.

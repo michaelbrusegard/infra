@@ -2811,8 +2811,8 @@ def text_checks(ctx, text, allow_broadcast):
     for word in dict.fromkeys(re.findall(r"(?<![\w<`/])@([a-zA-Z][\w.\-]+)", text)):
         if norm(word) in names and word.lower() not in ("here", "channel", "everyone"):
             warnings.append(f"plain @{word} does not notify; use <@{names[norm(word)]}>")
-    if "cliproxyapi/" in text:
-        warnings.append("footer contains a gateway prefix (cliproxyapi/...); use the bare model slug")
+    if "cliproxy/" in text:
+        warnings.append("footer contains a gateway prefix (cliproxy/...); use the bare model slug")
     if not FOOTER_RE.search(text):
         warnings.append(
             "no provenance footer ('---' then '<model-slug> · responding on behalf of Michael'); "
