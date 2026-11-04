@@ -270,9 +270,8 @@ locals {
 }
 
 resource "netbird_policy" "health_access" {
-  name        = "Health Access"
-  description = ""
-  enabled     = true
+  name    = "Health Access"
+  enabled = true
 
   rule {
     name          = "Admins to health"
@@ -306,9 +305,8 @@ resource "netbird_setup_key" "cortado" {
 }
 
 resource "netbird_policy" "hermes_egress_access" {
-  name        = "Hermes Egress Access"
-  description = ""
-  enabled     = true
+  name    = "Hermes Egress Access"
+  enabled = true
 
   rule {
     name          = "Hermes to Cortado"
@@ -322,9 +320,8 @@ resource "netbird_policy" "hermes_egress_access" {
 }
 
 resource "netbird_policy" "quest_hermes_access" {
-  name        = "Quest Hermes Access"
-  description = ""
-  enabled     = true
+  name    = "Quest Hermes Access"
+  enabled = true
 
   rule {
     name          = "Quest to Hermes API"
@@ -409,9 +406,8 @@ resource "netbird_network_resource" "resources" {
 }
 
 resource "netbird_policy" "media_admin_access" {
-  name        = "Media Admin Access"
-  description = ""
-  enabled     = true
+  name    = "Media Admin Access"
+  enabled = true
 
   rule {
     name          = "Admins to media admin"
@@ -425,9 +421,8 @@ resource "netbird_policy" "media_admin_access" {
 }
 
 resource "netbird_policy" "media_access" {
-  name        = "Media Access"
-  description = ""
-  enabled     = true
+  name    = "Media Access"
+  enabled = true
 
   rule {
     name          = "Users to media"
@@ -441,9 +436,8 @@ resource "netbird_policy" "media_access" {
 }
 
 resource "netbird_policy" "mealie_access" {
-  name        = "Mealie Access"
-  description = ""
-  enabled     = true
+  name    = "Mealie Access"
+  enabled = true
 
   rule {
     name          = "Users to Mealie"
@@ -470,9 +464,8 @@ resource "netbird_account_settings" "main" {
 }
 
 resource "netbird_policy" "infra_access" {
-  name        = "Infra Access"
-  description = ""
-  enabled     = true
+  name    = "Infra Access"
+  enabled = true
 
   rule {
     name          = "Admins to infra"
@@ -489,9 +482,8 @@ resource "netbird_policy" "infra_access" {
 }
 
 resource "netbird_policy" "public_access" {
-  name        = "Public Access"
-  description = ""
-  enabled     = true
+  name    = "Public Access"
+  enabled = true
 
   rule {
     name          = "Users to public"
@@ -505,9 +497,8 @@ resource "netbird_policy" "public_access" {
 }
 
 resource "netbird_policy" "manafish_access" {
-  name        = "Manafish Access"
-  description = ""
-  enabled     = true
+  name    = "Manafish Access"
+  enabled = true
 
   rule {
     name          = "Admins to Manafish"
@@ -521,9 +512,8 @@ resource "netbird_policy" "manafish_access" {
 }
 
 resource "netbird_policy" "home_access" {
-  name        = "Home Access"
-  description = ""
-  enabled     = true
+  name    = "Home Access"
+  enabled = true
 
   rule {
     name          = "Admins to home"
@@ -537,9 +527,8 @@ resource "netbird_policy" "home_access" {
 }
 
 resource "netbird_policy" "midgard_access" {
-  name        = "Midgard Access"
-  description = ""
-  enabled     = true
+  name    = "Midgard Access"
+  enabled = true
 
   rule {
     name          = "Admins to Midgard"
@@ -553,9 +542,8 @@ resource "netbird_policy" "midgard_access" {
 }
 
 resource "netbird_policy" "personal_device_mesh" {
-  name        = "Personal Device Mesh"
-  description = ""
-  enabled     = true
+  name    = "Personal Device Mesh"
+  enabled = true
 
   rule {
     name          = "Personal devices full mesh"
@@ -573,9 +561,8 @@ resource "netbird_policy" "personal_device_mesh" {
 # peer-directed ACLs — the Blocky DNS network resource only provides the
 # client-side route. Both these policies and the resource are required.
 resource "netbird_policy" "routing_peer_dns_udp" {
-  name        = "Routing Peer DNS UDP"
-  description = ""
-  enabled     = true
+  name    = "Routing Peer DNS UDP"
+  enabled = true
 
   rule {
     name          = "Peers to routing peer DNS (udp)"
@@ -590,9 +577,8 @@ resource "netbird_policy" "routing_peer_dns_udp" {
 }
 
 resource "netbird_policy" "routing_peer_dns_tcp" {
-  name        = "Routing Peer DNS TCP"
-  description = ""
-  enabled     = true
+  name    = "Routing Peer DNS TCP"
+  enabled = true
 
   rule {
     name          = "Peers to routing peer DNS (tcp)"
@@ -610,9 +596,8 @@ resource "netbird_policy" "routing_peer_dns_tcp" {
 # resource (macchiato's stable LAN address routed via the routing peer);
 # NetBird ACLs are default-deny, so DNS needs its own policies.
 resource "netbird_policy" "dns_access_udp" {
-  name        = "DNS Access UDP"
-  description = ""
-  enabled     = true
+  name    = "DNS Access UDP"
+  enabled = true
 
   rule {
     name          = "Peers to Blocky DNS (udp)"
@@ -627,9 +612,8 @@ resource "netbird_policy" "dns_access_udp" {
 }
 
 resource "netbird_policy" "dns_access_tcp" {
-  name        = "DNS Access TCP"
-  description = ""
-  enabled     = true
+  name    = "DNS Access TCP"
+  enabled = true
 
   rule {
     name          = "Peers to Blocky DNS (tcp)"
