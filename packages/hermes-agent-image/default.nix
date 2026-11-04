@@ -89,7 +89,10 @@
     pname = "hermes-agent-node-tools";
     version = "1.0.0";
     src = ./node-tools;
-    npmDepsHash = "sha256-rIzCBQTbxR8085+qgceSzFvEzWYGjm79ZsZFbW3PFxo=";
+    # Renovate maintains the lockfile, so derive the deps from it instead of
+    # pinning an npmDepsHash that each lockfile update would break.
+    npmDeps = pkgs.importNpmLock {npmRoot = ./node-tools;};
+    inherit (pkgs.importNpmLock) npmConfigHook;
     dontNpmBuild = true;
     installPhase = ''
       runHook preInstall
