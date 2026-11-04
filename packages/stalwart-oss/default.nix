@@ -38,10 +38,20 @@ in
         then "sha256-EZ7cuHToVzs/pubGtvXRzgHjmJ8DV7OrIuXnlmQyy1s="
         else "sha256-tQY5L8tTyVbhIX0VrWbaKfR+Q97coTVoMRRDSHv5Lms=";
     };
-    cargoHash =
-      if nativeScim
-      then "sha256-kDWeqY9Ye8tQXYrYNk0W6lhwvHk0Mk6Bkpdmua2UlPE="
-      else "sha256-EUx/ELV85pdPKzv49SEQ1Q8e/4ism2x3ZrKPqL6uvoE=";
+    # stalwartlabs deleted its opentelemetry-rust fork, but the pinned commit
+    # is upstream, so fetch it from there. The vendored output is unchanged.
+    cargoDeps = rustPlatform.fetchCargoVendor {
+      inherit (finalAttrs) pname version src;
+      hash =
+        if nativeScim
+        then "sha256-kDWeqY9Ye8tQXYrYNk0W6lhwvHk0Mk6Bkpdmua2UlPE="
+        else "sha256-EUx/ELV85pdPKzv49SEQ1Q8e/4ism2x3ZrKPqL6uvoE=";
+      env = {
+        GIT_CONFIG_COUNT = "1";
+        GIT_CONFIG_KEY_0 = "url.https://github.com/open-telemetry/opentelemetry-rust.insteadOf";
+        GIT_CONFIG_VALUE_0 = "https://github.com/stalwartlabs/opentelemetry-rust";
+      };
+    };
 
     postPatch = lib.optionalString nativeScim ''
       python3 resources/scripts/ossify.py .
