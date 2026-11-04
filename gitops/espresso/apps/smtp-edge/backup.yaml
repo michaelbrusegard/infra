@@ -22,6 +22,8 @@ spec:
       # chmod changes queue-file bits used by Postfix as delivery flags.
       runAsUser: 100
       runAsGroup: 100
+      fsGroup: 100
+      fsGroupChangePolicy: OnRootMismatch
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-single-replica

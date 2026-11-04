@@ -15,6 +15,8 @@ spec:
     moverSecurityContext:
       runAsUser: 2000
       runAsGroup: 2000
+      fsGroup: 2000
+      fsGroupChangePolicy: OnRootMismatch
     copyMethod: Snapshot
     volumeSnapshotClassName: mayastor-snapshot
     cacheStorageClassName: openebs-single-replica
