@@ -16,5 +16,5 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
       -o /out/netbird-proxy ./proxy/cmd/proxy
 
 # Preserve upstream's CA certificates, UID, shell and filesystem layout.
-FROM docker.io/netbirdio/reverse-proxy:0.81.3@sha256:5da714cd47a66a7c74ddbacc54a6a90d35c1959b77d1744a149b082e69659b45
+FROM docker.io/netbirdio/reverse-proxy:0.82.0@sha256:cc0deaed250ca1332e28f40caca780055cdda7871750cb020478f6fe96e1f6d7
 COPY --from=build /out/netbird-proxy /go/bin/netbird-proxy
