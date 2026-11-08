@@ -1,0 +1,306 @@
+Subject: [PATCH] fix(provider): report reload errors after saving state
+
+Reload failures leave settings persisted but inactive. Fail the operation
+with the server error, retaining read-back state (or the completed deletion)
+before reload so an error or timeout cannot hide the successful write.
+Allow action requests 120 seconds for OIDC discovery and bundle downloads,
+without extending ordinary API requests or overriding cancellation.
+
+diff --git a/internal/client/client.go b/internal/client/client.go
+--- a/internal/client/client.go
++++ b/internal/client/client.go
+@@ -187 +187,12 @@
+-	resp, err := c.http.Do(req)
++	// Actions can validate OIDC discovery and download application bundles.
++	// Keep ordinary requests bounded without cutting off the server's result.
++	httpClient := c.http
++	for _, call := range calls {
++		if call.Name == "x:Action/set" {
++			actionClient := *c.http
++			actionClient.Timeout = max(actionClient.Timeout, 120*time.Second)
++			httpClient = &actionClient
++			break
++		}
++	}
++	resp, err := httpClient.Do(req)
+diff --git a/internal/client/client_test.go b/internal/client/client_test.go
+--- a/internal/client/client_test.go
++++ b/internal/client/client_test.go
+@@ -178,0 +179,29 @@
++
++type roundTripFunc func(*http.Request) (*http.Response, error)
++
++func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
++
++func TestActionTimeout(t *testing.T) {
++	for _, timeout := range []time.Duration{30 * time.Second, 180 * time.Second} {
++		var actions atomic.Int64
++		c := newTestClient(t, testServer(t, &actions), true)
++		c.http.Timeout = timeout
++		c.http.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
++			deadline, ok := r.Context().Deadline()
++			want := max(timeout, 120*time.Second)
++			if !ok || time.Until(deadline) < want-time.Second || time.Until(deadline) > want {
++				t.Errorf("action deadline = %v, want %s remaining", deadline, want)
++			}
++			return nil, errors.New("test transport failure")
++		})
++		if err := c.Reload(context.Background(), "ReloadSettings"); err == nil {
++			t.Fatal("transport error lost")
++		}
++		if c.http.Timeout != timeout {
++			t.Errorf("ordinary request timeout changed to %s", c.http.Timeout)
++		}
++		if _, ok := c.lastReload["ReloadSettings"]; ok {
++			t.Fatal("failed reload marked successful")
++		}
++	}
++}
+diff --git a/internal/provider/generic_resource.go b/internal/provider/generic_resource.go
+--- a/internal/provider/generic_resource.go
++++ b/internal/provider/generic_resource.go
+@@ -103,4 +102,0 @@
+-	if err := r.client.Reload(ctx, r.descriptor.ReloadAction); err != nil {
+-		resp.Diagnostics.AddWarning("Unable to reload server configuration", err.Error())
+-	}
+-
+@@ -113,0 +110,6 @@
++	if resp.Diagnostics.HasError() {
++		return
++	}
++
++	// Record the persisted object before a slow or unsuccessful reload.
++	r.reload(ctx, &resp.Diagnostics)
+@@ -165,4 +166,0 @@
+-	if err := r.client.Reload(ctx, r.descriptor.ReloadAction); err != nil {
+-		resp.Diagnostics.AddWarning("Unable to reload server configuration", err.Error())
+-	}
+-
+@@ -175,0 +174,6 @@
++	if resp.Diagnostics.HasError() {
++		return
++	}
++
++	// Record the persisted object before a slow or unsuccessful reload.
++	r.reload(ctx, &resp.Diagnostics)
+@@ -199,0 +204,6 @@
++	// A reload error does not undo the deletion. Forget it even on failure.
++	resp.State.RemoveResource(ctx)
++	r.reload(ctx, &resp.Diagnostics)
++}
++
++func (r *genericResource) reload(ctx context.Context, diags *diag.Diagnostics) {
+@@ -201 +211,2 @@
+-		resp.Diagnostics.AddWarning("Unable to reload server configuration", err.Error())
++		diags.AddError("Unable to reload server configuration",
++			fmt.Sprintf("Changes to %s were persisted, but %s failed: %s", r.descriptor.Name, r.descriptor.ReloadAction, err))
+diff --git a/internal/provider/reload_test.go b/internal/provider/reload_test.go
+new file mode 100644
+--- /dev/null
++++ b/internal/provider/reload_test.go
+@@ -0,0 +1,205 @@
++package provider
++
++import (
++	"context"
++	"encoding/json"
++	"net/http"
++	"net/http/httptest"
++	"strings"
++	"testing"
++	"time"
++
++	"github.com/hashicorp/terraform-plugin-framework/attr"
++	"github.com/hashicorp/terraform-plugin-framework/diag"
++	"github.com/hashicorp/terraform-plugin-framework/resource"
++	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
++	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
++	"github.com/hashicorp/terraform-plugin-framework/types"
++	"github.com/tahacodes/terraform-provider-stalwart/internal/client"
++)
++
++func TestGeneratedReloadActions(t *testing.T) {
++	expected := map[string]string{
++		"application":             "UpdateApps",
++		"certificate":             "ReloadTlsCertificates",
++		"allowed_ip":              "ReloadBlockedIps",
++		"blocked_ip":              "ReloadBlockedIps",
++		"memory_lookup_key":       "ReloadLookupStores",
++		"memory_lookup_key_value": "ReloadLookupStores",
++		"http_lookup":             "ReloadLookupStores",
++		"store_lookup":            "ReloadLookupStores",
++		"http":                    "ReloadSettings",
++		"user":                    "", "domain": "", "role": "",
++	}
++	for _, d := range generatedResources {
++		if want, ok := expected[d.Name]; ok {
++			if d.ReloadAction != want {
++				t.Errorf("%s reload = %q, want %q", d.Name, d.ReloadAction, want)
++			}
++			delete(expected, d.Name)
++		}
++	}
++	for name := range expected {
++		t.Errorf("missing descriptor %s", name)
++	}
++}
++
++func TestReloadFailurePreservesPersistedState(t *testing.T) {
++	for _, operation := range []string{"create", "singleton", "update", "delete"} {
++		for _, failure := range []string{"forbidden", "validationFailed", "method", "transport", "timeout", "disabled"} {
++			t.Run(operation+"/"+failure, func(t *testing.T) {
++				ctx := context.Background()
++				persisted, actions := false, 0
++				mux := http.NewServeMux()
++				mux.HandleFunc("/jmap/session", func(w http.ResponseWriter, _ *http.Request) {
++					_ = json.NewEncoder(w).Encode(map[string]any{"apiUrl": "/jmap", "accounts": map[string]any{"a": map[string]any{}}})
++				})
++				mux.HandleFunc("/jmap", func(w http.ResponseWriter, req *http.Request) {
++					var input struct {
++						MethodCalls []client.MethodCall `json:"methodCalls"`
++					}
++					if err := json.NewDecoder(req.Body).Decode(&input); err != nil {
++						t.Error(err)
++						return
++					}
++					call := input.MethodCalls[0]
++					result := map[string]any{}
++					switch call.Name {
++					case "x:Test/set":
++						persisted = true
++						if operation == "create" {
++							result["created"] = map[string]any{"new": map[string]any{"id": "saved"}}
++						}
++					case "x:Test/get":
++						result["list"] = []any{map[string]any{"id": "saved", "description": "persisted"}}
++					case "x:Action/set":
++						actions++
++						if !persisted {
++							t.Error("reload preceded persistence")
++						}
++						if failure == "transport" {
++							conn, _, err := w.(http.Hijacker).Hijack()
++							if err != nil {
++								t.Error(err)
++								return
++							}
++							_ = conn.Close()
++							return
++						}
++						if failure == "timeout" {
++							<-req.Context().Done()
++							return
++						}
++						detail := map[string]any{"type": failure, "description": "activation rejected by test server"}
++						if failure == "method" {
++							call.Name = "error"
++							result = detail
++						} else {
++							result["notCreated"] = map[string]any{"new": detail}
++						}
++					default:
++						t.Errorf("unexpected method %s", call.Name)
++					}
++					_ = json.NewEncoder(w).Encode(map[string]any{"methodResponses": []any{[]any{call.Name, result, call.CallID}}})
++				})
++				server := httptest.NewServer(mux)
++				defer server.Close()
++				c, err := client.New(ctx, client.Config{Endpoint: server.URL, AutoReload: failure != "disabled"})
++				if err != nil {
++					t.Fatal(err)
++				}
++				s := schema.Schema{Attributes: map[string]schema.Attribute{
++					"id":          schema.StringAttribute{Computed: true},
++					"description": schema.StringAttribute{Required: true},
++				}}
++				attrTypes := map[string]attr.Type{"id": types.StringType, "description": types.StringType}
++				plan := types.ObjectValueMust(attrTypes, map[string]attr.Value{"id": types.StringValue("saved"), "description": types.StringValue("persisted")})
++				if operation == "create" || operation == "singleton" {
++					plan = types.ObjectValueMust(attrTypes, map[string]attr.Value{"id": types.StringUnknown(), "description": types.StringValue("persisted")})
++				}
++				raw, _ := plan.ToTerraformValue(ctx)
++				state := tfsdk.State{Raw: raw, Schema: s}
++				if operation == "update" || operation == "delete" {
++					before := types.ObjectValueMust(attrTypes, map[string]attr.Value{"id": types.StringValue("saved"), "description": types.StringValue("before")})
++					state.Raw, _ = before.ToTerraformValue(ctx)
++				}
++				r := &genericResource{client: c, descriptor: resourceDescriptor{Name: "test", JMAPType: "x:Test", ReloadAction: "ReloadSettings", Singleton: operation == "singleton", Schema: s}}
++				// Bound the reload through the operation context without shortening read-back.
++				if failure == "timeout" {
++					var cancel context.CancelFunc
++					ctx, cancel = context.WithTimeout(ctx, 100*time.Millisecond)
++					defer cancel()
++				}
++				var diags diag.Diagnostics
++				var details string
++				switch operation {
++				case "create", "singleton":
++					resp := resource.CreateResponse{State: tfsdk.State{Schema: s}}
++					r.Create(ctx, resource.CreateRequest{Plan: tfsdk.Plan{Raw: raw, Schema: s}, Config: tfsdk.Config{Raw: raw, Schema: s}}, &resp)
++					state = resp.State
++					diags = resp.Diagnostics
++					for _, d := range resp.Diagnostics {
++						details += d.Summary() + " " + d.Detail()
++					}
++				case "update":
++					resp := resource.UpdateResponse{State: state}
++					r.Update(ctx, resource.UpdateRequest{Plan: tfsdk.Plan{Raw: raw, Schema: s}, Config: tfsdk.Config{Raw: raw, Schema: s}, State: state}, &resp)
++					state = resp.State
++					diags = resp.Diagnostics
++					for _, d := range resp.Diagnostics {
++						details += d.Summary() + " " + d.Detail()
++					}
++				case "delete":
++					resp := resource.DeleteResponse{State: state}
++					r.Delete(ctx, resource.DeleteRequest{State: state}, &resp)
++					state = resp.State
++					diags = resp.Diagnostics
++					for _, d := range resp.Diagnostics {
++						details += d.Summary() + " " + d.Detail()
++					}
++				}
++				if !persisted {
++					t.Fatal("write did not persist")
++				}
++				if failure == "disabled" {
++					if diags.HasError() || actions != 0 {
++						t.Fatalf("disabled reload: actions=%d, diagnostics=%s", actions, details)
++					}
++				} else {
++					if !diags.HasError() {
++						t.Errorf("reload failure did not fail %s: %s", operation, details)
++					}
++					for _, want := range []string{"ReloadSettings", "persisted"} {
++						if !strings.Contains(details, want) {
++							t.Errorf("diagnostic lacks %q: %s", want, details)
++						}
++					}
++					if failure == "forbidden" || failure == "validationFailed" || failure == "method" {
++						for _, want := range []string{failure, "activation rejected by test server"} {
++							if !strings.Contains(details, want) {
++								t.Errorf("diagnostic lacks %q: %s", want, details)
++							}
++						}
++					}
++				}
++				if operation == "delete" {
++					if !state.Raw.IsNull() {
++						t.Errorf("deleted object retained in state: %s", state.Raw)
++					}
++					return
++				}
++				var saved types.Object
++				if d := state.Get(context.Background(), &saved); d.HasError() {
++					t.Fatal(d)
++				}
++				wantID := "saved"
++				if operation == "singleton" {
++					wantID = singletonID
++				}
++				if attributeString(saved, "id") != wantID || attributeString(saved, "description") != "persisted" {
++					t.Errorf("persisted state lost: %v", saved)
++				}
++			})
++		}
++	}
++}

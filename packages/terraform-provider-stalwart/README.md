@@ -67,10 +67,32 @@ text equal to `****` remains writable. Account credentials retain the
 server's own mask handling. Singleton destroy only removes state; destroying
 an imported or adopted non-singleton deletes the server object.
 
+## Reloads
+
+Application changes invoke `UpdateApps` to reload and unpack bundles. Lookup
+resources (`memory_lookup_key`, `memory_lookup_key_value`, `http_lookup`,
+`store_lookup`) invoke `ReloadLookupStores`. Certificates use
+`ReloadTlsCertificates`, IP lists use `ReloadBlockedIps`, and other settings
+use `ReloadSettings`. Grant the principal the corresponding action permissions,
+including `actionUpdateApps` for applications.
+
+With `auto_reload = true` (the default), a rejected or timed-out action fails
+apply with the server's error type and description. State records the persisted
+values before reload; a completed deletion is removed from state even if its
+reload fails. Action requests allow at least 120 seconds; other requests retain
+the 30-second timeout. Caller cancellation still applies.
+
+A failed reload does not roll back settings. Resolve the reported cause, then
+retry the action explicitly or make another managed change to trigger it. An
+empty plan compares persisted configuration and does not prove activation.
+`ReloadSettings` validates OIDC discovery, so its issuer must be reachable.
+Stalwart can log bundle download/unpack failures while accepting `UpdateApps`;
+check served assets as well as the action response.
+
 ## Local verification
 
 Use a disposable upstream `stalwartlabs/stalwart:v1.0.3` container. In a
-source tree made from the pinned upstream commit, apply the four patches,
+source tree made from the pinned upstream commit, apply the five patches,
 decompress the pinned schema to `schema/v1.0.3.json`, then regenerate:
 
 ```sh
@@ -108,6 +130,13 @@ listener adoption, application and directory imports, and preservation of
 an imported relay secret. It applies twice from separate empty states,
 checks the same IDs and object counts, requires an empty second plan in
 each state, and checks that an HTTP response header took effect after reload.
+The acceptance suite also changes an enabled application's bundle and verifies
+its HTML and JavaScript without restarting the server. Its local bundle server
+uses `host.docker.internal`; set `STALWART_FIXTURE_HOST` for other runtimes.
+A proxy fixture rejects reload to verify apply fails, then explicitly retries
+activation of the persisted settings. Unit tests cover create, singleton create,
+update and delete failures, including transport errors and cancellation.
+
 Logs, state and a provider schema dump go in the evidence directory.
-The fixture does not test OIDC token authentication or serve application
+The smoke fixture does not test OIDC token authentication or serve application
 assets. Remove the disposable test container after verification.

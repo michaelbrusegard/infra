@@ -31,6 +31,7 @@ in
       ./patches/0002-fix-client-retire-idle-connections.patch
       ./patches/0003-test-run-acceptance-against-stalwart-v1.0.3.patch
       ./patches/0004-fix-provider-never-write-a-masked-secret-back.patch
+      ./patches/0005-fix-provider-report-reload-errors-after-saving-state.patch
     ];
 
     # Upstream commits code generated from its v0.16 schema; regenerate it.

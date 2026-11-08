@@ -1,7 +1,8 @@
 Subject: [PATCH] test: run acceptance against Stalwart v1.0.3
 
 v1 renamed Bootstrap.serverHostname to defaultHostname. /api/schema now
-redirects to a content-addressed URL served gzip-encoded.
+redirects to a content-addressed URL served gzip-encoded. Exercise bundle
+activation after an Application update and fail apply when reload is denied.
 ---
  Makefile                     | 4 ++--
  scripts/acceptance-server.sh | 4 ++--
@@ -49,3 +50,180 @@ index 4abedd9..2aaf850 100755
  	"${URL}/jmap" >/dev/null
  
  docker restart "${NAME}" >/dev/null
+diff --git a/internal/provider/acceptance_test.go b/internal/provider/acceptance_test.go
+--- a/internal/provider/acceptance_test.go
++++ b/internal/provider/acceptance_test.go
+@@ -3,0 +4,2 @@
++	"archive/zip"
++	"bytes"
+@@ -4,0 +7 @@
++	"encoding/json"
+@@ -5,0 +9,2 @@
++	"io"
++	"net"
+@@ -6,0 +12,3 @@
++	"net/http/httptest"
++	"net/http/httputil"
++	"net/url"
+@@ -7,0 +16,3 @@
++	"regexp"
++	"strings"
++	"sync/atomic"
+@@ -482,0 +494,157 @@
++
++// The fixture must be reachable from the server container. Colima supplies
++// host.docker.internal; other runtimes can set STALWART_FIXTURE_HOST.
++func TestAccApplicationReloadServesUpdatedBundle(t *testing.T) {
++	if os.Getenv("TF_ACC") != "1" {
++		t.Skip("acceptance test")
++	}
++	testAccPreCheck(t)
++	bundles := map[string][]byte{}
++	for _, version := range []string{"first", "second"} {
++		var buffer bytes.Buffer
++		archive := zip.NewWriter(&buffer)
++		for name, body := range map[string]string{
++			"stalwart-app.json": `{"id":"provider-acceptance","version":"1.0.0"}`,
++			"index.html":        "<html><body>" + version + "<script src=\"app.js\"></script></body></html>",
++			"app.js":            "console.log('" + version + "');",
++		} {
++			file, err := archive.Create(name)
++			if err != nil {
++				t.Fatal(err)
++			}
++			if _, err = file.Write([]byte(body)); err != nil {
++				t.Fatal(err)
++			}
++		}
++		if err := archive.Close(); err != nil {
++			t.Fatal(err)
++		}
++		bundles["/"+version+".zip"] = buffer.Bytes()
++	}
++	fixture := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		bundle, ok := bundles[r.URL.Path]
++		if !ok {
++			http.NotFound(w, r)
++			return
++		}
++		w.Header().Set("Content-Type", "application/zip")
++		_, _ = w.Write(bundle)
++	}))
++	listener, err := net.Listen("tcp4", "0.0.0.0:0")
++	if err != nil {
++		t.Fatal(err)
++	}
++	fixture.Listener = listener
++	fixture.Start()
++	defer fixture.Close()
++	host := os.Getenv("STALWART_FIXTURE_HOST")
++	if host == "" {
++		host = "host.docker.internal"
++	}
++	base := fmt.Sprintf("http://%s:%d", host, listener.Addr().(*net.TCPAddr).Port)
++	config := func(version string) string {
++		return fmt.Sprintf(`
++resource "stalwart_application" "test" {
++ description = "provider reload acceptance"
++ resource_url = %q
++ url_prefix = ["/provider-acc-app"]
++ enable = true
++}
++`, base+"/"+version+".zip")
++	}
++	var existingID string
++	check := func(version string) resource.TestCheckFunc {
++		return func(s *terraform.State) error {
++			id := s.RootModule().Resources["stalwart_application.test"].Primary.ID
++			if existingID == "" {
++				existingID = id
++			} else if id != existingID {
++				return fmt.Errorf("application replaced: %s -> %s", existingID, id)
++			}
++			for path, want := range map[string]string{"/": "<body>" + version, "/app.js": "console.log('" + version + "');"} {
++				response, err := http.Get(os.Getenv("STALWART_URL") + "/provider-acc-app" + path)
++				if err != nil {
++					return err
++				}
++				body, err := io.ReadAll(response.Body)
++				_ = response.Body.Close()
++				if err != nil {
++					return err
++				}
++				if response.StatusCode != http.StatusOK || !strings.Contains(string(body), want) {
++					return fmt.Errorf("%s: status %d, body %q, want %q", path, response.StatusCode, body, want)
++				}
++			}
++			return nil
++		}
++	}
++	resource.Test(t, resource.TestCase{
++		ProtoV6ProviderFactories: protoV6ProviderFactories,
++		Steps: []resource.TestStep{
++			{Config: config("first"), Check: check("first")},
++			{Config: config("second"), Check: check("second")},
++		},
++	})
++}
++
++func TestAccReloadFailureFailsApply(t *testing.T) {
++	if os.Getenv("TF_ACC") != "1" {
++		t.Skip("acceptance test")
++	}
++	testAccPreCheck(t)
++	target, err := url.Parse(os.Getenv("STALWART_URL"))
++	if err != nil {
++		t.Fatal(err)
++	}
++	proxy := httputil.NewSingleHostReverseProxy(target)
++	var reject atomic.Bool
++	endpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		if r.Method == http.MethodPost && reject.Load() {
++			body, err := io.ReadAll(r.Body)
++			if err != nil {
++				t.Error(err)
++				return
++			}
++			_ = r.Body.Close()
++			r.Body = io.NopCloser(bytes.NewReader(body))
++			var input struct {
++				MethodCalls []client.MethodCall `json:"methodCalls"`
++			}
++			if err := json.Unmarshal(body, &input); err != nil {
++				t.Error(err)
++				return
++			}
++			if len(input.MethodCalls) == 1 && input.MethodCalls[0].Name == "x:Action/set" {
++				w.Header().Set("Content-Type", "application/json")
++				_, _ = io.WriteString(w, `{"methodResponses":[["x:Action/set",{"notCreated":{"new":{"type":"forbidden","description":"reload-denied"}}},"c0"]]}`)
++				return
++			}
++		}
++		proxy.ServeHTTP(w, r)
++	}))
++	defer endpoint.Close()
++	config := func(value string) string {
++		return fmt.Sprintf(`
++provider "stalwart" { endpoint = %q }
++resource "stalwart_http" "test" { response_headers = { "X-Acc-Failure" = %q } }
++`, endpoint.URL, value)
++	}
++	resource.Test(t, resource.TestCase{
++		ProtoV6ProviderFactories: protoV6ProviderFactories,
++		Steps: []resource.TestStep{
++			{Config: config("before"), Check: checkServerHeader("X-Acc-Failure", "before")},
++			{PreConfig: func() { reject.Store(true) }, Config: config("persisted"), ExpectError: regexp.MustCompile(`(?s)Unable to reload server configuration.*reload-denied.*forbidden`)},
++			// An explicit reload retries activation of the values already in state.
++			{PreConfig: func() {
++				reject.Store(false)
++				c, err := client.New(context.Background(), client.Config{Endpoint: target.String(), Username: os.Getenv("STALWART_USER"), Password: os.Getenv("STALWART_PASSWORD"), AutoReload: true})
++				if err != nil {
++					t.Fatal(err)
++				}
++				if err = c.Reload(context.Background(), "ReloadSettings"); err != nil {
++					t.Fatal(err)
++				}
++			}, Config: config("persisted"), Check: resource.ComposeAggregateTestCheckFunc(resource.TestCheckResourceAttr("stalwart_http.test", "response_headers.X-Acc-Failure", "persisted"), checkServerHeader("X-Acc-Failure", "persisted"))},
++		},
++	})
++}

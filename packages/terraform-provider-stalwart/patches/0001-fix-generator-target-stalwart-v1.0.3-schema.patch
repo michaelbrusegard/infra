@@ -5,6 +5,9 @@ MtaMilter.host, MtaRouteRelay.host, TracerOtelHttp.url), turned AiModel
 into a variant union and added objects. Required sets for the new types
 were probed against a live v1.0.3 server.
 
+Application bundles and lookup stores have independent server caches; use
+UpdateApps and ReloadLookupStores rather than ReloadSettings.
+
 OAuthGrant and IndexQueueStatus are read-only runtime objects whose
 creation the server forbids, so expose them as data sources only.
 ---
@@ -177,3 +180,29 @@ index 955fab3..cc56429 100644
  	"user":                                {"domainId", "name"},
  	"web_hook":                            {"url"},
  }
+@@ -146,10 +157,15 @@
+-	"x:Account":     "",
+-	"x:Domain":      "",
+-	"x:MailingList": "",
+-	"x:MaskedEmail": "",
+-	"x:OAuthClient": "",
+-	"x:Role":        "",
+-	"x:Tenant":      "",
+-	"x:AllowedIp":   "ReloadBlockedIps",
+-	"x:BlockedIp":   "ReloadBlockedIps",
+-	"x:Certificate": "ReloadTlsCertificates",
++	"x:Account":              "",
++	"x:Domain":               "",
++	"x:MailingList":          "",
++	"x:MaskedEmail":          "",
++	"x:OAuthClient":          "",
++	"x:Role":                 "",
++	"x:Tenant":               "",
++	"x:Application":          "UpdateApps",
++	"x:HttpLookup":           "ReloadLookupStores",
++	"x:MemoryLookupKey":      "ReloadLookupStores",
++	"x:MemoryLookupKeyValue": "ReloadLookupStores",
++	"x:StoreLookup":          "ReloadLookupStores",
++	"x:AllowedIp":            "ReloadBlockedIps",
++	"x:BlockedIp":            "ReloadBlockedIps",
++	"x:Certificate":          "ReloadTlsCertificates",
