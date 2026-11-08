@@ -26,6 +26,6 @@ in
     python3 -m py_compile \
       ${source}/mail.py ${source}/migration.py ${source}/identity.py ${source}/recovery.py \
       ${source}/rate_limit.py ${source}/routing.py ${source}/retirement.py \
-      ${source}/smtp_fixture.py ${source}/edge_dns.py
+      ${source}/smtp_fixture.py ${source}/edge_dns.py ${source}/ui.py
     touch $out
   ''

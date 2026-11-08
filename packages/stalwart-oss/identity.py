@@ -357,9 +357,12 @@ def stalwart_oidc_login(
                     "description": "Disposable real Pocket ID authentication",
                     "issuerUrl": pocket.origin,
                     "claimUsername": "email",
+                    "claimName": "name",
                     "claimGroups": "groups",
-                    "requireAudience": "wrong-fixture-audience",
-                    "requireScopes": {"groups": True},
+                    # This fixture models the old full-account OIDC policy;
+                    # Pocket ID tokens do not carry Stalwart-specific scopes.
+                    "unscopedTokens": "full",
+                    "acceptedAudiences": {"wrong-fixture-audience": True},
                 }
             }
         },
@@ -392,7 +395,7 @@ def stalwart_oidc_login(
         client.expect("GET", "/api/account", 401, auth="Bearer " + token)
         client.jmap(
             "x:Directory/set",
-            {"update": {directory: {"requireAudience": oidc["id"]}}},
+            {"update": {directory: {"acceptedAudiences": {oidc["id"]: True}}}},
         )
         reload()
         for _ in range(40):

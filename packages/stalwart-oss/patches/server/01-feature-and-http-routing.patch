@@ -1,52 +1,22 @@
---- a/crates/main/Cargo.toml
-+++ b/crates/main/Cargo.toml
-@@ -45,6 +45,7 @@
- tikv-jemallocator = "0.7"
- 
- [features]
-+independent-scim = ["http/independent-scim", "common/independent-scim", "services/independent-scim"]
- #default = ["sqlite", "postgres", "mysql", "rocks", "s3", "redis", "azure", "nats", "enterprise", "zenoh", "kafka"]
- #default = ["sqlite", "postgres", "mysql", "rocks", "s3", "redis", "azure", "nats", "enterprise"]
- default = ["rocks", "enterprise"]
---- a/crates/http/Cargo.toml
-+++ b/crates/http/Cargo.toml
-@@ -43,6 +43,7 @@
- flate2 = "1.1"
- 
- [features]
-+independent-scim = ["common/independent-scim"]
- test_mode = []
- dev_mode = []
- enterprise = ["scim/enterprise"]
 --- a/crates/common/Cargo.toml
 +++ b/crates/common/Cargo.toml
-@@ -89,6 +89,7 @@
- socket2 = "0.6"
+@@ -96,6 +96,7 @@ sd-notify = "0.5"
+ dns-update = { version = "0.6", features = ["test_provider"] }
  
  [features]
 +independent-scim = ["store/independent-scim"]
- test_mode = []
  dev_mode = []
- enterprise = []
---- a/crates/store/Cargo.toml
-+++ b/crates/store/Cargo.toml
-@@ -56,6 +56,7 @@
- tokio = { version = "1.53", features = ["full"] }
+ enterprise = ["store/enterprise", "utils/enterprise", "trc/enterprise", "telemetry/enterprise", "directory/enterprise", "coordinator/enterprise", "registry/enterprise", "jmap_proto/enterprise"]
+ foundation = []
+--- a/crates/http/Cargo.toml
++++ b/crates/http/Cargo.toml
+@@ -45,6 +45,7 @@ flate2 = "1.1"
+ jmap-tools = { path = "../jmap-tools" }
  
  [features]
-+independent-scim = []
- # Data Stores
- rocks = ["rocksdb", "rayon", "num_cpus"]
- sqlite = ["rusqlite", "rayon", "r2d2", "num_cpus", "lru-cache"]
---- a/crates/services/Cargo.toml
-+++ b/crates/services/Cargo.toml
-@@ -36,6 +36,7 @@
- [dev-dependencies]
- 
- [features]
-+independent-scim = ["common/independent-scim"]
- test_mode = []
- enterprise = []
++independent-scim = ["common/independent-scim", "services/independent-scim"]
+ dev_mode = []
+ enterprise = ["scim/enterprise", "store/enterprise", "common/enterprise", "utils/enterprise", "trc/enterprise", "email/enterprise", "smtp/enterprise", "jmap/enterprise", "dav/enterprise", "groupware/enterprise", "http_proto/enterprise", "jmap_proto/enterprise", "directory/enterprise", "services/enterprise", "registry/enterprise"]
  
 --- a/crates/http/src/lib.rs
 +++ b/crates/http/src/lib.rs
@@ -61,7 +31,7 @@
  pub mod form;
 --- a/crates/http/src/request.rs
 +++ b/crates/http/src/request.rs
-@@ -436,6 +436,10 @@
+@@ -547,6 +547,10 @@ impl ParseHttp for Server {
                  }
                  _ => (),
              },
@@ -72,3 +42,33 @@
              "api" => {
                  // Allow CORS preflight requests
                  if req.method() == Method::OPTIONS {
+--- a/crates/main/Cargo.toml
++++ b/crates/main/Cargo.toml
+@@ -50,6 +50,7 @@ tikv-jemallocator = "0.7"
+ tikv-jemallocator = { version = "0.7", features = ["unprefixed_malloc_on_supported_platforms"] }
+ 
+ [features]
++independent-scim = ["http/independent-scim", "common/independent-scim", "services/independent-scim"]
+ #default = ["sqlite", "postgres", "mysql", "rocks", "s3", "redis", "azure", "nats", "enterprise", "zenoh", "kafka"]
+ #default = ["sqlite", "postgres", "mysql", "rocks", "s3", "redis", "azure", "nats", "enterprise"]
+ default = ["rocks", "enterprise"]
+--- a/crates/services/Cargo.toml
++++ b/crates/services/Cargo.toml
+@@ -40,6 +40,7 @@ compact_str = "0.10.0"
+ [dev-dependencies]
+ 
+ [features]
++independent-scim = ["common/independent-scim"]
+ enterprise = ["store/enterprise", "common/enterprise", "coordinator/enterprise", "utils/enterprise", "trc/enterprise", "email/enterprise", "smtp/enterprise", "groupware/enterprise", "spam-filter/enterprise", "jmap_proto/enterprise", "registry/enterprise"]
+ 
+ [lints]
+--- a/crates/store/Cargo.toml
++++ b/crates/store/Cargo.toml
+@@ -63,6 +63,7 @@ encodify = "1.0"
+ tokio = { version = "1.54", features = ["full"] }
+ 
+ [features]
++independent-scim = ["registry/independent-scim"]
+ # Data Stores
+ rocks = ["rocksdb", "rayon", "num_cpus"]
+ sqlite = ["rusqlite", "rayon", "r2d2", "num_cpus", "lru-cache"]

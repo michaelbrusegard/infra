@@ -1,0 +1,438 @@
+--- a/crates/registry/Cargo.toml
++++ b/crates/registry/Cargo.toml
+@@ -19,6 +19,7 @@ compact_str = "0.10.0"
+ 
+ [features]
+ enterprise = ["trc/enterprise", "utils/enterprise"]
++independent-scim = []
+ 
+ [lints]
+ workspace = true
+--- a/crates/registry/src/schema/enums.rs
++++ b/crates/registry/src/schema/enums.rs
+@@ -1830,6 +1830,8 @@ pub enum Permission {
+     DavCalMultiGet = 216,
+     DavCalFreeBusyQuery = 217,
+     LiveDeliveryTest = 220,
++    #[cfg(feature = "independent-scim")]
++    ScimAccess = 221,
+     SysAccountGet = 222,
+     SysAccountCreate = 223,
+     SysAccountUpdate = 224,
+--- a/crates/registry/src/schema/enums_impl.rs
++++ b/crates/registry/src/schema/enums_impl.rs
+@@ -7622,6 +7622,10 @@ impl<'de> serde::Deserialize<'de> for PasswordStrength {
+ impl EnumImpl for Permission {
+     #[cfg(not(feature = "enterprise"))]
+     fn parse(value: &str) -> Option<Self> {
++        #[cfg(feature = "independent-scim")]
++        if value == "scimAccess" {
++            return Some(Permission::ScimAccess);
++        }
+         hashify::map! {
+             value.as_bytes(),
+             Permission,
+@@ -8479,6 +8483,8 @@ impl EnumImpl for Permission {
+             Permission::DavCalMultiGet => "davCalMultiGet",
+             Permission::DavCalFreeBusyQuery => "davCalFreeBusyQuery",
+             Permission::LiveDeliveryTest => "liveDeliveryTest",
++            #[cfg(feature = "independent-scim")]
++            Permission::ScimAccess => "scimAccess",
+             Permission::SysAccountGet => "sysAccountGet",
+             Permission::SysAccountCreate => "sysAccountCreate",
+             Permission::SysAccountUpdate => "sysAccountUpdate",
+@@ -9108,6 +9114,8 @@ impl EnumImpl for Permission {
+             216 => Some(Permission::DavCalMultiGet),
+             217 => Some(Permission::DavCalFreeBusyQuery),
+             220 => Some(Permission::LiveDeliveryTest),
++            #[cfg(feature = "independent-scim")]
++            221 => Some(Permission::ScimAccess),
+             222 => Some(Permission::SysAccountGet),
+             223 => Some(Permission::SysAccountCreate),
+             224 => Some(Permission::SysAccountUpdate),
+@@ -9737,6 +9745,8 @@ impl Permission {
+         Permission::DavCalMultiGet,
+         Permission::DavCalFreeBusyQuery,
+         Permission::LiveDeliveryTest,
++        #[cfg(feature = "independent-scim")]
++        Permission::ScimAccess,
+         Permission::SysAccountGet,
+         Permission::SysAccountCreate,
+         Permission::SysAccountUpdate,
+--- a/crates/registry/src/schema/properties.rs
++++ b/crates/registry/src/schema/properties.rs
+@@ -291,6 +291,8 @@ pub enum Property {
+     AllowInvalidCerts = 41,
+     AllowPlainTextAuth = 502,
+     AllowRelaying = 419,
++    #[cfg(feature = "independent-scim")]
++    AllowScimProvisioning = 421,
+     AllowSpamTraining = 446,
+     AllowedEndpoints = 475,
+     AllowedIps = 63,
+@@ -555,6 +557,8 @@ pub enum Property {
+     ExpungeTrashAfter = 232,
+     Extension = 896,
+     Extensions = 297,
++    #[cfg(feature = "independent-scim")]
++    ExternalId = 472,
+     ExternalPublicKeys = 1016,
+     ExtraContactInfo = 283,
+     Factor = 962,
+--- a/crates/registry/src/schema/properties_impl.rs
++++ b/crates/registry/src/schema/properties_impl.rs
+@@ -397,6 +397,12 @@ impl<'de> serde::Deserialize<'de> for ObjectType {
+ impl EnumImpl for Property {
+     #[cfg(not(feature = "enterprise"))]
+     fn parse(value: &str) -> Option<Self> {
++        #[cfg(feature = "independent-scim")]
++        match value {
++            "allowScimProvisioning" => return Some(Property::AllowScimProvisioning),
++            "externalId" => return Some(Property::ExternalId),
++            _ => {}
++        }
+         hashify::map! {
+             value.as_bytes(),
+             Property,
+@@ -1437,6 +1443,8 @@ impl EnumImpl for Property {
+             Property::AllowInvalidCerts => "allowInvalidCerts",
+             Property::AllowPlainTextAuth => "allowPlainTextAuth",
+             Property::AllowRelaying => "allowRelaying",
++            #[cfg(feature = "independent-scim")]
++            Property::AllowScimProvisioning => "allowScimProvisioning",
+             Property::AllowSpamTraining => "allowSpamTraining",
+             Property::AllowedEndpoints => "allowedEndpoints",
+             Property::AllowedIps => "allowedIps",
+@@ -1701,6 +1709,8 @@ impl EnumImpl for Property {
+             Property::ExpungeTrashAfter => "expungeTrashAfter",
+             Property::Extension => "extension",
+             Property::Extensions => "extensions",
++            #[cfg(feature = "independent-scim")]
++            Property::ExternalId => "externalId",
+             Property::ExternalPublicKeys => "externalPublicKeys",
+             Property::ExtraContactInfo => "extraContactInfo",
+             Property::Factor => "factor",
+@@ -2432,6 +2442,8 @@ impl EnumImpl for Property {
+             41 => Some(Property::AllowInvalidCerts),
+             502 => Some(Property::AllowPlainTextAuth),
+             419 => Some(Property::AllowRelaying),
++            #[cfg(feature = "independent-scim")]
++            421 => Some(Property::AllowScimProvisioning),
+             446 => Some(Property::AllowSpamTraining),
+             475 => Some(Property::AllowedEndpoints),
+             63 => Some(Property::AllowedIps),
+@@ -2696,6 +2708,8 @@ impl EnumImpl for Property {
+             232 => Some(Property::ExpungeTrashAfter),
+             896 => Some(Property::Extension),
+             297 => Some(Property::Extensions),
++            #[cfg(feature = "independent-scim")]
++            472 => Some(Property::ExternalId),
+             1016 => Some(Property::ExternalPublicKeys),
+             283 => Some(Property::ExtraContactInfo),
+             962 => Some(Property::Factor),
+@@ -3536,6 +3550,12 @@ impl ObjectType {
+                     IndexSchemaType::Search,
+                     IndexSchemaValueType::Id,
+                 ),
++                #[cfg(feature = "independent-scim")]
++                IndexSchema::new(
++                    Property::ExternalId,
++                    IndexSchemaType::Search,
++                    IndexSchemaValueType::Keyword,
++                ),
+                 IndexSchema::new(
+                     Property::MemberGroupIds,
+                     IndexSchemaType::Search,
+--- a/crates/registry/src/schema/structs.rs
++++ b/crates/registry/src/schema/structs.rs
+@@ -2243,6 +2243,9 @@ pub struct Domain {
+     pub allow_relaying: bool,
+     #[serde(rename = "reportAddressUri")]
+     pub report_address_uri: Option<String>,
++    #[cfg(feature = "independent-scim")]
++    #[serde(rename = "allowScimProvisioning")]
++    pub allow_scim_provisioning: bool,
+ }
+ 
+ #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+@@ -2528,6 +2531,9 @@ pub struct GroupAccount {
+     pub locale: Locale,
+     #[serde(rename = "timeZone")]
+     pub time_zone: Option<TimeZone>,
++    #[cfg(feature = "independent-scim")]
++    #[serde(rename = "externalId")]
++    pub external_id: Option<String>,
+ }
+ 
+ #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+@@ -5397,6 +5403,9 @@ pub struct UserAccount {
+     pub permissions: Permissions,
+     pub quotas: VecMap<StorageQuota, u64>,
+     pub aliases: List<EmailAlias>,
++    #[cfg(feature = "independent-scim")]
++    #[serde(rename = "externalId")]
++    pub external_id: Option<String>,
+     pub description: Option<String>,
+     pub locale: Locale,
+     #[serde(rename = "timeZone")]
+--- a/crates/registry/src/schema/structs_impl.rs
++++ b/crates/registry/src/schema/structs_impl.rs
+@@ -24646,6 +24646,10 @@ impl Pickle for Domain {
+         if self.report_address_uri.is_some() {
+             bitmap |= 1 << 7;
+         }
++        #[cfg(feature = "independent-scim")]
++        if self.allow_scim_provisioning {
++            bitmap |= 1 << 8;
++        }
+         let block = crate::pickle::begin_block(out, 16, 9, bitmap);
+         self.name.pickle(out);
+         self.aliases.pickle(out);
+@@ -24735,6 +24739,8 @@ impl Pickle for Domain {
+         } else {
+             Some("mailto:postmaster".to_string())
+         };
++        #[cfg(feature = "independent-scim")]
++        let field15: bool = if block.has(15) { block.flag(8) } else { false };
+         stream.close_block(block);
+         Some(Self {
+             name: field0,
+@@ -24749,6 +24755,8 @@ impl Pickle for Domain {
+             sub_addressing: field12,
+             allow_relaying: field13,
+             report_address_uri: field14,
++            #[cfg(feature = "independent-scim")]
++            allow_scim_provisioning: field15,
+         })
+     }
+ }
+@@ -24768,6 +24776,8 @@ impl Default for Domain {
+             sub_addressing: Default::default(),
+             allow_relaying: false,
+             report_address_uri: Some("mailto:postmaster".to_string()),
++            #[cfg(feature = "independent-scim")]
++            allow_scim_provisioning: false,
+         }
+     }
+ }
+@@ -24815,6 +24825,11 @@ impl IntoValue for Domain {
+             Property::ReportAddressUri,
+             self.report_address_uri.into_value_with(opts),
+         );
++        #[cfg(feature = "independent-scim")]
++        map.insert_unchecked(
++            Property::AllowScimProvisioning,
++            self.allow_scim_provisioning.into_value_with(opts),
++        );
+         JmapValue::Object(map)
+     }
+ }
+@@ -24849,6 +24864,10 @@ impl RegistryJsonPropertyPatch for Domain {
+             Some(Property::ReportAddressUri) => self
+                 .report_address_uri
+                 .patch(pointer.with_validators(&[StringValidator::Trim]), value),
++            #[cfg(feature = "independent-scim")]
++            Some(Property::AllowScimProvisioning) => {
++                self.allow_scim_provisioning.patch(pointer, value)
++            }
+             Some(Property::Type) => Ok(MaybeUnpatched::Unpatched {
+                 property: Property::Type,
+                 value,
+@@ -27920,6 +27939,12 @@ impl GroupAccount {
+         for value in value.values() {
+             value.validate(errors);
+         }
++        #[cfg(feature = "independent-scim")]
++        if let Some(value) = &self.external_id {
++            if value.is_empty() {
++                errors.push(ValidationError::required(Property::ExternalId));
++            }
++        }
+         errors.len() == neb
+     }
+ 
+@@ -27940,6 +27965,10 @@ impl GroupAccount {
+         for item in self.aliases.values() {
+             item.index(i);
+         }
++        #[cfg(feature = "independent-scim")]
++        if let Some(value) = &self.external_id {
++            i.search(Property::ExternalId, value);
++        }
+     }
+ }
+ 
+@@ -27952,6 +27981,10 @@ impl Pickle for GroupAccount {
+         if self.time_zone.is_some() {
+             bitmap |= 1 << 2;
+         }
++        #[cfg(feature = "independent-scim")]
++        if self.external_id.is_some() {
++            bitmap |= 1 << 3;
++        }
+         let block = crate::pickle::begin_block(out, 12, 4, bitmap);
+         self.name.pickle(out);
+         self.domain_id.pickle(out);
+@@ -27967,6 +28000,10 @@ impl Pickle for GroupAccount {
+         if let Some(value) = &self.time_zone {
+             value.pickle(out);
+         }
++        #[cfg(feature = "independent-scim")]
++        if let Some(value) = &self.external_id {
++            value.pickle(out);
++        }
+         crate::pickle::end_block(out, block);
+     }
+ 
+@@ -28030,6 +28067,16 @@ impl Pickle for GroupAccount {
+         } else {
+             Default::default()
+         };
++        #[cfg(feature = "independent-scim")]
++        let field11: Option<String> = if block.has(11) {
++            if block.flag(3) {
++                Some(Pickle::unpickle(stream)?)
++            } else {
++                None
++            }
++        } else {
++            Default::default()
++        };
+         stream.close_block(block);
+         Some(Self {
+             name: field0,
+@@ -28042,6 +28089,8 @@ impl Pickle for GroupAccount {
+             aliases: field8,
+             locale: field9,
+             time_zone: field10,
++            #[cfg(feature = "independent-scim")]
++            external_id: field11,
+         })
+     }
+ }
+@@ -28059,6 +28108,8 @@ impl Default for GroupAccount {
+             aliases: Default::default(),
+             locale: Locale::EnUS,
+             time_zone: Default::default(),
++            #[cfg(feature = "independent-scim")]
++            external_id: Default::default(),
+         }
+     }
+ }
+@@ -28086,6 +28137,8 @@ impl IntoValue for GroupAccount {
+         map.insert_unchecked(Property::Aliases, self.aliases.into_value_with(opts));
+         map.insert_unchecked(Property::Locale, self.locale.into_value_with(opts));
+         map.insert_unchecked(Property::TimeZone, self.time_zone.into_value_with(opts));
++        #[cfg(feature = "independent-scim")]
++        map.insert_unchecked(Property::ExternalId, self.external_id.into_value_with(opts));
+         JmapValue::Object(map)
+     }
+ }
+@@ -28112,6 +28165,8 @@ impl RegistryJsonPropertyPatch for GroupAccount {
+             Some(Property::Aliases) => self.aliases.patch(pointer, value),
+             Some(Property::Locale) => self.locale.patch(pointer, value),
+             Some(Property::TimeZone) => self.time_zone.patch(pointer, value),
++            #[cfg(feature = "independent-scim")]
++            Some(Property::ExternalId) => self.external_id.patch(pointer, value),
+             Some(Property::Type) => Ok(MaybeUnpatched::Unpatched {
+                 property: Property::Type,
+                 value,
+@@ -61311,6 +61366,12 @@ impl UserAccount {
+         for value in value.values() {
+             value.validate(errors);
+         }
++        #[cfg(feature = "independent-scim")]
++        if let Some(value) = &self.external_id {
++            if value.is_empty() {
++                errors.push(ValidationError::required(Property::ExternalId));
++            }
++        }
+         if let Some(value) = &self.description {
+             if value.is_empty() {
+                 errors.push(ValidationError::required(Property::Description));
+@@ -61345,6 +61406,10 @@ impl UserAccount {
+         for item in self.aliases.values() {
+             item.index(i);
+         }
++        #[cfg(feature = "independent-scim")]
++        if let Some(value) = &self.external_id {
++            i.search(Property::ExternalId, value);
++        }
+         if let Some(value) = &self.description {
+             i.text(Property::Text, value);
+         }
+@@ -61355,6 +61420,10 @@ impl UserAccount {
+ impl Pickle for UserAccount {
+     fn pickle(&self, out: &mut Vec<u8>) {
+         let mut bitmap = 0u64;
++        #[cfg(feature = "independent-scim")]
++        if self.external_id.is_some() {
++            bitmap |= 1 << 1;
++        }
+         if self.description.is_some() {
+             bitmap |= 1 << 2;
+         }
+@@ -61371,6 +61440,10 @@ impl Pickle for UserAccount {
+         self.permissions.pickle(out);
+         self.quotas.pickle(out);
+         self.aliases.pickle(out);
++        #[cfg(feature = "independent-scim")]
++        if let Some(value) = &self.external_id {
++            value.pickle(out);
++        }
+         if let Some(value) = &self.description {
+             value.pickle(out);
+         }
+@@ -61429,6 +61502,16 @@ impl Pickle for UserAccount {
+         } else {
+             Default::default()
+         };
++        #[cfg(feature = "independent-scim")]
++        let field10: Option<String> = if block.has(10) {
++            if block.flag(1) {
++                Some(Pickle::unpickle(stream)?)
++            } else {
++                None
++            }
++        } else {
++            Default::default()
++        };
+         let field11: Option<String> = if block.has(11) {
+             if block.flag(2) {
+                 Some(Pickle::unpickle(stream)?)
+@@ -61468,6 +61551,8 @@ impl Pickle for UserAccount {
+             permissions: field7,
+             quotas: field8,
+             aliases: field9,
++            #[cfg(feature = "independent-scim")]
++            external_id: field10,
+             description: field11,
+             locale: field12,
+             time_zone: field13,
+@@ -61488,6 +61573,8 @@ impl Default for UserAccount {
+             permissions: Default::default(),
+             quotas: Default::default(),
+             aliases: Default::default(),
++            #[cfg(feature = "independent-scim")]
++            external_id: Default::default(),
+             description: Default::default(),
+             locale: Locale::EnUS,
+             time_zone: Default::default(),
+@@ -61521,6 +61608,8 @@ impl IntoValue for UserAccount {
+         );
+         map.insert_unchecked(Property::Quotas, self.quotas.into_value_with(opts));
+         map.insert_unchecked(Property::Aliases, self.aliases.into_value_with(opts));
++        #[cfg(feature = "independent-scim")]
++        map.insert_unchecked(Property::ExternalId, self.external_id.into_value_with(opts));
+         map.insert_unchecked(
+             Property::Description,
+             self.description.into_value_with(opts),
+@@ -61556,6 +61645,8 @@ impl RegistryJsonPropertyPatch for UserAccount {
+             Some(Property::Quotas) => self.quotas.patch(pointer, value),
+             Some(Property::UsedDiskQuota) => pointer.assert_server_set(),
+             Some(Property::Aliases) => self.aliases.patch(pointer, value),
++            #[cfg(feature = "independent-scim")]
++            Some(Property::ExternalId) => self.external_id.patch(pointer, value),
+             Some(Property::Description) => self.description.patch(pointer, value),
+             Some(Property::Locale) => self.locale.patch(pointer, value),
+             Some(Property::TimeZone) => self.time_zone.patch(pointer, value),

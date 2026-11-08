@@ -8,6 +8,7 @@ Rust changes live in patches/ so their context and feature guards are reviewable
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import base64
+import copy
 import gzip
 import hashlib
 import json
@@ -22,6 +23,7 @@ SCIM_FIELDS = (
     ("x:UserAccount", "externalId"),
     ("x:GroupAccount", "externalId"),
 )
+SCIM_PERMISSION = "scimAccess"
 
 
 def validate_source(root, native):
@@ -42,15 +44,67 @@ def validate_source(root, native):
         raise RuntimeError("Native SCIM implementation is missing")
 
 
+def load_schema(path):
+    return json.loads(gzip.decompress(path.read_bytes()))
+
+
+def insert_after(items, item, previous, key):
+    """Insert item after the nearest preceding entry that also exists here."""
+    names = [entry[key] for entry in items]
+    for name in reversed(previous):
+        if name in names:
+            items.insert(names.index(name) + 1, item)
+            return
+    items.insert(0, item)
+
+
 def schema_archive(root):
-    schema = json.loads(
-        gzip.decompress((root / "resources/schema/schema.json.gz").read_bytes())
-    )
+    """Extend the OSS schema with the capabilities native SCIM implements.
+
+    The open-source schema omits the SCIM fields and the scimAccess permission.
+    Their definitions, form placement and labels come from the full schema,
+    without the enterprise flag, so the API and WebUI expose them.
+    """
+    resources = root / "resources/schema"
+    full = load_schema(resources / "schema.json.gz")
+    schema = load_schema(resources / "schema_oss.json.gz")
     for kind, name in SCIM_FIELDS:
-        field = schema["fields"][kind]["properties"][name]
-        if field.get("enterprise") is not True:
+        field = copy.deepcopy(full["fields"][kind]["properties"][name])
+        if field.pop("enterprise", None) is not True:
             raise RuntimeError(f"Unexpected upstream schema: {kind}.{name}")
-        field["enterprise"] = False
+        properties = schema["fields"][kind]["properties"]
+        if name in properties:
+            raise RuntimeError(f"Upstream OSS schema already has {kind}.{name}")
+        properties[name] = field
+        sections = [
+            (section, entry)
+            for section in full["forms"][kind]["sections"]
+            for entry in section["fields"]
+            if entry["name"] == name
+        ]
+        if len(sections) != 1:
+            raise RuntimeError(f"Unexpected upstream form: {kind}.{name}")
+        section, entry = sections[0]
+        target = [
+            candidate
+            for candidate in schema["forms"][kind]["sections"]
+            if candidate.get("title") == section.get("title")
+        ]
+        if len(target) != 1:
+            raise RuntimeError(f"Unexpected OSS form section: {kind}.{name}")
+        previous = [item["name"] for item in section["fields"]]
+        previous = previous[: previous.index(name)]
+        insert_after(target[0]["fields"], copy.deepcopy(entry), previous, "name")
+    permissions = [item["name"] for item in full["enums"]["Permission"]]
+    if SCIM_PERMISSION in (item["name"] for item in schema["enums"]["Permission"]):
+        raise RuntimeError("Upstream OSS schema already has scimAccess")
+    index = permissions.index(SCIM_PERMISSION)
+    insert_after(
+        schema["enums"]["Permission"],
+        copy.deepcopy(full["enums"]["Permission"][index]),
+        permissions[:index],
+        "name",
+    )
     return gzip.compress(json.dumps(schema, separators=(",", ":")).encode(), mtime=0)
 
 

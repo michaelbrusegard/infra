@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 //! Independent SCIM protocol implementation, based on RFC 7643/7644 and public
 //! Stalwart attribute-mapping documentation. No proprietary implementation used.
-//! Storage is responsible for domain/tenant policy, locale/timezone registries,
+//! Storage is responsible for domain policy, locale/timezone registries,
 //! uniqueness, member existence, authorization, and server-generated metadata.
 use serde_json::{Map, Value, json};
 use std::cmp::Ordering;
@@ -142,14 +142,7 @@ fn user_primary(body: &Value) -> Result<String, Error> {
         .ok_or_else(|| invalid("A short userName requires one primary full email"))?;
     let mut primaries = items
         .iter()
-        .filter(|item| {
-            get(item, "primary")
-                .map(boolean)
-                .transpose()
-                .ok()
-                .flatten()
-                == Some(true)
-        })
+        .filter(|item| get(item, "primary").map(boolean).transpose().ok().flatten() == Some(true))
         .map(|item| email(get(item, "value").unwrap_or(&Value::Null)));
     let primary = primaries
         .next()
@@ -684,6 +677,80 @@ fn present(v: &Value) -> bool {
         _ => true,
     }
 }
+/// Strict RFC 3339 date-time as (UTC seconds, nanoseconds) for instant ordering.
+fn rfc3339_instant(value: &str) -> Option<(i64, u32)> {
+    let bytes = value.as_bytes();
+    let digits = |range: std::ops::Range<usize>| {
+        bytes
+            .get(range)
+            .is_some_and(|part| part.iter().all(u8::is_ascii_digit))
+    };
+    if bytes.len() < 20
+        || !(digits(0..4) && digits(5..7) && digits(8..10))
+        || !(digits(11..13) && digits(14..16) && digits(17..19))
+        || bytes[4] != b'-'
+        || bytes[7] != b'-'
+        || !matches!(bytes[10], b'T' | b't')
+        || bytes[13] != b':'
+        || bytes[16] != b':'
+    {
+        return None;
+    }
+    let mut rest = &value[19..];
+    let mut nanos = 0u32;
+    if let Some(fraction) = rest.strip_prefix('.') {
+        let len = fraction.bytes().take_while(u8::is_ascii_digit).count();
+        if len == 0 {
+            return None;
+        }
+        for (index, digit) in fraction.bytes().take(len.min(9)).enumerate() {
+            nanos += u32::from(digit - b'0') * 10u32.pow(8 - index as u32);
+        }
+        rest = &fraction[len..];
+    }
+    let zone = rest.as_bytes();
+    let valid_zone = matches!(rest, "Z" | "z")
+        || (zone.len() == 6
+            && matches!(zone[0], b'+' | b'-')
+            && zone[3] == b':'
+            && zone[1..3].iter().all(u8::is_ascii_digit)
+            && zone[4..6].iter().all(u8::is_ascii_digit));
+    if !valid_zone {
+        return None;
+    }
+    // The registry parser accepts impossible calendar dates and restricts the
+    // year range. Filters need the same RFC 3339 semantics as before the port.
+    let mut instant = mail_parser::DateTime::parse_rfc3339(&value.to_ascii_uppercase())?;
+    let leap = instant.year % 4 == 0 && (instant.year % 100 != 0 || instant.year % 400 == 0);
+    let days = match instant.month {
+        2 => {
+            if leap {
+                29
+            } else {
+                28
+            }
+        }
+        4 | 6 | 9 | 11 => 30,
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        _ => return None,
+    };
+    if instant.day == 0
+        || instant.day > days
+        || instant.hour > 23
+        || instant.minute > 59
+        || instant.second > 60
+        || instant.tz_hour > 23
+        || instant.tz_minute > 59
+    {
+        return None;
+    }
+    if instant.second == 60 {
+        instant.second = 59;
+        nanos += 1_000_000_000;
+    }
+    Some((instant.to_timestamp(), nanos))
+}
+
 fn comparison(left: &Value, right: &Value, op: Op, exact: bool, datetime: bool) -> bool {
     let order = match (left, right) {
         (Value::String(a), Value::String(b)) => {
@@ -701,11 +768,8 @@ fn comparison(left: &Value, right: &Value, op: Op, exact: bool, datetime: bool) 
             }
             // Date-time comparison uses instants, not the lexical timezone spelling.
             if datetime {
-                match (
-                    chrono::DateTime::parse_from_rfc3339(a),
-                    chrono::DateTime::parse_from_rfc3339(b),
-                ) {
-                    (Ok(a), Ok(b)) => Some(a.cmp(&b)),
+                match (rfc3339_instant(a), rfc3339_instant(b)) {
+                    (Some(a), Some(b)) => Some(a.cmp(&b)),
                     _ => None,
                 }
             } else if exact {
@@ -1818,6 +1882,34 @@ mod tests {
             assert!(Filter::parse_public(filter).is_err());
         }
     }
+    #[test]
+    fn filter_dates_preserve_rfc3339_instant_semantics() {
+        assert_eq!(
+            rfc3339_instant("1969-12-31t23:59:59.123456789z"),
+            Some((-1, 123_456_789)),
+        );
+        assert_eq!(
+            rfc3339_instant("2024-02-29T01:00:00.5+01:00"),
+            rfc3339_instant("2024-02-29T00:00:00.500Z"),
+        );
+        assert_eq!(
+            rfc3339_instant("2016-12-31T23:59:60.5Z"),
+            Some((1_483_228_799, 1_500_000_000)),
+        );
+        for value in [
+            "2023-02-29T00:00:00Z",
+            "2024-04-31T00:00:00Z",
+            "2024-02-29T24:00:00Z",
+            "2024-02-29T00:00:00+24:00",
+            "2024-02-29T00:00:00.Z",
+            "2024-02-29T00:00:00Zjunk",
+            "2024-02-29T00:00:00",
+            "2024-02-29T00:00:00+01:0",
+        ] {
+            assert!(rfc3339_instant(value).is_none(), "{value}");
+        }
+    }
+
     #[test]
     fn value_paths_keep_predicates_on_same_element() {
         let resource = json!({"emails":[{"value":"a@example.org","type":"work"},{"value":"b@example.org","type":"home"}]});

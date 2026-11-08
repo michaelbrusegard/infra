@@ -261,7 +261,7 @@ def configure_backend(
                 "protocol": name,
                 "bind": bind,
                 "useTls": True,
-                "tlsImplicit": True,
+                "implicitTls": True,
             },
         )
     update(
@@ -299,7 +299,7 @@ def configure_backend(
                     "0": {
                         "name": "alias-" + name,
                         "domainId": domain_id,
-                        "enabled": True,
+                        "enable": True,
                     }
                 },
             },

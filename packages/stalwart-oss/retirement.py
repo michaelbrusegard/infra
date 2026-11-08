@@ -72,7 +72,7 @@ def run(binary):
                                 "0": {
                                     "name": "postmaster",
                                     "domainId": fixture["domain_id"],
-                                    "enabled": True,
+                                    "enable": True,
                                 },
                             }
                         }

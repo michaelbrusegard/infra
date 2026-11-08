@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import copy
 import gzip
 import hashlib
 import ipaddress
@@ -160,6 +161,12 @@ def enterprise_flags(schema):
 
 
 def check_schema(archive, fingerprint, reference=None):
+    """v1 serves the OSS schema, which omits Enterprise items entirely.
+
+    The native build adds exactly the SCIM fields and the scimAccess
+    permission, without Enterprise annotations. `reference` is the upstream
+    schema_oss.json.gz of the pinned release.
+    """
     expected = (
         base64.urlsafe_b64encode(hashlib.sha256(archive).digest()).decode().rstrip("=")
     )
@@ -167,26 +174,59 @@ def check_schema(archive, fingerprint, reference=None):
         fingerprint == expected, "Schema redirect hash does not match served gzip bytes"
     )
     schema = json.loads(gzip.decompress(archive))
-    flags = enterprise_flags(schema)
-    for field in SCIM_FIELDS:
+    require(not enterprise_flags(schema), "OSS schema carries Enterprise annotations")
+    for kind, name in SCIM_FIELDS:
         require(
-            flags.get(field) is False,
-            f"Native SCIM schema field is still gated: {field}",
+            name in schema["fields"][kind]["properties"],
+            f"Native SCIM schema field is missing: {(kind, name)}",
         )
-    for field in (
-        ("x:Authentication", "defaultTenantRoleIds"),
-        ("x:DataRetention", "archiveDeletedAccountsFor"),
-        ("x:DataRetention", "holdMetricsFor"),
-    ):
-        require(
-            flags.get(field) is True,
-            f"Unrelated Enterprise annotation changed: {field}",
-        )
+    require(
+        "scimAccess" in {item["name"] for item in schema["enums"]["Permission"]},
+        "Native SCIM permission is missing",
+    )
+    require(
+        "defaultTenantRoleIds"
+        not in schema["fields"]["x:Authentication"]["properties"],
+        "Unrelated Enterprise field exposed",
+    )
+    permission = [
+        item for item in schema["enums"]["Permission"] if item["name"] == "scimAccess"
+    ]
+    require(
+        len(permission) == 1 and "enterprise" not in permission[0],
+        "Native SCIM permission carries an Enterprise annotation",
+    )
     if reference is not None:
-        previous = enterprise_flags(reference)
-        require(set(previous) == set(flags), "Enterprise annotation keys changed")
-        changed = {field for field in flags if flags[field] != previous[field]}
-        require(changed == SCIM_FIELDS, f"Unexpected schema annotation diff: {changed}")
+        # Remove only the implemented extensions. Comparing the complete schema
+        # also catches removed fields, changed defaults, and unrelated UI changes.
+        reduced = copy.deepcopy(schema)
+        for kind, name in SCIM_FIELDS:
+            require(
+                name not in reference["fields"][kind]["properties"],
+                f"Reference already contains native SCIM field: {(kind, name)}",
+            )
+            del reduced["fields"][kind]["properties"][name]
+            placements = 0
+            for section in reduced["forms"][kind]["sections"]:
+                before = len(section["fields"])
+                section["fields"] = [
+                    field for field in section["fields"] if field["name"] != name
+                ]
+                placements += before - len(section["fields"])
+            require(placements == 1, f"Unexpected native SCIM form: {(kind, name)}")
+        require(
+            not any(
+                item["name"] == "scimAccess"
+                for item in reference["enums"]["Permission"]
+            ),
+            "Reference already contains native SCIM permission",
+        )
+        reduced["enums"]["Permission"] = [
+            item
+            for item in reduced["enums"]["Permission"]
+            if item["name"] != "scimAccess"
+        ]
+        require(reduced == reference, "Unexpected changes to the upstream OSS schema")
     return schema
 
 
@@ -573,7 +613,9 @@ class Acceptance:
     def stage(self, name, operation):
         try:
             operation()
-        except Exception as error:  # noqa: BLE001 - collect test failures, never skip them
+        except (
+            Exception
+        ) as error:  # noqa: BLE001 - collect test failures, never skip them
             self.failures.append(name)
             print(
                 self.c.redactor(f"FAIL {name}: {type(error).__name__}: {error}"),
@@ -624,7 +666,7 @@ class Acceptance:
         for name, enabled in ((DOMAIN, True), ("closed.test", False)):
             domains[name] = {
                 "name": name,
-                "isEnabled": True,
+                "enable": True,
                 "allowScimProvisioning": enabled,
                 "certificateManagement": {"@type": "Manual"},
                 "dkimManagement": {"@type": "Manual"},
@@ -1325,7 +1367,7 @@ class Acceptance:
                 "create": {
                     name: {
                         "name": name,
-                        "isEnabled": True,
+                        "enable": True,
                         "allowScimProvisioning": False,
                         "certificateManagement": {"@type": "Manual"},
                         "dkimManagement": {"@type": "Manual"},
@@ -1410,7 +1452,9 @@ class Acceptance:
                             "claimUsername": "email",
                             "claimName": "name",
                             "claimGroups": "groups",
-                            "requireScopes": {},
+                            # Fixture tokens are opaque and carry no scopes.
+                            "opaqueTokenValidation": "userInfo",
+                            "unscopedTokens": "full",
                         }
                     }
                 },
@@ -2281,21 +2325,36 @@ class Acceptance:
         require(index.is_file(), "Pinned asset fixture has no index.html")
         candidates = sorted(root.rglob("*.js"))
         require(candidates, "Pinned asset fixture has no JavaScript bundle")
-        for source, path in (
-            (index, "/"),
-            (candidates[0], "/" + candidates[0].relative_to(root).as_posix()),
-        ):
-            response = self.c.expect("GET", path, 200, auth=None)
-            data = (
-                gzip.decompress(response.raw)
-                if response.headers.get("Content-Encoding") == "gzip"
-                else response.raw
-            )
-            require(
-                hashlib.sha256(data).digest()
-                == hashlib.sha256(source.read_bytes()).digest(),
-                f"Served admin asset differs from pinned bytes: {path}",
-            )
+        for prefix in ("/admin", "/account"):
+            for source, path in (
+                (index, prefix + "/"),
+                (
+                    candidates[0],
+                    prefix + "/" + candidates[0].relative_to(root).as_posix(),
+                ),
+            ):
+                response = self.c.expect("GET", path, 200, auth=None)
+                data = (
+                    gzip.decompress(response.raw)
+                    if response.headers.get("Content-Encoding") == "gzip"
+                    else response.raw
+                )
+                expected = source.read_bytes()
+                if source == index:
+                    # v1 serves one bundle at both prefixes, rewriting the base
+                    # path and injecting the Application's configured scopes.
+                    expected = expected.replace(
+                        b'<base href="/"', f'<base href="{prefix}/"'.encode(), 1
+                    )
+                    expected = expected.replace(
+                        b'<meta name="oauth-scopes" content=""',
+                        b'<meta name="oauth-scopes" content="groups"',
+                        1,
+                    )
+                require(
+                    hashlib.sha256(data).digest() == hashlib.sha256(expected).digest(),
+                    f"Served admin asset differs from pinned bytes: {path}",
+                )
 
     def ui_checks(self):
         from ui import run_ui_checks
@@ -2733,16 +2792,20 @@ class HelperTests(unittest.TestCase):
             same_origin_path("http://127.0.0.1:10/x", "http://127.0.0.1:9")
 
     def test_schema_hash_and_gating(self):
-        fields = {}
-        for kind, name in SCIM_FIELDS | {
-            ("x:Authentication", "defaultTenantRoleIds"),
-            ("x:DataRetention", "archiveDeletedAccountsFor"),
-            ("x:DataRetention", "holdMetricsFor"),
-        }:
-            fields.setdefault(kind, {"properties": {}})["properties"][name] = {
-                "enterprise": (kind, name) not in SCIM_FIELDS
-            }
-        schema = {"fields": fields}
+        fields = {
+            "x:Authentication": {"properties": {"defaultUserRoleIds": {}}},
+        }
+        for kind, name in SCIM_FIELDS:
+            fields.setdefault(kind, {"properties": {}})["properties"][name] = {}
+        forms = {
+            kind: {"sections": [{"fields": [{"name": name}]}]}
+            for kind, name in SCIM_FIELDS
+        }
+        schema = {
+            "fields": fields,
+            "forms": forms,
+            "enums": {"Permission": [{"name": "authenticate"}, {"name": "scimAccess"}]},
+        }
         raw = gzip.compress(encoded(schema), mtime=0)
         fingerprint = (
             base64.urlsafe_b64encode(hashlib.sha256(raw).digest()).decode().rstrip("=")
@@ -2752,13 +2815,44 @@ class HelperTests(unittest.TestCase):
             check_schema(raw, "wrong")
         reference = json.loads(json.dumps(schema))
         for kind, name in SCIM_FIELDS:
-            reference["fields"][kind]["properties"][name]["enterprise"] = True
+            del reference["fields"][kind]["properties"][name]
+            reference["forms"][kind]["sections"][0]["fields"] = []
+        reference["enums"]["Permission"].pop()
         check_schema(raw, fingerprint, reference)
-        reference["fields"]["x:Authentication"]["properties"]["defaultTenantRoleIds"][
-            "enterprise"
-        ] = False
+        for mutate in (
+            lambda value: value["fields"]["x:Authentication"]["properties"].pop(
+                "defaultUserRoleIds"
+            ),
+            lambda value: value["fields"]["x:Authentication"]["properties"][
+                "defaultUserRoleIds"
+            ].update(default="changed"),
+            lambda value: value["enums"]["Permission"][0].update(label="changed"),
+            lambda value: value["forms"]["x:Domain"]["sections"].clear(),
+        ):
+            changed = copy.deepcopy(reference)
+            mutate(changed)
+            with self.assertRaises(AssertionError):
+                check_schema(raw, fingerprint, changed)
+        gated_permission = copy.deepcopy(schema)
+        gated_permission["enums"]["Permission"][-1]["enterprise"] = True
+        gated_raw = gzip.compress(encoded(gated_permission), mtime=0)
+        gated_hash = (
+            base64.urlsafe_b64encode(hashlib.sha256(gated_raw).digest())
+            .decode()
+            .rstrip("=")
+        )
         with self.assertRaises(AssertionError):
-            check_schema(raw, fingerprint, reference)
+            check_schema(gated_raw, gated_hash)
+        gated = json.loads(json.dumps(schema))
+        gated["fields"]["x:Domain"]["properties"]["allowScimProvisioning"] = {
+            "enterprise": False
+        }
+        raw = gzip.compress(encoded(gated), mtime=0)
+        fingerprint = (
+            base64.urlsafe_b64encode(hashlib.sha256(raw).digest()).decode().rstrip("=")
+        )
+        with self.assertRaises(AssertionError):
+            check_schema(raw, fingerprint)
 
     def test_key_scope_and_redaction(self):
         self.assertEqual(len(SCIM_PERMISSIONS), 6)
@@ -2991,7 +3085,7 @@ def main():
     )
     parser.add_argument(
         "--reference-schema",
-        help="Public upstream schema.json.gz, for exact annotation-diff assertion",
+        help="Public upstream schema_oss.json.gz, for an exact schema-diff assertion",
     )
     parser.add_argument(
         "--admin-assets",

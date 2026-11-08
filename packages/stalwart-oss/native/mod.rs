@@ -10,7 +10,7 @@
 //! Authentication contract: anonymous GET discovery only; all other endpoints accept
 //! Bearer credentials through the existing HTTP authenticator (Basic is rejected).
 //! Authenticate + ScimAccess + the corresponding SysAccount{Get,Create,Update,Destroy}
-//! permission must be present on the resulting credential-scoped token. Tenant/domain
+//! permission must be present on the resulting credential-scoped token. Domain
 //! scoping is additionally enforced by storage. API key issuance remains native.
 //!
 //! Account/membership mutations and suspension state commit in a native store batch.
@@ -20,7 +20,7 @@
 pub mod protocol;
 mod storage;
 
-use crate::auth::authenticate::{Authenticator, HttpHeaders};
+use crate::auth::authenticate::{Authenticator, HttpAuthenticated, HttpHeaders};
 use common::{Server, auth::AccessToken};
 use http_body_util::BodyExt;
 use http_proto::{HttpRequest, HttpResponse, HttpSessionData, form_urlencoded};
@@ -168,7 +168,11 @@ pub async fn handle(
         return failure(error(401, None, "A native Bearer API key is required"))
             .with_header(header::WWW_AUTHENTICATE, "Bearer");
     }
-    let (_in_flight, token) = match server.authenticate_headers(&req, session).await {
+    let HttpAuthenticated {
+        in_flight: _in_flight,
+        access_token: token,
+        ..
+    } = match server.authenticate_headers(&req, session).await {
         Ok(auth) => auth,
         Err(err) => return authentication_failure(&err),
     };
@@ -502,7 +506,7 @@ async fn dispatch(
             .as_ref()
             .and_then(|filter| filter.equality_terms())
             .unwrap_or_default();
-        let indexed = snapshot.indexed_candidates(server, token, &terms).await?;
+        let indexed = snapshot.indexed_candidates(server, &terms).await?;
         let nonindexed = terms
             .iter()
             .any(|(name, _)| matches!(name.as_str(), "displayname" | "name.formatted" | "active"));

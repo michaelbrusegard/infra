@@ -7,28 +7,12 @@ name: Stalwart Image
       - main
     paths:
       - flake.lock
-      - packages/stalwart-oss/default.nix
-      - packages/stalwart-oss/image.nix
-      - packages/stalwart-oss/webui.nix
-      - packages/stalwart-oss/apply-native.py
-      - packages/stalwart-oss/rate_limit.py
-      - packages/stalwart-oss/integration.py
-      - packages/stalwart-oss/mail.py
-      - packages/stalwart-oss/native/**
-      - packages/stalwart-oss/patches/**
+      - packages/stalwart-oss/**
       - .github/workflows/stalwart-image.yaml
   pull_request:
     paths:
       - flake.lock
-      - packages/stalwart-oss/default.nix
-      - packages/stalwart-oss/image.nix
-      - packages/stalwart-oss/webui.nix
-      - packages/stalwart-oss/apply-native.py
-      - packages/stalwart-oss/rate_limit.py
-      - packages/stalwart-oss/integration.py
-      - packages/stalwart-oss/mail.py
-      - packages/stalwart-oss/native/**
-      - packages/stalwart-oss/patches/**
+      - packages/stalwart-oss/**
       - .github/workflows/stalwart-image.yaml
 
 concurrency:
@@ -54,6 +38,16 @@ jobs:
             max-jobs = 1
             cores = 2
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
+      - name: Check native source integration against v1
+        run: |
+          nix build --impure --no-link --expr '
+            let
+              lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.${lock.nodes.root.inputs.nixpkgs}.locked.rev);
+              pkgs = upstream.legacyPackages.x86_64-linux;
+              server = pkgs.callPackage ./packages/stalwart-oss/default.nix { nativeScim = true; };
+            in pkgs.callPackage ./packages/stalwart-oss/source-check.nix { inherit server; }
+          '
       - name: Build without loading the private secrets flake
         run: |
           nix build --impure --out-link result --expr '

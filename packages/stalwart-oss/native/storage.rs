@@ -2,8 +2,7 @@
 //! Native SCIM persistence. Every visible mutation is one registry-store batch.
 //!
 //! Required host hook: every native registry write must set epoch_key() to a fresh
-//! non-expiring value (u64::MAX expiry followed by assign_id().to_be_bytes())
-//! IN ITS OWN WRITE BATCH. This
+//! value (assign_id().to_be_bytes()) IN ITS OWN WRITE BATCH. This
 //! protects enumeration predicates against native writers, not just SCIM writers.
 //! Account revisions protect individual rows; the epoch protects membership ranges.
 //! Deletion requires registry and task/data stores to be the same native store.
@@ -12,13 +11,11 @@
 //! never arbitrary client-supplied roles/permissions. No elevated token is constructed.
 
 use super::protocol::Error;
-use common::{
-    Server, auth::AccessToken, cache::invalidate::CacheInvalidationBuilder, ipc::CacheInvalidation,
-};
+use common::{Server, auth::AccessToken, cache::invalidate::CacheInvalidationBuilder};
 use registry::{
     schema::{
         enums::{AccountType, Locale, Permission, TimeZone},
-        prelude::{OBJ_FILTER_TENANT, Object, ObjectInner, ObjectType, Property},
+        prelude::{Object, ObjectInner, ObjectType, Property},
         structs::{
             Account, Authentication, Domain, EmailAlias, GroupAccount, Permissions,
             PermissionsList, Role, Task, TaskDestroyAccount, TaskStatus, UserAccount, UserRoles,
@@ -34,11 +31,15 @@ use registry::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use services::task_manager::tasks::destroy_account::independent_scim_revoke_account_grants;
 use std::collections::{BTreeMap, BTreeSet};
 use store::{
     SerializeInfallible, ValueKey,
-    registry::{RegistryObject, RegistryQuery},
-    write::{BatchBuilder, InMemoryClass, RegistryClass, ValueClass, assert::AssertValue},
+    registry::{
+        RegistryObject, RegistryQuery,
+        write::{INDEPENDENT_SCIM_EPOCH_KEY, independent_scim_key},
+    },
+    write::{BatchBuilder, MAX_ACCOUNT_ID, RegistryClass, ValueClass, assert::AssertValue},
 };
 use types::id::Id;
 
@@ -72,22 +73,18 @@ pub(super) fn authorize(token: &AccessToken, permission: Permission) -> Result<(
     }
 }
 pub(super) fn epoch_key() -> ValueClass {
-    ValueClass::InMemory(InMemoryClass::Key(
-        store::registry::write::INDEPENDENT_SCIM_EPOCH_KEY.to_vec(),
-    ))
+    independent_scim_key(INDEPENDENT_SCIM_EPOCH_KEY)
 }
 fn state_key(id: Id) -> ValueClass {
     let mut key = b"independent-scim/suspended/v1/".to_vec();
     key.extend_from_slice(&id.id().to_be_bytes());
-    ValueClass::InMemory(InMemoryClass::Key(key))
+    independent_scim_key(&key)
 }
 async fn read_epoch(server: &Server) -> Result<Option<u64>, Error> {
     server
         .registry()
-        .store()
-        .get_value::<NativeEpoch>(ValueKey::from(epoch_key()))
+        .independent_scim_epoch()
         .await
-        .map(|value| value.map(|value| value.0))
         .map_err(|_| internal())
 }
 #[derive(Clone, Serialize, Deserialize)]
@@ -95,27 +92,28 @@ struct SavedState {
     permissions: Permissions,
 }
 
-struct NativeEpoch(u64);
-impl store::Deserialize for NativeEpoch {
-    fn deserialize(bytes: &[u8]) -> trc::Result<Self> {
-        if bytes.len() != 16 || bytes[..8] != u64::MAX.to_be_bytes() {
-            return Err(trc::StoreEvent::DataCorruption.into_err());
-        }
-        <u64 as store::Deserialize>::deserialize(&bytes[8..]).map(Self)
-    }
-}
 impl store::Deserialize for SavedState {
     fn deserialize(bytes: &[u8]) -> trc::Result<Self> {
-        if bytes.len() < 8 || bytes[..8] != u64::MAX.to_be_bytes() {
-            return Err(trc::StoreEvent::DataCorruption.into_err());
-        }
-        serde_json::from_slice(&bytes[8..]).map_err(|_| trc::StoreEvent::DataCorruption.into_err())
+        serde_json::from_slice(bytes).map_err(|_| trc::StoreEvent::DataCorruption.into_err())
     }
 }
-fn durable_value(payload: &[u8]) -> Vec<u8> {
-    let mut value = u64::MAX.to_be_bytes().to_vec();
-    value.extend_from_slice(payload);
-    value
+// Email primary keys are the local part followed by the big-endian domain id.
+fn email_key(name: &str, domain: Id) -> Vec<u8> {
+    let mut key = name.as_bytes().to_vec();
+    key.extend_from_slice(&domain.document_id().to_be_bytes());
+    key
+}
+// Mirrors store::registry::write's composite primary key encoding.
+fn composite_key(
+    value_1: &registry::types::index::IndexValue<'_>,
+    value_2: &registry::types::index::IndexValue<'_>,
+) -> Vec<u8> {
+    let mut key = value_1.serialize();
+    if matches!(value_2, IndexValue::Text(_) | IndexValue::Bytes(_)) {
+        key.push(0);
+    }
+    key.extend(value_2.serialize());
+    key
 }
 
 pub(super) struct Snapshot {
@@ -125,15 +123,15 @@ pub(super) struct Snapshot {
     suspended: BTreeMap<Id, SavedState>,
     active: BTreeMap<Id, bool>,
 }
-fn scope(account: &Account) -> (Id, Option<Id>) {
+fn scope(account: &Account) -> Id {
     match account {
-        Account::User(a) => (a.domain_id, a.member_tenant_id),
-        Account::Group(a) => (a.domain_id, a.member_tenant_id),
+        Account::User(a) => a.domain_id,
+        Account::Group(a) => a.domain_id,
     }
 }
 fn object(account: &RegistryObject<Account>) -> Object {
     Object {
-        inner: ObjectInner::Account(account.object.clone()),
+        inner: ObjectInner::Account(Box::new(account.object.clone())),
         revision: account.revision,
     }
 }
@@ -184,11 +182,9 @@ async fn derive_group_name(server: &Server, domain: Id, display: &str) -> Result
     let slug = group_slug(display);
     for suffix in 0..1000 {
         let name = suffixed_slug(&slug, suffix);
-        let mut key = name.as_bytes().to_vec();
-        key.extend_from_slice(&domain.id().to_be_bytes());
         if server
             .registry()
-            .primary_key(None, Property::Email, key)
+            .primary_key(None, Property::Email, email_key(&name, domain))
             .await
             .map_err(|_| internal())?
             .is_none()
@@ -205,7 +201,7 @@ async fn derive_group_name(server: &Server, domain: Id, display: &str) -> Result
 
 fn account_value(account: Account) -> Object {
     Object {
-        inner: ObjectInner::Account(account),
+        inner: ObjectInner::Account(Box::new(account)),
         revision: 0,
     }
 }
@@ -375,24 +371,14 @@ impl Snapshot {
             let domains = native_rows::<Domain>(server)
                 .await?
                 .into_iter()
-                .filter(|d| {
-                    d.object.allow_scim_provisioning
-                        && token
-                            .tenant_id()
-                            .is_none_or(|t| d.object.member_tenant_id == Some(Id::from(t)))
-                })
+                .filter(|d| d.object.allow_scim_provisioning)
                 .collect::<Vec<_>>();
             let accounts = native_rows::<Account>(server)
                 .await?
                 .into_iter()
                 .filter(|entry| {
-                    let (domain, tenant) = scope(&entry.object);
-                    token
-                        .tenant_id()
-                        .is_none_or(|t| tenant == Some(Id::from(t)))
-                        && domains
-                            .iter()
-                            .any(|d| d.id.id() == domain && d.object.member_tenant_id == tenant)
+                    let domain = scope(&entry.object);
+                    domains.iter().any(|d| d.id.id() == domain)
                 })
                 .collect::<Vec<_>>();
             // Read roles from the guarded registry, not the eventually invalidated auth
@@ -423,9 +409,6 @@ impl Snapshot {
                     }
                     let roles = match &user.roles {
                         UserRoles::User => authentication.default_user_role_ids.as_slice(),
-                        UserRoles::Admin if user.member_tenant_id.is_some() => {
-                            authentication.default_tenant_role_ids.as_slice()
-                        }
                         UserRoles::Admin => authentication.default_admin_role_ids.as_slice(),
                         UserRoles::Custom(roles) => roles.role_ids.as_slice(),
                     };
@@ -461,12 +444,11 @@ impl Snapshot {
         })
     }
     /// Intersect public indexed equality terms using the native registry indexes.
-    /// The snapshot remains the authoritative domain/tenant boundary and supplies
+    /// The snapshot remains the authoritative domain boundary and supplies
     /// reverse memberships. Null comparisons fall back to the bounded semantic pass.
     pub async fn indexed_candidates(
         &self,
         server: &Server,
-        token: &AccessToken,
         terms: &[(String, Value)],
     ) -> Result<Option<BTreeSet<Id>>, Error> {
         let mut result: Option<BTreeSet<Id>> = None;
@@ -481,7 +463,6 @@ impl Snapshot {
                         .registry()
                         .query::<Vec<Id>>(
                             RegistryQuery::new(ObjectType::Account)
-                                .with_tenant(token.tenant_id())
                                 .equal(Property::ExternalId, text),
                         )
                         .await
@@ -495,7 +476,6 @@ impl Snapshot {
                             .registry()
                             .query::<Vec<Id>>(
                                 RegistryQuery::new(ObjectType::Account)
-                                    .with_tenant(token.tenant_id())
                                     .equal(Property::MemberGroupIds, id.id()),
                             )
                             .await
@@ -521,8 +501,7 @@ impl Snapshot {
                         for domain in self.domains.iter().filter(|domain| {
                             domain.object.name.to_lowercase() == domain_name.to_lowercase()
                         }) {
-                            let mut key = name.to_lowercase().into_bytes();
-                            key.extend_from_slice(&domain.id.id().id().to_be_bytes());
+                            let key = email_key(&name.to_lowercase(), domain.id.id());
                             if let Some(id) = server
                                 .registry()
                                 .primary_key(None, Property::Email, key)
@@ -547,7 +526,7 @@ impl Snapshot {
                                 if matches(&user.name, user.domain_id)
                                     || (path == "emails.value"
                                         && user.aliases.values().any(|alias| {
-                                            alias.enabled && matches(&alias.name, alias.domain_id)
+                                            alias.enable && matches(&alias.name, alias.domain_id)
                                         }))
                                 {
                                     ids.insert(entry.id.id());
@@ -617,7 +596,7 @@ impl Snapshot {
                 )
             })
     }
-    fn address(&self, address: &str, tenant: Option<Id>) -> Result<(String, Id), Error> {
+    fn address(&self, address: &str) -> Result<(String, Id), Error> {
         let (name, domain) = address
             .rsplit_once('@')
             .ok_or_else(|| error(400, Some("invalidValue"), "Expected a full email address"))?;
@@ -625,18 +604,17 @@ impl Snapshot {
             .domains
             .iter()
             .find(|d| {
-                d.object.member_tenant_id == tenant
-                    && (d.object.name.eq_ignore_ascii_case(domain)
-                        || d.object
-                            .aliases
-                            .iter()
-                            .any(|alias| alias.eq_ignore_ascii_case(domain)))
+                d.object.name.eq_ignore_ascii_case(domain)
+                    || d.object
+                        .aliases
+                        .iter()
+                        .any(|alias| alias.eq_ignore_ascii_case(domain))
             })
             .ok_or_else(|| {
                 error(
                     400,
                     Some("invalidValue"),
-                    "Email domain is not opted into SCIM provisioning in this tenant",
+                    "Email domain is not opted into SCIM provisioning",
                 )
             })?;
         Ok((name.to_owned(), domain.id.id()))
@@ -658,7 +636,7 @@ impl Snapshot {
                     Some(json!({"value":id.to_string(), "$ref":format!("{base}/Groups/{id}"), "type":"direct", "display":group_display_name(group)}))
                 }).collect::<Vec<_>>();
                 let mut emails = vec![json!({"value":username,"primary":true,"type":"work"})];
-                for alias in a.aliases.values().filter(|a| a.enabled) {
+                for alias in a.aliases.values().filter(|a| a.enable) {
                     if let Ok(domain) = self.domain(alias.domain_id) {
                         emails.push(json!({"value":format!("{}@{}",alias.name,domain.object.name),"primary":false,"type":"work"}));
                     }
@@ -812,13 +790,14 @@ impl Snapshot {
             let id = server
                 .registry()
                 .store()
-                .write(batch.build_all())
+                .write_batch(&mut batch)
                 .await
                 .map_err(|_| internal())?
-                .last_counter_id()
-                .map_err(|_| internal())?;
+                .last_counter_id();
             let id = u32::try_from(id)
-                .map_err(|_| error(507, None, "Native account ID space exhausted"))?;
+                .ok()
+                .filter(|id| *id <= MAX_ACCOUNT_ID)
+                .ok_or_else(|| error(507, None, "Native account ID space exhausted"))?;
             Id::from(id)
         };
         let mut account = if let Some(old) = old {
@@ -829,7 +808,6 @@ impl Snapshot {
             let username = doc["userName"]
                 .as_str()
                 .ok_or_else(|| error(400, Some("invalidValue"), "userName required"))?;
-            // For global service principals, the target domain determines tenant ownership.
             let domain_name = username.rsplit_once('@').map(|v| v.1).unwrap_or_default();
             let domain = self
                 .domains
@@ -850,7 +828,6 @@ impl Snapshot {
                 })?;
             Account::User(UserAccount {
                 domain_id: domain.id.id(),
-                member_tenant_id: domain.object.member_tenant_id,
                 created_at: UTCDateTime::now(),
                 ..UserAccount::default()
             })
@@ -861,26 +838,22 @@ impl Snapshot {
                 .await
                 .map_err(|_| internal())?
                 .ok_or_else(|| error(403, None, "Provisioning principal has no native domain"))?;
-            let (domain, tenant) = scope(&principal);
+            let domain = scope(&principal);
             self.domain(domain)?;
             Account::Group(GroupAccount {
                 domain_id: domain,
-                member_tenant_id: tenant,
                 created_at: UTCDateTime::now(),
                 ..GroupAccount::default()
             })
         };
-        let tenant = scope(&account).1;
         let mut wanted_members = BTreeSet::new();
         if let Some(doc) = document {
             match &mut account {
                 Account::User(user) => {
-                    let (name, domain) = self.address(
-                        doc["userName"]
-                            .as_str()
-                            .ok_or_else(|| error(400, Some("invalidValue"), "userName required"))?,
-                        tenant,
-                    )?;
+                    let (name, domain) =
+                        self.address(doc["userName"].as_str().ok_or_else(|| {
+                            error(400, Some("invalidValue"), "userName required")
+                        })?)?;
                     user.name = name;
                     user.domain_id = domain;
                     user.description = doc
@@ -918,27 +891,24 @@ impl Snapshot {
                         .filter(|email| email["primary"] != Value::Bool(true))
                     {
                         wanted.insert(
-                            self.address(
-                                email["value"].as_str().ok_or_else(|| {
-                                    error(400, Some("invalidValue"), "Invalid alias")
-                                })?,
-                                tenant,
-                            )?,
+                            self.address(email["value"].as_str().ok_or_else(|| {
+                                error(400, Some("invalidValue"), "Invalid alias")
+                            })?)?,
                         );
                     }
                     let mut aliases = List::default();
                     for alias in user.aliases.values() {
                         if wanted.remove(&(alias.name.clone(), alias.domain_id)) {
                             let mut alias = alias.clone();
-                            alias.enabled = true;
+                            alias.enable = true;
                             aliases.push(alias);
-                        } else if !alias.enabled || self.domain(alias.domain_id).is_err() {
+                        } else if !alias.enable || self.domain(alias.domain_id).is_err() {
                             aliases.push(alias.clone());
                         }
                     }
                     for (name, domain_id) in wanted {
                         aliases.push(EmailAlias {
-                            enabled: true,
+                            enable: true,
                             name,
                             domain_id,
                             description: None,
@@ -992,20 +962,17 @@ impl Snapshot {
                     let display = doc["displayName"]
                         .as_str()
                         .ok_or_else(|| error(400, Some("invalidValue"), "displayName required"))?;
-                    // Description uniqueness spans the tenant, including locally managed
+                    // Description uniqueness spans every group, including locally managed
                     // groups outside opted-in domains. The epoch serializes this predicate.
                     for other in native_rows::<Account>(server).await? {
                         if other.id.id() != id
                             && let Account::Group(other) = &other.object
                         {
-                            if other.member_tenant_id == tenant
-                                && group_display_name(other).to_lowercase()
-                                    == display.to_lowercase()
-                            {
+                            if group_display_name(other).to_lowercase() == display.to_lowercase() {
                                 return Err(error(
                                     409,
                                     Some("uniqueness"),
-                                    "Group displayName already exists in this tenant",
+                                    "Group displayName already exists",
                                 ));
                             }
                         }
@@ -1021,16 +988,9 @@ impl Snapshot {
                     for member in doc["members"].as_array().into_iter().flatten() {
                         let member_id = parse_id(member["value"].as_str().unwrap_or_default())
                             .map_err(|_| error(400, Some("invalidValue"), "Invalid member ID"))?;
-                        let member = self
-                            .account(member_id, "Users")
-                            .filter(|a| scope(&a.object).1 == tenant)
-                            .ok_or_else(|| {
-                                error(
-                                    400,
-                                    Some("invalidValue"),
-                                    "Member is not a visible User in this tenant",
-                                )
-                            })?;
+                        let member = self.account(member_id, "Users").ok_or_else(|| {
+                            error(400, Some("invalidValue"), "Member is not a visible User")
+                        })?;
                         wanted_members.insert(member.id.id());
                     }
                 }
@@ -1108,7 +1068,7 @@ impl Snapshot {
                 if !removed_member
                     && !matches!(
                         linked.object(),
-                        ObjectType::PublicKey | ObjectType::MaskedEmail
+                        ObjectType::PublicKey | ObjectType::OAuthGrant
                     )
                 {
                     return Err(error(
@@ -1133,7 +1093,7 @@ impl Snapshot {
             server
                 .registry()
                 .store()
-                .write(batch.build_all())
+                .write_batch(&mut batch)
                 .await
                 .map_err(|err| {
                     if err.is_assertion_failure() {
@@ -1184,7 +1144,7 @@ impl Snapshot {
                                 error(409, None, "Mutation references a deleted account")
                             })?;
                             if let ObjectInner::Account(target) = &target.inner {
-                                let typ = match target {
+                                let typ = match target.as_ref() {
                                     Account::User(_) => AccountType::User,
                                     Account::Group(_) => AccountType::Group,
                                 };
@@ -1212,15 +1172,6 @@ impl Snapshot {
                                     "Native reference no longer exists",
                                 )
                             })?;
-                        if object_id.object().flags() & OBJ_FILTER_TENANT != 0
-                            && foreign.inner.member_tenant_id() != new.inner.member_tenant_id()
-                        {
-                            return Err(error(
-                                400,
-                                Some("invalidValue"),
-                                "Cross-tenant native reference",
-                            ));
-                        }
                         batch.assert_value(
                             ValueClass::Registry(RegistryClass::Item {
                                 object_id: object_id.object().to_id(),
@@ -1246,8 +1197,7 @@ impl Snapshot {
                         global,
                     } = key
                     {
-                        let mut key = value_1.serialize();
-                        key.extend(value_2.serialize());
+                        let key = composite_key(value_1, value_2);
                         if let Some(existing) = server
                             .registry()
                             .primary_key((!*global).then_some(ObjectType::Account), *property, key)
@@ -1277,7 +1227,7 @@ impl Snapshot {
             if let Some(state) = state {
                 batch.set(
                     state_key(id),
-                    durable_value(&serde_json::to_vec(&state).map_err(|_| internal())?),
+                    serde_json::to_vec(&state).map_err(|_| internal())?,
                 );
             } else {
                 batch.clear(state_key(id));
@@ -1285,25 +1235,25 @@ impl Snapshot {
         }
         if deleting {
             batch.clear(state_key(id));
-            let (domain_id, _) = scope(&account);
-            let (name, typ) = match &account {
-                Account::User(a) => (&a.name, AccountType::User),
-                Account::Group(a) => (&a.name, AccountType::Group),
+            let (name, typ, member_group_ids) = match &account {
+                Account::User(a) => (&a.name, AccountType::User, a.member_group_ids.clone()),
+                Account::Group(a) => (&a.name, AccountType::Group, Default::default()),
             };
             batch.schedule_task(Task::DestroyAccount(TaskDestroyAccount {
-                account_domain_id: domain_id,
+                account_domain_id: scope(&account),
                 account_id: id,
                 account_name: name.clone(),
                 account_type: typ,
+                member_group_ids,
                 status: TaskStatus::now(),
             }));
-            revoke_owned_acl(server, id, &mut batch, &mut invalidation).await?;
         }
         server.registry().advance_independent_scim_epoch(&mut batch);
+        let queues = batch.queue_notify();
         server
             .registry()
             .store()
-            .write(batch.build_all())
+            .write_batch(&mut batch)
             .await
             .map_err(|err| {
                 if err.is_assertion_failure() {
@@ -1312,13 +1262,18 @@ impl Snapshot {
                     internal()
                 }
             })?;
-        server
-            .invalidate_caches(invalidation)
-            .await
-            .map_err(|_| internal())?;
-        if deleting {
-            server.notify_task_queue();
-        }
+        let acl_result = if deleting {
+            // The committed destruction task repeats this if cleanup fails or
+            // the request is interrupted after committing the account deletion.
+            independent_scim_revoke_account_grants(server, id.document_id()).await
+        } else {
+            Ok(())
+        };
+        let invalidation_result = server.invalidate_caches(invalidation).await;
+        // Wake the durable retry even when post-commit cleanup reports an error.
+        server.notify_queues(queues).await;
+        invalidation_result.map_err(|_| internal())?;
+        acl_result.map_err(|_| internal())?;
         Ok(id)
     }
 }
@@ -1379,54 +1334,6 @@ fn append_change(batch: &mut BatchBuilder, change: &Change) -> Result<(), Error>
                 object_id,
                 item_id,
             }));
-    }
-    Ok(())
-}
-async fn revoke_owned_acl(
-    server: &Server,
-    id: Id,
-    batch: &mut BatchBuilder,
-    invalidation: &mut CacheInvalidationBuilder,
-) -> Result<(), Error> {
-    use store::{
-        Deserialize, IterateParams, query::acl::AclItem, write::key::DeserializeBigEndian,
-    };
-    let from = ValueKey {
-        account_id: 0,
-        collection: 0,
-        document_id: 0,
-        class: ValueClass::Acl(0),
-    };
-    let to = ValueKey {
-        account_id: u32::MAX,
-        collection: u8::MAX,
-        document_id: u32::MAX,
-        class: ValueClass::Acl(u32::MAX),
-    };
-    let mut items = Vec::new();
-    server
-        .store()
-        .iterate(IterateParams::new(from, to), |key, value| {
-            let item = AclItem::deserialize(key)?;
-            if item.to_account_id == id.document_id() {
-                items.push((
-                    key.deserialize_be_u32(0)?,
-                    item,
-                    <u64 as store::Deserialize>::deserialize(value)?,
-                ));
-            }
-            Ok(true)
-        })
-        .await
-        .map_err(|_| internal())?;
-    for (grant, item, permissions) in items {
-        batch
-            .with_account_id(id.document_id())
-            .with_collection(item.to_collection)
-            .with_document(item.to_document_id)
-            .assert_value(ValueClass::Acl(grant), AssertValue::U64(permissions))
-            .acl_revoke(grant);
-        invalidation.invalidate(CacheInvalidation::AccessToken(grant));
     }
     Ok(())
 }
