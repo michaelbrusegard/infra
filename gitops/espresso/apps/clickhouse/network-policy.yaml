@@ -1,0 +1,40 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: clickhouse
+  namespace: clickhouse
+spec:
+  endpointSelector:
+    matchLabels:
+      app: clickhouse
+  ingress:
+    # Kubelet probes.
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "8123"
+              protocol: TCP
+    # CLIProxyAPI's archive plugin writes requests and usage. Reads go
+    # through kubectl exec as the localhost-only default user.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: cliproxy
+            k8s:app: cliproxy
+      toPorts:
+        - ports:
+            - port: "8123"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"

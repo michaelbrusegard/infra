@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse
+  namespace: clickhouse
+spec:
+  replicas: 1
+  serviceName: clickhouse
+  selector:
+    matchLabels:
+      app: clickhouse
+  template:
+    metadata:
+      labels:
+        app: clickhouse
+      annotations:
+        configmap.reloader.stakater.com/reload: clickhouse
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:26.8.36.3@sha256:d426d2f612e1e189c90f9a3f8dcd85a03c6851273833817a296bb327e63aa7a7
+          env:
+            # users.xml owns the default user; the entrypoint must not rewrite it.
+            - name: CLICKHOUSE_SKIP_USER_SETUP
+              value: "1"
+            # schema.sql is idempotent, so new tables land on restart.
+            - name: CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS
+              value: "1"
+          ports:
+            - name: http
+              containerPort: 8123
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 30
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/archive.xml
+              subPath: config.xml
+            - name: config
+              mountPath: /etc/clickhouse-server/users.d/archive.xml
+              subPath: users.xml
+            - name: config
+              mountPath: /docker-entrypoint-initdb.d/schema.sql
+              subPath: schema.sql
+      volumes:
+        - name: config
+          configMap:
+            name: clickhouse
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        # Repeated context compresses well, but bodies only ever accumulate.
+        # The SATA pools have the room, and there are no backups to restore.
+        storageClassName: ssd-ha
+        resources:
+          requests:
+            storage: 50Gi

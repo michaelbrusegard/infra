@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - hermes-agent
   - cliproxy
+  - clickhouse
   - hindsight
   - healthlog
   - immich

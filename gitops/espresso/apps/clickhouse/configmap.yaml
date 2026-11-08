@@ -1,0 +1,154 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse
+  namespace: clickhouse
+data:
+  config.xml: |
+    <clickhouse>
+      <logger>
+        <level>warning</level>
+        <console>1</console>
+        <log remove="remove"/>
+        <errorlog remove="remove"/>
+      </logger>
+
+      <!-- Only HTTP is exposed; kubectl exec uses the native port on localhost. -->
+      <mysql_port remove="remove"/>
+      <postgresql_port remove="remove"/>
+      <interserver_http_port remove="remove"/>
+
+      <!-- Keep only a short query log; the other system logs grow without bound
+           and nothing here reads them. -->
+      <query_log>
+        <ttl>event_date + INTERVAL 7 DAY DELETE</ttl>
+      </query_log>
+      <asynchronous_insert_log remove="remove"/>
+      <asynchronous_metric_log remove="remove"/>
+      <background_schedule_pool_log remove="remove"/>
+      <backup_log remove="remove"/>
+      <blob_storage_log remove="remove"/>
+      <error_log remove="remove"/>
+      <latency_log remove="remove"/>
+      <metric_log remove="remove"/>
+      <opentelemetry_span_log remove="remove"/>
+      <part_log remove="remove"/>
+      <processors_profile_log remove="remove"/>
+      <query_metric_log remove="remove"/>
+      <query_thread_log remove="remove"/>
+      <query_views_log remove="remove"/>
+      <s3queue_log remove="remove"/>
+      <session_log remove="remove"/>
+      <text_log remove="remove"/>
+      <trace_log remove="remove"/>
+    </clickhouse>
+  users.xml: |
+    <clickhouse>
+      <users>
+        <!-- Admin access is kubectl exec only. -->
+        <default>
+          <networks replace="replace">
+            <ip>::1</ip>
+            <ip>127.0.0.1</ip>
+          </networks>
+        </default>
+        <!-- CLIProxyAPI can append but never read. The network policy limits
+             who can reach the port, so the insert-only user needs no secret. -->
+        <cliproxy>
+          <no_password/>
+          <networks>
+            <ip>::/0</ip>
+          </networks>
+          <profile>default</profile>
+          <quota>default</quota>
+          <grants>
+            <query>GRANT INSERT ON llm.requests</query>
+            <query>GRANT INSERT ON llm.usage</query>
+          </grants>
+        </cliproxy>
+      </users>
+    </clickhouse>
+  schema.sql: |
+    CREATE DATABASE IF NOT EXISTS llm;
+
+    -- One row per proxied model request, written by the archive plugin.
+    -- trace_id identifies the inbound HTTP request.
+    CREATE TABLE IF NOT EXISTS llm.requests
+    (
+        request_id String,
+        trace_id String,
+        session_id String,
+        started_at DateTime64(3, 'UTC'),
+        completed_at DateTime64(3, 'UTC'),
+        source_format LowCardinality(String),
+        model LowCardinality(String),
+        requested_model LowCardinality(String),
+        stream Bool,
+        outcome LowCardinality(String),
+        status_code UInt16,
+        error String,
+        user_agent LowCardinality(String),
+        truncated Bool,
+        request_body String CODEC(ZSTD(3)),
+        response_body String CODEC(ZSTD(3))
+    )
+    ENGINE = MergeTree
+    PARTITION BY toYYYYMM(started_at)
+    -- Requests in one session resend the same context; keeping them adjacent
+    -- is what makes the bodies compress.
+    ORDER BY (session_id, started_at, request_id);
+
+    -- One row per upstream attempt, so retries show up as extra rows. Join to
+    -- llm.requests on trace_id.
+    CREATE TABLE IF NOT EXISTS llm.usage
+    (
+        request_id String,
+        trace_id String,
+        session_id String,
+        parent_session_id String,
+        requested_at DateTime64(3, 'UTC'),
+        provider LowCardinality(String),
+        executor_type LowCardinality(String),
+        model LowCardinality(String),
+        alias LowCardinality(String),
+        response_model LowCardinality(String),
+        auth_id LowCardinality(String),
+        auth_type LowCardinality(String),
+        reasoning_effort LowCardinality(String),
+        service_tier LowCardinality(String),
+        effective_service_tier LowCardinality(String),
+        response_service_tier LowCardinality(String),
+        stream Bool,
+        failed Bool,
+        failure_status UInt16,
+        failure_body String,
+        latency_ms UInt32,
+        ttft_ms UInt32,
+        input_tokens UInt64,
+        output_tokens UInt64,
+        reasoning_tokens UInt64,
+        cached_tokens UInt64,
+        cache_read_tokens UInt64,
+        cache_creation_tokens UInt64,
+        total_tokens UInt64,
+        response_headers Map(String, String)
+    )
+    ENGINE = MergeTree
+    PARTITION BY toYYYYMM(requested_at)
+    ORDER BY (requested_at, trace_id, request_id);
+
+    -- Raw agent transcript lines from a one-off backfill of each machine's
+    -- local history. Rows with the same key replace each other.
+    CREATE TABLE IF NOT EXISTS llm.transcripts
+    (
+        source LowCardinality(String),
+        host LowCardinality(String),
+        session String,
+        id String,
+        path String,
+        line String CODEC(ZSTD(3)),
+        ts DateTime64(3, 'UTC') DEFAULT parseDateTime64BestEffortOrZero(JSONExtractString(line, 'timestamp'), 3, 'UTC'),
+        ingested_at DateTime DEFAULT now()
+    )
+    ENGINE = ReplacingMergeTree(ingested_at)
+    ORDER BY (source, host, session, id);
