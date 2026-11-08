@@ -8,9 +8,9 @@ data:
     provider_installation {
       filesystem_mirror {
         path    = "/provider-mirror"
-        include = ["registry.opentofu.org/tahacodes/stalwart"]
+        include = ["registry.opentofu.org/michaelbrusegard/stalwart"]
       }
       direct {
-        exclude = ["registry.opentofu.org/tahacodes/stalwart"]
+        exclude = ["registry.opentofu.org/michaelbrusegard/stalwart"]
       }
     }

@@ -20,6 +20,8 @@ patches:
       metadata:
         name: manafishrov-stalwart
       spec:
+        # Keep the committed mirror checksums, including the Linux runner.
+        upgradeOnInit: false
         path: ./tofu/stalwart
         vars:
           - name: smtp_edge_activation_ready
@@ -29,9 +31,12 @@ patches:
           - name: smtp_edge_proxy_networks
             value: ["10.42.0.0/16", "fd42::/56"]
         backendConfig:
-          secretSuffix: manafishrov-stalwart
+          secretSuffix: manafishrov-stalwart-v1
         runnerPodTemplate:
           spec:
+            # The published provider contains only linux_amd64.
+            nodeSelector:
+              kubernetes.io/arch: amd64
             env:
               - name: TF_CLI_CONFIG_FILE
                 value: /etc/tofu/tofurc
@@ -40,35 +45,12 @@ patches:
                   name: manafishrov-stalwart-tofu
             initContainers:
               - name: install-stalwart-provider
-                image: alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
-                command:
-                  - /bin/sh
-                  - -ec
-                  - |
-                    case "$(uname -m)" in
-                      x86_64)
-                        arch=amd64
-                        checksum=9b4b3dc07a73055d7116fc426c6009de86479df7776ab23b6795132eeca8c119
-                        ;;
-                      aarch64)
-                        arch=arm64
-                        checksum=6b68d65e7690aed06ead33307370988034bf1c1aeb28eadf58b5516cf4a2bb0e
-                        ;;
-                      *)
-                        echo "unsupported architecture: $(uname -m)" >&2
-                        exit 1
-                        ;;
-                    esac
-                    version=0.2.3
-                    archive="terraform-provider-stalwart_${version}_linux_${arch}.zip"
-                    wget -q "https://github.com/tahacodes/terraform-provider-stalwart/releases/download/v${version}/${archive}" -O "/tmp/${archive}"
-                    echo "${checksum}  /tmp/${archive}" | sha256sum -c -
-                    destination="/provider-mirror/registry.opentofu.org/tahacodes/stalwart/${version}/linux_${arch}"
-                    mkdir -p "${destination}"
-                    unzip -q "/tmp/${archive}" -d "${destination}"
+                # CUTOVER: pin the provider image built at 2e56442a.
+                image: ghcr.io/michaelbrusegard/terraform-provider-stalwart:REPLACE_WITH_PROVIDER_TAG@sha256:REPLACE_WITH_PROVIDER_DIGEST
+                command: ["/bin/cp", "-R", "/provider-mirror/.", "/mnt/provider-mirror/"]
                 volumeMounts:
                   - name: provider-mirror
-                    mountPath: /provider-mirror
+                    mountPath: /mnt/provider-mirror
             volumeMounts:
               - name: tofu-cli-config
                 mountPath: /etc/tofu
