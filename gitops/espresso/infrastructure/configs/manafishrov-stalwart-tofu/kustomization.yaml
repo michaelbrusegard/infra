@@ -45,8 +45,7 @@ patches:
                   name: manafishrov-stalwart-tofu
             initContainers:
               - name: install-stalwart-provider
-                # CUTOVER: pin the provider image built at 2e56442a.
-                image: ghcr.io/michaelbrusegard/terraform-provider-stalwart:REPLACE_WITH_PROVIDER_TAG@sha256:REPLACE_WITH_PROVIDER_DIGEST
+                image: ghcr.io/michaelbrusegard/terraform-provider-stalwart:1.0.3@sha256:4832706a856de04f0af6a1a7b4aee5277f74eab0285f089b3c585de3cf7dd1aa
                 command: ["/bin/cp", "-R", "/provider-mirror/.", "/mnt/provider-mirror/"]
                 volumeMounts:
                   - name: provider-mirror
