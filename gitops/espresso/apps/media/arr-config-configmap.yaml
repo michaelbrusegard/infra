@@ -11,7 +11,8 @@ data:
     The arr apps keep settings in their own databases, so this job is the
     declarative source of truth for the pieces we care about. Currently:
     delay profiles (wait before grabbing torrents so pre-air fakes and
-    bad rips get nuked or superseded before we ever download them).
+    bad rips get nuked or superseded before we ever download them), and
+    sonarr subtitle preferences for anime.
     """
     import json
     import os
@@ -39,6 +40,23 @@ data:
         "minimumCustomFormatScore": 0,
     }
 
+    # Anime web rips often ship French-only subtitles (Tsundere-Raws tags
+    # them SUBFRENCH/VOSTFR) and, with nothing to rank them, sonarr grabbed
+    # those for Black Clover. Reject them outright, and score releases that
+    # carry English or multi-language subs above raws, hardsubs and dubs.
+    RELEASE_PROFILE = {
+        "name": "No French-only subs",
+        "enabled": True,
+        "required": [],
+        "ignored": ["/\\b(VOSTFR|SUBFRENCH)\\b/i"],
+        "indexerId": 0,
+        "tags": [],
+    }
+
+    SUBS_FORMAT_NAME = "English/Multi Subs"
+    SUBS_FORMAT_REGEX = r"\b(multi[ ._-]?subs?|msubs|eng(lish)?[ ._-]?subs?)\b"
+    SUBS_FORMAT_SCORE = 10
+
 
     def request(method: str, url: str, key: str, body: dict | None = None):
         data = json.dumps(body).encode() if body is not None else None
@@ -53,6 +71,70 @@ data:
             return json.loads(payload) if payload else {}
 
 
+    def sync_release_profile(base: str, key: str) -> None:
+        profiles = request("GET", f"{base}/api/v3/releaseprofile", key)
+        current = next(
+            (p for p in profiles if p["name"] == RELEASE_PROFILE["name"]), None
+        )
+        if current is None:
+            request("POST", f"{base}/api/v3/releaseprofile", key, RELEASE_PROFILE)
+            print("sonarr: release profile created")
+            return
+        desired = {**current, **RELEASE_PROFILE}
+        if desired == current:
+            print("sonarr: release profile in sync")
+            return
+        request(
+            "PUT", f"{base}/api/v3/releaseprofile/{current['id']}", key, desired
+        )
+        print("sonarr: release profile updated")
+
+
+    def sync_subs_format(base: str, key: str) -> None:
+        desired = {
+            "name": SUBS_FORMAT_NAME,
+            "includeCustomFormatWhenRenaming": False,
+            "specifications": [
+                {
+                    "name": "Subs in title",
+                    "implementation": "ReleaseTitleSpecification",
+                    "negate": False,
+                    "required": True,
+                    "fields": [{"name": "value", "value": SUBS_FORMAT_REGEX}],
+                }
+            ],
+        }
+        formats = request("GET", f"{base}/api/v3/customformat", key)
+        current = next((f for f in formats if f["name"] == SUBS_FORMAT_NAME), None)
+        if current is None:
+            current = request("POST", f"{base}/api/v3/customformat", key, desired)
+            print("sonarr: subs custom format created")
+        elif [f["value"] for s in current["specifications"] for f in s["fields"]] != [
+            SUBS_FORMAT_REGEX
+        ]:
+            request(
+                "PUT",
+                f"{base}/api/v3/customformat/{current['id']}",
+                key,
+                {**desired, "id": current["id"]},
+            )
+            print("sonarr: subs custom format updated")
+        else:
+            print("sonarr: subs custom format in sync")
+
+        for profile in request("GET", f"{base}/api/v3/qualityprofile", key):
+            item = next(
+                i for i in profile["formatItems"] if i["format"] == current["id"]
+            )
+            if item["score"] == SUBS_FORMAT_SCORE:
+                continue
+            item["score"] = SUBS_FORMAT_SCORE
+            request(
+                "PUT", f"{base}/api/v3/qualityprofile/{profile['id']}", key, profile
+            )
+            print(f"sonarr: {profile['name']} subs score updated")
+
+
     def main() -> int:
         for app, (base, key) in APPS.items():
             profiles = request("GET", f"{base}/api/v3/delayprofile", key)
@@ -65,6 +147,9 @@ data:
                 "PUT", f"{base}/api/v3/delayprofile/{default['id']}", key, desired
             )
             print(f"{app}: delay profile updated")
+        sonarr = APPS["sonarr"]
+        sync_release_profile(*sonarr)
+        sync_subs_format(*sonarr)
         return 0
 
 
