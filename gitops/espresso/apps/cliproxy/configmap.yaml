@@ -22,3 +22,10 @@ data:
     quota-exceeded:
       switch-project: true
       switch-preview-model: true
+    plugins:
+      enabled: true
+      dir: /plugins
+      configs:
+        # Archives requests, responses, and usage into ClickHouse.
+        clickhouse-archive:
+          enabled: true

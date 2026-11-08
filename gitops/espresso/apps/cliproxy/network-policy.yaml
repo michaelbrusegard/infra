@@ -68,3 +68,11 @@ spec:
         - ports:
             - port: "443"
               protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: clickhouse
+            k8s:app: clickhouse
+      toPorts:
+        - ports:
+            - port: "8123"
+              protocol: TCP

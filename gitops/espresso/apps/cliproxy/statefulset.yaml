@@ -59,6 +59,37 @@ spec:
               mountPath: /config
             - name: auth
               mountPath: /data
+        - name: install-plugins
+          # CI swaps this for the plugin image once it is built and publicly
+          # pullable. Until then there is nothing to copy.
+          image: busybox:1.38.0@sha256:f97baa533a26513c453a362be331a43eb60214302f449c16571b23cea141dce4
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              mkdir -p /plugins/linux/amd64
+              if [ -d /plugin ]; then
+                cp /plugin/*.so /plugins/linux/amd64/
+              fi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: plugins
+              mountPath: /plugins
       containers:
         - name: cliproxy
           image: docker.io/eceasy/cli-proxy-api:v8.0.47@sha256:d1874eba7f9819f3a19a0fea0333b457d6fdd4cf290d4bfe4283be102dc489d9
@@ -116,6 +147,9 @@ spec:
               mountPath: /config
             - name: auth
               mountPath: /data
+            - name: plugins
+              mountPath: /plugins
+              readOnly: true
       volumes:
         - name: config-template
           configMap:
@@ -127,6 +161,8 @@ spec:
           secret:
             secretName: cliproxy-management
         - name: config
+          emptyDir: {}
+        - name: plugins
           emptyDir: {}
   volumeClaimTemplates:
     - metadata:
