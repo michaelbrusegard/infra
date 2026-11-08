@@ -26,7 +26,7 @@ in
       else "stalwart-oss";
     version =
       if nativeScim
-      then "0.16.21"
+      then "0.16.27"
       else "0.16.17";
 
     src = fetchFromGitHub {
@@ -35,7 +35,7 @@ in
       tag = "v${finalAttrs.version}";
       hash =
         if nativeScim
-        then "sha256-EZ7cuHToVzs/pubGtvXRzgHjmJ8DV7OrIuXnlmQyy1s="
+        then "sha256-QaPhmiHFIFTdOai0+dfIZaXCctphYTm2h9lB2gcye5c="
         else "sha256-tQY5L8tTyVbhIX0VrWbaKfR+Q97coTVoMRRDSHv5Lms=";
     };
     # stalwartlabs deleted its opentelemetry-rust fork, but the pinned commit
@@ -44,7 +44,7 @@ in
       inherit (finalAttrs) pname version src;
       hash =
         if nativeScim
-        then "sha256-kDWeqY9Ye8tQXYrYNk0W6lhwvHk0Mk6Bkpdmua2UlPE="
+        then "sha256-imB0ItaQdHCJ5beJ0NOkl/8LdTF1Ocf6YPqSbjsn+Ps="
         else "sha256-EUx/ELV85pdPKzv49SEQ1Q8e/4ism2x3ZrKPqL6uvoE=";
       env = {
         GIT_CONFIG_COUNT = "1";

@@ -31,7 +31,7 @@ class NativePackaging(unittest.TestCase):
     def setUpClass(cls):
         source = os.environ.get("STALWART_SOURCE_DIR")
         if not source:
-            raise RuntimeError("Set STALWART_SOURCE_DIR to the pinned v0.16.21 source")
+            raise RuntimeError("Set STALWART_SOURCE_DIR to the pinned v0.16.27 source")
         cls.temporary = tempfile.TemporaryDirectory(prefix="stalwart-source-test-")
         cls.root = Path(cls.temporary.name) / "source"
         shutil.copytree(source, cls.root)
@@ -338,7 +338,8 @@ class NativePackaging(unittest.TestCase):
             target = root / "crates/common/src/manager/defaults.rs"
             original = target.read_text()
             changed = original.replace(
-                "webui/releases/latest", "unexpected/releases/latest"
+                "resource_url: WEBUI_PINNED_URL.into()",
+                "resource_url: UNEXPECTED_URL.into()",
             )
             self.assertNotEqual(original, changed)
             target.write_text(changed)
