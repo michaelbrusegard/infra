@@ -34,8 +34,8 @@ in
     ];
 
     # Upstream commits code generated from its v0.16 schema; regenerate it.
-    # The generator needs vendored modules, which the module fetch, which
-    # inherits preBuild, does not have yet.
+    # The generator needs vendored modules. The module fetch inherits
+    # preBuild but has not downloaded those modules yet.
     preBuild = ''
       gzip -dc ${schema} > schema/v${stalwartVersion}.json
       go run ./tools/generator schema/v${stalwartVersion}.json \
