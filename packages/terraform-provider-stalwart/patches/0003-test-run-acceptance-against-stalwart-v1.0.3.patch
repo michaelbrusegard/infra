@@ -1,0 +1,51 @@
+Subject: [PATCH] test: run acceptance against Stalwart v1.0.3
+
+v1 renamed Bootstrap.serverHostname to defaultHostname. /api/schema now
+redirects to a content-addressed URL served gzip-encoded.
+---
+ Makefile                     | 4 ++--
+ scripts/acceptance-server.sh | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index fb4d55d..25fdac7 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,5 +1,5 @@
+ OWNER ?=
+-STALWART_VERSION ?= v0.16.17
++STALWART_VERSION ?= v1.0.3
+ BINARY := terraform-provider-stalwart
+ 
+ default: build
+@@ -35,7 +35,7 @@ docs:
+ schema:
+ 	@test -n "$(STALWART_URL)" || (echo "STALWART_URL is required"; exit 1)
+ 	@test -n "$(STALWART_VERSION)" || (echo "STALWART_VERSION is required"; exit 1)
+-	curl -sSf -u "$(STALWART_USER):$(STALWART_PASSWORD)" "$(STALWART_URL)/api/schema" \
++	curl -sSfL --compressed -u "$(STALWART_USER):$(STALWART_PASSWORD)" "$(STALWART_URL)/api/schema" \
+ 		-o schema/$(STALWART_VERSION).json
+ 	@echo "wrote schema/$(STALWART_VERSION).json"
+ 
+diff --git a/scripts/acceptance-server.sh b/scripts/acceptance-server.sh
+index 4abedd9..2aaf850 100755
+--- a/scripts/acceptance-server.sh
++++ b/scripts/acceptance-server.sh
+@@ -1,7 +1,7 @@
+ #!/usr/bin/env bash
+ set -euo pipefail
+ 
+-IMAGE="${STALWART_IMAGE:-stalwartlabs/stalwart:v0.16.17}"
++IMAGE="${STALWART_IMAGE:-stalwartlabs/stalwart:v1.0.3}"
+ NAME="${STALWART_CONTAINER:-stalwart-acc}"
+ PORT="${STALWART_PORT:-18080}"
+ ADMIN_USER="admin"
+@@ -28,7 +28,7 @@ wait_ready
+ 
+ curl -sf --max-time 60 -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -X POST \
+ 	-H "Content-Type: application/json" \
+-	-d '{"using":["urn:ietf:params:jmap:core"],"methodCalls":[["x:Bootstrap/set",{"accountId":"d333333","update":{"singleton":{"defaultDomain":"example.com","serverHostname":"mail.example.com","generateDkimKeys":false,"requestTlsCertificate":false,"blobStore":{"@type":"Default"},"dataStore":{"@type":"RocksDb","path":"/var/lib/stalwart/"},"directory":{"@type":"Internal"},"dnsServer":{"@type":"Manual"},"inMemoryStore":{"@type":"Default"},"searchStore":{"@type":"Default"},"tracer":{"@type":"Log","path":"/var/log/stalwart/"}}}},"c0"]]}' \
++	-d '{"using":["urn:ietf:params:jmap:core"],"methodCalls":[["x:Bootstrap/set",{"accountId":"d333333","update":{"singleton":{"defaultDomain":"example.com","defaultHostname":"mail.example.com","generateDkimKeys":false,"requestTlsCertificate":false,"blobStore":{"@type":"Default"},"dataStore":{"@type":"RocksDb","path":"/var/lib/stalwart/"},"directory":{"@type":"Internal"},"dnsServer":{"@type":"Manual"},"inMemoryStore":{"@type":"Default"},"searchStore":{"@type":"Default"},"tracer":{"@type":"Log","path":"/var/log/stalwart/"}}}},"c0"]]}' \
+ 	"${URL}/jmap" >/dev/null
+ 
+ docker restart "${NAME}" >/dev/null

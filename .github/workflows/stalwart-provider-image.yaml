@@ -1,0 +1,99 @@
+name: Stalwart Provider Image
+
+'on':
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - flake.lock
+      - packages/terraform-provider-stalwart/**
+      - .github/workflows/stalwart-provider-image.yaml
+  pull_request:
+    paths:
+      - flake.lock
+      - packages/terraform-provider-stalwart/**
+      - .github/workflows/stalwart-provider-image.yaml
+
+concurrency:
+  group: stalwart-provider-image-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE_REF: ghcr.io/michaelbrusegard/terraform-provider-stalwart
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+        with:
+          extra-conf: |
+            max-jobs = 1
+            cores = 2
+      - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
+      - name: Build without loading the private secrets flake
+        run: |
+          nix build --impure --out-link result --expr '
+            let
+              lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+              upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.${lock.nodes.root.inputs.nixpkgs}.locked.rev);
+              pkgs = upstream.legacyPackages.x86_64-linux;
+            in pkgs.callPackage ./packages/terraform-provider-stalwart/image.nix {}
+          '
+          tag=$(tar -xOf result manifest.json | jq -er '.[0].RepoTags | if length == 1 then .[0] else error("expected one tag") end')
+          echo "IMAGE_TAG=$tag" >> "$GITHUB_ENV"
+      - name: Check mirror layout
+        run: |
+          sha256sum result
+          docker load < result
+          # Copy the mirror out the way the tofu runner's init container does,
+          # then run the provider outside the image, as OpenTofu will.
+          mirror=$(mktemp -d)
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges:true --user "$(id -u):$(id -g)" \
+            -v "$mirror:/mnt/provider-mirror" "$IMAGE_TAG" \
+            cp -R /provider-mirror/. /mnt/provider-mirror/
+          version=${IMAGE_TAG#*:}
+          binary="$mirror/registry.opentofu.org/michaelbrusegard/stalwart/$version/linux_amd64/terraform-provider-stalwart_v$version"
+          test -x "$binary"
+          # A plugin started outside OpenTofu prints a notice and exits 1.
+          notice=$("$binary" 2>&1 || true)
+          grep -q 'This binary is a plugin' <<<"$notice"
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        if: github.event_name != 'pull_request'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      # manafishrov/infra copies the mirror from this image in the tofu
+      # runner's init container and pins <version>@<digest>.
+      - name: Publish image
+        if: github.event_name != 'pull_request'
+        run: |
+          # Tag by the image's Nix output hash: the same inputs reuse the
+          # published image instead of pushing a byte-distinct rebuild.
+          store_hash=$(basename "$(readlink result)" | cut -c1-32)
+          version=${IMAGE_TAG#*:}
+          target="$IMAGE_REF:$version-nix-$store_hash"
+          if digest=$(docker buildx imagetools inspect "$target" --format '{{json .Manifest.Digest}}' 2>/dev/null | jq -er .); then
+            echo "Reusing published $target"
+          else
+            docker tag "$IMAGE_TAG" "$target"
+            docker push "$target"
+            digest=$(docker image inspect "$target" --format '{{json .RepoDigests}}' \
+              | jq -er --arg prefix "$IMAGE_REF@" '[.[] | select(startswith($prefix))] | unique | if length == 1 then .[0] | sub(".*@"; "") else error("expected one registry digest") end')
+          fi
+          # Retag remotely so the version tag keeps the exact manifest digest.
+          rev=$(jq -r '.nodes[.nodes.root.inputs.nixpkgs].locked.rev' flake.lock)
+          crane() { nix run "github:NixOS/nixpkgs/$rev#crane" -- "$@"; }
+          crane tag "$IMAGE_REF@$digest" "$version"
+          test "$(crane digest "$IMAGE_REF:$version")" = "$digest"
+          echo "Published $IMAGE_REF:$version@$digest"

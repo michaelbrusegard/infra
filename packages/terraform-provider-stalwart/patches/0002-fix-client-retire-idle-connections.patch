@@ -1,0 +1,26 @@
+Subject: [PATCH] fix(client): retire idle connections before Stalwart closes
+ them
+
+Stalwart closes idle keep-alive connections after 30 seconds without a
+Keep-Alive header. net/http does not retry a POST on a reused connection
+the server just closed, so a read-back after a slow reload failed with
+EOF and left the created object out of state.
+---
+ internal/client/client.go | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/internal/client/client.go b/internal/client/client.go
+index bb80a21..23aea75 100644
+--- a/internal/client/client.go
++++ b/internal/client/client.go
+@@ -89,6 +89,10 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
+ 	}
+ 
+ 	transport := http.DefaultTransport.(*http.Transport).Clone()
++	// Stalwart closes idle keep-alive connections after 30 seconds without
++	// announcing it. A JMAP POST is not retried on a reused connection the
++	// server just closed, so retire pooled connections well before that.
++	transport.IdleConnTimeout = 10 * time.Second
+ 	if cfg.Insecure {
+ 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+ 	}

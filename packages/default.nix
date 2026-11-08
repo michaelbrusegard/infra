@@ -7,9 +7,11 @@ pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
   stalwart-oss-image = pkgs.callPackage ./stalwart-oss/image.nix {};
   stalwart-native-scim = pkgs.callPackage ./stalwart-oss {nativeScim = true;};
   stalwart-native-scim-image = pkgs.callPackage ./stalwart-oss/image.nix {nativeScim = true;};
+  terraform-provider-stalwart-image = pkgs.callPackage ./terraform-provider-stalwart/image.nix {};
 }
 // {
   ai-images = pkgs.callPackage ./ai-images {};
   slack-cli = pkgs.callPackage ./slack-cli {};
+  terraform-provider-stalwart = pkgs.callPackage ./terraform-provider-stalwart {};
   vite-plus = import ./vite-plus {inherit pkgs;};
 }

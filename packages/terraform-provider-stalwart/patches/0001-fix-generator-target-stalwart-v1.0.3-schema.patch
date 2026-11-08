@@ -1,0 +1,179 @@
+Subject: [PATCH] fix(generator): target the Stalwart v1.0.3 schema
+
+v1 renamed fields that requiredOverrides names (DNS provider keys,
+MtaMilter.host, MtaRouteRelay.host, TracerOtelHttp.url), turned AiModel
+into a variant union and added objects. Required sets for the new types
+were probed against a live v1.0.3 server.
+
+OAuthGrant and IndexQueueStatus are read-only runtime objects whose
+creation the server forbids, so expose them as data sources only.
+---
+ tools/generator/datasources.go | 14 +++++++---
+ tools/generator/main.go        | 47 +++++++++++++++++++++-------------
+ 2 files changed, 40 insertions(+), 21 deletions(-)
+
+diff --git a/tools/generator/datasources.go b/tools/generator/datasources.go
+index 75267ff..bae8736 100644
+--- a/tools/generator/datasources.go
++++ b/tools/generator/datasources.go
+@@ -28,8 +28,10 @@ var runtimeDataSources = []string{
+ 	"x:ClusterNode",
+ 	"x:DmarcExternalReport",
+ 	"x:DmarcInternalReport",
++	"x:IndexQueueStatus",
+ 	"x:Log",
+ 	"x:Metric",
++	"x:OAuthGrant",
+ 	"x:QueuedMessage",
+ 	"x:SpamTrainingSample",
+ 	"x:Task",
+@@ -38,8 +40,10 @@ var runtimeDataSources = []string{
+ }
+ 
+ var pluralNameOverrides = map[string]string{
+-	"x:Metric":      "metric_data_points",
+-	"x:OAuthClient": "oauth_clients",
++	"x:IndexQueueStatus": "index_queue_statuses",
++	"x:Metric":           "metric_data_points",
++	"x:OAuthClient":      "oauth_clients",
++	"x:OAuthGrant":       "oauth_grants",
+ }
+ 
+ func buildDataSourceTargets(r *resolver, resources []resourceTarget) []dataSourceTarget {
+@@ -83,8 +87,12 @@ func buildDataSourceTargets(r *resolver, resources []resourceTarget) []dataSourc
+ 		}
+ 
+ 		_, hasName := attributes["name"]
++		name := resourceNameOverrides[objectName]
++		if name == "" {
++			name = resourceName(strings.TrimPrefix(objectName, "x:"))
++		}
+ 		targets = append(targets, dataSourceTarget{
+-			Name:        resourceName(strings.TrimPrefix(objectName, "x:")),
++			Name:        name,
+ 			JMAPType:    objectName,
+ 			HasName:     hasName,
+ 			Description: object.Description,
+diff --git a/tools/generator/main.go b/tools/generator/main.go
+index 955fab3..cc56429 100644
+--- a/tools/generator/main.go
++++ b/tools/generator/main.go
+@@ -32,8 +32,10 @@ var excludedObjects = map[string]string{
+ 	"x:ClusterNode":         "runtime data, creation forbidden by the server",
+ 	"x:DmarcExternalReport": "runtime data",
+ 	"x:DmarcInternalReport": "runtime data",
++	"x:IndexQueueStatus":    "runtime data, creation forbidden by the server",
+ 	"x:Log":                 "runtime data",
+ 	"x:Metric":              "runtime data",
++	"x:OAuthGrant":          "runtime data, creation forbidden by the server",
+ 	"x:QueuedMessage":       "runtime data",
+ 	"x:SpamTrainingSample":  "runtime data",
+ 	"x:Task":                "runtime data",
+@@ -46,11 +48,17 @@ var resourceNameOverrides = map[string]string{
+ 	"x:Account/User":  "user",
+ 	"x:Account/Group": "group",
+ 	"x:OAuthClient":   "oauth_client",
++	"x:OAuthGrant":    "oauth_grant",
+ }
+ 
+ var requiredOverrides = map[string][]string{
+ 	"acme_provider":                       {"contact"},
+-	"ai_model":                            {"model", "name", "url"},
++	"ai_model_anthropic":                  {"model", "name"},
++	"ai_model_gemini":                     {"model", "name"},
++	"ai_model_ollama":                     {"model", "name"},
++	"ai_model_open_ai":                    {"model", "name"},
++	"ai_model_type_safe":                  {"model", "name"},
++	"alert":                               {"condition"},
+ 	"allowed_ip":                          {"address"},
+ 	"application":                         {"description", "resourceUrl", "urlPrefix"},
+ 	"blocked_ip":                          {"address"},
+@@ -62,42 +70,43 @@ var requiredOverrides = map[string][]string{
+ 	"dkim_signature_dkim1_rsa_sha256":     {"privateKey"},
+ 	"dkim_signature_dkim2_ed25519_sha256": {"privateKey"},
+ 	"dkim_signature_dkim2_rsa_sha256":     {"privateKey"},
+-	"dns_server_alidns":                   {"accessKey", "description", "secretKey"},
++	"dns_server_alidns":                   {"accessKeyId", "description", "secretKey"},
+ 	"dns_server_arvan_cloud":              {"description", "secret"},
+ 	"dns_server_azure_dns":                {"clientId", "clientSecret", "description", "resourceGroup", "subscriptionId", "tenantId"},
+ 	"dns_server_bunny":                    {"description", "secret"},
+ 	"dns_server_cloudflare":               {"description", "secret"},
+-	"dns_server_cpanel":                   {"baseUrl", "description", "token", "username"},
++	"dns_server_cpanel":                   {"description", "token", "url", "username"},
+ 	"dns_server_de_sec":                   {"description", "secret"},
+ 	"dns_server_digital_ocean":            {"description", "secret"},
+-	"dns_server_dnsimple":                 {"accountIdentifier", "description", "secret"},
+-	"dns_server_domeneshop":               {"authToken", "description", "secret"},
++	"dns_server_dnsimple":                 {"accountIdentifier", "description", "token"},
++	"dns_server_domeneshop":               {"description", "secret", "token"},
+ 	"dns_server_dreamhost":                {"description", "secret"},
+ 	"dns_server_gcore":                    {"description", "secret"},
+-	"dns_server_glesys":                   {"apiKey", "apiUser", "description"},
++	"dns_server_glesys":                   {"apiKey", "description", "username"},
+ 	"dns_server_google_cloud_dns":         {"description", "projectId", "serviceAccountJson"},
+ 	"dns_server_hosting_de":               {"description", "secret"},
+ 	"dns_server_ibm_cloud":                {"apiKey", "description", "username"},
+ 	"dns_server_infomaniak":               {"description", "secret"},
+ 	"dns_server_inwx":                     {"description", "password", "username"},
+ 	"dns_server_ionos":                    {"description", "secret"},
+-	"dns_server_lightsail":                {"accessKeyId", "description", "secretAccessKey"},
++	"dns_server_lightsail":                {"accessKeyId", "description", "secretKey"},
+ 	"dns_server_linode":                   {"description", "secret"},
+-	"dns_server_lua_dns":                  {"authToken", "description", "username"},
+-	"dns_server_netcup":                   {"apiKey", "customerNumber", "description", "password"},
++	"dns_server_lua_dns":                  {"description", "token", "username"},
++	"dns_server_netcup":                   {"apiKeyId", "customerNumber", "description", "password"},
+ 	"dns_server_netlify":                  {"description", "secret"},
+ 	"dns_server_ns1":                      {"description", "secret"},
+ 	"dns_server_ovh":                      {"applicationKey", "applicationSecret", "description"},
+-	"dns_server_plesk":                    {"apiKey", "baseUrl", "description"},
+-	"dns_server_porkbun":                  {"apiKey", "description", "secret"},
+-	"dns_server_route53":                  {"accessKeyId", "description", "secretAccessKey"},
++	"dns_server_plesk":                    {"apiKey", "description", "url"},
++	"dns_server_porkbun":                  {"apiKeyId", "description", "secret"},
++	"dns_server_power_dns":                {"apiKey", "description"},
++	"dns_server_route53":                  {"accessKeyId", "description", "secretKey"},
+ 	"dns_server_safedns":                  {"description", "secret"},
+ 	"dns_server_scaleway":                 {"description", "secret"},
+-	"dns_server_spaceship":                {"apiKey", "description", "secret"},
+-	"dns_server_tencent_cloud":            {"description", "secretId", "secretKey"},
++	"dns_server_spaceship":                {"apiKeyId", "description", "secret"},
++	"dns_server_tencent_cloud":            {"accessKeyId", "description", "secretKey"},
+ 	"dns_server_tsig":                     {"description", "host", "key", "keyName"},
+ 	"dns_server_ultra_dns":                {"description", "password", "username"},
+-	"dns_server_vercel":                   {"authToken", "description"},
++	"dns_server_vercel":                   {"description", "token"},
+ 	"dns_server_vultr":                    {"description", "secret"},
+ 	"group":                               {"domainId", "name"},
+ 	"http_lookup":                         {"namespace", "url"},
+@@ -107,16 +116,17 @@ var requiredOverrides = map[string][]string{
+ 	"mta_delivery_schedule":               {"name", "queueId"},
+ 	"mta_hook":                            {"url"},
+ 	"mta_inbound_throttle":                {"description", "rate"},
+-	"mta_milter":                          {"hostname"},
++	"mta_milter":                          {"host"},
+ 	"mta_outbound_throttle":               {"description", "rate"},
+ 	"mta_queue_quota":                     {"key"},
+-	"mta_route_relay":                     {"address", "name"},
++	"mta_route_relay":                     {"host", "name"},
+ 	"network_listener":                    {"bind", "name"},
+ 	"oauth_client":                        {"clientId"},
+ 	"public_key":                          {"key"},
+ 	"role":                                {"description"},
+ 	"sieve_system_script":                 {"contents", "name"},
+ 	"sieve_user_script":                   {"contents", "name"},
++	"smime_trust_anchor":                  {"certificate"},
+ 	"spam_dnsbl_server_any":               {"name", "zone"},
+ 	"spam_dnsbl_server_body":              {"name", "zone"},
+ 	"spam_dnsbl_server_domain":            {"name", "zone"},
+@@ -136,8 +146,9 @@ var requiredOverrides = map[string][]string{
+ 	"spam_tag_reject":                     {"tag"},
+ 	"spam_tag_score":                      {"tag"},
+ 	"store_lookup":                        {"namespace", "store"},
++	"symmetric_key":                       {"key"},
+ 	"tracer_log":                          {"path"},
+-	"tracer_otel_http":                    {"endpoint"},
++	"tracer_otel_http":                    {"url"},
+ 	"user":                                {"domainId", "name"},
+ 	"web_hook":                            {"url"},
+ }
