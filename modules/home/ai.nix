@@ -256,6 +256,8 @@ in {
           CLAUDE_CODE_ALWAYS_ENABLE_EFFORT = "1";
         };
         modelPicker.options = claudeGatewayModels;
+        # Keep transcripts; the default deletes them after 30 days.
+        cleanupPeriodDays = 36500;
         autoMemoryEnabled = false;
         disableRemoteControl = true;
         enableAllProjectMcpServers = true;
