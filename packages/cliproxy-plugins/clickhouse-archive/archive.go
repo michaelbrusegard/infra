@@ -43,11 +43,13 @@ type archive struct {
 	mu      sync.Mutex
 	pending map[string]*pendingRequest
 
-	rows     chan row
-	stop     chan struct{}
-	done     chan struct{}
-	started  atomic.Bool
-	stopOnce sync.Once
+	rows chan row
+	// Includes rows in the channel and the batches awaiting insertion.
+	queuedBytes atomic.Int64
+	stop        chan struct{}
+	done        chan struct{}
+	started     atomic.Bool
+	stopOnce    sync.Once
 }
 
 type pendingRequest struct {
@@ -405,9 +407,21 @@ func (a *archive) enqueue(table string, v any) {
 		log.Printf("clickhouse-archive: encode %s row: %v", table, err)
 		return
 	}
+	size := int64(len(data) + 1)
+	for {
+		queued := a.queuedBytes.Load()
+		if size > maxQueueBytes-queued {
+			log.Printf("clickhouse-archive: backlog full, dropped %s row", table)
+			return
+		}
+		if a.queuedBytes.CompareAndSwap(queued, queued+size) {
+			break
+		}
+	}
 	select {
 	case a.rows <- row{table: table, json: data}:
 	default:
+		a.queuedBytes.Add(-size)
 		log.Printf("clickhouse-archive: queue full, dropped %s row", table)
 	}
 }
@@ -417,7 +431,6 @@ func (a *archive) flushLoop() {
 	ticker := time.NewTicker(flushInterval)
 	defer ticker.Stop()
 	batches := map[string]*bytes.Buffer{}
-	queued := 0
 	failing := false
 	add := func(r row) {
 		buf := batches[r.table]
@@ -427,7 +440,6 @@ func (a *archive) flushLoop() {
 		}
 		buf.Write(r.json)
 		buf.WriteByte('\n')
-		queued += len(r.json) + 1
 	}
 	flush := func() {
 		failing = false
@@ -440,17 +452,14 @@ func (a *archive) flushLoop() {
 				failing = true
 				continue
 			}
-			queued -= buf.Len()
-			buf.Reset()
+			a.queuedBytes.Add(-int64(buf.Len()))
+			// Release the backing allocation as well as its byte budget.
+			delete(batches, table)
 		}
 	}
 	for {
 		select {
 		case r := <-a.rows:
-			if queued+len(r.json) > maxQueueBytes {
-				log.Printf("clickhouse-archive: backlog full, dropped %s row", r.table)
-				continue
-			}
 			add(r)
 			// After a failed insert, only the ticker retries.
 			if !failing && batches[r.table].Len() >= maxBatchBytes {

@@ -120,15 +120,17 @@ spec:
               drop:
                 - ALL
           env:
+            # The host and each c-shared plugin have their own Go runtime.
+            # Leave room for all three heaps and native allocations.
             - name: GOMEMLIMIT
-              value: 900MiB
+              value: 384MiB
           resources:
             requests:
               cpu: 100m
-              memory: 256Mi
+              memory: 512Mi
             limits:
               cpu: 500m
-              memory: 1Gi
+              memory: 2Gi
           startupProbe:
             tcpSocket:
               port: http
