@@ -7,7 +7,7 @@ COPY . .
 RUN test -z "$(gofmt -l .)" \
   && go vet ./... \
   && go test ./... \
-  && for plugin in clickhouse-archive; do \
+  && for plugin in clickhouse-archive soonest-reset; do \
     CGO_ENABLED=1 go build -trimpath -buildvcs=false -buildmode=c-shared \
       -o "/out/$plugin.so" "./$plugin" || exit 1; \
   done

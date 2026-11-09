@@ -20,6 +20,7 @@ data:
     request-retry: 3
     max-retry-interval: 30
     # Keep each conversation on one account; prompt caches are per account.
+    # Ignored while the soonest-reset plugin picks, which does the same.
     routing:
       session-affinity: true
     quota-exceeded:
@@ -31,4 +32,7 @@ data:
       configs:
         # Archives requests, responses, and usage into ClickHouse.
         clickhouse-archive:
+          enabled: true
+        # Sends new sessions to the account whose quota resets soonest.
+        soonest-reset:
           enabled: true
