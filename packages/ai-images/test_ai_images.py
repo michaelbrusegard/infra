@@ -52,7 +52,7 @@ class ImageClientTests(unittest.TestCase):
         path, headers, body = self.requests[0]
         self.assertEqual(path, "/v1/images/generations")
         self.assertEqual(headers["Authorization"], "Bearer netbird")
-        self.assertEqual(body["model"], "gpt-image-2.5-sunburst")
+        self.assertEqual(body["model"], "gpt-image-2.6-sunburst")
         self.assertEqual(body["prompt"], "Paint a beach")
         self.assertEqual(self.output.read_bytes(), PNG)
         self.assertEqual(result["path"], str(self.output))

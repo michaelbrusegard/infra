@@ -13,14 +13,14 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
 GATEWAY = "https://ai.asgard.michaelbrusegard.com/v1"
-DEFAULT_MODEL = "gpt-image-2.5-sunburst"
-MODELS = (DEFAULT_MODEL, "gpt-image-2.5-flare", "gpt-image-2")
+DEFAULT_MODEL = "gpt-image-2.6-sunburst"
+MODELS = (DEFAULT_MODEL, "gpt-image-2.6-flare", "gpt-image-2")
 # NetBird recovers routing metadata from requests up to 32 MiB. Leave room
 # for the prompt and base64 expansion instead of failing after a long upload.
 MAX_REQUEST_BYTES = 30 * 1024 * 1024
 MAX_RESPONSE_BYTES = 64 * 1024 * 1024
 Quality = Literal["low", "medium", "high", "xhigh", "max", "auto"]
-Model = Literal["gpt-image-2.5-sunburst", "gpt-image-2.5-flare", "gpt-image-2"]
+Model = Literal["gpt-image-2.6-sunburst", "gpt-image-2.6-flare", "gpt-image-2"]
 
 
 class NoRedirect(HTTPRedirectHandler):
