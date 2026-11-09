@@ -62,7 +62,7 @@ spec:
         - name: install-plugins
           # CI swaps this for the plugin image once it is built and publicly
           # pullable. Until then there is nothing to copy.
-          image: busybox:1.38.0@sha256:f97baa533a26513c453a362be331a43eb60214302f449c16571b23cea141dce4
+          image: ghcr.io/michaelbrusegard/cliproxy-plugins:sha-7c285f6c220771ec089fcb1c8d094ee20d299298@sha256:3b4541da27a24c5308a4343e97abc483445cb915e5a5e1ed9c569d5e2466a117
           command:
             - sh
             - -c
