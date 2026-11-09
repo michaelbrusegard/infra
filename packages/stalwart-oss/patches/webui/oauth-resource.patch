@@ -1,0 +1,11 @@
+--- a/src/services/auth/oauth.ts
++++ b/src/services/auth/oauth.ts
+@@ -59,7 +59,7 @@ export function selectResource(
+     return null;
+   }
+   const listed = discovery.protected_resources;
+-  if (Array.isArray(listed) && !listed.includes(origin)) return null;
++  if (!Array.isArray(listed) || !listed.includes(origin)) return null;
+   return origin;
+ }
+ 

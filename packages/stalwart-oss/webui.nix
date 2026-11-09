@@ -17,12 +17,13 @@ buildNpmPackage (finalAttrs: {
   npmDepsHash = "sha256-AOgnRg8lcNvQUm7kAgdPKgttBj78pUz0oFU26C/7Z6A=";
   nativeBuildInputs = [python3 zip];
 
-  # Cosmetic only: retain all edition checks and feature authorization. Our
+  # Retain all edition checks and feature authorization. Our
   # server's schema exposes its independently implemented SCIM capabilities.
   # sel-free-build only drops a parameter the SEL dashboard code used.
   patches = [
     ./patches/webui/no-upsell.patch
     ./patches/webui/sel-free-build.patch
+    ./patches/webui/oauth-resource.patch
   ];
   patchFlags = ["-p1" "--fuzz=0"];
   # WebUI 2 ships the Enterprise dashboards and live tracing under the SEL.
@@ -60,11 +61,12 @@ buildNpmPackage (finalAttrs: {
     PY
   '';
 
-  # WebUI 2 has no unit tests; lint catches leftovers of the SEL removal.
+  # Exercise the real OAuth modules; lint also catches SEL removal leftovers.
   doCheck = true;
   checkPhase = ''
     runHook preCheck
     npm run lint
+    node ${./test_webui_oauth.cjs}
     runHook postCheck
   '';
   installPhase = ''
