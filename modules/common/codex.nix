@@ -24,9 +24,10 @@ in {
       experimental_bearer_token = "netbird";
       wire_api = "responses";
       requires_openai_auth = false;
-      # NetBird checks HTTP requests, not subsequent WebSocket messages.
-      # Keep Responses on SSE until per-message model checks are available.
-      supports_websockets = false;
+      # Each turn sends only new input instead of the whole conversation.
+      # NetBird cannot see a socket's messages, so it admits one only while
+      # no policy restricts models; otherwise Codex falls back to SSE.
+      supports_websockets = true;
       supports_standalone_web_search = true;
     };
     approval_policy = "never";
