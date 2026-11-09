@@ -18,6 +18,10 @@ data:
       <postgresql_port remove="remove"/>
       <interserver_http_port remove="remove"/>
 
+      <access_control_improvements>
+        <settings_constraints_replace_previous>true</settings_constraints_replace_previous>
+      </access_control_improvements>
+
       <!-- Keep only a short query log; the other system logs grow without bound
            and nothing here reads them. -->
       <query_log>
@@ -44,6 +48,23 @@ data:
     </clickhouse>
   users.xml: |
     <clickhouse>
+      <profiles>
+        <grafana>
+          <readonly>1</readonly>
+          <max_execution_time>30</max_execution_time>
+          <max_memory_usage>536870912</max_memory_usage>
+          <max_threads>2</max_threads>
+          <max_result_rows>100000</max_result_rows>
+          <constraints>
+            <!-- Queries use 30s; the driver's connection health check uses 60s. -->
+            <max_execution_time>
+              <min>1</min>
+              <max>60</max>
+              <changeable_in_readonly/>
+            </max_execution_time>
+          </constraints>
+        </grafana>
+      </profiles>
       <users>
         <!-- Admin access is kubectl exec only. -->
         <default>
@@ -66,6 +87,20 @@ data:
             <query>GRANT INSERT ON llm.usage</query>
           </grants>
         </cliproxy>
+        <!-- Network policy trusts only CLIProxy and Grafana pods. As with the
+             writer, authentication is at that boundary; allowed pods can select
+             either passwordless identity. Expose only the metrics view here. -->
+        <grafana>
+          <no_password/>
+          <networks>
+            <ip>::/0</ip>
+          </networks>
+          <profile>grafana</profile>
+          <quota>default</quota>
+          <grants>
+            <query>GRANT SELECT ON llm.usage_metrics</query>
+          </grants>
+        </grafana>
       </users>
     </clickhouse>
   schema.sql: |
@@ -136,6 +171,47 @@ data:
     ENGINE = MergeTree
     PARTITION BY toYYYYMM(requested_at)
     ORDER BY (requested_at, trace_id, request_id);
+
+    -- Grafana cannot read prompt bodies, failure bodies, headers, or account IDs.
+    -- A definer view lets it query metrics without access to the source table.
+    -- Current standard API-equivalent USD rates, verified 2026-11-09:
+    -- https://developers.openai.com/api/docs/models/gpt-6.1-sol
+    -- https://developers.openai.com/api/docs/models/gpt-6-astra
+    -- https://developers.openai.com/api/docs/models/gpt-6-luna
+    -- https://platform.claude.com/docs/en/about-claude/pricing
+    -- Unknown models and cache writes with unknown TTL are explicitly unpriced.
+    -- Speed/region/tool fees and subscription billing are outside this estimate.
+    CREATE OR REPLACE VIEW llm.usage_metrics
+    DEFINER = default SQL SECURITY DEFINER AS
+    WITH
+        greatest(u.cache_read_tokens, if(provider = 'claude', 0, u.cached_tokens)) AS read_tokens,
+        u.cache_creation_tokens AS write_tokens,
+        if(provider = 'claude', u.input_tokens,
+            toUInt64(greatest(toInt64(u.input_tokens) - toInt64(read_tokens) - toInt64(write_tokens), 0))) AS fresh_tokens,
+        if(provider = 'claude', u.input_tokens + read_tokens + write_tokens, u.input_tokens) AS all_input_tokens,
+        -- USD per million tokens: uncached input, cache reads, output.
+        multiIf(
+            provider = 'codex' AND model = 'gpt-6.1-sol', tuple(2., 0.1, 10.),
+            provider = 'codex' AND model = 'gpt-6-sol', tuple(2., 0.2, 10.),
+            provider = 'codex' AND model = 'gpt-6-astra', tuple(10., 1., 50.),
+            provider = 'codex' AND model = 'gpt-6-luna', tuple(0.1, 0.01, 0.5),
+            provider = 'claude' AND model = 'claude-opus-5-5', tuple(4., 0.2, 20.),
+            tuple(0., 0., 0.)) AS rates,
+        rates.1 > 0 AND write_tokens = 0 AS priced,
+        provider = 'codex' AND all_input_tokens > 272000 AS long_context
+    SELECT
+        requested_at, provider, model, auth_type, trace_id,
+        failed, failure_status, latency_ms, ttft_ms,
+        all_input_tokens AS input_tokens,
+        output_tokens, reasoning_tokens,
+        read_tokens AS cache_read_tokens, write_tokens AS cache_creation_tokens,
+        fresh_tokens AS uncached_input_tokens,
+        all_input_tokens + output_tokens AS total_tokens,
+        if(priced,
+            ((fresh_tokens * rates.1 + read_tokens * rates.2) * if(long_context, 2., 1.)
+                + output_tokens * rates.3 * if(long_context, 1.5, 1.)) / 1000000.,
+            NULL) AS estimated_cost_usd
+    FROM llm.usage AS u;
 
     -- Raw agent transcript lines from a one-off backfill of each machine's
     -- local history. Agent filenames can repeat under different parent sessions,

@@ -149,6 +149,8 @@ spec:
                         - /etc/alertmanager/secrets/hermes-alert-webhook/WEBHOOK_SECRET
 
     grafana:
+      plugins:
+        - grafana-clickhouse-datasource@4.23.4
       deploymentStrategy:
         type: RollingUpdate
         rollingUpdate:
@@ -173,3 +175,20 @@ spec:
           type: loki
           url: http://loki.monitoring.svc.cluster.local:3100
           access: proxy
+        - name: AI usage
+          uid: ai-usage-clickhouse
+          type: grafana-clickhouse-datasource
+          access: proxy
+          editable: false
+          jsonData:
+            host: clickhouse.clickhouse.svc.cluster.local
+            port: 8123
+            protocol: http
+            username: grafana
+            defaultDatabase: llm
+            defaultTable: usage_metrics
+            dialTimeout: 5
+            queryTimeout: 30
+            maxOpenConns: 4
+            maxIdleConns: 2
+            enableMapKeysDiscovery: false

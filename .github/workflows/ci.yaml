@@ -109,6 +109,8 @@ jobs:
         run: |
           python3 -m unittest discover -s gitops/espresso/apps/netbird/agent-network -v
           python3 -m unittest discover -s packages/ai-images -v
+      - name: Test AI usage dashboard and ClickHouse permissions
+        run: python3 gitops/espresso/tests/ai-usage.py
       - name: Run Hermes Android unit tests
         run: |
           nix-shell \

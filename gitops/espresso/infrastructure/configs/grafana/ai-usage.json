@@ -1,0 +1,834 @@
+{
+  "uid": "ai-usage",
+  "title": "AI usage",
+  "description": "Live CLIProxy tokens, reliability, latency, and standard API-equivalent estimates.",
+  "tags": [
+    "ai",
+    "cliproxy"
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "timezone": "browser",
+  "refresh": "1m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "provider",
+        "label": "Provider",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "ai-usage-clickhouse"
+        },
+        "query": "SELECT DISTINCT provider FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at) ORDER BY provider",
+        "definition": "SELECT DISTINCT provider FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at) ORDER BY provider",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": [],
+        "sort": 1
+      },
+      {
+        "name": "model",
+        "label": "Model",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "ai-usage-clickhouse"
+        },
+        "query": "SELECT DISTINCT model FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at) AND $__conditionalAll(provider IN (${provider:singlequote}), $provider) ORDER BY model",
+        "definition": "SELECT DISTINCT model FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at) AND $__conditionalAll(provider IN (${provider:singlequote}), $provider) ORDER BY model",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": [],
+        "sort": 1
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "AI usage",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 4
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Live CLIProxy usage only. Imported Claude, Codex, Pi, and OpenCode transcripts are not included.\n\nEach usage row is an upstream call/attempt, including retries. A proxy trace may contain several WebSocket calls. Input includes cache reads/writes; reasoning is already part of output.\n\n**Cost is a current standard API-equivalent estimate, not your subscription bill or remaining allowance.** Rates verified 2026-11-09; OpenAI long-context multipliers are included. Speed, region, tool fees, and cache-write calls are excluded. Unknown models (currently Kimi) show as unpriced. Totals cover priced calls only. [OpenAI rates](https://developers.openai.com/api/docs/pricing) \u00b7 [Claude rates](https://platform.claude.com/docs/en/about-claude/pricing)"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Upstream calls / attempts",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Includes failed attempts and retries.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT count() AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "format": 1,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Failed attempts",
+      "type": "stat",
+      "gridPos": {
+        "x": 4,
+        "y": 4,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Upstream failures; not final client request outcomes.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT countIf(failed) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "format": 1,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Rate-limited attempts",
+      "type": "stat",
+      "gridPos": {
+        "x": 8,
+        "y": 4,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Attempts that returned an upstream HTTP 429.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT countIf(failure_status = 429) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "format": 1,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Input cache hit rate",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Cached reads divided by all input tokens.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT sum(cache_read_tokens) / nullIf(sum(input_tokens), 0) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "format": 1,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Standard API equivalent",
+      "type": "stat",
+      "gridPos": {
+        "x": 16,
+        "y": 4,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Priced calls only. Not actual subscription charges. See unpriced calls beside this total.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT sumOrNull(estimated_cost_usd) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "format": 1,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Unpriced calls with tokens",
+      "type": "stat",
+      "gridPos": {
+        "x": 20,
+        "y": 4,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Calls with usage excluded from cost because the model rate or cache-write TTL is unavailable.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT countIf(isNull(estimated_cost_usd) AND total_tokens > 0) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "format": 1,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Token breakdown",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Components sum to total tokens. Cache hits are not added to input twice; reasoning is not added to output twice.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 35,
+            "lineWidth": 2,
+            "spanNulls": false,
+            "stacking": {
+              "mode": "normal",
+              "group": "tokens"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time,\n  sum(uncached_input_tokens) AS \"Uncached input\", sum(cache_read_tokens) AS \"Cache read\",\n  sum(cache_creation_tokens) AS \"Cache write\", sum(output_tokens) AS \"Output (includes reasoning)\"\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time ORDER BY time",
+          "format": 0,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Tokens by model",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time, model, sum(total_tokens) AS tokens\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time, model ORDER BY time, model",
+          "format": 0,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Daily tokens by provider (UTC)",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "description": "UTC calendar days; the first and last day follow the selected time range.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT toStartOfDay(requested_at, 'UTC') AS time, provider, sum(total_tokens) AS tokens\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time, provider ORDER BY time, provider",
+          "format": 0,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Standard API equivalent over time",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Current standard API rates applied to captured usage. Unpriced calls are excluded; this is not billing data.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "noValue": "N/A",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time, model, sumOrNull(estimated_cost_usd) AS cost\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time, model ORDER BY time, model",
+          "format": 0,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Successful call latency",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Successful attempts only. Zero or missing timings are excluded.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "noValue": "N/A",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time,\n  quantileOrNullIf(0.5)(latency_ms, NOT failed AND latency_ms > 0) AS \"Median\",\n  quantileOrNullIf(0.95)(latency_ms, NOT failed AND latency_ms > 0) AS \"p95\",\n  quantileOrNullIf(0.5)(ttft_ms, NOT failed AND ttft_ms > 0) AS \"Median time to first token\"\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time ORDER BY time",
+          "format": 0,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Call outcomes",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time,\n  countIf(NOT failed) AS \"Successful\", countIf(failed AND failure_status != 429) AS \"Other failures\",\n  countIf(failure_status = 429) AS \"Rate limited\"\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time ORDER BY time",
+          "format": 0,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Usage by model and provider",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 24,
+        "h": 9
+      },
+      "description": "Calls include retries. Proxy traces are inbound requests/connections, not model turns. Cost is only the priced subset.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "standard_api_equivalent_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT provider, model, count() AS calls, uniqExact(trace_id) AS proxy_traces,\n  countIf(failed) AS failures, countIf(failure_status = 429) AS rate_limited,\n  sum(input_tokens) AS input, sum(cache_read_tokens) AS cache_read,\n  sum(cache_creation_tokens) AS cache_write, sum(output_tokens) AS output,\n  sum(reasoning_tokens) AS reasoning_subset,\n  sumOrNull(estimated_cost_usd) AS standard_api_equivalent_usd,\n  countIf(isNull(estimated_cost_usd) AND total_tokens > 0) AS unpriced_calls\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY provider, model ORDER BY input DESC",
+          "format": 1,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "Daily usage (UTC)",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 41,
+        "w": 24,
+        "h": 8
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "N/A"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "standard_api_equivalent_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ai-usage-clickhouse"
+      },
+      "interval": "1m",
+      "maxDataPoints": 720,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ai-usage-clickhouse"
+          },
+          "editorType": "sql",
+          "rawSql": "SELECT toDate(requested_at, 'UTC') AS day, count() AS calls,\n  sum(input_tokens) AS input, sum(output_tokens) AS output,\n  sum(cache_read_tokens) AS cache_read, countIf(failed) AS failures,\n  sumOrNull(estimated_cost_usd) AS standard_api_equivalent_usd,\n  countIf(isNull(estimated_cost_usd) AND total_tokens > 0) AS unpriced_calls\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY day ORDER BY day DESC",
+          "format": 1,
+          "pluginVersion": "4.23.4"
+        }
+      ]
+    }
+  ]
+}

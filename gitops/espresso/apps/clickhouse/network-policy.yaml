@@ -25,6 +25,16 @@ spec:
         - ports:
             - port: "8123"
               protocol: TCP
+    # Grafana's backend queries the metrics view; no browser-to-database route.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            k8s:app.kubernetes.io/name: grafana
+            k8s:app.kubernetes.io/instance: kube-prometheus-stack
+      toPorts:
+        - ports:
+            - port: "8123"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
