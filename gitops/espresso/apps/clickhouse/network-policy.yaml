@@ -35,6 +35,19 @@ spec:
         - ports:
             - port: "8123"
               protocol: TCP
+    # Kuma can check health without accessing the database HTTP interface.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "8123"
+              protocol: TCP
+          rules:
+            http:
+              - method: GET
+                path: "^/ping$"
   egress:
     - toEndpoints:
         - matchLabels:

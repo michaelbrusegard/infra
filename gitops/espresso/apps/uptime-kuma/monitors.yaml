@@ -73,6 +73,16 @@ data:
         "max_retries": 3,
         "retry_interval": 30,
         "active": true
+      },
+      {
+        "name": "ClickHouse",
+        "type": "http",
+        "parent_name": "infrastructure[0]",
+        "url": "http://clickhouse.clickhouse.svc.cluster.local:8123/ping",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
       }
     ]
   networking.json: |
