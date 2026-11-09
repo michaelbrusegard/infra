@@ -167,6 +167,26 @@ class BootstrapTests(unittest.TestCase):
             self.run_bootstrap()
         self.assert_no_mutation()
 
+    def test_renamed_service_moves_provider_and_keeps_settings(self):
+        self.run_bootstrap()
+        self.api.providers[0].update({
+            "upstream_url": "http://old.old.svc.cluster.local:8317",
+            "models": [{"id": "restricted-model"}],
+        })
+        before = copy.deepcopy((self.api.providers[0], self.api.policies))
+        self.api.calls.clear()
+        self.run_bootstrap()
+        expected = {
+            **before[0], "upstream_url": self.config["provider"]["upstream_url"],
+            "api_key": "test-upstream-secret",
+        }
+        self.assertEqual(self.api.providers[0], expected)
+        self.assertEqual(self.api.policies, before[1])
+        self.assertEqual(
+            [(method, path) for method, path, _ in self.api.calls if method != "GET"],
+            [("PUT", "/agent-network/providers/providers0")],
+        )
+
     def test_existing_endpoint_is_never_replaced(self):
         self.api.settings = {"endpoint": "other.example.test", "proxy_address": "other.example.test"}
         with self.assertRaisesRegex(RuntimeError, "refusing to replace"):

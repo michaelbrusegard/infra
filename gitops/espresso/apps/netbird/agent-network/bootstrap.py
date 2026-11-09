@@ -7,7 +7,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
 
 
@@ -41,6 +41,10 @@ def named(items, name):
     return matches[0] if matches else None
 
 
+def in_cluster(url):
+    return (urlsplit(url).hostname or "").endswith(".svc.cluster.local")
+
+
 def configure_provider(api, desired, upstream_key, state_path):
     path = "/agent-network/providers"
     provider = named(api("GET", path), desired["name"])
@@ -49,10 +53,14 @@ def configure_provider(api, desired, upstream_key, state_path):
     if provider is None:
         provider = api("POST", path, {**desired, "api_key": upstream_key})
     else:
-        # Never send the CLIProxy credential to a different upstream.
-        if any(provider[key] != desired[key] for key in ("provider_id", "upstream_url")):
+        # Never send the CLIProxy credential to a different upstream. Moving
+        # between this cluster's Services, as when renaming CLIProxy's, is fine.
+        moved = provider["upstream_url"] != desired["upstream_url"]
+        if provider["provider_id"] != desired["provider_id"] or moved and not (
+            in_cluster(provider["upstream_url"]) and in_cluster(desired["upstream_url"])
+        ):
             raise RuntimeError("Existing provider points elsewhere; refusing to send credentials")
-        if last_digest == key_digest:
+        if last_digest == key_digest and not moved:
             return provider
         # A rotated key must preserve model restrictions and every other setting
         # managed in the dashboard. These are the 0.77 provider request fields.
@@ -63,7 +71,7 @@ def configure_provider(api, desired, upstream_key, state_path):
         )
         body = {key: provider[key] for key in fields if key in provider}
         provider = api("PUT", f"{path}/{quote(provider['id'], safe='')}", {
-            **body, "api_key": upstream_key,
+            **body, "upstream_url": desired["upstream_url"], "api_key": upstream_key,
         })
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(key_digest + "\n")
