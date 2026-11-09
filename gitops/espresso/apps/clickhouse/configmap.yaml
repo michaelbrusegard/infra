@@ -138,7 +138,8 @@ data:
     ORDER BY (requested_at, trace_id, request_id);
 
     -- Raw agent transcript lines from a one-off backfill of each machine's
-    -- local history. Rows with the same key replace each other.
+    -- local history. Agent filenames can repeat under different parent sessions,
+    -- so the source file is part of the key used to replace repeated imports.
     CREATE TABLE IF NOT EXISTS llm.transcripts
     (
         source LowCardinality(String),
@@ -151,4 +152,4 @@ data:
         ingested_at DateTime DEFAULT now()
     )
     ENGINE = ReplacingMergeTree(ingested_at)
-    ORDER BY (source, host, session, id);
+    ORDER BY (source, host, session, path, id);
