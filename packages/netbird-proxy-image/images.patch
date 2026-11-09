@@ -373,3 +373,325 @@ index 0000000..d445702
 +		}
 +	}
 +}
+diff --git a/proxy/internal/middleware/builtin/llm_router/middleware.go b/proxy/internal/middleware/builtin/llm_router/middleware.go
+index 5c0a451..c223a39 100644
+--- a/proxy/internal/middleware/builtin/llm_router/middleware.go
++++ b/proxy/internal/middleware/builtin/llm_router/middleware.go
+@@ -194,6 +194,10 @@ func (m *Middleware) Invoke(_ context.Context, in *middleware.Input) (*middlewar
+ 		}), nil
+ 	}
+ 
++	if model == "" && isResponsesWebsocketHandshake(reqPath, surface, in) {
++		return m.routeResponsesWebsocket(reqPath, surface, in.UserGroups), nil
++	}
++
+ 	if model == "" {
+ 		return m.routeModelless(reqPath, surface, in.Method, in.UserGroups), nil
+ 	}
+@@ -267,6 +271,55 @@ func (m *Middleware) routeModelless(reqPath, surface, method string, userGroups
+ 	}
+ }
+ 
++// responsesWebsocketPath is the OpenAI Responses endpoint Codex upgrades to a
++// WebSocket when the provider sets supports_websockets.
++const responsesWebsocketPath = "/v1/responses"
++
++// isResponsesWebsocketHandshake reports whether the request is a WebSocket
++// upgrade to the OpenAI Responses endpoint. The handshake is a bodiless GET;
++// every model arrives later in a response.create frame the proxy never reads.
++func isResponsesWebsocketHandshake(reqPath, surface string, in *middleware.Input) bool {
++	if in.Method != http.MethodGet || reqPath != responsesWebsocketPath || surface != "openai" {
++		return false
++	}
++	var upgrade, connection bool
++	for _, kv := range in.Headers {
++		switch {
++		case strings.EqualFold(kv.Key, "Upgrade"):
++			upgrade = upgrade || strings.EqualFold(strings.TrimSpace(kv.Value), "websocket")
++		case strings.EqualFold(kv.Key, "Connection"):
++			for _, token := range strings.Split(kv.Value, ",") {
++				connection = connection || strings.EqualFold(strings.TrimSpace(token), "upgrade")
++			}
++		}
++	}
++	return upgrade && connection
++}
++
++// routeResponsesWebsocket authorises a Responses WebSocket handshake. The
++// proxy cannot check the model of any later frame, so a socket is admitted
++// only where no model check could deny it: a route that claims every model,
++// for a caller none of whose policies sets a model allowlist. Group
++// authorisation and upstream credential injection are unchanged. The socket
++// is deliberately not marked non-inference, so the limit check still runs.
++func (m *Middleware) routeResponsesWebsocket(reqPath, surface string, userGroups []string) *middleware.Output {
++	route, outcome := m.matchRoute("", surface, reqPath, userGroups)
++	switch outcome {
++	case matchOutcomeFound:
++	case matchOutcomeUnauthorised:
++		return denyNoAuthorisedRoute(surface, "")
++	default:
++		return denyMissingModel(surface)
++	}
++	if len(route.Models) > 0 || route.Vertex || route.Bedrock {
++		return denyMissingModel(surface)
++	}
++	if _, restricted := policyPermittedModels(route, userGroups); restricted {
++		return denyMissingModel(surface)
++	}
++	return m.allowWithRoute(route, surface, userGroups)
++}
++
+ // isNonInferenceMethod reports whether a request method is one the
+ // non-inference endpoints actually use: the listing and the per-model lookup
+ // are GET, the connection-warming probe is HEAD or GET. The method is the only
+diff --git a/proxy/internal/middleware/builtin/llm_router/websocket_test.go b/proxy/internal/middleware/builtin/llm_router/websocket_test.go
+new file mode 100644
+index 0000000..6e8946d
+--- /dev/null
++++ b/proxy/internal/middleware/builtin/llm_router/websocket_test.go
+@@ -0,0 +1,92 @@
++package llm_router
++
++import (
++	"context"
++	"net/http"
++	"testing"
++
++	"github.com/stretchr/testify/require"
++
++	"github.com/netbirdio/netbird/proxy/internal/middleware"
++)
++
++func TestRouter_ResponsesWebsocket(t *testing.T) {
++	gateway := ProviderRoute{
++		ID: "gateway", UpstreamScheme: "http", UpstreamHost: "gateway.internal",
++		AuthHeaderName: "Authorization", AuthHeaderValue: "Bearer upstream",
++		AllowedGroupIDs: []string{defaultTestGroup},
++		ModelPolicies:   []ModelPolicyRule{{GroupIDs: []string{defaultTestGroup}}},
++	}
++	handshake := func() *middleware.Input {
++		return &middleware.Input{
++			Slot: middleware.SlotOnRequest, Method: http.MethodGet, URL: "/v1/responses",
++			Headers: []middleware.KV{
++				{Key: "Connection", Value: "keep-alive, Upgrade"},
++				{Key: "Upgrade", Value: "websocket"},
++			},
++			Metadata:   []middleware.KV{{Key: middleware.KeyLLMProvider, Value: "openai"}},
++			UserGroups: []string{defaultTestGroup},
++		}
++	}
++
++	for name, tc := range map[string]struct {
++		route  func(ProviderRoute) ProviderRoute
++		input  func(*middleware.Input)
++		reason string
++	}{
++		"allow": {},
++		"group-denied": {
++			input:  func(in *middleware.Input) { in.UserGroups = []string{"other"} },
++			reason: denyReasonNoAuthorisedRoute,
++		},
++		"enumerated-models": {
++			route:  func(r ProviderRoute) ProviderRoute { r.Models = []string{"gpt-test"}; return r },
++			reason: denyReasonNotRoutable,
++		},
++		"policy-allowlist": {
++			route: func(r ProviderRoute) ProviderRoute {
++				r.ModelPolicies = []ModelPolicyRule{{GroupIDs: []string{defaultTestGroup}, Models: []string{"gpt-test"}}}
++				return r
++			},
++			reason: denyReasonNotRoutable,
++		},
++		"no-upgrade": {
++			input:  func(in *middleware.Input) { in.Headers = nil },
++			reason: denyReasonNotRoutable,
++		},
++		"post": {
++			input:  func(in *middleware.Input) { in.Method = http.MethodPost },
++			reason: denyReasonNotRoutable,
++		},
++		"other-path": {
++			input:  func(in *middleware.Input) { in.URL = "/v1/chat/completions" },
++			reason: denyReasonNotRoutable,
++		},
++	} {
++		t.Run(name, func(t *testing.T) {
++			route := gateway
++			if tc.route != nil {
++				route = tc.route(route)
++			}
++			in := handshake()
++			if tc.input != nil {
++				tc.input(in)
++			}
++			out, err := New(Config{Providers: []ProviderRoute{route}}).Invoke(context.Background(), in)
++			require.NoError(t, err)
++			if tc.reason != "" {
++				require.Equal(t, middleware.DecisionDeny, out.Decision)
++				reason, _ := metaValue(t, out.Metadata, middleware.KeyLLMPolicyReason)
++				require.Equal(t, tc.reason, reason)
++				return
++			}
++			require.Equal(t, middleware.DecisionAllow, out.Decision)
++			rewrite := out.Mutations.RewriteUpstream
++			require.Equal(t, "gateway.internal", rewrite.Host)
++			require.Equal(t, "Bearer upstream", rewrite.AuthHeader.Value)
++			require.Contains(t, rewrite.StripHeaders, "Authorization")
++			_, nonInference := metaValue(t, out.Metadata, middleware.KeyLLMNonInference)
++			require.False(t, nonInference, "the limit check must still run for a socket")
++		})
++	}
++}
+diff --git a/proxy/internal/proxy/reverseproxy.go b/proxy/internal/proxy/reverseproxy.go
+index bf3ccae..e513e22 100644
+--- a/proxy/internal/proxy/reverseproxy.go
++++ b/proxy/internal/proxy/reverseproxy.go
+@@ -229,7 +229,7 @@ func (p *ReverseProxy) serveWithChain(w http.ResponseWriter, r *http.Request, ct
+ 		return
+ 	}
+ 
+-	respWriter, capturingWriter := p.newResponseWriter(ctx, w, result, capturedData)
++	respWriter, capturingWriter := p.newResponseWriter(ctx, w, r, result, capturedData)
+ 	if capturingWriter != nil {
+ 		defer capturingWriter.Release()
+ 		defer p.observeResponse(ctx, chain, acc, reqInput, requestMeta, capturingWriter, w, capturedData, result, middlewareIDs)
+@@ -289,11 +289,16 @@ func (p *ReverseProxy) serveDeny(w http.ResponseWriter, denyOutput *middleware.O
+ // response capture is enabled and not bypassed it wraps w in a capturing
+ // writer (also returned so the caller can release it and feed the response
+ // leg); otherwise the capturing writer is nil and w is used directly.
+-func (p *ReverseProxy) newResponseWriter(ctx context.Context, w http.ResponseWriter, result targetResult, capturedData *CapturedData) (http.ResponseWriter, *bodytap.CapturingResponseWriter) {
++func (p *ReverseProxy) newResponseWriter(ctx context.Context, w http.ResponseWriter, r *http.Request, result targetResult, capturedData *CapturedData) (http.ResponseWriter, *bodytap.CapturingResponseWriter) {
+ 	pt := result.target
+ 	if pt.CaptureConfig == nil || pt.CaptureConfig.MaxResponseBytes <= 0 {
+ 		return w, nil
+ 	}
++	// An upgraded connection's bytes bypass the writer after the hijack, so a
++	// capture would see nothing yet hold its budget until the socket closes.
++	if r.Header.Get("Upgrade") != "" {
++		return w, nil
++	}
+ 	capturingWriter := bodytap.NewCapturingResponseWriter(w, pt.CaptureConfig.MaxResponseBytes, p.middlewareManager.Budget())
+ 	if capturingWriter.Bypassed() {
+ 		if capturedData != nil {
+diff --git a/proxy/internal/proxy/websocket_test.go b/proxy/internal/proxy/websocket_test.go
+new file mode 100644
+index 0000000..e865537
+--- /dev/null
++++ b/proxy/internal/proxy/websocket_test.go
+@@ -0,0 +1,116 @@
++package proxy
++
++import (
++	"bufio"
++	"context"
++	"encoding/json"
++	"io"
++	"net"
++	"net/http"
++	"net/http/httptest"
++	"net/url"
++	"testing"
++
++	log "github.com/sirupsen/logrus"
++	"github.com/stretchr/testify/require"
++
++	"github.com/netbirdio/netbird/proxy/internal/middleware"
++	"github.com/netbirdio/netbird/proxy/internal/middleware/bodytap"
++	"github.com/netbirdio/netbird/proxy/internal/middleware/builtin/llm_guardrail"
++	"github.com/netbirdio/netbird/proxy/internal/middleware/builtin/llm_request_parser"
++	"github.com/netbirdio/netbird/proxy/internal/middleware/builtin/llm_router"
++)
++
++// A Responses WebSocket handshake routes through the production chain, gets
++// the upstream credential, and the upgraded stream carries bytes both ways.
++func TestResponsesWebsocketForwarding(t *testing.T) {
++	for _, access := range []string{"allow", "group-denied"} {
++		t.Run(access, func(t *testing.T) {
++			hits := 0
++			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++				hits++
++				require.Equal(t, "/v1/responses", r.URL.Path)
++				require.Equal(t, "Bearer test-upstream-key", r.Header.Get("Authorization"))
++				require.Equal(t, "websocket", r.Header.Get("Upgrade"))
++				conn, buf, err := http.NewResponseController(w).Hijack()
++				require.NoError(t, err)
++				defer conn.Close()
++				_, err = buf.WriteString("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
++				require.NoError(t, err)
++				require.NoError(t, buf.Flush())
++				frame := make([]byte, 4)
++				_, err = io.ReadFull(buf, frame)
++				require.NoError(t, err)
++				_, err = conn.Write(frame)
++				require.NoError(t, err)
++			}))
++			defer upstream.Close()
++			u, err := url.Parse(upstream.URL)
++			require.NoError(t, err)
++
++			registry := middleware.NewRegistry()
++			registry.MustRegister(llm_request_parser.Factory{})
++			registry.MustRegister(llm_router.Factory{})
++			registry.MustRegister(llm_guardrail.Factory{})
++			routerConfig, err := json.Marshal(llm_router.Config{Providers: []llm_router.ProviderRoute{{
++				ID: "cliproxy", UpstreamScheme: u.Scheme, UpstreamHost: u.Host,
++				AllowedGroupIDs: []string{"AI"}, AuthHeaderName: "Authorization", AuthHeaderValue: "Bearer test-upstream-key",
++			}}})
++			require.NoError(t, err)
++			specs := []middleware.Spec{
++				{ID: llm_request_parser.ID, Enabled: true, Slot: middleware.SlotOnRequest, RawConfig: []byte(`{"capture_prompt":false}`)},
++				{ID: llm_router.ID, Enabled: true, Slot: middleware.SlotOnRequest, CanMutate: true, RawConfig: routerConfig},
++				{ID: llm_guardrail.ID, Enabled: true, Slot: middleware.SlotOnRequest, RawConfig: []byte(`{}`)},
++			}
++			logger := log.New()
++			logger.SetLevel(log.ErrorLevel)
++			const captureBytes = 1 << 20
++			manager := middleware.NewManager(captureBytes, nil, logger)
++			manager.SetResolver(middleware.NewResolver(registry))
++			require.NoError(t, manager.Rebuild("ws", []middleware.PathTargetBinding{{ServiceID: "ws", PathID: "/", Specs: specs}}))
++			chain := manager.ChainFor("ws", "/")
++			defer chain.Close(context.Background())
++			proxy := &ReverseProxy{middlewareManager: manager, logger: logger, transport: http.DefaultTransport, forwardedProto: "auto"}
++			result := targetResult{serviceID: "ws", matchedPath: "/", target: &PathTarget{
++				URL: u, AgentNetwork: true, Middlewares: specs,
++				CaptureConfig: &bodytap.Config{MaxRequestBytes: captureBytes, MaxResponseBytes: captureBytes, ContentTypes: []string{"application/json"}},
++			}}
++			groups := []string{"AI"}
++			if access == "group-denied" {
++				groups = []string{"other"}
++			}
++			gateway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++				caller := &CapturedData{}
++				caller.SetUserGroups(groups)
++				proxy.serveWithChain(w, r, r.Context(), result, chain, "", caller)
++			}))
++			defer gateway.Close()
++
++			conn, err := net.Dial("tcp", gateway.Listener.Addr().String())
++			require.NoError(t, err)
++			defer conn.Close()
++			_, err = io.WriteString(conn, "GET /v1/responses HTTP/1.1\r\nHost: ai.test\r\n"+
++				"Authorization: Bearer client-placeholder\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n"+
++				"Sec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"+
++				"OpenAI-Beta: responses_websockets=2026-02-06\r\n\r\n")
++			require.NoError(t, err)
++			reader := bufio.NewReader(conn)
++			response, err := http.ReadResponse(reader, nil)
++			require.NoError(t, err)
++			if access != "allow" {
++				require.Equal(t, http.StatusForbidden, response.StatusCode)
++				require.Zero(t, hits)
++				return
++			}
++			require.Equal(t, http.StatusSwitchingProtocols, response.StatusCode)
++			require.True(t, manager.Budget().Acquire(captureBytes), "an open socket must not hold capture budget")
++			manager.Budget().Release(captureBytes)
++			_, err = io.WriteString(conn, "ping")
++			require.NoError(t, err)
++			echo := make([]byte, 4)
++			_, err = io.ReadFull(reader, echo)
++			require.NoError(t, err)
++			require.Equal(t, "ping", string(echo))
++		})
++	}
++}

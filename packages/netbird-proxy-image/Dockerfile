@@ -11,7 +11,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
       ./proxy/internal/middleware/builtin/llm_request_parser \
       ./proxy/internal/middleware/builtin/llm_router \
       ./proxy/internal/middleware/builtin/llm_guardrail && \
-    go test ./proxy/internal/proxy -run TestImagesHTTPForwarding -count=1 && \
+    go test ./proxy/internal/proxy -run 'TestImagesHTTPForwarding|TestResponsesWebsocketForwarding' -count=1 && \
     go build -trimpath -ldflags='-s -w -X main.Version=0.81.3-infra-images -X github.com/netbirdio/netbird/version.version=0.81.3-infra-images' \
       -o /out/netbird-proxy ./proxy/cmd/proxy
 
