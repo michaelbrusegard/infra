@@ -29,8 +29,8 @@ def manifest(path):
     return json.loads(run("yq", "-o=json", str(BASE / path)).stdout)
 
 
-def expand(sql, provider=None, model=None):
-    for name, value in (("provider", provider), ("model", model)):
+def expand(sql, provider=None, model=None, origin=None):
+    for name, value in (("origin", origin), ("provider", provider), ("model", model)):
         condition = f"$__conditionalAll({name} IN (${{{name}:singlequote}}), ${name})"
         sql = sql.replace(condition, "1=1" if value is None else f"{name} IN ('{value}')")
     sql = sql.replace("$__timeFilter_ms(requested_at)",
@@ -98,6 +98,23 @@ def main():
                 row("luna", "gpt-6-luna", input_tokens=1000, output_tokens=100),
             ]
             query("INSERT INTO llm.usage FORMAT JSONEachRow\n" + "\n".join(map(json.dumps, rows)))
+            old_stamp = (datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=90)).strftime("%Y-%m-%d %H:%M:%S.000")
+            history = [
+                dict(event_id='history-claude', source='claude-code', requested_at=old_stamp,
+                     provider='claude', model='claude-opus-5-5', uncached_input_tokens=100,
+                     cache_read_tokens=200, cache_creation_tokens=100,
+                     cache_write_5m_tokens=60, cache_write_1h_tokens=40, output_tokens=25),
+                dict(event_id='history-gpt', source='codex', requested_at=old_stamp,
+                     provider='codex', model='gpt-5.5', uncached_input_tokens=500,
+                     cache_read_tokens=500, output_tokens=100),
+                dict(event_id='history-unknown', source='pi', requested_at=old_stamp,
+                     provider='kimi', model='future-model', uncached_input_tokens=100, output_tokens=10),
+                dict(event_id='overlap', source='pi', requested_at=stamp,
+                     provider='codex', model='gpt-6.1-sol', uncached_input_tokens=999999999),
+            ]
+            # Reruns may add physical rows, but must never increase dashboard totals.
+            for _ in range(2):
+                query("INSERT INTO llm.historical_usage FORMAT JSONEachRow\n" + "\n".join(map(json.dumps, history)))
             values = [json.loads(line) for line in query(
                 "SELECT * FROM llm.usage_metrics FORMAT JSONEachRow", "grafana").stdout.splitlines()]
             data = {r["trace_id"]: r for r in values}
@@ -110,12 +127,24 @@ def main():
             assert data["cache-write"]["cache_read_tokens"] == 0  # cached_tokens may mean writes
             assert data["cache-write"]["estimated_cost_usd"] is None
             assert data["unknown"]["estimated_cost_usd"] is None
+            assert math.isclose(data['history-claude']['estimated_cost_usd'], 0.00156, rel_tol=1e-9)
+            assert math.isclose(data['history-gpt']['estimated_cost_usd'], 0.00575, rel_tol=1e-9)
+            assert data['history-unknown']['estimated_cost_usd'] is None
+            assert data['history-claude']['input_tokens'] == 400
+            assert data['history-claude']['latency_ms'] is None
+            assert data['history-claude']['failed'] is None
+            assert 'overlap' not in data
+            assert len(data) == len(rows) + 3
+            day_cost = float(query("SELECT sumOrNull(estimated_cost_usd) FROM llm.usage_metrics WHERE requested_at >= now() - INTERVAL 1 DAY", 'grafana').stdout)
+            year_cost = float(query("SELECT sumOrNull(estimated_cost_usd) FROM llm.usage_metrics WHERE requested_at >= now() - INTERVAL 1 YEAR", 'grafana').stdout)
+            assert math.isclose(year_cost - day_cost, 0.00731, rel_tol=1e-8)
 
             query("SELECT count() FROM llm.usage_metrics SETTINGS max_execution_time=10", "grafana")
             # The HTTP driver's connection health check uses a 60-second timeout.
             query("SELECT 1 SETTINGS max_execution_time=60", "grafana")
             denied = ["SELECT * FROM llm.usage", "SELECT * FROM llm.requests",
-                      "SELECT * FROM llm.transcripts", "SELECT failure_body FROM llm.usage_metrics",
+                      "SELECT * FROM llm.transcripts", "SELECT * FROM llm.historical_usage",
+                      "SELECT failure_body FROM llm.usage_metrics",
                       "INSERT INTO llm.usage (request_id) VALUES ('forbidden')",
                       "DROP VIEW llm.usage_metrics", "SET readonly=0",
                       "SELECT 1 SETTINGS max_execution_time=61"]
@@ -124,9 +153,10 @@ def main():
                 assert result.returncode != 0, f"Reader unexpectedly allowed {sql}"
 
             for title, sql in queries:
-                for provider, model in ((None, None), ("codex", "gpt-6.1-sol"), ("missing", "missing")):
+                for provider, model, origin in ((None, None, None), ("codex", "gpt-6.1-sol", 'live'),
+                                                (None, None, 'history:claude-code'), ("missing", "missing", None)):
                     try:
-                        query(expand(sql, provider, model), "grafana")
+                        query(expand(sql, provider, model, origin), "grafana")
                     except subprocess.CalledProcessError as error:
                         raise RuntimeError(f"{title}: {error.stderr}") from error
             print(f"PASS: pricing fixtures, token accounting, {len(denied)} permission checks, "

@@ -1,13 +1,13 @@
 {
   "uid": "ai-usage",
   "title": "AI usage",
-  "description": "Live CLIProxy tokens, reliability, latency, and standard API-equivalent estimates.",
+  "description": "Historical and live token usage, API-equivalent estimates, and live reliability metrics.",
   "tags": [
     "ai",
     "cliproxy"
   ],
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "editable": false,
   "timezone": "browser",
   "refresh": "1m",
@@ -18,6 +18,26 @@
   "templating": {
     "list": [
       {
+        "name": "origin",
+        "label": "Origin",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "ai-usage-clickhouse"
+        },
+        "query": "SELECT DISTINCT origin FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at) ORDER BY origin",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": [],
+        "sort": 1,
+        "definition": "SELECT DISTINCT origin FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at) ORDER BY origin"
+      },
+      {
         "name": "provider",
         "label": "Provider",
         "type": "query",
@@ -25,8 +45,8 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "ai-usage-clickhouse"
         },
-        "query": "SELECT DISTINCT provider FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at) ORDER BY provider",
-        "definition": "SELECT DISTINCT provider FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at) ORDER BY provider",
+        "query": "SELECT DISTINCT provider FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin) ORDER BY provider",
+        "definition": "SELECT DISTINCT provider FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin) ORDER BY provider",
         "refresh": 2,
         "multi": true,
         "includeAll": true,
@@ -45,8 +65,8 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "ai-usage-clickhouse"
         },
-        "query": "SELECT DISTINCT model FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at) AND $__conditionalAll(provider IN (${provider:singlequote}), $provider) ORDER BY model",
-        "definition": "SELECT DISTINCT model FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at) AND $__conditionalAll(provider IN (${provider:singlequote}), $provider) ORDER BY model",
+        "query": "SELECT DISTINCT model FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin) AND $__conditionalAll(provider IN (${provider:singlequote}), $provider) ORDER BY model",
+        "definition": "SELECT DISTINCT model FROM llm.usage_metrics WHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin) AND $__conditionalAll(provider IN (${provider:singlequote}), $provider) ORDER BY model",
         "refresh": 2,
         "multi": true,
         "includeAll": true,
@@ -83,12 +103,12 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "Live CLIProxy usage only. Imported Claude, Codex, Pi, and OpenCode transcripts are not included.\n\nEach usage row is an upstream call/attempt, including retries. A proxy trace may contain several WebSocket calls. Input includes cache reads/writes; reasoning is already part of output.\n\n**Cost is a current standard API-equivalent estimate, not your subscription bill or remaining allowance.** Rates verified 2026-11-09; OpenAI long-context multipliers are included. Speed, region, tool fees, and cache-write calls are excluded. Unknown models (currently Kimi) show as unpriced. Totals cover priced calls only. [OpenAI rates](https://developers.openai.com/api/docs/pricing) \u00b7 [Claude rates](https://platform.claude.com/docs/en/about-claude/pricing)"
+        "content": "Usage from CLIProxy and imported Claude, Codex, Pi, and OpenCode sessions. Use **Origin** to choose live capture or a historical source. History stops when live capture began, so the two do not overlap. Missing historical usage cannot be reconstructed.\n\nHistorical records contain token counts, but not complete failure or latency data. Failure counts, connection counts, and latency panels cover live capture only. Input includes cache reads/writes; reasoning is already part of output.\n\n**Cost is a current standard API-equivalent estimate, not your subscription bill.** Rates verified 2026-11-09; published long-context rates and recorded Claude cache-write TTLs are included. Unknown models or missing cache-write TTLs are unpriced. Speed, region, and tool fees are excluded. Totals cover priced calls only. [OpenAI rates](https://developers.openai.com/api/docs/pricing) \u00b7 [Claude rates](https://platform.claude.com/docs/en/about-claude/pricing)"
       }
     },
     {
       "id": 2,
-      "title": "Upstream calls / attempts",
+      "title": "Recorded calls / attempts",
       "type": "stat",
       "gridPos": {
         "x": 0,
@@ -96,7 +116,7 @@
         "w": 4,
         "h": 4
       },
-      "description": "Includes failed attempts and retries.",
+      "description": "Historical token-usage records plus live calls, including live failures and retries. Missing historical calls are not estimated.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -130,7 +150,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT count() AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "rawSql": "SELECT count() AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
           "format": 1,
           "pluginVersion": "4.23.4"
         }
@@ -138,7 +158,7 @@
     },
     {
       "id": 3,
-      "title": "Failed attempts",
+      "title": "Failed attempts (live only)",
       "type": "stat",
       "gridPos": {
         "x": 4,
@@ -180,7 +200,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT countIf(failed) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "rawSql": "SELECT countIf(failed) AS value\nFROM llm.usage_metrics\nWHERE origin = 'live' AND $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
           "format": 1,
           "pluginVersion": "4.23.4"
         }
@@ -188,7 +208,7 @@
     },
     {
       "id": 4,
-      "title": "Rate-limited attempts",
+      "title": "Rate-limited attempts (live only)",
       "type": "stat",
       "gridPos": {
         "x": 8,
@@ -230,7 +250,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT countIf(failure_status = 429) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "rawSql": "SELECT countIf(failure_status = 429) AS value\nFROM llm.usage_metrics\nWHERE origin = 'live' AND $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
           "format": 1,
           "pluginVersion": "4.23.4"
         }
@@ -280,7 +300,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT sum(cache_read_tokens) / nullIf(sum(input_tokens), 0) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "rawSql": "SELECT sum(cache_read_tokens) / nullIf(sum(input_tokens), 0) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
           "format": 1,
           "pluginVersion": "4.23.4"
         }
@@ -330,7 +350,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT sumOrNull(estimated_cost_usd) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "rawSql": "SELECT sumOrNull(estimated_cost_usd) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
           "format": 1,
           "pluginVersion": "4.23.4"
         }
@@ -380,7 +400,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT countIf(isNull(estimated_cost_usd) AND total_tokens > 0) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
+          "rawSql": "SELECT countIf(isNull(estimated_cost_usd) AND total_tokens > 0) AS value\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)",
           "format": 1,
           "pluginVersion": "4.23.4"
         }
@@ -438,7 +458,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time,\n  sum(uncached_input_tokens) AS \"Uncached input\", sum(cache_read_tokens) AS \"Cache read\",\n  sum(cache_creation_tokens) AS \"Cache write\", sum(output_tokens) AS \"Output (includes reasoning)\"\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time ORDER BY time",
+          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time,\n  sum(uncached_input_tokens) AS \"Uncached input\", sum(cache_read_tokens) AS \"Cache read\",\n  sum(cache_creation_tokens) AS \"Cache write\", sum(output_tokens) AS \"Output (includes reasoning)\"\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time ORDER BY time",
           "format": 0,
           "pluginVersion": "4.23.4"
         }
@@ -492,7 +512,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time, model, sum(total_tokens) AS tokens\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time, model ORDER BY time, model",
+          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time, model, sum(total_tokens) AS tokens\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time, model ORDER BY time, model",
           "format": 0,
           "pluginVersion": "4.23.4"
         }
@@ -546,7 +566,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT toStartOfDay(requested_at, 'UTC') AS time, provider, sum(total_tokens) AS tokens\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time, provider ORDER BY time, provider",
+          "rawSql": "SELECT toStartOfDay(requested_at, 'UTC') AS time, provider, sum(total_tokens) AS tokens\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time, provider ORDER BY time, provider",
           "format": 0,
           "pluginVersion": "4.23.4"
         }
@@ -600,7 +620,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time, model, sumOrNull(estimated_cost_usd) AS cost\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time, model ORDER BY time, model",
+          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time, model, sumOrNull(estimated_cost_usd) AS cost\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time, model ORDER BY time, model",
           "format": 0,
           "pluginVersion": "4.23.4"
         }
@@ -608,7 +628,7 @@
     },
     {
       "id": 12,
-      "title": "Successful call latency",
+      "title": "Successful call latency (live only)",
       "type": "timeseries",
       "gridPos": {
         "x": 0,
@@ -654,7 +674,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time,\n  quantileOrNullIf(0.5)(latency_ms, NOT failed AND latency_ms > 0) AS \"Median\",\n  quantileOrNullIf(0.95)(latency_ms, NOT failed AND latency_ms > 0) AS \"p95\",\n  quantileOrNullIf(0.5)(ttft_ms, NOT failed AND ttft_ms > 0) AS \"Median time to first token\"\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time ORDER BY time",
+          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time,\n  quantileOrNullIf(0.5)(latency_ms, NOT failed AND latency_ms > 0) AS \"Median\",\n  quantileOrNullIf(0.95)(latency_ms, NOT failed AND latency_ms > 0) AS \"p95\",\n  quantileOrNullIf(0.5)(ttft_ms, NOT failed AND ttft_ms > 0) AS \"Median time to first token\"\nFROM llm.usage_metrics\nWHERE origin = 'live' AND $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time ORDER BY time",
           "format": 0,
           "pluginVersion": "4.23.4"
         }
@@ -662,7 +682,7 @@
     },
     {
       "id": 13,
-      "title": "Call outcomes",
+      "title": "Call outcomes (live only)",
       "type": "timeseries",
       "gridPos": {
         "x": 12,
@@ -708,7 +728,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time,\n  countIf(NOT failed) AS \"Successful\", countIf(failed AND failure_status != 429) AS \"Other failures\",\n  countIf(failure_status = 429) AS \"Rate limited\"\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time ORDER BY time",
+          "rawSql": "SELECT $__timeInterval_ms(requested_at) AS time,\n  countIf(NOT failed) AS \"Successful\", countIf(failed AND failure_status != 429) AS \"Other failures\",\n  countIf(failure_status = 429) AS \"Rate limited\"\nFROM llm.usage_metrics\nWHERE origin = 'live' AND $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY time ORDER BY time",
           "format": 0,
           "pluginVersion": "4.23.4"
         }
@@ -724,7 +744,7 @@
         "w": 24,
         "h": 9
       },
-      "description": "Calls include retries. Proxy traces are inbound requests/connections, not model turns. Cost is only the priced subset.",
+      "description": "Historical recorded responses and live calls. Failure and proxy connection counts cover live capture only. Cost excludes unpriced calls.",
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -766,7 +786,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT provider, model, count() AS calls, uniqExact(trace_id) AS proxy_traces,\n  countIf(failed) AS failures, countIf(failure_status = 429) AS rate_limited,\n  sum(input_tokens) AS input, sum(cache_read_tokens) AS cache_read,\n  sum(cache_creation_tokens) AS cache_write, sum(output_tokens) AS output,\n  sum(reasoning_tokens) AS reasoning_subset,\n  sumOrNull(estimated_cost_usd) AS standard_api_equivalent_usd,\n  countIf(isNull(estimated_cost_usd) AND total_tokens > 0) AS unpriced_calls\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY provider, model ORDER BY input DESC",
+          "rawSql": "SELECT provider, model, count() AS calls, uniqExactIf(trace_id, origin = 'live') AS live_proxy_traces,\n  countIf(failed) AS live_failures, countIf(failure_status = 429) AS live_rate_limited,\n  sum(input_tokens) AS input, sum(cache_read_tokens) AS cache_read,\n  sum(cache_creation_tokens) AS cache_write, sum(output_tokens) AS output,\n  sum(reasoning_tokens) AS reasoning_subset,\n  sumOrNull(estimated_cost_usd) AS standard_api_equivalent_usd,\n  countIf(isNull(estimated_cost_usd) AND total_tokens > 0) AS unpriced_calls\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY provider, model ORDER BY input DESC",
           "format": 1,
           "pluginVersion": "4.23.4"
         }
@@ -824,7 +844,7 @@
             "uid": "ai-usage-clickhouse"
           },
           "editorType": "sql",
-          "rawSql": "SELECT toDate(requested_at, 'UTC') AS day, count() AS calls,\n  sum(input_tokens) AS input, sum(output_tokens) AS output,\n  sum(cache_read_tokens) AS cache_read, countIf(failed) AS failures,\n  sumOrNull(estimated_cost_usd) AS standard_api_equivalent_usd,\n  countIf(isNull(estimated_cost_usd) AND total_tokens > 0) AS unpriced_calls\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY day ORDER BY day DESC",
+          "rawSql": "SELECT toDate(requested_at, 'UTC') AS day, count() AS calls,\n  sum(input_tokens) AS input, sum(output_tokens) AS output,\n  sum(cache_read_tokens) AS cache_read, countIf(failed) AS live_failures,\n  sumOrNull(estimated_cost_usd) AS standard_api_equivalent_usd,\n  countIf(isNull(estimated_cost_usd) AND total_tokens > 0) AS unpriced_calls\nFROM llm.usage_metrics\nWHERE $__timeFilter_ms(requested_at)\n  AND $__conditionalAll(origin IN (${origin:singlequote}), $origin)\n  AND $__conditionalAll(provider IN (${provider:singlequote}), $provider)\n  AND $__conditionalAll(model IN (${model:singlequote}), $model)\nGROUP BY day ORDER BY day DESC",
           "format": 1,
           "pluginVersion": "4.23.4"
         }
