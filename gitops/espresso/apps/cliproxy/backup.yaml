@@ -1,14 +1,14 @@
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
-  name: cliproxyapi-auth-backup
-  namespace: cliproxyapi
+  name: cliproxy-auth-backup
+  namespace: cliproxy
 spec:
-  sourcePVC: auth-cliproxyapi-0
+  sourcePVC: auth-cliproxy-0
   trigger:
     schedule: "20 2 * * *"
   restic:
-    repository: freddo-restic-cliproxyapi-pvc
+    repository: freddo-restic-cliproxy-pvc
     pruneIntervalDays: 36500
     retain:
       within: 100y

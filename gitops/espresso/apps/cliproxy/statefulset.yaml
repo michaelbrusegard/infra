@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: cliproxyapi
-  namespace: cliproxyapi
+  name: cliproxy
+  namespace: cliproxy
 spec:
   replicas: 1
-  serviceName: cliproxyapi-internal
+  serviceName: cliproxy-internal
   selector:
     matchLabels:
-      app: cliproxyapi
+      app: cliproxy
   template:
     metadata:
       labels:
-        app: cliproxyapi
+        app: cliproxy
       annotations:
-        configmap.reloader.stakater.com/reload: cliproxyapi
-        secret.reloader.stakater.com/reload: cliproxyapi,cliproxyapi-management
+        configmap.reloader.stakater.com/reload: cliproxy
+        secret.reloader.stakater.com/reload: cliproxy,cliproxy-management
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -60,7 +60,7 @@ spec:
             - name: auth
               mountPath: /data
       containers:
-        - name: cliproxyapi
+        - name: cliproxy
           image: docker.io/eceasy/cli-proxy-api:v8.0.47@sha256:d1874eba7f9819f3a19a0fea0333b457d6fdd4cf290d4bfe4283be102dc489d9
           command:
             - /CLIProxyAPI/CLIProxyAPI
@@ -119,13 +119,13 @@ spec:
       volumes:
         - name: config-template
           configMap:
-            name: cliproxyapi
+            name: cliproxy
         - name: secret
           secret:
-            secretName: cliproxyapi
+            secretName: cliproxy
         - name: management-secret
           secret:
-            secretName: cliproxyapi-management
+            secretName: cliproxy-management
         - name: config
           emptyDir: {}
   volumeClaimTemplates:

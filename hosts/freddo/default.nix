@@ -23,7 +23,7 @@
 
   services.restic.server.initializeRepositories = {
     bazarr = ["repo-config"];
-    cliproxyapi = ["pvc"];
+    cliproxy = ["pvc"];
     hermes-agent = ["pvc"];
     healthlog = ["postgres"];
     hindsight = ["postgres"];

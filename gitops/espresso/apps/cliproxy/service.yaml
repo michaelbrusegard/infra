@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: cliproxyapi-internal
-  namespace: cliproxyapi
+  name: cliproxy-internal
+  namespace: cliproxy
 spec:
   clusterIP: None
   selector:
-    app: cliproxyapi
+    app: cliproxy
   ports:
     - name: http
       port: 8317
@@ -25,11 +25,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: cliproxyapi
-  namespace: cliproxyapi
+  name: cliproxy
+  namespace: cliproxy
 spec:
   selector:
-    app: cliproxyapi
+    app: cliproxy
   ports:
     - name: http
       port: 8317

@@ -63,8 +63,8 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: cliproxyapi
-            k8s:app: cliproxyapi
+            k8s:io.kubernetes.pod.namespace: cliproxy
+            k8s:app: cliproxy
       toPorts:
         - ports:
             - port: "8317"

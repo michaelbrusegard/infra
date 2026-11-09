@@ -17,7 +17,7 @@
   "provider": {
     "name": "CLIProxy",
     "provider_id": "custom",
-    "upstream_url": "http://cliproxyapi.cliproxyapi.svc.cluster.local:8317",
+    "upstream_url": "http://cliproxy.cliproxy.svc.cluster.local:8317",
     "enabled": true,
     "models": [],
     "metadata_disabled": true,

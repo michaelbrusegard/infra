@@ -387,7 +387,7 @@ data:
         "name": "CLIProxy",
         "type": "port",
         "parent_name": "apps[0]",
-        "hostname": "cliproxyapi.cliproxyapi.svc.cluster.local",
+        "hostname": "cliproxy.cliproxy.svc.cluster.local",
         "port": 8317,
         "interval": 60,
         "max_retries": 3,

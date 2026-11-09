@@ -1,12 +1,12 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: cliproxyapi
-  namespace: cliproxyapi
+  name: cliproxy
+  namespace: cliproxy
 spec:
   endpointSelector:
     matchLabels:
-      app: cliproxyapi
+      app: cliproxy
   ingress:
     - fromEntities:
         - ingress

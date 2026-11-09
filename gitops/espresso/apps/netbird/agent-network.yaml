@@ -41,7 +41,7 @@ spec:
       labels:
         app: netbird-agent-network
       annotations:
-        secret.reloader.stakater.com/reload: netbird-credentials,cliproxyapi,netbird-agent-network-tls
+        secret.reloader.stakater.com/reload: netbird-credentials,cliproxy,netbird-agent-network-tls
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -68,7 +68,7 @@ spec:
             - name: UPSTREAM_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: cliproxyapi
+                  name: cliproxy
                   key: API_KEY
           securityContext:
             allowPrivilegeEscalation: false
@@ -245,8 +245,8 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: cliproxyapi
-            k8s:app: cliproxyapi
+            k8s:io.kubernetes.pod.namespace: cliproxy
+            k8s:app: cliproxy
       toPorts:
         - ports:
             - port: "8317"
