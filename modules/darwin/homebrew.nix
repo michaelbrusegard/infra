@@ -75,4 +75,13 @@
       "DaVinci Resolve" = 571213070;
     };
   };
+  # NetBird UI upgrades can remove the daemon and silently fail to reinstall it.
+  system.activationScripts.postActivation.text = ''
+    if [ ! -f /Library/LaunchDaemons/netbird.plist ]; then
+      "${config.homebrew.prefix}/bin/netbird" service install
+    fi
+    if ! /bin/launchctl print system/netbird >/dev/null 2>&1; then
+      "${config.homebrew.prefix}/bin/netbird" service start
+    fi
+  '';
 }
