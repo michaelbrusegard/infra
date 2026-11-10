@@ -81,6 +81,7 @@ in {
           whatsappDarwin
 
           brewCasks.linearmouse
+          brewCasks.stats
           brewCasks.legcord
 
           brewCasks.transmission
