@@ -148,6 +148,30 @@ jobs:
         with:
           tofu_version: ${{ env.OPENTOFU_VERSION }}
           tofu_wrapper: false
+      # The registry still points trozz/pocketid at the pre-transfer GitHub
+      # name, which 404s since a fork took it. Remove once upstream fixes
+      # https://github.com/pocket-id/terraform-provider/issues/127.
+      - name: Install Pocket ID provider mirror
+        if: matrix.tofu-dir == 'gitops/espresso/tofu/pocket-id' || matrix.tofu-dir == 'gitops/espresso/tofu/hermes-auth'
+        run: |
+          version=2.5.0
+          archive="terraform-provider-pocketid_${version}_linux_amd64.zip"
+          mirror="$RUNNER_TEMP/provider-mirror/registry.opentofu.org/trozz/pocketid"
+          mkdir -p "$mirror"
+          curl -fsSL "https://github.com/pocket-id/terraform-provider/releases/download/v${version}/${archive}" -o "$mirror/$archive"
+          echo "640d92b75f5c9e0d18e888eb8248eb61560e01b611898286b3d852e952d4d2f2  $mirror/$archive" | sha256sum -c -
+          cat > "$RUNNER_TEMP/tofurc" <<EOF
+          provider_installation {
+            filesystem_mirror {
+              path    = "$RUNNER_TEMP/provider-mirror"
+              include = ["registry.opentofu.org/trozz/pocketid"]
+            }
+            direct {
+              exclude = ["registry.opentofu.org/trozz/pocketid"]
+            }
+          }
+          EOF
+          echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/tofurc" >> "$GITHUB_ENV"
       - name: Check OpenTofu formatting
         run: tofu -chdir=${{ matrix.tofu-dir }} fmt -check
       - name: Initialize OpenTofu
