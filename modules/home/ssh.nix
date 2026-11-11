@@ -32,7 +32,6 @@
         };
       }
       // config.secrets.ssh.hostSettings
-      // config.secrets.ssh.deploySettings
-      // config.secrets.ssh.telescopeSettings;
+      // config.secrets.ssh.deploySettings;
   };
 }
