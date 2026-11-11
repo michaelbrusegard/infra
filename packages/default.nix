@@ -1,6 +1,7 @@
 {pkgs}:
 pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
   chromium-seccomp-profile = pkgs.callPackage ./chromium-seccomp-profile {};
+  helium-browser = pkgs.callPackage ./helium-browser {};
   rustdesk-flutter = pkgs.callPackage ./rustdesk {};
   smtp-edge-image = pkgs.callPackage ./smtp-edge/image.nix {};
   stalwart-oss = pkgs.callPackage ./stalwart-oss {};

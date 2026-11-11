@@ -15,6 +15,7 @@
     inputs.self.homeManagerModules.git
     inputs.self.homeManagerModules.gnome-keyring
     inputs.self.homeManagerModules.groupware
+    inputs.self.homeManagerModules.helium
     inputs.self.homeManagerModules.helix
     inputs.self.homeManagerModules.hyprland
     inputs.self.homeManagerModules.launchd
