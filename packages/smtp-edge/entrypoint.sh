@@ -43,6 +43,16 @@ printf '%s\n' "$master" > /run/postfix/master.cf
 unset master
 chmod 0644 /run/postfix/{main,master}.cf
 
+# Absent identity leaves the backup handoff disabled. Only a pinned client can
+# submit original peer metadata on this listener, even from a changing WAN IP.
+if [[ -n ${BACKUP_CLIENT_FINGERPRINT_FILE:-} && -f $BACKUP_CLIENT_FINGERPRINT_FILE ]]; then
+  fingerprint=$(<"$BACKUP_CLIENT_FINGERPRINT_FILE")
+  [[ $fingerprint =~ ^([[:xdigit:]]{2}:){31}[[:xdigit:]]{2}$ ]] || fail 'invalid backup client SHA-256 fingerprint'
+  printf '%s OK\n' "$fingerprint" > /run/postfix/backup-client
+  chmod 0644 /run/postfix/backup-client
+  cat /opt/smtp-edge/backup-master.cf >> /run/postfix/master.cf
+fi
+
 # Regexp maps are case-insensitive by default. DUNNO does not bypass verification.
 printf '%s\n' '/@manafishrov[.]com$/ DUNNO' '/.*/ REJECT recipient domain not served' > /run/postfix/served-domains
 chmod 0644 /run/postfix/served-domains

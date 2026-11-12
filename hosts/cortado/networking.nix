@@ -159,7 +159,8 @@ in {
       dnsProvider = "cloudflare";
       credentialFiles."CLOUDFLARE_DNS_API_TOKEN_FILE" = config.secrets.cloudflare-dyndns.apiTokenFile;
       group = "caddy";
-      reloadServices = ["caddy"];
+      # Postfix serves this certificate for the secondary MX.
+      reloadServices = ["caddy" "postfix"];
     };
   };
 
@@ -172,6 +173,8 @@ in {
       group = "acme";
       mode = "0755";
     }
+    # Mail queued by the secondary MX must survive reboots.
+    "/var/lib/postfix"
   ];
 
   services = {

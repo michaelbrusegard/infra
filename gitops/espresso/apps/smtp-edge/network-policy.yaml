@@ -8,7 +8,7 @@ spec:
     matchLabels:
       app: smtp-edge
   ingress:
-    # Public SMTP only; preserve the peer address with Service Local policy.
+    # Port 2525 requires the pinned backup client certificate in Postfix.
     - fromEntities:
         - world
         - host
@@ -16,6 +16,8 @@ spec:
       toPorts:
         - ports:
             - port: "25"
+              protocol: TCP
+            - port: "2525"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:

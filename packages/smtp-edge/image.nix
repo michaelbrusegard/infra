@@ -15,7 +15,7 @@
 }: let
   # Store individual file contents, not paths rooted in a checkout/flake source.
   # Otherwise unrelated repository changes alter the image's store closure.
-  files = lib.genAttrs ["main.cf" "master.cf" "deliver.sh" "entrypoint.sh"] (
+  files = lib.genAttrs ["main.cf" "master.cf" "backup-master.cf" "deliver.sh" "entrypoint.sh"] (
     name: builtins.toFile name (builtins.readFile (./. + "/${name}"))
   );
   layout = runCommand "smtp-edge-layout" {} ''
@@ -52,6 +52,7 @@
     newaliases_path = ${postfix}/bin/newaliases
     EOF
     cp ${files."master.cf"} $out/opt/smtp-edge/master.cf
+    cp ${files."backup-master.cf"} $out/opt/smtp-edge/backup-master.cf
     cp ${files."deliver.sh"} $out/opt/smtp-edge/deliver.sh
     cp ${files."entrypoint.sh"} $out/bin/smtp-edge-entrypoint
     chmod 0555 $out/bin/smtp-edge-entrypoint $out/opt/smtp-edge/deliver.sh

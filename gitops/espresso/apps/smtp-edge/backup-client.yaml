@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smtp-edge-backup-client
+  namespace: smtp-edge
+data:
+  # SHA-256 of cortado's handoff client certificate (infra-secrets
+  # hosts/cortado smtp-backup/client-cert). Only this identity may submit
+  # original peer metadata on port 2525.
+  fingerprint: "0C:2D:64:BD:BB:85:72:2F:4B:C6:45:8E:FF:0E:7E:D2:7C:8A:42:2F:3C:2A:21:60:0F:7C:51:7C:14:86:D4:0E"

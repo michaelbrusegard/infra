@@ -246,6 +246,7 @@
         nixpkgs.lib.optionalAttrs nixpkgs.legacyPackages.${system}.stdenv.hostPlatform.isLinux {
           ai-images = inputs.self.packages.${system}.ai-images;
           smtp-edge = nixpkgs.legacyPackages.${system}.callPackage ./packages/smtp-edge/source-check.nix {};
+          smtp-backup = nixpkgs.legacyPackages.${system}.callPackage ./packages/smtp-backup/test.nix {};
           stalwart-native-scim = inputs.self.packages.${system}.stalwart-native-scim;
           stalwart-native-scim-source = nixpkgs.legacyPackages.${system}.callPackage ./packages/stalwart-oss/source-check.nix {
             server = inputs.self.packages.${system}.stalwart-native-scim;

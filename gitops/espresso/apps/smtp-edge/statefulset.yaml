@@ -5,6 +5,7 @@ metadata:
   namespace: smtp-edge
   annotations:
     secret.reloader.stakater.com/reload: smtp-edge-resend,wildcard-tls
+    configmap.reloader.stakater.com/reload: smtp-edge-backup-client
 spec:
   # Pending registry digest, secret provisioning and cutover approval; see README.
   replicas: 1
@@ -60,9 +61,13 @@ spec:
               value: /run/secrets/smtp-edge/tls/tls.key
             - name: RESEND_PASSWORD_FILE
               value: /run/secrets/smtp-edge/resend/api-key
+            - name: BACKUP_CLIENT_FINGERPRINT_FILE
+              value: /run/secrets/smtp-edge/backup/fingerprint
           ports:
             - name: smtp
               containerPort: 25
+            - name: backup
+              containerPort: 2525
           # Do not call the entrypoint's check mode: it rebuilds runtime maps.
           # These native checks need no backend, mail submission or API writer.
           startupProbe:
@@ -104,7 +109,13 @@ spec:
             - name: resend
               mountPath: /run/secrets/smtp-edge/resend
               readOnly: true
+            - name: backup-client
+              mountPath: /run/secrets/smtp-edge/backup
+              readOnly: true
       volumes:
+        - name: backup-client
+          configMap:
+            name: smtp-edge-backup-client
         - name: run
           emptyDir:
             sizeLimit: 128Mi

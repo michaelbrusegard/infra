@@ -42,6 +42,8 @@
     (forward publicGateway "tcp" 443)
     # Shared server-to-server SMTP edge. Clients use JMAP through HTTPS.
     (forward stalwartEdge "tcp" 25)
+    # Backup MX handoff requires the pinned cortado client certificate.
+    (forward stalwartEdge "tcp" 2525)
     # NetBird coturn
     (forward netbirdCoturn "udp" 3478)
     # mc-router fans out by handshake hostname (*.eldians.com).

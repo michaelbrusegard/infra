@@ -7,3 +7,4 @@ resources:
   - services.yaml
   - network-policy.yaml
   - backup.yaml
+  - backup-client.yaml

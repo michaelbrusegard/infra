@@ -22,6 +22,7 @@
     ./disko.nix
     ./hardware.nix
     ./networking.nix
+    ./smtp-backup.nix
   ];
 
   time.timeZone = "America/Los_Angeles";

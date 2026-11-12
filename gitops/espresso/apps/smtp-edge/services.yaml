@@ -38,3 +38,6 @@ spec:
     - name: smtp-public
       port: 25
       targetPort: smtp
+    - name: smtp-backup
+      port: 2525
+      targetPort: backup
