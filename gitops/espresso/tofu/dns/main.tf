@@ -34,6 +34,18 @@ locals {
       content = "router.asgard.michaelbrusegard.com"
       proxied = true
     }
+    # SMTP2GO outbound relay: bounce return path and DKIM. Its link-tracking
+    # CNAME is deliberately absent because tracking stays disabled.
+    smtp2go_return_path = {
+      name    = "em1206132"
+      type    = "CNAME"
+      content = "return.smtp2go.net"
+    }
+    smtp2go_dkim = {
+      name    = "s1206132._domainkey"
+      type    = "CNAME"
+      content = "dkim.smtp2go.net"
+    }
     tlsrpt = {
       name    = "_smtp._tls"
       type    = "TXT"
