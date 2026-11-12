@@ -21,6 +21,16 @@
     mode = "0700";
   };
 
+  # dhcpcd generates a time-based DUID when none exists. A new DUID on every
+  # boot leaves the ISP's DHCPv6 binding orphaned, so the WAN address and
+  # delegated prefix stay gone until the old lease expires.
+  dhcpcdDirectories = lib.optional config.networking.dhcpcd.enable {
+    directory = "/var/lib/dhcpcd";
+    user = "dhcpcd";
+    group = "dhcpcd";
+    mode = "0755";
+  };
+
   # App-owned user state is colocated in the owning home-manager modules
   # (via the homePersistenceRoot guard). Only identity material and the
   # generic XDG user directories stay centralized here.
@@ -58,7 +68,7 @@ in {
 
   environment.persistence.${persistPath} = {
     hideMounts = true;
-    directories = baseDirectories ++ bluetoothDirectories;
+    directories = baseDirectories ++ bluetoothDirectories ++ dhcpcdDirectories;
     files = persistedFiles;
     users = lib.filterAttrs (user: _: builtins.elem user users) userPersistence;
   };
