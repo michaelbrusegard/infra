@@ -28,17 +28,18 @@
                  {
                      response.not_created.append(
                          id,
-@@ -277,6 +280,52 @@ impl IdentitySet for Server {
+@@ -277,6 +280,53 @@ impl IdentitySet for Server {
      }
  }
  
 +/// Whether an account may send as an address no principal claims, because the
 +/// address's domain has a catch-all that delivers to that account.
 +///
-+/// The lookups read cached registry data and the identity write asserts no
-+/// registry version, so an address reassigned concurrently can still get an
-+/// identity. EmailSubmission/set reruns this check, so it cannot send as one.
-+pub(crate) async fn is_catch_all_sender(
++/// This only governs which identities exist. The lookups read cached data, so
++/// an address reassigned concurrently can still get an identity, and one left
++/// behind after ownership changes is kept. Neither grants sending: the SMTP
++/// must_match_sender rule still decides which addresses a submission may use.
++async fn is_catch_all_sender(
 +    server: &Server,
 +    account_id: u32,
 +    address: &str,
@@ -81,7 +82,7 @@
  fn validate_identity_value(
      expected_id: Option<Id>,
      property: &Key<'_, IdentityProperty>,
-@@ -384,3 +433,65 @@ fn validate_identity_value(
+@@ -384,3 +434,65 @@ fn validate_identity_value(
  
      Ok(())
  }
@@ -135,7 +136,7 @@
 +    }
 +
 +    #[test]
-+    fn catch_all_sender_rechecks_deny_after_revocation() {
++    fn catch_all_sender_denies_after_revocation() {
 +        // Allowed when the identity was created.
 +        assert!(catch_all_sender(OWNER, None, Some(OWNER), Some(OWNER)));
 +        // Catch-all removed: the address no longer resolves to anyone.
@@ -147,39 +148,3 @@
 +        assert!(!catch_all_sender(OWNER, exact, Some(OTHER), Some(OWNER)));
 +    }
 +}
---- a/crates/jmap/src/submission/set.rs
-+++ b/crates/jmap/src/submission/set.rs
-@@ -4,6 +4,7 @@
-  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
-  */
- 
-+use crate::identity::set::is_catch_all_sender;
- use common::{
-     Server,
-     config::smtp::queue::QueueName,
-@@ -581,6 +582,25 @@ impl EmailSubmissionSet for Server {
-                 .with_description("Identity not found.")));
-         };
- 
-+        // Catch-all identities are only authorized at creation, and the
-+        // catch-all or address ownership may have changed since.
-+        if !self
-+            .account_info(account_id)
-+            .await
-+            .caused_by(trc::location!())?
-+            .addresses()
-+            .iter()
-+            .any(|e| e == &identity_mail_from)
-+            && !is_catch_all_sender(self, account_id, &identity_mail_from)
-+                .await
-+                .caused_by(trc::location!())?
-+        {
-+            return Ok(Err(SetError::new(SetErrorType::ForbiddenFrom)
-+                .with_description(
-+                    "Identity email address is not configured for this account.",
-+                )));
-+        }
-+
-         // Make sure the envelope address matches the identity email address
-         let mail_from = if let Some(mail_from) = mail_from {
-             if !mail_from.address.eq_ignore_ascii_case(&identity_mail_from) {
