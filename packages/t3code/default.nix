@@ -2,7 +2,7 @@
   lib,
   symlinkJoin,
   makeWrapper,
-  nightly,
+  unwrapped,
   claude-code,
   codex,
   opencode,
@@ -12,9 +12,9 @@
   backendPort ? null,
 }:
 symlinkJoin {
-  pname = "t3code-nightly";
-  inherit (nightly) version meta;
-  paths = [nightly];
+  pname = "t3code";
+  inherit (unwrapped) version meta;
+  paths = [unwrapped];
   nativeBuildInputs = [makeWrapper];
   # Keep providers available to both the GUI and headless server. The upstream
   # binary release includes its own resource monitor and disables auto-updates.

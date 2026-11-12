@@ -285,7 +285,7 @@ in {
           with pkgs; [
             paseo
             paseo-desktop
-            (t3code-nightly.override {
+            (t3code.override {
               # Preserve project environments instead of using unwrapped providers.
               claude-code = config.programs.claude-code.package;
               codex = config.programs.codex.package;

@@ -62,7 +62,7 @@ in {
   pi-coding-agent = inputs.llm-agents.packages.${system}.pi;
   paseo = paseoPackage;
   paseo-desktop = paseoDesktopPackage;
-  t3code-nightly = prev.callPackage ../packages/t3code-nightly {
-    nightly = inputs.t3code.packages.${system}.t3-code-nightly;
+  t3code = prev.callPackage ../packages/t3code {
+    unwrapped = inputs.t3code.packages.${system}.t3-code;
   };
 }
