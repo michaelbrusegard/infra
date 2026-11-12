@@ -32,6 +32,7 @@
         };
       }
       // config.secrets.ssh.hostSettings
-      // config.secrets.ssh.deploySettings;
+      // config.secrets.ssh.deploySettings
+      // config.secrets.ssh.questSettings;
   };
 }
