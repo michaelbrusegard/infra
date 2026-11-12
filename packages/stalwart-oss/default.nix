@@ -72,8 +72,9 @@ in
     cargoBuildFlags = ["--package" "stalwart"] ++ lib.optional nativeScim "--ignore-rust-version";
     cargoTestFlags =
       if nativeScim
-      then ["--ignore-rust-version" "--package" "http@${finalAttrs.version}" "--package" "directory" "--package" "services" "--lib" "independent_scim"]
+      then ["--ignore-rust-version" "--package" "http@${finalAttrs.version}" "--package" "directory" "--package" "services" "--package" "jmap" "--lib"]
       else ["--package" "stalwart"];
+    checkFlags = lib.optionals nativeScim ["independent_scim" "catch_all_sender"];
     nativeBuildInputs = [pkg-config protobuf rustPlatform.bindgenHook] ++ lib.optionals nativeScim [python3 patch];
     buildInputs = [openssl sqlite zstd];
     env =

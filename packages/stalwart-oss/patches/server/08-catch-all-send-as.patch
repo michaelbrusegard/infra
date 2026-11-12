@@ -1,0 +1,92 @@
+--- a/crates/jmap/src/identity/set.rs
++++ b/crates/jmap/src/identity/set.rs
+@@ -27,7 +27,7 @@ use types::{
+     collection::{Collection, SyncCollection},
+     id::Id,
+ };
+-use utils::sanitize_email;
++use utils::{DomainPart, sanitize_email};
+ 
+ type CreatedValue = Value<'static, IdentityProperty, IdentityValue>;
+ 
+@@ -115,6 +115,9 @@ impl IdentitySet for Server {
+                     .addresses()
+                     .iter()
+                     .any(|e| e == &identity.email)
++                    && !is_catch_all_sender(self, account_id, &identity.email)
++                        .await
++                        .caused_by(trc::location!())?
+                 {
+                     response.not_created.append(
+                         id,
+@@ -277,6 +280,36 @@ impl IdentitySet for Server {
+     }
+ }
+ 
++/// Whether an account may send as an address no principal claims, because the
++/// address's domain has a catch-all that delivers to that account.
++async fn is_catch_all_sender(server: &Server, account_id: u32, address: &str) -> trc::Result<bool> {
++    let Some(domain) = server.domain(address.domain_part()).await? else {
++        return Ok(false);
++    };
++    let Some(catch_all) = domain.catch_all.as_deref() else {
++        return Ok(false);
++    };
++    // An external directory may own recipients the registry does not know.
++    if server
++        .get_directory_for_cached_domain(&domain)
++        .is_some_and(|directory| directory.can_lookup_recipients())
++    {
++        return Ok(false);
++    }
++    Ok(catch_all_sender(
++        account_id,
++        server.account_id_from_email(catch_all, false).await?,
++        server.account_id_from_email(address, true).await?,
++    ))
++}
++
++/// `catch_all` is the account the domain's catch-all names; `address` is the
++/// account the address resolves to, falling back to the catch-all only when no
++/// account or list claims it.
++fn catch_all_sender(account_id: u32, catch_all: Option<u32>, address: Option<u32>) -> bool {
++    catch_all == Some(account_id) && address == Some(account_id)
++}
++
+ fn validate_identity_value(
+     expected_id: Option<Id>,
+     property: &Key<'_, IdentityProperty>,
+@@ -384,3 +417,33 @@ fn validate_identity_value(
+ 
+     Ok(())
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::catch_all_sender;
++
++    const OWNER: u32 = 1;
++    const OTHER: u32 = 2;
++
++    #[test]
++    fn catch_all_sender_allows_unclaimed_address_on_own_catch_all() {
++        assert!(catch_all_sender(OWNER, Some(OWNER), Some(OWNER)));
++    }
++
++    #[test]
++    fn catch_all_sender_denies_catch_all_to_another_account() {
++        assert!(!catch_all_sender(OWNER, Some(OTHER), Some(OTHER)));
++    }
++
++    #[test]
++    fn catch_all_sender_denies_address_owned_by_another_principal() {
++        assert!(!catch_all_sender(OWNER, Some(OWNER), Some(OTHER)));
++        // Lists and disabled addresses resolve to no account.
++        assert!(!catch_all_sender(OWNER, Some(OWNER), None));
++    }
++
++    #[test]
++    fn catch_all_sender_denies_without_catch_all() {
++        assert!(!catch_all_sender(OWNER, None, None));
++    }
++}
