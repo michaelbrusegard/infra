@@ -88,6 +88,14 @@ spec:
         - ports:
             - port: "1411"
               protocol: TCP
+    # Stalwart and Bulwark OIDC discovery/token/userinfo requests
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: stalwart
+      toPorts:
+        - ports:
+            - port: "1411"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
@@ -101,3 +109,12 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
+    # SCIM provisions personal mailboxes on the Stalwart backend.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: stalwart
+            k8s:app: stalwart
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

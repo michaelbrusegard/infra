@@ -48,6 +48,9 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: manafishrov-stalwart
             k8s:app: stalwart
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: stalwart
+            k8s:app: stalwart
       toPorts:
         - ports:
             - port: "24"

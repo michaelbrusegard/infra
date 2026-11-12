@@ -47,7 +47,10 @@ spec:
               value: edge.asgard.michaelbrusegard.com
             # Space-separated domain=backend routes.
             - name: BACKENDS
-              value: manafishrov.com=backend.manafishrov.com
+              value: >-
+                manafishrov.com=backend.manafishrov.com
+                michaelbrusegard.com=mail-backend.asgard.michaelbrusegard.com
+                michbrus.com=mail-backend.asgard.michaelbrusegard.com
             - name: BACKEND_LMTP_PORT
               value: "24"
             - name: BACKEND_SMTP_PORT
