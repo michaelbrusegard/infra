@@ -104,7 +104,7 @@ def verify_tools(binary, approved_sha256, curl_version):
 
 def listener(client, name, number, *, proxy):
     body = {'name': name, 'protocol': 'smtp', 'bind': {f'{RELAY}:{number}': True},
-            'useTls': True, 'tlsImplicit': False}
+            'useTls': True, 'implicitTls': False}
     if proxy:
         # Native IpAddrOrMask rejects prefixes shorter than /8 (registry ipmask.rs):
         # "all IPs" is not expressible. Production must use the pod CIDR that the
@@ -400,20 +400,15 @@ def run(root, report, binary, *, postfix_control=None, postfix_port=None):
                 r = send('direct-all-fail-forged', client_ip=FAIL_IP, sender='sender@fail.auth.example.com',
                          author='fail', sign=invalid_signature)
                 native_only(r, 'direct-all-fail-forged')
-                # The approved mail-auth version returns DMARC None when no
-                # mechanism passes. Postfix's real TLS Received hop also avoids
-                # the stock VIOLATED_DIRECT_SPF rule; do not fabricate its score.
-                tags(r, 'SPF_FAIL (1.00)', 'DKIM_REJECT (1.00)', 'DMARC_NA (1.00)')
-                require('spf=fail' in r['authenticationResults'][0] and 'dmarc=none' in r['authenticationResults'][0]
+                # v1 fails DMARC when no mechanism passes; the p=reject policy
+                # only scores, so the message is still accepted into Junk.
+                tags(r, 'SPF_FAIL (1.00)', 'DKIM_REJECT (1.00)', 'DMARC_POLICY_REJECT (4.00)')
+                require('spf=fail' in r['authenticationResults'][0] and 'dmarc=fail' in r['authenticationResults'][0]
                         and 'policy.dmarc=reject' in r['authenticationResults'][0], r)
                 require('SPF_ALLOW' not in r['spamResult'][0] and 'DKIM_ALLOW' not in r['spamResult'][0]
                         and 'DMARC_POLICY_ALLOW' not in r['spamResult'][0], 'Forged headers earned native credit')
-                expected = ('INBOX', 'No') if postfix_port else ('Junk Mail', 'Yes')
-                require((r['folder'], r['spamStatus'][0]) == expected, r)
+                require((r['folder'], r['spamStatus'][0]) == ('Junk Mail', 'Yes'), r)
                 require(r['exit'] == 0, 'DMARC p=reject caused a rejection; relaxed mode required')
-                report['findings'] = report.get('findings', []) + [
-                    'Mail with no passing SPF/DKIM yields native dmarc=none/DMARC_NA, not dmarc=fail (mail-auth 0.12.1 dmarc/verify.rs:170-212); '
-                    'DMARC_POLICY_REJECT only appears on an actual alignment failure of a pass result']
             stage('allFailForgedHeadersEarnNothingNoReject', all_fail)
 
             def dmarc_unaligned():
@@ -502,8 +497,8 @@ def run(root, report, binary, *, postfix_control=None, postfix_port=None):
                     r = send('direct-contact-gtube-dmarc-fail-forged', client_ip=FAIL_IP,
                              sender='sender@fail.auth.example.com', gtube=True)
                     native_only(r, 'direct-contact-gtube-dmarc-fail-forged')
-                    tags(r, 'GTUBE_TEST (1000.00)', 'SPF_FAIL (1.00)', 'DMARC_NA (1.00)')
-                    require('dmarc=none' in r['authenticationResults'][0], r)
+                    tags(r, 'GTUBE_TEST (1000.00)', 'SPF_FAIL (1.00)', 'DMARC_POLICY_REJECT (4.00)')
+                    require('dmarc=fail' in r['authenticationResults'][0], r)
                     require(r['folder'] == 'Junk Mail' and r['spamStatus'][0] == 'Yes',
                             f'Forged headers earned contact trust without native DMARC pass: {r}')
                 finally:
@@ -515,9 +510,9 @@ def run(root, report, binary, *, postfix_control=None, postfix_port=None):
             def utf8():
                 alias = 'álïce'
                 change(client, 'Account', fixture['users']['alice']['id'], {'aliases': {
-                    '0': {'name': 'alias-alice', 'domainId': fixture['domain_id'], 'enabled': True},
-                    '1': {'name': alias, 'domainId': fixture['domain_id'], 'enabled': True},
-                    '2': {'name': 'alice+explicit', 'domainId': fixture['domain_id'], 'enabled': True}}})
+                    '0': {'name': 'alias-alice', 'domainId': fixture['domain_id'], 'enable': True},
+                    '1': {'name': alias, 'domainId': fixture['domain_id'], 'enable': True},
+                    '2': {'name': 'alice+explicit', 'domainId': fixture['domain_id'], 'enable': True}}})
                 reload(client)
                 tag = 'smtp-utf8-envelope-and-body'
                 msg = known_message(tag)
@@ -600,7 +595,7 @@ def run(root, report, binary, *, postfix_control=None, postfix_port=None):
                     alias = 'retired-after-acceptance'
                     current = client.jmap('x:Account/get', {'ids': [fixture['users']['alice']['id']]})['list'][0]['aliases']
                     expanded = dict(current)
-                    expanded['99'] = {'name': alias, 'domainId': fixture['domain_id'], 'enabled': True}
+                    expanded['99'] = {'name': alias, 'domainId': fixture['domain_id'], 'enable': True}
                     change(client, 'Account', fixture['users']['alice']['id'], {'aliases': expanded})
                     reload(client)
                     tag = 'revoked-after-postfix-rcpt'

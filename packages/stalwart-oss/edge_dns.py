@@ -98,4 +98,4 @@ class AuthDNS:
 
 RESOLVER = {'@type': 'Custom', 'servers': {'0': {
     'protocol': 'udp', 'address': '127.0.0.1', 'port': 15353}},
-    'attempts': 1, 'timeout': 1000, 'concurrency': 2, 'enableEdns': False, 'tcpOnError': False}
+    'attempts': 1, 'timeout': 1000, 'maxConcurrentRequests': 2, 'enableEdns': False, 'tcpOnError': False}

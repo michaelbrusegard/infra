@@ -136,7 +136,7 @@ class SharedFixtureTests(unittest.TestCase):
             'enable': True, 'scoreSpam': 5, 'scoreReject': 0, 'scoreDiscard': 0,
             'trustContacts': True, 'trustReplies': True, 'spamFilterRulesUrl': None})
         self.assertEqual(settings['x:SpamPyzor/set'], {'enable': False})
-        self.assertEqual(settings['x:SpamLlm/set'], {'@type': 'Disable'})
+        self.assertNotIn('x:SpamAi/set', settings)
         self.assertEqual(settings['x:MtaStageData/set'], {
             'enableSpamFilter': {'else': "listener == 'fixture-smtp'", 'match': {}}})
 

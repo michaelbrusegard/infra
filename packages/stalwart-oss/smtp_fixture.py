@@ -78,7 +78,7 @@ def deterministic_spam_settings(client, enable_expression):
                                     'scoreDiscard': 0.0, 'trustContacts': True, 'trustReplies': True,
                                     'spamFilterRulesUrl': None})
     update(client, 'SpamPyzor', {'enable': False})
-    update(client, 'SpamLlm', {'@type': 'Disable'})
+    # v1 OSS has no LLM filter to disable; SpamAi is enterprise-only.
     update(client, 'MtaStageData', {'enableSpamFilter': {'else': enable_expression, 'match': {}}})
 
 
