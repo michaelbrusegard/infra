@@ -102,3 +102,39 @@ resource "cloudflare_dns_record" "safe" {
   proxied  = try(each.value.proxied, false)
   priority = try(each.value.priority, null)
 }
+
+data "cloudflare_zone" "michbrus" {
+  filter = {
+    name = "michbrus.com"
+  }
+}
+
+# Proton's existing MX, SPF, DKIM and DMARC records stay unmanaged until the
+# mail cutover replaces them.
+locals {
+  michbrus_records = {
+    # SMTP2GO outbound relay: bounce return path and DKIM. Its link-tracking
+    # CNAME is deliberately absent because tracking stays disabled.
+    smtp2go_return_path = {
+      name    = "em1206132"
+      type    = "CNAME"
+      content = "return.smtp2go.net"
+    }
+    smtp2go_dkim = {
+      name    = "s1206132._domainkey"
+      type    = "CNAME"
+      content = "dkim.smtp2go.net"
+    }
+  }
+}
+
+resource "cloudflare_dns_record" "michbrus" {
+  for_each = local.michbrus_records
+
+  zone_id = data.cloudflare_zone.michbrus.zone_id
+  name    = each.value.name
+  type    = each.value.type
+  content = each.value.content
+  ttl     = 300
+  proxied = false
+}
