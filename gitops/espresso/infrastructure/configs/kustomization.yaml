@@ -26,3 +26,4 @@ resources:
   - postgres
   - public-dns
   - rustfs
+  - stalwart-tofu

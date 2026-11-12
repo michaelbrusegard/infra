@@ -1,0 +1,60 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../tofu-base
+  - provider-config.yaml
+patches:
+  - target:
+      kind: Terraform
+      name: tofu-base
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: stalwart-infra
+  - target:
+      kind: Terraform
+      name: stalwart-infra
+    patch: |
+      apiVersion: infra.contrib.fluxcd.io/v1alpha2
+      kind: Terraform
+      metadata:
+        name: stalwart-infra
+      spec:
+        # Keep the committed mirror checksums, including the Linux runner.
+        upgradeOnInit: false
+        # Concurrent registry writes fail with serverUnavailable; apply serially.
+        parallelism: 1
+        path: ./gitops/espresso/tofu/stalwart
+        backendConfig:
+          secretSuffix: stalwart-infra
+        runnerPodTemplate:
+          spec:
+            # The published provider contains only linux_amd64.
+            nodeSelector:
+              kubernetes.io/arch: amd64
+            env:
+              - name: TF_CLI_CONFIG_FILE
+                value: /etc/tofu/tofurc
+            envFrom:
+              - secretRef:
+                  name: stalwart-tofu
+            initContainers:
+              - name: install-stalwart-provider
+                image: ghcr.io/michaelbrusegard/terraform-provider-stalwart:1.0.3@sha256:4832706a856de04f0af6a1a7b4aee5277f74eab0285f089b3c585de3cf7dd1aa
+                command: ["/bin/cp", "-R", "/provider-mirror/.", "/mnt/provider-mirror/"]
+                volumeMounts:
+                  - name: provider-mirror
+                    mountPath: /mnt/provider-mirror
+            volumeMounts:
+              - name: tofu-cli-config
+                mountPath: /etc/tofu
+                readOnly: true
+              - name: provider-mirror
+                mountPath: /provider-mirror
+                readOnly: true
+            volumes:
+              - name: tofu-cli-config
+                configMap:
+                  name: stalwart-tofu-provider
+              - name: provider-mirror
+                emptyDir: {}
