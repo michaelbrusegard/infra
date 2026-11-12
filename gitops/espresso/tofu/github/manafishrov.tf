@@ -39,7 +39,7 @@ resource "github_repository_deploy_key" "flux_espresso_manafishrov_secrets" {
   provider   = github.manafishrov
   repository = "infra-secrets"
   title      = "flux-espresso"
-  key        = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHP2Q6sV7UUjH9DjY0UOaQ9iZh+gAtdIZ/1kHhGrkfWp flux-manafishrov-secrets"
+  key        = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHP2Q6sV7UUjH9DjY0UOaQ9iZh+gAtdIZ/1kHhGrkfWp"
   read_only  = true
 }
 

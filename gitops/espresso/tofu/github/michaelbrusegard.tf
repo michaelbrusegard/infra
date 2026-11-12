@@ -4,7 +4,7 @@
 resource "github_repository_deploy_key" "flux_espresso_secrets" {
   repository = "infra-secrets"
   title      = "flux-espresso"
-  key        = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGxmJXxX1UP9NOjJYd9PM2TkW7aULyBfYJSLDCkeTJRi michaelbrusegard@lungo"
+  key        = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGxmJXxX1UP9NOjJYd9PM2TkW7aULyBfYJSLDCkeTJRi"
   read_only  = true
 }
 
@@ -15,7 +15,7 @@ resource "github_repository_deploy_key" "flux_espresso_secrets" {
 resource "github_repository_deploy_key" "image_bump" {
   repository = "infra"
   title      = "image-bump"
-  key        = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIzrJ/6vvuImL47mKGymHhsGIsa1c7j6gUkNPZENA5ZO image-bump@github-actions"
+  key        = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIzrJ/6vvuImL47mKGymHhsGIsa1c7j6gUkNPZENA5ZO"
   read_only  = false
 }
 
