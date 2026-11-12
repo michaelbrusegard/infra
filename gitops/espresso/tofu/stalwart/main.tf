@@ -1,7 +1,7 @@
 # Objects without a unique key would duplicate if state were rebuilt: the
-# OIDC directory, certificate, tracer and DKIM signatures. After the first
-# apply, add import blocks with their server-assigned IDs. Seeded defaults
-# are adopted in seeded.tf.
+# OIDC directory, certificate, tracer and DKIM signatures. imports.tf adopts
+# them by server-assigned ID. Seeded defaults are adopted in seeded.tf.
+# New listeners only bind after a server restart; a reload is not enough.
 
 resource "stalwart_mta_sts" "this" {
   max_age  = 604800000
