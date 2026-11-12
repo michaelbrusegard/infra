@@ -5,6 +5,9 @@ resource "stalwart_domain" "michaelbrusegard" {
   enable                  = true
   allow_relaying          = false
   allow_scim_provisioning = true
+  # Role addresses (postmaster@, infra@, mb@, ...) land in the one mailbox, and
+  # the patched server lets the mailbox send as any address nobody else owns.
+  catch_all_address = "michaelbrusegard@michaelbrusegard.com"
   certificate_management = {
     type = "Manual"
   }
@@ -67,14 +70,4 @@ resource "stalwart_dkim_signature_dkim1_ed25519_sha256" "this" {
     type      = "File"
     file_path = "/var/lib/stalwart/private/dkim/${each.key}.ed25519.key"
   }
-}
-
-# Receive-only role addresses. Lists have no SASL login, so nothing can
-# authenticate as them; replies go out from the mailbox user.
-resource "stalwart_mailing_list" "forward" {
-  for_each = toset(["postmaster", "infra", "mb"])
-
-  domain_id  = stalwart_domain.michaelbrusegard.id
-  name       = each.key
-  recipients = ["michaelbrusegard@michaelbrusegard.com"]
 }

@@ -29,8 +29,8 @@ resource "stalwart_mta_stage_auth" "server" {
   # The single user sends as any address in a local domain (mb@, service@
   # michbrus.com, ...) over SMTP submission. Any other sender domain must
   # still be one of the account's own addresses, which are all local, so a
-  # foreign domain is always refused. This only governs SMTP MAIL FROM:
-  # JMAP identities remain limited to the account's addresses.
+  # foreign domain is always refused. JMAP submission runs through this rule
+  # too; the catch-all send-as patch only governs which identities exist.
   must_match_sender = {
     match = [{
       if   = "!is_empty(authenticated_as) && is_local_domain(sender_domain)"
