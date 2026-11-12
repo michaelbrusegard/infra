@@ -1,11 +1,15 @@
 # Only append this listener after provisioning the pinned client fingerprint.
 # XFORWARD is advertised to dynamic WAN peers, but no message can be accepted
 # without the pinned TLS identity. The public port-25 listener never trusts it.
+# The DATA check also covers recipients that skip RCPT restrictions, such as
+# bare postmaster. Unknown identities are deferred, not rejected: a pin
+# mismatch must leave cortado's queue intact instead of destroying mail.
 2525      inet  n       -      n      -      5       smtpd
   -o smtpd_tls_security_level=encrypt
   -o smtpd_tls_ask_ccert=yes
   -o smtpd_tls_fingerprint_digest=sha256
   -o relay_clientcerts=texthash:/run/postfix/backup-client
-  -o smtpd_client_restrictions=permit_tls_clientcerts,reject
+  -o smtpd_client_restrictions=permit_tls_clientcerts,defer
+  -o smtpd_data_restrictions=permit_tls_clientcerts,defer
   -o smtpd_authorized_xforward_hosts=0.0.0.0/0,[::]/0
   -o smtpd_authorized_xclient_hosts=

@@ -110,9 +110,16 @@ in
       backup.wait_for_unit("postfix.service")
       assert len(backup.succeed("postqueue -j").splitlines()) == 2
 
-      # Only the pinned client identity may hand off mail with original peer metadata.
+      # A pin mismatch must defer the handoff and keep the queue intact. Install
+      # it before the primary starts so automatic retries cannot drain the queue.
+      primary.succeed("cp /run/postfix/backup-client /tmp/backup-client; sed -i 's/^../00/' /run/postfix/backup-client")
       primary.succeed("systemctl start postfix")
       primary.wait_for_open_port(2525)
+      backup.succeed("postqueue -f")
+      backup.wait_until_succeeds("postqueue -j | grep -q 'Client host rejected: Try again later'", timeout=60)
+      assert len(backup.succeed("postqueue -j").splitlines()) == 2
+
+      # Only the pinned client identity may hand off mail with original peer metadata.
       python(primary, """
       import smtplib, ssl
       for identity in [None, 'rogue']:
@@ -125,7 +132,18 @@ in
               s.ehlo()
               s.docmd('XFORWARD', 'ADDR=203.0.113.1 HELO=forged.test')
               s.mail('sender@outside.test')
-              assert s.rcpt('user@manafishrov.com')[0] >= 500
+              assert 400 <= s.rcpt('user@manafishrov.com')[0] < 500
+              s.rset()
+              # Bare postmaster skips RCPT restrictions; DATA must still refuse.
+              s.docmd('XFORWARD', 'ADDR=203.0.113.1 HELO=forged.test')
+              s.mail('sender@outside.test')
+              s.rcpt('postmaster')
+              assert 400 <= s.docmd('DATA')[0] < 500
+      """)
+      primary.fail("grep forged.test /tmp/delivered")
+      primary.succeed("cp /tmp/backup-client /run/postfix/backup-client; postfix reload")
+      python(primary, """
+      import smtplib, ssl
       ctx = ssl._create_unverified_context()
       ctx.load_cert_chain('/tmp/client.crt', '/tmp/client.key')
       with smtplib.SMTP('localhost', 2525) as s:
