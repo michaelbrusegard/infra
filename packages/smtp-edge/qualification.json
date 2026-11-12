@@ -1,8 +1,8 @@
 {
   "fixtureQualified": true,
   "productionActivated": true,
-  "evidence": "https://github.com/michaelbrusegard/infra/actions/runs/40273064684",
-  "registryManifestDigest": "sha256:1fd2a06263a388aa0064639c0de7a872431653924476a2c07ca77eb5e0c8f897",
+  "evidence": "https://github.com/michaelbrusegard/infra/actions/runs/43174603760",
+  "registryManifestDigest": "sha256:05dfae1f5fd5864ea35908584473c8c099539516134fffa5f556d4a6c7adbd63",
   "productionEvidence": {
     "date": "2026-09-18",
     "publicAddressProbeVantage": "independent cortado WAN, following initial local public-address checks",
@@ -76,28 +76,28 @@
     ]
   },
   "postfixSecurityProfile": "default Docker seccomp, no-new-privileges, exact capabilities, readonly root, root-owned 0400 TLS mounts",
-  "dockerConfigId": "sha256:69ae15719c6202ba645f21e523b779aad3acf8fbbaea06f31a769a71fdcaaf93",
+  "dockerConfigId": "sha256:8dae6f8a645f4c33e2940c19bebee92f7c4d0ade774892eae34f3164b3fc4fcb",
   "priorOwnershipFixEvidence": [
     "/tmp/smtp-edge-postfix-2ii9tw6v",
     "/tmp/smtp-edge-postfix-yf03trfj"
   ],
   "wrongCaTlsProbeExit": 60,
   "imageIdentityNote": "Hash the actual archive configuration JSON. Docker 29 reports the manifest digest as .Id; do not confuse that with the configuration digest or published registry pin.",
-  "stalwartBinarySha256": "3c283adb22cc27beabf0cf7711af6f2e2b4be4739133a68a628e00f8134ae5b1",
+  "stalwartBinarySha256": "3459f892901e7ffb6f86386c095886a40783ad38a916b6008f573c0b4b11d915",
   "nativeStages": 19,
   "deliveredMessages": 15,
   "postfixQueueEmpty": true,
   "sourceSha256": {
-    "qualify_postfix.py": "6d74d2e483fec78319a15025d5d5e78e19cd0ddf639f7b4ca7353a84ed3bee5b",
-    "qualify.py": "dd7a6aa2a9f1cd1e71dfc3596b4ae3163935e5ce94f836b9f84894a38378e807",
+    "qualify_postfix.py": "46c6f71c946aae79b4df2f02961739b236fea75c37603111b1f1be99fb45e7e6",
+    "qualify.py": "0770aa7b3948111da2529b97674d479050e9857907d8237d1fde301d7bcbb10a",
     "deliver.sh": "18b8b2fde11b81659fd4de73ebca679a5a7859219a3fc6662463e936d383d6fa",
-    "main.cf": "c05df4417eae9f4945a08dbd60c39112d44318bb3765cd78c48da95ea17095e3",
-    "master.cf": "d24ae18201a6b828ac3dffbae19e09dbeb60f1ca2f658feabf2d0668749416aa",
-    "entrypoint.sh": "402ece5fa50981d185d5d5df354e4106ef57e7c9ed046b6cf0d1aa3be743cfa7",
-    "integration.py": "6bf99c26bbf9b47955c924bbbf45288c0e68023d3e53bb3b243c58c7488c3f33",
-    "mail.py": "e38145d603a9a2f58136bfcdfc4dc297b4fc457157d964a763658397a1ba4ac8",
-    "smtp_fixture.py": "f1a963424a7bb27f13ea2bc108d4eea0fcd330a3c1556bc6df9c37c983dbe07f",
-    "edge_dns.py": "935cf3e254bba736ddcb0139b7d3c6212af964b83820a92a8dff4319bc20f18c"
+    "main.cf": "7a5dcf1e33a33732277dd333923ccc7adfafa3939cef1248b01ca58554ee9d14",
+    "master.cf": "8302022ce7c834a6bb9b31d601643540b896ba2886ae8ad5642fb153aaa48601",
+    "entrypoint.sh": "b18ba4a36b04c7daf74e84cd4fe5ecfb3f5a417a49a6f0343298038b7a8d22a2",
+    "integration.py": "26ad6e379bf8ca815b00c399b0356b2dbc50e46cae1b08ea16854ae737b519a7",
+    "mail.py": "b3dfbc81189d609b2dfd706f8b46710e0a5e68d2fb707331095dcc205c3403b1",
+    "smtp_fixture.py": "5f1cffeaf7dcdf5e58754cf020756b5d36f7ce5dfe59367cb9c82a688f448334",
+    "edge_dns.py": "4ae620b188fec8b042c8f9c35a3dad6eb120e1dacccb654a5c49b11681cbc7e7"
   },
   "limits": [
     "Independent external IPv4/IPv6 messages reached native Junk with original peer IP/EHLO preserved. Live Junk evidence is ingestion/delivery telemetry; Email/query remains forbidden and no production message bodies were fetched.",
@@ -108,9 +108,9 @@
     "Stock mail-auth returns DMARC none if no mechanism passes; no custom authentication-score overrides are installed.",
     "Local generated and wrong-CA cases include direct-adapter controls; Postfix-generated local DSN and actual Postfix queue restart are tested separately."
   ],
-  "qualifiedAt": "2026-10-26",
-  "sourceRevision": "824453f0ceaa15f766ab4fa4b632727564af96e4",
-  "dockerImageId": "sha256:1fd2a06263a388aa0064639c0de7a872431653924476a2c07ca77eb5e0c8f897",
+  "qualifiedAt": "2026-11-12",
+  "sourceRevision": "c18ceba6f48fcedc5b2db073e592ca2645365a8a",
+  "dockerImageId": "sha256:05dfae1f5fd5864ea35908584473c8c099539516134fffa5f556d4a6c7adbd63",
   "postfixVersion": "3.11.7",
   "curlVersion": "8.22.0"
 }
