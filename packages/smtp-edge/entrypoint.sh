@@ -4,8 +4,10 @@ set -euo pipefail
 umask 077
 
 : "${POSTFIX_HOSTNAME:=edge.asgard.michaelbrusegard.com}"
-: "${BACKEND_HOST:=backend.manafishrov.com}"
-: "${BACKEND_TLS_SERVERNAME:=$BACKEND_HOST}"
+# Space-separated domain=host routes; each domain is served by one backend.
+: "${BACKENDS:=manafishrov.com=backend.manafishrov.com}"
+# Fixtures that reach a backend by IP verify one shared certificate name.
+: "${BACKEND_TLS_SERVERNAME:=}"
 : "${BACKEND_LMTP_PORT:=24}"
 : "${BACKEND_SMTP_PORT:=25}"
 : "${BACKEND_LOCAL_SMTP_PORT:=26}"
@@ -16,9 +18,20 @@ umask 077
 
 fail() { printf 'smtp-edge: %s\n' "$1" >&2; exit 1; }
 [[ $EUID == 0 ]] || fail 'Postfix master must run as root'
-for name in POSTFIX_HOSTNAME BACKEND_HOST BACKEND_TLS_SERVERNAME; do
-  [[ ${!name} =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ ]] || fail "invalid $name"
+dns_name='^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$'
+[[ $POSTFIX_HOSTNAME =~ $dns_name ]] || fail 'invalid POSTFIX_HOSTNAME'
+[[ -z $BACKEND_TLS_SERVERNAME || $BACKEND_TLS_SERVERNAME =~ $dns_name ]] || fail 'invalid BACKEND_TLS_SERVERNAME'
+declare -A backend_for=()
+read -ra routes <<< "$BACKENDS"
+for route in "${routes[@]}"; do
+  domain=${route%%=*}
+  host=${route#*=}
+  domain=${domain,,}
+  [[ $route == *=* && $domain =~ $dns_name && $host =~ $dns_name ]] || fail "invalid BACKENDS route: $route"
+  [[ -z ${backend_for[$domain]:-} ]] || fail "duplicate BACKENDS domain: $domain"
+  backend_for[$domain]=$host
 done
+(( ${#backend_for[@]} > 0 )) || fail 'BACKENDS has no routes'
 for name in BACKEND_LMTP_PORT BACKEND_SMTP_PORT BACKEND_LOCAL_SMTP_PORT; do
   [[ ${!name} =~ ^[0-9]{1,5}$ ]] || fail "invalid $name"
   (( 10#${!name} >= 1 && 10#${!name} <= 65535 )) || fail "invalid $name"
@@ -35,7 +48,6 @@ install -d -m 0730 -o postfix -g postdrop /var/lib/postfix/queue/maildrop
 install -d -m 0710 -o postfix -g postdrop /var/lib/postfix/queue/public
 cp /opt/smtp-edge/main.cf /run/postfix/main.cf
 master=$(</opt/smtp-edge/master.cf)
-master=${master//@BACKEND_HOST@/$BACKEND_HOST}
 master=${master//@BACKEND_SMTP_PORT@/$BACKEND_SMTP_PORT}
 master=${master//@BACKEND_LOCAL_SMTP_PORT@/$BACKEND_LOCAL_SMTP_PORT}
 master=${master//@BACKEND_CA_FILE@/$BACKEND_CA_FILE}
@@ -54,13 +66,24 @@ if [[ -n ${BACKUP_CLIENT_FINGERPRINT_FILE:-} && -f $BACKUP_CLIENT_FINGERPRINT_FI
 fi
 
 # Regexp maps are case-insensitive by default. DUNNO does not bypass verification.
-printf '%s\n' '/@manafishrov[.]com$/ DUNNO' '/.*/ REJECT recipient domain not served' > /run/postfix/served-domains
-chmod 0644 /run/postfix/served-domains
-
+# Delivery and recipient verification both follow the recipient's domain.
 # An explicit policy match authenticates the configured name, not discovered DNS.
-printf '[%s]:%s secure match=%s servername=%s\n' "$BACKEND_HOST" "$BACKEND_LMTP_PORT" "$BACKEND_TLS_SERVERNAME" "$BACKEND_TLS_SERVERNAME" |
-  postmap -ir lmdb:/run/postfix/lmtp-tls
-chmod 0644 /run/postfix/lmtp-tls.lmdb
+served='' transport='' verify='' tls=''
+for domain in "${!backend_for[@]}"; do
+  host=${backend_for[$domain]}
+  name=${BACKEND_TLS_SERVERNAME:-$host}
+  served+="/@${domain//./[.]}\$/ DUNNO"$'\n'
+  transport+="$domain forward:$host"$'\n'
+  verify+="$domain lmtp:inet:[$host]:$BACKEND_LMTP_PORT"$'\n'
+  tls+="[$host]:$BACKEND_LMTP_PORT secure match=$name servername=$name"$'\n'
+done
+printf '%s%s\n' "$served" '/.*/ REJECT recipient domain not served' > /run/postfix/served-domains
+chmod 0644 /run/postfix/served-domains
+printf '%s' "$transport" | postmap -ir lmdb:/run/postfix/transport
+printf '%s' "$verify" | postmap -ir lmdb:/run/postfix/verify-transport
+# Domains sharing a backend repeat its policy key; -r keeps one entry.
+printf '%s' "$tls" | postmap -ir lmdb:/run/postfix/lmtp-tls
+chmod 0644 /run/postfix/{transport,verify-transport,lmtp-tls}.lmdb
 
 password=$(<"$RESEND_PASSWORD_FILE")
 [[ -n $password && $password != *[$'\r\n\t ']* ]] || fail 'invalid Resend credential file'
@@ -71,7 +94,7 @@ chmod 0600 /run/postfix/sasl-passwd.lmdb
 
 postconf -e \
   "myhostname = $POSTFIX_HOSTNAME" \
-  "address_verify_transport_maps = static:lmtp:inet:[$BACKEND_HOST]:$BACKEND_LMTP_PORT" \
+  "relay_domains = ${!backend_for[*]}" \
   "lmtp_tls_CAfile = $BACKEND_CA_FILE" \
   "smtp_tls_CAfile = /etc/ssl/certs/ca-bundle.crt" \
   "smtpd_tls_cert_file = $INBOUND_TLS_CERT_FILE" \

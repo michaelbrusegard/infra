@@ -45,10 +45,9 @@ spec:
           env:
             - name: POSTFIX_HOSTNAME
               value: edge.asgard.michaelbrusegard.com
-            - name: BACKEND_HOST
-              value: backend.manafishrov.com
-            - name: BACKEND_TLS_SERVERNAME
-              value: backend.manafishrov.com
+            # Space-separated domain=backend routes.
+            - name: BACKENDS
+              value: manafishrov.com=backend.manafishrov.com
             - name: BACKEND_LMTP_PORT
               value: "24"
             - name: BACKEND_SMTP_PORT

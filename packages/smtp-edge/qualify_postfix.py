@@ -257,7 +257,7 @@ def main():
         require(report['versions']['postfix'] == postfix_version
                 and report['versions']['curl'].startswith(f'curl {curl_version} '),
                 'Image binaries do not match its version label')
-        env = {'POSTFIX_HOSTNAME': 'edge.fixture.test', 'BACKEND_HOST': ready['backendHost'],
+        env = {'POSTFIX_HOSTNAME': 'edge.fixture.test', 'BACKENDS': 'manafishrov.com=' + ready['backendHost'],
                'BACKEND_TLS_SERVERNAME': 'localhost', 'BACKEND_LMTP_PORT': ready['lmtpPort'],
                'BACKEND_SMTP_PORT': ready['smtpPort'], 'BACKEND_LOCAL_SMTP_PORT': ready['localSmtpPort'],
                'BACKEND_CA_FILE': '/run/fixture-tls/ca.crt', 'INBOUND_TLS_CERT_FILE': '/run/fixture-tls/tls.crt',

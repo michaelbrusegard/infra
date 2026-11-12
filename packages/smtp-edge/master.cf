@@ -20,4 +20,4 @@ scache    unix  -       -      n      -      1       scache
 postlog   unix-dgram n  -      n      -      1       postlogd
 forward   unix  -       n      n      -      2       pipe
   flags= eol=\r\n null_sender= user=mailforward
-  argv=/bin/bash /opt/smtp-edge/deliver.sh @BACKEND_HOST@ @BACKEND_SMTP_PORT@ @BACKEND_LOCAL_SMTP_PORT@ @BACKEND_CA_FILE@ ${client_address} ${client_helo} ${sender} ${recipient}
+  argv=/bin/bash /opt/smtp-edge/deliver.sh ${nexthop} @BACKEND_SMTP_PORT@ @BACKEND_LOCAL_SMTP_PORT@ @BACKEND_CA_FILE@ ${client_address} ${client_helo} ${sender} ${recipient}

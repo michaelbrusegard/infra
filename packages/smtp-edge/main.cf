@@ -9,7 +9,8 @@ inet_interfaces = all
 inet_protocols = all
 mydestination =
 mynetworks =
-relay_domains = manafishrov.com
+# relay_domains is set at startup from BACKENDS.
+relay_domains =
 parent_domain_matches_subdomains =
 relay_recipient_maps =
 local_recipient_maps =
@@ -34,7 +35,8 @@ smtpd_helo_required = yes
 disable_vrfy_command = yes
 smtpd_tls_security_level = may
 
-relay_transport = forward
+transport_maps = lmdb:/etc/postfix/transport
+relay_transport = error:5.3.0 no backend for this domain
 forward_destination_recipient_limit = 1
 forward_destination_concurrency_limit = 2
 local_transport = error:local delivery disabled
@@ -42,6 +44,7 @@ virtual_transport = error:virtual delivery disabled
 
 # Finite optimistic cache: failed refreshes do not revoke unexpired positives.
 address_verify_map = lmdb:$data_directory/verify_cache
+address_verify_transport_maps = lmdb:/etc/postfix/verify-transport
 address_verify_sender = <>
 address_verify_positive_expire_time = 1h
 address_verify_positive_refresh_time = 1m
