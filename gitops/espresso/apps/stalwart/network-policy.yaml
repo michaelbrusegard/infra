@@ -1,0 +1,133 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: stalwart
+  namespace: stalwart
+spec:
+  endpointSelector:
+    matchLabels:
+      app: stalwart
+  ingress:
+    # Internet SMTP terminates on the shared edge, never on this backend.
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "465"
+              protocol: TCP
+            - port: "587"
+              protocol: TCP
+            - port: "993"
+              protocol: TCP
+            - port: "4190"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    # PROXY sender assertions are trusted only from this exact workload identity.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: smtp-edge
+            k8s:app: smtp-edge
+      toPorts:
+        - ports:
+            - port: "24"
+              protocol: TCP
+            - port: "25"
+              protocol: TCP
+            - port: "26"
+              protocol: TCP
+    # Pocket ID pushes the mailbox user over SCIM.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: pocket-id
+            k8s:app: pocket-id
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    # The tofu-controller runner manages the server over HTTP.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: flux-system
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    # Mail clients (IMAP, submission, Sieve) only from the LAN and NetBird.
+    - fromCIDR:
+        - 10.0.186.0/24
+        - fd7a:115c:a1e0:186::/64
+        - 10.0.187.0/24
+        - fd7a:115c:a1e0:187::/64
+        - 100.102.0.0/16
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "465"
+              protocol: TCP
+            - port: "587"
+              protocol: TCP
+            - port: "993"
+              protocol: TCP
+            - port: "4190"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: uptime-kuma
+            k8s:app: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "465"
+              protocol: TCP
+            - port: "587"
+              protocol: TCP
+            - port: "993"
+              protocol: TCP
+            - port: "4190"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # Split-DNS OIDC traverses the public Gateway on 443 and reaches Pocket ID
+    # on its translated backend port.
+    - toEntities:
+        - cluster
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "1411"
+              protocol: TCP
+    # SMTP2GO relay (587), spam rule downloads and OIDC discovery (443).
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "587"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP

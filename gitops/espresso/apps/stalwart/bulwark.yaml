@@ -1,0 +1,209 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bulwark-settings
+  namespace: stalwart
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ssd-ha
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bulwark
+  namespace: stalwart
+  annotations:
+    secret.reloader.stakater.com/reload: bulwark
+spec:
+  replicas: 1
+  # Zero surge avoids RWO mount conflicts on the settings volume.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: bulwark
+  template:
+    metadata:
+      labels:
+        app: bulwark
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: webmail
+          image: ghcr.io/bulwarkmail/webmail:1.21.0@sha256:420069671e7776f49cf40882f35bc37b57593f224c7dddbeb6f78e52341fa207
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: JMAP_SERVER_URL
+              value: https://mail.asgard.michaelbrusegard.com
+            - name: APP_NAME
+              value: Mail
+            - name: OAUTH_ENABLED
+              value: "true"
+            - name: OAUTH_ONLY
+              value: "true"
+            # Stalwart validates this audience; the webmail session does not
+            # request authorization groups.
+            - name: OAUTH_CLIENT_ID
+              value: stalwart
+            - name: OAUTH_ISSUER_URL
+              value: https://id.asgard.michaelbrusegard.com
+            - name: OAUTH_ALLOW_PRIVATE_ENDPOINTS
+              value: "true"
+            - name: OAUTH_SCOPES
+              value: openid email profile offline_access
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bulwark
+                  key: SESSION_SECRET
+            - name: SETTINGS_SYNC_ENABLED
+              value: "true"
+            - name: SETTINGS_DATA_DIR
+              value: /app/data/settings
+            - name: ADMIN_CONFIG_READONLY
+              value: "true"
+            - name: BULWARK_TELEMETRY
+              value: "off"
+            - name: BULWARK_UPDATE_CHECK
+              value: "off"
+            - name: NEXT_TELEMETRY_DISABLED
+              value: "1"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /api/config
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/config
+              port: http
+          livenessProbe:
+            tcpSocket:
+              port: http
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: settings
+              mountPath: /app/data/settings
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /app/.next/cache
+      volumes:
+        # Settings persist; runtime audit/setup state remains ephemeral.
+        - name: settings
+          persistentVolumeClaim:
+            claimName: bulwark-settings
+        - name: data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bulwark
+  namespace: stalwart
+spec:
+  selector:
+    app: bulwark
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bulwark
+  namespace: stalwart
+spec:
+  parentRefs:
+    - name: public
+      namespace: gateway
+      sectionName: https
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - webmail.asgard.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: bulwark
+          port: 3000
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: bulwark
+  namespace: stalwart
+spec:
+  endpointSelector:
+    matchLabels:
+      app: bulwark
+  ingress:
+    - fromEntities: [ingress, host, remote-node]
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # Split-DNS HTTPS traverses the Gateway and translated backend ports.
+    - toEntities: [cluster]
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
+            - port: "1411"
+              protocol: TCP
+    - toFQDNs:
+        - matchName: id.asgard.michaelbrusegard.com
+        - matchName: mail.asgard.michaelbrusegard.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

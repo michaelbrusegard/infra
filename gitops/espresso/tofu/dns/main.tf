@@ -125,6 +125,17 @@ locals {
       type    = "CNAME"
       content = "dkim.smtp2go.net"
     }
+    # Stalwart signs with these; the private keys live in infra-secrets.
+    dkim_rsa = {
+      name    = "stalwart-rsa._domainkey"
+      type    = "TXT"
+      content = "v=DKIM1; k=rsa; p=${var.dkim_rsa_pub_michbrus}"
+    }
+    dkim_ed25519 = {
+      name    = "stalwart-ed25519._domainkey"
+      type    = "TXT"
+      content = "v=DKIM1; k=ed25519; p=${var.dkim_ed25519_pub_michbrus}"
+    }
   }
 }
 

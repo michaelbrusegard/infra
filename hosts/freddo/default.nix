@@ -32,6 +32,11 @@
       "uploads"
     ];
     jellyfin = ["repo-config"];
+    # Personal Stalwart mailbox store and Bulwark webmail settings.
+    mail = [
+      "bulwark-settings"
+      "stalwart"
+    ];
     minecraft-creative = ["world"];
     minecraft-revelation = ["world"];
     minecraft-vanilla = ["world"];

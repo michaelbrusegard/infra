@@ -17,4 +17,5 @@ resources:
   - mealie
   - searxng
   - smtp-edge
+  - stalwart
   - uptime-kuma

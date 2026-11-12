@@ -312,7 +312,8 @@ in {
     cloudflare-dyndns.domains = [
       routerDomain
       "mx.manafishrov.com"
-      # Compatibility for senders retaining the previous MX hostname.
+      "mx.${baseDomain}"
+      # Personal Stalwart web, JMAP and administration via the HTTPS Gateway.
       "mail.${baseDomain}"
     ];
 
@@ -482,9 +483,9 @@ in {
       };
       customDNS.mapping = {
         "${routerDomain}" = "10.0.186.1,fd7a:115c:a1e0:186::1";
-        # SMTP uses the shared edge; webmail uses the HTTP gateway.
+        # SMTP uses the shared edge; mail.* web names resolve through k8s-gateway.
         "mx.manafishrov.com" = "10.0.188.12,fd7a:115c:a1e0:188::12";
-        "mail.${baseDomain}" = "10.0.188.12,fd7a:115c:a1e0:188::12";
+        "mx.${baseDomain}" = "10.0.188.12,fd7a:115c:a1e0:188::12";
       };
     };
 
