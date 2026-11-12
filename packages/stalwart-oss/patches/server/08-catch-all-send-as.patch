@@ -1,5 +1,14 @@
 --- a/crates/jmap/src/identity/set.rs
 +++ b/crates/jmap/src/identity/set.rs
+@@ -5,7 +5,7 @@
+  */
+ 
+ use super::{StoredIdentities, get::IdentityGet};
+-use common::{Server, storage::index::ObjectIndexBuilder};
++use common::{Server, auth::EmailCache, storage::index::ObjectIndexBuilder};
+ use email::identity::{EmailAddress, Identity};
+ use jmap_proto::{
+     error::set::{SetError, SetErrorType},
 @@ -27,7 +27,7 @@ use types::{
      collection::{Collection, SyncCollection},
      id::Id,
@@ -19,13 +28,21 @@
                  {
                      response.not_created.append(
                          id,
-@@ -277,6 +280,36 @@ impl IdentitySet for Server {
+@@ -277,6 +280,52 @@ impl IdentitySet for Server {
      }
  }
  
 +/// Whether an account may send as an address no principal claims, because the
 +/// address's domain has a catch-all that delivers to that account.
-+async fn is_catch_all_sender(server: &Server, account_id: u32, address: &str) -> trc::Result<bool> {
++///
++/// The lookups read cached registry data and the identity write asserts no
++/// registry version, so an address reassigned concurrently can still get an
++/// identity. EmailSubmission/set reruns this check, so it cannot send as one.
++pub(crate) async fn is_catch_all_sender(
++    server: &Server,
++    account_id: u32,
++    address: &str,
++) -> trc::Result<bool> {
 +    let Some(domain) = server.domain(address.domain_part()).await? else {
 +        return Ok(false);
 +    };
@@ -41,22 +58,30 @@
 +    }
 +    Ok(catch_all_sender(
 +        account_id,
-+        server.account_id_from_email(catch_all, false).await?,
++        server.rcpt_id_from_email(address).await?,
 +        server.account_id_from_email(address, true).await?,
++        server.account_id_from_email(catch_all, false).await?,
 +    ))
 +}
 +
-+/// `catch_all` is the account the domain's catch-all names; `address` is the
-+/// account the address resolves to, falling back to the catch-all only when no
-+/// account or list claims it.
-+fn catch_all_sender(account_id: u32, catch_all: Option<u32>, address: Option<u32>) -> bool {
-+    catch_all == Some(account_id) && address == Some(account_id)
++/// `exact` is whatever claims the address itself, including lists and
++/// disabled addresses; `resolved` is the account it delivers to after
++/// sub-addressing and catch-all fallback; `catch_all` is the account the
++/// domain's catch-all names. Checking `exact` first stops sub-addressing from
++/// stripping an exactly claimed `local+tag` down to an unclaimed `local`.
++fn catch_all_sender(
++    account_id: u32,
++    exact: Option<EmailCache>,
++    resolved: Option<u32>,
++    catch_all: Option<u32>,
++) -> bool {
++    exact.is_none() && resolved == Some(account_id) && catch_all == Some(account_id)
 +}
 +
  fn validate_identity_value(
      expected_id: Option<Id>,
      property: &Key<'_, IdentityProperty>,
-@@ -384,3 +417,33 @@ fn validate_identity_value(
+@@ -384,3 +433,65 @@ fn validate_identity_value(
  
      Ok(())
  }
@@ -64,29 +89,97 @@
 +#[cfg(test)]
 +mod tests {
 +    use super::catch_all_sender;
++    use common::auth::EmailCache;
 +
 +    const OWNER: u32 = 1;
 +    const OTHER: u32 = 2;
 +
 +    #[test]
 +    fn catch_all_sender_allows_unclaimed_address_on_own_catch_all() {
-+        assert!(catch_all_sender(OWNER, Some(OWNER), Some(OWNER)));
++        assert!(catch_all_sender(OWNER, None, Some(OWNER), Some(OWNER)));
++    }
++
++    #[test]
++    fn catch_all_sender_denies_exact_sub_address_owned_by_another_account() {
++        // vip+tag is another account's alias; sub-addressing strips it to an
++        // unclaimed vip, which falls back to the catch-all.
++        let exact = Some(EmailCache::Account(OTHER));
++        assert!(!catch_all_sender(OWNER, exact, Some(OWNER), Some(OWNER)));
++    }
++
++    #[test]
++    fn catch_all_sender_denies_claimed_address() {
++        for exact in [
++            EmailCache::MailingList(OTHER),
++            EmailCache::DisabledListAddress(OTHER),
++            EmailCache::DisabledAccountAddress(OTHER),
++            EmailCache::DisabledAccountAddress(OWNER),
++        ] {
++            assert!(!catch_all_sender(OWNER, Some(exact), None, Some(OWNER)));
++        }
++    }
++
++    #[test]
++    fn catch_all_sender_denies_sub_address_of_another_account() {
++        assert!(!catch_all_sender(OWNER, None, Some(OTHER), Some(OWNER)));
 +    }
 +
 +    #[test]
 +    fn catch_all_sender_denies_catch_all_to_another_account() {
-+        assert!(!catch_all_sender(OWNER, Some(OTHER), Some(OTHER)));
-+    }
-+
-+    #[test]
-+    fn catch_all_sender_denies_address_owned_by_another_principal() {
-+        assert!(!catch_all_sender(OWNER, Some(OWNER), Some(OTHER)));
-+        // Lists and disabled addresses resolve to no account.
-+        assert!(!catch_all_sender(OWNER, Some(OWNER), None));
++        assert!(!catch_all_sender(OWNER, None, Some(OTHER), Some(OTHER)));
 +    }
 +
 +    #[test]
 +    fn catch_all_sender_denies_without_catch_all() {
-+        assert!(!catch_all_sender(OWNER, None, None));
++        assert!(!catch_all_sender(OWNER, None, None, None));
++    }
++
++    #[test]
++    fn catch_all_sender_rechecks_deny_after_revocation() {
++        // Allowed when the identity was created.
++        assert!(catch_all_sender(OWNER, None, Some(OWNER), Some(OWNER)));
++        // Catch-all removed: the address no longer resolves to anyone.
++        assert!(!catch_all_sender(OWNER, None, None, None));
++        // Catch-all repointed to another account.
++        assert!(!catch_all_sender(OWNER, None, Some(OTHER), Some(OTHER)));
++        // Address assigned to another account.
++        let exact = Some(EmailCache::Account(OTHER));
++        assert!(!catch_all_sender(OWNER, exact, Some(OTHER), Some(OWNER)));
 +    }
 +}
+--- a/crates/jmap/src/submission/set.rs
++++ b/crates/jmap/src/submission/set.rs
+@@ -4,6 +4,7 @@
+  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
+  */
+ 
++use crate::identity::set::is_catch_all_sender;
+ use common::{
+     Server,
+     config::smtp::queue::QueueName,
+@@ -581,6 +582,25 @@ impl EmailSubmissionSet for Server {
+                 .with_description("Identity not found.")));
+         };
+ 
++        // Catch-all identities are only authorized at creation, and the
++        // catch-all or address ownership may have changed since.
++        if !self
++            .account_info(account_id)
++            .await
++            .caused_by(trc::location!())?
++            .addresses()
++            .iter()
++            .any(|e| e == &identity_mail_from)
++            && !is_catch_all_sender(self, account_id, &identity_mail_from)
++                .await
++                .caused_by(trc::location!())?
++        {
++            return Ok(Err(SetError::new(SetErrorType::ForbiddenFrom)
++                .with_description(
++                    "Identity email address is not configured for this account.",
++                )));
++        }
++
+         // Make sure the envelope address matches the identity email address
+         let mail_from = if let Some(mail_from) = mail_from {
+             if !mail_from.address.eq_ignore_ascii_case(&identity_mail_from) {
