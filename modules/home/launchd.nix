@@ -41,6 +41,18 @@ lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
       };
     };
 
+    stats = {
+      enable = true;
+      config = {
+        ProgramArguments = [
+          "/usr/bin/open"
+          "${pkgs.brewCasks.stats}/Applications/Stats.app"
+        ];
+        RunAtLoad = true;
+        LimitLoadToSessionType = "Aqua";
+      };
+    };
+
     netbird-ui = {
       enable = true;
       config = {
