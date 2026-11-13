@@ -17,6 +17,7 @@
     inputs.self.nixosModules.openssh
     inputs.self.nixosModules.rasdaemon
     inputs.self.nixosModules.security
+    inputs.self.nixosModules.smartctl-exporter
     inputs.self.nixosModules.watchdog
     ./cluster.nix
     ./seccomp-profiles.nix
