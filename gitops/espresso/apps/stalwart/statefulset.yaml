@@ -25,7 +25,7 @@ spec:
       containers:
         - name: stalwart
           # Same patched native-SCIM build as the manafishrov tenant.
-          image: ghcr.io/michaelbrusegard/stalwart-native-scim:1.0.3@sha256:140bc73e80023e32d4432ac993887a1929607890fd601462b88333868d8a97f3
+          image: ghcr.io/michaelbrusegard/stalwart-native-scim:1.0.3@sha256:67083aba390b26e3ee97c0f3c016bc473f10831dad4f7244b979e5dfcaf29ad8
           command:
             - /usr/local/bin/stalwart
             - --config
