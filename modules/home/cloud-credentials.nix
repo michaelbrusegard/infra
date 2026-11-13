@@ -7,6 +7,7 @@
     persistence.${homePersistenceRoot}.directories = [
       ".aws"
       ".blaxel"
+      ".cloudflared"
     ];
   };
 }
