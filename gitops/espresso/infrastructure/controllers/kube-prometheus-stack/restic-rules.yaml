@@ -9,6 +9,14 @@ spec:
   groups:
     - name: backup-host-restic
       rules:
+        - alert: BackupHostDown
+          expr: up{job="node-exporter",instance=~"freddo|manata"} == 0
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: Backup host {{ $labels.instance }} is unreachable
+            description: "Backups to {{ $labels.instance }} cannot run while it is down."
         - alert: ResticMaintenanceFailed
           expr: node_systemd_unit_state{instance=~"freddo|manata",name=~"restic-(rest-server|maintenance|prune|check|unlock|metrics)\\.service",state="failed"} == 1
           for: 5m

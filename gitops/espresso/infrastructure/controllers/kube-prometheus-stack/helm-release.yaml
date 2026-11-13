@@ -32,6 +32,63 @@ spec:
       rules:
         etcd: false
         kubeProxy: false
+      # Fires for every failed Job until someone deletes it, including
+      # CronJob runs that later succeeded. job-rules.yaml replaces it.
+      disabled:
+        KubeJobFailed: true
+
+    # DiskPool status for storage-rules.yaml: the io-engine exporter only
+    # reports pools it has imported, so a pool that fails to import vanishes.
+    # ReplicationSources for backup-rules.yaml: VolSync keeps reporting
+    # deleted sources and cannot tell a paused source from a failing one.
+    kube-state-metrics:
+      rbac:
+        extraRules:
+          - apiGroups: ["openebs.io"]
+            resources: ["diskpools"]
+            verbs: ["list", "watch"]
+          - apiGroups: ["volsync.backube"]
+            resources: ["replicationsources"]
+            verbs: ["list", "watch"]
+      customResourceState:
+        enabled: true
+        config:
+          kind: CustomResourceStateMetrics
+          spec:
+            resources:
+              - groupVersionKind:
+                  group: openebs.io
+                  version: v1beta3
+                  kind: DiskPool
+                metricNamePrefix: openebs_diskpool
+                labelsFromPath:
+                  name: [metadata, name]
+                  node: [spec, node]
+                metrics:
+                  - name: status
+                    help: DiskPool status reported by the OpenEBS operator.
+                    each:
+                      type: StateSet
+                      stateSet:
+                        labelName: status
+                        path: [status, status]
+                        list: [Online, Offline, Unknown]
+              - groupVersionKind:
+                  group: volsync.backube
+                  version: v1alpha1
+                  kind: ReplicationSource
+                metricNamePrefix: volsync_replicationsource
+                labelsFromPath:
+                  obj_namespace: [metadata, namespace]
+                  obj_name: [metadata, name]
+                metrics:
+                  - name: paused
+                    help: Whether the ReplicationSource is paused.
+                    each:
+                      type: Gauge
+                      gauge:
+                        path: [spec, paused]
+                        nilIsZero: true
 
     prometheus-node-exporter:
       extraArgs:
@@ -66,6 +123,20 @@ spec:
               - targets: ["10.0.186.17:9100"]
                 labels:
                   instance: freddo
+              - targets: ["10.0.186.18:9100"]
+                labels:
+                  instance: manata
+          - job_name: smartctl
+            static_configs:
+              - targets: ["10.0.187.2:9633"]
+                labels:
+                  instance: espresso-0
+              - targets: ["10.0.187.3:9633"]
+                labels:
+                  instance: espresso-1
+              - targets: ["10.0.187.4:9633"]
+                labels:
+                  instance: espresso-2
           - job_name: node-exporter-ipv6
             static_configs:
               - targets: ["[fd7a:115c:a1e0:187::2]:9100"]

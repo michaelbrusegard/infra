@@ -1,0 +1,43 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: storage
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: storage
+      rules:
+        - alert: MayastorPoolNotOnline
+          expr: openebs_diskpool_status{status="Online"} == 0
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.name }} on {{ $labels.node }} is not online"
+            description: "Its replicas are unavailable and volumes on it run degraded. Check the disk and the DiskPool status."
+        - alert: MayastorPoolIoErrors
+          expr: diskpool_io_alert_status > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.name }} on {{ $labels.node }} reports I/O errors or stalls"
+            description: "Check the disk behind the pool."
+        - alert: MayastorPoolAlmostFull
+          expr: diskpool_used_size_bytes / diskpool_total_size_bytes > 0.9
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.name }} on {{ $labels.node }} is {{ $value | humanizePercentage }} full"
+            description: "Replicas may not fit for new volumes or rebuilds."
+        - alert: MayastorNodeOffline
+          expr: mayastor_node_online == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Mayastor node {{ $labels.node_id }} is offline"
+            description: "Volume replicas on it are unavailable."

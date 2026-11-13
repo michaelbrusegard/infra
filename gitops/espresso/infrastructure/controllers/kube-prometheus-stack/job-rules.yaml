@@ -1,0 +1,45 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: jobs
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: jobs
+      rules:
+        # Replaces the chart's KubeJobFailed. CronJob runs are judged by their
+        # latest run instead, so an old failure stops firing once a later run
+        # succeeds.
+        - alert: KubeJobFailed
+          expr: |
+            kube_job_failed{job="kube-state-metrics"} > 0
+              unless on (namespace, job_name)
+                kube_job_owner{job="kube-state-metrics", owner_kind="CronJob"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Job failed to complete
+            description: "Job {{ $labels.namespace }}/{{ $labels.job_name }} failed. Delete it after investigating to clear this alert."
+        - alert: CronJobLastRunFailed
+          expr: |
+            (
+              (
+                kube_cronjob_status_last_schedule_time
+                  > on (namespace, cronjob) kube_cronjob_status_last_successful_time
+              )
+              or
+              (
+                kube_cronjob_status_last_schedule_time
+                  unless on (namespace, cronjob) kube_cronjob_status_last_successful_time
+              )
+            )
+            and on (namespace, cronjob) kube_cronjob_status_active == 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: CronJob's latest run failed
+            description: "The latest run of {{ $labels.namespace }}/{{ $labels.cronjob }} did not succeed."

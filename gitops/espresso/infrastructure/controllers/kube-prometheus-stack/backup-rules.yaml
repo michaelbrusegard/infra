@@ -1,0 +1,41 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: backups
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: backups
+      rules:
+        - alert: VolSyncBackupOutOfSync
+          expr: |
+            volsync_volume_out_of_sync{role="source"} == 1
+              and on (obj_namespace, obj_name) volsync_replicationsource_paused == 0
+          for: 2h
+          labels:
+            severity: warning
+          annotations:
+            summary: VolSync backup missed its schedule
+            description: "{{ $labels.obj_namespace }}/{{ $labels.obj_name }} has not completed a sync on schedule."
+        # Backups are paused by pausing their ReplicationSource or suspending
+        # their CronJob. Catch a pause that outlives the outage it was for.
+        - alert: VolSyncBackupPaused
+          expr: volsync_replicationsource_paused == 1
+          for: 14d
+          labels:
+            severity: warning
+          annotations:
+            summary: VolSync backup has been paused for two weeks
+            description: "{{ $labels.obj_namespace }}/{{ $labels.obj_name }} has been paused for over 14 days."
+        - alert: BackupCronJobSuspended
+          expr: |
+            kube_cronjob_spec_suspend{cronjob=~".*backup.*"} == 1
+              and on (namespace, cronjob)
+                time() - kube_cronjob_status_last_schedule_time > 14 * 86400
+          labels:
+            severity: warning
+          annotations:
+            summary: Backup CronJob has been suspended for two weeks
+            description: "{{ $labels.namespace }}/{{ $labels.cronjob }} is suspended and has not run for over 14 days."
