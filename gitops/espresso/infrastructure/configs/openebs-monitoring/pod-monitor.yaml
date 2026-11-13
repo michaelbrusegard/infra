@@ -7,8 +7,9 @@ spec:
   namespaceSelector:
     matchNames:
       - openebs
+  # The exporter is a sidecar container of the io-engine pods.
   selector:
     matchLabels:
-      app: metrics-exporter-io-engine
+      app: io-engine
   podMetricsEndpoints:
     - port: metrics
