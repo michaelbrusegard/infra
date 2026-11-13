@@ -596,6 +596,14 @@ impl Snapshot {
                 )
             })
     }
+    /// Groups carry no address, so they join the provisioning principal's
+    /// domain. A principal kept in a system domain outside SCIM falls back to
+    /// the server's default domain.
+    fn group_domain(&self, principal: Id, default: Id) -> Result<Id, Error> {
+        self.domain(principal)
+            .or_else(|_| self.domain(default))
+            .map(|domain| domain.id.id())
+    }
     fn address(&self, address: &str) -> Result<(String, Id), Error> {
         let (name, domain) = address
             .rsplit_once('@')
@@ -838,8 +846,10 @@ impl Snapshot {
                 .await
                 .map_err(|_| internal())?
                 .ok_or_else(|| error(403, None, "Provisioning principal has no native domain"))?;
-            let domain = scope(&principal);
-            self.domain(domain)?;
+            let domain = self.group_domain(
+                scope(&principal),
+                Id::from(server.core.email.default_domain_id),
+            )?;
             Account::Group(GroupAccount {
                 domain_id: domain,
                 created_at: UTCDateTime::now(),
@@ -1444,6 +1454,32 @@ mod tests {
         let id = Id::from(42u32);
         assert_eq!(parse_id(&id.to_string()).ok(), Some(id));
         assert!(parse_id("../Users/42").is_err());
+    }
+    #[test]
+    fn groups_fall_back_to_the_default_domain() {
+        let system = Id::from(1u32);
+        let mail = Id::from(2u32);
+        let other = Id::from(3u32);
+        let snapshot = Snapshot {
+            domains: [mail, other]
+                .into_iter()
+                .map(|id| RegistryObject {
+                    id: ObjectId::new(ObjectType::Domain, id),
+                    revision: 1,
+                    object: Domain {
+                        allow_scim_provisioning: true,
+                        ..Domain::default()
+                    },
+                })
+                .collect(),
+            accounts: Vec::new(),
+            epoch: Some(1),
+            suspended: BTreeMap::new(),
+            active: BTreeMap::new(),
+        };
+        assert_eq!(snapshot.group_domain(other, mail).ok(), Some(other));
+        assert_eq!(snapshot.group_domain(system, mail).ok(), Some(mail));
+        assert!(snapshot.group_domain(system, system).is_err());
     }
     #[test]
     fn locale_uses_native_registry() {
