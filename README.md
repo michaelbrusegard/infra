@@ -467,6 +467,50 @@ sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
   /dev/disk/by-id/ata-MZ7LM3T8HMLP0D3_S37MNX0J600844-part1
 ```
 
+### Replace or revive a data disk
+
+A failed Samsung PM863a can drop into a firmware safe mode: the firmware
+revision reads `ERRORMOD` and the disk reports 1 GB. Its data is lost, but an
+ATA secure erase often brings the disk back at full capacity. Check that the
+security state is not frozen, then erase and verify the disk before reusing it
+(a run of `smartctl -t long` takes up to 200 minutes):
+
+```sh
+D=/dev/disk/by-id/ata-MODEL_SERIAL
+sudo hdparm -I "$D" | sed -n '/^Security:/,/erase/p'
+sudo hdparm --user-master u --security-set-pass revive "$D"
+sudo hdparm --user-master u --security-erase-enhanced revive "$D"
+sudo smartctl -t long "$D"
+```
+
+For a new disk, update its id in `hosts/espresso/disko.nix` first. Then, with
+the disk's old LUKS mapping and holders gone, recreate the partition and LUKS
+volume as disko lays them out and enroll the TPM. Use the LUKS passphrase
+without a trailing newline:
+
+```sh
+SLOT=data2
+P=/dev/disk/by-partlabel/disk-$SLOT-root
+sudo sgdisk --zap-all "$D"
+sudo sgdisk -n1:2048:0 -t1:8300 -c1:"disk-$SLOT-root" "$D"
+sudo cryptsetup luksFormat --type luks2 --sector-size 512 --key-file ./secret.key "$P"
+sudo systemd-cryptenroll --unlock-key-file=./secret.key --tpm2-device=auto --tpm2-pcrs=7 "$P"
+sudo systemd-cryptsetup attach "crypted-$SLOT" "$P" - \
+  tpm2-device=auto,discard,no-read-workqueue,no-write-workqueue
+sudo dd if=/dev/zero of="/dev/mapper/crypted-$SLOT" bs=1M count=64 oflag=direct
+```
+
+Mayastor keeps the replica records of a lost pool and refuses to delete the
+pool, or those records, while the pool is missing. Create an empty pool with
+the same name in the node's io-engine pod; Mayastor then drops the stale
+replicas itself. Remove the DiskPool's finalizer if its deletion is stuck, and
+Flux recreates it around the existing pool:
+
+```sh
+kubectl -n openebs exec IO_ENGINE_POD -c io-engine -- \
+  io-engine-client pool create "pool-espresso-NODE-$SLOT" "aio:///dev/mapper/crypted-$SLOT"
+```
+
 ## Freddo and Manata (NixOS Raspberry Pi Backup Servers)
 
 `freddo` (one 2TB drive) and `manata` (two 1TB drives) are Raspberry Pi 4
