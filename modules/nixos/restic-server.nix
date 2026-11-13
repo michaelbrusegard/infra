@@ -523,7 +523,15 @@ in {
 
         restic-maintenance = maintenanceService "forget";
         restic-prune = maintenanceService "prune";
-        restic-initialize = maintenanceService "init";
+        # Create repositories on boot and whenever a switch adds one. A source
+        # that has not backed up yet otherwise leaves maintenance and metrics
+        # failing on a missing repository.
+        restic-initialize = lib.recursiveUpdate (maintenanceService "init") {
+          wantedBy = ["multi-user.target"];
+          restartIfChanged = true;
+          restartTriggers = [repoEntries];
+          serviceConfig.RemainAfterExit = true;
+        };
         restic-check = maintenanceService "check";
         restic-metrics = lib.recursiveUpdate (maintenanceService "metrics") {
           serviceConfig = {
