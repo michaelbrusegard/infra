@@ -10,11 +10,10 @@ spec:
   restic:
     # New mail/* group; the retired stalwart/* repositories keep their history.
     repository: freddo-restic-mail-stalwart
-    pruneIntervalDays: 30
+    # freddo forgets and prunes server-side and rejects client deletes.
+    pruneIntervalDays: 36500
     retain:
-      daily: 14
-      weekly: 8
-      monthly: 12
+      within: 100y
     moverSecurityContext:
       runAsUser: 2000
       runAsGroup: 2000
@@ -36,11 +35,10 @@ spec:
     schedule: "40 */6 * * *"
   restic:
     repository: freddo-restic-mail-bulwark-settings
-    pruneIntervalDays: 30
+    # freddo forgets and prunes server-side and rejects client deletes.
+    pruneIntervalDays: 36500
     retain:
-      daily: 14
-      weekly: 8
-      monthly: 12
+      within: 100y
     moverSecurityContext:
       runAsUser: 1001
       runAsGroup: 1001
