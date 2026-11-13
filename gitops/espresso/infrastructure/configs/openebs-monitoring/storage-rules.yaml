@@ -9,6 +9,50 @@ spec:
   groups:
     - name: storage
       rules:
+        # Mayastor exports no volume health, so compare each volume's replicas
+        # on online pools with the count its StorageClass asks for.
+        - record: mayastor:volume_expected_replicas
+          expr: |
+            max by (pv_name, claim_namespace, claim) (
+              label_replace(
+                label_replace(
+                  (
+                    kube_persistentvolume_info{storageclass="nvme-ha"} * 0 + 3
+                    or kube_persistentvolume_info{storageclass="ssd-ha"} * 0 + 2
+                    or kube_persistentvolume_info{storageclass="openebs-single-replica"} * 0 + 1
+                  )
+                  * on (persistentvolume) group_left (claim_namespace, name) kube_persistentvolume_claim_ref,
+                  "pv_name", "$1", "persistentvolume", "(.+)"
+                ),
+                "claim", "$1", "name", "(.+)"
+              )
+            )
+        - record: mayastor:volume_replicas
+          expr: |
+            max by (pv_name) (
+              count by (pv_name) (replica_num_read_ops)
+              or mayastor:volume_expected_replicas * 0
+            )
+        - alert: MayastorVolumeDegraded
+          expr: |
+            mayastor:volume_expected_replicas > on (pv_name) mayastor:volume_replicas
+              and on (pv_name) mayastor:volume_replicas > 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.claim_namespace }}/{{ $labels.claim }} is missing a replica"
+            description: "It has fewer than {{ $value }} replicas. One more disk failure can lose it."
+        - alert: MayastorVolumeFaulted
+          expr: |
+            mayastor:volume_expected_replicas
+              and on (pv_name) mayastor:volume_replicas == 0
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.claim_namespace }}/{{ $labels.claim }} has no replica left"
+            description: "Its data is unavailable."
         - alert: MayastorPoolNotOnline
           expr: openebs_diskpool_status{status="Online"} == 0
           for: 10m
