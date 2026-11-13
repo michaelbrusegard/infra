@@ -57,5 +57,8 @@ jobs:
 
           git add flake.lock packages/vite-plus
           git commit -m "chore(flake): update agent harnesses"
+          # The agent offers the read-only infra-secrets key before the
+          # checkout's image-bump key, and GitHub rejects the push with it.
+          unset SSH_AUTH_SOCK
           git pull --rebase origin main
           git push
