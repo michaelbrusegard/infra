@@ -94,9 +94,8 @@ func (c *Context) Add(field string, raw []byte) {
 type exported struct {
 	system []string
 	tools  []exportedTool
-	// Export names by namespace and name, for the bare names that more than
-	// one namespace defines.
-	qualified map[[2]string]string
+	// Export names by namespace and name, for every tool defined.
+	names map[[2]string]string
 }
 
 type exportedTool struct {
@@ -113,11 +112,12 @@ const defaultNamespace = "functions"
 // which only the Responses API has, are flattened into their tools, since
 // the export dialects have none. Tools keep their bare names unless more than
 // one namespace defines the name; then those tools, and the calls naming
-// them, become namespace__name, as MCP tools are named elsewhere. An export
-// that would have to guess which tool a name means fails instead. Hosted
-// tools are left out, with their calls; see hosted.
+// them, become namespace__name, as MCP tools are named elsewhere. A call
+// matches a tool by namespace and name, and an export that would have to
+// guess which tool a call means fails instead. Hosted tools are left out,
+// with their calls; see hosted.
 func (c Context) effective() (exported, error) {
-	out := exported{system: c.System, qualified: map[[2]string]string{}}
+	out := exported{system: c.System, names: map[[2]string]string{}}
 	tools := c.Tools
 	if c.echo != nil && len(c.echo.System) > 0 {
 		out.system = c.echo.System
@@ -178,10 +178,11 @@ func (c Context) effective() (exported, error) {
 	}
 	names := map[string]bool{}
 	for _, d := range all {
+		key := [2]string{d.namespace, d.name}
 		if len(namespaces[d.name]) > 1 {
 			d.name = qualify(d.namespace, d.name)
-			out.qualified[[2]string{d.namespace, toolName(d.def)}] = d.name
 		}
+		out.names[key] = d.name
 		if d.name != "" && names[d.name] {
 			return exported{}, fmt.Errorf("two tools are exported as %q", d.name)
 		}
@@ -204,16 +205,19 @@ func toolName(t map[string]any) string {
 	return firstNonEmpty(name, text(t["name"]))
 }
 
-// call returns the name an export gives a tool call's tool.
+// call returns the name an export gives a tool call's tool: the name of the
+// tool its namespace defines under its name. A call to a name that only
+// other namespaces define fails, rather than take another tool's schema. A
+// name nothing defines stays as it is; ForTraining refuses such calls.
 func (e exported) call(b Block) (string, error) {
 	ns := b.ToolNamespace
 	if ns == defaultNamespace {
 		ns = ""
 	}
-	if name, ok := e.qualified[[2]string{ns, b.ToolName}]; ok {
+	if name, ok := e.names[[2]string{ns, b.ToolName}]; ok {
 		return name, nil
 	}
-	for key := range e.qualified {
+	for key := range e.names {
 		if key[1] == b.ToolName {
 			return "", fmt.Errorf("call %s to %q matches none of the namespaces defining it", b.ToolCallID, qualify(ns, b.ToolName))
 		}

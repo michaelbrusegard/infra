@@ -635,9 +635,11 @@ Definitions and calls always convert the same way:
   and the calls to them, which name their namespace, become
   `namespace__name`, the way MCP tools are named elsewhere. The echo puts
   top-level tools in a `functions` namespace that calls never name, so it
-  counts as none. A call that matches none of the colliding namespaces, or a
-  tool defined twice differently, fails the export rather than pick a
-  schema.
+  counts as none. A call matches a tool by namespace and name, so a call
+  whose namespace defines no such tool, even if another namespace does, or
+  a tool defined twice differently, fails the export rather than take
+  another tool's schema. In live data every call without a namespace names
+  a top-level tool.
 - **Freeform custom tools**, such as Codex's `exec`, take raw text: they stay
   custom tools in Chat Completions, and become tools taking the text as
   `input` in Anthropic Messages, which has no freeform tools and loses their

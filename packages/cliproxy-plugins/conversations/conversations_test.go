@@ -1061,7 +1061,7 @@ func TestProxyRunsDoNotRewriteArchivedItems(t *testing.T) {
 
 // Namespaces flatten into their tools, and a bare name two namespaces define
 // is qualified in both the definitions and the calls, so a call keeps the
-// schema of the tool it called. A call that names no matching namespace
+// schema of the tool it called. A call whose namespace defines no such tool
 // fails the export instead of picking one.
 func TestExportsQualifyCollidingToolNames(t *testing.T) {
 	var ctx Context
@@ -1072,7 +1072,7 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 		{"type":"function","name":"exec","parameters":{"type":"object","required":["cmd"]}}]`))
 	call := func(namespace, name, input string) []Message {
 		return []Message{{Role: "user", Blocks: []Block{{Type: "text", Text: "Search for hello."}}},
-			{Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
+			{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
 				ToolName: name, ToolNamespace: namespace, ToolCallID: "call_1", ToolInput: input}}}}
 	}
 	schemas := func(tools []any, schema func(map[string]any) (string, any)) map[string]string {
@@ -1116,6 +1116,23 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 		if _, err := export(ctx, call("", "run", `{"query":"hello"}`)); err == nil {
 			t.Fatal("exported a call to run without the namespace that says which")
 		}
+	}
+	// A namespace that defines no such tool matches none, even when the
+	// name is unique.
+	var one Context
+	one.Add("tools", []byte(`[{"type":"namespace","name":"a","tools":[{"type":"function","name":"run","parameters":{"type":"object"}}]}]`))
+	for _, export := range []func(Context, []Message) (map[string]any, error){OpenAIChat, AnthropicMessages} {
+		if _, err := export(one, call("a", "run", `{}`)); err != nil {
+			t.Fatal(err)
+		}
+		for _, namespace := range []string{"b", ""} {
+			if _, err := export(one, call(namespace, "run", `{}`)); err == nil {
+				t.Fatalf("exported a call to %q with the schema of a.run", qualify(namespace, "run"))
+			}
+		}
+	}
+	if err := ForTraining(one, call("b", "run", `{}`), []Hash{{1}}); err == nil {
+		t.Fatal("a call to b.run trains on a.run")
 	}
 	var twice Context
 	twice.Add("tools", []byte(`[{"type":"function","name":"run","parameters":{"required":["path"]}},
