@@ -428,6 +428,11 @@ func TestTranscriptLinesAreCovered(t *testing.T) {
 	if total != len(lines) || total != 62 || dispositions["message"]+dispositions["event"] != len(named) {
 		t.Fatalf("%d lines covered as %v, %d named, of %d", total, dispositions, len(named), len(lines))
 	}
+	for c := range n.Coverage {
+		if (c.Disposition == "dropped") != (c.Destination == "") {
+			t.Fatalf("coverage %+v names no destination, or a dropped line one", c)
+		}
+	}
 	sort.Strings(dropped)
 	if want := []string{"claude-code/api-request-blob", "claude-code/last-prompt", "claude-code/queue-operation",
 		"codex/event_msg:context_compacted", "codex/event_msg:user_message", "opencode/message:idle", "pi/model_change",
@@ -435,6 +440,8 @@ func TestTranscriptLinesAreCovered(t *testing.T) {
 		t.Fatalf("dropped %q, want %q", dropped, want)
 	}
 }
+
+func must2[T, U any](v T, _ U) T { return v }
 
 // fileLines returns the lines of the file a reference names.
 func fileLines(files [][]TranscriptLine, ref lineRef) []string {
@@ -556,13 +563,19 @@ func TestTranscriptConversations(t *testing.T) {
 	}
 }
 
-// The proxy owns a session from its first proxied call on. The transcript
-// keeps what came before as messages and calls, and its later lines as
-// events, so earlier history is kept and nothing is counted twice.
+// The proxy owns a session from its first proxied call on, for the lines
+// whose reply it returned. The transcript keeps what came before as
+// messages and calls, so earlier history is kept and nothing is counted
+// twice. A reply the proxy did not return stays the transcript's even
+// after the handover, since no other row would hold it.
 func TestTranscriptsOwnHistoryBeforeTheProxy(t *testing.T) {
 	session := "claude:11111111-1111-4111-8111-111111111111"
 	proxied := &Proxied{}
 	proxied.Add(session, "", "claude-code", "", "2026-11-10 09:00:00.000")
+	if n, _ := transcriptBatch(t, proxied); len(n.Calls) != len(must2(transcriptBatch(t, nil)).Calls) {
+		t.Fatalf("a reply the proxy never returned went with the handover: %+v", n.Calls)
+	}
+	proxied.Add(session, "", "claude-code", "msg_01A", "2026-11-10 09:00:00.000")
 	n, _ := transcriptBatch(t, proxied)
 	var lines []string
 	for _, m := range n.Messages {
@@ -573,7 +586,7 @@ func TestTranscriptsOwnHistoryBeforeTheProxy(t *testing.T) {
 	if !reflect.DeepEqual(lines, []string{"1"}) {
 		t.Fatalf("transcript messages %v, want the line before the proxy", lines)
 	}
-	if got := n.Coverage[Covered{"claude-code", "assistant", "proxied"}]; got != 1 {
+	if got := n.Coverage[Covered{"claude-code", "assistant", "proxied", "llm.calls"}]; got != 1 {
 		t.Fatalf("%d lines after the proxy, want 1", got)
 	}
 	for _, c := range n.Calls {
@@ -766,7 +779,7 @@ func TestRepeatedTranscriptEntriesKeepEveryLine(t *testing.T) {
 	n, files := transcriptBatch(t, nil)
 	lines := linesOf(files)
 	session := "claude:22222222-2222-4222-8222-222222222222"
-	first, repeat := 0, n.Coverage[Covered{"claude-code", "assistant", "repeat"}]
+	first, repeat := 0, n.Coverage[Covered{"claude-code", "assistant", "repeat", "llm.messages"}]
 	for _, m := range n.Messages {
 		if m.SessionID == session && strings.Contains(lines[lineRef{m.Host, m.Path, m.Line}], `"uuid":"x2"`) {
 			first++

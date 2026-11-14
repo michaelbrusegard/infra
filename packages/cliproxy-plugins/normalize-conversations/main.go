@@ -209,12 +209,12 @@ func normalizeTranscripts(path string, n *conversations.Normalizer, proxied *con
 	return n.CoverageError()
 }
 
-// writeCoverage writes the source, kind, disposition, and number of lines
-// of every kind of transcript line, sorted.
+// writeCoverage writes the source, kind, disposition, destination, and
+// number of lines of every kind of transcript line, sorted.
 func writeCoverage(path string, coverage map[conversations.Covered]int) error {
 	var rows []string
 	for c, lines := range coverage {
-		rows = append(rows, fmt.Sprintf("%s\t%s\t%s\t%d", c.Source, c.Kind, c.Disposition, lines))
+		rows = append(rows, fmt.Sprintf("%s\t%s\t%s\t%s\t%d", c.Source, c.Kind, c.Disposition, c.Destination, lines))
 	}
 	sort.Strings(rows)
 	return os.WriteFile(path, []byte(strings.Join(rows, "\n")+"\n"), 0o644)

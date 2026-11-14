@@ -217,3 +217,107 @@ func TestClaudeCodeCallsTakeTheRequestLogOfAnyCopy(t *testing.T) {
 		t.Fatalf("calls %q, want %q", calls, want)
 	}
 }
+
+// Claude Code logs requests that got no reply, such as failed or
+// interrupted ones: 952 live requests no reply in any file names. Each is
+// kept as a call without outputs, whose context holds its system prompt,
+// tools, and the messages it logged as blobs, which its base request's
+// first messages and its own tail make up. Coverage names the call as the
+// destination of its lines, and drops only blobs no such request holds.
+func TestClaudeCodeUnansweredRequestsAreKept(t *testing.T) {
+	project := ".claude/projects/-Users-michaelbrusegard-Projects-infra/"
+	log := claudeRequestLog("r_answered")
+	file := claudeFile(project+"44444444-4444-4444-8444-444444444444.jsonl", "2026-11-01 10:00",
+		claudeUser("u1", "", "Deploy it."),
+		log[0], log[1],
+		claudeReply("x1", "u1", "msg_1", "r_answered"),
+		`{"type":"api-request-blob","hash":"b_first","message":{"role":"user","content":"Deploy it."}}`,
+		`{"type":"api-request-blob","hash":"b_second","message":{"role":"user","content":"Retry the deploy."}}`,
+		`{"type":"api-request-blob","hash":"b_unused","message":{"role":"user","content":"Never sent."}}`,
+		`{"type":"api-request","id":"r_base","shapeHash":"sh1","params":{"model":"claude-opus-5-5"},"keep":0,"tail":["b_first","h_line"]}`,
+		`{"type":"api-request","id":"r_failed","shapeHash":"sh1","params":{"model":"claude-opus-5-5"},"base":"r_base","keep":2,"tail":["b_second"]}`)
+	n := NewNormalizer()
+	n.Transcript(file, repliesOf(nil, file), nil)
+	if err := n.CoverageError(); err != nil {
+		t.Fatal(err)
+	}
+	items := map[Hash]string{}
+	for _, it := range n.Items {
+		items[it.Hash] = it.Item
+	}
+	var got []string
+	for _, id := range []string{"r_base", "r_failed"} {
+		c := callByID(t, &n.Batch, id)
+		var parts []string
+		for _, p := range c.Context {
+			parts = append(parts, fmt.Sprintf("%s/%d", p.Field, p.Position))
+			if p.Field == "messages" {
+				parts = append(parts, items[p.Hash])
+			}
+		}
+		if len(c.OutputIDs) != 0 || c.Model != "claude-opus-5-5" || c.InputID == (Hash{}) {
+			t.Fatalf("call %+v", c)
+		}
+		got = append(got, id+" "+strings.Join(parts, " "))
+	}
+	want := []string{
+		`r_base system/0 tools/0 messages/0 {"role":"user","content":"Deploy it."}`,
+		`r_failed system/0 tools/0 messages/0 {"role":"user","content":"Deploy it."} messages/2 {"role":"user","content":"Retry the deploy."}`,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("calls\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+	for c, lines := range map[Covered]int{
+		{"claude-code", "api-request", "call", "llm.calls.context"}:       3,
+		{"claude-code", "api-request-shape", "call", "llm.calls.context"}: 1,
+		{"claude-code", "api-request-blob", "call", "llm.calls.context"}:  2,
+		{"claude-code", "api-request-blob", "dropped", ""}:                1,
+	} {
+		if n.Coverage[c] != lines {
+			t.Fatalf("coverage %+v: %d lines, want %d, in %v", c, n.Coverage[c], lines, n.Coverage)
+		}
+	}
+}
+
+// A line whose call another file holds names that call as its
+// destination, so that call must hold its content: a copy's request log
+// that the owner's call does not take fails the import.
+func TestCopiedContextMustBeHeld(t *testing.T) {
+	project := ".claude/projects/-Users-michaelbrusegard-Projects-infra/"
+	session := "55555555-5555-4555-8555-555555555555"
+	fork := []string{claudeUser("v1", "", "Fork."), claudeReply("y1", "v1", "msg_fork", "r_fork")}
+	other := `{"type":"api-request-shape","shapeHash":"sh2","shape":{"system":[{"type":"text","text":"Another prompt."}]}}`
+	first := claudeFile(project+session+"/subagents/agent-f1.jsonl", "2026-11-01 11:00",
+		append([]string{other, `{"type":"api-request","id":"r_fork","shapeHash":"sh2"}`}, fork...)...)
+	second := claudeFile(project+session+"/subagents/agent-f2.jsonl", "2026-11-01 11:00",
+		append(claudeRequestLog("r_fork"), fork...)...)
+	files := [][]TranscriptLine{first, second}
+	replies := repliesOf(nil, files...)
+	n := NewNormalizer()
+	for _, f := range files {
+		n.Transcript(f, replies, nil)
+	}
+	if err := n.CoverageError(); err == nil || !strings.Contains(err.Error(), "no written call holds") {
+		t.Fatalf("error %v", err)
+	}
+}
+
+// OpenCode sends a system prompt with a user message's turn, which the
+// calls answering it take as context.
+func TestOpenCodeCallsTakeTheirTurnsSystemPrompt(t *testing.T) {
+	line := func(id, ts, data string) TranscriptLine {
+		return TranscriptLine{Source: "opencode", Host: "forte", Session: "ses_a", ID: "message:" + id,
+			Path: ".local/share/opencode/opencode.db", TS: ts, Line: `{"kind":"message","id":"` + id +
+				`","session_id":"ses_a","timestamp":"` + ts + `","data":` + data + `}`}
+	}
+	file := []TranscriptLine{
+		line("msg_1", "2026-06-17 20:42:35.000", `{"role":"user","system":"<available_skills>","text":"Hi"}`),
+		line("msg_2", "2026-06-17 20:42:36.000", `{"role":"assistant","modelID":"kimi-k3.1-pro","tokens":{"input":5,"output":2}}`),
+	}
+	n := NewNormalizer()
+	n.Transcript(file, repliesOf(nil, file), nil)
+	c := callByID(t, &n.Batch, "msg_2")
+	if len(c.Context) != 1 || c.Context[0].Field != "system" || n.Items[0].Item != `"<available_skills>"` {
+		t.Fatalf("context %+v, items %+v", c.Context, n.Items)
+	}
+}

@@ -247,19 +247,63 @@ def main():
             # counts as messages and events. Every kind it drops is in the
             # design doc's table of dropped kinds.
             coverage = [line.split("\t") for line in (out / "coverage.tsv").read_text().splitlines()]
-            assert sum(int(c[3]) for c in coverage) == int(scalar("SELECT count() FROM llm.transcripts FINAL")) == 62
+            assert sum(int(c[4]) for c in coverage) == int(scalar("SELECT count() FROM llm.transcripts FINAL")) == 62
             lines = "SELECT toString(host), path, id FROM llm.transcripts FINAL"
             named = """SELECT * FROM (
                 SELECT toString(host), path, line FROM llm.messages FINAL WHERE path != '' AND part = ''
                 UNION ALL SELECT toString(host), path, line FROM llm.events FINAL)"""
             assert scalar(f"SELECT count() FROM ({named})") \
-                == str(sum(int(c[3]) for c in coverage if c[2] in ("message", "event")))
+                == str(sum(int(c[4]) for c in coverage if c[2] in ("message", "event")))
             assert scalar(f"SELECT count() FROM ({named} EXCEPT {lines})") == "0"
             assert scalar(f"SELECT count() FROM (SELECT DISTINCT * FROM ({named}))") \
                 == scalar(f"SELECT count() FROM ({named})")
             documented = set(re.findall(r"^\| `([a-z-]+)` \| `([^`]+)` \|", DOC.read_text(), re.M))
             assert documented, "no table of dropped kinds"
             assert not {(c[0], c[1]) for c in coverage if c[2] == "dropped"} - documented, coverage
+            # Every line that is no dropped kind names where its content is
+            # now, and that row holds it: each destination is checked against
+            # the canonical tables, not only counted.
+            def lines_to(source, disposition, destination, kind=None):
+                return sum(int(c[4]) for c in coverage if (c[0], c[2], c[3]) == (source, disposition, destination)
+                           and kind in (None, c[1]))
+            assert all((c[2] == "dropped") == (c[3] == "") for c in coverage), coverage
+            assert {c[3] for c in coverage} <= {"", "llm.messages", "llm.events", "llm.sessions", "llm.calls",
+                                               "llm.calls.usage", "llm.calls.model", "llm.calls.context",
+                                               "llm.messages.part", "llm.messages.parent_id", "llm.messages.blocks"}, coverage
+            # Codex usage lines are each the usage of one call of their file.
+            assert lines_to("codex", "call", "llm.calls.usage") == int(scalar(
+                "SELECT count() FROM llm.calls FINAL WHERE origin = 'transcript' AND client = 'codex' "
+                "AND uncached_input_tokens + cache_read_tokens + output_tokens > 0")) > 0, coverage
+            # Turn settings give the calls after them their model.
+            assert lines_to("codex", "call", "llm.calls.model") > 0 and scalar(
+                "SELECT countIf(model = '') FROM llm.calls FINAL WHERE origin = 'transcript' AND client = 'codex'") == "0"
+            # Claude Code's request logs are the context of the calls naming
+            # them, one call per request in these files.
+            assert lines_to("claude-code", "call", "llm.calls.context", "api-request") == int(scalar(
+                "SELECT count() FROM llm.calls FINAL WHERE origin = 'transcript' AND client = 'claude-code' "
+                "AND notEmpty(context)")) > 0, coverage
+            # Session lines are in the sessions of their files.
+            assert scalar("SELECT count() FROM (SELECT DISTINCT host, path FROM llm.transcripts FINAL "
+                          "EXCEPT SELECT DISTINCT host, path FROM llm.sessions FINAL WHERE origin = 'transcript')") == "0"
+            # Compacted histories are messages built from their lines, and
+            # OpenCode's part records hold blocks of messages that exist.
+            assert lines_to("codex", "structure", "llm.messages.part") == int(scalar(
+                "SELECT uniqExact(host, path, line) FROM llm.messages FINAL WHERE format = 'openai-responses' "
+                "AND part != ''"))
+            assert lines_to("opencode", "structure", "llm.messages.blocks") == int(scalar(
+                "SELECT count() FROM llm.transcripts FINAL WHERE source = 'opencode' "
+                "AND JSONExtractString(line, 'kind') = 'part' AND (host, path, concat('message:', "
+                "JSONExtractString(line, 'message_id'))) IN (SELECT host, path, line FROM llm.messages)")) > 0
+            # A line is the proxy's only when the proxy returned the reply it
+            # leads to: every reply among those lines is a proxy call's.
+            proxied_replies = scalar("""
+                SELECT count() FROM (SELECT ts, multiIf(source = 'claude-code', JSONExtractString(line, 'message', 'id'),
+                        source = 'pi', JSONExtractString(line, 'message', 'responseId'),
+                        JSONExtractString(line, 'payload', 'response_id')) AS reply FROM llm.transcripts FINAL)
+                WHERE reply != '' AND reply IN (SELECT response_id FROM llm.calls FINAL WHERE origin = 'proxy')
+                    AND ts >= (SELECT min(started_at) FROM llm.calls FINAL WHERE origin = 'proxy')""")
+            assert int(proxied_replies) > 0 and sum(int(c[4]) for c in coverage if c[2] == "proxied") \
+                >= int(proxied_replies), coverage
             # Messages built from inside a line name it, and calls their file.
             assert scalar("""
                 SELECT count() FROM llm.messages FINAL
@@ -288,7 +332,7 @@ def main():
                 == "['proxy','transcript']"
             assert scalar(f"SELECT groupArray(line) FROM llm.messages FINAL WHERE session_id = {both} AND line != ''") \
                 == "['1']"
-            assert ["claude-code", "assistant", "proxied", "1"] in coverage, coverage
+            assert ["claude-code", "assistant", "proxied", "llm.calls", "1"] in coverage, coverage
             assert scalar(f"SELECT groupUniqArray(origin) FROM llm.calls FINAL WHERE session_id = {both}") == "['proxy']"
             # Pi's proxied calls have only CLIProxy's session. The replies both
             # recorded put the transcript in it, so its replies count once.
@@ -532,7 +576,7 @@ def main():
             whole = query("SELECT source, host, session, id, path, line, toString(ts) AS ts FROM llm.transcripts FINAL "
                           "ORDER BY source, host, path, session, toUInt64OrZero(id), id FORMAT JSONEachRow").stdout
             stripped = transcript_lines()
-            assert len(stripped) < len(whole) - 12000, (len(stripped), len(whole))
+            assert len(stripped) < len(whole) - 8000, (len(stripped), len(whole))
             outs = [import_transcripts(name, lines) for name, lines in (("whole", whole), ("stripped", stripped))]
             for table in (*canonical, "coverage.tsv"):
                 name = table if table.endswith(".tsv") else f"{table}.jsonl"

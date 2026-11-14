@@ -58,9 +58,13 @@ type Normalizer struct {
 	sessions map[string]struct{}
 	// The items read this run, by hash.
 	read map[Hash]string
-	// Kinds of transcript line or block the import does not know; see
-	// CoverageError.
+	// Kinds of transcript line or block the import does not know, or lines
+	// no written row holds; see CoverageError.
 	unknowns map[string]int
+	// The context items of written transcript calls, and the context of
+	// lines whose call another file holds, which they must be among.
+	held   map[Hash]bool
+	copies []held
 }
 
 // node is what the normalizer knows of a written message.
@@ -71,7 +75,7 @@ type node struct {
 
 func NewNormalizer() *Normalizer {
 	return &Normalizer{nodes: map[Hash]node{}, after: map[string]Hash{}, sessions: map[string]struct{}{},
-		read: map[Hash]string{}}
+		read: map[Hash]string{}, held: map[Hash]bool{}}
 }
 
 // State is a row of state.sql, which earlier runs left: a node of a

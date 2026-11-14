@@ -364,7 +364,9 @@ into CLIProxy's scheme: `claude:<session>`, `claude:<parent>:agent:<agent>`,
 - **opencode**: messages are ordered by time. Older part records attach their
   content to their message. A sub-agent's session record names its parent
   (`parent_id`, 142 of 228 live sessions), which becomes
-  `opencode:<parent>`.
+  `opencode:<parent>`. A user message's `system` (121 live), the system
+  prompt OpenCode sends with its turn, is the context of the calls answering
+  it.
 
 ### Overlap with the proxy
 
@@ -424,10 +426,9 @@ each is matched by its own response ID, so they stay distinct calls, and a
 copy without a response ID keeps a call of its own. `normalize-conversations`
 prints every such key with its response IDs, and the
 [collision audit](#collision-audit) lists them from `llm.transcripts`.
-Only lines from before the proxy took a file's session over count, because
-the file writes no call after that: a reply the proxy never returned, seen
-after the parent's handover and in a child's earlier copy, is the child's
-call rather than nobody's. In every other file the reply is a copy. It
+Only lines the file keeps count, not the proxy's (see the handover below),
+so a reply the proxy returned is in no file's election, and one it never
+returned stays with the file that made it. In every other file the reply is a copy. It
 stays a message in that file's tree, because the model was sent it, but as
 input (`output = false`, no model or call) like Pi's compaction copies, and
 it adds no call.
@@ -444,14 +445,18 @@ sessions (`origin = 'transcript'`), the messages with a `path`, and all
 events first. That needs the transcript lines, so only before the drop or
 from a restored export.
 
-**A handover at the session's first proxied call.** Transcript lines from
-before it become messages and calls as usual, and lines from then on are the
-proxy's (`proxied` in the coverage), because the proxy has those calls with
-their exact bodies. Turns from before the proxy, and branches compacted away
-before it, stay canonical messages, and no call or token is counted twice.
-Only 3,714 transcript lines fall after the proxy started at all, but turns of
-a session that left the proxy again would go with the drop; the coverage
-counts them, and the pre-drop spot checks look for them.
+**A handover at the session's first proxied call, verified by reply.**
+Transcript lines from before it become messages and calls as usual. A line
+from then on is the proxy's (`proxied` in the coverage) only when the reply
+it leads to, its own or the next one the file records, is one the proxy
+returned, by response ID from `llm.calls`: the proxy has that call with its
+exact bodies. Any other line stays the file's: a turn the proxy never
+captured, such as one of a session that left the proxy again, or a prompt
+after the last proxied reply. Turns from before the proxy, and branches
+compacted away before it, stay canonical messages, and no call or token is
+counted twice. Only 3,714 transcript lines fall after the proxy started at
+all; in the four Codex files the proxy took over, all 236 replies after the
+handover are in `llm.requests`.
 
 The proxy's first call resends the context from before it, so that context
 is in both trees: as transcript nodes at their own times, and as the proxy
@@ -531,21 +536,37 @@ SETTINGS max_threads = 1, max_block_size = 256, preferred_block_size_bytes = 104
 ## What the transcript import keeps
 
 `llm.transcripts` is dropped once the import is verified, so the import
-accounts for every line. Each line is counted once, by what became of it,
-in the `coverage.tsv` the normalizer writes:
+accounts for every line. Each line is counted once, by what became of it
+and where its content is now, in the `coverage.tsv` the normalizer writes
+(source, kind, disposition, destination, lines):
 
-- **message**: the line is a message row, which names it by `host`, `path`
-  and `line`, with its role, time, model, blocks and tree position.
-- **event**: the line is an `llm.events` row with its detail.
-- **call**, **session** or **structure**: the line is folded into a call
-  (usage records, Codex token counts, turn settings, Claude Code's request
-  logs), a session (titles, metadata), or the tree (compaction boundaries,
-  Codex compacted histories, OpenCode part records, whose content is in
-  their messages).
-- **repeat**: an entry written again, whose first line is the message.
-- **proxied**: a line from after the proxy took its session over; the proxy
-  holds the call.
-- **dropped**: a kind listed below.
+- **message** (`llm.messages`): the line is a message row, which names it by
+  `host`, `path` and `line`, with its role, time, model, blocks and tree
+  position.
+- **event** (`llm.events`): the line is an event row with its detail.
+- **call** (`llm.calls.usage`, `.model` or `.context`): the line is folded
+  into a call this file writes: usage records and Codex token counts into
+  its usage, turn settings into its model, Claude Code's request logs and
+  Codex's additional tools into its context. What became of the call decides
+  the line's disposition, so a line no written call holds is never counted
+  as one.
+- **copy** (the same columns): the line is folded into a call that another
+  file holds, a copied reply's. A context line's items must be in a written
+  call's context, which the import checks over all files.
+- **session** (`llm.sessions`) or **structure** (`llm.messages.part`,
+  `.parent_id` or `.blocks`): the line is folded into a session (titles,
+  metadata) or the tree (Codex compacted histories, compaction boundaries,
+  OpenCode part records, whose content is in their messages' blocks).
+- **repeat** (`llm.messages` or `llm.calls.usage`): an entry written again,
+  whose first line is the message, or a Codex token count that repeats a
+  point counted already, echoes a usage record, or has no usage.
+- **proxied** (`llm.calls`): the proxy returned the reply the line leads
+  to, and holds its call.
+- **dropped** (no destination): a kind listed below.
+
+The import fails rather than count a line it cannot place: an unknown kind
+or block, a folded line no call takes, an OpenCode part whose message is
+not written, or a copy's context that no written call holds.
 
 Inside the lines it keeps or folds, the import drops image and file data
 (blocks keep the media type), thinking signatures and encrypted reasoning,
@@ -569,7 +590,7 @@ before the proxy took any session over). These losses are approved:
 
 | Source | Kind | Lines | MiB | Why it can go |
 | --- | --- | ---: | ---: | --- |
-| `claude-code` | `api-request-blob` | 48,172 | 226.1 | The message bodies of logged requests. The same messages are user, assistant and attachment lines; only the exact per-request message lists go. |
+| `claude-code` | `api-request-blob` | 48,172 | 226.1 | The message bodies of logged requests a reply names. The same messages are user, assistant and attachment lines; only the exact per-request message lists go. The blobs of requests no reply names are kept, below. |
 | `claude-code` | `attachment:deferred_tools_record` | 30,800 | 20.4 | Which tools were deferred; the tools are in the call's context. Not shown to the model. |
 | `claude-code` | `last-prompt` | 23,154 | 6.4 | Client state: the prompt box's last text. |
 | `claude-code` | `atis-latch` | 22,872 | 1.8 | Client state. |
@@ -605,6 +626,7 @@ before the proxy took any session over). These losses are approved:
 | `codex` | `event_msg:web_search_end` | 2,140 | 1.1 | Copies of web search calls. |
 | `codex` | `inter_agent_communication_metadata` | 1,677 | 0.2 | Routing metadata of sub-agent messages. |
 | `codex` | `event_msg:context_compacted` | 1,168 | 0.1 | Progress; the `compacted` line holds the new context. |
+| `codex` | `turn_context` | ≤ 2,391 | 0.0 | Settings of a turn that made no call, such as an interrupted one. The others give their calls the model. |
 | `opencode` | `message:idle` | 63 | 0.0 | Status. |
 | `pi` | `thinking_level_change` | 811 | 0.1 | Settings. |
 | `pi` | `model_change` | 803 | 0.1 | Settings; each reply names its model. |
@@ -654,6 +676,20 @@ every log: of the 47 live Claude Code replies in more than one file, the
 file that holds the call lacks the log for 28, which a sub-agent's or a
 sibling fork's copy has. The file that holds the call stays the same. Those
 calls export as tool-using training examples.
+
+952 live requests are named by no reply in any file: requests that failed
+or were interrupted, mostly of the main thread (837) and of sub-agents.
+Nothing else holds what they sent, so each is a call without outputs, with
+the request's ID as `call_id`, its model, and the time it was logged. Its
+input is the conversation as the file had it then, and its context holds
+the shape's system prompt and tools and, as `messages` parts at their
+positions in the request, the messages Claude Code logged as blobs: the
+first `keep` messages of its `base` request and its own `tail`, each a blob
+hash. Claude Code logs a message as a blob only when it is not one of the
+file's own lines (161,125 of 243,141 tail references name no blob, as all
+blobs resolve within their file), so the other positions are messages of
+the tree. The blobs these requests hold are counted as `call`; the others
+are dropped.
 
 ### Usage history
 
@@ -814,7 +850,10 @@ explained, not just counted.
   `item` is a part of the request its call names, and in
   `llm.request_items`, and every proxy output's call exists.
 - **Transcript coverage.** `coverage.tsv` counts every `llm.transcripts` row
-  once, its totals match the table's per source, and the lines messages
+  once, its totals match the table's per source, every row but the dropped
+  ones names a destination, and the rows there hold it: usage lines are
+  calls with usage, request logs calls with context, proxied lines replies
+  in `llm.calls`. The lines messages
   (`part = ''`) and events name are exactly as many as it counts as messages
   and events, all distinct and all in `llm.transcripts`. Every dropped kind is
   in the [table](#what-the-transcript-import-keeps), with about the counts it
@@ -1132,9 +1171,8 @@ weights nothing.
 
 What training exports can cover is limited by what the sources record:
 
-- **After a handover**, transcript lines are the proxy's, so turns the
-  proxy did not capture, such as a session that left the proxy again, have
-  no messages to export.
+- **After a handover**, transcript lines whose replies the proxy returned
+  are the proxy's, which exports them from its raw capture.
 - **Images** are left out of both exports, so an example whose context had
   an image teaches a reply to context the model saw more of.
 - **Hosted tools** are left out with their results, so text the model wrote

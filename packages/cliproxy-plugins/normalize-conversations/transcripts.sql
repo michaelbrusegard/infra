@@ -13,16 +13,14 @@
 --
 -- The largest kinds of line the import drops are sent as their type alone,
 -- which is all the normalizer reads of them, to count them: Codex events
--- other than token counts, interruptions, and rollbacks, Codex world state,
--- and Claude Code's request blobs. That is about a fifth of the bytes, and
--- the normalizer's rows are the same either way.
+-- other than token counts, interruptions, and rollbacks, and Codex world
+-- state. That is about a sixth of the bytes, and the normalizer's rows are
+-- the same either way. Claude Code's request blobs are sent whole, since a
+-- request no reply names keeps the messages they hold.
 SELECT source, host, session, id, path,
-    multiIf(
-        source = 'codex' AND (type = 'world_state'
+    if(source = 'codex' AND (type = 'world_state'
             OR type = 'event_msg' AND subtype NOT IN ('token_count', 'turn_aborted', 'thread_rolled_back')),
-            concat('{"type":', toJSONString(type), ',"payload":{"type":', toJSONString(subtype), '}}'),
-        source = 'claude-code' AND type = 'api-request-blob',
-            concat('{"type":', toJSONString(type), '}'),
+        concat('{"type":', toJSONString(type), ',"payload":{"type":', toJSONString(subtype), '}}'),
         raw) AS line,
     toString(ts) AS ts
 FROM (

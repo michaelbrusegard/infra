@@ -26,6 +26,7 @@ type TranscriptLine struct {
 // file is the state of one transcript file being normalized.
 type file struct {
 	n       *Normalizer
+	replies *Replies
 	session Session
 	// The file's fileKey.
 	key string
@@ -56,6 +57,58 @@ type file struct {
 	// context from where they appear, and those each call was sent with.
 	tools     []json.RawMessage
 	callTools map[string][]json.RawMessage
+	// The system prompt an OpenCode call was sent with.
+	callSystem map[string]json.RawMessage
+	// Lines folded into calls, which count by what became of their call,
+	// and those of them that take the next call the file starts.
+	folds []fold
+	next  []int
+	// Lines after the proxy took the session over whose reply the proxy
+	// returned; see owned.
+	proxied map[string]bool
+	// Claude Code's request logs as the file wrote them: each request's
+	// line, its shapes' lines, and its message blobs by hash.
+	requestLines []requestLine
+	shapeLines   map[string][]TranscriptLine
+	blobs        map[string]blob
+	// The calls of requests no reply names: each request's messages, as
+	// far as its blobs hold them, by position.
+	requestMessages map[string][]requestMessage
+}
+
+// fold is a line folded into a call: its usage, model, or context. What
+// became of the call decides what became of the line: a call of this file
+// holds it, the file holding a copied reply's call does, or the proxy.
+type fold struct {
+	l           TranscriptLine
+	kind, field string
+	// The call, or empty until the file starts its next call.
+	call string
+	// The items a context line holds, which the call of a copy's owner
+	// must hold too.
+	items []Hash
+}
+
+type requestLine struct {
+	l                      TranscriptLine
+	id, shape, base, model string
+	keep                   int
+	tail                   []string
+	// The conversation as the file had it when the request was logged.
+	input Hash
+	ts    string
+}
+
+type blob struct {
+	lines   []TranscriptLine
+	message json.RawMessage
+	// Held by the messages of a request no reply names.
+	used bool
+}
+
+type requestMessage struct {
+	position int
+	raw      json.RawMessage
 }
 
 // Proxied is what the proxy captured, for handing sessions over from
@@ -145,6 +198,8 @@ type Replies struct {
 	refs     map[string]string
 	requests map[string]string
 	shapes   map[string]json.RawMessage
+	// The reply naming each request, from any file.
+	replies map[string]string
 }
 
 type sighting struct {
@@ -163,6 +218,7 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 		r.seen, r.parents, r.responses = map[string][]sighting{}, map[string]string{}, map[string]string{}
 		r.conflicts = map[string]map[string]bool{}
 		r.refs, r.requests, r.shapes = map[string]string{}, map[string]string{}, map[string]json.RawMessage{}
+		r.replies = map[string]string{}
 	}
 	r.owners = nil
 	f := newFile(nil, lines, proxied)
@@ -213,8 +269,20 @@ func (r *Replies) requestLogs(lines []TranscriptLine) {
 			if _, ok := r.refs[id]; !ok && id != "" && ref != "" {
 				r.refs[id] = ref
 			}
+			if _, ok := r.replies[ref]; !ok && ref != "" {
+				r.replies[ref] = id
+			}
 		}
 	}
+}
+
+// referenced returns the reply that names a request, in any file.
+func (r *Replies) referenced(request string) (string, bool) {
+	if r == nil {
+		return "", false
+	}
+	reply, ok := r.replies[request]
+	return reply, ok
 }
 
 // shape returns the shape of the request log of a reply, from any file.
@@ -475,6 +543,7 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 		return
 	}
 	f := newFile(n, lines, proxied)
+	f.replies = replies
 	start := len(n.Messages)
 	switch lines[0].Source {
 	case "claude-code":
@@ -491,6 +560,9 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 		}
 	}
 	n.session(f.session)
+	// What became of each call: written here, copied from the file or
+	// source that holds it, or the proxy's.
+	fates := map[string]string{}
 	for _, id := range f.order {
 		c := f.calls[id]
 		// A copy of a Codex reply lacks its response ID, which the file it
@@ -506,12 +578,132 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 		copied := !replies.owns(f.key, reply) || !replies.owns(f.key, f.counts[id])
 		if _, returned := proxied.returned(responseID); returned || copied {
 			n.copied(n.Messages[start:], c.CallID)
+			fates[id] = "copy"
+			if returned {
+				fates[id] = "proxied"
+			}
 			continue
 		}
 		c.ResponseID = responseID
 		c.Context = f.context(c.CallID, replies.shape(responseID))
 		n.Calls = append(n.Calls, *c)
+		fates[id] = "call"
+		for _, p := range c.Context {
+			n.held[p.Hash] = true
+		}
 	}
+	f.requestLogs(replies, proxied, fates)
+	for _, fd := range f.folds {
+		f.settle(fd, fates[fd.call])
+	}
+}
+
+// settle counts a folded line by what became of its call. A line no call
+// took fails the import, except the turn settings of a turn that made no
+// call, which hold nothing else the import keeps.
+func (f *file) settle(fd fold, fate string) {
+	switch {
+	case fate == "" && fd.kind == "turn_context":
+		f.count(fd.l.Source, fd.kind, "dropped", "")
+	case fate == "":
+		f.n.unknown("no call for " + fd.l.Source + "/" + fd.kind)
+	case fate == "proxied":
+		f.count(fd.l.Source, fd.kind, fate, "llm.calls")
+	default:
+		if fate == "copy" && len(fd.items) > 0 {
+			f.n.copies = append(f.n.copies, held{fd.l.Source + "/" + fd.kind, fd.items})
+		}
+		f.count(fd.l.Source, fd.kind, fate, "llm.calls."+fd.field)
+	}
+}
+
+// fold folds a line into a call, or with no call, into the next call the
+// file starts.
+func (f *file) fold(l TranscriptLine, e obj, field, call string, items []Hash) {
+	f.folds = append(f.folds, fold{l: l, kind: kindOf(l.Source, e), field: field, call: call, items: items})
+	if call == "" {
+		f.next = append(f.next, len(f.folds)-1)
+	}
+}
+
+// requestLogs accounts for Claude Code's request logs once every call's
+// fate is known. A request a reply names is held by that reply's call,
+// here, in the file holding a copied reply's call, or by the proxy. Its
+// shape is held where any of its requests is, and its blobs are dropped
+// unless a request no reply names holds them.
+func (f *file) requestLogs(replies *Replies, proxied *Proxied, fates map[string]string) {
+	calls := map[string]string{}
+	for call, ref := range f.refs {
+		calls[ref] = call
+	}
+	rank := map[string]int{"call": 3, "copy": 2, "proxied": 1}
+	shapes := map[string]string{}
+	for _, r := range f.requestLines {
+		fate := fates[calls[r.id]]
+		if fate == "" {
+			fate = "copy"
+			if reply, ok := replies.referenced(r.id); !ok {
+				fate = fates[r.id]
+			} else if _, returned := proxied.returned(reply); returned {
+				fate = "proxied"
+			}
+		}
+		f.settle(fold{l: r.l, kind: "api-request", field: "context", items: contextHashes(f.shapes[r.shape])}, fate)
+		if rank[fate] > rank[shapes[r.shape]] {
+			shapes[r.shape] = fate
+		}
+	}
+	for shape, lines := range f.shapeLines {
+		for _, l := range lines {
+			f.settle(fold{l: l, kind: "api-request-shape", field: "context", items: contextHashes(f.shapes[shape])},
+				shapes[shape])
+		}
+	}
+	for _, b := range f.blobs {
+		for _, l := range b.lines {
+			if b.used {
+				f.count(l.Source, "api-request-blob", "call", "llm.calls.context")
+			} else {
+				f.count(l.Source, "api-request-blob", "dropped", "")
+			}
+		}
+	}
+}
+
+func firstRaw(values ...json.RawMessage) json.RawMessage {
+	for _, v := range values {
+		if len(v) > 0 {
+			return v
+		}
+	}
+	return nil
+}
+
+// held is the context of a folded line whose call another file holds, by
+// its items, which CoverageError checks a written call holds.
+type held struct {
+	what  string
+	items []Hash
+}
+
+// contextHashes returns the hashes of the items context stores of a
+// request shape.
+func contextHashes(shape json.RawMessage) []Hash {
+	var out []Hash
+	s := parse(shape)
+	for _, field := range []string{"system", "tools"} {
+		raw := bytes.TrimSpace(s[field])
+		switch {
+		case len(raw) == 0:
+		case raw[0] != '[':
+			out = append(out, itemHash(raw))
+		default:
+			for _, item := range array(raw) {
+				out = append(out, itemHash(item))
+			}
+		}
+	}
+	return out
 }
 
 // newFile starts a transcript file: its session, and when the proxy took
@@ -520,11 +712,32 @@ func newFile(n *Normalizer, lines []TranscriptLine, proxied *Proxied) *file {
 	f := &file{n: n, key: fileKey(lines[0]), parents: map[string]string{}, nodes: map[string]Hash{},
 		calls: map[string]*Call{}, kept: map[string]Message{}, items: map[string]string{}, counts: map[string]string{},
 		shapes: map[string]json.RawMessage{}, requests: map[string]string{}, refs: map[string]string{},
-		callTools: map[string][]json.RawMessage{}}
+		callTools: map[string][]json.RawMessage{}, callSystem: map[string]json.RawMessage{}, proxied: map[string]bool{}, shapeLines: map[string][]TranscriptLine{},
+		blobs: map[string]blob{}, requestMessages: map[string][]requestMessage{}}
 	f.session = transcriptSession(lines)
 	if proxied != nil {
 		f.session.SessionID = proxied.sessionOf(f.session, lines)
 		f.proxiedSince = proxied.since[f.session.SessionID]
+	}
+	if f.proxiedSince != "" {
+		// A line from after the handover is the proxy's only when the reply
+		// it leads to, its own or the next one the file records, is one
+		// the proxy returned. Anything else, such as a turn the proxy never
+		// saw or a prompt after the last reply, stays the file's.
+		stamps := make([]string, len(lines))
+		for i, l := range lines {
+			stamps[i] = f.stamp(l)
+		}
+		f.ts = ""
+		next := ""
+		for i := len(lines) - 1; i >= 0; i-- {
+			if id := replyID(lines[i]); id != "" {
+				next = id
+			}
+			if _, returned := proxied.returned(next); returned && stamps[i] >= f.proxiedSince {
+				f.proxied[lines[i].ID] = true
+			}
+		}
 	}
 	return f
 }
@@ -668,10 +881,12 @@ func (f *file) stamp(l TranscriptLine) string {
 	return f.ts
 }
 
-// owned reports whether a line falls before the proxy's capture, so its
-// message is this transcript's to write.
+// owned reports whether a line is this transcript's to write: it falls
+// before the proxy's capture of the session, or the proxy did not return
+// the reply it leads to.
 func (f *file) owned(l TranscriptLine) bool {
-	return f.proxiedSince == "" || f.stamp(l) < f.proxiedSince
+	f.stamp(l)
+	return !f.proxied[l.ID]
 }
 
 // Covered is what became of transcript lines of a source and kind: a
@@ -682,6 +897,9 @@ func (f *file) owned(l TranscriptLine) bool {
 // docs/llm-conversations.md.
 type Covered struct {
 	Source, Kind, Disposition string
+	// Where the line's content is now: a table, or a table and column for
+	// lines folded into calls and sessions, empty for dropped lines.
+	Destination string
 }
 
 // folded names what the lines of each kind that is no message are folded
@@ -770,6 +988,15 @@ func (n *Normalizer) unknown(what string) {
 // kinds of line or block it does not know. The import must not be inserted
 // with any, since llm.transcripts is dropped after it.
 func (n *Normalizer) CoverageError() error {
+	for _, c := range n.copies {
+		for _, h := range c.items {
+			if !n.held[h] {
+				n.unknown("no written call holds the context of a copy's " + c.what)
+				break
+			}
+		}
+	}
+	n.copies = nil
 	if len(n.unknowns) == 0 {
 		return nil
 	}
@@ -781,11 +1008,16 @@ func (n *Normalizer) CoverageError() error {
 	return fmt.Errorf("the transcript import does not know %s", strings.Join(list, ", "))
 }
 
-func (f *file) cover(l TranscriptLine, e obj, disposition string) {
+// cover counts a line by what became of it and where its content is now.
+func (f *file) cover(l TranscriptLine, e obj, disposition, destination string) {
+	f.count(l.Source, kindOf(l.Source, e), disposition, destination)
+}
+
+func (f *file) count(source, kind, disposition, destination string) {
 	if f.n.Coverage == nil {
 		f.n.Coverage = map[Covered]int{}
 	}
-	f.n.Coverage[Covered{l.Source, kindOf(l.Source, e), disposition}]++
+	f.n.Coverage[Covered{source, kind, disposition, destination}]++
 }
 
 // other accounts for a line that is no message: an event, folded into a
@@ -804,11 +1036,38 @@ func (f *file) other(l TranscriptLine, e obj) {
 		disposition = "proxied"
 	case disposition == "dropped" && !droppedKinds[key]:
 		f.n.unknown("kind " + key)
+	case disposition == "call":
+		// Lines folded into calls count by what became of the call.
+		f.n.unknown("no call for " + key)
 	case event:
 		f.n.Events = append(f.n.Events, Event{SessionID: f.session.SessionID, TS: f.stamp(l), Host: l.Host,
 			Path: l.Path, Line: l.ID, Type: kind, Detail: eventDetail(kind, e)})
 	}
-	f.cover(l, e, disposition)
+	destination := destinations[disposition+"/"+key]
+	if disposition == "proxied" {
+		// The proxy's call of the reply the line leads to; see owned.
+		destination = "llm.calls"
+	}
+	f.cover(l, e, disposition, destination)
+}
+
+// destinations name where the content of lines that are no message is: an
+// event, a session, or the tree.
+var destinations = map[string]string{}
+
+func init() {
+	for key, disposition := range folded {
+		switch disposition {
+		case "session":
+			destinations["session/"+key] = "llm.sessions"
+		case "structure":
+			destinations["structure/"+key] = map[string]string{"claude-code/system:compact_boundary": "llm.messages.parent_id",
+				"codex/compacted": "llm.messages.part", "opencode/part": "llm.messages.blocks"}[key]
+		}
+	}
+	for key := range eventKinds {
+		destinations["event/"+key] = "llm.events"
+	}
 }
 
 // eventDetail reads what an event says: the error, the notice, why a turn
@@ -835,6 +1094,9 @@ func eventDetail(kind string, e obj) string {
 // record the tools.
 func (f *file) context(callID string, shared json.RawMessage) []requestitems.Part {
 	parts := []requestitems.Part{}
+	if system := f.callSystem[callID]; len(system) > 0 {
+		parts = append(parts, requestitems.Part{Field: "system", Position: -1, Hash: f.n.item(system)})
+	}
 	for i, tool := range f.callTools[callID] {
 		parts = append(parts, requestitems.Part{Field: "tools", Position: int32(i), Hash: f.n.item(tool)})
 	}
@@ -856,6 +1118,9 @@ func (f *file) context(callID string, shared json.RawMessage) []requestitems.Par
 			parts = append(parts, requestitems.Part{Field: field, Position: int32(i), Hash: f.n.item(item)})
 		}
 	}
+	for _, m := range f.requestMessages[callID] {
+		parts = append(parts, requestitems.Part{Field: "messages", Position: int32(m.position), Hash: f.n.item(m.raw)})
+	}
 	return parts
 }
 
@@ -869,10 +1134,10 @@ func (f *file) message(l TranscriptLine, e obj, parent Hash, key string, m Messa
 	id, added := f.node(parent, key, f.stamp(l), m)
 	f.last = id
 	if !added {
-		f.cover(l, e, "repeat")
+		f.cover(l, e, "repeat", "llm.messages")
 		return id, false
 	}
-	f.cover(l, e, "message")
+	f.cover(l, e, "message", "llm.messages")
 	if m.Output && m.CallID != "" {
 		c := f.calls[m.CallID]
 		if c == nil {
@@ -895,6 +1160,10 @@ func (f *file) call(callID, format, model string, input Hash, ts string) *Call {
 	if len(f.tools) > 0 {
 		f.callTools[callID] = f.tools[:len(f.tools):len(f.tools)]
 	}
+	for _, i := range f.next {
+		f.folds[i].call = callID
+	}
+	f.next = nil
 	return c
 }
 
@@ -951,6 +1220,28 @@ func (f *file) claudeCode(lines []TranscriptLine) {
 		case "api-request":
 			f.requests[e.str("id")] = e.str("shapeHash")
 		}
+		if f.owned(l) {
+			// Request logs count once every call's fate is known; see
+			// requestLogs.
+			switch t {
+			case "api-request-shape":
+				f.shapeLines[e.str("shapeHash")] = append(f.shapeLines[e.str("shapeHash")], l)
+				continue
+			case "api-request":
+				var tail []string
+				json.Unmarshal(e["tail"], &tail)
+				f.requestLines = append(f.requestLines, requestLine{l: l, id: e.str("id"), shape: e.str("shapeHash"),
+					base: e.str("base"), model: e.obj("params").str("model"), keep: int(e.num("keep")), tail: tail,
+					input: f.last, ts: f.stamp(l)})
+				continue
+			case "api-request-blob":
+				b := f.blobs[e.str("hash")]
+				b.lines = append(b.lines, l)
+				b.message = firstRaw(b.message, e["message"])
+				f.blobs[e.str("hash")] = b
+				continue
+			}
+		}
 		m := Message{Format: "claude-code"}
 		switch {
 		case uuid == "" || !f.owned(l):
@@ -998,6 +1289,52 @@ func (f *file) claudeCode(lines []TranscriptLine) {
 			f.setUsage(m.CallID, msg.str("id"), anthropicUsage(msg.obj("usage")))
 		}
 	}
+	f.unansweredRequests()
+}
+
+// unansweredRequests keeps the requests no reply names, in any file, such
+// as ones that failed or were interrupted: no other row would hold what
+// they sent. Each is a call without outputs, whose input is the
+// conversation as the file had it when the request was logged, and whose
+// context holds its system prompt, tools, and the messages it sent that
+// Claude Code logged as blobs. It names the others by hash only; they are
+// the file's own lines, which are messages.
+func (f *file) unansweredRequests() {
+	named := map[string]bool{}
+	for _, ref := range f.refs {
+		named[ref] = true
+	}
+	byID := map[string]requestLine{}
+	for _, r := range f.requestLines {
+		byID[r.id] = r
+	}
+	var messages func(id string, depth int) []string
+	messages = func(id string, depth int) []string {
+		r, ok := byID[id]
+		if !ok || depth > 1<<12 {
+			return nil
+		}
+		var out []string
+		if r.base != "" {
+			base := messages(r.base, depth+1)
+			out = append(out, base[:min(r.keep, len(base))]...)
+		}
+		return append(out, r.tail...)
+	}
+	for _, r := range f.requestLines {
+		if _, ok := f.replies.referenced(r.id); ok || named[r.id] {
+			continue
+		}
+		for i, hash := range messages(r.id, 0) {
+			if b, ok := f.blobs[hash]; ok {
+				b.used = true
+				f.blobs[hash] = b
+				f.requestMessages[r.id] = append(f.requestMessages[r.id], requestMessage{i, b.message})
+			}
+		}
+		f.refs[r.id] = r.id
+		f.call(r.id, "claude-code", r.model, r.input, r.ts)
+	}
 }
 
 func (f *file) codex(lines []TranscriptLine) {
@@ -1036,6 +1373,12 @@ func (f *file) codex(lines []TranscriptLine) {
 			// context, as in a request, rather than a message.
 			tools, _ := additionalTools(e["payload"])
 			f.tools = append(f.tools, tools...)
+			var items []Hash
+			for _, tool := range tools {
+				items = append(items, itemHash(tool))
+			}
+			f.fold(l, e, "context", "", items)
+			continue
 		case t == "response_item":
 			role, blocks := responsesItem(e["payload"])
 			m := Message{Role: role, Blocks: blocks, Format: "codex"}
@@ -1055,8 +1398,9 @@ func (f *file) codex(lines []TranscriptLine) {
 			// A response's usage record follows its items and ends it. A
 			// second response with no output since, such as a remote
 			// compaction's, has no items of its own, so it is a call
-			// without outputs rather than the previous call's usage.
-			if c := f.calls[call]; c != nil && call == recorded && p.str("response_id") != c.ResponseID {
+			// without outputs rather than the previous call's usage, and so
+			// is a record before any items.
+			if c := f.calls[call]; c == nil || call == recorded && p.str("response_id") != c.ResponseID {
 				call = f.session.SessionID + ":" + l.ID
 				f.call(call, "codex", model, f.last, f.stamp(l))
 			}
@@ -1075,7 +1419,20 @@ func (f *file) codex(lines []TranscriptLine) {
 			recorded, lastWasOutput, f.counts[call] = call, false, count
 			f.setUsage(call, "", codexUsage(p.obj("info").obj("last_token_usage")))
 		}
-		f.other(l, e)
+		switch {
+		case !f.owned(l):
+			f.other(l, e)
+		case t == "turn_context":
+			// The model of the calls from here on.
+			f.fold(l, e, "model", "", nil)
+		case t == "token_usage_record" || count != "":
+			f.fold(l, e, "usage", call, nil)
+		case t == "event_msg" && p.str("type") == "token_count":
+			// A point counted already, a usage record's echo, or no usage.
+			f.cover(l, e, "repeat", "llm.calls.usage")
+		default:
+			f.other(l, e)
+		}
 	}
 }
 
@@ -1200,13 +1557,13 @@ func (f *file) piCompaction(l TranscriptLine, e obj, m Message) Hash {
 // the table, so messages are ordered by time here.
 func (f *file) opencode(lines []TranscriptLine) {
 	parts := map[string][]json.RawMessage{}
-	var messages []TranscriptLine
+	var messages, partLines []TranscriptLine
 	for _, l := range lines {
 		e := parse([]byte(l.Line))
 		switch e.str("kind") {
 		case "part":
 			parts[e.str("message_id")] = append(parts[e.str("message_id")], e["data"])
-			f.other(l, e)
+			partLines = append(partLines, l)
 		case "message":
 			messages = append(messages, l)
 		default:
@@ -1220,10 +1577,18 @@ func (f *file) opencode(lines []TranscriptLine) {
 		a, b := parse([]byte(messages[i].Line)), parse([]byte(messages[j].Line))
 		return a.str("timestamp")+a.str("id") < b.str("timestamp")+b.str("id")
 	})
+	// The messages that hold their parts' content, or whose lines are the
+	// proxy's.
+	held := map[string]string{}
+	// The system prompt OpenCode sends with a user message's turn.
+	var system json.RawMessage
 	for _, l := range messages {
 		e := parse([]byte(l.Line))
 		d := e.obj("data")
 		m := Message{Format: "opencode", Role: firstNonEmpty(d.str("role"), e.str("type"))}
+		if m.Role == "user" {
+			system = d["system"]
+		}
 		switch m.Role {
 		case "user", "system", "synthetic":
 			if s := d.str("text"); s != "" {
@@ -1244,12 +1609,30 @@ func (f *file) opencode(lines []TranscriptLine) {
 			m.Role = ""
 		}
 		m.Blocks = append(m.Blocks, opencodeParts(append(d.arr("content"), parts[e.str("id")]...))...)
+		if !f.owned(l) {
+			held[e.str("id")] = "proxied"
+		}
 		if !f.owned(l) || m.Role == "" {
 			f.other(l, e)
 			continue
 		}
+		held[e.str("id")] = "structure"
 		if _, added := f.message(l, e, f.last, e.str("id"), m); added && m.Output {
 			f.setUsage(m.CallID, "", opencodeUsage(d.obj("tokens")))
+			if len(system) > 0 {
+				f.callSystem[m.CallID] = system
+			}
+		}
+	}
+	for _, l := range partLines {
+		e := parse([]byte(l.Line))
+		switch held[e.str("message_id")] {
+		case "structure":
+			f.cover(l, e, "structure", "llm.messages.blocks")
+		case "proxied":
+			f.cover(l, e, "proxied", "llm.calls")
+		default:
+			f.n.unknown("no message for opencode/part")
 		}
 	}
 }

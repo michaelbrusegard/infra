@@ -128,9 +128,10 @@ func TestTranscriptReplyOwnershipIgnoresBatches(t *testing.T) {
 	}
 }
 
-// A file writes no call from the proxy's handover on, so its sighting of a
-// reply the proxy never returned cannot hold the call. The child's earlier
-// copy, from before any handover, holds it, and its usage still counts.
+// A file's lines from after the proxy's handover are the proxy's only when
+// the proxy returned their reply. A reply it never returned stays with the
+// file that made it, the parent, rather than going with the handover or to
+// the child's copy; one it returned is the proxy's, in every file.
 func TestTranscriptReplyOwnerCanWriteTheCall(t *testing.T) {
 	files := forkedFiles()[:2]
 	parent, child := "codex:019f6478-0000-7000-8000-00000000000a", "codex:019f6478-0000-7000-8000-00000000000a:agent:review"
@@ -146,7 +147,22 @@ func TestTranscriptReplyOwnerCanWriteTheCall(t *testing.T) {
 		calls = append(calls, c.SessionID+" "+c.ResponseID)
 	}
 	sort.Strings(calls)
-	if want := []string{child + " resp_child", child + " resp_parent"}; !reflect.DeepEqual(calls, want) {
+	if want := []string{parent + " resp_parent", child + " resp_child"}; !reflect.DeepEqual(calls, want) {
+		t.Fatalf("calls %v, want %v", calls, want)
+	}
+	// Once the proxy returned the parent's reply, the reply is the
+	// proxy's, and neither file writes it.
+	proxied.Add(parent, "", "codex", "resp_parent", "2026-11-12 10:00:00.000")
+	replies = repliesOf(proxied, files...)
+	n = NewNormalizer()
+	for _, f := range files {
+		n.Transcript(f, replies, proxied)
+	}
+	calls = nil
+	for _, c := range n.Calls {
+		calls = append(calls, c.SessionID+" "+c.ResponseID)
+	}
+	if want := []string{child + " resp_child"}; !reflect.DeepEqual(calls, want) {
 		t.Fatalf("calls %v, want %v", calls, want)
 	}
 }

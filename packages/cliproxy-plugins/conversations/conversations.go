@@ -169,7 +169,7 @@ type Item struct {
 // it on insert and the item would no longer match its hash.
 func (b *Batch) item(raw []byte) Hash {
 	raw = bytes.ToValidUTF8(raw, []byte("\uFFFD"))
-	h := requestitems.HashOf(raw)
+	h := itemHash(raw)
 	if b.items == nil {
 		b.items = map[Hash]bool{}
 	}
@@ -178,6 +178,11 @@ func (b *Batch) item(raw []byte) Hash {
 		b.Items = append(b.Items, Item{h, string(raw)})
 	}
 	return h
+}
+
+// itemHash is the hash an item of these bytes has in llm.request_items.
+func itemHash(raw []byte) Hash {
+	return requestitems.HashOf(bytes.ToValidUTF8(raw, []byte("\uFFFD")))
 }
 
 // version ranks the rows written for one node, highest first: a model's
