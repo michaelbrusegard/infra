@@ -17,6 +17,15 @@ spec:
     managementURL: https://netbird.asgard.michaelbrusegard.com
     cluster:
       name: espresso
+    # The pod webhook fails closed, so while the operator is down it blocks
+    # every pod it matches. Only hermes-agent has a SidecarProfile; scoping
+    # the webhook there keeps an operator outage from stopping CoreDNS,
+    # Cilium and storage pods cluster-wide.
+    webhook:
+      namespaceSelectors:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values: ["hermes-agent"]
     netbirdAPI:
       keyFromSecret:
         name: netbird-credentials
