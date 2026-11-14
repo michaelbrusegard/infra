@@ -115,14 +115,15 @@ func eachRow[T any](r io.Reader, f func(T) error) error {
 func printSessions(r io.Reader, w io.Writer) error {
 	seen := map[string]bool{}
 	var quoted []string
+	n := conversations.NewNormalizer()
 	err := eachRow(r, func(req conversations.Request) error {
-		if s := conversations.SessionOf(req); !seen[s] {
+		if s := n.SessionOf(req); !seen[s] {
 			seen[s] = true
 			quoted = append(quoted, "'"+strings.NewReplacer(`\`, `\\`, `'`, `\'`).Replace(s)+"'")
 		}
 		return nil
 	})
-	if err != nil {
+	if err = errors.Join(err, n.Err); err != nil {
 		return err
 	}
 	_, err = fmt.Fprintf(w, "[%s]\n", strings.Join(quoted, ","))
@@ -185,7 +186,7 @@ func normalizeRequests(r io.Reader, n *conversations.Normalizer, drain func() er
 	if held > 0 {
 		log.Printf("held back %d recent requests whose usage or previous response is not archived yet", held)
 	}
-	return err
+	return errors.Join(err, n.Err)
 }
 
 // normalizeTranscripts reads the file twice: the first pass decides which

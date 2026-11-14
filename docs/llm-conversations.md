@@ -651,8 +651,10 @@ Each run:
    Requests land when they complete, so a watermark on start times would skip
    every request that outlived the gap; selecting what is missing picks them
    up whenever they land. The day only bounds the scan, and must exceed the
-   longest request and any outage. Each item is sent once per run, with the
-   first request that uses it; the normalizer remembers what it needs of it.
+   longest request and any outage; `before` is open. Only the items the
+   normalizer reads are sent, conversation messages and client metadata,
+   each once per run, with the first request that uses it, and the
+   normalizer keeps them for the run.
 2. Lists the sessions those requests touch with
    `normalize-conversations -requests -sessions`.
 3. Reads those sessions' nodes and response leaves from `llm.messages` and
@@ -682,21 +684,24 @@ ssh -L 18123:127.0.0.1:18123 deploy-espresso-0 \
 ```
 
 Queries go to `http://127.0.0.1:18123/` with
-`enable_http_compression=1` and `Accept-Encoding: gzip`, which the
-normalizer reads as is, and `readonly=2` for the reads. Inserts send gzip
-(`Content-Encoding: gzip`). In order, because which transcript file holds a
-reply's call depends on the proxy's calls:
+`enable_http_compression=1` and `readonly=2`, and inserts send their files
+compressed (`Content-Encoding`). In order, because which transcript file
+holds a reply's call depends on the proxy's calls:
 
 1. **The proxy**, from 2026-11-09, in start order, so `llm.calls` holds every
-   proxied call: `requests.sql` with `after` at the proxy's start, piped
-   through `normalize-conversations -requests`, then the four canonical
-   files inserted. The first request to use an item carries it, and later
-   ones only its hash: joined in full, the items of every request would be
-   68 GiB rather than 2.6 GiB. The download is the distinct items, envelopes
-   and response bodies, about 11.4 GiB uncompressed.
+   proxied call: the job's three steps, run a day at a time (`after` and
+   `before` a day apart), each inserted before the next day starts, so the
+   state carries over. The downloads use `Accept-Encoding: zstd` and are
+   piped through `zstd -d` into `normalize-conversations -requests`: response
+   streams repeat 36 KiB instruction and tool echoes, which gzip's 32 KiB
+   window cannot deduplicate. Each run sends an item once: joined in full,
+   the items of every request would be 68 GiB rather than 2.6 GiB, of which
+   the normalizer reads the conversation items. The rest is envelopes and
+   response bodies, 8.9 GiB uncompressed.
 2. **The transcripts**, once, in one pass: `-proxied` from the query in
    [`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql),
-   then `transcripts.sql` itself saved gzip-compressed and passed as
+   then `transcripts.sql` itself saved gzip-compressed (`Accept-Encoding:
+   gzip`, which Go reads without a dependency) and passed as
    `normalize-conversations -in transcripts.jsonl.gz`, which reads it twice
    without a decompressed copy. The largest dropped kinds arrive as their
    type alone. Insert the five files it writes, `llm.request_items`

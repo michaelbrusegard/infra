@@ -1,6 +1,14 @@
--- Input for `normalize-conversations -requests`: requests started since
--- {after} that are not in llm.calls yet, in start order, each with the items
--- its parts reference and the session CLIProxy recorded in llm.usage.
+-- Input for `normalize-conversations -requests`: requests started from
+-- {after} until {before} that are not in llm.calls yet, in start order, each
+-- with the items its parts reference and the session CLIProxy recorded in
+-- llm.usage.
+--
+-- The normalizer reads only conversation items and client metadata, and
+-- each is sent once, with the first request of the run that uses it; the
+-- normalizer keeps it for later ones. Other items are empty. Joined in full,
+-- every request's items would be 68 GiB rather than 2.6 GiB for the
+-- archive. A backfill runs this a day at a time, with state between runs,
+-- which bounds the items the server joins at once.
 --
 -- The plugin writes a request before CLIProxy writes its usage, so a request
 -- without usage attempts may only be early; the normalizer holds recent ones
@@ -19,23 +27,35 @@
 WITH
     selected AS (
         SELECT * FROM llm.requests
-        WHERE started_at >= {after:DateTime64(3)}
+        WHERE started_at >= {after:DateTime64(3)} AND started_at < {before:DateTime64(3)}
             AND request_id NOT IN (
                 SELECT request_id FROM llm.calls
                 WHERE origin = 'proxy' AND started_at >= {after:DateTime64(3)})
     ),
+    parts AS (
+        SELECT request_id, started_at, part.field AS field, part.hash AS hash, n
+        FROM selected
+        ARRAY JOIN request_parts AS part, arrayEnumerate(request_parts) AS n
+    ),
+    sent AS (
+        SELECT hash, argMin((request_id, n), (started_at, request_id, n)) AS first
+        FROM parts
+        WHERE field IN ('messages', 'input', 'client_metadata')
+        GROUP BY hash
+    ),
+    contents AS (
+        -- Items are unique only after merges; duplicates are identical.
+        SELECT hash, any(item) AS item FROM llm.request_items
+        WHERE hash IN (SELECT hash FROM sent)
+        GROUP BY hash
+    ),
     items AS (
-        SELECT
-            request_id,
-            -- Items are unique only after merges; duplicates are identical.
-            arrayMap(x -> x.2, arraySort(arrayDistinct(groupArray((n, i.item))))) AS items
-        FROM (
-            SELECT request_id, part.hash AS hash, n
-            FROM selected
-            ARRAY JOIN request_parts AS part, arrayEnumerate(request_parts) AS n
-        ) AS p
-        INNER JOIN llm.request_items AS i ON i.hash = p.hash
-        GROUP BY request_id
+        SELECT p.request_id AS request_id,
+            arrayMap(x -> x.2, arraySort(groupArray((p.n, if((p.request_id, p.n) = s.first, c.item, ''))))) AS items
+        FROM parts AS p
+        LEFT JOIN sent AS s ON s.hash = p.hash
+        LEFT JOIN contents AS c ON c.hash = p.hash
+        GROUP BY p.request_id
     ),
     attempts AS (
         SELECT

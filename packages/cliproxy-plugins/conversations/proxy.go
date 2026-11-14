@@ -13,7 +13,9 @@ import (
 
 // Request is a row of llm.requests with the items its parts reference, in
 // part order, and the session CLIProxy recorded in llm.usage for it, from
-// as many upstream attempts as UsageAttempts.
+// as many upstream attempts as UsageAttempts. requests.sql sends an item
+// only with the first request of a run that uses it, and only items the
+// normalizer reads; the others are empty.
 type Request struct {
 	RequestID            string              `json:"request_id"`
 	TraceID              string              `json:"trace_id"`
@@ -49,9 +51,13 @@ type Normalizer struct {
 	// 15:04:05.000" in UTC, so a later run can place them once it arrives.
 	// Empty holds nothing.
 	HoldAfter string
-	nodes     map[Hash]node
-	after     map[string]Hash
-	sessions  map[string]struct{}
+	// Set when a request needed an item that was not sent; see received.
+	Err      error
+	nodes    map[Hash]node
+	after    map[string]Hash
+	sessions map[string]struct{}
+	// The items read this run, by hash.
+	read map[Hash]string
 }
 
 // node is what the normalizer knows of a written message.
@@ -61,7 +67,8 @@ type node struct {
 }
 
 func NewNormalizer() *Normalizer {
-	return &Normalizer{nodes: map[Hash]node{}, after: map[string]Hash{}, sessions: map[string]struct{}{}}
+	return &Normalizer{nodes: map[Hash]node{}, after: map[string]Hash{}, sessions: map[string]struct{}{},
+		read: map[Hash]string{}}
 }
 
 // State is a row of state.sql, which earlier runs left: a node of a
@@ -88,8 +95,22 @@ func (n *Normalizer) Restore(s State) {
 }
 
 // The fields holding the conversation; the others, such as system prompts
-// and tools, are per-call context that stays in the call's parts.
+// and tools, are per-call context that stays in the request.
 var conversationFields = map[string]bool{"messages": true, "input": true}
+
+// received returns the bytes of a part that the normalizer reads, which
+// requests.sql sends only with the first request of a run to use them.
+func (n *Normalizer) received(p requestitems.Part, sent string) []byte {
+	if sent != "" {
+		n.read[p.Hash] = sent
+		return []byte(sent)
+	}
+	item, ok := n.read[p.Hash]
+	if !ok && n.Err == nil {
+		n.Err = fmt.Errorf("item %s of field %s was not sent", p.Hash, p.Field)
+	}
+	return []byte(item)
+}
 
 var formats = map[string]string{"claude": "anthropic", "openai-response": "openai-responses", "openai": "openai-chat"}
 
@@ -101,17 +122,20 @@ type part struct {
 }
 
 // split reads a request's conversation messages and client metadata.
-func split(r Request, env obj) (conversation []part, metadata obj) {
+func (n *Normalizer) split(r Request, env obj) (conversation []part, metadata obj) {
 	for i, p := range r.RequestParts {
-		item := []byte(r.Items[i])
+		sent := ""
+		if i < len(r.Items) {
+			sent = r.Items[i]
+		}
 		switch {
 		case conversationFields[p.Field] && p.Position >= 0:
-			conversation = append(conversation, part{item, p.Hash})
+			conversation = append(conversation, part{n.received(p, sent), p.Hash})
 		case p.Field == "input":
 			// A whole input string is one user message.
-			conversation = append(conversation, part{[]byte(fmt.Sprintf(`{"role":"user","content":%s}`, item)), p.Hash})
+			conversation = append(conversation, part{[]byte(fmt.Sprintf(`{"role":"user","content":%s}`, n.received(p, sent))), p.Hash})
 		case p.Field == "client_metadata":
-			metadata = parse(item)
+			metadata = parse(n.received(p, sent))
 		}
 	}
 	if input := env["input"]; isString(input) {
@@ -124,10 +148,11 @@ func split(r Request, env obj) (conversation []part, metadata obj) {
 }
 
 // SessionOf names the session a request belongs to, so a run can restore
-// the state of the sessions it touches before normalizing.
-func SessionOf(r Request) string {
+// the state of the sessions it touches before normalizing. Like Request, it
+// reads the requests of a run in order.
+func (n *Normalizer) SessionOf(r Request) string {
 	env := parse([]byte(r.RequestEnvelope))
-	conversation, metadata := split(r, env)
+	conversation, metadata := n.split(r, env)
 	session, _ := proxySession(r, env, metadata, conversation)
 	return session
 }
@@ -136,7 +161,7 @@ func SessionOf(r Request) string {
 // when the request is held back; see HoldAfter.
 func (n *Normalizer) Request(r Request) bool {
 	env := parse([]byte(r.RequestEnvelope))
-	conversation, metadata := split(r, env)
+	conversation, metadata := n.split(r, env)
 	if n.HoldAfter != "" && r.CompletedAt >= n.HoldAfter && r.UsageAttempts == 0 {
 		// The plugin writes a request when it completes, before CLIProxy
 		// writes its usage, whose session tells sub-agents apart. Placed now,

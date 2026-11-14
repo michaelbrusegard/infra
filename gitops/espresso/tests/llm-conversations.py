@@ -141,7 +141,10 @@ def main():
                 out = temp / name
                 out.mkdir()
                 rows = query((NORMALIZER / "requests.sql").read_text(),
-                             params=(("after", "2000-01-01 00:00:00"),)).stdout
+                             params=(("after", "2000-01-01 00:00:00"), ("before", "2100-01-01 00:00:00"))).stdout
+                # Each item the normalizer reads is sent once a run.
+                sent = [item for row in rows.splitlines() for item in json.loads(row)["items"] if item]
+                assert len(sent) == len(set(sent)), "an item was sent twice"
                 sessions = run(str(normalizer), "-requests", "-sessions", input=rows).stdout.strip()
                 state = temp / f"{name}-state.jsonl"
                 state.write_text(query((NORMALIZER / "state.sql").read_text(), params=(("sessions", sessions),)).stdout)

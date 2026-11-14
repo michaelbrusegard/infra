@@ -46,7 +46,7 @@ func collapse(messages []Message) map[Hash]Message {
 func stateOf(b *Batch, requests []Request) []State {
 	sessions := map[string]bool{}
 	for _, r := range requests {
-		sessions[SessionOf(r)] = true
+		sessions[NewNormalizer().SessionOf(r)] = true
 	}
 	var out []State
 	for _, m := range collapse(b.Messages) {
@@ -284,5 +284,51 @@ func TestInterruptedAnthropicStreamKeepsArguments(t *testing.T) {
 	want[1].(map[string]any)["input"] = strings.Join(chunks[:len(chunks)-1], "")
 	if got, expected := content(stream[:len(stream)-1]), fmt.Sprint(decode(t, encode(want))); got != expected {
 		t.Fatalf("content cut in the arguments\n%s\nwant\n%s", got, expected)
+	}
+}
+
+// requests.sql sends an item only with the first request of a run that
+// uses it, and only items the normalizer reads. The rows are the same as
+// with every item sent, and an item a request needs that was never sent
+// fails the run rather than lose a message.
+func TestItemsAreSentOncePerRun(t *testing.T) {
+	requests := byStart(func() []Request {
+		var out []Request
+		for _, r := range storedRequests(t) {
+			out = append(out, r)
+		}
+		return out
+	}())
+	whole := NewNormalizer()
+	for _, r := range requests {
+		whole.Request(r)
+	}
+	once := NewNormalizer()
+	sent := map[Hash]bool{}
+	blanked := 0
+	for _, r := range requests {
+		r.Items = append([]string{}, r.Items...)
+		for i, p := range r.RequestParts {
+			if !conversationFields[p.Field] && p.Field != "client_metadata" || sent[p.Hash] {
+				r.Items[i] = ""
+				blanked++
+				continue
+			}
+			sent[p.Hash] = true
+		}
+		once.Request(r)
+	}
+	if once.Err != nil || blanked == 0 {
+		t.Fatalf("%v after blanking %d items", once.Err, blanked)
+	}
+	if !reflect.DeepEqual(once.Messages, whole.Messages) || !reflect.DeepEqual(once.Calls, whole.Calls) ||
+		!reflect.DeepEqual(once.Sessions, whole.Sessions) {
+		t.Fatal("rows differ when items are sent once")
+	}
+	missing := NewNormalizer()
+	r := storedRequests(t)["claude-2"]
+	r.Items = make([]string, len(r.Items))
+	if missing.Request(r); missing.Err == nil {
+		t.Fatal("a request without its items was normalized")
 	}
 }
