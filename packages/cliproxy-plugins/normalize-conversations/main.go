@@ -8,7 +8,8 @@
 // touch with -sessions, then passes those sessions' state from state.sql
 // with -state. Otherwise input rows are llm.transcripts rows from
 // transcripts.sql, and -proxied names a file of the proxy's calls, each a
-// session ID, response ID, and start time, tab-separated.
+// session ID, its parent session and client, a response ID, and a start
+// time, tab-separated.
 //
 // With -export openai or -export anthropic, it instead reads one call or
 // conversation, as the call and conversation queries in the design doc
@@ -36,7 +37,7 @@ func main() {
 	sessions := flag.Bool("sessions", false, "print the sessions the requests touch, for state.sql")
 	state := flag.String("state", "", "file of state.sql rows from earlier runs")
 	hold := flag.Duration("hold", 10*time.Minute, "hold back requests that continue an unseen response and started this recently, or lack usage and completed this recently")
-	proxied := flag.String("proxied", "", "file of the proxy's calls: session ID, response ID, and start")
+	proxied := flag.String("proxied", "", "file of the proxy's calls: session, parent session, client, response ID, and start")
 	out := flag.String("out", ".", "directory for the output files")
 	export := flag.String("export", "", "print a call or conversation as openai or anthropic messages")
 	flag.Parse()
@@ -62,8 +63,8 @@ func main() {
 				log.Fatal(err)
 			}
 			for _, line := range strings.Split(string(data), "\n") {
-				if f := strings.Split(line, "\t"); len(f) == 3 {
-					p.Add(f[0], f[1], f[2])
+				if f := strings.Split(line, "\t"); len(f) == 5 {
+					p.Add(f[0], f[1], f[2], f[3], f[4])
 				}
 			}
 		}

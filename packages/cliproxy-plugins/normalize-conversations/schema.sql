@@ -2,9 +2,10 @@
 -- written by packages/cliproxy-plugins/normalize-conversations. Raw JSON
 -- lives once in llm.request_items, referenced by content hash.
 
--- What does not change as a session grows. A session captured by both the
--- proxy and a transcript has a row per origin; the transcript's messages end
--- where the proxy's calls begin.
+-- What does not change as a session grows, per source: a session captured
+-- by both the proxy and transcripts has a row for the proxy and one for each
+-- transcript file, by host and path. The transcripts' messages end where the
+-- proxy's calls begin.
 CREATE TABLE IF NOT EXISTS llm.sessions
 (
     session_id String,
@@ -17,7 +18,7 @@ CREATE TABLE IF NOT EXISTS llm.sessions
     cwd String
 )
 ENGINE = ReplacingMergeTree
-ORDER BY (session_id, origin);
+ORDER BY (session_id, origin, host, path);
 
 -- One row per node of a session's conversation tree. A node's ID covers its
 -- parent's, so resent context maps to existing nodes. The extracted blocks

@@ -45,34 +45,67 @@ type keptMessage struct {
 }
 
 // Proxied is what the proxy captured, for handing sessions over from
-// transcripts: when each session's first proxied call started, and the
-// session of each response the proxy returned.
+// transcripts: when each session's first proxied call started, each
+// session's client and parent session, and the session of each response the
+// proxy returned.
 type Proxied struct {
 	since    map[string]string
+	clients  map[string]string
+	parents  map[string]string
 	sessions map[string]string
 }
 
-// Add records a proxy call.
-func (p *Proxied) Add(session, responseID, startedAt string) {
+// Add records a proxy call and its session's client and parent session.
+func (p *Proxied) Add(session, parent, client, responseID, startedAt string) {
 	if p.since == nil {
-		p.since, p.sessions = map[string]string{}, map[string]string{}
+		p.since, p.clients, p.parents, p.sessions = map[string]string{}, map[string]string{}, map[string]string{}, map[string]string{}
 	}
 	if s, ok := p.since[session]; !ok || startedAt < s {
 		p.since[session] = startedAt
 	}
+	p.clients[session], p.parents[session] = client, parent
 	if responseID != "" {
 		p.sessions[responseID] = session
 	}
 }
 
+// sessionOf returns the proxy session a transcript shares by its replies,
+// or else the transcript's own. Sessionless clients such as Pi get a
+// session from CLIProxy that the transcript cannot derive, so shared replies
+// decide, but only when every one of them was returned in the same session,
+// of the same client and parent. A sub-agent's file can hold a copy of its
+// parent's reply, so a reply alone does not make a session the same.
+func (p *Proxied) sessionOf(s Session, lines []TranscriptLine) string {
+	shared := ""
+	for _, l := range lines {
+		switch session, ok := p.sessions[replyID(l)]; {
+		case !ok:
+		case shared == "":
+			shared = session
+		case session != shared:
+			return s.SessionID
+		}
+	}
+	if shared == "" || p.clients[shared] != s.Client || p.parents[shared] != s.ParentSessionID {
+		return s.SessionID
+	}
+	return shared
+}
+
 // Transcript normalizes the lines of one transcript file, in file order.
 // Every line becomes exactly one message or event that references the line
-// verbatim. A transcript and the proxy share a session when they share a
-// reply, by its response ID, or else when their session IDs match. From the
-// session's first proxied call on, the proxy owns its messages and calls,
-// and its transcript lines are kept as events only. Everything before,
-// which the proxy never saw, keeps its messages and calls here, so nothing
-// is counted twice and no history is lost.
+// verbatim. A transcript and the proxy share a session when they share
+// their replies, by response ID (see sessionOf), or else when their session
+// IDs match. From the session's first proxied call on, the proxy owns its
+// messages and calls, and its transcript lines are kept as events only.
+// Everything before, which the proxy never saw, keeps its messages and calls
+// here, so nothing is counted twice and no history is lost.
+//
+// A reply that the proxy returned, or that an earlier file already made a
+// call, is a copy, such as the parent's reply a forked sub-agent starts
+// from: it stays in this file's tree as context sent to the model, with no
+// call of its own. Files must arrive in path order, which puts a Claude Code
+// session before its sub-agents, and a Codex rollout before those it spawns.
 func (n *Normalizer) Transcript(lines []TranscriptLine, proxied *Proxied) {
 	if len(lines) == 0 {
 		return
@@ -81,16 +114,10 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, proxied *Proxied) {
 		kept: map[string]keptMessage{}}
 	f.session = transcriptSession(lines)
 	if proxied != nil {
-		// Sessionless clients such as Pi get a session from CLIProxy that
-		// the transcript cannot derive, so a shared reply decides.
-		for _, l := range lines {
-			if s, ok := proxied.sessions[replyID(l)]; ok {
-				f.session.SessionID = s
-				break
-			}
-		}
+		f.session.SessionID = proxied.sessionOf(f.session, lines)
 		f.proxiedSince = proxied.since[f.session.SessionID]
 	}
+	start := len(n.Messages)
 	switch lines[0].Source {
 	case "claude-code":
 		f.claudeCode(lines)
@@ -107,7 +134,37 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, proxied *Proxied) {
 	}
 	n.session(f.session)
 	for _, id := range f.order {
-		n.Calls = append(n.Calls, *f.calls[id])
+		c := f.calls[id]
+		if _, returned := proxied.returned(c.ResponseID); returned || n.called[c.ResponseID] {
+			n.copied(n.Messages[start:], c.CallID)
+			continue
+		}
+		if c.ResponseID != "" {
+			n.called[c.ResponseID] = true
+		}
+		n.Calls = append(n.Calls, *c)
+	}
+}
+
+// returned reports whether the proxy returned a response, and in which
+// session.
+func (p *Proxied) returned(responseID string) (string, bool) {
+	if p == nil || responseID == "" {
+		return "", false
+	}
+	s, ok := p.sessions[responseID]
+	return s, ok
+}
+
+// copied turns the outputs of a call that another source owns into context
+// sent to the model, as Pi's compaction copies are.
+func (n *Normalizer) copied(messages []Message, callID string) {
+	for i := range messages {
+		m := &messages[i]
+		if m.Output && m.CallID == callID {
+			m.Output, m.Model, m.CallID, m.Version = false, "", "", version(false, m.TS)
+			n.nodes[m.ID] = node{m.Seq, m.Version}
+		}
 	}
 }
 

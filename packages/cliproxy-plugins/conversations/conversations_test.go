@@ -6,6 +6,7 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -455,7 +456,7 @@ func TestTranscriptConversations(t *testing.T) {
 func TestTranscriptsOwnHistoryBeforeTheProxy(t *testing.T) {
 	session := "claude:11111111-1111-4111-8111-111111111111"
 	proxied := &Proxied{}
-	proxied.Add(session, "", "2026-11-10 09:00:00.000")
+	proxied.Add(session, "", "claude-code", "", "2026-11-10 09:00:00.000")
 	n, _ := transcriptBatch(t, proxied)
 	var lines []string
 	for _, m := range n.Messages {
@@ -492,11 +493,7 @@ func TestTranscriptsOwnHistoryBeforeTheProxy(t *testing.T) {
 // ID, put the transcript in the proxy's session, which then owns its calls.
 func TestTranscriptsShareTheProxySessionOfTheirReplies(t *testing.T) {
 	p, _ := proxyBatch(t)
-	proxied := &Proxied{}
-	for _, c := range p.Calls {
-		proxied.Add(c.SessionID, c.ResponseID, c.StartedAt)
-	}
-	n, _ := transcriptBatch(t, proxied)
+	n, _ := transcriptBatch(t, proxiedBy(&p.Batch))
 	session := callByID(t, &p.Batch, "chat-1").SessionID
 	var lines []string
 	for _, m := range n.Messages {
@@ -517,6 +514,146 @@ func TestTranscriptsShareTheProxySessionOfTheirReplies(t *testing.T) {
 	for _, s := range n.Sessions {
 		if strings.HasPrefix(s.SessionID, "pi:01a1c000") {
 			t.Fatalf("transcript kept its own session %+v", s)
+		}
+	}
+}
+
+// proxiedBy returns what -proxied passes for the proxy's rows.
+func proxiedBy(b *Batch) *Proxied {
+	parents := map[string]string{}
+	for _, s := range b.Sessions {
+		if s.Origin == "proxy" {
+			parents[s.SessionID] = s.ParentSessionID
+		}
+	}
+	p := &Proxied{}
+	for _, c := range b.Calls {
+		p.Add(c.SessionID, parents[c.SessionID], c.Client, c.ResponseID, c.StartedAt)
+	}
+	return p
+}
+
+// Several files can continue one proxy session. Each keeps a session row
+// with its host and path, so no file's source is lost.
+func TestTranscriptsSharingASessionKeepEverySource(t *testing.T) {
+	p, _ := proxyBatch(t)
+	var lines []TranscriptLine
+	load(t, "transcripts.json", &lines)
+	var pi []TranscriptLine
+	for _, l := range lines {
+		if strings.Contains(l.Path, "01a1c000") {
+			pi = append(pi, l)
+		}
+	}
+	copied := append([]TranscriptLine{}, pi...)
+	for i := range copied {
+		copied[i].Host = "forte"
+	}
+	n := NewNormalizer()
+	proxied := proxiedBy(&p.Batch)
+	n.Transcript(pi, proxied)
+	n.Transcript(copied, proxied)
+	session := callByID(t, &p.Batch, "chat-1").SessionID
+	var hosts []string
+	for _, s := range n.Sessions {
+		if s.SessionID == session && s.Path == pi[0].Path {
+			hosts = append(hosts, s.Host)
+		}
+	}
+	if !reflect.DeepEqual(hosts, []string{"lungo", "forte"}) {
+		t.Fatalf("session rows for hosts %v, want both files", hosts)
+	}
+}
+
+// A forked sub-agent's file starts with a copy of its parent's history,
+// replies included. A copied reply does not make the file its parent's: it
+// keeps its own session and parent, the copy is context sent to the model
+// with no call, and the sub-agent's own reply is its call, unless the proxy
+// has it. A reply an earlier file holds is a copy the same way.
+func TestSubAgentTranscriptsKeepTheirOwnSession(t *testing.T) {
+	parent, child := "codex:019f6478-0000-7000-8000-00000000000a", "codex:019f6478-0000-7000-8000-00000000000a:agent:review"
+	file := func(id string, lines ...string) []TranscriptLine {
+		var out []TranscriptLine
+		for i, l := range lines {
+			out = append(out, TranscriptLine{Source: "codex", Host: "lungo", Session: "rollout-" + id, ID: strconv.Itoa(i + 1),
+				Path: ".codex/sessions/2026/11/12/rollout-" + id + ".jsonl", Line: l,
+				TS: "2026-11-12 10:00:0" + strconv.Itoa(i) + ".000"})
+		}
+		return out
+	}
+	user := func(text string) string {
+		return `{"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"` + text + `"}]}}`
+	}
+	reply := func(text string) string {
+		return `{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"` + text + `"}]}}`
+	}
+	usage := func(id string) string {
+		return `{"type":"token_usage_record","payload":{"response_id":"` + id + `","usage":{"input_tokens":10,"output_tokens":5}}}`
+	}
+	history := []string{user("Plan the migration."), reply("Plan: three steps."), usage("resp_parent")}
+	parentFile := file("2026-11-12T09-59-00-019f6478-0000-7000-8000-00000000000a", append([]string{
+		`{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000a"}}`}, history...)...)
+	childFile := file("2026-11-12T10-00-00-019f6478-0000-7000-8000-00000000000b", append(append([]string{
+		`{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000b","source":{"subagent":{"thread_spawn":` +
+			`{"parent_thread_id":"019f6478-0000-7000-8000-00000000000a","agent_path":"/root/review"}}}}}`},
+		history...), user("Review the plan."), reply("The plan misses a rollback."), usage("resp_child"))...)
+
+	for _, tc := range []struct {
+		name    string
+		files   [][]TranscriptLine
+		proxied func(p *Proxied)
+		calls   []string
+	}{
+		// Only the parent went through the proxy.
+		{"parent proxied", [][]TranscriptLine{childFile}, func(p *Proxied) {
+			p.Add(parent, "", "codex", "resp_parent", "2026-11-12 09:59:00.000")
+		}, []string{"resp_child"}},
+		// Both did: the replies disagree, and the proxy owns the child's
+		// from its first call on.
+		{"both proxied", [][]TranscriptLine{childFile}, func(p *Proxied) {
+			p.Add(parent, "", "codex", "resp_parent", "2026-11-12 09:59:00.000")
+			p.Add(child, parent, "codex", "resp_child", "2026-11-12 10:00:05.000")
+		}, nil},
+		// Neither did; the parent's file holds the reply first.
+		{"no proxy", [][]TranscriptLine{parentFile, childFile}, nil, []string{"resp_parent", "resp_child"}},
+	} {
+		n := NewNormalizer()
+		var proxied *Proxied
+		if tc.proxied != nil {
+			proxied = &Proxied{}
+			tc.proxied(proxied)
+		}
+		for _, f := range tc.files {
+			n.Transcript(f, proxied)
+		}
+		var sessions []string
+		for _, s := range n.Sessions {
+			if s.Path == childFile[0].Path {
+				sessions = append(sessions, s.SessionID+" < "+s.ParentSessionID)
+			}
+		}
+		if !reflect.DeepEqual(sessions, []string{child + " < " + parent}) {
+			t.Fatalf("%s: child file in sessions %v", tc.name, sessions)
+		}
+		var calls []string
+		for _, c := range n.Calls {
+			calls = append(calls, c.ResponseID)
+		}
+		if !reflect.DeepEqual(calls, tc.calls) {
+			t.Fatalf("%s: calls %v, want %v", tc.name, calls, tc.calls)
+		}
+		copies := 0
+		for _, m := range n.Messages {
+			if m.SessionID != child || m.Line != "3" {
+				continue
+			}
+			copies++
+			if m.Output || m.CallID != "" || collapse(n.Messages)[m.ID].Output {
+				t.Fatalf("%s: the copied reply is an output: %+v", tc.name, m)
+			}
+		}
+		if copies != 1 {
+			t.Fatalf("%s: %d messages for the copied reply", tc.name, copies)
 		}
 	}
 }

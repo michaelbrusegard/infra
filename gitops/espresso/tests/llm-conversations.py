@@ -154,8 +154,10 @@ def main():
             # Transcripts once, after the proxy, which owns each session it
             # captured from its first call on.
             proxied = temp / "proxied.tsv"
-            proxied.write_text(query("SELECT session_id, response_id, started_at FROM llm.calls FINAL "
-                                     "WHERE origin = 'proxy' FORMAT TSV").stdout)
+            proxied.write_text(query("SELECT c.session_id, s.parent_session_id, c.client, c.response_id, c.started_at "
+                                     "FROM llm.calls AS c FINAL INNER JOIN (SELECT session_id, parent_session_id "
+                                     "FROM llm.sessions FINAL WHERE origin = 'proxy') AS s ON s.session_id = c.session_id "
+                                     "WHERE c.origin = 'proxy' FORMAT TSV").stdout)
             out = temp / "transcripts"
             out.mkdir()
             run(str(normalizer), "-proxied", str(proxied), "-out", str(out),

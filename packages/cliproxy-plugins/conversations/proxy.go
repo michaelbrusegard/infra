@@ -52,6 +52,8 @@ type Normalizer struct {
 	nodes     map[Hash]node
 	after     map[string]Hash
 	sessions  map[string]struct{}
+	// Response IDs that transcript calls hold.
+	called map[string]bool
 }
 
 // node is what the normalizer knows of a written message.
@@ -61,7 +63,8 @@ type node struct {
 }
 
 func NewNormalizer() *Normalizer {
-	return &Normalizer{nodes: map[Hash]node{}, after: map[string]Hash{}, sessions: map[string]struct{}{}}
+	return &Normalizer{nodes: map[Hash]node{}, after: map[string]Hash{}, sessions: map[string]struct{}{},
+		called: map[string]bool{}}
 }
 
 // State is a row of state.sql, which earlier runs left: a node of a
@@ -302,8 +305,11 @@ func (n *Normalizer) node(session string, parent Hash, key string, item Hash, ts
 	return id, true
 }
 
+// session adds a session row for each source of the session: the proxy, or
+// a transcript file, by its host and path. Several files can share a
+// session, such as Pi files that continue one proxy session.
 func (n *Normalizer) session(s Session) {
-	key := s.SessionID + "\x00" + s.Origin
+	key := strings.Join([]string{s.SessionID, s.Origin, s.Host, s.Path}, "\x00")
 	if _, ok := n.sessions[key]; !ok {
 		n.sessions[key] = struct{}{}
 		n.Sessions = append(n.Sessions, s)
