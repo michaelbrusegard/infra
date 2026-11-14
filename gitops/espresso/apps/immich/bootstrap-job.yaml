@@ -42,6 +42,12 @@ spec:
                 sleep 5
               done
 
+              # Immich changes the "admin exists" error between releases, so
+              # check the server state instead of matching its message.
+              if curl -fsS http://immich/api/server/config | grep -q '"isInitialized":true'; then
+                exit 0
+              fi
+
               body=$(printf '{"email":"%s","password":"%s","name":"%s"}' \
                 "$IMMICH_ADMIN_EMAIL" "$IMMICH_ADMIN_PASSWORD" "$IMMICH_ADMIN_NAME")
               status=$(curl -sS -o /tmp/immich-admin-sign-up.out -w '%{http_code}' \
@@ -53,11 +59,6 @@ spec:
               case "$status" in
                 200|201)
                   exit 0
-                  ;;
-                400)
-                  if grep -qi 'already has an admin' /tmp/immich-admin-sign-up.out; then
-                    exit 0
-                  fi
                   ;;
               esac
 
