@@ -8,8 +8,10 @@
 -- scan and must reach back past the longest request and any outage.
 --
 -- llm.usage has a row per upstream attempt, and a websocket trace carries
--- many requests one after another. An attempt belongs to the request in its
--- trace whose span holds it, with 50 ms of slack for the clocks.
+-- many requests one after another. An attempt belongs to exactly one
+-- request of its trace: the latest to start whose span holds it, or else,
+-- for the clocks, the first to start within 50 ms after it. Every request
+-- of the trace competes, normalized or not.
 WITH
     selected AS (
         SELECT * FROM llm.requests
@@ -31,15 +33,26 @@ WITH
         INNER JOIN llm.request_items AS i ON i.hash = p.hash
         GROUP BY request_id
     ),
-    sessions AS (
-        SELECT r.request_id AS request_id, any(u.session_id) AS usage_session, any(u.parent_session_id) AS usage_parent
-        FROM selected AS r
-        INNER JOIN (
-            SELECT trace_id, requested_at, session_id, parent_session_id FROM llm.usage
+    attempts AS (
+        SELECT
+            u.request_id AS attempt,
+            argMin((r.request_id, u.session_id, u.parent_session_id), (r.started_at > u.requested_at,
+                abs(dateDiff('millisecond', r.started_at, u.requested_at)), r.request_id)) AS owner
+        FROM (
+            SELECT request_id, trace_id, requested_at, session_id, parent_session_id FROM llm.usage
             WHERE trace_id IN (SELECT trace_id FROM selected)
-        ) AS u ON u.trace_id = r.trace_id
+        ) AS u
+        INNER JOIN (
+            SELECT request_id, trace_id, started_at, completed_at FROM llm.requests
+            WHERE trace_id IN (SELECT trace_id FROM selected)
+        ) AS r ON r.trace_id = u.trace_id
         WHERE u.requested_at BETWEEN r.started_at - INTERVAL 50 MILLISECOND AND r.completed_at
-        GROUP BY r.request_id
+        GROUP BY attempt
+    ),
+    sessions AS (
+        SELECT owner.1 AS request_id, any(owner.2) AS usage_session, any(owner.3) AS usage_parent
+        FROM attempts
+        GROUP BY request_id
     )
 SELECT
     r.request_id AS request_id, r.trace_id AS trace_id, r.session_id AS session_id,

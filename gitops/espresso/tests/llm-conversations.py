@@ -273,6 +273,35 @@ def main():
 
             agents = query(sql["subagents"]).stdout
             assert "codex:01a1da81-0000-7000-8000-000000000001\tcodex:01a1da81-0000-7000-8000-000000000001:agent:pricing_review" in agents, agents
+
+            # In trace ws-tight, call A spans 0-30 ms and B starts at 40 ms, so
+            # A's attempt at 0 ms is also within B's 50 ms of slack, and B's
+            # attempt at 35 ms only within the slack. Each attempt still
+            # belongs to exactly one call, for its session and its cost.
+            base = "2026-11-10 13:00:00"
+            for call, started, completed, attempt in (("tight-a", ".000", ".030", ".000"),
+                                                      ("tight-b", ".040", ".070", ".035")):
+                body = json.dumps({"type": "response.completed", "response": {
+                    "id": f"resp_{call}", "object": "response", "model": "gpt-6.1-sol", "output": [],
+                    "usage": {"input_tokens": 1000, "output_tokens": 10}}})
+                query("INSERT INTO llm.requests FORMAT JSONEachRow\n" + json.dumps({
+                    "request_id": call, "trace_id": "ws-tight", "started_at": base + started,
+                    "completed_at": base + completed, "source_format": "openai-response", "model": "gpt-6.1-sol",
+                    "outcome": "succeeded", "status_code": 200, "user_agent": "T3 Code/0.0.30",
+                    "request_envelope": "{}", "request_parts": [], "response_body": body}), "cliproxy")
+                query("INSERT INTO llm.usage FORMAT JSONEachRow\n" + json.dumps({
+                    "request_id": f"usage-{call}", "trace_id": "ws-tight", "session_id": f"codex:{call}",
+                    "requested_at": base + attempt, "provider": "codex", "model": "gpt-6.1-sol",
+                    "input_tokens": 1000, "output_tokens": 10}), "cliproxy")
+            assert sorted(job("proxy-tight")[0]) == ["tight-a", "tight-b"]
+            assert scalar("SELECT groupArray((call_id, session_id)) FROM (SELECT call_id, session_id "
+                          "FROM llm.calls FINAL WHERE trace_id = 'ws-tight' ORDER BY call_id)") \
+                == "[('tight-a','codex:tight-a'),('tight-b','codex:tight-b')]"
+            cost = [line.split("\t") for line in query(sql["cost"]).stdout.splitlines()]
+            assert sorted((session, attempts) for session, _, attempts, _ in cost if "tight" in session) \
+                == [("codex:tight-a", "1"), ("codex:tight-b", "1")], cost
+            live = float(scalar("SELECT sum(estimated_cost_usd) FROM llm.usage_metrics WHERE origin = 'live'"))
+            assert abs(sum(float(c[3]) for c in cost if c[3] != "\\N") - live) < 1e-9, (cost, live)
             print(f"PASS: {len(sql)} doc examples, lossless proxy and transcript round trips, permissions")
         finally:
             run("docker", "rm", "--force", container, check=False)

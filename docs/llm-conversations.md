@@ -103,7 +103,10 @@ responses). The PVC is 75 GiB.
   another (none overlap), and each of their 26.4k usage rows falls inside
   exactly one request's span, never before it starts. So **an attempt
   belongs to the call in its trace whose span holds it**; a retry adds a
-  second attempt to the same call. The queries allow 50 ms of clock slack.
+  second attempt to the same call. The queries allow 50 ms of clock slack,
+  but only for attempts no span holds, and pick one call per attempt: with
+  slack alone, an attempt at the start of a call that ends 10 ms before the
+  next one starts would match both.
 - Item bytes are dominated by **base64 images: 1.8 of 2.5 GiB**. Only 2,884 of
   4,599 data-URL images are distinct.
 
@@ -461,16 +464,26 @@ ORDER BY day, input_tokens DESC
 ```sql
 -- example: cost
 -- Estimated cost per session and model of proxy calls, as the dashboard
--- prices them. An upstream attempt belongs to the call in its trace whose
--- span holds it: a websocket trace carries many calls, so joining on
--- trace_id alone would count each attempt once per call. Unpriced attempts
--- are NULL and left out of the sum.
+-- prices them. A websocket trace carries many calls, so joining on
+-- trace_id alone would count each upstream attempt once per call. Each
+-- attempt belongs to one call of its trace instead: the latest to start
+-- whose span holds it, or else the first to start within 50 ms after it.
+-- The view has no attempt ID, but the owner depends only on the trace and
+-- time. Unpriced attempts are NULL and left out of the sum.
+WITH owners AS (
+    SELECT u.trace_id AS trace_id, u.requested_at AS requested_at,
+        argMin(c.call_id, (c.started_at > u.requested_at,
+            abs(dateDiff('millisecond', c.started_at, u.requested_at)), c.call_id)) AS call_id
+    FROM (SELECT DISTINCT trace_id, requested_at FROM llm.usage_metrics WHERE origin = 'live') AS u
+    INNER JOIN (SELECT call_id, trace_id, started_at, completed_at FROM llm.calls FINAL WHERE origin = 'proxy') AS c
+        ON c.trace_id = u.trace_id
+    WHERE u.requested_at BETWEEN c.started_at - INTERVAL 50 MILLISECOND AND c.completed_at
+    GROUP BY trace_id, requested_at)
 SELECT c.session_id AS session, c.model AS model, count() AS attempts,
     sum(u.estimated_cost_usd) AS cost_usd
-FROM llm.calls AS c FINAL
-INNER JOIN llm.usage_metrics AS u ON u.trace_id = c.trace_id
-WHERE c.origin = 'proxy'
-    AND u.requested_at BETWEEN c.started_at - INTERVAL 50 MILLISECOND AND c.completed_at
+FROM llm.usage_metrics AS u
+INNER JOIN owners AS o ON o.trace_id = u.trace_id AND o.requested_at = u.requested_at
+INNER JOIN (SELECT call_id, session_id, model FROM llm.calls FINAL) AS c ON c.call_id = o.call_id
 GROUP BY session, model
 ORDER BY cost_usd DESC
 LIMIT 50
