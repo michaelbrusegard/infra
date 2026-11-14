@@ -685,8 +685,13 @@ ssh -L 18123:127.0.0.1:18123 deploy-espresso-0 \
 
 Queries go to `http://127.0.0.1:18123/` with
 `enable_http_compression=1` and `readonly=2`, and inserts send their files
-compressed (`Content-Encoding`). In order, because which transcript file
-holds a reply's call depends on the proxy's calls:
+compressed (`Content-Encoding`). A long stream through the port-forward can
+break off and leave the tunnel hung: in a trial on 2026-11-14 the whole
+transcript download stopped after 21 minutes. So every download is in parts
+that are checked (`gzip -t`) and retried alone, with the tunnel restarted
+and a stall timeout on `curl` (`--speed-limit`, `--speed-time`). In order,
+because which transcript file holds a reply's call depends on the proxy's
+calls:
 
 1. **The proxy**, from 2026-11-09, in start order, so `llm.calls` holds every
    proxied call: the job's three steps, run a day at a time (`after` and
@@ -700,9 +705,11 @@ holds a reply's call depends on the proxy's calls:
    response bodies, 8.9 GiB uncompressed.
 2. **The transcripts**, once, in one pass: `-proxied` from the query in
    [`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql),
-   then `transcripts.sql` itself saved gzip-compressed (`Accept-Encoding:
-   gzip`, which Go reads without a dependency) and passed as
-   `normalize-conversations -in transcripts.jsonl.gz`, which reads it twice
+   then `transcripts.sql` itself in 16 parts (`part` 0 to 15 of `parts`
+   16), each saved gzip-compressed (`Accept-Encoding: gzip`, which Go reads
+   without a dependency). The parts concatenate into one gzip file in any
+   order, which is passed as `normalize-conversations -in
+   transcripts.jsonl.gz`, which reads it twice
    without a decompressed copy. The largest dropped kinds arrive as their
    type alone. Insert the five files it writes, `llm.request_items`
    included, and keep `coverage.tsv`.

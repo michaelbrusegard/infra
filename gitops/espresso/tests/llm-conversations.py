@@ -181,7 +181,12 @@ def main():
                                      "FROM llm.calls AS c FINAL INNER JOIN (SELECT session_id, parent_session_id "
                                      "FROM llm.sessions FINAL WHERE origin = 'proxy') AS s ON s.session_id = c.session_id "
                                      "WHERE c.origin = 'proxy' FORMAT TSV").stdout)
-            transcripts = query((NORMALIZER / "transcripts.sql").read_text()).stdout
+            # The import's input, downloaded in three parts and concatenated.
+            def transcript_lines():
+                return "".join(query((NORMALIZER / "transcripts.sql").read_text(),
+                                     params=(("part", part), ("parts", 3))).stdout for part in range(3))
+
+            transcripts = transcript_lines()
 
             def import_transcripts(name, lines):
                 out = temp / name
@@ -471,7 +476,7 @@ def main():
             audit = [line.split("\t") for line in query(sql["collisions"]).stdout.splitlines()]
             out = temp / "collisions"
             out.mkdir()
-            (temp / "collisions.jsonl").write_text(query((NORMALIZER / "transcripts.sql").read_text()).stdout)
+            (temp / "collisions.jsonl").write_text(transcript_lines())
             reported = run(str(normalizer), "-in", str(temp / "collisions.jsonl"), "-proxied", str(proxied),
                            "-out", str(out)).stderr
             assert audit == [["item:call_shared", "['resp_c1','resp_c2']"]], audit
@@ -503,12 +508,12 @@ def main():
                 "line": json.dumps(line)}) for source, path, session, id, line in added))
             whole = query("SELECT source, host, session, id, path, line, toString(ts) AS ts FROM llm.transcripts FINAL "
                           "ORDER BY source, host, path, session, toUInt64OrZero(id), id FORMAT JSONEachRow").stdout
-            stripped = query((NORMALIZER / "transcripts.sql").read_text()).stdout
+            stripped = transcript_lines()
             assert len(stripped) < len(whole) - 12000, (len(stripped), len(whole))
             outs = [import_transcripts(name, lines) for name, lines in (("whole", whole), ("stripped", stripped))]
             for table in (*canonical, "coverage.tsv"):
                 name = table if table.endswith(".tsv") else f"{table}.jsonl"
-                rows = [(directory / name).read_text() for directory in outs]
+                rows = [sorted((directory / name).read_text().splitlines()) for directory in outs]
                 assert rows[0] == rows[1], table
             events = sorted((e["type"], e["detail"]) for e in jsonl(outs[1] / "llm.events.jsonl"))
             assert events == [("api_error", "Can't reach the API server"), ("turn_aborted", "interrupted")], events

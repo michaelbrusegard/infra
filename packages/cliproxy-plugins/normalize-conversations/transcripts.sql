@@ -1,7 +1,9 @@
 -- Input for `normalize-conversations -in`: every transcript line, grouped by
 -- file in line order. The import is one pass over all of them, since which
--- file holds a reply's call depends on every file. Pass the proxy's calls
--- with -proxied, from
+-- file holds a reply's call depends on every file. The files are split into
+-- {parts} by hash, and this returns part {part}, so a download that breaks
+-- off is retried alone; the parts' gzip streams concatenate into one input,
+-- in any order. Pass the proxy's calls with -proxied, from
 -- SELECT c.session_id, s.parent_session_id, c.client, c.response_id, c.started_at
 -- FROM llm.calls AS c FINAL
 -- INNER JOIN (SELECT session_id, parent_session_id FROM llm.sessions FINAL WHERE origin = 'proxy') AS s
@@ -26,6 +28,7 @@ FROM (
     SELECT source, host, session, id, path, line AS raw, ts,
         JSONExtractString(raw, 'type') AS type, JSONExtractString(raw, 'payload', 'type') AS subtype
     FROM llm.transcripts FINAL
+    WHERE cityHash64(host, path) % {parts:UInt64} = {part:UInt64}
 )
 ORDER BY source, host, path, session, toUInt64OrZero(id), id
 SETTINGS max_threads = 1, max_block_size = 256, preferred_block_size_bytes = 1048576
