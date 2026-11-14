@@ -83,10 +83,20 @@ func transcriptBatch(t *testing.T, proxied *Proxied) (*Normalizer, [][]Transcrip
 		files[len(files)-1] = append(files[len(files)-1], l)
 	}
 	n := NewNormalizer()
+	replies := repliesOf(files...)
 	for _, f := range files {
-		n.Transcript(f, proxied)
+		n.Transcript(f, replies, proxied)
 	}
 	return n, files
+}
+
+// repliesOf is the first pass of the transcript import, over every file.
+func repliesOf(files ...[]TranscriptLine) *Replies {
+	r := &Replies{}
+	for _, f := range files {
+		r.Add(f)
+	}
+	return r
 }
 
 func itemsOf(b *Batch) map[Hash]string {
@@ -551,8 +561,9 @@ func TestTranscriptsSharingASessionKeepEverySource(t *testing.T) {
 	}
 	n := NewNormalizer()
 	proxied := proxiedBy(&p.Batch)
-	n.Transcript(pi, proxied)
-	n.Transcript(copied, proxied)
+	replies := repliesOf(pi, copied)
+	n.Transcript(pi, replies, proxied)
+	n.Transcript(copied, replies, proxied)
 	session := callByID(t, &p.Batch, "chat-1").SessionID
 	var hosts []string
 	for _, s := range n.Sessions {
@@ -569,7 +580,7 @@ func TestTranscriptsSharingASessionKeepEverySource(t *testing.T) {
 // replies included. A copied reply does not make the file its parent's: it
 // keeps its own session and parent, the copy is context sent to the model
 // with no call, and the sub-agent's own reply is its call, unless the proxy
-// has it. A reply an earlier file holds is a copy the same way.
+// has it. A reply another file recorded first is a copy the same way.
 func TestSubAgentTranscriptsKeepTheirOwnSession(t *testing.T) {
 	parent, child := "codex:019f6478-0000-7000-8000-00000000000a", "codex:019f6478-0000-7000-8000-00000000000a:agent:review"
 	file := func(id string, lines ...string) []TranscriptLine {
@@ -623,8 +634,9 @@ func TestSubAgentTranscriptsKeepTheirOwnSession(t *testing.T) {
 			proxied = &Proxied{}
 			tc.proxied(proxied)
 		}
+		replies := repliesOf(tc.files...)
 		for _, f := range tc.files {
-			n.Transcript(f, proxied)
+			n.Transcript(f, replies, proxied)
 		}
 		var sessions []string
 		for _, s := range n.Sessions {

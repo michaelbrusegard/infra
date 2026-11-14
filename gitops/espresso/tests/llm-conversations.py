@@ -10,6 +10,7 @@ Requires Docker and Go.
 """
 
 from datetime import datetime, timezone
+import itertools
 import json
 import os
 from pathlib import Path
@@ -158,11 +159,24 @@ def main():
                                      "FROM llm.calls AS c FINAL INNER JOIN (SELECT session_id, parent_session_id "
                                      "FROM llm.sessions FINAL WHERE origin = 'proxy') AS s ON s.session_id = c.session_id "
                                      "WHERE c.origin = 'proxy' FORMAT TSV").stdout)
-            out = temp / "transcripts"
-            out.mkdir()
-            run(str(normalizer), "-proxied", str(proxied), "-out", str(out),
-                input=query((NORMALIZER / "transcripts.sql").read_text()).stdout)
+            transcripts = query((NORMALIZER / "transcripts.sql").read_text()).stdout
+
+            def import_transcripts(name, lines):
+                out = temp / name
+                out.mkdir()
+                run(str(normalizer), "-proxied", str(proxied), "-out", str(out), input=lines)
+                return out
+
+            out = import_transcripts("transcripts", transcripts)
             load(out)
+            # The import's rows do not depend on the order of the files.
+            files = [list(group) for _, group in itertools.groupby(
+                transcripts.splitlines(keepends=True),
+                lambda line: [json.loads(line)[k] for k in ("source", "host", "session", "path")])]
+            reversed_out = import_transcripts("transcripts-reversed", "".join(itertools.chain(*files[::-1])))
+            for table in ("llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events"):
+                rows = [sorted((directory / f"{table}.jsonl").read_text().splitlines()) for directory in (out, reversed_out)]
+                assert rows[0] == rows[1], table
 
             # Proxy calls keep every llm.requests column verbatim, so
             # llm.requests could be dropped. The column list comes from the

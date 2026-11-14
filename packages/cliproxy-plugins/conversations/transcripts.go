@@ -25,6 +25,8 @@ type TranscriptLine struct {
 type file struct {
 	n       *Normalizer
 	session Session
+	// The file's fileKey.
+	key string
 	// When the proxy's capture of this session starts, or empty.
 	proxiedSince string
 	ts           string
@@ -92,6 +94,53 @@ func (p *Proxied) sessionOf(s Session, lines []TranscriptLine) string {
 	return shared
 }
 
+// Replies records which transcript file holds the call of each reply that
+// files record: the file whose line recording it is earliest, then the first
+// by host, path, and session. A forked sub-agent's file copies its parent's
+// replies after the parent wrote them, so the parent keeps them, and copies
+// that tie, such as one file synced to two hosts, fall to the first. Every
+// file is added before any is normalized, so which file holds a call
+// depends on all of them, never on which run together or in what order.
+type Replies struct {
+	// Response IDs to their earliest sighting: the time, then the file.
+	first map[string]string
+}
+
+// Add records the replies of one file.
+func (r *Replies) Add(lines []TranscriptLine) {
+	if r.first == nil {
+		r.first = map[string]string{}
+	}
+	f := &file{}
+	for _, l := range lines {
+		ts := f.stamp(l)
+		if id := replyID(l); id != "" {
+			s := ts + "\x00" + fileKey(l)
+			if first, ok := r.first[id]; !ok || s < first {
+				r.first[id] = s
+			}
+		}
+	}
+}
+
+// owns reports whether a file, by its fileKey, holds the call of a reply. Calls
+// without a response ID cannot be copied elsewhere, and nil Replies know no
+// other files.
+func (r *Replies) owns(file, responseID string) bool {
+	first, ok := "", false
+	if r != nil {
+		first, ok = r.first[responseID]
+	}
+	_, owner, _ := strings.Cut(first, "\x00")
+	return !ok || owner == file
+}
+
+// fileKey identifies the file a transcript line comes from. One OpenCode
+// database holds many sessions, so the session is part of it.
+func fileKey(l TranscriptLine) string {
+	return strings.Join([]string{l.Host, l.Path, l.Session}, "\x00")
+}
+
 // Transcript normalizes the lines of one transcript file, in file order.
 // Every line becomes exactly one message or event that references the line
 // verbatim. A transcript and the proxy share a session when they share
@@ -101,17 +150,18 @@ func (p *Proxied) sessionOf(s Session, lines []TranscriptLine) string {
 // Everything before, which the proxy never saw, keeps its messages and calls
 // here, so nothing is counted twice and no history is lost.
 //
-// A reply that the proxy returned, or that an earlier file already made a
-// call, is a copy, such as the parent's reply a forked sub-agent starts
-// from: it stays in this file's tree as context sent to the model, with no
-// call of its own. Files must arrive in path order, which puts a Claude Code
-// session before its sub-agents, and a Codex rollout before those it spawns.
-func (n *Normalizer) Transcript(lines []TranscriptLine, proxied *Proxied) {
+// A reply that the proxy returned, or whose call replies gives another file,
+// is a copy, such as the parent's reply a forked sub-agent starts from: it
+// stays in this file's tree as context sent to the model, with no call of
+// its own. Nodes are keyed by file, so a file's rows depend only on the
+// file, replies, and proxied, and files can be normalized in any order and
+// any runs.
+func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxied *Proxied) {
 	if len(lines) == 0 {
 		return
 	}
-	f := &file{n: n, parents: map[string]string{}, nodes: map[string]Hash{}, calls: map[string]*Call{},
-		kept: map[string]keptMessage{}}
+	f := &file{n: n, key: fileKey(lines[0]), parents: map[string]string{}, nodes: map[string]Hash{},
+		calls: map[string]*Call{}, kept: map[string]keptMessage{}}
 	f.session = transcriptSession(lines)
 	if proxied != nil {
 		f.session.SessionID = proxied.sessionOf(f.session, lines)
@@ -135,12 +185,9 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, proxied *Proxied) {
 	n.session(f.session)
 	for _, id := range f.order {
 		c := f.calls[id]
-		if _, returned := proxied.returned(c.ResponseID); returned || n.called[c.ResponseID] {
+		if _, returned := proxied.returned(c.ResponseID); returned || !replies.owns(f.key, c.ResponseID) {
 			n.copied(n.Messages[start:], c.CallID)
 			continue
-		}
-		if c.ResponseID != "" {
-			n.called[c.ResponseID] = true
 		}
 		n.Calls = append(n.Calls, *c)
 	}
@@ -275,7 +322,7 @@ func (f *file) event(l TranscriptLine, kind string) {
 func (f *file) message(l TranscriptLine, parent Hash, key string, m Message) (Hash, bool) {
 	m.Line = l.ID
 	m.Role = roleOf(m.Role, m.Blocks)
-	id, added := f.n.node(f.session.SessionID, parent, key, f.n.item([]byte(l.Line)), f.stamp(l), m, false)
+	id, added := f.node(parent, key, f.n.item([]byte(l.Line)), f.stamp(l), m)
 	f.last = id
 	if !added {
 		f.event(l, "repeat")
@@ -295,6 +342,13 @@ func (f *file) message(l TranscriptLine, parent Hash, key string, m Message) (Ha
 		c.Model = firstNonEmpty(c.Model, m.Model)
 	}
 	return id, true
+}
+
+// node writes a message of this file. Its key is the file's as well as the
+// entry's, so a file that another shares a session with, such as a copy on
+// another host, keeps its own nodes, and no file's rows depend on another's.
+func (f *file) node(parent Hash, key string, item Hash, ts string, m Message) (Hash, bool) {
+	return f.n.node(f.session.SessionID, parent, f.key+"\x00"+key, item, ts, m, false)
 }
 
 // treeParent finds the nearest ancestor entry that is a message, skipping
@@ -391,8 +445,8 @@ func (f *file) codex(lines []TranscriptLine) {
 			parent := Hash{}
 			for i, raw := range p.arr("replacement_history") {
 				role, blocks := responsesItem(raw)
-				parent, _ = f.n.node(f.session.SessionID, parent, l.ID+"#"+strconv.Itoa(i), f.n.item(raw), f.stamp(l),
-					Message{Role: roleOf(role, blocks), Blocks: blocks, Format: "openai-responses", Line: l.ID}, false)
+				parent, _ = f.node(parent, l.ID+"#"+strconv.Itoa(i), f.n.item(raw), f.stamp(l),
+					Message{Role: roleOf(role, blocks), Blocks: blocks, Format: "openai-responses", Line: l.ID})
 			}
 			f.last, lastWasOutput = parent, false
 			continue
@@ -508,7 +562,7 @@ func (f *file) piCompaction(l TranscriptLine, e obj, m Message) Hash {
 		}
 		c := k.m
 		c.Output, c.Model, c.CallID, c.Line = false, "", "", l.ID+"#"+tail[i]
-		leaf, _ = f.n.node(f.session.SessionID, leaf, c.Line, k.item, f.stamp(l), c, false)
+		leaf, _ = f.node(leaf, c.Line, k.item, f.stamp(l), c)
 	}
 	return leaf
 }

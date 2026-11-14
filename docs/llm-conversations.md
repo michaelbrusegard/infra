@@ -191,9 +191,12 @@ key is:
   prefixes and 50 of 50 replies matched; without normalization the tree
   forked at 50 turns.
 - **Transcript messages**: the source's own entry ID (uuid, Pi ID, OpenCode
-  message ID, Codex line). Codex compaction items use `line#index`. An entry
-  written again under the same parent is the same node: its first line is
-  the message, and each repeat is a `repeat` event referencing its own line.
+  message ID, Codex line), within its file: the key includes the file's host
+  and path, so files that share a session, such as one file synced to two
+  hosts, never share nodes. Codex compaction items use `line#index`. An
+  entry written again under the same parent is the same node: its first line
+  is the message, and each repeat is a `repeat` event referencing its own
+  line.
 
 Because IDs are deterministic, rerunning the normalizer over the same input
 produces the same rows. All tables are `ReplacingMergeTree`, so reruns and
@@ -256,10 +259,10 @@ Truncated bodies keep their single raw part and have no messages.
 
 ## Transcripts
 
-Each file is normalized on its own, in path order, and **every line becomes
-exactly one message or event that references the line verbatim**. The only
-state files share is which replies are already calls (see
-[Overlap](#overlap-with-the-proxy)). The session ID is mapped
+Each file is normalized on its own, and **every line becomes exactly one
+message or event that references the line verbatim**. The only thing files
+share is which of them holds each reply's call, which a first pass over all
+files decides (see [Overlap](#overlap-with-the-proxy)). The session ID is mapped
 into CLIProxy's scheme: `claude:<session>`, `claude:<parent>:agent:<agent>`,
 `codex:<thread>`, `codex:<parent>:agent:<agent path>`, `pi:<session>` and
 `opencode:<session>`.
@@ -310,14 +313,26 @@ one). Otherwise, or without a shared reply, the transcript keeps its own
 session ID.
 
 **Each reply is one call.** A transcript reply that the proxy returned, in
-any session, or that an earlier transcript file already made a call, is a
-copy. It stays a message in this file's tree, because the model was sent
-it, but as input (`output = false`, no model or call) like Pi's compaction
-copies, and it adds no call. Transcript files run in path order, which puts
-a Claude Code session's file before its sub-agents' and a Codex rollout
-before those it spawns, so the original keeps the call. Sibling forks
-holding a reply none of them wrote are ambiguous; the first by path keeps
-the call, so it still counts once.
+any session, is the proxy's call. Otherwise the file whose line recording
+the reply is earliest holds the call, and ties go to the first by host,
+path and session. A forked file copies its parent's replies after the parent
+wrote them, so the parent keeps them, whatever the paths: path order is not
+ancestry order in live Codex files. Sibling forks holding a reply none of
+them wrote, or one file synced to two hosts, tie and fall to the first. In
+every other file the reply is a copy. It stays a message in that file's
+tree, because the model was sent it, but as input (`output = false`, no
+model or call) like Pi's compaction copies, and it adds no call.
+
+So a file's rows depend only on the file, the replies of all files, and the
+proxy's calls. The import is one complete pass: `normalize-conversations`
+reads every transcript line, records each file's replies, then normalizes
+the files, in any order. Run over the same lines and proxy calls, it writes
+the same rows, which collapse. Rows from different inputs or rules do not
+replace each other reliably, because a wrong output row outranks the
+corrected input row and a wrong call is never removed, so such a rerun goes
+into tables without transcript rows: delete the transcript calls and
+sessions (`origin = 'transcript'`), the messages with a `line`, and all
+events first.
 
 **A handover at the session's first proxied call.** Transcript lines from
 before it become messages and calls as usual, and lines from then on are
@@ -399,10 +414,12 @@ held back (see Session and Gaps), and `version` keeps the right row if a
 node is written again anyway.
 Deterministic IDs make reruns harmless. The job needs a ClickHouse user with
 SELECT on the sources and INSERT on the new tables. The transcripts run
-once, after the proxy backfill, with
+once, in one pass over all of them, after the proxy backfill, with
 [`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql)
 and the proxy's calls, each with its session, the session's parent and
-client, its response ID and start, as `-proxied`.
+client, its response ID and start, as `-proxied`. The normalizer reads its
+input twice, through a copy in its output directory, so that needs room for
+the transcripts once more (about 9 GiB).
 
 `llm.calls` holds every `llm.requests` column, so once the job has run
 cleanly for a while, `llm.requests` can become staging with a short TTL, such

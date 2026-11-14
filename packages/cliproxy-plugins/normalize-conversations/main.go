@@ -166,26 +166,52 @@ func run(r io.Reader, dir string, n *conversations.Normalizer, proxied *conversa
 		}
 		return err
 	}
-	var file []conversations.TranscriptLine
-	flush := func() error {
-		n.Transcript(file, proxied)
-		file = file[:0]
-		return drain()
+	// The import is two passes over every file: the first decides which file
+	// holds each reply's call, and the second normalizes. The input is kept
+	// in the output directory in between.
+	spool, err := os.CreateTemp(dir, "transcripts-*.jsonl")
+	if err != nil {
+		return err
 	}
+	defer os.Remove(spool.Name())
+	defer spool.Close()
+	if _, err := io.Copy(spool, r); err != nil {
+		return err
+	}
+	replies := &conversations.Replies{}
+	for _, pass := range []func([]conversations.TranscriptLine) error{
+		func(file []conversations.TranscriptLine) error { replies.Add(file); return nil },
+		func(file []conversations.TranscriptLine) error { n.Transcript(file, replies, proxied); return drain() },
+	} {
+		if _, err := spool.Seek(0, io.SeekStart); err != nil {
+			return err
+		}
+		if err := eachFile(spool, pass); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// eachFile reads transcript lines grouped by file, as transcripts.sql
+// orders them.
+func eachFile(r io.Reader, f func([]conversations.TranscriptLine) error) error {
+	var file []conversations.TranscriptLine
 	err := eachRow(r, func(line conversations.TranscriptLine) error {
 		if len(file) > 0 && (line.Source != file[0].Source || line.Host != file[0].Host ||
 			line.Session != file[0].Session || line.Path != file[0].Path) {
-			if err := flush(); err != nil {
+			if err := f(file); err != nil {
 				return err
 			}
+			file = nil
 		}
 		file = append(file, line)
 		return nil
 	})
-	if err != nil {
+	if err != nil || len(file) == 0 {
 		return err
 	}
-	return flush()
+	return f(file)
 }
 
 func writeRows[T any](w *bufio.Writer, rows []T) error {

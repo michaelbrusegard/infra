@@ -1,7 +1,7 @@
--- Input for `normalize-conversations`: transcript lines, grouped by file in
--- line order. Files come in path order, which puts a Claude Code session
--- before its sub-agents, so a reply a sub-agent copied stays its parent's
--- call. Pass the proxy's calls with -proxied, from
+-- Input for `normalize-conversations`: every transcript line, grouped by file
+-- in line order. The import is one pass over all of them, since which file
+-- holds a reply's call depends on every file. Pass the proxy's calls with
+-- -proxied, from
 -- SELECT c.session_id, s.parent_session_id, c.client, c.response_id, c.started_at
 -- FROM llm.calls AS c FINAL
 -- INNER JOIN (SELECT session_id, parent_session_id FROM llm.sessions FINAL WHERE origin = 'proxy') AS s

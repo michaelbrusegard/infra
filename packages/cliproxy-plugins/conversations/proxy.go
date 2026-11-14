@@ -52,8 +52,6 @@ type Normalizer struct {
 	nodes     map[Hash]node
 	after     map[string]Hash
 	sessions  map[string]struct{}
-	// Response IDs that transcript calls hold.
-	called map[string]bool
 }
 
 // node is what the normalizer knows of a written message.
@@ -63,8 +61,7 @@ type node struct {
 }
 
 func NewNormalizer() *Normalizer {
-	return &Normalizer{nodes: map[Hash]node{}, after: map[string]Hash{}, sessions: map[string]struct{}{},
-		called: map[string]bool{}}
+	return &Normalizer{nodes: map[Hash]node{}, after: map[string]Hash{}, sessions: map[string]struct{}{}}
 }
 
 // State is a row of state.sql, which earlier runs left: a node of a
