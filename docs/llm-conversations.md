@@ -13,7 +13,8 @@ results.
 
 The rule that shapes everything: **the canonical form must be lossless**. Every
 source record must be recoverable from it, so the source tables could be
-dropped later without losing anything.
+dropped later without losing anything but their import times (see
+[Losslessness](#losslessness)).
 
 ## Recommendation in short
 
@@ -52,7 +53,8 @@ dropped later without losing anything.
   produced. Responses API calls take them from the response's echo, since
   Codex often sends no tools and delta requests send neither. A call that
   produced nothing, or whose output calls tools its context lacks, is
-  refused rather than exported with tools missing.
+  refused rather than exported with tools missing. Only the call's own
+  outputs are training targets; earlier turns are context.
 
 ## What the data looks like
 
@@ -203,7 +205,12 @@ key is:
 Because IDs are deterministic, rerunning the normalizer over the same input
 produces the same rows. All tables are `ReplacingMergeTree`, so reruns and
 overlapping batches collapse. Raw items deduplicate by content hash, as they
-do today.
+do today. That holds for identical inputs and rules only. A rerun with
+changed extraction rules writes nodes under other keys beside the old ones,
+and transcript rows from changed inputs, such as more files or proxy calls,
+do not replace the old ones reliably (see
+[Overlap](#overlap-with-the-proxy)), so either rebuilds the affected rows:
+delete them first.
 
 A proxy node can still be written more than once: a run without a session's
 state, or a request that started earlier but landed later, sends it again.
@@ -343,9 +350,10 @@ keeps its own call; no live OpenCode session is in two files.
 Only lines from before the proxy took a file's session over count, because
 the file writes no call after that: a reply the proxy never returned, seen
 after the parent's handover and in a child's earlier copy, is the child's
-call rather than nobody's. In every other file the reply is a copy. It stays a message in that file's
-tree, because the model was sent it, but as input (`output = false`, no
-model or call) like Pi's compaction copies, and it adds no call.
+call rather than nobody's. In every other file the reply is a copy. It
+stays a message in that file's tree, because the model was sent it, but as
+input (`output = false`, no model or call) like Pi's compaction copies, and
+it adds no call.
 
 So a file's rows depend only on the file, the replies of all files, and the
 proxy's calls. The import is one complete pass: `normalize-conversations`
@@ -382,7 +390,7 @@ session, as the prompts example does. Usage already uses a fixed handover;
 | `llm.requests` row | `llm.calls`, every column verbatim, with `request_id`, `session_id` and `model` as `call_id`, `source_session_id` and `source_model`. `request_envelope` plus `request_parts` rebuild the body exactly as `llm.request_bodies` does. |
 | request item | `llm.request_items`, unchanged and referenced from calls. |
 | response body | `llm.calls.response_body`, verbatim. Assembled outputs are added as items. |
-| `llm.transcripts` row | One message or event whose item is the exact line, repeats included, with the row's `host`, `path` and `id` (as `line`). The file's session row, by `session_id`, `host` and `path`, holds `source` as `client`. The file-name `session` column is the path's file name without `.jsonl`, or for OpenCode, whose database holds many sessions, the session ID without `opencode:`; live data has no exceptions. |
+| `llm.transcripts` row | One message or event whose item is the exact line, repeats included, with the row's `host`, `path` and `id` (as `line`). The file's session row, by `session_id`, `host` and `path`, holds `source` as `client`. The file-name `session` column is the path's file name without `.jsonl`, or for OpenCode, whose database holds many sessions, the session ID without `opencode:`; live data has no exceptions. `ts` is the column's default, computed from the line's `timestamp`, so it recomputes from the line; a message's or event's `ts` differs where a line has none. `ingested_at`, when the dump was imported, is not kept. |
 | `llm.usage`, `llm.historical_usage` | Unchanged. They feed Grafana, and `llm.calls` links to usage by `trace_id`. |
 
 The prototype tests this both ways:
@@ -392,8 +400,9 @@ The prototype tests this both ways:
   deployed schema, compared both ways with `EXCEPT`.
 - Every `llm.transcripts` row rebuilds from exactly one message or event, by
   file and line with identical bytes, and no other row is left over, in Go
-  and again in ClickHouse, compared both ways with `EXCEPT`. The fixtures
-  include a file synced to two hosts.
+  and again in ClickHouse, compared both ways with `EXCEPT` on every column
+  but `ts` and `ingested_at`. The fixtures include a file synced to two
+  hosts.
 - Every content string in a raw item (text, thinking, arguments, tool input
   and output, summaries, rendered attachments) appears in an extracted block,
   and every extracted string comes from the raw item. Deliberately breaking an
@@ -438,14 +447,29 @@ writing them again, and delta requests continue responses from earlier
 runs. Recent requests whose usage or previous response has not landed are
 held back (see Session and Gaps), and `version` keeps the right row if a
 node is written again anyway.
-Deterministic IDs make reruns harmless. The job needs a ClickHouse user with
-SELECT on the sources and INSERT on the new tables. The transcripts run
-once, in one pass over all of them, after the proxy backfill, with
-[`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql)
-and the proxy's calls, each with its session, the session's parent and
-client, its response ID and start, as `-proxied`. The normalizer reads its
-input twice, through a copy in its output directory, so that needs room for
-the transcripts once more (about 9 GiB).
+Deterministic IDs make reruns over the same input harmless. The job needs a
+ClickHouse user with SELECT on the sources and INSERT on the new tables.
+
+The backfill runs in this order, because which transcript file holds a
+reply's call depends on the proxy's calls:
+
+1. The proxy, from 2026-11-09, in start order, so `llm.calls` holds every
+   proxied call.
+2. The transcripts, once, in one pass over all of them, with
+   [`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql)
+   and the proxy's calls from step 1, each with its session, the session's
+   parent and client, its response ID and start, as `-proxied`.
+3. The job, from then on.
+
+The transcript pass needs local disk. It reads its input twice, through a
+copy in its output directory: `transcripts.sql` writes about 10 GiB of
+escaped JSON lines (the lines are 8.9 GiB). Its output is about as much
+again for `llm.request_items`, which holds every line, plus about 4 GiB of
+messages and less than 1 GiB of events and calls, so budget about 30 GiB.
+Run it from a workstation with that much free, such as `ristretto`, over a
+`kubectl port-forward` to ClickHouse, as the usage backfill did, and insert
+the files with `clickhouse-client`. Neither the ClickHouse volume nor a pod's
+ephemeral storage should hold the spool.
 
 `llm.calls` holds every `llm.requests` column, so once the job has run
 cleanly for a while, `llm.requests` can become staging with a short TTL, such
@@ -702,6 +726,19 @@ context, which the API would merge itself, so the last message is exactly
 the call's output and the only one to train on. A conversation export
 weights nothing.
 
+What training exports can cover is limited by what the sources record:
+
+- **After a handover**, transcript lines are events only, so turns the
+  proxy did not capture, such as a session that left the proxy again, have
+  no extracted messages to export.
+- **Images** are left out of both exports, so an example whose context had
+  an image teaches a reply to context the model saw more of.
+- **Hosted tools** are left out with their results, so text the model wrote
+  from a search result stands without the result.
+- **Transcripts record no tool definitions** or, except Claude Code's own
+  request logs, system prompts, so a transcript call that calls a tool is
+  refused, and one that answers in text exports without its real context.
+
 ```sql
 -- example: raw
 -- The exact source JSON behind each message: images, signatures, encrypted
@@ -781,6 +818,7 @@ nix develop --command python3 gitops/espresso/tests/llm-conversations.py < /dev/
 4. **Claude Code's own request logs** (`api-request*`, about 110k lines) are
    kept as events. Are they worth mapping to calls for the transcript era?
    They would give exact system prompts and tools from before the proxy.
-5. **Backfill order.** Run the transcripts once, then the proxy from
-   2026-11-09, then the job. Is a one-off run from a workstation over a
-   port-forward acceptable, as for the usage backfill?
+5. **Backfill from a workstation.** The proxy, then the transcripts, then
+   the job, as in [Ongoing capture](#ongoing-capture), from `ristretto` over
+   a port-forward, as for the usage backfill. Is that acceptable, or should
+   it run in the cluster with a 30 GiB scratch volume?
