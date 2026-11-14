@@ -45,6 +45,11 @@ spec:
       base:
         metrics:
           enabled: true
+      agents:
+        core:
+          rebuild:
+            # Rebuilds share NVMe disks with the control plane; cap them.
+            maxConcurrent: 2
       apis:
         rest:
           resources:
