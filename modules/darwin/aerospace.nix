@@ -115,9 +115,9 @@ in {
           # Toggle floating window
           alt-0 = "layout floating tiling";
 
-          # Open Kitty and Nimble Commander
+          # Open Kitty and Finder
           alt-enter = "exec-and-forget ${kitty} --working-directory ${home}";
-          alt-shift-enter = "exec-and-forget /usr/bin/open '${pkgs.brewCasks.nimble-commander}/Applications/Nimble Commander.app'";
+          alt-shift-enter = "exec-and-forget /usr/bin/open ${home}";
         };
       };
     };

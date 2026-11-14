@@ -175,8 +175,6 @@
         };
       };
       CustomUserPreferences = {
-        # Send "Show in Finder" reveals to Nimble Commander.
-        NSGlobalDomain.NSFileViewer = "info.filesmanager.Files";
         "com.android.Emulator"."set.alwaysOnTop" = true;
         "com.apple.symbolichotkeys" = {
           AppleSymbolicHotKeys = {

@@ -75,7 +75,6 @@ in {
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           brewCasks.raycast
-          brewCasks.nimble-commander
           brewCasks.rustdesk
           brewCasks.mattermost
           whatsappDarwin
