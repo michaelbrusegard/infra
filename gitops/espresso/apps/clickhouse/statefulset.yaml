@@ -93,4 +93,6 @@ spec:
         storageClassName: ssd-ha
         resources:
           requests:
+            # The live PVC was expanded to 75Gi for the request_items
+            # migration; a StatefulSet cannot change this field in place.
             storage: 50Gi
