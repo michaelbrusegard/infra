@@ -88,7 +88,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        # Repeated context compresses well, but bodies only ever accumulate.
+        # Repeated context is stored once, but the archive only ever accumulates.
         # The SATA pools have the room, and there are no backups to restore.
         storageClassName: ssd-ha
         resources:

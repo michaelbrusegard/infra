@@ -84,6 +84,7 @@ data:
           <quota>default</quota>
           <grants>
             <query>GRANT INSERT ON llm.requests</query>
+            <query>GRANT INSERT ON llm.request_items</query>
             <query>GRANT INSERT ON llm.usage</query>
           </grants>
         </cliproxy>
@@ -107,7 +108,9 @@ data:
     CREATE DATABASE IF NOT EXISTS llm;
 
     -- One row per proxied model request, written by the archive plugin.
-    -- trace_id identifies the inbound HTTP request.
+    -- trace_id identifies the inbound HTTP request. Each request body is an
+    -- envelope plus references into llm.request_items; llm.request_bodies
+    -- rebuilds whole bodies.
     CREATE TABLE IF NOT EXISTS llm.requests
     (
         request_id String,
@@ -124,14 +127,76 @@ data:
         error String,
         user_agent LowCardinality(String),
         truncated Bool,
-        request_body String CODEC(ZSTD(3)),
+        -- The body's top-level keys that were not split off, as a JSON object.
+        -- Empty when the body is not a JSON object.
+        request_envelope String CODEC(ZSTD(3)),
+        -- The split-off items in body order. position is the index within a
+        -- top-level array, or -1 for a whole value.
+        request_parts Array(Tuple(field LowCardinality(String), position Int32, hash UInt128)) CODEC(ZSTD(3)),
         response_body String CODEC(ZSTD(3))
     )
     ENGINE = MergeTree
     PARTITION BY toYYYYMM(started_at)
-    -- Requests in one session resend the same context; keeping them adjacent
-    -- is what makes the bodies compress.
+    -- Requests in one session reference mostly the same items; keeping them
+    -- adjacent makes their part lists compress.
     ORDER BY (session_id, started_at, request_id);
+
+    -- The table from before request_items still holds request_body until
+    -- migrate-request-items.sh replaces it; these are no-ops afterwards.
+    ALTER TABLE llm.requests
+        ADD COLUMN IF NOT EXISTS request_envelope String CODEC(ZSTD(3)) AFTER truncated,
+        ADD COLUMN IF NOT EXISTS request_parts Array(Tuple(field LowCardinality(String), position Int32, hash UInt128)) CODEC(ZSTD(3))
+            AFTER request_envelope;
+
+    -- Each distinct message, tool, or large value of a request body, stored
+    -- once however many turns resend it. packages/cliproxy-plugins/requestitems
+    -- defines the split. hash is reinterpretAsUInt128(substring(SHA256(item), 1, 16)).
+    CREATE TABLE IF NOT EXISTS llm.request_items
+    (
+        hash UInt128,
+        item String CODEC(ZSTD(3))
+    )
+    ENGINE = ReplacingMergeTree
+    ORDER BY hash;
+
+    -- Whole request bodies. Split keys follow the envelope's keys, otherwise
+    -- the JSON is unchanged apart from whitespace. Each body is rebuilt in
+    -- full, so filter by request, session, or time.
+    CREATE OR REPLACE VIEW llm.request_bodies AS
+    SELECT
+        request_id, trace_id, session_id, started_at,
+        if(envelope = '', tupleElement(parts[1], 4), concat(
+            substring(envelope, 1, length(envelope) - 1),
+            arrayStringConcat(arrayMap(k -> concat(
+                -- Open a key at its first item, and close arrays at their last.
+                if(tupleElement(parts[k], 3) <= 0,
+                    concat(if(k = 1 AND envelope = '{}', '', ','), '"', tupleElement(parts[k], 2), '":',
+                        if(tupleElement(parts[k], 3) = 0, '[', '')),
+                    ','),
+                tupleElement(parts[k], 4),
+                if(tupleElement(parts[k], 3) >= 0
+                    AND (k = length(parts) OR tupleElement(parts[k + 1], 3) <= 0), ']', '')),
+                arrayEnumerate(parts))),
+            '}')) AS request_body
+    FROM (
+        SELECT
+            p.request_id AS request_id, p.trace_id AS trace_id,
+            p.session_id AS session_id, p.started_at AS started_at,
+            any(p.request_envelope) AS envelope,
+            -- Items are unique only after merges; duplicates are identical.
+            arraySort(arrayDistinct(groupArrayIf((p.n, p.field, p.position, i.item), p.n > 0))) AS parts
+        -- Items on the probe side get a runtime filter from the selected
+        -- requests' hashes, rather than every item being loaded to join.
+        FROM llm.request_items AS i
+        RIGHT JOIN (
+            SELECT
+                request_id, trace_id, session_id, started_at, request_envelope,
+                part.field AS field, part.position AS position, part.hash AS hash, n
+            FROM llm.requests
+            LEFT ARRAY JOIN request_parts AS part, arrayEnumerate(request_parts) AS n
+        ) AS p ON i.hash = p.hash
+        GROUP BY request_id, trace_id, session_id, started_at
+    );
 
     -- One row per upstream attempt, so retries show up as extra rows. Join to
     -- llm.requests on trace_id.

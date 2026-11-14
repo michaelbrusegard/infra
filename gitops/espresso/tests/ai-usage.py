@@ -143,6 +143,7 @@ def main():
             # The HTTP driver's connection health check uses a 60-second timeout.
             query("SELECT 1 SETTINGS max_execution_time=60", "grafana")
             denied = ["SELECT * FROM llm.usage", "SELECT * FROM llm.requests",
+                      "SELECT * FROM llm.request_items", "SELECT * FROM llm.request_bodies",
                       "SELECT * FROM llm.transcripts", "SELECT * FROM llm.historical_usage",
                       "SELECT failure_body FROM llm.usage_metrics",
                       "INSERT INTO llm.usage (request_id) VALUES ('forbidden')",
