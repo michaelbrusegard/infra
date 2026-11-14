@@ -43,10 +43,11 @@ type Request struct {
 // that response's messages first. Restore loads what earlier runs left.
 type Normalizer struct {
 	Batch
-	// Requests that continue a response nobody has seen, or whose usage has
-	// not arrived, are held back when they started at or after this time, as
-	// "2006-01-02 15:04:05.000" in UTC, so a later run can place them once it
-	// arrives. Empty holds nothing.
+	// Requests that continue a response nobody has seen are held back when
+	// they started at or after this time, and requests whose usage has not
+	// arrived when they completed at or after it, as "2006-01-02
+	// 15:04:05.000" in UTC, so a later run can place them once it arrives.
+	// Empty holds nothing.
 	HoldAfter string
 	nodes     map[Hash]node
 	after     map[string]Hash
@@ -129,13 +130,14 @@ func SessionOf(r Request) string {
 func (n *Normalizer) Request(r Request) bool {
 	env := parse([]byte(r.RequestEnvelope))
 	conversation, metadata := split(r, env)
-	recent := n.HoldAfter != "" && r.StartedAt >= n.HoldAfter
-	if recent && r.UsageAttempts == 0 {
-		// The plugin writes a request before CLIProxy writes its usage, whose
-		// session tells sub-agents apart. Placed now, the request would stay
-		// in the header's session for good.
+	if n.HoldAfter != "" && r.CompletedAt >= n.HoldAfter && r.UsageAttempts == 0 {
+		// The plugin writes a request when it completes, before CLIProxy
+		// writes its usage, whose session tells sub-agents apart. Placed now,
+		// the request would stay in the header's session for good. The hold
+		// runs from completion, since a call can run longer than the hold.
 		return false
 	}
+	recent := n.HoldAfter != "" && r.StartedAt >= n.HoldAfter
 	session, parentSession := proxySession(r, env, metadata, conversation)
 	var parent Hash
 	prev := env.str("previous_response_id")

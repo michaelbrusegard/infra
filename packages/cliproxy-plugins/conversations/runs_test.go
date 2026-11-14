@@ -227,6 +227,13 @@ func TestRecentRequestsWaitForTheirUsage(t *testing.T) {
 	if !n.Request(agent) || n.Calls[0].SessionID != agent.UsageSessionID {
 		t.Fatalf("request with usage placed in %+v", n.Calls)
 	}
+	// A call that ran longer than the hold is recent by its completion,
+	// which is when it and its usage land.
+	long := NewNormalizer()
+	long.HoldAfter = "2026-11-10 09:00:07.000"
+	if early.StartedAt >= long.HoldAfter || long.Request(early) {
+		t.Fatal("placed a long request that just completed before its usage")
+	}
 	old := NewNormalizer()
 	old.HoldAfter = "2026-11-10 10:00:00.000"
 	if !old.Request(early) || old.Calls[0].SessionID != "claude:11111111-1111-4111-8111-111111111111" {

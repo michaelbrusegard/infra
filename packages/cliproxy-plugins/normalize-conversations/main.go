@@ -35,7 +35,7 @@ func main() {
 	requests := flag.Bool("requests", false, "read llm.requests rows instead of transcript lines")
 	sessions := flag.Bool("sessions", false, "print the sessions the requests touch, for state.sql")
 	state := flag.String("state", "", "file of state.sql rows from earlier runs")
-	hold := flag.Duration("hold", 10*time.Minute, "hold back requests this recent that continue an unseen response")
+	hold := flag.Duration("hold", 10*time.Minute, "hold back requests that continue an unseen response and started this recently, or lack usage and completed this recently")
 	proxied := flag.String("proxied", "", "file of the proxy's calls: session ID, response ID, and start")
 	out := flag.String("out", ".", "directory for the output files")
 	export := flag.String("export", "", "print a call or conversation as openai or anthropic messages")

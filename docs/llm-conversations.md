@@ -212,10 +212,12 @@ Requests are processed in start order, with a little state per session.
    sub-agents apart. Otherwise derive the same form: Codex from `client_metadata` (`codex:<root>`
    or `codex:<root>:agent:<name>`), then the header session, then
    `proxy:<hash of first message>` for anything sessionless. The plugin
-   writes a request before CLIProxy writes its usage, and a run never
-   revisits a normalized request, so a recent request without usage is held
-   back, as in Gaps. Placed early, a Claude sub-agent's call would stay in
-   its parent's header session for good. On 2026-11-13, 29 of 9,167
+   writes a request when it completes, before CLIProxy writes its usage, and
+   a run never revisits a normalized request, so a request without usage
+   that completed within the hold is held back. Placed early, a Claude
+   sub-agent's call would stay in its parent's header session for good. The
+   hold runs from completion, not start: a 15-minute call would otherwise
+   land already outside a 10-minute hold. On 2026-11-13, 29 of 9,167
    requests never got usage; such requests wait out the hold and then use
    the derived session.
 2. **Context.** With `previous_response_id`, start from the leaf after that
