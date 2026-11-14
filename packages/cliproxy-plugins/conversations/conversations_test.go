@@ -1114,7 +1114,7 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 		}
 	}
 	for _, export := range []func(Context, []Message, []Hash) (map[string]any, error){OpenAIChat, AnthropicMessages} {
-		if _, err := export(ctx, call("", "run", `{"query":"hello"}`), nil); err == nil {
+		if _, err := export(ctx, call("", "run", `{"query":"hello"}`), []Hash{{1}}); err == nil {
 			t.Fatal("exported a call to run without the namespace that says which")
 		}
 	}
@@ -1127,7 +1127,7 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, namespace := range []string{"b", ""} {
-			if _, err := export(one, call(namespace, "run", `{}`), nil); err == nil {
+			if _, err := export(one, call(namespace, "run", `{}`), []Hash{{1}}); err == nil {
 				t.Fatalf("exported a call to %q with the schema of a.run", qualify(namespace, "run"))
 			}
 		}
@@ -1302,5 +1302,40 @@ func TestExportsTrainOnlyTheCallsOutputs(t *testing.T) {
 	chat, _ := json.Marshal(must(OpenAIChat(ctx, []Message{user, interrupted, result, answer}, nil)))
 	if strings.Contains(string(chat), "weight") {
 		t.Fatalf("conversation export weighted: %s", chat)
+	}
+}
+
+// Only the exported call's own tool calls must match its definitions.
+// Earlier calls were made under definitions that may have changed since,
+// such as an MCP server renamed between turns: they keep their own name,
+// qualified by their namespace, and never fail the export.
+func TestExportsKeepHistoricalToolNames(t *testing.T) {
+	var ctx Context
+	ctx.Add("tools", []byte(`[{"type":"namespace","name":"new","tools":[{"type":"function","name":"run","parameters":{"type":"object"}}]},
+		{"type":"namespace","name":"other","tools":[{"type":"function","name":"run","parameters":{"type":"object"}}]}]`))
+	path := []Message{{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "Run it twice."}}},
+		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
+			ToolName: "run", ToolNamespace: "old", ToolCallID: "call_1", ToolInput: `{}`}}},
+		{ID: Hash{3}, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1", Text: "ok"}}},
+		{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
+			ToolName: "run", ToolNamespace: "new", ToolCallID: "call_2", ToolInput: `{}`}}}}
+	if err := ForTraining(ctx, path, []Hash{{4}}); err != nil {
+		t.Fatal(err)
+	}
+	chat, _ := json.Marshal(must(OpenAIChat(ctx, path, []Hash{{4}}))["messages"])
+	anthropic, _ := json.Marshal(must(AnthropicMessages(ctx, path, []Hash{{4}}))["messages"])
+	for name, got := range map[string]string{"openai": string(chat), "anthropic": string(anthropic)} {
+		if !strings.Contains(got, `"name":"old__run"`) || !strings.Contains(got, `"name":"new__run"`) {
+			t.Fatalf("%s export names %s", name, got)
+		}
+	}
+	// The same call as the target still has to match.
+	for _, export := range []func(Context, []Message, []Hash) (map[string]any, error){OpenAIChat, AnthropicMessages} {
+		if _, err := export(ctx, path[:2], []Hash{{2}}); err == nil {
+			t.Fatal("exported a target calling old.run, which its context does not define")
+		}
+	}
+	if err := ForTraining(ctx, path[:2], []Hash{{2}}); err == nil {
+		t.Fatal("trained on a call to old.run, which its context does not define")
 	}
 }

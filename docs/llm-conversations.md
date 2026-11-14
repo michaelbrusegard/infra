@@ -640,7 +640,12 @@ Definitions and calls always convert the same way:
   whose namespace defines no such tool, even if another namespace does, or
   a tool defined twice differently, fails the export rather than take
   another tool's schema. In live data every call without a namespace names
-  a top-level tool.
+  a top-level tool. That check applies to the exported call's own outputs.
+  Earlier tool calls were made under definitions that may have changed
+  since, such as an MCP server renamed between turns, so one that matches
+  none of this call's tools keeps its own name, `namespace__name` or bare,
+  and never fails the export. Such a bare name can coincide with a tool the
+  call defines in a namespace; it is context, not a target.
 - **Freeform custom tools**, such as Codex's `exec`, take raw text: they stay
   custom tools in Chat Completions, and become tools taking the text as
   `input` in Anthropic Messages, which has no freeform tools and loses their
