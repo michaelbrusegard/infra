@@ -84,37 +84,88 @@ def main():
             sources.mkdir()
             run("go", "test", "-count=1", "./conversations", "-run", "TestDumpSources",
                 "-args", "-dump", str(sources), cwd=PLUGINS)
-            for table in ("llm.request_items", "llm.requests", "llm.usage"):
-                insert(table, sources / f"{table}.jsonl", "cliproxy")
+            normalizer = temp / "normalize-conversations"
+            run("go", "build", "-o", str(normalizer), "./normalize-conversations", cwd=PLUGINS)
+            insert("llm.request_items", sources / "llm.request_items.jsonl", "cliproxy")
             insert("llm.transcripts", sources / "llm.transcripts.jsonl")
 
-            # Normalize requests first, so transcripts know the proxy's sessions.
-            def normalize(sql, out, *flags, params=()):
-                out.mkdir()
-                rows = query(sql, params=params).stdout
-                run("go", "run", "./normalize-conversations", "-out", str(out), *flags, input=rows, cwd=PLUGINS)
+            def jsonl(path):
+                return [json.loads(line) for line in path.read_text().splitlines()]
+
+            # The proxy's rows arrive in two batches, the way the plugin writes
+            # requests as they complete. The second holds a delta request and a
+            # full resend continuing calls from the first, and claude-agent,
+            # which started before requests of the first batch.
+            later = {"claude-2", "claude-agent", "codex-2"}
+            requests_rows, usage_rows = jsonl(sources / "llm.requests.jsonl"), jsonl(sources / "llm.usage.jsonl")
+
+            def arrive(batch):
+                for table, rows, key in (("llm.requests", requests_rows, "request_id"),
+                                         ("llm.usage", usage_rows, "request_id")):
+                    data = "".join(json.dumps(row) + "\n" for row in rows
+                                   if (row[key].removeprefix("usage-") in later) == (batch == 2))
+                    query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + data, "cliproxy")
+
+            def load(out):
                 for table in ("llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events"):
                     insert(table, out / f"{table}.jsonl")
-                return rows
 
-            requests = normalize((NORMALIZER / "requests.sql").read_text(), temp / "proxy", "-requests",
-                                 params=(("after", "2000-01-01 00:00:00"), ("before", "2100-01-01 00:00:00")))
-            assert len(requests.splitlines()) == 10, requests
-            proxied = temp / "proxied.txt"
-            proxied.write_text(query("SELECT DISTINCT session_id FROM llm.calls WHERE origin = 'proxy'").stdout)
-            normalize((NORMALIZER / "transcripts.sql").read_text(), temp / "transcripts", "-proxied", str(proxied))
+            # One run of the job: the requests not normalized yet, the state of
+            # the sessions they touch, then the normalizer.
+            def job(name):
+                out = temp / name
+                out.mkdir()
+                rows = query((NORMALIZER / "requests.sql").read_text(),
+                             params=(("after", "2000-01-01 00:00:00"),)).stdout
+                sessions = run(str(normalizer), "-requests", "-sessions", input=rows).stdout.strip()
+                state = temp / f"{name}-state.jsonl"
+                state.write_text(query((NORMALIZER / "state.sql").read_text(), params=(("sessions", sessions),)).stdout)
+                run(str(normalizer), "-requests", "-state", str(state), "-out", str(out), input=rows)
+                load(out)
+                return [json.loads(row)["request_id"] for row in rows.splitlines()], jsonl(out / "llm.messages.jsonl")
+
+            arrive(1)
+            first, first_messages = job("proxy-1")
+            arrive(2)
+            second, second_messages = job("proxy-2")
+            assert sorted(first) == sorted(r["request_id"] for r in requests_rows if r["request_id"] not in later), first
+            assert sorted(second) == sorted(later), second
+            assert job("proxy-3")[0] == []
+            # The second run extended the first run's trees without writing
+            # their nodes again, and found the response codex-2 continues.
+            written = {m["id"] for m in first_messages}
+            assert not [m for m in second_messages if m["id"] in written], second_messages
+
+            # Transcripts once, after the proxy, which owns each session it
+            # captured from its first call on.
+            proxied = temp / "proxied.tsv"
+            proxied.write_text(query("SELECT session_id, min(started_at) FROM llm.calls FINAL "
+                                     "WHERE origin = 'proxy' GROUP BY session_id FORMAT TSV").stdout)
+            out = temp / "transcripts"
+            out.mkdir()
+            run(str(normalizer), "-proxied", str(proxied), "-out", str(out),
+                input=query((NORMALIZER / "transcripts.sql").read_text()).stdout)
+            load(out)
 
             def scalar(sql):
                 return query(sql).stdout.strip()
 
-            # Proxy calls keep every column the request bodies and responses
-            # are rebuilt from, so llm.requests could be dropped.
-            assert scalar("""
-                SELECT count() FROM llm.requests AS r INNER JOIN llm.calls AS c FINAL ON c.call_id = r.request_id
-                WHERE c.request_envelope = r.request_envelope AND c.request_parts = r.request_parts
-                    AND c.response_body = r.response_body AND c.trace_id = r.trace_id
-                    AND c.started_at = r.started_at AND c.user_agent = r.user_agent AND c.outcome = r.outcome
-            """) == "10"
+            # Proxy calls keep every llm.requests column verbatim, so
+            # llm.requests could be dropped. The column list comes from the
+            # deployed schema, so a new column there fails this.
+            columns = scalar("SELECT groupArray(name) FROM (SELECT name FROM system.columns "
+                             "WHERE database = 'llm' AND table = 'requests' ORDER BY position) FORMAT JSONEachRow")
+            columns = json.loads(columns)["groupArray(name)"]
+            renamed = {"request_id": "call_id", "session_id": "source_session_id", "model": "source_model"}
+            source = ", ".join(columns)
+            kept = ", ".join(f"{renamed.get(c, c)} AS {c}" for c in columns)
+            calls = f"SELECT {kept} FROM llm.calls FINAL WHERE origin = 'proxy'"
+            assert len(columns) == 17, columns
+            assert scalar(f"SELECT count() FROM (SELECT {source} FROM llm.requests EXCEPT {calls})") == "0"
+            assert scalar(f"SELECT count() FROM ({calls} EXCEPT SELECT {source} FROM llm.requests)") == "0"
+            assert scalar(f"SELECT count() FROM ({calls})") == "10"
+            # Only the unarchived previous response starts at a marker.
+            assert scalar("SELECT count() FROM llm.messages FINAL WHERE format = 'proxy'") == "1"
             # Every transcript row is referenced by exactly one message or
             # event with its exact line, so llm.transcripts could be dropped.
             assert scalar("""
@@ -125,7 +176,7 @@ def main():
                     GROUP BY item, line)
                 SELECT countIf(r.n = 1), count() FROM llm.transcripts AS t
                 LEFT JOIN refs AS r ON r.item = reinterpretAsUInt128(substring(SHA256(t.line), 1, 16)) AND r.line = t.id
-            """) == "50\t50"
+            """) == "52\t52"
             # Raw items exist for every row and hash the way the plugin's do.
             assert scalar("""
                 SELECT count() FROM (SELECT item FROM llm.messages UNION ALL SELECT item FROM llm.events)
@@ -133,18 +184,24 @@ def main():
             """) == "0"
             assert scalar("SELECT count() FROM llm.request_items "
                           "WHERE hash != reinterpretAsUInt128(substring(SHA256(item), 1, 16))") == "0"
-            # The proxy owns the session both captured.
-            assert scalar("SELECT arraySort(groupArray(origin)) FROM llm.sessions FINAL "
-                          "WHERE session_id = 'claude:11111111-1111-4111-8111-111111111111'") == "['proxy','transcript']"
-            assert scalar("SELECT count() FROM llm.messages FINAL WHERE session_id = "
-                          "'claude:11111111-1111-4111-8111-111111111111' AND line != ''") == "0"
+            # Both captured this session. The transcript keeps the line from
+            # before the proxy's first call as a message, and the later one
+            # as an event; its calls and tokens are the proxy's.
+            both = "'claude:11111111-1111-4111-8111-111111111111'"
+            assert scalar(f"SELECT arraySort(groupArray(origin)) FROM llm.sessions FINAL WHERE session_id = {both}") \
+                == "['proxy','transcript']"
+            assert scalar(f"SELECT groupArray(line) FROM llm.messages FINAL WHERE session_id = {both} AND line != ''") \
+                == "['1']"
+            assert scalar(f"SELECT groupArray(line) FROM llm.events FINAL WHERE session_id = {both}") == "['2']"
+            assert scalar(f"SELECT groupUniqArray(origin) FROM llm.calls FINAL WHERE session_id = {both}") == "['proxy']"
             # Grafana keeps seeing only the metrics view.
             for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions"):
                 assert query(f"SELECT * FROM {table}", "grafana", check=False).returncode != 0, table
 
             sql = examples()
             prompts = query(sql["prompts"]).stdout
-            assert "The nightly backup job fails; find out why." in prompts, prompts
+            # Both sources hold the first prompt; it counts once.
+            assert prompts.count("The nightly backup job fails; find out why.") == 1, prompts
             assert "Why does the dashboard show no cost for luna?" in prompts, prompts
             assert "Add a Renovate rule" not in prompts, prompts  # July, not last week
             assert "permissions instructions" not in prompts, prompts
@@ -157,17 +214,42 @@ def main():
             assert failures[("gpt-6.1-sol", "exec")] == (1, 0), failures
 
             tokens = query(sql["tokens"]).stdout
-            assert "2026-11-10\tclaude-code\tclaude-opus-5-5\t2\t" in tokens, tokens
+            # claude-1, claude-2, and the truncated request.
+            assert "2026-11-10\tclaude-code\tclaude-opus-5-5\t3\t" in tokens, tokens
+
+            # Three calls share the websocket trace ws-1. Each usage row is
+            # priced once, where joining on the trace alone would count it
+            # once per call.
+            cost = sum(float(line.split("\t")[3]) for line in query(sql["cost"]).stdout.splitlines()
+                       if not line.endswith("\\N"))
+            live = float(scalar("SELECT sum(estimated_cost_usd) FROM llm.usage_metrics WHERE origin = 'live'"))
+            by_trace = float(scalar("SELECT sum(u.estimated_cost_usd) FROM llm.calls AS c FINAL "
+                                    "INNER JOIN llm.usage_metrics AS u ON u.trace_id = c.trace_id"))
+            assert live > 0 and abs(cost - live) < 1e-9 and by_trace > live, (cost, live, by_trace)
 
             session = ("session", "claude:11111111-1111-4111-8111-111111111111")
             path = query(sql["conversation"], params=(session,)).stdout
             roles = [(m["role"], m["output"]) for m in map(json.loads, path.splitlines())]
             # The tool result arrives with the user's own text, so it stays a user turn.
             assert roles == [("user", False), ("assistant", True), ("user", False), ("assistant", True)], roles
-            exported = json.loads(run("go", "run", "./normalize-conversations", "-export", "openai",
-                                      input=path, cwd=PLUGINS).stdout)
+            exported = json.loads(run(str(normalizer), "-export", "openai", input=path).stdout)
             assert [m["role"] for m in exported["messages"]] == ["user", "assistant", "tool", "user", "assistant"], exported
             assert exported["messages"][1]["tool_calls"][0]["function"]["name"] == "Bash", exported
+
+            # A call exports with what it sent beside its messages. The delta
+            # request codex-2 sent no instructions or tools of its own.
+            for call, system, tools in (("claude-2", "You are Claude Code", ["Bash", "Read"]),
+                                        ("codex-1", "You are Codex", ["exec", "update_plan"]),
+                                        ("codex-2", "", [])):
+                rows = query(sql["call"], params=(("call", call),)).stdout
+                openai = json.loads(run(str(normalizer), "-export", "openai", input=rows).stdout)
+                anthropic = json.loads(run(str(normalizer), "-export", "anthropic", input=rows).stdout)
+                for exported in (openai, anthropic):
+                    assert [t.get("function", t)["name"] for t in exported.get("tools", [])] == tools, (call, exported)
+                    assert exported["messages"][-1]["role"] == "assistant", (call, exported)
+                first = openai["messages"][0]
+                assert (first["role"] == "system") == bool(system) and first["content"].startswith(system), (call, first)
+                assert anthropic["system"].startswith(system or "<permissions instructions>"), (call, anthropic)
 
             raw = query(sql["raw"], params=(session,)).stdout
             assert '"cache_control"' in raw and "signature" in raw, raw

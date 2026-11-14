@@ -24,20 +24,28 @@ dropped later without losing anything.
   context a proxy request resends every turn maps onto existing nodes. Codex's
   delta requests (`previous_response_id`) chain onto the previous response.
   Compaction starts a new root, and retries or edits branch.
-- Proxy nodes are keyed by **content, ignoring transport noise**, so a model's
-  output and its resent copy are one node. Without this, Claude Code's moving
-  `cache_control` markers split the tree at 50 of 52 turns in a live session.
+- Proxy nodes are keyed by **content, ignoring transport fields where the
+  protocols put them**, so a model's output and its resent copy are one node.
+  Without this, Claude Code's moving `cache_control` markers split the tree
+  at 50 of 52 turns in a live session. A node written again keeps the row of
+  the call that produced it, whatever order calls are normalized in.
 - Every message and event references its **exact source JSON** by hash, and
   proxy calls keep the request envelope, parts and response body verbatim. The
   extracted columns are a queryable view and never the only copy, so an
   extractor bug cannot lose data.
 - **Session IDs follow CLIProxy's scheme** (`claude:<id>`,
   `claude:<id>:agent:<agent>`, `codex:<thread>`, …), and transcripts are
-  mapped into it too. A session captured by both sources then has a single ID,
-  and the proxy owns its messages.
-- A **normalizer job** derives the canonical rows from the raw capture. The
-  plugin keeps writing the raw capture unchanged. Normalizing in the plugin is
-  rejected for now (see [Ongoing capture](#ongoing-capture)).
+  mapped into it too. A session captured by both sources then has a single
+  ID. The proxy owns it from its first proxied call, and the transcript keeps
+  everything before.
+- A **normalizer job** derives the canonical rows from the raw capture. Each
+  run picks up every request not normalized yet, however late it landed, and
+  restores the state of the sessions it touches. The plugin keeps writing the
+  raw capture unchanged. Normalizing in the plugin is rejected for now (see
+  [Ongoing capture](#ongoing-capture)).
+- **Training exports take one call**: its system prompt or instructions and
+  tools, which are per-call context, plus the conversation it saw and
+  produced.
 
 ## What the data looks like
 
@@ -84,9 +92,15 @@ responses). The PVC is 75 GiB.
   calls), OpenCode (429, with a header session), pi (105, sessionless).
   CLIProxy derives `lcp:v1:<hash>` sessions in `llm.usage` for sessionless
   calls.
-- Usage links by `trace_id`, not `request_id`, whose namespaces differ. A
-  websocket trace carries many requests, so the link is unambiguous only when
-  the trace has one usage session.
+- The plugin writes a request when it completes. 180 requests ran longer than
+  2 minutes, the longest 15 minutes, so requests land out of start order.
+- Usage links by `trace_id`, not `request_id`, whose namespaces differ.
+  `llm.usage` has a row per upstream attempt, and a websocket trace carries
+  many requests: 1,920 traces hold 26.4k requests. They run one after
+  another (none overlap), and each of their 26.4k usage rows falls inside
+  exactly one request's span, never before it starts. So **an attempt
+  belongs to the call in its trace whose span holds it**; a retry adds a
+  second attempt to the same call. The queries allow 50 ms of clock slack.
 - Item bytes are dominated by **base64 images: 1.8 of 2.5 GiB**. Only 2,884 of
   4,599 data-URL images are distinct.
 
@@ -95,8 +109,8 @@ responses). The PVC is 75 GiB.
 | Source      | Lines | Notes |
 | ----------- | ----- | ----- |
 | codex       | 1.33M | Linear rollouts. `response_item` (messages, reasoning, tool calls and outputs) is the conversation. `event_msg` duplicates much of it (`item_completed` is 1.15 GiB). `token_usage_record` or `token_count` gives usage, `turn_context` the model, `compacted` carries the `replacement_history` that becomes the new context, and `session_meta.source.subagent.thread_spawn` links sub-agents. |
-| claude-code | 0.52M | A tree by `uuid` and `parentUuid`. Assistant replies are one line per streamed block, grouped by `requestId`. `attachment` lines hold `rendered` context the model saw (environment, reminders, CLAUDE.md, as `system` or `user`). A `compact_boundary` system line starts a new root (`logicalParentUuid` keeps the link), and `isCompactSummary` marks the summary. Since 2026-10-26 Claude Code also logs its own content-addressed API requests (`api-request`, `api-request-blob`, `api-request-shape`). The 126k lines without timestamps are metadata such as `last-prompt`, `ai-title`, `mode` and request blobs. Sub-agents and workflow agents are separate files under `<session>/subagents/`. |
-| pi          | 0.31M | A tree by `id` and `parentId`. Messages are `user`, `assistant` (with `responseId`, `usage`, `model`), `toolResult` (`isError`) and `system`. `compaction` entries carry a summary. |
+| claude-code | 0.52M | A tree by `uuid` and `parentUuid`. Resumed sessions write some entries again: 795 `uuid` and parent pairs repeat within a file, 574 with different bytes, such as an added `slug`. Assistant replies are one line per streamed block, grouped by `requestId`. `attachment` lines hold `rendered` context the model saw (environment, reminders, CLAUDE.md, as `system` or `user`). A `compact_boundary` system line starts a new root (`logicalParentUuid` keeps the link), and `isCompactSummary` marks the summary. Since 2026-10-26 Claude Code also logs its own content-addressed API requests (`api-request`, `api-request-blob`, `api-request-shape`). The 126k lines without timestamps are metadata such as `last-prompt`, `ai-title`, `mode` and request blobs. Sub-agents and workflow agents are separate files under `<session>/subagents/`. |
+| pi          | 0.31M | A tree by `id` and `parentId`. Messages are `user`, `assistant` (with `responseId`, `usage`, `model`), `toolResult` (`isError`) and `system`. `compaction` entries carry a summary and `firstKeptEntryId` (all 409), the first entry Pi keeps sending after the summary. |
 | opencode    | 58k   | Exported from SQLite. Older sessions store `message` and `part` records separately (`text`, `reasoning`, `tool` with call and result state, `file`, step markers); newer ones inline the content. |
 
 Only 3,714 transcript lines fall after the proxy started; six Claude Code
@@ -123,6 +137,7 @@ updating.
 | `output`, `model`, `call_id` | Whether a model produced it, which model, and in which call. Inputs name the call that first sent them. |
 | `blocks` | `Array(Tuple(type, source_type, text, tool_name, tool_call_id, tool_input, is_error, media))`. `type` is one of text, thinking, tool_call, tool_result, image, file, compaction, other; `source_type` keeps the dialect's own name. Image and file data, signatures and encrypted reasoning are not copied here. |
 | `format`, `item`, `line` | The raw dialect (anthropic, openai-responses, openai-chat, claude-code, codex, pi, opencode), the hash of the exact source JSON in `llm.request_items`, and the transcript line. |
+| `version` | Ranks the rows written for one node; `ReplacingMergeTree(version)` keeps the highest. See [Identity](#identity-and-deduplication). |
 
 **`llm.calls`**: one row per model call. It holds the call and session,
 `trace_id` (joins `llm.usage`), `response_id`, times, origin, client, model,
@@ -130,11 +145,17 @@ updating.
 and `output_ids`. Token counts are split the way `llm.usage_metrics` splits
 them: uncached input, cache read, cache write, output and reasoning. Proxy
 calls also keep every `llm.requests` column verbatim, including
-`request_envelope`, `request_parts` and `response_body`.
+`request_envelope`, `request_parts` and `response_body`. Three are renamed
+because the canonical columns use their names: `request_id` is `call_id`,
+and the header `session_id` and the archived `model` are
+`source_session_id` and `source_model`. `session_id` is the canonical
+session and `model` the model the response reported.
 
 **`llm.events`**: every transcript line that is not a message, such as token
-counts, turn settings, titles, queue operations, Claude Code's request logs and
-OpenCode part records. Each row has a session, time, line, type and item hash.
+counts, turn settings, titles, queue operations, Claude Code's request logs,
+OpenCode part records, repeated entries (`repeat`), and lines after the
+proxy took a session over. Each row has a session, time, line, type and item
+hash.
 
 **`llm.request_items`** stays as is and becomes the store for all raw JSON:
 proxy items, assembled response messages, and transcript lines. Renaming it is
@@ -146,30 +167,43 @@ cosmetic and not proposed.
 key is:
 
 - **Proxy messages**: the message's content, normalized. Anthropic and chat
-  messages are keyed by role and content (plus tool calls for chat), with
-  `cache_control` and `logprobs` removed and string content treated as one
-  text block. Responses items drop `id` and `status`. A response's assembled
-  message keys the same as the copy the client sends back, so they are one
-  node. The node keeps the first bytes seen, normally the response's, with
-  ID, model and usage. Every call's own bytes stay in its `request_parts`.
+  messages are keyed by role and content (plus tool calls for chat), and
+  string content is treated as one text block. Responses items drop `id` and
+  `status`. `cache_control` and `logprobs` are removed only where the
+  protocols put them, on content blocks and the blocks a tool result nests;
+  inside a tool's input or a hosted tool's action they are content, so
+  different calls stay different nodes. A response's assembled message keys
+  the same as the copy the client sends back, so they are one node. The node
+  keeps the response's row, with ID, model and usage. Every call's own bytes
+  stay in its `request_parts`.
   On a live sample (two Claude Code sessions, 50 turns), 50 of 50 resent
   prefixes and 50 of 50 replies matched; without normalization the tree
   forked at 50 turns.
 - **Transcript messages**: the source's own entry ID (uuid, Pi ID, OpenCode
-  message ID, Codex line). Codex compaction items use `line#index`.
+  message ID, Codex line). Codex compaction items use `line#index`. An entry
+  written again under the same parent is the same node: its first line is
+  the message, and each repeat is a `repeat` event referencing its own line.
 
 Because IDs are deterministic, rerunning the normalizer over the same input
 produces the same rows. All tables are `ReplacingMergeTree`, so reruns and
 overlapping batches collapse. Raw items deduplicate by content hash, as they
 do today.
 
+A proxy node can still be written more than once: a run without a session's
+state, or a request that started earlier but landed later, sends it again.
+Each row's `version` ranks a model's output above any copy sent back as
+input, then the earliest sighting first, and `llm.messages` keeps the
+highest. So the call, model and time that produced a message survive any
+order of normalization, and the rows agree on everything else, because the
+ID fixes the node's path.
+
 ## Building conversations from the proxy
 
 Requests are processed in start order, with a little state per session.
 
-1. **Session.** Use `llm.usage.session_id` when the trace has exactly one
-   session, which covers every Claude call and tells sub-agents apart.
-   Otherwise derive the same form: Codex from `client_metadata` (`codex:<root>`
+1. **Session.** Use the `llm.usage` session of the call's attempts, linked by
+   trace and span as above, which covers every Claude call and tells
+   sub-agents apart. Otherwise derive the same form: Codex from `client_metadata` (`codex:<root>`
    or `codex:<root>:agent:<name>`), then the header session, then
    `proxy:<hash of first message>` for anything sessionless.
 2. **Context.** With `previous_response_id`, start from the leaf after that
@@ -180,12 +214,15 @@ Requests are processed in start order, with a little state per session.
    system prompt (Claude Code puts the date and git status in it) does not
    duplicate the conversation.
 3. **Outputs.** Assemble the response into messages: Anthropic SSE into the
-   final message, Responses into the `output_item.done` items (interrupted
-   items from their deltas), chat chunks into one assistant message. Append
+   final message, Responses into the `output_item.done` items, chat chunks
+   into one assistant message. Interrupted streams keep what streamed,
+   including tool arguments whose block never stopped. Append
    them under the input leaf, and remember the response ID's leaf for the next
    delta request.
 4. **Gaps.** A `previous_response_id` that was never archived starts at a
-   `missing_context` marker root rather than guessing.
+   `missing_context` marker root rather than guessing. While such a request
+   is recent (10 minutes by default) the job holds it back instead, in case
+   the response has not landed yet.
 
 Compaction needs no special case. After Claude Code or Codex compacts, the
 request starts with the summary or `compaction` item, so the conversation gets
@@ -211,46 +248,58 @@ into CLIProxy's scheme: `claude:<session>`, `claude:<parent>:agent:<agent>`,
   attachments and system lines in the chain are skipped. A compaction boundary
   starts a new root, and the summary's blocks are `compaction`. Assistant
   lines group into one call by `requestId`, with the last line's usage.
-  `ai-title` sets the title.
+  `ai-title` sets the title. Repeated entries become `repeat` events.
 - **codex**: `response_item` lines are messages chained in file order.
   Assistant items between two inputs form one call, and its usage comes from
   the next `token_usage_record`, or `token_count` in older logs. The model
   comes from `turn_context`. A `compacted` line is kept as an event, and its
   `replacement_history` items become a new root chain.
-- **pi**: `message` entries are messages, and `compaction` and
-  `branch_summary` become user messages with a `compaction` block. Each
-  assistant message is one call.
+- **pi**: `message` entries are messages, and a `branch_summary` is a user
+  message with a `compaction` block, in place. A `compaction` rebuilds what
+  Pi sends from then on: the summary, then the entries from
+  `firstKeptEntryId` to the compaction. The summary starts a new root, and
+  copies of the kept messages follow it as context sent again, with
+  `output = false` and the line `<compaction line>#<entry id>`. Later
+  entries continue from the last copy, and the original branch stays as it
+  was. Each assistant message is one call.
 - **opencode**: messages are ordered by time. Older part records attach their
   content to the message and are also kept as `part` events, so the raw lines
   stay one-to-one.
 
 ### Overlap with the proxy
 
-**One owner per session.** If the proxy captured a session, its transcript
-lines are kept only as events and produce no messages or calls. Nothing is
-counted twice, and nothing is dropped.
+**A handover at the session's first proxied call.** Transcript lines from
+before it become messages and calls as usual, and lines from then on are
+kept only as events, because the proxy has those calls with their exact
+bodies. Turns from before the proxy, and branches compacted away before it,
+stay canonical messages, and no call or token is counted twice. Lines after
+the handover stay as events either way, so a session that left the proxy
+again would lose nothing, only the extracted view of those turns.
 
-The alternative is a handover at the first proxied call. It would keep
-per-message transcript timestamps for the pre-proxy part of about 15
-sessions, but it needs fuzzy matching between transcript lines and API
-messages (Claude Code splits replies per block), for little gain. Usage
-already uses a fixed handover; `llm.historical_usage` stays the dashboard's
-source for history.
+The proxy's first call resends the context from before it, so that context
+is in both trees: as transcript nodes at their own times, and as the proxy
+call's input nodes. The two are not merged, because matching transcript
+lines to API messages needs fuzzy matching (Claude Code splits replies per
+block) for little gain. Calls and tokens need nothing, since each call has
+one owner; counting prompts or messages should dedupe by content per
+session, as the prompts example does. Usage already uses a fixed handover;
+`llm.historical_usage` stays the dashboard's source for history.
 
 ## Losslessness
 
 | Source | Where it survives |
 | --- | --- |
-| `llm.requests` row | `llm.calls`, every column verbatim. `request_envelope` plus `request_parts` rebuild the body exactly as `llm.request_bodies` does. |
+| `llm.requests` row | `llm.calls`, every column verbatim, with `request_id`, `session_id` and `model` as `call_id`, `source_session_id` and `source_model`. `request_envelope` plus `request_parts` rebuild the body exactly as `llm.request_bodies` does. |
 | request item | `llm.request_items`, unchanged and referenced from calls. |
 | response body | `llm.calls.response_body`, verbatim. Assembled outputs are added as items. |
-| `llm.transcripts` row | One message or event whose item is the exact line. `line` is the row's `id`; the session row holds `source`, `host` and `path`. The file-name `session` column is derivable from `path`. |
+| `llm.transcripts` row | One message or event whose item is the exact line, repeats included. `line` is the row's `id`; the session row holds `source`, `host` and `path`. The file-name `session` column is derivable from `path`. |
 | `llm.usage`, `llm.historical_usage` | Unchanged. They feed Grafana, and `llm.calls` links to usage by `trace_id`. |
 
 The prototype tests this both ways:
 
 - Calls rebuild every request body (by JSON value) and every response body
-  (by byte).
+  (by byte), and in ClickHouse match `llm.requests` on every column of the
+  deployed schema, compared both ways with `EXCEPT`.
 - Every transcript line is referenced exactly once with identical bytes, in Go
   and again in ClickHouse via `SHA256(line)`.
 - Every content string in a raw item (text, thinking, arguments, tool input
@@ -276,16 +325,31 @@ derives the canonical rows.**
   walking trees per request is work it should not do while proxying.
 
 The job runs the same Go package as a CronJob, for example every 10 minutes.
-It reads requests in the window `[watermark, now() - 2 min)` with
-[`requests.sql`](../packages/cliproxy-plugins/normalize-conversations/requests.sql)
-and inserts the rows. Its state is the node index and the response-to-leaf map
-for open sessions, rebuilt each run from `llm.messages` and `llm.calls` for the
-sessions in the window. The watermark is `max(started_at)` in `llm.calls`;
-deterministic IDs make reruns harmless. It needs a ClickHouse user with SELECT
-on the sources and INSERT on the new tables. The transcripts run once, after
-the proxy backfill, with
+Each run:
+
+1. Selects the requests of the last day that are not in `llm.calls` yet,
+   with
+   [`requests.sql`](../packages/cliproxy-plugins/normalize-conversations/requests.sql).
+   Requests land when they complete, so a watermark on start times would skip
+   every request that outlived the gap; selecting what is missing picks them
+   up whenever they land. The day only bounds the scan, and must exceed the
+   longest request and any outage.
+2. Lists the sessions those requests touch with
+   `normalize-conversations -requests -sessions`.
+3. Reads those sessions' nodes and response leaves from `llm.messages` and
+   `llm.calls` with
+   [`state.sql`](../packages/cliproxy-plugins/normalize-conversations/state.sql).
+4. Normalizes with `-state` and inserts the rows.
+
+With the state restored, full-resend requests extend their trees without
+writing them again, and delta requests continue responses from earlier
+runs. Delta requests whose response has not landed are held back (see
+Gaps), and `version` keeps the right row if a node is written again anyway.
+Deterministic IDs make reruns harmless. The job needs a ClickHouse user with
+SELECT on the sources and INSERT on the new tables. The transcripts run
+once, after the proxy backfill, with
 [`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql)
-and the proxy's sessions as `-proxied`.
+and the proxy's sessions, each with its first call's start, as `-proxied`.
 
 `llm.calls` holds every `llm.requests` column, so once the job has run
 cleanly for a while, `llm.requests` can become staging with a short TTL, such
@@ -332,13 +396,16 @@ Not proposed now.
 -- example: prompts
 -- What I asked in the last week. Injected context (<system-reminder>,
 -- <environment_context>, AGENTS.md) is also user-role text; skipping text
--- that starts with a tag is a heuristic.
-SELECT ts, session_id, b.text AS prompt
+-- that starts with a tag is a heuristic. Retries, compactions, and the
+-- proxy's first call in a session a transcript also holds send a prompt
+-- again, so each counts once per session, when it was first seen.
+SELECT min(ts) AS first_seen, session_id, b.text AS prompt
 FROM llm.messages FINAL
 ARRAY JOIN blocks AS b
 WHERE role = 'user' AND b.type = 'text' AND NOT startsWith(b.text, '<')
-    AND ts >= now() - INTERVAL 7 DAY
-ORDER BY ts DESC
+GROUP BY session_id, prompt
+HAVING first_seen >= now() - INTERVAL 7 DAY
+ORDER BY first_seen DESC
 LIMIT 100
 ```
 
@@ -365,14 +432,32 @@ LIMIT 50
 
 ```sql
 -- example: tokens
--- Calls and tokens per day, client, and model. Costs: join proxy calls to
--- llm.usage_metrics on trace_id, as the dashboard prices them.
+-- Calls and tokens per day, client, and model, as the responses reported
+-- them. For costs, see the cost example.
 SELECT toDate(started_at) AS day, client, model, count() AS calls,
     sum(uncached_input_tokens + cache_read_tokens + cache_write_tokens) AS input_tokens,
     sum(output_tokens) AS output_tokens
 FROM llm.calls FINAL
 GROUP BY day, client, model
 ORDER BY day, input_tokens DESC
+```
+
+```sql
+-- example: cost
+-- Estimated cost per session and model of proxy calls, as the dashboard
+-- prices them. An upstream attempt belongs to the call in its trace whose
+-- span holds it: a websocket trace carries many calls, so joining on
+-- trace_id alone would count each attempt once per call. Unpriced attempts
+-- are NULL and left out of the sum.
+SELECT c.session_id AS session, c.model AS model, count() AS attempts,
+    sum(u.estimated_cost_usd) AS cost_usd
+FROM llm.calls AS c FINAL
+INNER JOIN llm.usage_metrics AS u ON u.trace_id = c.trace_id
+WHERE c.origin = 'proxy'
+    AND u.requested_at BETWEEN c.started_at - INTERVAL 50 MILLISECOND AND c.completed_at
+GROUP BY session, model
+ORDER BY cost_usd DESC
+LIMIT 50
 ```
 
 ```sql
@@ -394,10 +479,55 @@ SELECT seq, role, output, model, blocks FROM path ORDER BY seq
 FORMAT JSONEachRow
 ```
 
-Pipe that into `normalize-conversations -export openai` (or `anthropic`) for
-training data. It merges consecutive assistant items into one turn, pairs tool
-calls with results, and puts reasoning in `reasoning_content` or `thinking`
-blocks. Images are left out of the export; their data is in the raw items.
+```sql
+-- example: call
+-- One call as training data: the system prompt or instructions and the
+-- tools it sent, which are per-call context outside the message tree, and
+-- the conversation it saw and produced. Context rows have a field.
+WITH RECURSIVE
+    path AS (
+        SELECT id, parent_id, seq, role, output, model, blocks
+        FROM llm.messages FINAL
+        WHERE session_id = (SELECT session_id FROM llm.calls FINAL WHERE call_id = {call:String})
+            AND id = (SELECT if(empty(output_ids), input_id, output_ids[-1])
+                FROM llm.calls FINAL WHERE call_id = {call:String})
+        UNION ALL
+        SELECT m.id, m.parent_id, m.seq, m.role, m.output, m.model, m.blocks
+        FROM llm.messages AS m FINAL
+        INNER JOIN path AS p ON m.id = p.parent_id
+        WHERE m.session_id = (SELECT session_id FROM llm.calls FINAL WHERE call_id = {call:String})
+    ),
+    context AS (
+        -- Split into items, or small enough to stay in the envelope.
+        SELECT part.field AS field, part.position AS position, any(i.item) AS value
+        FROM (SELECT request_parts FROM llm.calls FINAL WHERE call_id = {call:String})
+        ARRAY JOIN request_parts AS part
+        INNER JOIN llm.request_items AS i ON i.hash = part.hash
+        WHERE part.field IN ('system', 'instructions', 'tools')
+        GROUP BY field, position
+        UNION ALL
+        SELECT field, -1, JSONExtractRaw(request_envelope, field)
+        FROM llm.calls FINAL
+        ARRAY JOIN ['system', 'instructions', 'tools'] AS field
+        WHERE call_id = {call:String} AND JSONHas(request_envelope, field)
+    )
+SELECT * FROM (
+    SELECT field, position, value, 0 AS seq, '' AS role, false AS output, '' AS model, [] AS blocks
+    FROM context
+    UNION ALL
+    SELECT '', 0, '', seq, role, output, model, blocks FROM path)
+ORDER BY field = '', field, position, seq
+FORMAT JSONEachRow
+```
+
+Pipe either into `normalize-conversations -export openai` (or `anthropic`)
+for training data; use the call query for training, since a conversation
+alone lacks the system prompt and tools. The export puts the system prompt
+first and converts tool definitions between dialects, keeping hosted and
+freeform tools as they are. It keeps text, reasoning, tool calls and results
+in the order they happened, merges consecutive assistant items into one turn
+until a tool result ends it, and puts reasoning in `reasoning_content` or
+`thinking` blocks. Images are left out; their data is in the raw items.
 
 ```sql
 -- example: raw
@@ -449,15 +579,16 @@ ORDER BY parent, agent
   (`export.go`). The tests use hand-written, redacted fixtures in the shapes
   profiled from live data, covering every source format.
 - [`packages/cliproxy-plugins/normalize-conversations`](../packages/cliproxy-plugins/normalize-conversations):
-  the CLI the job would run, the DDL, and the input queries.
+  the CLI the job would run, the DDL, and the input and state queries.
 - [`gitops/espresso/tests/llm-conversations.py`](../gitops/espresso/tests/llm-conversations.py):
   loads the fixtures into a real ClickHouse running the deployed schema, then
-  normalizes them through the input queries and CLI. It checks the lossless
-  round trips and that Grafana permissions are unchanged, and runs every
-  example above.
+  normalizes them the way the job would, in two runs with requests landing
+  late. It checks the lossless round trips, that the second run continues
+  the first without writing its nodes again, and that Grafana permissions are
+  unchanged, and runs every example above.
 
 ```sh
-cd packages/cliproxy-plugins && go test ./...
+cd packages/cliproxy-plugins && go test -race ./...
 nix develop --command python3 gitops/espresso/tests/llm-conversations.py < /dev/null
 ```
 
