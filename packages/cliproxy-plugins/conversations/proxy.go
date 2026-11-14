@@ -137,8 +137,10 @@ func (n *Normalizer) Request(r Request) bool {
 			return false
 		}
 	}
+	// The request's items were read from llm.request_items, so they only
+	// need to be known here, not written again.
 	for _, item := range r.Items {
-		n.item([]byte(item))
+		n.stored([]byte(item))
 	}
 	client := clientOf(r.UserAgent)
 	n.session(Session{SessionID: session, ParentSessionID: parentSession, Client: client, Origin: "proxy"})

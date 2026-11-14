@@ -57,10 +57,18 @@ func proxyBatch(t *testing.T) (*Normalizer, []proxyFixture) {
 	load(t, "proxy.json", &fixtures)
 	n := NewNormalizer()
 	for _, f := range fixtures {
-		n.Request(f.stored())
+		r := f.stored()
+		for _, item := range r.Items {
+			archived[requestitems.HashOf([]byte(item))] = item
+		}
+		n.Request(r)
 	}
 	return n, fixtures
 }
+
+// archived stands in for llm.request_items: the items requests were read
+// with, which the normalizer does not write again.
+var archived = map[Hash]string{}
 
 func transcriptBatch(t *testing.T, proxiedSince func(string) string) (*Normalizer, [][]TranscriptLine) {
 	t.Helper()
@@ -82,6 +90,9 @@ func transcriptBatch(t *testing.T, proxiedSince func(string) string) (*Normalize
 
 func itemsOf(b *Batch) map[Hash]string {
 	out := map[Hash]string{}
+	for h, item := range archived {
+		out[h] = item
+	}
 	for _, it := range b.Items {
 		if requestitems.HashOf([]byte(it.Item)) != it.Hash {
 			panic("item does not match its hash")
@@ -762,5 +773,22 @@ func TestRowsEncodeForClickHouse(t *testing.T) {
 	c, _ := json.Marshal(calls[0])
 	if !bytes.Contains(c, []byte(`"output_ids":["`)) || !bytes.Contains(c, []byte(`"request_parts":[{"field":`)) {
 		t.Fatalf("call row %s", c)
+	}
+}
+
+func TestProxyRunsDoNotRewriteArchivedItems(t *testing.T) {
+	n, fixtures := proxyBatch(t)
+	written := map[Hash]bool{}
+	for _, it := range n.Items {
+		written[it.Hash] = true
+	}
+	for _, f := range fixtures {
+		for _, p := range f.stored().RequestParts {
+			// System prompts and tools are per-call context and never become
+			// messages, so the run has no reason to write them.
+			if (p.Field == "system" || p.Field == "tools" || p.Field == "instructions") && written[p.Hash] {
+				t.Fatalf("%s: archived %s item written again", f.Request.RequestID, p.Field)
+			}
+		}
 	}
 }

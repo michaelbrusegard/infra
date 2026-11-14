@@ -165,6 +165,15 @@ func (b *Batch) item(raw []byte) Hash {
 	return h
 }
 
+// stored records an item that is already in llm.request_items, so item does
+// not write it again.
+func (b *Batch) stored(raw []byte) {
+	if b.items == nil {
+		b.items = map[Hash]struct{}{}
+	}
+	b.items[requestitems.HashOf(bytes.ToValidUTF8(raw, []byte("�")))] = struct{}{}
+}
+
 // version ranks the rows written for one node, highest first: a model's
 // output over a copy sent back as input, then the earliest sighting. The row
 // ClickHouse keeps then does not depend on the order or the runs in which
