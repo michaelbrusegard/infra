@@ -446,12 +446,16 @@ func AnthropicMessages(ctx Context, path []Message) (map[string]any, error) {
 				if err != nil {
 					return nil, err
 				}
+				// Arguments stay as written, so numbers keep their exact
+				// digits.
 				var input any = map[string]any{}
 				if isCustomCall(b) {
 					// Anthropic has no freeform tools; the definition takes
 					// the raw text as input.
 					input = map[string]any{"input": b.ToolInput}
-				} else if b.ToolInput != "" && json.Unmarshal([]byte(b.ToolInput), &input) != nil {
+				} else if json.Valid([]byte(b.ToolInput)) {
+					input = json.RawMessage(b.ToolInput)
+				} else if b.ToolInput != "" {
 					input = map[string]any{"input": b.ToolInput}
 				}
 				blocks = append(blocks, map[string]any{"type": "tool_use", "id": b.ToolCallID, "name": name, "input": input})

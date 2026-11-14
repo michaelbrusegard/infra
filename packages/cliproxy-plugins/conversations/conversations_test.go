@@ -1231,3 +1231,32 @@ func TestTrainingNeedsOutputAndItsTools(t *testing.T) {
 		}
 	}
 }
+
+// Both exports keep JSON numbers exactly as written, in tool arguments and
+// in tool definitions, beyond what a float64 holds.
+func TestExportsKeepNumbersExact(t *testing.T) {
+	var ctx Context
+	ctx.Add("tools", []byte(`[{"type":"function","name":"get","parameters":{"type":"object",`+
+		`"properties":{"id":{"type":"integer","maximum":9007199254740993}}}}]`))
+	args := `{"id":9007199254740993,"ratio":0.1000000000000000055511151231257827}`
+	path := []Message{{Role: "user", Blocks: []Block{{Type: "text", Text: "Get it."}}},
+		{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
+			ToolName: "get", ToolCallID: "call_1", ToolInput: args}}}}
+	for _, tc := range []struct {
+		export func(Context, []Message) (map[string]any, error)
+		want   string
+	}{
+		{OpenAIChat, `"arguments":` + strconv.Quote(args)},
+		{AnthropicMessages, `"input":` + args},
+	} {
+		var b bytes.Buffer
+		enc := json.NewEncoder(&b)
+		enc.SetEscapeHTML(false)
+		if err := enc.Encode(must(tc.export(ctx, path))); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(b.String(), tc.want) || !strings.Contains(b.String(), `"maximum":9007199254740993`) {
+			t.Fatalf("export changed numbers: %s", b.String())
+		}
+	}
+}

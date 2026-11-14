@@ -625,7 +625,8 @@ output. The export puts the system prompt first, flattens the echo's tool
 namespaces, and converts tool definitions between dialects. It keeps text,
 reasoning, tool calls and results in the order they happened, merges
 consecutive assistant items into one turn until a tool result ends it, and
-puts reasoning in `reasoning_content` or `thinking` blocks. Images are left
+puts reasoning in `reasoning_content` or `thinking` blocks. Tool arguments
+and definitions keep their JSON numbers exactly as written. Images are left
 out; their data is in the raw items.
 
 Definitions and calls always convert the same way:
