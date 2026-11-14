@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"cliproxy-plugins/conversations"
@@ -75,5 +76,29 @@ func TestTranscriptsReadGzip(t *testing.T) {
 	}
 	if a, _ := os.ReadFile(filepath.Join(plain, "llm.messages.jsonl")); len(a) == 0 {
 		t.Fatal("no messages")
+	}
+}
+
+// The call query marks its rows with a call row, so a call is checked as a
+// training example even with no context, such as a transcript call whose
+// transcript records no tools, and even with no outputs.
+func TestCallExportsAreCheckedWithoutContext(t *testing.T) {
+	bash := `{"field":"","seq":0,"id":"1","role":"user","blocks":[{"type":"text","text":"List files."}]}` + "\n" +
+		`{"field":"","seq":1,"id":"2","role":"assistant","output":true,"call_output":true,"blocks":` +
+		`[{"type":"tool_call","tool_name":"Bash","tool_call_id":"t1","tool_input":"{\"command\":\"ls\"}"}]}` + "\n"
+	for name, rows := range map[string]string{
+		"no tools":   `{"field":"call"}` + "\n" + bash,
+		"no outputs": `{"field":"call"}` + "\n" + `{"field":"","seq":0,"id":"1","role":"user","blocks":[{"type":"text","text":"Hi"}]}` + "\n",
+		"no rows":    `{"field":"call"}` + "\n",
+	} {
+		var out strings.Builder
+		if err := exportConversation(strings.NewReader(rows), &out, "openai"); err == nil {
+			t.Fatalf("%s: exported %s", name, out.String())
+		}
+	}
+	// A conversation is no call, and exports as it is.
+	var out strings.Builder
+	if err := exportConversation(strings.NewReader(bash), &out, "openai"); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -1004,8 +1004,8 @@ FORMAT JSONEachRow
 -- tools it ran with, which are per-call context outside the message tree,
 -- and the conversation it saw and produced. The context comes from a proxy
 -- call's llm.requests row, or a transcript call's context. Context rows
--- have a field, and call_output marks the call's own outputs, which the
--- export checks.
+-- have a field, a call row marks the call, and call_output marks the
+-- call's own outputs, which the export checks.
 WITH RECURSIVE
     path AS (
         SELECT id, parent_id, seq, role, output, model, blocks
@@ -1044,8 +1044,12 @@ WITH RECURSIVE
         SELECT 'response', 0, response_body FROM request
     )
 SELECT * FROM (
-    SELECT field, position, value, 0 AS seq, 0 AS id, '' AS role, false AS output, '' AS model, [] AS blocks,
-        false AS call_output
+    -- Marks the rows as a call's, so the export checks it as a training
+    -- example even when it has no context and no outputs.
+    SELECT 'call' AS field, 0 AS position, '' AS value, 0 AS seq, 0 AS id, '' AS role, false AS output,
+        '' AS model, [] AS blocks, false AS call_output
+    UNION ALL
+    SELECT field, position, value, 0, 0, '', false, '', [], false
     FROM context
     UNION ALL
     SELECT '', 0, '', seq, id, role, output, model, blocks,
@@ -1099,7 +1103,9 @@ Definitions and calls always convert the same way:
   the raw items, so neither export could write them back faithfully. The
   text the model wrote from a result stays.
 
-A call export is checked as a training example first, and fails with the
+A call export is checked as a training example first, which the call
+query's `call` row asks for, whether or not the call has context or
+outputs, and fails with the
 reason instead of printing one when the call produced nothing an export
 keeps, such as a failed call that returned nothing, or when its output calls
 a tool its context does not define, such as a failed delta call with output

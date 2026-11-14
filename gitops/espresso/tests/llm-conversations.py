@@ -387,6 +387,17 @@ def main():
                 assert (first["role"] == "system") == bool(system) and first["content"].startswith(system), (call, first)
                 assert anthropic["system"].startswith(system or "<permissions instructions>"), (call, anthropic)
 
+            # A transcript call whose transcript records no tools is refused
+            # rather than exported with its tool calls undefined, and so is a
+            # call without outputs, such as a Pi compaction: the call query
+            # marks its rows as a call's even without context or outputs.
+            bare = scalar("SELECT call_id FROM llm.calls FINAL WHERE origin = 'transcript' AND client = 'codex' "
+                          "AND empty(context) AND notEmpty(output_ids) ORDER BY started_at LIMIT 1")
+            for call, reason in ((bare, "does not define"), ("c1", "no output")):
+                rows = query(sql["call"], params=(("call", call),)).stdout
+                failed = run(str(normalizer), "-export", "openai", input=rows, check=False)
+                assert failed.returncode != 0 and reason in failed.stderr, (call, failed)
+
             # The truncated request produced nothing, so it is no training
             # example, and the export says why instead of writing one.
             rows = query(sql["call"], params=(("call", "truncated"),)).stdout

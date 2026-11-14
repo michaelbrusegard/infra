@@ -272,8 +272,10 @@ func writeRows[T any](w *bufio.Writer, rows []T) error {
 }
 
 // exportConversation reads message rows in conversation order, and for a
-// call, rows with a field and value: the system prompt, instructions, or
-// tools the call sent, and its response, which may echo them.
+// call, a row with the field call, which marks the rows as a call's, and
+// rows with a field and value: the system prompt, instructions, or tools
+// the call sent, and its response, which may echo them. A call is checked
+// as a training example, even with no context or outputs.
 func exportConversation(r io.Reader, w io.Writer, format string) error {
 	var ctx conversations.Context
 	var path []conversations.Message
@@ -287,11 +289,14 @@ func exportConversation(r io.Reader, w io.Writer, format string) error {
 		CallOutput bool `json:"call_output"`
 	}
 	err := eachRow(r, func(row row) error {
-		if row.Field != "" {
+		switch row.Field {
+		case "call":
+			call = true
+		case "":
+			path = append(path, row.Message)
+		default:
 			call = true
 			ctx.Add(row.Field, []byte(row.Value))
-		} else {
-			path = append(path, row.Message)
 		}
 		if row.CallOutput {
 			outputs = append(outputs, row.ID)
