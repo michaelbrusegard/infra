@@ -774,7 +774,8 @@ Definitions and calls always convert the same way:
   Earlier tool calls were made under definitions that may have changed
   since, such as an MCP server renamed between turns, so one that matches
   none of this call's tools keeps its own name, `namespace__name` or bare,
-  and never fails the export. Such a bare name can coincide with a tool the
+  and never fails the export, even when no current tool has its name, so two
+  removed tools named alike stay apart. Such a bare name can coincide with a tool the
   call defines in a namespace; it is context, not a target.
 - **Freeform custom tools**, such as Codex's `exec`, take raw text: they stay
   custom tools in Chat Completions, and become tools taking the text as

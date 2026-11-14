@@ -1339,3 +1339,33 @@ func TestExportsKeepHistoricalToolNames(t *testing.T) {
 		t.Fatal("trained on a call to old.run, which its context does not define")
 	}
 }
+
+// Historical calls to tools that no current definition has, in any
+// namespace, keep their namespaces too, so two removed tools of the same
+// name stay apart.
+func TestExportsKeepRemovedToolNamespaces(t *testing.T) {
+	var ctx Context
+	ctx.Add("tools", []byte(`[{"type":"function","name":"read","parameters":{"type":"object"}}]`))
+	call := func(id Hash, namespace, callID string) Message {
+		return Message{ID: id, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
+			ToolName: "run", ToolNamespace: namespace, ToolCallID: callID, ToolInput: `{}`}}}
+	}
+	result := func(id Hash, callID string) Message {
+		return Message{ID: id, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: callID, Text: "ok"}}}
+	}
+	path := []Message{{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "Run both, then read."}}},
+		call(Hash{2}, "old_a", "call_1"), result(Hash{3}, "call_1"), call(Hash{4}, "old_b", "call_2"), result(Hash{5}, "call_2"),
+		{ID: Hash{6}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
+			ToolName: "read", ToolCallID: "call_3", ToolInput: `{}`}}}}
+	if err := ForTraining(ctx, path, []Hash{{6}}); err != nil {
+		t.Fatal(err)
+	}
+	chat, _ := json.Marshal(must(OpenAIChat(ctx, path, []Hash{{6}}))["messages"])
+	anthropic, _ := json.Marshal(must(AnthropicMessages(ctx, path, []Hash{{6}}))["messages"])
+	for name, got := range map[string]string{"openai": string(chat), "anthropic": string(anthropic)} {
+		if !strings.Contains(got, `"name":"old_a__run"`) || !strings.Contains(got, `"name":"old_b__run"`) ||
+			!strings.Contains(got, `"name":"read"`) {
+			t.Fatalf("%s export names %s", name, got)
+		}
+	}
+}

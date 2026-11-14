@@ -230,17 +230,20 @@ func (e exported) call(b Block) (string, error) {
 // calls are context, made under definitions that may since have changed,
 // such as an MCP server renamed between turns, so one that matches none of
 // this call's tools keeps its own name, qualified by its namespace, rather
-// than fail the export or take another tool's schema.
+// than fail the export or take another tool's schema, even when no current
+// tool has its name.
 func (e exported) name(b Block, target bool) (string, error) {
-	name, err := e.call(b)
-	if err != nil && !target {
-		ns := b.ToolNamespace
-		if ns == defaultNamespace {
-			ns = ""
-		}
-		return qualify(ns, b.ToolName), nil
+	if target {
+		return e.call(b)
 	}
-	return name, err
+	ns := b.ToolNamespace
+	if ns == defaultNamespace {
+		ns = ""
+	}
+	if name, ok := e.names[[2]string{ns, b.ToolName}]; ok {
+		return name, nil
+	}
+	return qualify(ns, b.ToolName), nil
 }
 
 // function reads a tool definition in any dialect as a function name,
