@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"path"
 	"reflect"
 	"sort"
 	"strconv"
@@ -305,50 +306,83 @@ func TestProxyNormalizationIsIdempotent(t *testing.T) {
 	}
 }
 
+// Every transcript line is one message or event that references the line
+// verbatim and records its file, so its llm.transcripts row rebuilds, with
+// the source from the file's session row. No two rows share the key
+// ClickHouse replaces by, even for a file synced to a second host, which
+// shares its session, line numbers, and times.
 func TestTranscriptLinesAreKeptExactlyOnce(t *testing.T) {
-	n, files := transcriptBatch(t, nil)
-	items := itemsOf(&n.Batch)
-	type ref struct{ session, line string }
-	rows := map[ref]int{}
-	for _, m := range n.Messages {
-		if items[m.Item] != "" && strings.HasPrefix(items[m.Item], "{") && m.Line != "" {
-			rows[ref{m.SessionID, m.Line}]++
+	_, files := transcriptBatch(t, nil)
+	for _, f := range files {
+		if strings.HasSuffix(f[0].Path, "019f6478-0000-7000-8000-000000000004.jsonl") {
+			synced := append([]TranscriptLine{}, f...)
+			for i := range synced {
+				synced[i].Host = "ristretto"
+			}
+			files = append(files, synced)
 		}
 	}
-	for _, e := range n.Events {
-		rows[ref{e.SessionID, e.Line}]++
+	n := NewNormalizer()
+	replies := repliesOf(files...)
+	for _, f := range files {
+		n.Transcript(f, replies, nil)
 	}
-	sessions := map[string]Session{}
+	items := itemsOf(&n.Batch)
+	type file struct{ session, host, path string }
+	sources := map[file]string{}
 	for _, s := range n.Sessions {
-		sessions[s.SessionID] = s
+		sources[file{s.SessionID, s.Host, s.Path}] = s.Client
+	}
+	rebuilt := map[TranscriptLine]int{}
+	add := func(f file, line string, item Hash) {
+		source, ok := sources[f]
+		if !ok {
+			t.Fatalf("no session row for %+v", f)
+		}
+		// The file-name session is the path's, or for an OpenCode database,
+		// which holds many sessions, the canonical session's.
+		session := strings.TrimSuffix(path.Base(f.path), ".jsonl")
+		if source == "opencode" {
+			session = strings.TrimPrefix(f.session, "opencode:")
+		}
+		rebuilt[TranscriptLine{Source: source, Host: f.host, Session: session, ID: line, Path: f.path, Line: items[item]}]++
+	}
+	ids := map[Hash]bool{}
+	for _, m := range n.Messages {
+		if ids[m.ID] {
+			t.Fatalf("two rows for message %v", m.ID)
+		}
+		ids[m.ID] = true
+		// Compaction items and the context Pi sends again are messages from
+		// inside a line, as line#item.
+		if !strings.Contains(m.Line, "#") {
+			add(file{m.SessionID, m.Host, m.Path}, m.Line, m.Item)
+		}
+	}
+	keys := map[[5]string]bool{}
+	for _, e := range n.Events {
+		key := [5]string{e.SessionID, e.TS, e.Host, e.Path, e.Line}
+		if keys[key] {
+			t.Fatalf("two events share the key %q", key)
+		}
+		keys[key] = true
+		add(file{e.SessionID, e.Host, e.Path}, e.Line, e.Item)
 	}
 	total := 0
 	for _, f := range files {
-		// One OpenCode database holds many sessions.
-		s := sessions[transcriptSession(f).SessionID]
 		for _, l := range f {
 			total++
-			// Exactly one row references the line verbatim.
-			found := 0
-			for _, m := range n.Messages {
-				if m.SessionID == s.SessionID && m.Line == l.ID && items[m.Item] == l.Line {
-					found++
-				}
+			l.TS = ""
+			if rebuilt[l] != 1 {
+				t.Fatalf("%s line %s on %s is rebuilt %d times", l.Path, l.ID, l.Host, rebuilt[l])
 			}
-			for _, e := range n.Events {
-				if e.SessionID == s.SessionID && e.Line == l.ID && items[e.Item] == l.Line {
-					found++
-				}
-			}
-			if found != 1 {
-				t.Fatalf("%s line %s is referenced %d times", l.Path, l.ID, found)
-			}
-		}
-		if s.Host != f[0].Host || s.Path != f[0].Path {
-			t.Fatalf("session %+v lost the file's host or path", s)
+			delete(rebuilt, l)
 		}
 	}
-	if total != 57 {
+	if len(rebuilt) > 0 {
+		t.Fatalf("rows that are no line: %v", rebuilt)
+	}
+	if total != 59 {
 		t.Fatalf("checked %d lines", total)
 	}
 }

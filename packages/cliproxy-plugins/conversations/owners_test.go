@@ -110,6 +110,13 @@ func TestTranscriptReplyOwnershipIgnoresBatches(t *testing.T) {
 				!strings.HasPrefix(calls[1], child+" resp_child ") {
 				t.Fatalf("order %v, split %v: calls %v", order, split, calls)
 			}
+			for _, n := range runs {
+				for _, m := range n.Messages {
+					if m.Output && m.SessionID == parent && m.Host != "forte" {
+						t.Fatalf("order %v, split %v: %s's copy holds the parent's reply", order, split, m.Host)
+					}
+				}
+			}
 			got := strings.Join(append(calls, rows...), "\n")
 			if want == "" {
 				want = got

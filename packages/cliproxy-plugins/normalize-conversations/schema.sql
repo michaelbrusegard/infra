@@ -25,6 +25,7 @@ ORDER BY (session_id, origin, host, path);
 -- are for querying; item is the exact source JSON. A node written again
 -- keeps the row with the highest version: a model's output over a resent
 -- copy, then the earliest, whatever order the calls were normalized in.
+-- Transcript messages record the line and the host and path of its file.
 CREATE TABLE IF NOT EXISTS llm.messages
 (
     session_id String,
@@ -49,6 +50,8 @@ CREATE TABLE IF NOT EXISTS llm.messages
     format LowCardinality(String),
     item UInt128,
     line String,
+    host LowCardinality(String),
+    path String,
     version UInt64
 )
 ENGINE = ReplacingMergeTree(version)
@@ -97,14 +100,18 @@ PARTITION BY toYYYYMM(started_at)
 ORDER BY (session_id, started_at, call_id);
 
 -- Transcript records that are not messages, such as token counts, turn
--- settings, or attachments the model never saw.
+-- settings, or attachments the model never saw. Files that share a session,
+-- such as one synced to two hosts, share line numbers and times, so the
+-- file is part of the key.
 CREATE TABLE IF NOT EXISTS llm.events
 (
     session_id String,
     ts DateTime64(3, 'UTC'),
+    host LowCardinality(String),
+    path String,
     line String,
     type LowCardinality(String),
     item UInt128
 )
 ENGINE = ReplacingMergeTree
-ORDER BY (session_id, ts, line);
+ORDER BY (session_id, ts, host, path, line);

@@ -147,7 +147,7 @@ messages and calls, so they never need updating.
 | `role` | `system`, `developer`, `user`, `assistant` or `tool`. A message made only of tool results is `tool` in every dialect. |
 | `output`, `model`, `call_id` | Whether a model produced it, which model, and in which call. Inputs name the call that first sent them. |
 | `blocks` | `Array(Tuple(type, source_type, text, tool_name, tool_namespace, tool_call_id, tool_input, is_error, media))`. `type` is one of text, thinking, tool_call, tool_result, image, file, compaction, other; `source_type` keeps the dialect's own name. `tool_namespace` is the namespace a Responses API call names, such as an MCP server's. Image and file data, signatures and encrypted reasoning are not copied here. |
-| `format`, `item`, `line` | The raw dialect (anthropic, openai-responses, openai-chat, claude-code, codex, pi, opencode), the hash of the exact source JSON in `llm.request_items`, and the transcript line. |
+| `format`, `item`, `line`, `host`, `path` | The raw dialect (anthropic, openai-responses, openai-chat, claude-code, codex, pi, opencode), the hash of the exact source JSON in `llm.request_items`, and for transcripts the line and its file's host and path. Messages built from inside a line, Codex compaction items and the context Pi sends again, have the line `<line>#<item>`. |
 | `version` | Ranks the rows written for one node; `ReplacingMergeTree(version)` keeps the highest. See [Identity](#identity-and-deduplication). |
 
 **`llm.calls`**: one row per model call. It holds the call and session,
@@ -165,8 +165,10 @@ session and `model` the model the response reported.
 **`llm.events`**: every transcript line that is not a message, such as token
 counts, turn settings, titles, queue operations, Claude Code's request logs,
 OpenCode part records, repeated entries (`repeat`), and lines after the
-proxy took a session over. Each row has a session, time, line, type and item
-hash.
+proxy took a session over. Each row has a session, time, file (`host` and
+`path`), line, type and item hash. Files that share a session, such as one
+synced to two hosts, share line numbers and times, so the file is part of
+the key.
 
 **`llm.request_items`** stays as is and becomes the store for all raw JSON:
 proxy items, assembled response messages, and transcript lines. Renaming it is
@@ -277,7 +279,8 @@ into CLIProxy's scheme: `claude:<session>`, `claude:<parent>:agent:<agent>`,
   Assistant items between two inputs form one call, and its usage comes from
   the next `token_usage_record`, or `token_count` in older logs. The model
   comes from `turn_context`. A `compacted` line is kept as an event, and its
-  `replacement_history` items become a new root chain.
+  `replacement_history` items become a new root chain, with lines
+  `<line>#<index>`.
 - **pi**: `message` entries are messages, and a `branch_summary` is a user
   message with a `compaction` block, in place. A `compaction` rebuilds what
   Pi sends from then on: the summary, then the entries from
@@ -331,7 +334,7 @@ the same rows, which collapse. Rows from different inputs or rules do not
 replace each other reliably, because a wrong output row outranks the
 corrected input row and a wrong call is never removed, so such a rerun goes
 into tables without transcript rows: delete the transcript calls and
-sessions (`origin = 'transcript'`), the messages with a `line`, and all
+sessions (`origin = 'transcript'`), the messages with a `path`, and all
 events first.
 
 **A handover at the session's first proxied call.** Transcript lines from
@@ -358,7 +361,7 @@ session, as the prompts example does. Usage already uses a fixed handover;
 | `llm.requests` row | `llm.calls`, every column verbatim, with `request_id`, `session_id` and `model` as `call_id`, `source_session_id` and `source_model`. `request_envelope` plus `request_parts` rebuild the body exactly as `llm.request_bodies` does. |
 | request item | `llm.request_items`, unchanged and referenced from calls. |
 | response body | `llm.calls.response_body`, verbatim. Assembled outputs are added as items. |
-| `llm.transcripts` row | One message or event whose item is the exact line, repeats included. `line` is the row's `id`; the file's own session row holds `source` (as `client`), `host` and `path`. The file-name `session` column is derivable from `path`. |
+| `llm.transcripts` row | One message or event whose item is the exact line, repeats included, with the row's `host`, `path` and `id` (as `line`). The file's session row, by `session_id`, `host` and `path`, holds `source` as `client`. The file-name `session` column is the path's file name without `.jsonl`, or for OpenCode, whose database holds many sessions, the session ID without `opencode:`; live data has no exceptions. |
 | `llm.usage`, `llm.historical_usage` | Unchanged. They feed Grafana, and `llm.calls` links to usage by `trace_id`. |
 
 The prototype tests this both ways:
@@ -366,8 +369,10 @@ The prototype tests this both ways:
 - Calls rebuild every request body (by JSON value) and every response body
   (by byte), and in ClickHouse match `llm.requests` on every column of the
   deployed schema, compared both ways with `EXCEPT`.
-- Every transcript line is referenced exactly once with identical bytes, in Go
-  and again in ClickHouse via `SHA256(line)`.
+- Every `llm.transcripts` row rebuilds from exactly one message or event, by
+  file and line with identical bytes, and no other row is left over, in Go
+  and again in ClickHouse, compared both ways with `EXCEPT`. The fixtures
+  include a file synced to two hosts.
 - Every content string in a raw item (text, thinking, arguments, tool input
   and output, summaries, rendered attachments) appears in an extracted block,
   and every extracted string comes from the raw item. Deliberately breaking an

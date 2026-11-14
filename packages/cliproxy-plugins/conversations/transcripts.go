@@ -311,8 +311,8 @@ func (f *file) owned(l TranscriptLine) bool {
 }
 
 func (f *file) event(l TranscriptLine, kind string) {
-	f.n.Events = append(f.n.Events, Event{SessionID: f.session.SessionID, TS: f.stamp(l), Line: l.ID,
-		Type: kind, Item: f.n.item([]byte(l.Line))})
+	f.n.Events = append(f.n.Events, Event{SessionID: f.session.SessionID, TS: f.stamp(l), Host: l.Host,
+		Path: l.Path, Line: l.ID, Type: kind, Item: f.n.item([]byte(l.Line))})
 }
 
 // message adds a line as a message under parent, keyed by its entry ID,
@@ -344,10 +344,12 @@ func (f *file) message(l TranscriptLine, parent Hash, key string, m Message) (Ha
 	return id, true
 }
 
-// node writes a message of this file. Its key is the file's as well as the
-// entry's, so a file that another shares a session with, such as a copy on
-// another host, keeps its own nodes, and no file's rows depend on another's.
+// node writes a message of this file, which records the file's host and
+// path. Its key is the file's as well as the entry's, so a file that another
+// shares a session with, such as a copy on another host, keeps its own
+// nodes, and no file's rows depend on another's.
 func (f *file) node(parent Hash, key string, item Hash, ts string, m Message) (Hash, bool) {
+	m.Host, m.Path = f.session.Host, f.session.Path
 	return f.n.node(f.session.SessionID, parent, f.key+"\x00"+key, item, ts, m, false)
 }
 
@@ -445,8 +447,9 @@ func (f *file) codex(lines []TranscriptLine) {
 			parent := Hash{}
 			for i, raw := range p.arr("replacement_history") {
 				role, blocks := responsesItem(raw)
-				parent, _ = f.node(parent, l.ID+"#"+strconv.Itoa(i), f.n.item(raw), f.stamp(l),
-					Message{Role: roleOf(role, blocks), Blocks: blocks, Format: "openai-responses", Line: l.ID})
+				line := l.ID + "#" + strconv.Itoa(i)
+				parent, _ = f.node(parent, line, f.n.item(raw), f.stamp(l),
+					Message{Role: roleOf(role, blocks), Blocks: blocks, Format: "openai-responses", Line: line})
 			}
 			f.last, lastWasOutput = parent, false
 			continue

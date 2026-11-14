@@ -93,6 +93,11 @@ def main():
             run("go", "build", "-o", str(normalizer), "./normalize-conversations", cwd=PLUGINS)
             insert("llm.request_items", sources / "llm.request_items.jsonl", "cliproxy")
             insert("llm.transcripts", sources / "llm.transcripts.jsonl")
+            # A file synced to a second host shares its session, line numbers,
+            # and times with the first.
+            query("INSERT INTO llm.transcripts (source, host, session, id, path, line) "
+                  "SELECT source, 'ristretto', session, id, path, line FROM llm.transcripts "
+                  "WHERE path LIKE '%019f6478-0000-7000-8000-000000000004.jsonl'")
 
             def jsonl(path):
                 return [json.loads(line) for line in path.read_text().splitlines()]
@@ -194,17 +199,29 @@ def main():
             assert scalar(f"SELECT count() FROM ({calls})") == "10"
             # Only the unarchived previous response starts at a marker.
             assert scalar("SELECT count() FROM llm.messages FINAL WHERE format = 'proxy'") == "1"
-            # Every transcript row is referenced by exactly one message or
-            # event with its exact line, so llm.transcripts could be dropped.
-            assert scalar("""
-                WITH refs AS (
-                    SELECT item, line, count() AS n FROM (
-                        SELECT item, line FROM llm.messages FINAL WHERE format NOT IN ('anthropic', 'openai-responses', 'openai-chat', 'proxy')
-                        UNION ALL SELECT item, line FROM llm.events FINAL)
-                    GROUP BY item, line)
-                SELECT countIf(r.n = 1), count() FROM llm.transcripts AS t
-                LEFT JOIN refs AS r ON r.item = reinterpretAsUInt128(substring(SHA256(t.line), 1, 16)) AND r.line = t.id
-            """) == "57\t57"
+            # Every transcript row is one message or event with its exact line
+            # and file, so llm.transcripts could be dropped: its rows rebuild,
+            # compared both ways. The source is the file's session row's
+            # client, and the file-name session is the path's, or for an
+            # OpenCode database, the canonical session's. Messages from inside
+            # a line, such as compaction items, are line#item.
+            rebuilt = r"""
+                SELECT s.client AS source, r.host AS host,
+                    if(s.client = 'opencode', substring(r.session_id, 10),
+                        replaceRegexpOne(r.path, '^(.*/)?([^/]*)\.jsonl$', '\2')) AS session,
+                    r.line AS id, r.path AS path, i.item AS line
+                FROM (SELECT session_id, host, path, line, item FROM llm.messages FINAL
+                      WHERE path != '' AND NOT like(line, '%#%')
+                      UNION ALL SELECT session_id, host, path, line, item FROM llm.events FINAL) AS r
+                INNER JOIN (SELECT session_id, host, path, client FROM llm.sessions FINAL
+                            WHERE origin = 'transcript') AS s
+                    ON s.session_id = r.session_id AND s.host = r.host AND s.path = r.path
+                INNER JOIN (SELECT hash, any(item) AS item FROM llm.request_items GROUP BY hash) AS i
+                    ON i.hash = r.item"""
+            lines = "SELECT source, host, session, id, path, line FROM llm.transcripts FINAL"
+            assert scalar(f"SELECT count() FROM ({rebuilt})") == scalar(f"SELECT count() FROM ({lines})") == "59"
+            assert scalar(f"SELECT count() FROM ({rebuilt} EXCEPT {lines})") == "0"
+            assert scalar(f"SELECT count() FROM ({lines} EXCEPT {rebuilt})") == "0"
             # Raw items exist for every row and hash the way the plugin's do.
             assert scalar("""
                 SELECT count() FROM (SELECT item FROM llm.messages UNION ALL SELECT item FROM llm.events)

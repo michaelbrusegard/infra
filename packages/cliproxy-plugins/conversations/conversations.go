@@ -64,8 +64,11 @@ type Message struct {
 	Format string `json:"format"`
 	// The exact source JSON in llm.request_items.
 	Item Hash `json:"item"`
-	// The transcript line, empty for proxy messages.
+	// The transcript line, and the host and path of its file, empty for
+	// proxy messages.
 	Line string `json:"line"`
+	Host string `json:"host"`
+	Path string `json:"path"`
 	// Ranks the rows written for one node; ReplacingMergeTree keeps the
 	// highest. See version.
 	Version uint64 `json:"version"`
@@ -113,10 +116,13 @@ type Call struct {
 }
 
 // Event is any transcript record that is not a message, such as Codex token
-// counts or Claude Code attachments, kept verbatim.
+// counts or Claude Code attachments, kept verbatim with the host and path of
+// its file.
 type Event struct {
 	SessionID string `json:"session_id"`
 	TS        string `json:"ts"`
+	Host      string `json:"host"`
+	Path      string `json:"path"`
 	Line      string `json:"line"`
 	Type      string `json:"type"`
 	Item      Hash   `json:"item"`
