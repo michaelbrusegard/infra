@@ -1,7 +1,8 @@
 # LLM conversations: one canonical format
 
-Status: proposal with a tested prototype. Nothing here is deployed, and no
-existing table changes until the cutover described below.
+Status: ready to roll out as in [Rollout](#rollout). Merging creates the
+canonical tables and a suspended job; nothing is normalized until the
+backfill runs.
 
 All LLM history currently sits in two raw shapes: the proxy archive
 (`llm.requests`, `llm.request_items`, `llm.usage`) since 2026-11-09, and a
@@ -760,64 +761,96 @@ writing them again, and delta requests continue responses from earlier
 runs. Recent requests whose usage or previous response has not landed are
 held back (see Session and Gaps), and `version` keeps the right row if a
 node is written again anyway.
-Deterministic IDs make reruns over the same input harmless. The job needs a
-ClickHouse user with SELECT on the sources and INSERT on the canonical
-tables.
+Deterministic IDs make reruns over the same input harmless.
+
+The job is the `llm-normalizer` CronJob in
+[`apps/clickhouse/llm-normalizer.yaml`](../gitops/espresso/apps/clickhouse/llm-normalizer.yaml),
+every 10 minutes, next to ClickHouse. The plugin image's CI builds
+`normalize-conversations` into `/normalizer` of the image, with
+[`normalize.sh`](../packages/cliproxy-plugins/normalize-conversations/normalize.sh)
+and the queries, and promotes it into the CronJob and the backfill Job as it
+does into CLIProxyAPI. An init container copies `/normalizer` next to
+`clickhouse-client` in the ClickHouse server image, and `normalize.sh cron`
+runs the four steps over the native protocol. ClickHouse's network policy
+admits only the normalizer's pods to the native port, and they reach
+nothing else. They connect as `llm_normalizer`, which has SELECT on the
+sources (`llm.requests`, `llm.request_items`, `llm.usage`, and until they
+are dropped `llm.transcripts` and `llm.historical_usage`), SELECT and INSERT
+on `llm.sessions`, `llm.messages`, `llm.calls` and `llm.events`, and INSERT
+on `llm.request_items`; it cannot read the dashboard's view, write the raw
+capture, delete, or drop. The CronJob starts suspended, so it waits for the
+backfill.
 
 ### Backfill
 
-The backfill runs from `forte`, which has ample disk but a slow link to the
-cluster, about 1 MB/s, so everything crosses it compressed, and only once.
-`forte` has no kubeconfig for the cluster, so the port-forward runs on a node
-and is tunnelled:
-
-```sh
-ssh -L 18123:127.0.0.1:18123 deploy-espresso-0 \
-  sudo k3s kubectl -n clickhouse port-forward svc/clickhouse 18123:8123
-```
-
-Queries go to `http://127.0.0.1:18123/` with
-`enable_http_compression=1` and `readonly=2`, and inserts send their files
-compressed (`Content-Encoding`). A long stream does not survive the link:
-in a trial on 2026-11-14 the tunnel stalled for 30 seconds or more every
-few minutes, and ClickHouse ends an HTTP response whose socket write blocks
-that long (`SOCKET_TIMEOUT`; the query settings `http_send_timeout` and
-`send_timeout` do not lengthen it). So every download is in parts that take
-a minute or two, each checked (`gzip -t`) and retried alone over a new
-tunnel, with a stall timeout on `curl` (`--speed-limit`, `--speed-time`).
-Each tunnel forwards a fresh port on the node with `ssh -tt`, so a hung
-port-forward ends with its connection instead of holding the port. In
-order, because which transcript file holds a reply's call depends on the
+The backfill runs in the cluster as the one-off `llm-backfill` Job, on
+ClickHouse's node, with a 40 GiB local scratch volume (`openebs-hostpath`)
+that goes with the pod. Nothing crosses the workstation's link but the
+Job's log. The Job's manifest,
+[`llm-backfill-job.yaml`](../gitops/espresso/apps/clickhouse/llm-backfill-job.yaml),
+is not in the Kustomization, so Flux never applies it;
+[`llm-backfill.sh`](../gitops/espresso/apps/clickhouse/llm-backfill.sh)
+creates it, waits for it, and saves its log. `normalize.sh backfill` runs,
+in order, because which transcript file holds a reply's call depends on the
 proxy's calls:
 
-1. **The proxy**, from 2026-11-09, in start order, so `llm.calls` holds every
-   proxied call: the job's three steps, run a day at a time (`after` and
-   `before` a day apart), each inserted before the next day starts, so the
-   state carries over. The downloads use `Accept-Encoding: zstd` and are
-   piped through `zstd -d` into `normalize-conversations -requests`: response
-   streams repeat 36 KiB instruction and tool echoes, which gzip's 32 KiB
-   window cannot deduplicate. Each run sends an item once: joined in full,
-   the items of every request would be 68 GiB rather than 2.6 GiB, of which
-   the normalizer reads the conversation items. The rest is envelopes and
-   response bodies, 8.9 GiB uncompressed.
-2. **The transcripts**, once, in one pass: `-proxied` from the query in
-   [`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql),
-   then `transcripts.sql` itself in parts: `files.sql` lists the files with
-   their sizes, and each part names about 48 MiB of them in `files`, which
-   the table's key finds without a scan (200 parts on 2026-11-14). Each part
-   is saved gzip-compressed (`Accept-Encoding: gzip`, which Go reads without
-   a dependency). The parts concatenate into one gzip file in any order,
-   which is passed as `normalize-conversations -in transcripts.jsonl.gz`,
-   which reads it twice
-   without a decompressed copy. The largest dropped kinds arrive as their
-   type alone. Insert the five files it writes, `llm.request_items`
-   included, and keep `coverage.tsv`.
-3. **The job**, from then on.
+1. **The proxy**, from its first request, in start order, so `llm.calls`
+   holds every proxied call: the job's steps a day at a time (`after` and
+   `before` a day apart), each day inserted before the next reads its
+   state. A day bounds the items the server joins at once: joined in full,
+   the items of every request would be 68 GiB rather than 2.6 GiB, and each
+   run sends an item once. The last day reaches into the future; its
+   requests from the last 10 minutes are held back for the job.
+2. **The transcripts**, once, in one pass, and only into tables without
+   transcript calls: the proxy's calls from
+   [`proxied.sql`](../packages/cliproxy-plugins/normalize-conversations/proxied.sql),
+   then the lines from
+   [`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql)
+   in parts of whole files of about 256 MiB that
+   [`files.sql`](../packages/cliproxy-plugins/normalize-conversations/files.sql)
+   lists, which the table's key finds, so each query sorts only its part.
+   The parts go gzip-compressed into one file, which
+   `normalize-conversations -in` reads twice without a decompressed copy.
+   The largest dropped kinds arrive as their type alone. If the normalizer
+   reports a coverage error, or its coverage counts other than
+   `llm.transcripts`' lines, nothing is inserted; otherwise the five files,
+   `llm.request_items` included, are, and the log has `coverage.tsv`.
+3. **The checks** of
+   [`verify.sql`](../packages/cliproxy-plugins/normalize-conversations/verify.sql):
+   the proxy's references both ways, unique response IDs, no transcript call
+   the proxy returned, context items and message items present, tree
+   integrity, and calls and tokens per client against the old import. A
+   check that finds a violation fails the Job; the reports are for
+   [Before dropping the transcripts](#before-dropping-the-transcripts).
 
-The transcript download is about 7.3 GiB of lines uncompressed. The local
-spool is the two compressed downloads and the output, and nothing is
-written to the ClickHouse volume or a pod's ephemeral storage but the
-inserted rows.
+The transcript input is about 7.5 GiB of lines uncompressed, about 2 GiB on
+the scratch volume, plus the rows to insert. The server's work per query is
+bounded by a day of requests or a part of files, on one thread.
+
+### Rollout
+
+1. **Merge** the change. Flux applies the schema (the canonical tables and
+   `llm.call_history`, created on ClickHouse's restart), the normalizer's
+   user, port and network policy, and the suspended CronJob. The dashboard
+   keeps showing the old import's history.
+2. **Wait for the image.** The plugin image's CI builds the normalizer and
+   commits `chore(cliproxy): update plugin image`, which names the new
+   image in the CLIProxyAPI installer, the CronJob and the Job. Pull it.
+3. **Run the backfill** from the repo root:
+   `gitops/espresso/apps/clickhouse/llm-backfill.sh`. It exits non-zero
+   when the Job fails, with the log in `llm-backfill.log`. A failed run
+   inserted nothing of the transcripts if it failed before their insert;
+   otherwise delete the transcript rows as in [Rebuild](#rebuild) before
+   running it again, since the Job refuses to import twice. The proxy's
+   days are safe to run again. The dashboard reads the transcript calls'
+   history from the moment they are inserted.
+4. **Resume the job**: set `suspend: false` in `llm-normalizer.yaml` and
+   push. It picks up every request since the backfill's last day, however
+   late it landed.
+5. **Verify** with the log and
+   [Before dropping the transcripts](#before-dropping-the-transcripts), then
+   drop the old import there. A later run of the checks alone is
+   `normalize.sh verify` in a copy of the Job.
 
 ## Rebuild
 
@@ -829,9 +862,9 @@ for example after an extractor fix:
    'proxy'`, the same for `llm.sessions`, and `ALTER TABLE llm.messages DELETE
    WHERE path = ''`. Or, if the schema changes, drop and recreate the four
    tables and restore the transcript rows from their export (below).
-3. Run the job's query from the proxy's start, as in step 1 of the backfill,
-   and insert. In the cluster no transfer limit applies, so the job itself can
-   do it with a wide `after`.
+3. Run step 1 of the backfill: `normalize.sh` in a copy of the backfill
+   Job whose command runs the proxy's days, or the Job itself while the
+   transcript rows are absent.
 4. Start the job again.
 
 The transcript period cannot be rebuilt from raw once `llm.transcripts` is
@@ -839,7 +872,12 @@ dropped. Its canonical rows are then the only record, and a rebuild must keep
 them, `origin = 'transcript'` and messages with a `path`, or restore them
 from the optional export to `freddo` (see the checklist). If the export of
 `llm.transcripts` itself is kept, restoring it and rerunning step 2 of the
-backfill rebuilds them too. A proxy rebuild changes which transcript calls
+backfill rebuilds them too. To redo the transcript import before the drop,
+delete its rows first: `ALTER TABLE llm.calls DELETE WHERE origin =
+'transcript'`, the same for `llm.sessions`, `ALTER TABLE llm.messages DELETE
+WHERE path != ''`, and `ALTER TABLE llm.events DELETE WHERE 1`, as the
+`default` user through `kubectl exec`. Their items are content-addressed,
+so the rerun's collapse with them. A proxy rebuild changes which transcript calls
 are copies only if it changes the proxy's sessions or response IDs; if it
 does, rerun the transcript pass from the export as well.
 
@@ -891,7 +929,7 @@ explained, not just counted.
   another file order or split into other runs, gives identical rows, and a
   job run interrupted and run again leaves no extra rows after `FINAL`. A
   rebuild of the proxy's rows, as above, gives the same rows.
-- **Resources.** The downloads and spool stay within the estimates above,
+- **Resources.** The scratch volume stays within the estimates above,
   every query stays within the server's memory, the job finishes well inside
   its interval, and storage grows as estimated in [Sizes](#sizes).
 
@@ -1253,9 +1291,10 @@ ORDER BY parent, agent
 - [`packages/cliproxy-plugins/normalize-conversations`](../packages/cliproxy-plugins/normalize-conversations):
   the CLI the job runs, and the input and state queries.
 - [`gitops/espresso/tests/llm-conversations.py`](../gitops/espresso/tests/llm-conversations.py):
-  loads the fixtures into a real ClickHouse running the deployed schema, then
-  normalizes them the way the job would, in runs with requests landing late
-  and usage landing after its requests. It checks the proxy's references both
+  loads the fixtures into a real ClickHouse running the production schema,
+  then normalizes them the way the job would, in runs with requests landing
+  late and usage landing after its requests, and runs the backfill Job's
+  `normalize.sh` in the ClickHouse image as `llm_normalizer`. It checks the proxy's references both
   ways, the transcript coverage against the dropped kinds listed above, that
   the raw capture is unchanged, that the second run continues the first
   without writing its nodes again, the usage history cutover, and that
@@ -1279,8 +1318,8 @@ nix develop --command python3 gitops/espresso/tests/ai-usage.py < /dev/null
 - **Claude Code's request logs** are mapped into their calls' context, since
   the transcripts are dropped. The Codex base instructions in `session_meta`
   are not mapped yet, and go with the drop unless that changes first.
-- **The backfill runs from `forte`**, over a tunnelled port-forward with
-  compressed transfers, as in [Backfill](#backfill).
+- **The backfill runs in the cluster**, as a Job next to ClickHouse, as in
+  [Backfill](#backfill); the workstation's link carries only its log.
 - **The transcript import is dropped after verification**, with
   `llm.historical_usage`, as in
   [Before dropping the transcripts](#before-dropping-the-transcripts).

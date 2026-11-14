@@ -100,9 +100,11 @@ jobs:
           git diff --exit-code "$GIT_SHA" -- packages/cliproxy-plugins .github/workflows/cliproxy-plugins-image.yaml
           python3 packages/cliproxy-plugins/update-manifest.py \
             "$IMAGE_REF:sha-$GIT_SHA@$DIGEST"
-          manifest=gitops/espresso/apps/cliproxy/statefulset.yaml
-          if git diff --quiet -- "$manifest"; then exit 0; fi
-          git add "$manifest"
+          manifests=(gitops/espresso/apps/cliproxy/statefulset.yaml
+            gitops/espresso/apps/clickhouse/llm-normalizer.yaml
+            gitops/espresso/apps/clickhouse/llm-backfill-job.yaml)
+          if git diff --quiet -- "${manifests[@]}"; then exit 0; fi
+          git add "${manifests[@]}"
           git commit -m 'chore(cliproxy): update plugin image'
           git pull --rebase origin main
           git diff --exit-code "$GIT_SHA" -- packages/cliproxy-plugins .github/workflows/cliproxy-plugins-image.yaml

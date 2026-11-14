@@ -10,3 +10,8 @@ spec:
     - name: http
       port: 8123
       targetPort: http
+    # For clickhouse-client in the LLM normalizer; the network policy admits
+    # only its pods.
+    - name: native
+      port: 9000
+      targetPort: 9000

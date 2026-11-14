@@ -13,7 +13,8 @@ data:
         <errorlog remove="remove"/>
       </logger>
 
-      <!-- Only HTTP is exposed; kubectl exec uses the native port on localhost. -->
+      <!-- HTTP is exposed, and the native port only to the LLM normalizer;
+           kubectl exec uses the native port on localhost. -->
       <mysql_port remove="remove"/>
       <postgresql_port remove="remove"/>
       <interserver_http_port remove="remove"/>
@@ -95,6 +96,31 @@ data:
             <query>GRANT INSERT ON llm.usage</query>
           </grants>
         </cliproxy>
+        <!-- The LLM normalizer reads the raw capture and the state of the
+             canonical tables, and appends to the canonical tables. As with
+             the others, the network policy, which admits only its pods to
+             the native port, is the boundary. -->
+        <llm_normalizer>
+          <no_password/>
+          <networks>
+            <ip>::/0</ip>
+          </networks>
+          <profile>default</profile>
+          <quota>default</quota>
+          <grants>
+            <query>GRANT SELECT ON llm.requests</query>
+            <query>GRANT SELECT ON llm.request_items</query>
+            <query>GRANT SELECT ON llm.usage</query>
+            <query>GRANT SELECT ON llm.transcripts</query>
+            <query>GRANT SELECT ON llm.historical_usage</query>
+            <query>GRANT SELECT ON llm.call_history</query>
+            <query>GRANT SELECT, INSERT ON llm.sessions</query>
+            <query>GRANT SELECT, INSERT ON llm.messages</query>
+            <query>GRANT SELECT, INSERT ON llm.calls</query>
+            <query>GRANT SELECT, INSERT ON llm.events</query>
+            <query>GRANT INSERT ON llm.request_items</query>
+          </grants>
+        </llm_normalizer>
         <!-- Network policy trusts only CLIProxy and Grafana pods. As with the
              writer, authentication is at that boundary; allowed pods can select
              either passwordless identity. Expose only the metrics view here. -->

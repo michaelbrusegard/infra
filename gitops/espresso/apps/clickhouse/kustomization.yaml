@@ -7,3 +7,4 @@ resources:
   - service.yaml
   - network-policy.yaml
   - backup.yaml
+  - llm-normalizer.yaml

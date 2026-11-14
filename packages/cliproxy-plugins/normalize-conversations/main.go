@@ -13,9 +13,9 @@
 // items, in start order, from requests.sql. A run first prints the sessions
 // they touch with -sessions, then passes those sessions' state from
 // state.sql with -state. Otherwise -in names a file of llm.transcripts rows
-// from transcripts.sql, plain or gzip-compressed as ClickHouse's HTTP
-// interface sends it, which is read twice, and -proxied names a file of the
-// proxy's calls, each a session ID, its parent session and client, a
+// from transcripts.sql, plain or gzip-compressed as the backfill writes
+// it, which is read twice, and -proxied names a file of the proxy's calls
+// from proxied.sql, each a session ID, its parent session and client, a
 // response ID, and a start time, tab-separated.
 //
 // With -export openai or -export anthropic, it instead reads one call or

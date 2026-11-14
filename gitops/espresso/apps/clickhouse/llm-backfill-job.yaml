@@ -1,0 +1,99 @@
+# The one-off backfill of docs/llm-conversations.md: the proxy's capture,
+# then the transcript import, then the checks. It is not in
+# kustomization.yaml, so Flux never applies it; llm-backfill.sh creates it,
+# waits, and collects its output. It runs on ClickHouse's node, with a
+# local scratch volume for the transcript download and the rows it inserts,
+# which goes with the pod.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: llm-backfill
+  namespace: clickhouse
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 21600
+  ttlSecondsAfterFinished: 604800
+  template:
+    metadata:
+      labels:
+        app: llm-normalizer
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: clickhouse
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: install-normalizer
+          # CI swaps this for each plugin image it builds, which holds the
+          # normalizer in /normalizer.
+          image: ghcr.io/michaelbrusegard/cliproxy-plugins:sha-421df0ddcb72e2111319b608734f32bf57880003@sha256:d8b49bfd814002985b28a67c0daa969686abb701350017d8813d7c6185bc6319
+          command:
+            - cp
+            - -r
+            - /normalizer/.
+            - /opt/normalizer/
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: normalizer
+              mountPath: /opt/normalizer
+      containers:
+        - name: normalizer
+          # The server image, for clickhouse-client.
+          image: clickhouse/clickhouse-server:26.8.36.3@sha256:d426d2f612e1e189c90f9a3f8dcd85a03c6851273833817a296bb327e63aa7a7
+          command:
+            - /opt/normalizer/normalize.sh
+            - backfill
+          env:
+            - name: HOME
+              value: /scratch
+            - name: SCRATCH
+              value: /scratch
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 6Gi
+          volumeMounts:
+            - name: normalizer
+              mountPath: /opt/normalizer
+              readOnly: true
+            - name: scratch
+              mountPath: /scratch
+      volumes:
+        - name: normalizer
+          emptyDir: {}
+        # About 3 GiB of compressed transcript lines and 8 GiB of rows to
+        # insert.
+        - name: scratch
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                storageClassName: openebs-hostpath
+                resources:
+                  requests:
+                    storage: 40Gi

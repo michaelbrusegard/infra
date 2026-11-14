@@ -1,15 +1,10 @@
 -- Input for `normalize-conversations -in`: every transcript line, grouped by
 -- file in line order. The import is one pass over all of them, since which
 -- file holds a reply's call depends on every file. It returns the files
--- named in {files}, by source, host, and session, which files.sql lists
--- with their sizes, so the import downloads them in small parts that are
--- retried alone. The parts' gzip streams concatenate into one input, in any
--- order. Pass the proxy's calls with -proxied, from
--- SELECT c.session_id, s.parent_session_id, c.client, c.response_id, c.started_at
--- FROM llm.calls AS c FINAL
--- INNER JOIN (SELECT session_id, parent_session_id FROM llm.sessions FINAL WHERE origin = 'proxy') AS s
---     ON s.session_id = c.session_id
--- WHERE c.origin = 'proxy' FORMAT TSV
+-- named in {files}, by source, host, and session, as files.sql splits them,
+-- so each query sorts only a part of the table; the parts' gzip streams
+-- concatenate into one input, in any order. Pass the proxy's calls from
+-- proxied.sql with -proxied.
 --
 -- The largest kinds of line the import drops are sent as their type alone,
 -- which is all the normalizer reads of them, to count them: Codex events

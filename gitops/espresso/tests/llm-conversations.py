@@ -46,6 +46,13 @@ ORDER BY (source, host, session, path, id);
 """
 
 
+# A file synced to a second host shares its session, line numbers, and
+# times with the first.
+SYNCED = ("INSERT INTO llm.transcripts (source, host, session, id, path, line) "
+          "SELECT source, 'ristretto', session, id, path, line FROM llm.transcripts "
+          "WHERE path LIKE '%019f6478-0000-7000-8000-000000000004.jsonl'")
+
+
 def run(*args, input=None, check=True, **kwargs):
     result = subprocess.run(args, input=input, text=True, capture_output=True, **kwargs)
     if check and result.returncode != 0:
@@ -117,18 +124,10 @@ def main():
             insert("llm.transcripts", sources / "llm.transcripts.jsonl")
             # A file synced to a second host shares its session, line numbers,
             # and times with the first.
-            query("INSERT INTO llm.transcripts (source, host, session, id, path, line) "
-                  "SELECT source, 'ristretto', session, id, path, line FROM llm.transcripts "
-                  "WHERE path LIKE '%019f6478-0000-7000-8000-000000000004.jsonl'")
-
-            def jsonl_text(text):
-                return [json.loads(line) for line in text.splitlines()]
+            query(SYNCED)
 
             def jsonl(path):
-                return jsonl_text(path.read_text())
-
-            def sql_string(value):
-                return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
+                return [json.loads(line) for line in path.read_text().splitlines()]
 
             # The proxy's rows arrive in two batches, the way the plugin writes
             # requests as they complete. The second holds a delta request and a
@@ -211,20 +210,14 @@ def main():
             # Transcripts once, after the proxy, which owns each session it
             # captured from its first call on.
             proxied = temp / "proxied.tsv"
-            proxied.write_text(query("SELECT c.session_id, s.parent_session_id, c.client, c.response_id, c.started_at "
-                                     "FROM llm.calls AS c FINAL INNER JOIN (SELECT session_id, parent_session_id "
-                                     "FROM llm.sessions FINAL WHERE origin = 'proxy') AS s ON s.session_id = c.session_id "
-                                     "WHERE c.origin = 'proxy' FORMAT TSV").stdout)
-            # The import's input, downloaded in parts of a few files each,
-            # largest first, and concatenated.
+            proxied.write_text(query((NORMALIZER / "proxied.sql").read_text()).stdout)
+            # The import's input, read in parts of whole files, as the
+            # backfill Job reads it, and concatenated.
             def transcript_lines():
-                files = sorted(jsonl_text(query((NORMALIZER / "files.sql").read_text()).stdout),
-                               key=lambda f: -int(f["bytes"]))
-                parts = [files[i:i + 4] for i in range(0, len(files), 4)]
+                parts = query((NORMALIZER / "files.sql").read_text(), params=(("bytes", 4096),)).stdout.splitlines()
                 assert len(parts) > 2, parts
-                return "".join(query((NORMALIZER / "transcripts.sql").read_text(), params=(
-                    ("files", "[" + ",".join("(" + ",".join(sql_string(f[k]) for k in ("source", "host", "session"))
-                                             + ")" for f in part) + "]"),)).stdout for part in parts)
+                return "".join(query((NORMALIZER / "transcripts.sql").read_text(), params=(("files", part),)).stdout
+                               for part in parts)
 
             transcripts = transcript_lines()
 
@@ -237,6 +230,7 @@ def main():
 
             out = import_transcripts("transcripts", transcripts)
             load(out)
+            transcript_calls = scalar("SELECT count() FROM llm.calls FINAL WHERE origin = 'transcript'")
             # The import's rows do not depend on the order of the files.
             files = [list(group) for _, group in itertools.groupby(
                 transcripts.splitlines(keepends=True),
@@ -633,6 +627,73 @@ def main():
                   "unchanged raw capture, usage history cutover and drop, permissions")
         finally:
             run("docker", "rm", "--force", container, check=False)
+        backfill_in_cluster(image, temp, schema, sources, transcript_calls)
+
+
+def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
+    """The cluster's backfill Job: normalize.sh in the ClickHouse image, as
+    llm_normalizer over the native port, from the same source rows."""
+    container = f"infra-llm-backfill-test-{os.getpid()}"
+    tools = temp / "normalizer"
+    tools.mkdir()
+    run("go", "build", "-o", str(tools / "normalize-conversations"), "./normalize-conversations", cwd=PLUGINS,
+        env={**os.environ, "CGO_ENABLED": "0"})
+    for name in ["normalize.sh", *(p.name for p in NORMALIZER.glob("*.sql"))]:
+        (tools / name).write_bytes((NORMALIZER / name).read_bytes())
+        (tools / name).chmod(0o755)
+    try:
+        run("docker", "run", "--detach", "--name", container, "--network", "none",
+            "--memory", "2g", "--cpus", "2", "-e", "CLICKHOUSE_SKIP_USER_SETUP=1",
+            "-v", f"{temp}/config.xml:/etc/clickhouse-server/config.d/archive.xml:ro",
+            "-v", f"{temp}/users.xml:/etc/clickhouse-server/users.d/archive.xml:ro",
+            "-v", f"{temp}/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro",
+            "-v", f"{tools}:/opt/normalizer:ro", image)
+
+        def query(sql, user="default"):
+            return run("docker", "exec", "-i", container, "clickhouse-client", "--user", user, input=sql).stdout.strip()
+
+        # The entrypoint runs schema.sql on a temporary server, then starts
+        # the real one, so the schema is ready once it answers twice.
+        ready = 0
+        for _ in range(240):
+            ready = ready + 1 if run("docker", "exec", container, "clickhouse-client", "--query",
+                                     "EXISTS TABLE llm.events", check=False).stdout.strip() == "1" else 0
+            if ready == 2:
+                break
+            time.sleep(1)
+        for table, user in (("llm.request_items", "cliproxy"), ("llm.requests", "cliproxy"),
+                            ("llm.usage", "cliproxy"), ("llm.transcripts", "default")):
+            query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + (sources / f"{table}.jsonl").read_text(), user)
+        query(SYNCED)
+
+        def normalize(mode):
+            return run("docker", "exec", "-u", "101", "-e", "CLICKHOUSE_HOST=localhost", "-e", "SCRATCH=/tmp/scratch",
+                       "-e", "HOME=/tmp", container, "/opt/normalizer/normalize.sh", mode, check=False)
+
+        result = normalize("backfill")
+        assert result.returncode == 0, result.stdout + result.stderr
+        checks = [line.split("\t") for line in result.stdout.splitlines() if line.startswith("check\t")]
+        assert len(checks) >= 10 and all(c[2] == "0" for c in checks), checks
+        assert "coverage (source, kind, disposition, destination, lines):" in result.stdout, result.stdout
+        assert query("SELECT count() FROM llm.calls FINAL WHERE origin = 'proxy'") == "10"
+        assert query("SELECT count() FROM llm.calls FINAL WHERE origin = 'transcript'") == transcript_calls
+        # The job finds nothing left, and a second import is refused rather
+        # than mixed with the first.
+        rows = query("SELECT count() FROM llm.messages")
+        result = normalize("cron")
+        assert result.returncode == 0 and query("SELECT count() FROM llm.messages") == rows, result.stderr
+        result = normalize("backfill")
+        assert result.returncode != 0 and "delete the transcript rows first" in result.stderr, result.stderr
+        # The normalizer's user reads the sources and appends to the
+        # canonical tables, and nothing else.
+        for sql in ("SELECT * FROM llm.usage_metrics", "INSERT INTO llm.requests (request_id) VALUES ('x')",
+                    "ALTER TABLE llm.calls DELETE WHERE 1", "DROP TABLE llm.events"):
+            denied = run("docker", "exec", "-i", container, "clickhouse-client", "--user", "llm_normalizer",
+                         input=sql, check=False)
+            assert denied.returncode != 0, sql
+        print("PASS: the in-cluster backfill and job, with the normalizer's grants")
+    finally:
+        run("docker", "rm", "--force", container, check=False)
 
 
 if __name__ == "__main__":

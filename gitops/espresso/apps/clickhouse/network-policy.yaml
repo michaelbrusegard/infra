@@ -25,6 +25,16 @@ spec:
         - ports:
             - port: "8123"
               protocol: TCP
+    # The LLM normalizer's CronJob and backfill Job, as llm_normalizer, over
+    # the native protocol of their clickhouse-client.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: clickhouse
+            k8s:app: llm-normalizer
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
     # Grafana's backend queries the metrics view; no browser-to-database route.
     - fromEndpoints:
         - matchLabels:
