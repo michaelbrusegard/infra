@@ -16,6 +16,10 @@ in {
   };
 
   networking = {
+    # Keep the leased address when dhcpcd stops. Otherwise restarting it
+    # during a switch drops the node IP, and the kernel deletes Cilium's
+    # routes to the other nodes' pod networks with it.
+    dhcpcd.persistent = true;
     useDHCP = false;
     tempAddresses = "disabled";
     firewall.enable = false;
