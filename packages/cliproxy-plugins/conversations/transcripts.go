@@ -558,6 +558,12 @@ func transcriptSession(lines []TranscriptLine) Session {
 		s.SessionID = "pi:" + firstNonEmpty(id, stem)
 	case "opencode":
 		s.SessionID = "opencode:" + l.Session
+		// A sub-agent's session record names the session that started it.
+		for _, line := range lines {
+			if e := parse([]byte(line.Line)); e.str("kind") == "session" && e.str("parent_id") != "" {
+				s.ParentSessionID = "opencode:" + e.str("parent_id")
+			}
+		}
 	default:
 		s.SessionID = l.Source + ":" + l.Session
 	}

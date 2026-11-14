@@ -132,3 +132,17 @@ func TestPiCompactionsKeepTheirUsage(t *testing.T) {
 		t.Fatalf("compaction input %v", input)
 	}
 }
+
+// An OpenCode sub-agent's session names its parent, which maps into the
+// same namespace as every OpenCode session.
+func TestOpenCodeSessionsKeepTheirParent(t *testing.T) {
+	file := []TranscriptLine{{Source: "opencode", Host: "forte", Session: "ses_child", ID: "session:ses_child",
+		Path: ".local/share/opencode/opencode.db", TS: "2026-06-17 20:42:35.341",
+		Line: `{"kind":"session","id":"ses_child","session_id":"ses_child","timestamp":"2026-06-17T20:42:35.341Z",` +
+			`"title":"Quick context rerun (@explore subagent)","directory":"/tmp","parent_id":"ses_parent"}`}}
+	n := NewNormalizer()
+	n.Transcript(file, repliesOf(nil, file), nil)
+	if len(n.Sessions) != 1 || n.Sessions[0].SessionID != "opencode:ses_child" || n.Sessions[0].ParentSessionID != "opencode:ses_parent" {
+		t.Fatalf("sessions %+v", n.Sessions)
+	}
+}

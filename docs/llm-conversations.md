@@ -362,7 +362,9 @@ into CLIProxy's scheme: `claude:<session>`, `claude:<parent>:agent:<agent>`,
   compactions carry usage, 51,531,037 tokens. The call has no outputs, like a
   Codex remote compaction, and its input is the entry it summarized from.
 - **opencode**: messages are ordered by time. Older part records attach their
-  content to their message.
+  content to their message. A sub-agent's session record names its parent
+  (`parent_id`, 142 of 228 live sessions), which becomes
+  `opencode:<parent>`.
 
 ### Overlap with the proxy
 
