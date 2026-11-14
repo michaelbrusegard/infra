@@ -908,6 +908,9 @@ func TestExportsCarryCallContext(t *testing.T) {
 		}
 		ctx.Add("response", []byte(c.ResponseBody))
 		path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
+		if err := ForTraining(ctx, path); err != nil {
+			t.Fatalf("%s: %v", tc.call, err)
+		}
 		chat := must(OpenAIChat(ctx, path))
 		first := chat["messages"].([]map[string]any)[0]
 		if (first["role"] == "system") != (tc.system != "") || !strings.HasPrefix(first["content"].(string), tc.system) {
@@ -1073,5 +1076,76 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 		{"type":"function","name":"run","parameters":{"required":["query"]}}]`))
 	if _, err := OpenAIChat(twice, call("", "run", "{}")); err == nil {
 		t.Fatal("exported a tool defined twice differently")
+	}
+}
+
+// Neither export dialect can write a hosted tool's call back: Chat
+// Completions has none, and Anthropic's results are only in the raw items.
+// So a hosted call, its result, and its definition are left out together,
+// and the text the model wrote stays.
+func TestExportsLeaveOutHostedToolsTogether(t *testing.T) {
+	var ctx Context
+	ctx.Add("tools", []byte(`[{"type":"function","name":"exec","parameters":{"type":"object"}},
+		{"type":"web_search"},{"type":"tool_search"},{"type":"web_search_20250305","name":"web_search","max_uses":5}]`))
+	path := []Message{
+		{Role: "user", Blocks: []Block{{Type: "text", Text: "Which ClickHouse release added JSON?"}}},
+		{Role: "assistant", Output: true, Blocks: []Block{
+			{Type: "tool_call", SourceType: "web_search_call", ToolName: "web_search", ToolCallID: "ws_1", ToolInput: `{"query":"clickhouse json"}`},
+			{Type: "tool_call", SourceType: "server_tool_use", ToolName: "web_search", ToolCallID: "srvtoolu_1", ToolInput: `{"query":"clickhouse json"}`},
+			{Type: "tool_result", SourceType: "web_search_tool_result", ToolCallID: "srvtoolu_1", Text: "results"},
+			{Type: "tool_call", SourceType: "tool_search_call", ToolName: "tool_search", ToolCallID: "ts_1", ToolInput: `{"query":"shell"}`}}},
+		{Role: "tool", Blocks: []Block{{Type: "tool_result", SourceType: "tool_search_output", ToolCallID: "ts_1", Text: "exec"}}},
+		{Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "24.8."},
+			{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`}}},
+	}
+	for name, request := range map[string]map[string]any{
+		"openai": must(OpenAIChat(ctx, path)), "anthropic": must(AnthropicMessages(ctx, path))} {
+		got, _ := json.Marshal(request)
+		for _, hosted := range []string{"web_search", "tool_search", "ws_1", "srvtoolu_1", "ts_1", "results"} {
+			if strings.Contains(string(got), hosted) {
+				t.Fatalf("%s export keeps %s: %s", name, hosted, got)
+			}
+		}
+		if !strings.Contains(string(got), "24.8.") || !strings.Contains(string(got), "call_1") ||
+			len(request["tools"].([]any)) != 1 {
+			t.Fatalf("%s export lost the rest: %s", name, got)
+		}
+	}
+	if err := ForTraining(ctx, path); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// A call makes a training example only with output an export keeps, and
+// with every tool that output calls defined in its context.
+func TestTrainingNeedsOutputAndItsTools(t *testing.T) {
+	var tools Context
+	tools.Add("tools", []byte(`[{"type":"function","name":"exec","parameters":{"type":"object"}},{"type":"web_search"}]`))
+	user := Message{Role: "user", Blocks: []Block{{Type: "text", Text: "List the pods."}}}
+	call := Message{Role: "assistant", Output: true, Blocks: []Block{
+		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`}}}
+	search := Message{Role: "assistant", Output: true, Blocks: []Block{
+		{Type: "tool_call", SourceType: "web_search_call", ToolName: "web_search", ToolCallID: "ws_1"}}}
+	for _, tc := range []struct {
+		name string
+		ctx  Context
+		path []Message
+		ok   bool
+	}{
+		{"complete", tools, []Message{user, call}, true},
+		// A failed call that returned nothing ends at its input.
+		{"no output", tools, []Message{user}, false},
+		{"empty output", tools, []Message{user, {Role: "assistant", Output: true, Blocks: []Block{{Type: "text"}}}}, false},
+		// Only a hosted call, which the export leaves out.
+		{"hosted only", tools, []Message{user, search}, false},
+		// A failed delta call with output but no echo knows no tools.
+		{"unknown tools", Context{}, []Message{user, call}, false},
+		// Earlier outputs are context, not what the example teaches.
+		{"earlier call", Context{}, []Message{user, call, {Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1"}}},
+			{Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "Two pods."}}}}, true},
+	} {
+		if err := ForTraining(tc.ctx, tc.path); (err == nil) != tc.ok {
+			t.Fatalf("%s: %v", tc.name, err)
+		}
 	}
 }

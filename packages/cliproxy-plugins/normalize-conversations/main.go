@@ -13,7 +13,9 @@
 //
 // With -export openai or -export anthropic, it instead reads one call or
 // conversation, as the call and conversation queries in the design doc
-// return them, and prints it for training.
+// return them, and prints it for training. A call that is no training
+// example, because it produced nothing or calls tools its context does not
+// define, fails with the reason.
 package main
 
 import (
@@ -203,6 +205,7 @@ func writeRows[T any](w *bufio.Writer, rows []T) error {
 func exportConversation(r io.Reader, w io.Writer, format string) error {
 	var ctx conversations.Context
 	var path []conversations.Message
+	call := false
 	type row struct {
 		conversations.Message
 		Field string `json:"field"`
@@ -210,6 +213,7 @@ func exportConversation(r io.Reader, w io.Writer, format string) error {
 	}
 	err := eachRow(r, func(row row) error {
 		if row.Field != "" {
+			call = true
 			ctx.Add(row.Field, []byte(row.Value))
 		} else {
 			path = append(path, row.Message)
@@ -218,6 +222,11 @@ func exportConversation(r io.Reader, w io.Writer, format string) error {
 	})
 	if err != nil {
 		return err
+	}
+	if call {
+		if err := conversations.ForTraining(ctx, path); err != nil {
+			return err
+		}
 	}
 	var out any
 	switch format {

@@ -114,7 +114,8 @@ const defaultNamespace = "functions"
 // the export dialects have none. Tools keep their bare names unless more than
 // one namespace defines the name; then those tools, and the calls naming
 // them, become namespace__name, as MCP tools are named elsewhere. An export
-// that would have to guess which tool a name means fails instead.
+// that would have to guess which tool a name means fails instead. Hosted
+// tools are left out, with their calls; see hosted.
 func (c Context) effective() (exported, error) {
 	out := exported{system: c.System, qualified: map[[2]string]string{}}
 	tools := c.Tools
@@ -146,6 +147,11 @@ func (c Context) effective() (exported, error) {
 				}
 			}
 			return nil
+		}
+		if _, _, _, ok := function(t); !ok {
+			if _, _, _, ok := customTool(t); !ok {
+				return nil
+			}
 		}
 		name := toolName(t)
 		if name != "" {
@@ -217,7 +223,7 @@ func (e exported) call(b Block) (string, error) {
 
 // function reads a tool definition in any dialect as a function name,
 // description, and JSON schema. Hosted tools, such as web search, have no
-// schema and are kept as they are.
+// schema.
 func function(t map[string]any) (name, description string, schema any, ok bool) {
 	if f, isChat := t["function"].(map[string]any); isChat {
 		return text(f["name"]), text(f["description"]), f["parameters"], true
@@ -247,6 +253,31 @@ func customTool(t map[string]any) (name, description string, format any, ok bool
 // isCustomCall reports whether a tool call invokes a freeform custom tool.
 func isCustomCall(b Block) bool { return b.SourceType == "custom_tool_call" }
 
+// hosted returns the IDs of the path's calls to hosted tools, such as
+// Responses web_search_call or tool_search_call items and Anthropic
+// server_tool_use blocks. Exports leave them out with their results and
+// definitions: Chat Completions has no hosted tools, and Anthropic's hosted
+// results are opaque, often encrypted, and only in the raw items, so neither
+// export could write them back. The text the model wrote from a result
+// stays.
+func hosted(path []Message) map[string]bool {
+	ids := map[string]bool{}
+	for _, m := range path {
+		for _, b := range m.Blocks {
+			if isHostedCall(b) {
+				ids[b.ToolCallID] = true
+			}
+		}
+	}
+	return ids
+}
+
+func isHostedCall(b Block) bool {
+	t := b.SourceType
+	return b.Type == "tool_call" && (t == "server_tool_use" || t == "mcp_tool_use" ||
+		strings.HasSuffix(t, "_call") && t != "function_call" && t != "custom_tool_call")
+}
+
 // OpenAIChat renders a call or conversation as a Chat Completions request
 // for training: the context's system prompt and tools, then text,
 // reasoning, tool calls, and tool results in the order they happened.
@@ -263,6 +294,7 @@ func OpenAIChat(ctx Context, path []Message) (map[string]any, error) {
 	if len(e.system) > 0 {
 		out = append(out, map[string]any{"role": "system", "content": strings.Join(e.system, "\n\n")})
 	}
+	dropped := hosted(path)
 	var assistant map[string]any
 	turn := func() map[string]any {
 		if assistant == nil {
@@ -298,7 +330,7 @@ func OpenAIChat(ctx Context, path []Message) (map[string]any, error) {
 					turn()["reasoning_content"] = join(turn()["reasoning_content"], b.Text)
 				}
 			case "tool_call":
-				if m.Role == "assistant" {
+				if m.Role == "assistant" && !dropped[b.ToolCallID] {
 					name, err := e.call(b)
 					if err != nil {
 						return nil, err
@@ -313,6 +345,9 @@ func OpenAIChat(ctx Context, path []Message) (map[string]any, error) {
 					turn()["tool_calls"] = append(prior, call)
 				}
 			case "tool_result":
+				if dropped[b.ToolCallID] {
+					continue
+				}
 				// OpenCode keeps a tool's result in the assistant message;
 				// the result ends the assistant's turn either way.
 				flushTexts()
@@ -343,8 +378,6 @@ func OpenAIChat(ctx Context, path []Message) (map[string]any, error) {
 				c["format"] = format
 			}
 			tools = append(tools, map[string]any{"type": "custom", "custom": c})
-		} else {
-			tools = append(tools, t)
 		}
 	}
 	if len(tools) > 0 {
@@ -365,6 +398,7 @@ func AnthropicMessages(ctx Context, path []Message) (map[string]any, error) {
 		return nil, err
 	}
 	system := append([]string{}, e.system...)
+	dropped := hosted(path)
 	var out []map[string]any
 	add := func(role string, blocks []any) {
 		if len(blocks) == 0 {
@@ -401,6 +435,9 @@ func AnthropicMessages(ctx Context, path []Message) (map[string]any, error) {
 					blocks = append(blocks, map[string]any{"type": "thinking", "thinking": b.Text})
 				}
 			case "tool_call":
+				if dropped[b.ToolCallID] {
+					continue
+				}
 				name, err := e.call(b)
 				if err != nil {
 					return nil, err
@@ -415,6 +452,9 @@ func AnthropicMessages(ctx Context, path []Message) (map[string]any, error) {
 				}
 				blocks = append(blocks, map[string]any{"type": "tool_use", "id": b.ToolCallID, "name": name, "input": input})
 			case "tool_result":
+				if dropped[b.ToolCallID] {
+					continue
+				}
 				result := map[string]any{"type": "tool_result", "tool_use_id": b.ToolCallID,
 					"content": b.Text, "is_error": b.IsError}
 				if role == "assistant" {
@@ -445,14 +485,55 @@ func AnthropicMessages(ctx Context, path []Message) (map[string]any, error) {
 			tools = append(tools, map[string]any{"name": name, "description": description,
 				"input_schema": map[string]any{"type": "object", "required": []any{"input"},
 					"properties": map[string]any{"input": map[string]any{"type": "string"}}}})
-		} else {
-			tools = append(tools, t)
 		}
 	}
 	if len(tools) > 0 {
 		request["tools"] = tools
 	}
 	return request, nil
+}
+
+// ForTraining checks that a call makes a training example: that the model
+// produced something an export keeps, and that every tool its output calls
+// is defined. A call that failed or returned nothing fails the first, and a
+// call whose context is unknown fails the second: a failed Responses call
+// with output but no echo after a request that sent no tools, or a
+// transcript call, whose tools the transcript does not record. Writing
+// those as examples would teach calls to tools the model was never given.
+func ForTraining(ctx Context, path []Message) error {
+	e, err := ctx.effective()
+	if err != nil {
+		return err
+	}
+	defined := map[string]bool{}
+	for _, t := range e.tools {
+		defined[t.name] = true
+	}
+	dropped := hosted(path)
+	kept := 0
+	for i := len(path) - 1; i >= 0 && path[i].Output; i-- {
+		for _, b := range path[i].Blocks {
+			switch {
+			case b.Type == "text" || b.Type == "thinking":
+				if b.Text != "" {
+					kept++
+				}
+			case b.Type == "tool_call" && !dropped[b.ToolCallID]:
+				name, err := e.call(b)
+				if err != nil {
+					return err
+				}
+				if !defined[name] {
+					return fmt.Errorf("the output calls %q, which the call's context does not define", name)
+				}
+				kept++
+			}
+		}
+	}
+	if kept == 0 {
+		return fmt.Errorf("the call produced no output to train on")
+	}
+	return nil
 }
 
 func join(prior any, s string) string {

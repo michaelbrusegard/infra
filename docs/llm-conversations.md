@@ -50,7 +50,9 @@ dropped later without losing anything.
 - **Training exports take one call**: its system prompt or instructions and
   tools, which are per-call context, plus the conversation it saw and
   produced. Responses API calls take them from the response's echo, since
-  Codex often sends no tools and delta requests send neither.
+  Codex often sends no tools and delta requests send neither. A call that
+  produced nothing, or whose output calls tools its context lacks, is
+  refused rather than exported with tools missing.
 
 ## What the data looks like
 
@@ -594,20 +596,39 @@ request's otherwise. On 2026-11-14, 3,420 of 4,063 successful Responses
 calls had their tools only in the echo; responses CLIProxy translates from
 other providers echo nothing, and failed calls often have no echo and no
 output. The export puts the system prompt first, flattens the echo's tool
-namespaces, and converts tool definitions between dialects, keeping hosted
-tools as they are. Flattened tools keep their bare names, which is what a
-call names, unless two namespaces define the same name: then those tools and
-the calls to them, which name their namespace, become `namespace__name`, the
-way MCP tools are named elsewhere. The echo puts top-level tools in a
-`functions` namespace that calls never name, so it counts as none. A call
-that matches none of the colliding namespaces, or a tool defined twice
-differently, fails the export rather than pick a schema. Freeform custom tools, such as Codex's `exec`, take raw
-text: they stay custom tools in Chat Completions, and become tools taking
-the text as `input` in Anthropic Messages, which has no freeform tools and
-loses their grammar. Definitions and calls convert the same way. It keeps text, reasoning, tool calls and results
-in the order they happened, merges consecutive assistant items into one turn
-until a tool result ends it, and puts reasoning in `reasoning_content` or
-`thinking` blocks. Images are left out; their data is in the raw items.
+namespaces, and converts tool definitions between dialects. It keeps text,
+reasoning, tool calls and results in the order they happened, merges
+consecutive assistant items into one turn until a tool result ends it, and
+puts reasoning in `reasoning_content` or `thinking` blocks. Images are left
+out; their data is in the raw items.
+
+Definitions and calls always convert the same way:
+
+- **Namespaces.** Flattened tools keep their bare names, which is what a
+  call names, unless two namespaces define the same name: then those tools
+  and the calls to them, which name their namespace, become
+  `namespace__name`, the way MCP tools are named elsewhere. The echo puts
+  top-level tools in a `functions` namespace that calls never name, so it
+  counts as none. A call that matches none of the colliding namespaces, or a
+  tool defined twice differently, fails the export rather than pick a
+  schema.
+- **Freeform custom tools**, such as Codex's `exec`, take raw text: they stay
+  custom tools in Chat Completions, and become tools taking the text as
+  `input` in Anthropic Messages, which has no freeform tools and loses their
+  grammar.
+- **Hosted tools**, such as Responses `web_search` and `tool_search` or
+  Anthropic's server tools, are left out of both exports, each call together
+  with its result and its definition. Chat Completions has no hosted tools,
+  and Anthropic's hosted results are opaque, often encrypted, and only in
+  the raw items, so neither export could write them back faithfully. The
+  text the model wrote from a result stays.
+
+A call export is checked as a training example first, and fails with the
+reason instead of printing one when the call produced nothing an export
+keeps, such as a failed call that returned nothing, or when its output calls
+a tool its context does not define, such as a failed delta call with output
+but no echo, or a transcript call, whose transcript records no tools.
+Earlier turns are context and are not checked.
 
 ```sql
 -- example: raw

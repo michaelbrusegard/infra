@@ -282,6 +282,12 @@ def main():
                 assert (first["role"] == "system") == bool(system) and first["content"].startswith(system), (call, first)
                 assert anthropic["system"].startswith(system or "<permissions instructions>"), (call, anthropic)
 
+            # The truncated request produced nothing, so it is no training
+            # example, and the export says why instead of writing one.
+            rows = query(sql["call"], params=(("call", "truncated"),)).stdout
+            failed = run(str(normalizer), "-export", "openai", input=rows, check=False)
+            assert failed.returncode != 0 and "no output" in failed.stderr, failed
+
             raw = query(sql["raw"], params=(session,)).stdout
             assert '"cache_control"' in raw and "signature" in raw, raw
 
