@@ -62,7 +62,7 @@ spec:
         - name: install-plugins
           # CI swaps this for the plugin image once it is built and publicly
           # pullable. Until then there is nothing to copy.
-          image: ghcr.io/michaelbrusegard/cliproxy-plugins:sha-57e8221a74c366d8004aa1f63ea42f82bf825463@sha256:19572eb34a9874e76ed18d55238e31b47c7f3f3412311933b9c07cc527c7a52d
+          image: ghcr.io/michaelbrusegard/cliproxy-plugins:sha-421df0ddcb72e2111319b608734f32bf57880003@sha256:d8b49bfd814002985b28a67c0daa969686abb701350017d8813d7c6185bc6319
           command:
             - sh
             - -c
