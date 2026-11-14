@@ -40,7 +40,14 @@ columns='request_id, trace_id, session_id, started_at, completed_at, source_form
 sql() { "${exec_in[@]}" clickhouse-client --multiquery; }
 
 upload() {
-	"${exec_in[@]}" dd "of=$2" status=none < "$1"
+	# dd reads nothing through `kubectl exec -i` over ssh; tee does.
+	"${exec_in[@]}" tee "$2" < "$1" > /dev/null
+	local size
+	size=$("${exec_in[@]}" wc -c "$2" < /dev/null)
+	if [[ ${size%% *} != "$(wc -c < "$1")" ]]; then
+		echo "upload of $2 is incomplete" >&2
+		exit 1
+	fi
 	"${exec_in[@]}" chmod 755 "$2"
 }
 
@@ -159,8 +166,14 @@ SELECT throwIf(free_space < $min_free_bytes, 'too little free disk space to cont
 FROM system.disks WHERE name = 'default' FORMAT Null;
 SQL
 		printf 'chunk %s: ' "$chunk"
-		"${exec_in[@]}" bash /tmp/request-items-chunk.sh "$chunk" < /dev/null \
-			| awk -F'\t' '{print "rows " $1 ", unchecked " $6}'
+		local result
+		result=$("${exec_in[@]}" bash /tmp/request-items-chunk.sh "$chunk" < /dev/null)
+		# Every chunk ends with a verification row; none means it did not run.
+		if [[ -z $result ]]; then
+			echo "no verification result" >&2
+			exit 1
+		fi
+		awk -F'\t' '{print "rows " $1 ", unchecked " $6}' <<< "$result"
 	done
 	echo "All chunks copied and verified. Review any unchecked rows, then run: $0 drop"
 }
