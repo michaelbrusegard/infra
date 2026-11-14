@@ -15,6 +15,12 @@ in {
     "net.ipv6.conf.all.accept_ra" = 2;
   };
 
+  # Never restart dhcpcd during a switch; changes apply at the next boot.
+  # Losing the node IP stalls every Mayastor NVMe-oF device, and a dhcpcd
+  # started while they hang can wedge before it leases the address back.
+  # That took espresso-2 offline until it was reset.
+  systemd.services.dhcpcd.restartIfChanged = false;
+
   networking = {
     # Keep the leased address when dhcpcd stops. Otherwise restarting it
     # during a switch drops the node IP, and the kernel deletes Cilium's
