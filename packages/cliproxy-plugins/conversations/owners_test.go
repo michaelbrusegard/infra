@@ -180,3 +180,69 @@ func TestTranscriptReplyOwnerPrefersTheParent(t *testing.T) {
 		}
 	}
 }
+
+// A Codex sub-agent's file copies its parent's items, with their provider
+// IDs but without the parent's usage records, which older logs lack
+// anyway. The copies are matched by item, so each invocation is one call
+// and one output tool call, and a copy of a reply the proxy returned is
+// the proxy's.
+func TestTranscriptCodexCopiesWithoutResponseIDs(t *testing.T) {
+	parentID, childID := "019f6478-0000-7000-8000-00000000000a", "019f6478-0000-7000-8000-00000000000b"
+	parent, child := "codex:"+parentID, "codex:"+parentID+":agent:review"
+	user := codexUserLine("Check the pods.")
+	call := `{"type":"response_item","payload":{"type":"function_call","id":"fc_1","name":"exec","arguments":"{}","call_id":"call_1"}}`
+	output := `{"type":"response_item","payload":{"type":"function_call_output","call_id":"call_1","output":"2 pods"}}`
+	reply := `{"type":"response_item","payload":{"type":"message","id":"msg_1","role":"assistant","content":[{"type":"output_text","text":"Two pods."}]}}`
+	// Each call's usage follows it in the parent's file only.
+	files := func(usage1, usage2 string) [][]TranscriptLine {
+		p := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-"+parentID+".jsonl", "2026-11-12 10:00",
+			`{"type":"session_meta","payload":{"id":"`+parentID+`"}}`, user, call, usage1, output, reply, usage2)
+		c := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T09-00-00-"+childID+".jsonl", "2026-11-12 10:05",
+			`{"type":"session_meta","payload":{"id":"`+childID+`","source":{"subagent":{"thread_spawn":`+
+				`{"parent_thread_id":"`+parentID+`","agent_path":"/root/review"}}}}}`, user, call, output, reply,
+			codexUserLine("Review it."), `{"type":"response_item","payload":{"type":"message","id":"msg_2","role":"assistant",`+
+				`"content":[{"type":"output_text","text":"Fine."}]}}`)
+		return [][]TranscriptLine{p, c}
+	}
+	count := `{"type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"output_tokens":5}}}}`
+	for _, tc := range []struct {
+		name    string
+		files   [][]TranscriptLine
+		proxied *Proxied
+		calls   []string
+		tools   int
+	}{
+		// Older logs record no response IDs.
+		{"older logs", files(count, count), nil, []string{parent + " 10:00:02", parent + " 10:00:05", child + " 10:05:06"}, 1},
+		// The parent's session went through the proxy, which returned its
+		// reply; only the parent's file records the response ID.
+		{"proxied parent", files(codexUsageLine("resp_1"), codexUsageLine("resp_2")), func() *Proxied {
+			p := &Proxied{}
+			p.Add(parent, "", "codex", "resp_1", "2026-11-12 10:00:00.000")
+			p.Add(parent, "", "codex", "resp_2", "2026-11-12 10:00:04.000")
+			return p
+		}(), []string{child + " 10:05:06"}, 0},
+	} {
+		replies := repliesOf(tc.proxied, tc.files...)
+		n := NewNormalizer()
+		for _, f := range tc.files {
+			n.Transcript(f, replies, tc.proxied)
+		}
+		var calls []string
+		for _, c := range n.Calls {
+			calls = append(calls, c.SessionID+" "+strings.TrimPrefix(c.StartedAt, "2026-11-12 ")[:8])
+		}
+		sort.Strings(calls)
+		tools := 0
+		for _, m := range n.Messages {
+			for _, b := range m.Blocks {
+				if m.Output && b.Type == "tool_call" {
+					tools++
+				}
+			}
+		}
+		if !reflect.DeepEqual(calls, tc.calls) || tools != tc.tools {
+			t.Fatalf("%s: calls %v and %d output tool calls, want %v and %d", tc.name, calls, tools, tc.calls, tc.tools)
+		}
+	}
+}

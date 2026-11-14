@@ -315,8 +315,15 @@ session has the transcript's client and parent session (none, or the same
 one). Otherwise, or without a shared reply, the transcript keeps its own
 session ID.
 
-**Each reply is one call.** A transcript reply that the proxy returned, in
-any session, is the proxy's call. Otherwise one file holds it. A sub-agent
+**Each reply is one call.** A reply is identified by its response ID, or
+for Codex by the provider's ID of its first output item: a tool call's
+`call_id`, or the item's `id`. 842 of 1,978 live Codex files are older logs
+without response IDs, and a Codex sub-agent's copy of its parent's history
+keeps the items' IDs but never the usage records that carry response IDs:
+no response ID is in two live files, while 29k item IDs are. A copy whose
+item the original file maps to a response ID gets that ID. A transcript
+reply that the proxy returned, in any session, is the proxy's call.
+Otherwise one file holds it. A sub-agent
 or fork copies the replies it starts from, so where the files record that
 ancestry, by their parent session, an ancestor's file holds the call over
 its descendants', even when a skewed clock or timestamps of equal precision
@@ -329,7 +336,10 @@ synced to two hosts, tie and fall to the first. Where ancestry is not
 recorded, such as a Claude Code session forked into a new session ID, or a
 Codex agent spawned by another sub-agent, whose parent thread ID is not
 that sub-agent's session ID, the earliest file is a surrogate owner: the
-call counts once, but possibly in the copy's session.
+call counts once, but possibly in the copy's session. Replies with no ID
+at all, such as OpenCode's, or Codex replies whose items carry none, like
+text-only messages from June 2026, cannot be matched to a copy, so each file
+keeps its own call; no live OpenCode session is in two files.
 Only lines from before the proxy took a file's session over count, because
 the file writes no call after that: a reply the proxy never returned, seen
 after the parent's handover and in a child's earlier copy, is the child's
@@ -499,18 +509,21 @@ LIMIT 100
 -- example: tool-failures
 -- Tool use and failures per model and tool. Anthropic, Pi, and OpenCode
 -- results carry an error flag; Codex reports exit codes in the output text.
+-- A tool call ID is one invocation, so copies of the call or its result in
+-- other files or later requests count once.
 WITH
     tool_calls AS (
-        SELECT session_id, b.tool_call_id AS id, b.tool_name AS tool, model
+        SELECT b.tool_call_id AS id, any(b.tool_name) AS tool, any(model) AS model
         FROM llm.messages FINAL ARRAY JOIN blocks AS b
-        WHERE output AND b.type = 'tool_call'),
+        WHERE output AND b.type = 'tool_call' AND b.tool_call_id != ''
+        GROUP BY id),
     results AS (
-        SELECT session_id, b.tool_call_id AS id, max(b.is_error) AS failed
+        SELECT b.tool_call_id AS id, max(b.is_error) AS failed
         FROM llm.messages FINAL ARRAY JOIN blocks AS b
-        WHERE b.type = 'tool_result'
-        GROUP BY session_id, id)
+        WHERE b.type = 'tool_result' AND b.tool_call_id != ''
+        GROUP BY id)
 SELECT model, tool, count() AS uses, countIf(failed) AS failures
-FROM tool_calls INNER JOIN results USING (session_id, id)
+FROM tool_calls INNER JOIN results USING (id)
 GROUP BY model, tool
 ORDER BY failures DESC, uses DESC
 LIMIT 50

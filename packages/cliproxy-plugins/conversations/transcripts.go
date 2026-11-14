@@ -39,6 +39,8 @@ type file struct {
 	last  Hash
 	calls map[string]*Call
 	order []string
+	// The provider's ID of each Codex call's first output item; see itemKey.
+	items map[string]string
 }
 
 type keptMessage struct {
@@ -95,7 +97,8 @@ func (p *Proxied) sessionOf(s Session, lines []TranscriptLine) string {
 }
 
 // Replies records which transcript file holds the call of each reply that
-// files record. Within a lineage of sessions, recorded by each file's
+// files record, by response ID, or for Codex by the provider's ID of the
+// reply's first output item (see itemKey). Within a lineage of sessions, recorded by each file's
 // parent session, an ancestor's file holds it over its sub-agents' and
 // forks', since they copy the replies they start from, even when clocks or
 // timestamps of equal precision say otherwise. Otherwise the file whose
@@ -109,10 +112,13 @@ func (p *Proxied) sessionOf(s Session, lines []TranscriptLine) string {
 // normalized, so which file holds a call depends on all of them, never on
 // which run together or in what order.
 type Replies struct {
-	// Response IDs to the lines recording them.
+	// Response IDs and item keys to the lines recording them.
 	seen map[string][]sighting
 	// Sessions to their parent session, as files record them.
 	parents map[string]string
+	// Item keys of Codex calls to their response ID. Codex records it after
+	// the call's items, and copies of the items in other files lack it.
+	responses map[string]string
 	// Response IDs to the file holding the call, once every file is added.
 	owners map[string]string
 }
@@ -126,7 +132,7 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 		return
 	}
 	if r.seen == nil {
-		r.seen, r.parents = map[string][]sighting{}, map[string]string{}
+		r.seen, r.parents, r.responses = map[string][]sighting{}, map[string]string{}, map[string]string{}
 	}
 	r.owners = nil
 	f := newFile(nil, lines, proxied)
@@ -137,19 +143,55 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 	}
 	for _, l := range lines {
 		owned := f.owned(l)
-		id := replyID(l)
-		if id == "" || !owned {
-			continue
+		for _, id := range []string{replyID(l), itemKey(l)} {
+			if id == "" || !owned {
+				continue
+			}
+			// Claude Code writes a line per streamed block of a reply; the
+			// file's earliest counts.
+			s := sighting{f.stamp(l), f.key, f.session.SessionID}
+			if seen := r.seen[id]; len(seen) > 0 && seen[len(seen)-1].file == f.key {
+				seen[len(seen)-1].ts = min(seen[len(seen)-1].ts, s.ts)
+				continue
+			}
+			r.seen[id] = append(r.seen[id], s)
 		}
-		// Claude Code writes a line per streamed block of a reply; the
-		// file's earliest counts.
-		s := sighting{f.stamp(l), f.key, f.session.SessionID}
-		if seen := r.seen[id]; len(seen) > 0 && seen[len(seen)-1].file == f.key {
-			seen[len(seen)-1].ts = min(seen[len(seen)-1].ts, s.ts)
-			continue
-		}
-		r.seen[id] = append(r.seen[id], s)
 	}
+	if lines[0].Source == "codex" {
+		r.codexResponses(lines)
+	}
+}
+
+// codexResponses records the response ID of each Codex call by its item
+// key, grouping items into calls as Transcript does.
+func (r *Replies) codexResponses(lines []TranscriptLine) {
+	key, output := "", false
+	for _, l := range lines {
+		e := parse([]byte(l.Line))
+		switch e.str("type") {
+		case "response_item":
+			role, _ := responsesItem(e["payload"])
+			if role == "assistant" && (!output || key == "") {
+				key = itemKey(l)
+			}
+			output = role == "assistant"
+		case "compacted":
+			output = false
+		case "token_usage_record":
+			if id := e.obj("payload").str("response_id"); id != "" && key != "" {
+				r.responses[key] = id
+			}
+		}
+	}
+}
+
+// response returns the response ID of a call by its item key, from any
+// file that records it.
+func (r *Replies) response(key string) string {
+	if r == nil || key == "" {
+		return ""
+	}
+	return r.responses[key]
 }
 
 // elect decides the owner of every reply, as Replies describes. Each
@@ -211,17 +253,17 @@ func (r *Replies) lineage(session string) (string, int) {
 	return session, depth
 }
 
-// owns reports whether a file, by its fileKey, holds the call of a reply.
-// Calls without a response ID cannot be copied elsewhere, and nil Replies
-// know no other files.
-func (r *Replies) owns(file, responseID string) bool {
-	if r == nil || responseID == "" {
+// owns reports whether a file, by its fileKey, holds the call of a reply,
+// by its response ID or item key. A call with neither cannot be matched to
+// a copy elsewhere, and nil Replies know no other files.
+func (r *Replies) owns(file, reply string) bool {
+	if r == nil || reply == "" {
 		return true
 	}
 	if r.owners == nil {
 		r.elect()
 	}
-	owner, ok := r.owners[responseID]
+	owner, ok := r.owners[reply]
 	return !ok || owner == file
 }
 
@@ -269,7 +311,11 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 	n.session(f.session)
 	for _, id := range f.order {
 		c := f.calls[id]
-		if _, returned := proxied.returned(c.ResponseID); returned || !replies.owns(f.key, c.ResponseID) {
+		// A copy of a Codex reply lacks its response ID, which the file it
+		// was copied from records.
+		responseID := firstNonEmpty(c.ResponseID, replies.response(f.items[id]))
+		reply := firstNonEmpty(f.items[id], responseID)
+		if _, returned := proxied.returned(responseID); returned || !replies.owns(f.key, reply) {
 			n.copied(n.Messages[start:], c.CallID)
 			continue
 		}
@@ -281,7 +327,7 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 // the session over, if it did.
 func newFile(n *Normalizer, lines []TranscriptLine, proxied *Proxied) *file {
 	f := &file{n: n, key: fileKey(lines[0]), parents: map[string]string{}, nodes: map[string]Hash{},
-		calls: map[string]*Call{}, kept: map[string]keptMessage{}}
+		calls: map[string]*Call{}, kept: map[string]keptMessage{}, items: map[string]string{}}
 	f.session = transcriptSession(lines)
 	if proxied != nil {
 		f.session.SessionID = proxied.sessionOf(f.session, lines)
@@ -377,6 +423,27 @@ func replyID(l TranscriptLine) string {
 		return e.obj("payload").str("response_id")
 	case l.Source == "pi" && e.str("type") == "message":
 		return e.obj("message").str("responseId")
+	}
+	return ""
+}
+
+// itemKey reads the provider's ID of a Codex output item: a tool call's
+// call ID, or else the item's own. Unlike response IDs, which older Codex
+// logs lack, every Codex log records them, and a sub-agent's copy of its
+// parent's history keeps them, so a Codex call is matched to its copies by
+// its first output item's key. They are unique to the call that produced
+// the item.
+func itemKey(l TranscriptLine) string {
+	e := parse([]byte(l.Line))
+	if l.Source != "codex" || e.str("type") != "response_item" {
+		return ""
+	}
+	if role, _ := responsesItem(e["payload"]); role != "assistant" {
+		return ""
+	}
+	p := e.obj("payload")
+	if id := firstNonEmpty(p.str("call_id"), p.str("id")); id != "" {
+		return "item:" + id
 	}
 	return ""
 }
@@ -561,6 +628,9 @@ func (f *file) codex(lines []TranscriptLine) {
 			}
 			lastWasOutput = m.Output
 			f.message(l, f.last, l.ID, m)
+			if m.Output && f.items[call] == "" {
+				f.items[call] = itemKey(l)
+			}
 			continue
 		case t == "token_usage_record":
 			u := p.obj("usage")
