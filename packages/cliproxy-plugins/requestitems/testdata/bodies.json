@@ -1,0 +1,70 @@
+[
+  {
+    "name": "claude",
+    "body": "{\"model\": \"claude-opus-5-5\", \"max_tokens\": 32000, \"system\": [{\"type\": \"text\", \"text\": \"You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. \", \"cache_control\": {\"type\": \"ephemeral\"}}], \"messages\": [{\"role\": \"user\", \"content\": [{\"type\": \"text\", \"text\": \"Hi \\u00e9 \\ud83d\\ude00 \\u2028 </script>\"}]}, {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"t1\", \"name\": \"tool_0\", \"input\": {\"path\": \"/tmp/a,]b\"}}]}, {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"t1\", \"content\": \"}{[\\\"]\\\\\"}]}], \"tools\": [{\"name\": \"tool_0\", \"description\": \"Run a thing, with <tags> & \\\"quotes\\\"\", \"input_schema\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\"}}, \"required\": [\"path\"]}}, {\"name\": \"tool_1\", \"description\": \"Run a thing, with <tags> & \\\"quotes\\\"\", \"input_schema\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\"}}, \"required\": [\"path\"]}}, {\"name\": \"tool_2\", \"description\": \"Run a thing, with <tags> & \\\"quotes\\\"\", \"input_schema\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\"}}, \"required\": [\"path\"]}}], \"thinking\": {\"type\": \"enabled\", \"budget_tokens\": 1024}, \"metadata\": {\"user_id\": \"u\"}, \"stream\": true}"
+  },
+  {
+    "name": "openai-response",
+    "body": "{\n  \"model\": \"gpt-6.1-sol\",\n  \"instructions\": \"You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. \",\n  \"store\": false,\n  \"stream\": true,\n  \"input\": [\n    {\n      \"type\": \"message\",\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"input_text\",\n          \"text\": \"hello\"\n        }\n      ]\n    },\n    {\n      \"type\": \"function_call_output\",\n      \"call_id\": \"c\",\n      \"output\": \"ok\"\n    }\n  ],\n  \"tools\": [\n    {\n      \"name\": \"tool_0\",\n      \"description\": \"Run a thing, with <tags> & \\\"quotes\\\"\",\n      \"input_schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"path\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"path\"\n        ]\n      }\n    },\n    {\n      \"name\": \"tool_1\",\n      \"description\": \"Run a thing, with <tags> & \\\"quotes\\\"\",\n      \"input_schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"path\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"path\"\n        ]\n      }\n    },\n    {\n      \"name\": \"tool_2\",\n      \"description\": \"Run a thing, with <tags> & \\\"quotes\\\"\",\n      \"input_schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"path\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"path\"\n        ]\n      }\n    }\n  ],\n  \"include\": [],\n  \"reasoning\": {\n    \"effort\": \"high\"\n  },\n  \"prompt_cache_key\": \"k\"\n}"
+  },
+  {
+    "name": "openai-chat",
+    "body": "{\"model\":\"gpt-6-luna\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"response_format\":{\"type\":\"json_object\"},\"max_completion_tokens\":10}"
+  },
+  {
+    "name": "tricky",
+    "body": "{\n  \"model\" : \"x\",\n  \"numbers\" : [ 1.0, 1e5, 1E+2, -0, 12345678901234567890123, 0.1000000000000000000001, -1.5e-7 ],\n  \"escapes\" : [ \"é\", \"é\", \"\\/\", \"<\", \"<\", \"\\\"q\\\"\", \"\\\\\", \"\\t\\n\\u0001\", \"😀\", \"\\ud800\" ],\n  \"nested\" : [ { \"a\" : [ ], \"b\" : { }, \"c\" : null, \"d\" : true, \"e\" : false } , [ [ ] ] , null ],\n  \"empty\" : [ ],\n  \"object\" : { },\n  \"nothing\" : null,\n  \"big_int\" : 18446744073709551616,\n  \"messages\" : [ 1, 2 ],\n  \"large_string\" : \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\n  \"large_object\" : { \"k\" : \"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\" },\n  \"exactly_1023\" : \"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\",\n  \"exactly_1024\" : \"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"\n}\n"
+  },
+  {
+    "name": "duplicate-keys",
+    "body": "{\"a\":[1],\"a\":[2],\"b\":1,\"b\":[3,4]}"
+  },
+  {
+    "name": "only-split-keys",
+    "body": "{\"messages\":[{\"role\":\"user\"}]}"
+  },
+  {
+    "name": "small-object",
+    "body": "{\"model\":\"x\"}"
+  },
+  {
+    "name": "empty-object",
+    "body": "{}"
+  },
+  {
+    "name": "padded-object",
+    "body": " \n {\"input\":[\"a\"]} \t\n"
+  },
+  {
+    "name": "array",
+    "body": "[1, 2, {\"a\": 3}]"
+  },
+  {
+    "name": "string",
+    "body": "\"just a string\""
+  },
+  {
+    "name": "number",
+    "body": "42"
+  },
+  {
+    "name": "invalid",
+    "body": "{\"messages\":[1,2"
+  },
+  {
+    "name": "truncated",
+    "body": "{\"model\": \"claude-opus-5-5\", \"max_tokens\": 32000, \"system\": [{\"type\": \"text\", \"text\": \"You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are a careful assistant. You are"
+  },
+  {
+    "name": "empty",
+    "body": ""
+  },
+  {
+    "name": "whitespace",
+    "body": "  \n"
+  },
+  {
+    "name": "trailing-garbage",
+    "body": "{\"a\":1} x"
+  }
+]

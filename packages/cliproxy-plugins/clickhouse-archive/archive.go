@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"cliproxy-plugins/plugin"
+	"cliproxy-plugins/requestitems"
 )
 
 const (
@@ -26,13 +27,17 @@ const (
 	maxBatchBytes = 16 << 20
 	maxQueueBytes = 256 << 20
 	flushInterval = 2 * time.Second
+	// Recently inserted item hashes, so context a session resends every turn
+	// is not sent again. Repeats are mostly seconds apart. A forgotten hash
+	// only costs a duplicate that ReplacingMergeTree merges away.
+	sentItemsPerGeneration = 1 << 15
 	// request.complete is exactly-once, so this only guards against leaks if
 	// the host ever skips it.
 	staleAfter = time.Hour
 )
 
 // Headers clients use for a conversation ID. Rows from one session are
-// stored together so their repeated context compresses.
+// stored together, so a conversation reads from one place.
 var sessionHeaders = []string{"X-Claude-Code-Session-Id", "Session_id", "Conversation_id", "X-Session-Id"}
 
 type archive struct {
@@ -50,17 +55,27 @@ type archive struct {
 	done        chan struct{}
 	started     atomic.Bool
 	stopOnce    sync.Once
+
+	// Owned by the flush goroutine.
+	sent sentItems
 }
 
 type pendingRequest struct {
 	record    requestRow
+	body      []byte
 	response  bytes.Buffer
 	updatedAt time.Time
 }
 
+// A row is either encoded JSON or a request whose body is split and encoded
+// in the flush goroutine, off the request path. size is its reservation in
+// queuedBytes.
 type row struct {
-	table string
-	json  []byte
+	table   string
+	json    []byte
+	request *requestRow
+	body    []byte
+	size    int64
 }
 
 // Field names match CLIProxyAPI's pluginapi structs, which it encodes
@@ -144,8 +159,16 @@ type requestRow struct {
 	Error          string `json:"error"`
 	UserAgent      string `json:"user_agent"`
 	Truncated      bool   `json:"truncated"`
-	RequestBody    string `json:"request_body"`
-	ResponseBody   string `json:"response_body"`
+	// The body is stored as an envelope plus parts referencing
+	// llm.request_items.
+	RequestEnvelope string              `json:"request_envelope"`
+	RequestParts    []requestitems.Part `json:"request_parts"`
+	ResponseBody    string              `json:"response_body"`
+}
+
+type itemRow struct {
+	Hash requestitems.Hash `json:"hash"`
+	Item string            `json:"item"`
 }
 
 type usageRow struct {
@@ -276,7 +299,7 @@ func (a *archive) captureRequest(r interceptRequest) {
 		body = body[:maxBodyBytes]
 		p.record.Truncated = true
 	}
-	p.record.RequestBody = string(body)
+	p.body = body
 }
 
 func (a *archive) captureResponse(r interceptRequest) {
@@ -336,7 +359,11 @@ func (a *archive) complete(r requestCompletion) {
 	rec.StartedAt = clickhouseTime(r.StartedAt)
 	rec.CompletedAt = clickhouseTime(r.CompletedAt)
 	rec.ResponseBody = p.response.String()
-	a.enqueue("llm.requests", rec)
+	// The body is split later, so reserve its raw size plus the rest.
+	size := int64(len(p.body) + len(rec.ResponseBody) + len(rec.Error) + 1024)
+	if a.reserve("llm.requests", size) {
+		a.send(row{table: "llm.requests", request: &rec, body: p.body, size: size})
+	}
 }
 
 func (a *archive) pendingLocked(id string) *pendingRequest {
@@ -408,43 +435,79 @@ func (a *archive) enqueue(table string, v any) {
 		return
 	}
 	size := int64(len(data) + 1)
+	if a.reserve(table, size) {
+		a.send(row{table: table, json: data, size: size})
+	}
+}
+
+func (a *archive) reserve(table string, size int64) bool {
 	for {
 		queued := a.queuedBytes.Load()
 		if size > maxQueueBytes-queued {
 			log.Printf("clickhouse-archive: backlog full, dropped %s row", table)
-			return
+			return false
 		}
 		if a.queuedBytes.CompareAndSwap(queued, queued+size) {
-			break
+			return true
 		}
 	}
+}
+
+func (a *archive) send(r row) {
 	select {
-	case a.rows <- row{table: table, json: data}:
+	case a.rows <- r:
 	default:
-		a.queuedBytes.Add(-size)
-		log.Printf("clickhouse-archive: queue full, dropped %s row", table)
+		a.queuedBytes.Add(-r.size)
+		log.Printf("clickhouse-archive: queue full, dropped %s row", r.table)
 	}
 }
+
+// Items go first: a request row only lands after every item it references.
+var flushOrder = []string{"llm.request_items", "llm.requests", "llm.usage"}
 
 func (a *archive) flushLoop() {
 	defer close(a.done)
 	ticker := time.NewTicker(flushInterval)
 	defer ticker.Stop()
 	batches := map[string]*bytes.Buffer{}
+	// Hashes in the items batch, marked sent once it is inserted.
+	unsent := map[requestitems.Hash]struct{}{}
 	failing := false
-	add := func(r row) {
-		buf := batches[r.table]
+	write := func(table string, data []byte) int {
+		buf := batches[table]
 		if buf == nil {
 			buf = &bytes.Buffer{}
-			batches[r.table] = buf
+			batches[table] = buf
 		}
-		buf.Write(r.json)
+		buf.Write(data)
 		buf.WriteByte('\n')
+		return len(data) + 1
+	}
+	add := func(r row) {
+		if r.request == nil {
+			write(r.table, r.json)
+			return
+		}
+		// Swap the reservation for the bytes actually batched.
+		a.queuedBytes.Add(int64(a.encodeRequest(r, unsent, write)) - r.size)
+	}
+	full := func() bool {
+		for _, buf := range batches {
+			if buf.Len() >= maxBatchBytes {
+				return true
+			}
+		}
+		return false
 	}
 	flush := func() {
 		failing = false
-		for table, buf := range batches {
-			if buf.Len() == 0 {
+		for _, table := range flushOrder {
+			buf := batches[table]
+			if buf == nil {
+				continue
+			}
+			if table == "llm.requests" && batches["llm.request_items"] != nil {
+				// Their items failed to insert; retry both together.
 				continue
 			}
 			if err := a.insert(table, buf.Bytes()); err != nil {
@@ -455,6 +518,12 @@ func (a *archive) flushLoop() {
 			a.queuedBytes.Add(-int64(buf.Len()))
 			// Release the backing allocation as well as its byte budget.
 			delete(batches, table)
+			if table == "llm.request_items" {
+				for h := range unsent {
+					a.sent.add(h)
+				}
+				clear(unsent)
+			}
 		}
 	}
 	for {
@@ -462,7 +531,7 @@ func (a *archive) flushLoop() {
 		case r := <-a.rows:
 			add(r)
 			// After a failed insert, only the ticker retries.
-			if !failing && batches[r.table].Len() >= maxBatchBytes {
+			if !failing && full() {
 				flush()
 			}
 		case <-ticker.C:
@@ -480,6 +549,59 @@ func (a *archive) flushLoop() {
 			}
 		}
 	}
+}
+
+// encodeRequest splits a request body and batches the request row together
+// with any of its items not already stored or batched. It returns the bytes
+// batched.
+func (a *archive) encodeRequest(r row, unsent map[requestitems.Hash]struct{}, write func(string, []byte) int) int {
+	body := requestitems.Split(r.body)
+	rec := *r.request
+	rec.RequestEnvelope = body.Envelope
+	rec.RequestParts = body.Parts
+	data, err := json.Marshal(rec)
+	if err != nil {
+		log.Printf("clickhouse-archive: encode llm.requests row: %v", err)
+		return 0
+	}
+	n := 0
+	for i, part := range body.Parts {
+		if _, ok := unsent[part.Hash]; ok || a.sent.has(part.Hash) {
+			continue
+		}
+		item, err := json.Marshal(itemRow{Hash: part.Hash, Item: string(body.Items[i])})
+		if err != nil {
+			log.Printf("clickhouse-archive: encode llm.request_items row: %v", err)
+			return n
+		}
+		unsent[part.Hash] = struct{}{}
+		n += write("llm.request_items", item)
+	}
+	return n + write("llm.requests", data)
+}
+
+// sentItems is a set with two generations: when the current one fills up,
+// it replaces the previous one, so hashes still in use survive the turnover.
+type sentItems struct {
+	current, previous map[requestitems.Hash]struct{}
+}
+
+func (s *sentItems) has(h requestitems.Hash) bool {
+	if _, ok := s.current[h]; ok {
+		return true
+	}
+	if _, ok := s.previous[h]; ok {
+		s.add(h)
+		return true
+	}
+	return false
+}
+
+func (s *sentItems) add(h requestitems.Hash) {
+	if s.current == nil || len(s.current) >= sentItemsPerGeneration {
+		s.previous, s.current = s.current, make(map[requestitems.Hash]struct{}, sentItemsPerGeneration)
+	}
+	s.current[h] = struct{}{}
 }
 
 func (a *archive) insert(table string, body []byte) error {

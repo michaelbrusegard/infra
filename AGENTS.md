@@ -57,7 +57,7 @@ side:
 
 `.envrc` runs `use flake`, so direnv auto-loads the dev shell on `cd` into
 the repo. Without direnv, run `nix develop`. Either way you get `age`, `sops`,
-`kubectl`, `kustomize`, `fluxcd`, `opentofu`, `jq`, `yq-go`.
+`go`, `kubectl`, `kustomize`, `fluxcd`, `opentofu`, `jq`, `yq-go`.
 
 `gh` comes from Home Manager, not the dev shell. It authenticates through
 `~/.config/gh/hosts.yml`, which sops-nix renders from the GitHub token.

@@ -218,6 +218,7 @@
           bind
           fluxcd
           git
+          go
           imapsync
           jq
           kubectl

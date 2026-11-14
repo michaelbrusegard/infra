@@ -31,6 +31,7 @@ jobs:
               - 'gitops/**'
               - 'packages/ai-images/**'
               - 'packages/llm-usage-backfill/**'
+              - 'packages/cliproxy-plugins/**'
               - '.github/workflows/ci.yaml'
             tofu:
               - '**/*.tf'
@@ -103,7 +104,7 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
       - name: Install Tools
-        run: nix profile install nixpkgs#kustomize nixpkgs#kubeconform nixpkgs#yq-go
+        run: nix profile install nixpkgs#go nixpkgs#kustomize nixpkgs#kubeconform nixpkgs#yq-go
       - name: Check OpenTofu approval policy
         run: bash gitops/espresso/tests/tofu-approval.sh
       - name: Test Agent Network bootstrap and image client
