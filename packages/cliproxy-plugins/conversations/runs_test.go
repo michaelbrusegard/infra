@@ -208,6 +208,32 @@ func TestRecentDeltaRequestsWaitForTheirPreviousResponse(t *testing.T) {
 	}
 }
 
+// The plugin writes a request before CLIProxy writes its usage, whose
+// session tells a Claude sub-agent from its parent. A recent request read
+// in between is held back, and placed in the sub-agent's session once its
+// usage arrives. Only an old one without usage falls back to the header.
+func TestRecentRequestsWaitForTheirUsage(t *testing.T) {
+	agent := storedRequests(t)["claude-agent"]
+	early := agent
+	early.UsageSessionID, early.UsageParentSessionID, early.UsageAttempts = "", "", 0
+	n := NewNormalizer()
+	n.HoldAfter = "2026-11-10 09:00:00.000"
+	if n.Request(early) {
+		t.Fatalf("placed a request before its usage, in %s", n.Calls[0].SessionID)
+	}
+	if len(n.Messages)+len(n.Calls)+len(n.Sessions)+len(n.Items) != 0 {
+		t.Fatal("a held request wrote rows")
+	}
+	if !n.Request(agent) || n.Calls[0].SessionID != agent.UsageSessionID {
+		t.Fatalf("request with usage placed in %+v", n.Calls)
+	}
+	old := NewNormalizer()
+	old.HoldAfter = "2026-11-10 10:00:00.000"
+	if !old.Request(early) || old.Calls[0].SessionID != "claude:11111111-1111-4111-8111-111111111111" {
+		t.Fatal("held an old request without usage")
+	}
+}
+
 // Transport fields are dropped only where the dialects put them. The same
 // names inside a tool's input are content, so tool calls that differ there
 // stay different nodes.

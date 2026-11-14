@@ -9,6 +9,7 @@ Run with `nix develop --command python3 gitops/espresso/tests/llm-conversations.
 Requires Docker and Go.
 """
 
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -66,6 +67,9 @@ def main():
                     args.append(f"--param_{name}={value}")
                 return run(*args, input=sql, check=check)
 
+            def scalar(sql):
+                return query(sql).stdout.strip()
+
             def insert(table, path, user="default"):
                 data = path.read_text() if path.exists() else ""
                 if data:
@@ -99,9 +103,11 @@ def main():
             later = {"claude-2", "claude-agent", "codex-2"}
             requests_rows, usage_rows = jsonl(sources / "llm.requests.jsonl"), jsonl(sources / "llm.usage.jsonl")
 
-            def arrive(batch):
+            def arrive(batch, tables=("llm.requests", "llm.usage")):
                 for table, rows, key in (("llm.requests", requests_rows, "request_id"),
                                          ("llm.usage", usage_rows, "request_id")):
+                    if table not in tables:
+                        continue
                     data = "".join(json.dumps(row) + "\n" for row in rows
                                    if (row[key].removeprefix("usage-") in later) == (batch == 2))
                     query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + data, "cliproxy")
@@ -112,7 +118,7 @@ def main():
 
             # One run of the job: the requests not normalized yet, the state of
             # the sessions they touch, then the normalizer.
-            def job(name):
+            def job(name, hold="10m"):
                 out = temp / name
                 out.mkdir()
                 rows = query((NORMALIZER / "requests.sql").read_text(),
@@ -120,16 +126,25 @@ def main():
                 sessions = run(str(normalizer), "-requests", "-sessions", input=rows).stdout.strip()
                 state = temp / f"{name}-state.jsonl"
                 state.write_text(query((NORMALIZER / "state.sql").read_text(), params=(("sessions", sessions),)).stdout)
-                run(str(normalizer), "-requests", "-state", str(state), "-out", str(out), input=rows)
+                run(str(normalizer), "-requests", "-hold", hold, "-state", str(state), "-out", str(out), input=rows)
                 load(out)
                 return [json.loads(row)["request_id"] for row in rows.splitlines()], jsonl(out / "llm.messages.jsonl")
 
             arrive(1)
             first, first_messages = job("proxy-1")
-            arrive(2)
+            # The plugin writes requests before CLIProxy writes their usage. A
+            # run in between, while they are recent, holds them back rather
+            # than put claude-agent in its parent's session for good.
+            arrive(2, ["llm.requests"])
+            recent = f"{int(time.time() - datetime(2026, 11, 10, 8, tzinfo=timezone.utc).timestamp())}s"
+            assert sorted(job("proxy-2-early", recent)[0]) == sorted(later)
+            assert scalar("SELECT count() FROM llm.calls") == str(len(first)), "placed requests without usage"
+            arrive(2, ["llm.usage"])
             second, second_messages = job("proxy-2")
             assert sorted(first) == sorted(r["request_id"] for r in requests_rows if r["request_id"] not in later), first
             assert sorted(second) == sorted(later), second
+            assert scalar("SELECT session_id FROM llm.calls FINAL WHERE call_id = 'claude-agent'") \
+                == "claude:11111111-1111-4111-8111-111111111111:agent:a1b2c3d4e5f6a7b8c"
             assert job("proxy-3")[0] == []
             # The second run extended the first run's trees without writing
             # their nodes again, and found the response codex-2 continues.
@@ -146,9 +161,6 @@ def main():
             run(str(normalizer), "-proxied", str(proxied), "-out", str(out),
                 input=query((NORMALIZER / "transcripts.sql").read_text()).stdout)
             load(out)
-
-            def scalar(sql):
-                return query(sql).stdout.strip()
 
             # Proxy calls keep every llm.requests column verbatim, so
             # llm.requests could be dropped. The column list comes from the

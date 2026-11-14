@@ -12,7 +12,8 @@ import (
 )
 
 // Request is a row of llm.requests with the items its parts reference, in
-// part order, and the session CLIProxy recorded in llm.usage for it.
+// part order, and the session CLIProxy recorded in llm.usage for it, from
+// as many upstream attempts as UsageAttempts.
 type Request struct {
 	RequestID            string              `json:"request_id"`
 	TraceID              string              `json:"trace_id"`
@@ -34,6 +35,7 @@ type Request struct {
 	ResponseBody         string              `json:"response_body"`
 	UsageSessionID       string              `json:"usage_session_id"`
 	UsageParentSessionID string              `json:"usage_parent_session_id"`
+	UsageAttempts        Uint64              `json:"usage_attempts"`
 }
 
 // Normalizer turns sources into canonical rows. Requests must arrive in
@@ -41,10 +43,10 @@ type Request struct {
 // that response's messages first. Restore loads what earlier runs left.
 type Normalizer struct {
 	Batch
-	// Requests that continue a response nobody has seen are held back when
-	// they started at or after this time, as "2006-01-02 15:04:05.000" in
-	// UTC, so a later run can place them once the response arrives. Empty
-	// holds nothing.
+	// Requests that continue a response nobody has seen, or whose usage has
+	// not arrived, are held back when they started at or after this time, as
+	// "2006-01-02 15:04:05.000" in UTC, so a later run can place them once it
+	// arrives. Empty holds nothing.
 	HoldAfter string
 	nodes     map[Hash]node
 	after     map[string]Hash
@@ -127,13 +129,20 @@ func SessionOf(r Request) string {
 func (n *Normalizer) Request(r Request) bool {
 	env := parse([]byte(r.RequestEnvelope))
 	conversation, metadata := split(r, env)
+	recent := n.HoldAfter != "" && r.StartedAt >= n.HoldAfter
+	if recent && r.UsageAttempts == 0 {
+		// The plugin writes a request before CLIProxy writes its usage, whose
+		// session tells sub-agents apart. Placed now, the request would stay
+		// in the header's session for good.
+		return false
+	}
 	session, parentSession := proxySession(r, env, metadata, conversation)
 	var parent Hash
 	prev := env.str("previous_response_id")
 	known := true
 	if prev != "" {
 		parent, known = n.after[session+"\x00"+prev]
-		if !known && n.HoldAfter != "" && r.StartedAt >= n.HoldAfter {
+		if !known && recent {
 			return false
 		}
 	}

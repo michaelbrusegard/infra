@@ -211,7 +211,13 @@ Requests are processed in start order, with a little state per session.
    trace and span as above, which covers every Claude call and tells
    sub-agents apart. Otherwise derive the same form: Codex from `client_metadata` (`codex:<root>`
    or `codex:<root>:agent:<name>`), then the header session, then
-   `proxy:<hash of first message>` for anything sessionless.
+   `proxy:<hash of first message>` for anything sessionless. The plugin
+   writes a request before CLIProxy writes its usage, and a run never
+   revisits a normalized request, so a recent request without usage is held
+   back, as in Gaps. Placed early, a Claude sub-agent's call would stay in
+   its parent's header session for good. On 2026-11-13, 29 of 9,167
+   requests never got usage; such requests wait out the hold and then use
+   the derived session.
 2. **Context.** With `previous_response_id`, start from the leaf after that
    response; otherwise start at the root. Then append each `messages` or
    `input` item as a node. Full-resend clients walk their existing nodes and
@@ -361,8 +367,9 @@ Each run:
 
 With the state restored, full-resend requests extend their trees without
 writing them again, and delta requests continue responses from earlier
-runs. Delta requests whose response has not landed are held back (see
-Gaps), and `version` keeps the right row if a node is written again anyway.
+runs. Recent requests whose usage or previous response has not landed are
+held back (see Session and Gaps), and `version` keeps the right row if a
+node is written again anyway.
 Deterministic IDs make reruns harmless. The job needs a ClickHouse user with
 SELECT on the sources and INSERT on the new tables. The transcripts run
 once, after the proxy backfill, with
@@ -624,8 +631,8 @@ ORDER BY parent, agent
   the CLI the job would run, the DDL, and the input and state queries.
 - [`gitops/espresso/tests/llm-conversations.py`](../gitops/espresso/tests/llm-conversations.py):
   loads the fixtures into a real ClickHouse running the deployed schema, then
-  normalizes them the way the job would, in two runs with requests landing
-  late. It checks the lossless round trips, that the second run continues
+  normalizes them the way the job would, in runs with requests landing late
+  and usage landing after its requests. It checks the lossless round trips, that the second run continues
   the first without writing its nodes again, and that Grafana permissions are
   unchanged, and runs every example above.
 

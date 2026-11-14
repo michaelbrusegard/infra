@@ -84,7 +84,8 @@
   },
   "response_body": "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_01A\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-opus-5-5\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":12,\"cache_creation_input_tokens\":3000,\"cache_read_input_tokens\":0,\"output_tokens\":1}}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"\"}}\n\nevent: ping\ndata: {\"type\":\"ping\"}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"I should look at the \"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"CronJob logs first.\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"signature_delta\",\"signature\":\"c2lnbmF0dXJlLXJlZGFjdGVk\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"Checking the job logs.\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":1}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":2,\"content_block\":{\"type\":\"tool_use\",\"id\":\"toolu_01\",\"name\":\"Bash\",\"input\":{}}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"command\\\": \\\"kubectl\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\" logs job/backup\\\"}\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":2}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"tool_use\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":87}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n",
   "usage_session_id": "claude:11111111-1111-4111-8111-111111111111",
-  "usage_parent_session_id": ""
+  "usage_parent_session_id": "",
+  "usage_attempts": 1
  },
  {
   "name": "claude-2",
@@ -221,7 +222,8 @@
   },
   "response_body": "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_01B\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-opus-5-5\",\"content\":[],\"stop_reason\":null,\"usage\":{\"input_tokens\":40,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":3000,\"output_tokens\":1}}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"The job is pinned to a node that was removed.\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":15}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n",
   "usage_session_id": "claude:11111111-1111-4111-8111-111111111111",
-  "usage_parent_session_id": ""
+  "usage_parent_session_id": "",
+  "usage_attempts": 1
  },
  {
   "name": "claude-agent",
@@ -268,7 +270,8 @@
   },
   "response_body": "{\"id\": \"msg_01C\", \"type\": \"message\", \"role\": \"assistant\", \"model\": \"claude-haiku-4-5\", \"content\": [{\"type\": \"text\", \"text\": \"The CronJob has a nodeSelector for espresso-3.\"}], \"stop_reason\": \"end_turn\", \"stop_sequence\": null, \"usage\": {\"input_tokens\": 20, \"cache_read_input_tokens\": 0, \"cache_creation_input_tokens\": 0, \"output_tokens\": 11}}",
   "usage_session_id": "claude:11111111-1111-4111-8111-111111111111:agent:a1b2c3d4e5f6a7b8c",
-  "usage_parent_session_id": "claude:11111111-1111-4111-8111-111111111111"
+  "usage_parent_session_id": "claude:11111111-1111-4111-8111-111111111111",
+  "usage_attempts": 1
  },
  {
   "name": "codex-1",
@@ -359,7 +362,8 @@
   },
   "response_body": "{\"type\":\"response.created\",\"sequence_number\":0,\"response\":{\"id\":\"resp_A\",\"object\":\"response\",\"status\":\"in_progress\",\"model\":\"gpt-6.1-sol\",\"output\":[],\"instructions\":\"You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. You are Codex. \"}}\n{\"type\":\"response.output_item.added\",\"sequence_number\":1,\"output_index\":0,\"item\":{\"id\":\"rs_1\",\"type\":\"reasoning\",\"summary\":[]}}\n{\"type\":\"response.reasoning_summary_text.delta\",\"sequence_number\":2,\"output_index\":0,\"summary_index\":0,\"delta\":\"**Checking the pricing view**\"}\n{\"type\":\"response.output_item.done\",\"sequence_number\":3,\"output_index\":0,\"item\":{\"type\":\"reasoning\",\"id\":\"rs_1\",\"summary\":[{\"type\":\"summary_text\",\"text\":\"**Checking the pricing view**\"}],\"content\":null,\"encrypted_content\":\"gAAAAAB-redacted\"}}\n{\"type\":\"response.output_item.added\",\"sequence_number\":4,\"output_index\":1,\"item\":{\"id\":\"ctc_1\",\"type\":\"custom_tool_call\",\"status\":\"in_progress\",\"call_id\":\"call_1\",\"name\":\"exec\",\"input\":\"\"}}\n{\"type\":\"response.custom_tool_call_input.delta\",\"sequence_number\":5,\"output_index\":1,\"item_id\":\"ctc_1\",\"delta\":\"const r = await tools.exec_command({cmd: 'rg luna'});\"}\n{\"type\":\"response.custom_tool_call_input.delta\",\"sequence_number\":6,\"output_index\":1,\"item_id\":\"ctc_1\",\"delta\":\"\\ntext(r)\"}\n{\"type\":\"response.output_item.done\",\"sequence_number\":7,\"output_index\":1,\"item\":{\"type\":\"custom_tool_call\",\"id\":\"ctc_1\",\"status\":\"completed\",\"call_id\":\"call_1\",\"name\":\"exec\",\"input\":\"const r = await tools.exec_command({cmd: 'rg luna'});\\ntext(r)\"}}\n{\"type\":\"response.completed\",\"sequence_number\":8,\"response\":{\"id\":\"resp_A\",\"object\":\"response\",\"status\":\"completed\",\"model\":\"gpt-6.1-sol\",\"output\":[{\"type\":\"reasoning\",\"id\":\"rs_1\",\"summary\":[{\"type\":\"summary_text\",\"text\":\"**Checking the pricing view**\"}],\"content\":null,\"encrypted_content\":\"gAAAAAB-redacted\"},{\"type\":\"custom_tool_call\",\"id\":\"ctc_1\",\"status\":\"completed\",\"call_id\":\"call_1\",\"name\":\"exec\",\"input\":\"const r = await tools.exec_command({cmd: 'rg luna'});\\ntext(r)\"}],\"usage\":{\"input_tokens\":5000,\"input_tokens_details\":{\"cached_tokens\":4000},\"output_tokens\":300,\"output_tokens_details\":{\"reasoning_tokens\":120},\"total_tokens\":5300}}}\n{\"type\":\"codex.rate_limits\",\"plan_type\":\"pro\",\"rate_limits\":{\"primary\":{\"used_percent\":12.5}}}\n",
   "usage_session_id": "",
-  "usage_parent_session_id": ""
+  "usage_parent_session_id": "",
+  "usage_attempts": 1
  },
  {
   "name": "codex-2",
@@ -404,7 +408,8 @@
   },
   "response_body": "event: response.created\ndata: {\"type\":\"response.created\",\"sequence_number\":0,\"response\":{\"id\":\"resp_B\",\"object\":\"response\",\"status\":\"in_progress\",\"model\":\"gpt-6.1-sol\",\"previous_response_id\":\"resp_A\",\"instructions\":null,\"output\":[],\"tools\":[{\"type\":\"namespace\",\"name\":\"functions\",\"description\":\"\",\"tools\":[{\"type\":\"custom\",\"name\":\"exec\",\"description\":\"Run JavaScript in a sandbox.\",\"format\":{\"type\":\"grammar\",\"syntax\":\"lark\",\"definition\":\"start: /.+/\"}},{\"type\":\"function\",\"name\":\"update_plan\",\"description\":\"Update the plan.\",\"parameters\":{\"type\":\"object\",\"properties\":{}}}]}]}}\n\nevent: response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"sequence_number\":1,\"output_index\":0,\"item\":{\"id\":\"msg_A2\",\"type\":\"message\",\"status\":\"in_progress\",\"role\":\"assistant\",\"content\":[]}}\n\nevent: response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"sequence_number\":2,\"output_index\":0,\"content_index\":0,\"delta\":\"Luna is priced; the panel filters it out.\"}\n\nevent: response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"sequence_number\":3,\"output_index\":0,\"item\":{\"id\":\"msg_A2\",\"type\":\"message\",\"status\":\"completed\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"Luna is priced; the panel filters it out.\"}]}}\n\nevent: response.completed\ndata: {\"type\":\"response.completed\",\"sequence_number\":4,\"response\":{\"id\":\"resp_B\",\"object\":\"response\",\"status\":\"completed\",\"model\":\"gpt-6.1-sol\",\"output\":[{\"id\":\"msg_A2\",\"type\":\"message\",\"status\":\"completed\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"Luna is priced; the panel filters it out.\"}]}],\"usage\":{\"input_tokens\":5400,\"input_tokens_details\":{\"cached_tokens\":5000},\"output_tokens\":20,\"output_tokens_details\":{\"reasoning_tokens\":0}}}}\n\n",
   "usage_session_id": "",
-  "usage_parent_session_id": ""
+  "usage_parent_session_id": "",
+  "usage_attempts": 1
  },
  {
   "name": "codex-orphan",
@@ -451,7 +456,8 @@
   },
   "response_body": "{\"type\":\"response.created\",\"sequence_number\":0,\"response\":{\"id\":\"resp_D\",\"object\":\"response\",\"status\":\"in_progress\",\"model\":\"gpt-6.1-sol\",\"output\":[]}}\n{\"type\":\"response.output_item.added\",\"sequence_number\":1,\"output_index\":0,\"item\":{\"id\":\"fc_1\",\"type\":\"function_call\",\"status\":\"in_progress\",\"call_id\":\"call_9\",\"name\":\"update_plan\",\"arguments\":\"\"}}\n{\"type\":\"response.function_call_arguments.delta\",\"sequence_number\":2,\"output_index\":0,\"delta\":\"{\\\"plan\\\":\"}\n{\"type\":\"response.function_call_arguments.delta\",\"sequence_number\":3,\"output_index\":0,\"delta\":\"[]}\"}\n{\"type\":\"response.interrupt.accepted\",\"sequence_number\":4}\n{\"type\":\"response.incomplete\",\"sequence_number\":5,\"response\":{\"id\":\"resp_D\",\"object\":\"response\",\"status\":\"incomplete\",\"model\":\"gpt-6.1-sol\",\"output\":[],\"usage\":null}}\n",
   "usage_session_id": "",
-  "usage_parent_session_id": ""
+  "usage_parent_session_id": "",
+  "usage_attempts": 1
  },
  {
   "name": "codex-agent",
@@ -497,7 +503,8 @@
   },
   "response_body": "{\"type\":\"response.created\",\"response\":{\"id\":\"resp_S\",\"object\":\"response\",\"model\":\"gpt-6.1-sol\",\"output\":[]}}\n{\"type\":\"response.output_item.done\",\"output_index\":0,\"item\":{\"id\":\"msg_S\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":\"Reviewed: no findings.\"}]}}\n{\"type\":\"response.completed\",\"response\":{\"id\":\"resp_S\",\"object\":\"response\",\"model\":\"gpt-6.1-sol\",\"output\":[],\"usage\":{\"input_tokens\":100,\"output_tokens\":5}}}\n",
   "usage_session_id": "",
-  "usage_parent_session_id": ""
+  "usage_parent_session_id": "",
+  "usage_attempts": 1
  },
  {
   "name": "chat-1",
@@ -531,7 +538,8 @@
   },
   "response_body": "data: {\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"model\":\"kimi-k3.1-pro\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"reasoning_content\":\"Read flake.nix.\"}}]}\n\ndata: {\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"model\":\"kimi-k3.1-pro\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Reading it.\"}}]}\n\ndata: {\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"model\":\"kimi-k3.1-pro\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call_r\",\"type\":\"function\",\"function\":{\"name\":\"read\",\"arguments\":\"{\\\"path\\\":\"}}]}}]}\n\ndata: {\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"model\":\"kimi-k3.1-pro\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"\\\"flake.nix\\\"}\"}}]},\"finish_reason\":\"tool_calls\"}]}\n\ndata: {\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"model\":\"kimi-k3.1-pro\",\"choices\":[],\"usage\":{\"prompt_tokens\":900,\"completion_tokens\":40,\"prompt_tokens_details\":{\"cached_tokens\":800},\"completion_tokens_details\":{\"reasoning_tokens\":10}}}\n\ndata: [DONE]\n\n",
   "usage_session_id": "",
-  "usage_parent_session_id": ""
+  "usage_parent_session_id": "",
+  "usage_attempts": 1
  },
  {
   "name": "chat-2",
@@ -584,7 +592,8 @@
   },
   "response_body": "{\"id\": \"chatcmpl-2\", \"object\": \"chat.completion\", \"model\": \"kimi-k3.1-pro\", \"choices\": [{\"index\": 0, \"message\": {\"role\": \"assistant\", \"content\": \"The only input is nixpkgs.\"}, \"finish_reason\": \"stop\"}], \"usage\": {\"prompt_tokens\": 950, \"completion_tokens\": 8}}",
   "usage_session_id": "",
-  "usage_parent_session_id": ""
+  "usage_parent_session_id": "",
+  "usage_attempts": 1
  },
  {
   "name": "truncated",
@@ -605,6 +614,7 @@
   "body": "{\"model\":\"claude-opus-5-5\",\"messages\":[{\"role\":\"user\",\"content\":\"cut off mid-",
   "response_body": "",
   "usage_session_id": "claude:11111111-1111-4111-8111-111111111111",
-  "usage_parent_session_id": ""
+  "usage_parent_session_id": "",
+  "usage_attempts": 1
  }
 ]
