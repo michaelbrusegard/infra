@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: clickhouse
-          image: clickhouse/clickhouse-server:26.8.36.3@sha256:d426d2f612e1e189c90f9a3f8dcd85a03c6851273833817a296bb327e63aa7a7
+          image: clickhouse/clickhouse-server:26.10.4.207@sha256:4f491abc44d9f4a1747c033c35ddd5bc385521305d85ca8251ba0824ff597035
           env:
             # users.xml owns the default user; the entrypoint must not rewrite it.
             - name: CLICKHOUSE_SKIP_USER_SETUP
