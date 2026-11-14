@@ -473,7 +473,7 @@
   "session": "2026-08-25T17-16-23-878Z_01a039ec-0000-7000-8000-000000000005",
   "id": "7",
   "path": ".pi/agent/sessions/--Users-michaelbrusegard-Projects-infra--/2026-08-25T17-16-23-878Z_01a039ec-0000-7000-8000-000000000005.jsonl",
-  "line": "{\"type\":\"compaction\",\"id\":\"c1\",\"parentId\":\"t1\",\"timestamp\":\"2026-08-25T18:00:00.000Z\",\"summary\":\"## Goal\\nMake the tofu approval test pass.\",\"firstKeptEntryId\":\"p2\",\"tokensBefore\":190000}",
+  "line": "{\"type\":\"compaction\",\"id\":\"c1\",\"parentId\":\"t1\",\"timestamp\":\"2026-08-25T18:00:00.000Z\",\"summary\":\"## Goal\\nMake the tofu approval test pass.\",\"firstKeptEntryId\":\"p2\",\"tokensBefore\":190000,\"usage\":{\"input\":180000,\"output\":900,\"cacheRead\":10000,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":190900,\"cost\":{\"total\":0}}}",
   "ts": "2026-08-25 18:00:00.000"
  },
  {

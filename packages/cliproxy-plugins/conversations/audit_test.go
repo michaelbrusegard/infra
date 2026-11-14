@@ -113,3 +113,22 @@ func TestTranscriptImportFailsOnUnknownTypes(t *testing.T) {
 		}
 	}
 }
+
+// A Pi compaction is a summarization call, which records its usage: a
+// call without outputs, of the model in use, whose input is what it
+// summarized.
+func TestPiCompactionsKeepTheirUsage(t *testing.T) {
+	n, _ := transcriptBatch(t, nil)
+	c := callByID(t, &n.Batch, "c1")
+	if c.UncachedInputTokens != 180000 || c.CacheReadTokens != 10000 || c.OutputTokens != 900 ||
+		c.Model != "gpt-5.6-sol" || len(c.OutputIDs) != 0 || c.StartedAt != "2026-08-25 18:00:00.000" {
+		t.Fatalf("compaction call %+v", c)
+	}
+	var input []string
+	for _, m := range Path(n.Messages, c.InputID) {
+		input = append(input, m.Line)
+	}
+	if !reflect.DeepEqual(input, []string{"3", "4", "5"}) {
+		t.Fatalf("compaction input %v", input)
+	}
+}

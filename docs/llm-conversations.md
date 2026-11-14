@@ -356,7 +356,11 @@ into CLIProxy's scheme: `claude:<session>`, `claude:<parent>:agent:<agent>`,
   copies of the kept messages follow it as context sent again, with
   `output = false`, the compaction's line, and the entry ID as `part`. Later
   entries continue from the last copy, and the original branch stays as it
-  was. Each assistant message is one call.
+  was. Each assistant message is one call, and so is each compaction: Pi
+  summarizes with a call of the model in use (the last `model_change` or
+  reply), which records its usage but no response ID. All 409 live
+  compactions carry usage, 51,531,037 tokens. The call has no outputs, like a
+  Codex remote compaction, and its input is the entry it summarized from.
 - **opencode**: messages are ordered by time. Older part records attach their
   content to their message.
 
@@ -662,7 +666,8 @@ so they replace it: `llm.call_history` presents them in
 Its fixed handover (`requested_at < min(llm.usage.requested_at)`) stays.
 The rows follow the importer's rules: the provider from the model's prefix
 (`unknown` otherwise, where the importer used the provider the line named),
-Claude's thinking tokens as reasoning, OpenCode's reasoning added to output
+Claude's thinking tokens as reasoning, Pi compactions
+under the model in use (the importer recorded them as `(unknown)`), OpenCode's reasoning added to output
 unless its recorded total excludes it, cache writes by lifetime, and calls
 with no tokens left out. Origins stay `history:<client>`. The prototype
 test runs the deployed view with that change.

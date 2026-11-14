@@ -1046,6 +1046,8 @@ func codexUsage(u obj) usage {
 }
 
 func (f *file) pi(lines []TranscriptLine) {
+	// The model in use, which a compaction's summarization call ran with.
+	model := ""
 	for _, l := range lines {
 		e := parse([]byte(l.Line))
 		t, id := e.str("type"), e.str("id")
@@ -1057,6 +1059,8 @@ func (f *file) pi(lines []TranscriptLine) {
 			f.session.Cwd = e.str("cwd")
 		case "session_info":
 			f.session.Title = firstNonEmpty(e.str("name"), f.session.Title)
+		case "model_change":
+			model = firstNonEmpty(e.str("modelId"), model)
 		}
 		m := Message{Format: "pi"}
 		switch {
@@ -1077,7 +1081,18 @@ func (f *file) pi(lines []TranscriptLine) {
 			continue
 		}
 		if t == "compaction" {
+			// Pi summarizes the conversation with a call of the model in
+			// use, which records the call's usage but no response ID. It is
+			// a call without outputs, like a Codex remote compaction: its
+			// input is what it summarized, and the summary is the root of
+			// what Pi sends from then on.
+			input := f.treeParent(e.str("parentId"))
+			written := len(f.n.Messages)
 			f.nodes[id] = f.piCompaction(l, e, m)
+			if _, ok := e["usage"]; ok && len(f.n.Messages) > written {
+				f.call(id, "pi", model, input, f.stamp(l))
+				f.setUsage(id, "", piUsage(e.obj("usage")))
+			}
 			continue
 		}
 		var added bool
@@ -1086,11 +1101,15 @@ func (f *file) pi(lines []TranscriptLine) {
 			f.kept[id] = f.n.Messages[len(f.n.Messages)-1]
 		}
 		if added && m.Output {
-			u := e.obj("message").obj("usage")
-			f.setUsage(m.CallID, e.obj("message").str("responseId"), usage{uncached: u.num("input"),
-				read: u.num("cacheRead"), write: u.num("cacheWrite"), output: u.num("output"), reasoning: u.num("reasoning")})
+			model = firstNonEmpty(m.Model, model)
+			f.setUsage(m.CallID, e.obj("message").str("responseId"), piUsage(e.obj("message").obj("usage")))
 		}
 	}
+}
+
+func piUsage(u obj) usage {
+	return usage{uncached: u.num("input"), read: u.num("cacheRead"), write: u.num("cacheWrite"),
+		output: u.num("output"), reasoning: u.num("reasoning")}
 }
 
 // piCompaction builds the context Pi sends after a compaction: the summary,
