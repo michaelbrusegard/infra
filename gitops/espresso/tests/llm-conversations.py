@@ -378,14 +378,31 @@ def main():
             assert failed.returncode != 0 and "no output" in failed.stderr, failed
 
             # The collision audit finds the item keys the normalizer reports:
-            # two Codex calls whose first items share a call ID.
-            for name, item, response in (("c", "fc_1", "resp_c1"), ("d", "fc_2", "resp_c2")):
+            # two Codex calls whose first items share a call ID. A response
+            # without items, such as a compaction's, and two responses with
+            # no input between are calls of their own, so they collide with
+            # nothing.
+            def usage(response):
+                return {"type": "token_usage_record", "payload": {"response_id": response, "usage": {}}}
+
+            def item(payload):
+                return {"type": "response_item", "payload": payload}
+
+            def tool_call(item_id, call_id):
+                return item({"type": "function_call", "id": item_id, "name": "exec", "arguments": "{}", "call_id": call_id})
+
+            def reply(item_id):
+                return item({"type": "message", "id": item_id, "role": "assistant", "content": []})
+
+            for name, lines in (("c", [tool_call("fc_1", "call_shared"), usage("resp_c1")]),
+                                ("d", [tool_call("fc_2", "call_shared"), usage("resp_c2")]),
+                                ("e", [tool_call("fc_3", "call_e"), usage("resp_e1"),
+                                       item({"type": "function_call_output", "call_id": "call_e", "output": "ok"}),
+                                       usage("resp_e2"), {"type": "compacted", "payload": {"replacement_history": []}},
+                                       reply("msg_e3"), usage("resp_e3"), reply("msg_e4"), usage("resp_e4")])):
                 thread = f"01a1da81-0000-7000-8000-0000000000{name}{name}"
                 path = f".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-{thread}.jsonl"
-                lines = [{"type": "session_meta", "payload": {"id": thread}},
-                         {"type": "response_item", "payload": {"type": "function_call", "id": item, "name": "exec",
-                                                               "arguments": "{}", "call_id": "call_shared"}},
-                         {"type": "token_usage_record", "payload": {"response_id": response, "usage": {}}}]
+                lines = [{"type": "session_meta", "payload": {"id": thread}}, *lines]
                 query("INSERT INTO llm.transcripts FORMAT JSONEachRow\n" + "\n".join(json.dumps({
                     "source": "codex", "host": "lungo", "session": path.removesuffix(".jsonl").rsplit("/", 1)[1],
                     "id": str(i + 1), "path": path,

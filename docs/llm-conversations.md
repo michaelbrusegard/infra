@@ -284,7 +284,13 @@ into CLIProxy's scheme: `claude:<session>`, `claude:<parent>:agent:<agent>`,
   `ai-title` sets the title. Repeated entries become `repeat` events.
 - **codex**: `response_item` lines are messages chained in file order.
   Assistant items between two inputs form one call, and its usage comes from
-  the next `token_usage_record`, or `token_count` in older logs. The model
+  the next `token_usage_record`, or `token_count` in older logs. A
+  `token_usage_record` ends its response, so assistant items after it start
+  another call, and a second record with another response ID and no
+  assistant items since, as a remote compaction writes before its
+  `compacted` line (122 live), is a call of its own without outputs rather
+  than the previous call's usage. Grouping by inputs alone merges these,
+  and gives 146 live item keys two response IDs. The model
   comes from `turn_context`. A `compacted` line is kept as an event, and its
   `replacement_history` items become a new root chain, with lines
   `<line>#<index>`.
@@ -398,56 +404,65 @@ session, as the prompts example does. Usage already uses a fixed handover;
 
 This lists the Codex item keys that `llm.transcripts` maps to more than one
 response ID, grouping each file's output items into calls as the normalizer
-does. It reads only the columns it needs, one thread at a time, and spills
-sorts and aggregations to disk, so it stays within the server's memory: on
-the live table it reads the 1.3M Codex lines in about 40 seconds.
+does. It extracts only the fields it needs, in small blocks on one thread,
+and orders each file's lines as one array rather than with window
+functions, whose sort took 2 GiB: on the live table it reads the 1.3M Codex
+lines in 10 seconds with a 330 MiB peak, and finds no collisions.
 
 ```sql
 -- example: collisions
 WITH
     lines AS (
-        SELECT host, path, session, toUInt64OrZero(id) AS n,
-            JSONExtract(line, 'Tuple(type String, payload Tuple(type String, role String, call_id String, id String, response_id String))') AS e,
-            e.payload.type AS t,
-            -- Output items are 1, input items and compactions 0, and usage
-            -- records NULL, which leave the call as it is.
-            multiIf(e.type = 'compacted', 0,
-                e.type = 'token_usage_record', NULL,
+        SELECT file, n,
+            -- Output items are 1, and anything else 0: a response's usage
+            -- record ends it.
+            multiIf(e.type != 'response_item', 0,
                 t IN ('reasoning', 'function_call', 'custom_tool_call')
                     OR (t = 'message' OR (t = '' AND e.payload.role != '')) AND e.payload.role = 'assistant'
                     OR t LIKE '%\_call', 1,
                 0) AS output,
             if(output = 1, if(e.payload.call_id != '', e.payload.call_id, e.payload.id), '') AS item,
-            if(e.type = 'token_usage_record', e.payload.response_id, '') AS response_id
-        FROM llm.transcripts
-        WHERE source = 'codex'
-            AND JSONExtractString(line, 'type') IN ('response_item', 'compacted', 'token_usage_record')
-    ),
-    calls AS (
-        SELECT host, path, session, n, item, response_id,
-            sum(output = 1 AND coalesce(previous, 0) = 0)
-                OVER (PARTITION BY host, path, session ORDER BY n ROWS UNBOUNDED PRECEDING) AS call
+            e.type = 'token_usage_record' AS usage,
+            if(usage, e.payload.response_id, '') AS response_id
         FROM (
-            SELECT *, last_value(output)
-                OVER (PARTITION BY host, path, session ORDER BY n ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS previous
-            FROM lines
+            SELECT cityHash64(host, path, session) AS file, toUInt64OrZero(id) AS n,
+                JSONExtract(line, 'Tuple(type String, payload Tuple(type String, role String, call_id String, id String, response_id String))') AS e,
+                e.payload.type AS t
+            FROM llm.transcripts
+            WHERE source = 'codex'
+                AND JSONExtractString(line, 'type') IN ('response_item', 'compacted', 'token_usage_record')
         )
     ),
+    -- Each file's lines in order, numbered by call: an output item after
+    -- anything else starts one.
+    calls AS (
+        SELECT file, line.1 AS n, line.3 AS item, line.4 AS usage, line.5 AS response_id, call
+        FROM (
+            SELECT file, arraySort(groupArray((n, output, item, usage, response_id))) AS ordered,
+                arrayMap(l -> l.2, ordered) AS outputs
+            FROM lines
+            GROUP BY file
+        )
+        ARRAY JOIN ordered AS line,
+            arrayCumSum(arrayMap((o, previous) -> o = 1 AND previous = 0,
+                outputs, arrayPushFront(arrayPopBack(outputs), 0))) AS call
+    ),
+    -- A call's first usage record is its own. Later ones with another
+    -- response ID are responses without items, such as compactions.
     keyed AS (
-        SELECT argMinIf(item, n, item != '') AS item, groupUniqArrayIf(response_id, response_id != '') AS responses
+        SELECT argMinIf(item, n, item != '') AS item, argMinIf(response_id, n, usage) AS response
         FROM calls
         WHERE call > 0
-        GROUP BY host, path, session, call
-        HAVING item != ''
+        GROUP BY file, call
+        HAVING item != '' AND response != ''
     )
 SELECT 'item:' || item AS key, arraySort(groupUniqArray(response)) AS response_ids
 FROM keyed
-ARRAY JOIN responses AS response
 GROUP BY item
 HAVING length(response_ids) > 1
 ORDER BY key
-SETTINGS max_threads = 1, max_block_size = 1024, max_bytes_before_external_sort = 1000000000,
-    max_bytes_before_external_group_by = 1000000000, max_execution_time = 600
+SETTINGS max_threads = 1, max_block_size = 256, preferred_block_size_bytes = 1048576,
+    max_execution_time = 600
 ```
 
 ## Losslessness

@@ -180,11 +180,16 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 func (r *Replies) codexResponses(lines []TranscriptLine) map[string]bool {
 	recorded := map[string]bool{}
 	key, output := "", false
+	// Whether the call has a usage record yet, and its response ID.
+	used, response := false, ""
 	for _, l := range lines {
 		e := parse([]byte(l.Line))
 		switch e.str("type") {
 		case "response_item":
 			role, _ := responsesItem(e["payload"])
+			if role == "assistant" && !output {
+				used, response = false, ""
+			}
 			if role == "assistant" && (!output || key == "") {
 				key = itemKey(l)
 			}
@@ -192,7 +197,14 @@ func (r *Replies) codexResponses(lines []TranscriptLine) map[string]bool {
 		case "compacted":
 			output = false
 		case "token_usage_record":
-			if id := e.obj("payload").str("response_id"); id != "" && key != "" {
+			id := e.obj("payload").str("response_id")
+			output = false
+			if used && id != response {
+				// A response without items of its own; see file.codex.
+				continue
+			}
+			used, response = true, firstNonEmpty(id, response)
+			if id != "" && key != "" {
 				if old, ok := r.responses[key]; ok && old != id {
 					if r.conflicts[key] == nil {
 						r.conflicts[key] = map[string]bool{}
@@ -550,17 +562,23 @@ func (f *file) message(l TranscriptLine, parent Hash, key string, m Message) (Ha
 	if m.Output && m.CallID != "" {
 		c := f.calls[m.CallID]
 		if c == nil {
-			c = &Call{CallID: m.CallID, SessionID: f.session.SessionID, Origin: "transcript",
-				Client: f.session.Client, SourceFormat: m.Format, Model: m.Model, InputID: parent,
-				StartedAt: f.stamp(l), RequestParts: []requestitems.Part{}, OutputIDs: []Hash{}}
-			f.calls[m.CallID] = c
-			f.order = append(f.order, m.CallID)
+			c = f.call(m.CallID, m.Format, m.Model, parent, f.stamp(l))
 		}
 		c.OutputIDs = append(c.OutputIDs, id)
 		c.CompletedAt = f.stamp(l)
 		c.Model = firstNonEmpty(c.Model, m.Model)
 	}
 	return id, true
+}
+
+// call starts a call of this file, with no outputs yet.
+func (f *file) call(callID, format, model string, input Hash, ts string) *Call {
+	c := &Call{CallID: callID, SessionID: f.session.SessionID, Origin: "transcript", Client: f.session.Client,
+		SourceFormat: format, Model: model, InputID: input, StartedAt: ts, CompletedAt: ts,
+		RequestParts: []requestitems.Part{}, OutputIDs: []Hash{}}
+	f.calls[callID] = c
+	f.order = append(f.order, callID)
+	return c
 }
 
 // node writes a message of this file, which records the file's host and
@@ -652,6 +670,8 @@ func (f *file) claudeCode(lines []TranscriptLine) {
 
 func (f *file) codex(lines []TranscriptLine) {
 	model, call, lastWasOutput := "", "", false
+	// The call whose usage record came last.
+	recorded := ""
 	for _, l := range lines {
 		e := parse([]byte(l.Line))
 		t, p := e.str("type"), e.obj("payload")
@@ -688,8 +708,16 @@ func (f *file) codex(lines []TranscriptLine) {
 			}
 			continue
 		case t == "token_usage_record":
-			u := p.obj("usage")
-			f.setUsage(call, p.str("response_id"), codexUsage(u))
+			// A response's usage record follows its items and ends it. A
+			// second response with no output since, such as a remote
+			// compaction's, has no items of its own, so it is a call
+			// without outputs rather than the previous call's usage.
+			if c := f.calls[call]; c != nil && call == recorded && p.str("response_id") != c.ResponseID {
+				call = f.session.SessionID + ":" + l.ID
+				f.call(call, "codex", model, f.last, f.stamp(l))
+			}
+			recorded, lastWasOutput = call, false
+			f.setUsage(call, p.str("response_id"), codexUsage(p.obj("usage")))
 		case t == "event_msg" && p.str("type") == "token_count":
 			// Older logs only have the last call's counters.
 			if c := f.calls[call]; c != nil && c.ResponseID == "" && c.OutputTokens == 0 {

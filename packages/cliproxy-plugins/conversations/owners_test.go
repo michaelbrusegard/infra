@@ -315,3 +315,43 @@ func TestTranscriptItemKeyCollisionsStayDistinct(t *testing.T) {
 		}
 	}
 }
+
+// A Codex response's usage record ends it. A remote compaction's response
+// writes a usage record and no items before the compacted history, and two
+// responses can follow each other with no input between. Each is a call
+// of its own with its own usage, rather than the previous call's, and no
+// item key names two responses.
+func TestTranscriptCodexUsageRecordsEndCalls(t *testing.T) {
+	usage := func(id string, input, output int) string {
+		return fmt.Sprintf(`{"type":"token_usage_record","payload":{"response_id":%q,"usage":{"input_tokens":%d,"output_tokens":%d}}}`,
+			id, input, output)
+	}
+	reply := func(item, text string) string {
+		return `{"type":"response_item","payload":{"type":"message","id":"` + item + `","role":"assistant","content":[{"type":"output_text","text":"` + text + `"}]}}`
+	}
+	file := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-019f6478-0000-7000-8000-00000000000a.jsonl",
+		"2026-11-12 10:00", `{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000a"}}`,
+		codexUserLine("Check the pods."),
+		`{"type":"response_item","payload":{"type":"function_call","id":"fc_1","name":"exec","arguments":"{}","call_id":"call_1"}}`,
+		usage("resp_1", 100, 20),
+		usage("resp_1", 100, 20),
+		`{"type":"response_item","payload":{"type":"function_call_output","call_id":"call_1","output":"2 pods"}}`,
+		usage("resp_compact", 300, 40),
+		`{"type":"compacted","payload":{"replacement_history":[{"type":"message","role":"user","content":[{"type":"input_text","text":"Summary."}]}]}}`,
+		reply("msg_2", "Two pods."), usage("resp_2", 50, 7),
+		reply("msg_3", "Both ready."), usage("resp_3", 60, 8))
+	replies := repliesOf(nil, file)
+	n := NewNormalizer()
+	n.Transcript(file, replies, nil)
+	var calls []string
+	for _, c := range n.Calls {
+		calls = append(calls, fmt.Sprintf("%s %d/%d %d outputs", c.ResponseID, c.UncachedInputTokens, c.OutputTokens, len(c.OutputIDs)))
+	}
+	want := []string{"resp_1 100/20 1 outputs", "resp_compact 300/40 0 outputs", "resp_2 50/7 1 outputs", "resp_3 60/8 1 outputs"}
+	if !reflect.DeepEqual(calls, want) {
+		t.Fatalf("calls %v, want %v", calls, want)
+	}
+	if c := replies.Conflicts(); len(c) > 0 {
+		t.Fatalf("conflicts %v", c)
+	}
+}
