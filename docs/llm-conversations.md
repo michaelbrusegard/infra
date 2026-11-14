@@ -330,8 +330,12 @@ keeps the items' IDs but never the usage records that carry response IDs:
 no response ID is in two live files, while 29k item IDs are. A copy whose
 item the original file maps to a response ID gets that ID. A transcript
 reply that the proxy returned, in any session, is the proxy's call.
-Otherwise one file holds it. A sub-agent
-or fork copies the replies it starts from, so where the files record that
+Otherwise one file holds it. A Codex file that records the call's usage
+holds it over any that does not, because only the file that made the call
+writes its usage record: a copy holding it would count the call with no
+tokens and no response ID. The call keeps the response ID any file maps
+its item to. Otherwise, since a sub-agent or fork copies the replies it
+starts from, where the files record that
 ancestry, by their parent session, an ancestor's file holds the call over
 its descendants', even when a skewed clock or timestamps of equal precision
 put the copy first, and whatever the paths: path order is not ancestry
@@ -343,7 +347,8 @@ synced to two hosts, tie and fall to the first. Where ancestry is not
 recorded, such as a Claude Code session forked into a new session ID, or a
 Codex agent spawned by another sub-agent, whose parent thread ID is not
 that sub-agent's session ID, the earliest file is a surrogate owner: the
-call counts once, but possibly in the copy's session. Replies with no ID
+call counts once, but possibly in the copy's session, and for Codex only
+when no file records its usage. Replies with no ID
 at all, such as OpenCode's, or Codex replies whose items carry none, like
 text-only messages from June 2026, cannot be matched to a copy, so each file
 keeps its own call; no live OpenCode session is in two files.

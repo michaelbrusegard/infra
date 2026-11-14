@@ -246,3 +246,38 @@ func TestTranscriptCodexCopiesWithoutResponseIDs(t *testing.T) {
 		}
 	}
 }
+
+// A Codex agent spawned by a sub-agent records the sub-agent's raw thread ID
+// as its parent, which is not the sub-agent's session, so their lineages do
+// not connect. The nested agent's copy of the sub-agent's reply, tied in
+// time and in the lineage that sorts first, still yields to the file that
+// records the call's usage, whatever order the files come in.
+func TestTranscriptReplyOwnerRecordsTheUsage(t *testing.T) {
+	rootID, subID := "019f6478-0000-7000-8000-00000000000b", "019f6478-0000-7000-8000-00000000000a"
+	sub := "codex:" + rootID + ":agent:review"
+	reply := `{"type":"response_item","payload":{"type":"message","id":"msg_1","role":"assistant","content":[{"type":"output_text","text":"Done."}]}}`
+	usage := `{"type":"token_usage_record","payload":{"response_id":"resp_sub","usage":{"input_tokens":100,"output_tokens":20}}}`
+	subFile := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-"+subID+".jsonl", "2026-11-12 10:00",
+		`{"type":"session_meta","payload":{"id":"`+subID+`","source":{"subagent":{"thread_spawn":`+
+			`{"parent_thread_id":"`+rootID+`","agent_path":"/root/review"}}}}}`, codexUserLine("Review it."), reply, usage)
+	nested := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-019f6478-0000-7000-8000-00000000000c.jsonl",
+		"2026-11-12 10:00", `{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000c","source":{"subagent":`+
+			`{"thread_spawn":{"parent_thread_id":"`+subID+`","agent_path":"/root/review/deep"}}}}}`, codexUserLine("Review it."), reply)
+	if nested[2].TS != subFile[2].TS {
+		t.Fatal("the copy does not tie")
+	}
+	for _, files := range [][][]TranscriptLine{{subFile, nested}, {nested, subFile}} {
+		replies := repliesOf(nil, files...)
+		n := NewNormalizer()
+		for _, f := range files {
+			n.Transcript(f, replies, nil)
+		}
+		if len(n.Calls) != 1 {
+			t.Fatalf("%d calls, want 1: %+v", len(n.Calls), n.Calls)
+		}
+		c := n.Calls[0]
+		if c.SessionID != sub || c.ResponseID != "resp_sub" || c.UncachedInputTokens != 100 || c.OutputTokens != 20 {
+			t.Fatalf("call %+v, want the sub-agent's with its usage", c)
+		}
+	}
+}

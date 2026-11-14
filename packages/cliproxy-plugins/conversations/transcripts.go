@@ -98,8 +98,11 @@ func (p *Proxied) sessionOf(s Session, lines []TranscriptLine) string {
 
 // Replies records which transcript file holds the call of each reply that
 // files record, by response ID, or for Codex by the provider's ID of the
-// reply's first output item (see itemKey). Within a lineage of sessions, recorded by each file's
-// parent session, an ancestor's file holds it over its sub-agents' and
+// reply's first output item (see itemKey). A Codex file that records a
+// call's usage holds it over copies that do not, since only the file that
+// made the call writes its usage record, and a copy holding it would lose
+// its usage and response ID. Within a lineage of sessions, recorded by each
+// file's parent session, an ancestor's file holds it over its sub-agents' and
 // forks', since they copy the replies they start from, even when clocks or
 // timestamps of equal precision say otherwise. Otherwise the file whose
 // line recording it is earliest holds it, then the first by host, path,
@@ -123,7 +126,11 @@ type Replies struct {
 	owners map[string]string
 }
 
-type sighting struct{ ts, file, session string }
+type sighting struct {
+	ts, file, session string
+	// Whether the file records the call's usage.
+	recorded bool
+}
 
 // Add records the replies of one file, with the proxied calls that
 // Transcript is given.
@@ -136,6 +143,10 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 	}
 	r.owners = nil
 	f := newFile(nil, lines, proxied)
+	recorded := map[string]bool{}
+	if lines[0].Source == "codex" {
+		recorded = r.codexResponses(lines)
+	}
 	// Copies of a session agree on its parent; the smaller one keeps the
 	// result independent of order if they do not.
 	if p, ok := r.parents[f.session.SessionID]; !ok || f.session.ParentSessionID < p {
@@ -149,7 +160,7 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 			}
 			// Claude Code writes a line per streamed block of a reply; the
 			// file's earliest counts.
-			s := sighting{f.stamp(l), f.key, f.session.SessionID}
+			s := sighting{f.stamp(l), f.key, f.session.SessionID, id == replyID(l) || recorded[id]}
 			if seen := r.seen[id]; len(seen) > 0 && seen[len(seen)-1].file == f.key {
 				seen[len(seen)-1].ts = min(seen[len(seen)-1].ts, s.ts)
 				continue
@@ -157,14 +168,13 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 			r.seen[id] = append(r.seen[id], s)
 		}
 	}
-	if lines[0].Source == "codex" {
-		r.codexResponses(lines)
-	}
 }
 
 // codexResponses records the response ID of each Codex call by its item
-// key, grouping items into calls as Transcript does.
-func (r *Replies) codexResponses(lines []TranscriptLine) {
+// key, grouping items into calls as Transcript does, and returns the item
+// keys of the calls whose usage the file records.
+func (r *Replies) codexResponses(lines []TranscriptLine) map[string]bool {
+	recorded := map[string]bool{}
 	key, output := "", false
 	for _, l := range lines {
 		e := parse([]byte(l.Line))
@@ -181,8 +191,14 @@ func (r *Replies) codexResponses(lines []TranscriptLine) {
 			if id := e.obj("payload").str("response_id"); id != "" && key != "" {
 				r.responses[key] = id
 			}
+			recorded[key] = true
+		case "event_msg":
+			if e.obj("payload").str("type") == "token_count" {
+				recorded[key] = true
+			}
 		}
 	}
+	return recorded
 }
 
 // response returns the response ID of a call by its item key, from any
@@ -195,18 +211,22 @@ func (r *Replies) response(key string) string {
 }
 
 // elect decides the owner of every reply, as Replies describes. Each
-// sighting ranks by its lineage's earliest sighting and root, then its
-// depth in the lineage, its time, and its file: a total order, so the
-// owner never depends on the order files were added in.
+// sighting ranks by whether its file records the call's usage, its
+// lineage's earliest sighting and root, then its depth in the lineage, its
+// time, and its file: a total order, so the owner never depends on the
+// order files were added in.
 func (r *Replies) elect() {
 	r.owners = map[string]string{}
 	type rank struct {
+		copied      bool
 		first, root string
 		depth       int
 		ts, file    string
 	}
 	less := func(a, b rank) bool {
 		switch {
+		case a.copied != b.copied:
+			return !a.copied
 		case a.first != b.first:
 			return a.first < b.first
 		case a.root != b.root:
@@ -223,7 +243,7 @@ func (r *Replies) elect() {
 		first := map[string]string{}
 		for i, s := range seen {
 			root, depth := r.lineage(s.session)
-			ranks[i] = rank{root: root, depth: depth, ts: s.ts, file: s.file}
+			ranks[i] = rank{copied: !s.recorded, root: root, depth: depth, ts: s.ts, file: s.file}
 			if t, ok := first[root]; !ok || s.ts < t {
 				first[root] = s.ts
 			}
@@ -319,6 +339,7 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 			n.copied(n.Messages[start:], c.CallID)
 			continue
 		}
+		c.ResponseID = responseID
 		n.Calls = append(n.Calls, *c)
 	}
 }
