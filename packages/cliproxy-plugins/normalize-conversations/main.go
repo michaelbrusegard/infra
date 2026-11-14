@@ -22,6 +22,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -128,16 +129,17 @@ var tables = []string{"llm.request_items", "llm.sessions", "llm.messages", "llm.
 
 // run normalizes requests when proxied is nil, and transcript lines
 // otherwise.
-func run(r io.Reader, dir string, n *conversations.Normalizer, proxied *conversations.Proxied) error {
+func run(r io.Reader, dir string, n *conversations.Normalizer, proxied *conversations.Proxied) (err error) {
 	files := map[string]*bufio.Writer{}
 	for _, table := range tables {
-		f, err := os.Create(filepath.Join(dir, table+".jsonl"))
-		if err != nil {
-			return err
+		f, createErr := os.Create(filepath.Join(dir, table+".jsonl"))
+		if createErr != nil {
+			return createErr
 		}
-		defer f.Close()
 		w := bufio.NewWriterSize(f, 1<<20)
-		defer w.Flush()
+		// A full disk may only show when the last rows are flushed, or when
+		// the file is closed, and any lost row must fail the run.
+		defer func() { err = errors.Join(err, w.Flush(), f.Close()) }()
 		files[table] = w
 	}
 	// Rows are written as each unit is normalized, so memory holds only the
@@ -174,8 +176,7 @@ func run(r io.Reader, dir string, n *conversations.Normalizer, proxied *conversa
 	if err != nil {
 		return err
 	}
-	defer os.Remove(spool.Name())
-	defer spool.Close()
+	defer func() { err = errors.Join(err, spool.Close(), os.Remove(spool.Name())) }()
 	if _, err := io.Copy(spool, r); err != nil {
 		return err
 	}
