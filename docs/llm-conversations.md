@@ -290,7 +290,18 @@ into CLIProxy's scheme: `claude:<session>`, `claude:<parent>:agent:<agent>`,
   assistant items since, as a remote compaction writes before its
   `compacted` line (122 live), is a call of its own without outputs rather
   than the previous call's usage. Grouping by inputs alone merges these,
-  and gives 146 live item keys two response IDs. The model
+  and gives 146 live item keys two response IDs. In older logs a
+  `token_count` does the same, except at a cumulative point the file
+  already counted: Codex repeats a point, even inside the next response,
+  and a repeat is no call's usage. Newer logs repeat each record in a
+  count, at a point that drifts from the record's after a compaction, so
+  where a file has records its counts are no usage. A sub-agent's file
+  copies its parent's `session_meta` and history, with the counts but not
+  always the items before them, so a call that a count gives its usage
+  also matches its copies by the last `session_meta` ID and the point.
+  Each distinct point thus counts once, as `llm.historical_usage` counts
+  it, except that the importer counts the drifted repeats again (12,963
+  live). The model
   comes from `turn_context`. A `compacted` line is kept as an event, and its
   `replacement_history` items become a new root chain, with lines
   `<line>#<index>`.

@@ -204,7 +204,10 @@ func TestTranscriptCodexCopiesWithoutResponseIDs(t *testing.T) {
 				`"content":[{"type":"output_text","text":"Fine."}]}}`)
 		return [][]TranscriptLine{p, c}
 	}
-	count := `{"type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"output_tokens":5}}}}`
+	count := func(total int) string {
+		return fmt.Sprintf(`{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":%d},`+
+			`"last_token_usage":{"output_tokens":5}}}}`, total)
+	}
 	for _, tc := range []struct {
 		name    string
 		files   [][]TranscriptLine
@@ -213,7 +216,7 @@ func TestTranscriptCodexCopiesWithoutResponseIDs(t *testing.T) {
 		tools   int
 	}{
 		// Older logs record no response IDs.
-		{"older logs", files(count, count), nil, []string{parent + " 10:00:02", parent + " 10:00:05", child + " 10:05:06"}, 1},
+		{"older logs", files(count(5), count(10)), nil, []string{parent + " 10:00:02", parent + " 10:00:05", child + " 10:05:06"}, 1},
 		// The parent's session went through the proxy, which returned its
 		// reply; only the parent's file records the response ID.
 		{"proxied parent", files(codexUsageLine("resp_1"), codexUsageLine("resp_2")), func() *Proxied {
@@ -353,5 +356,111 @@ func TestTranscriptCodexUsageRecordsEndCalls(t *testing.T) {
 	}
 	if c := replies.Conflicts(); len(c) > 0 {
 		t.Fatalf("conflicts %v", c)
+	}
+}
+
+// Older Codex logs record usage only in token_count events, each the last
+// response's counters at a cumulative point. Codex repeats a point it
+// already reported, even in the middle of the next response, and a repeat
+// is never that response's usage: the response takes the count of its own
+// point. Like a usage record, a second point with no output since is a
+// call without outputs, so each distinct point counts once, as
+// llm.historical_usage counts it.
+func TestTranscriptCodexTokenCountsCountEachPointOnce(t *testing.T) {
+	count := func(total, input, cached, output int) string {
+		return fmt.Sprintf(`{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":%d},`+
+			`"last_token_usage":{"input_tokens":%d,"cached_input_tokens":%d,"output_tokens":%d}}}}`, total, input, cached, output)
+	}
+	record := func(id string, total, input, output int) string {
+		return fmt.Sprintf(`{"type":"token_usage_record","payload":{"response_id":%q,"usage":{"input_tokens":%d,"output_tokens":%d},`+
+			`"thread_token_usage":{"total_tokens":%d}}}`, id, input, output, total)
+	}
+	reasoning := func(id string) string {
+		return `{"type":"response_item","payload":{"type":"reasoning","id":"` + id + `","summary":[]}}`
+	}
+	tool := func(id, call string) string {
+		return `{"type":"response_item","payload":{"type":"custom_tool_call","id":"` + id + `","status":"completed","call_id":"` + call +
+			`","name":"exec","input":"ls"}}`
+	}
+	output := func(call string) string {
+		return `{"type":"response_item","payload":{"type":"custom_tool_call_output","call_id":"` + call + `","output":"ok"}}`
+	}
+	for _, tc := range []struct {
+		name  string
+		lines []string
+		calls []string
+	}{
+		// Lines 99 to 108 of a live rollout: line 104 repeats line 102's
+		// point after the next response began.
+		{"repeated point", []string{
+			reasoning("rs_1"), tool("ctc_1", "call_1"), output("call_1"), count(967038, 76619, 70400, 175),
+			reasoning("rs_2"), count(967038, 76619, 70400, 175), reasoning("rs_3"), tool("ctc_3", "call_3"), output("call_3"),
+			count(1053815, 86390, 84736, 387),
+		}, []string{"76619/175 2 outputs", "86390/387 3 outputs"}},
+		{"distinct points", []string{
+			codexReplyLine("Two pods."), count(120, 100, 0, 20), count(420, 280, 0, 20), codexReplyLine("Both ready."), count(530, 90, 0, 20),
+		}, []string{"100/20 1 outputs", "280/20 0 outputs", "90/20 1 outputs"}},
+		// Lines 734 to 751 of a newer live rollout: after a remote
+		// compaction, the counts that repeat usage records no longer
+		// share their points.
+		{"usage records", []string{
+			tool("ctc_1", "call_1"), record("resp_1", 13675681, 226073, 636), output("call_1"), count(13675681, 226073, 0, 636),
+			record("resp_compact", 13908682, 228018, 4983),
+			`{"type":"compacted","payload":{"replacement_history":[{"type":"message","role":"user","content":[{"type":"input_text","text":"Summary."}]}]}}`,
+			count(13675681, 0, 0, 0), tool("ctc_2", "call_2"), record("resp_2", 13933730, 25001, 47), output("call_2"),
+			count(13700729, 25001, 0, 47),
+		}, []string{"226073/636 1 outputs", "228018/4983 0 outputs", "25001/47 1 outputs"}},
+	} {
+		file := codexFile("lungo", ".codex/sessions/2026/07/16/rollout-2026-07-16T02-04-50-019f6a2b-0000-7000-8000-00000000000a.jsonl",
+			"2026-07-16 09:07", append([]string{`{"type":"session_meta","payload":{"id":"019f6a2b-0000-7000-8000-00000000000a"}}`,
+				codexUserLine("Check the pods.")}, tc.lines...)...)
+		n := NewNormalizer()
+		n.Transcript(file, repliesOf(nil, file), nil)
+		var calls []string
+		for _, c := range n.Calls {
+			calls = append(calls, fmt.Sprintf("%d/%d %d outputs", c.UncachedInputTokens+c.CacheReadTokens, c.OutputTokens, len(c.OutputIDs)))
+		}
+		if !reflect.DeepEqual(calls, tc.calls) {
+			t.Errorf("%s: calls %v, want %v", tc.name, calls, tc.calls)
+		}
+	}
+}
+
+// A sub-agent of an older log copies its parent's history after a copy of
+// its parent's session_meta, with the parent's token counts but not every
+// item they follow: two copied counts can follow each other, and a copied
+// reply can lack its reasoning, so its first item differs. The parent's
+// file holds its points, and the sub-agent only its own.
+func TestTranscriptCodexCopiedTokenCountsStayWithTheParent(t *testing.T) {
+	count := func(total, input int) string {
+		return fmt.Sprintf(`{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":%d},`+
+			`"last_token_usage":{"input_tokens":%d,"output_tokens":5}}}}`, total, input)
+	}
+	parentMeta := `{"type":"session_meta","payload":{"id":"019f6a2b-0000-7000-8000-00000000000a"}}`
+	reply := `{"type":"response_item","payload":{"type":"message","id":"msg_1","role":"assistant","content":[{"type":"output_text","text":"Plan: three steps."}]}}`
+	checked := `{"type":"response_item","payload":{"type":"message","id":"msg_3","role":"assistant","content":[{"type":"output_text","text":"Checked."}]}}`
+	parent := codexFile("lungo", ".codex/sessions/2026/07/16/rollout-2026-07-16T09-00-00-019f6a2b-0000-7000-8000-00000000000a.jsonl",
+		"2026-07-16 09:00", parentMeta, codexUserLine("Plan the migration."), reply, count(105, 100),
+		`{"type":"response_item","payload":{"type":"reasoning","id":"rs_2","summary":[]}}`, count(315, 205), codexUserLine("Check it."),
+		`{"type":"response_item","payload":{"type":"reasoning","id":"rs_3","summary":[]}}`, checked, count(600, 280))
+	child := codexFile("lungo", ".codex/sessions/2026/07/16/rollout-2026-07-16T09-05-00-019f6a2b-0000-7000-8000-00000000000b.jsonl",
+		"2026-07-16 09:05", `{"type":"session_meta","payload":{"id":"019f6a2b-0000-7000-8000-00000000000b","source":{"subagent":`+
+			`{"thread_spawn":{"parent_thread_id":"019f6a2b-0000-7000-8000-00000000000a","agent_path":"/root/review"}}}}}`,
+		parentMeta, codexUserLine("Plan the migration."), reply, count(105, 100), count(315, 205), codexUserLine("Check it."), checked,
+		count(600, 280), codexUserLine("Review the plan."), codexReplyLine("It misses a rollback."), count(1000, 680))
+	replies := repliesOf(nil, parent, child)
+	n := NewNormalizer()
+	for _, f := range [][]TranscriptLine{parent, child} {
+		n.Transcript(f, replies, nil)
+	}
+	var calls []string
+	for _, c := range n.Calls {
+		calls = append(calls, fmt.Sprintf("%s %d %d outputs", strings.TrimPrefix(c.SessionID, "codex:019f6a2b-0000-7000-8000-"),
+			c.UncachedInputTokens, len(c.OutputIDs)))
+	}
+	want := []string{"00000000000a 100 1 outputs", "00000000000a 205 1 outputs", "00000000000a 280 2 outputs",
+		"00000000000a:agent:review 680 1 outputs"}
+	if !reflect.DeepEqual(calls, want) {
+		t.Fatalf("calls %v, want %v", calls, want)
 	}
 }

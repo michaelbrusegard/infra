@@ -41,6 +41,9 @@ type file struct {
 	order []string
 	// The provider's ID of each Codex call's first output item; see itemKey.
 	items map[string]string
+	// The usage point of each Codex call that a token count gives its
+	// usage; see codexCounts.
+	counts map[string]string
 }
 
 type keptMessage struct {
@@ -98,9 +101,10 @@ func (p *Proxied) sessionOf(s Session, lines []TranscriptLine) string {
 
 // Replies records which transcript file holds the call of each reply that
 // files record, by response ID, or for Codex by the provider's ID of the
-// reply's first output item (see itemKey). A Codex file that records a
-// call's usage holds it over copies that do not, since only the file that
-// made the call writes its usage record, and a copy holding it would lose
+// reply's first output item (see itemKey) and the point of an older log's
+// token count (see codexCounts). A Codex file that records a call's usage
+// holds it over copies that do not, since only the file that made the call
+// writes its usage record, and a copy holding it would lose
 // its usage and response ID. Within a lineage of sessions, recorded by each
 // file's parent session, an ancestor's file holds it over its sub-agents' and
 // forks', since they copy the replies they start from, even when clocks or
@@ -147,9 +151,9 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 	}
 	r.owners = nil
 	f := newFile(nil, lines, proxied)
-	recorded := map[string]bool{}
+	recorded, counts := map[string]bool{}, map[string]string{}
 	if lines[0].Source == "codex" {
-		recorded = r.codexResponses(lines)
+		recorded, counts = r.codexResponses(lines)
 	}
 	// Copies of a session agree on its parent; the smaller one keeps the
 	// result independent of order if they do not.
@@ -158,7 +162,7 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 	}
 	for _, l := range lines {
 		owned := f.owned(l)
-		for _, id := range []string{replyID(l), itemKey(l)} {
+		for _, id := range []string{replyID(l), itemKey(l), counts[l.ID]} {
 			if id == "" || !owned {
 				continue
 			}
@@ -176,14 +180,20 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 
 // codexResponses records the response ID of each Codex call by its item
 // key, grouping items into calls as Transcript does, and returns the item
-// keys of the calls whose usage the file records.
-func (r *Replies) codexResponses(lines []TranscriptLine) map[string]bool {
-	recorded := map[string]bool{}
+// keys of the calls whose usage the file records, which include the keys of
+// its token counts, and those keys by line.
+func (r *Replies) codexResponses(lines []TranscriptLine) (map[string]bool, map[string]string) {
+	recorded, counted := map[string]bool{}, map[string]string{}
 	key, output := "", false
 	// Whether the call has a usage record yet, and its response ID.
 	used, response := false, ""
+	counts := codexCounts{points: map[uint64]bool{}}
 	for _, l := range lines {
 		e := parse([]byte(l.Line))
+		count := counts.key(e)
+		if count != "" {
+			recorded[count], counted[l.ID] = true, count
+		}
 		switch e.str("type") {
 		case "response_item":
 			role, _ := responsesItem(e["payload"])
@@ -215,12 +225,54 @@ func (r *Replies) codexResponses(lines []TranscriptLine) map[string]bool {
 			}
 			recorded[key] = true
 		case "event_msg":
-			if e.obj("payload").str("type") == "token_count" {
-				recorded[key] = true
+			if count == "" {
+				continue
 			}
+			output = false
+			if used {
+				// A response without items of its own; see file.codex.
+				continue
+			}
+			used = true
+			recorded[key] = true
 		}
 	}
-	return recorded
+	return recorded, counted
+}
+
+// codexCounts follows the token counts of a Codex file. Older logs only
+// have token counts: the last response's usage, at a cumulative point.
+// Codex repeats a point it reported, even within the next response, and a
+// repeat is no call's usage. Newer logs repeat each usage record in a
+// count, at a point that drifts from the record's after a compaction, so
+// there the records alone are the usage.
+type codexCounts struct {
+	records bool
+	// The thread of the last session_meta line. A sub-agent's file writes a
+	// copy of its parent's before the history it copies from the parent.
+	thread string
+	points map[uint64]bool
+}
+
+// key returns the key of the usage point a line records, or "" if it
+// records none: the thread and the point, as llm.historical_usage counts
+// each once.
+func (c *codexCounts) key(e obj) string {
+	p := e.obj("payload")
+	switch e.str("type") {
+	case "session_meta":
+		c.thread = p.str("id")
+	case "token_usage_record":
+		c.records = true
+	case "event_msg":
+		point := p.obj("info").obj("total_token_usage").num("total_tokens")
+		if p.str("type") != "token_count" || c.records || point == 0 || c.points[point] {
+			return ""
+		}
+		c.points[point] = true
+		return "count:" + c.thread + ":" + strconv.FormatUint(point, 10)
+	}
+	return ""
 }
 
 // response returns the response ID of a call by its item key, from any
@@ -373,14 +425,16 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 		c := f.calls[id]
 		// A copy of a Codex reply lacks its response ID, which the file it
 		// was copied from records. An item key of distinct responses
-		// matches none of them.
+		// matches none of them. A sub-agent's copy can also lack the
+		// first items of a reply, but not the token count of its usage.
 		key := f.items[id]
 		if replies != nil && replies.conflicts[key] != nil {
 			key = ""
 		}
 		responseID := firstNonEmpty(c.ResponseID, replies.response(key))
 		reply := firstNonEmpty(key, responseID)
-		if _, returned := proxied.returned(responseID); returned || !replies.owns(f.key, reply) {
+		copied := !replies.owns(f.key, reply) || !replies.owns(f.key, f.counts[id])
+		if _, returned := proxied.returned(responseID); returned || copied {
 			n.copied(n.Messages[start:], c.CallID)
 			continue
 		}
@@ -393,7 +447,7 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 // the session over, if it did.
 func newFile(n *Normalizer, lines []TranscriptLine, proxied *Proxied) *file {
 	f := &file{n: n, key: fileKey(lines[0]), parents: map[string]string{}, nodes: map[string]Hash{},
-		calls: map[string]*Call{}, kept: map[string]keptMessage{}, items: map[string]string{}}
+		calls: map[string]*Call{}, kept: map[string]keptMessage{}, items: map[string]string{}, counts: map[string]string{}}
 	f.session = transcriptSession(lines)
 	if proxied != nil {
 		f.session.SessionID = proxied.sessionOf(f.session, lines)
@@ -672,9 +726,11 @@ func (f *file) codex(lines []TranscriptLine) {
 	model, call, lastWasOutput := "", "", false
 	// The call whose usage record came last.
 	recorded := ""
+	counts := codexCounts{points: map[uint64]bool{}}
 	for _, l := range lines {
 		e := parse([]byte(l.Line))
 		t, p := e.str("type"), e.obj("payload")
+		count := counts.key(e)
 		switch {
 		case t == "turn_context":
 			model = firstNonEmpty(p.str("model"), model)
@@ -718,11 +774,18 @@ func (f *file) codex(lines []TranscriptLine) {
 			}
 			recorded, lastWasOutput = call, false
 			f.setUsage(call, p.str("response_id"), codexUsage(p.obj("usage")))
-		case t == "event_msg" && p.str("type") == "token_count":
-			// Older logs only have the last call's counters.
-			if c := f.calls[call]; c != nil && c.ResponseID == "" && c.OutputTokens == 0 {
-				f.setUsage(call, "", codexUsage(p.obj("info").obj("last_token_usage")))
+		case count != "":
+			// A token count's point, which codexCounts keeps once, is a
+			// response's usage and ends it like a usage record. Without a
+			// call to take it, it is a call without outputs. The point
+			// matches the call to its copies: a sub-agent copies its
+			// parent's counts but not every item they follow.
+			if c := f.calls[call]; c == nil || call == recorded {
+				call = f.session.SessionID + ":" + l.ID
+				f.call(call, "codex", model, f.last, f.stamp(l))
 			}
+			recorded, lastWasOutput, f.counts[call] = call, false, count
+			f.setUsage(call, "", codexUsage(p.obj("info").obj("last_token_usage")))
 		}
 		kind := t
 		if sub := p.str("type"); sub != "" {
