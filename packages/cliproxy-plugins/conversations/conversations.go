@@ -2,11 +2,12 @@
 // into one canonical form: sessions, a tree of messages, model calls, and
 // events. docs/llm-conversations.md describes the schema.
 //
-// Every source record stays recoverable. Message and event rows reference
-// their exact source JSON by content hash in llm.request_items, and calls
-// keep the request envelope, parts, and response body, so the extracted
-// columns only ever add a queryable view of information that is also kept
-// verbatim.
+// The raw capture stays the only copy of every source record, and the
+// canonical rows reference it rather than copy it: a proxy call names its
+// llm.requests row, a proxy message the llm.request_items hash it was read
+// from, and a transcript message or event its llm.transcripts line. The
+// canonical tables are a view that can be dropped and rebuilt from the raw
+// capture whenever the extraction improves.
 package conversations
 
 import (
@@ -59,16 +60,22 @@ type Message struct {
 	// The call that produced the message, or first sent it.
 	CallID string  `json:"call_id"`
 	Blocks []Block `json:"blocks"`
-	// The dialect of the raw item: anthropic, openai-responses, openai-chat,
+	// The source dialect: anthropic, openai-responses, openai-chat,
 	// claude-code, codex, pi, or opencode.
 	Format string `json:"format"`
-	// The exact source JSON in llm.request_items.
+	// For a proxy input, the llm.request_items hash of the request part it
+	// was read from, or zero when the request's envelope held it. A proxy
+	// output was assembled from its call's response body in llm.requests.
 	Item Hash `json:"item"`
-	// The transcript line, and the host and path of its file, empty for
-	// proxy messages.
-	Line string `json:"line"`
+	// For a transcript message, its llm.transcripts line by host, path, and
+	// ID. Part is empty when the message is the whole line, and otherwise
+	// names what inside the line it was built from: the index of a Codex
+	// compaction's replacement history item, or the entry a Pi compaction
+	// sends again.
 	Host string `json:"host"`
 	Path string `json:"path"`
+	Line string `json:"line"`
+	Part string `json:"part"`
 	// Ranks the rows written for one node; ReplacingMergeTree keeps the
 	// highest. See version.
 	Version uint64 `json:"version"`
@@ -78,13 +85,18 @@ type Message struct {
 type Call struct {
 	CallID      string `json:"call_id"`
 	SessionID   string `json:"session_id"`
-	TraceID     string `json:"trace_id"`
 	ResponseID  string `json:"response_id"`
 	StartedAt   string `json:"started_at"`
 	CompletedAt string `json:"completed_at"`
 	// proxy or transcript
-	Origin       string `json:"origin"`
-	Client       string `json:"client"`
+	Origin string `json:"origin"`
+	Client string `json:"client"`
+	// The call's raw source: its llm.requests row for the proxy, or the
+	// host and path of its transcript file, whose lines its messages and
+	// events name.
+	RequestID    string `json:"request_id"`
+	Host         string `json:"host"`
+	Path         string `json:"path"`
 	SourceFormat string `json:"source_format"`
 	Model        string `json:"model"`
 	// The last input message; its ancestors are the rest of the context.
@@ -97,27 +109,10 @@ type Call struct {
 	CacheWriteTokens    uint64 `json:"cache_write_tokens"`
 	OutputTokens        uint64 `json:"output_tokens"`
 	ReasoningTokens     uint64 `json:"reasoning_tokens"`
-	// Proxy calls keep every llm.requests column verbatim, so the row
-	// rebuilds exactly. The two that differ from a canonical column of the
-	// same name are renamed: session_id is the header session, and model the
-	// model the archive recorded.
-	SourceSessionID string              `json:"source_session_id"`
-	SourceModel     string              `json:"source_model"`
-	RequestedModel  string              `json:"requested_model"`
-	Stream          bool                `json:"stream"`
-	Outcome         string              `json:"outcome"`
-	StatusCode      int                 `json:"status_code"`
-	Error           string              `json:"error"`
-	UserAgent       string              `json:"user_agent"`
-	Truncated       bool                `json:"truncated"`
-	RequestEnvelope string              `json:"request_envelope"`
-	RequestParts    []requestitems.Part `json:"request_parts"`
-	ResponseBody    string              `json:"response_body"`
 }
 
 // Event is any transcript record that is not a message, such as Codex token
-// counts or Claude Code attachments, kept verbatim with the host and path of
-// its file.
+// counts or Claude Code attachments, by its llm.transcripts line.
 type Event struct {
 	SessionID string `json:"session_id"`
 	TS        string `json:"ts"`
@@ -125,7 +120,6 @@ type Event struct {
 	Path      string `json:"path"`
 	Line      string `json:"line"`
 	Type      string `json:"type"`
-	Item      Hash   `json:"item"`
 }
 
 // Session holds the attributes of a session that do not change as it grows.
@@ -142,44 +136,13 @@ type Session struct {
 	Cwd    string `json:"cwd"`
 }
 
-type Item struct {
-	Hash Hash   `json:"hash"`
-	Item string `json:"item"`
-}
-
-// Batch collects normalized rows. Each item is added once.
+// Batch collects normalized rows. It never holds raw records, only
+// references to them.
 type Batch struct {
 	Sessions []Session
 	Messages []Message
 	Calls    []Call
 	Events   []Event
-	Items    []Item
-	items    map[Hash]struct{}
-}
-
-// item stores raw bytes verbatim and returns their hash. Invalid UTF-8 is
-// replaced first, as requestitems does, because ClickHouse would replace it
-// on insert and the stored item would no longer match its hash.
-func (b *Batch) item(raw []byte) Hash {
-	raw = bytes.ToValidUTF8(raw, []byte("�"))
-	h := requestitems.HashOf(raw)
-	if b.items == nil {
-		b.items = map[Hash]struct{}{}
-	}
-	if _, ok := b.items[h]; !ok {
-		b.items[h] = struct{}{}
-		b.Items = append(b.Items, Item{h, string(raw)})
-	}
-	return h
-}
-
-// stored records an item that is already in llm.request_items, so item does
-// not write it again.
-func (b *Batch) stored(raw []byte) {
-	if b.items == nil {
-		b.items = map[Hash]struct{}{}
-	}
-	b.items[requestitems.HashOf(bytes.ToValidUTF8(raw, []byte("�")))] = struct{}{}
 }
 
 // version ranks the rows written for one node, highest first: a model's
@@ -208,8 +171,8 @@ func (u *Uint64) UnmarshalJSON(data []byte) error {
 	return err
 }
 
-// nodeID derives a message ID from its parent and a key: the item hash for
-// proxy messages, which dedupes resent prefixes, or the transcript's own
+// nodeID derives a message ID from its parent and a key: the content key
+// for proxy messages, which dedupes resent prefixes, or the transcript's own
 // entry ID. Roots derive from the session instead.
 func nodeID(session string, parent Hash, key string) Hash {
 	var seed []byte

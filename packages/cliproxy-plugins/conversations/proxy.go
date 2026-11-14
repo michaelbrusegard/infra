@@ -93,22 +93,29 @@ var conversationFields = map[string]bool{"messages": true, "input": true}
 
 var formats = map[string]string{"claude": "anthropic", "openai-response": "openai-responses", "openai": "openai-chat"}
 
-// split reads a request's conversation items and client metadata.
-func split(r Request, env obj) (conversation [][]byte, metadata obj) {
+// part is a conversation message of a request, and the hash of the
+// request item it was read from, zero when the envelope held it.
+type part struct {
+	raw  []byte
+	item Hash
+}
+
+// split reads a request's conversation messages and client metadata.
+func split(r Request, env obj) (conversation []part, metadata obj) {
 	for i, p := range r.RequestParts {
 		item := []byte(r.Items[i])
 		switch {
 		case conversationFields[p.Field] && p.Position >= 0:
-			conversation = append(conversation, item)
+			conversation = append(conversation, part{item, p.Hash})
 		case p.Field == "input":
 			// A whole input string is one user message.
-			conversation = append(conversation, []byte(fmt.Sprintf(`{"role":"user","content":%s}`, item)))
+			conversation = append(conversation, part{[]byte(fmt.Sprintf(`{"role":"user","content":%s}`, item)), p.Hash})
 		case p.Field == "client_metadata":
 			metadata = parse(item)
 		}
 	}
 	if input := env["input"]; isString(input) {
-		conversation = append(conversation, []byte(fmt.Sprintf(`{"role":"user","content":%s}`, input)))
+		conversation = append(conversation, part{raw: []byte(fmt.Sprintf(`{"role":"user","content":%s}`, input))})
 	}
 	if metadata == nil {
 		metadata = env.obj("client_metadata")
@@ -148,11 +155,6 @@ func (n *Normalizer) Request(r Request) bool {
 			return false
 		}
 	}
-	// The request's items were read from llm.request_items, so they only
-	// need to be known here, not written again.
-	for _, item := range r.Items {
-		n.stored([]byte(item))
-	}
 	client := clientOf(r.UserAgent)
 	n.session(Session{SessionID: session, ParentSessionID: parentSession, Client: client, Origin: "proxy"})
 	format := formats[r.SourceFormat]
@@ -166,22 +168,16 @@ func (n *Normalizer) Request(r Request) bool {
 			Blocks: []Block{{Type: "other", SourceType: "missing_context", Text: prev}},
 		})
 	}
-	for _, raw := range conversation {
-		role, blocks := dialectMessage(format, raw)
-		parent = n.message(session, parent, raw, r.StartedAt, Message{
-			Role: roleOf(role, blocks), CallID: r.RequestID, Format: format, Blocks: blocks,
+	for _, p := range conversation {
+		role, blocks := dialectMessage(format, p.raw)
+		parent = n.message(session, parent, p.raw, r.StartedAt, Message{
+			Role: roleOf(role, blocks), CallID: r.RequestID, Format: format, Blocks: blocks, Item: p.item,
 		})
 	}
 	call := Call{
-		CallID: r.RequestID, SessionID: session, TraceID: r.TraceID, StartedAt: r.StartedAt,
-		CompletedAt: r.CompletedAt, Origin: "proxy", Client: client, SourceFormat: r.SourceFormat,
-		InputID: parent, OutputIDs: []Hash{}, SourceSessionID: r.SessionID, SourceModel: r.Model,
-		RequestedModel: r.RequestedModel, Stream: r.Stream, Outcome: r.Outcome, StatusCode: r.StatusCode,
-		Error: r.Error, UserAgent: r.UserAgent, Truncated: r.Truncated, RequestEnvelope: r.RequestEnvelope,
-		RequestParts: r.RequestParts, ResponseBody: r.ResponseBody,
-	}
-	if call.RequestParts == nil {
-		call.RequestParts = []requestitems.Part{}
+		CallID: r.RequestID, SessionID: session, StartedAt: r.StartedAt, CompletedAt: r.CompletedAt,
+		Origin: "proxy", Client: client, RequestID: r.RequestID, SourceFormat: r.SourceFormat,
+		InputID: parent, OutputIDs: []Hash{},
 	}
 	resp := parseResponse(r.SourceFormat, r.ResponseBody)
 	call.ResponseID = resp.id
@@ -204,9 +200,9 @@ func (n *Normalizer) Request(r Request) bool {
 
 // message adds a node under parent unless one with the same content
 // exists, and returns its ID. The node keeps the row with the highest
-// version; every call's own bytes stay in its request parts.
+// version; every call's own bytes stay in its llm.requests row.
 func (n *Normalizer) message(session string, parent Hash, raw []byte, ts string, m Message) Hash {
-	id, _ := n.node(session, parent, contentKey(m.Format, raw), n.item(raw), ts, m, true)
+	id, _ := n.node(session, parent, contentKey(m.Format, raw), ts, m, true)
 	return id
 }
 
@@ -282,7 +278,7 @@ func stripTransport(content any) any {
 // node writes a message under parent, keyed by key, and reports whether it
 // wrote a row. An existing node gets another row only when replace is set
 // and the new row outranks the written one.
-func (n *Normalizer) node(session string, parent Hash, key string, item Hash, ts string, m Message, replace bool) (Hash, bool) {
+func (n *Normalizer) node(session string, parent Hash, key string, ts string, m Message, replace bool) (Hash, bool) {
 	id := nodeID(session, parent, key)
 	v := version(m.Output, ts)
 	known, ok := n.nodes[id]
@@ -294,7 +290,7 @@ func (n *Normalizer) node(session string, parent Hash, key string, item Hash, ts
 		seq = n.nodes[parent].seq + 1
 	}
 	n.nodes[id] = node{seq, v}
-	m.SessionID, m.ID, m.ParentID, m.Seq, m.TS, m.Item, m.Version = session, id, parent, seq, ts, item, v
+	m.SessionID, m.ID, m.ParentID, m.Seq, m.TS, m.Version = session, id, parent, seq, ts, v
 	if m.Blocks == nil {
 		m.Blocks = []Block{}
 	}
@@ -329,7 +325,7 @@ func dialectMessage(format string, raw []byte) (string, []Block) {
 // tells sub-agents apart, and otherwise derives one in the same scheme.
 // Requests with no session at all group by their first message, so calls
 // that extend one conversation still land together.
-func proxySession(r Request, env, metadata obj, conversation [][]byte) (string, string) {
+func proxySession(r Request, env, metadata obj, conversation []part) (string, string) {
 	client := clientOf(r.UserAgent)
 	if s := r.UsageSessionID; s != "" {
 		parent := r.UsageParentSessionID
@@ -353,7 +349,7 @@ func proxySession(r Request, env, metadata obj, conversation [][]byte) (string, 
 		return firstNonEmpty(prefix, "header") + ":" + r.SessionID, ""
 	}
 	if len(conversation) > 0 {
-		h := requestitems.HashOf(conversation[0])
+		h := requestitems.HashOf(conversation[0].raw)
 		return fmt.Sprintf("proxy:%x", h[:8]), ""
 	}
 	return "proxy:" + r.RequestID, ""
@@ -443,8 +439,10 @@ func events(body string) []json.RawMessage {
 }
 
 // parseResponse assembles the messages a response produced. The response
-// body itself stays in the call, so this only has to be faithful, not
-// complete: stream framing, rate limits, and timing remain there.
+// body itself stays in llm.requests, so this only has to be faithful, not
+// complete: stream framing, rate limits, and timing remain there. The
+// assembled messages are not stored: their blocks are the extracted view,
+// and a rebuild assembles them again.
 func parseResponse(format, body string) response {
 	evs := events(body)
 	switch format {

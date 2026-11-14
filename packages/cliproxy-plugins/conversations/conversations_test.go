@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 	"reflect"
 	"sort"
 	"strconv"
@@ -101,18 +100,54 @@ func repliesOf(proxied *Proxied, files ...[]TranscriptLine) *Replies {
 	return r
 }
 
-func itemsOf(b *Batch) map[Hash]string {
-	out := map[Hash]string{}
-	for h, item := range archived {
-		out[h] = item
-	}
-	for _, it := range b.Items {
-		if requestitems.HashOf([]byte(it.Item)) != it.Hash {
-			panic("item does not match its hash")
+// lineRef is how canonical rows name an llm.transcripts row: by host,
+// path, and ID, which identify one row as uniquely as the table's key.
+type lineRef struct{ host, path, id string }
+
+func linesOf(files [][]TranscriptLine) map[lineRef]string {
+	out := map[lineRef]string{}
+	for _, f := range files {
+		for _, l := range f {
+			out[lineRef{l.Host, l.Path, l.ID}] = l.Line
 		}
-		out[it.Hash] = it.Item
 	}
 	return out
+}
+
+// rawOf follows a message's references to the raw JSON it was read from: a
+// request item, a transcript line, or for a proxy output, the response body
+// its call names, assembled again. Messages built from inside a line, and
+// the inputs a request's envelope held, have none of their own.
+func rawOf(t *testing.T, b *Batch, lines map[lineRef]string, m Message) ([]byte, bool) {
+	t.Helper()
+	switch {
+	case m.Path != "":
+		line, ok := lines[lineRef{m.Host, m.Path, m.Line}]
+		if !ok {
+			t.Fatalf("message %v names no line", m.ID)
+		}
+		return []byte(line), m.Part == ""
+	case m.Output:
+		c := callByID(t, b, m.CallID)
+		r, ok := storedRequests(t)[c.RequestID]
+		if !ok {
+			t.Fatalf("call %s names no request", c.CallID)
+		}
+		outputs := parseResponse(r.SourceFormat, r.ResponseBody).outputs
+		for i, id := range c.OutputIDs {
+			if id == m.ID {
+				return outputs[i], true
+			}
+		}
+		t.Fatalf("output %v is not its call's", m.ID)
+	case m.Item != (Hash{}):
+		item, ok := archived[m.Item]
+		if !ok {
+			t.Fatalf("message %v names no item", m.ID)
+		}
+		return []byte(item), true
+	}
+	return nil, false
 }
 
 func decode(t *testing.T, data []byte) any {
@@ -153,34 +188,35 @@ func texts(path []Message) []string {
 	return out
 }
 
-func TestProxyCallsRebuildTheirSources(t *testing.T) {
+// Every request is exactly one call, which names it, and every message's
+// reference resolves: an input to an item of the request that first sent
+// it, an output to its call's response.
+func TestProxyReferencesResolve(t *testing.T) {
 	n, fixtures := proxyBatch(t)
-	items := itemsOf(&n.Batch)
+	requests := storedRequests(t)
+	calls := map[string]int{}
+	for _, c := range n.Calls {
+		if _, ok := requests[c.RequestID]; !ok || c.Origin != "proxy" {
+			t.Fatalf("call %s names no request", c.CallID)
+		}
+		calls[c.RequestID]++
+	}
 	for _, f := range fixtures {
-		c := callByID(t, &n.Batch, f.Name)
-		body := requestitems.Body{Envelope: c.RequestEnvelope, Parts: c.RequestParts}
-		for _, p := range c.RequestParts {
-			item, ok := items[p.Hash]
-			if !ok {
-				t.Fatalf("%s: part %s has no item", f.Name, p.Field)
-			}
-			body.Items = append(body.Items, []byte(item))
-		}
-		rebuilt := body.JSON()
-		if c.RequestEnvelope == "" {
-			if !bytes.Equal(rebuilt, f.body()) {
-				t.Fatalf("%s: body changed: %s", f.Name, rebuilt)
-			}
-		} else if !reflect.DeepEqual(decode(t, rebuilt), decode(t, f.body())) {
-			t.Fatalf("%s: rebuilt body differs:\n%s", f.Name, rebuilt)
-		}
-		if c.ResponseBody != f.ResponseBody {
-			t.Fatalf("%s: response body changed", f.Name)
+		if calls[f.Name] != 1 {
+			t.Fatalf("request %s is %d calls", f.Name, calls[f.Name])
 		}
 	}
 	for _, m := range n.Messages {
-		if _, ok := items[m.Item]; !ok {
-			t.Fatalf("message %v has no item", m.ID)
+		raw, _ := rawOf(t, &n.Batch, nil, m)
+		if m.Item == (Hash{}) {
+			continue
+		}
+		parts := false
+		for _, p := range requests[m.CallID].RequestParts {
+			parts = parts || p.Hash == m.Item
+		}
+		if !parts || requestitems.HashOf(raw) != m.Item {
+			t.Fatalf("message %v names item %v, which its call %s did not send", m.ID, m.Item, m.CallID)
 		}
 	}
 }
@@ -272,7 +308,7 @@ func TestProxyConversationTree(t *testing.T) {
 	}
 
 	truncated := callByID(t, &n.Batch, "truncated")
-	if truncated.InputID != (Hash{}) || len(truncated.RequestParts) != 1 {
+	if truncated.InputID != (Hash{}) || len(truncated.OutputIDs) != 0 {
 		t.Fatalf("truncated call %+v", truncated)
 	}
 	sessions := map[string]string{}
@@ -307,12 +343,13 @@ func TestProxyNormalizationIsIdempotent(t *testing.T) {
 	}
 }
 
-// Every transcript line is one message or event that references the line
-// verbatim and records its file, so its llm.transcripts row rebuilds, with
-// the source from the file's session row. No two rows share the key
-// ClickHouse replaces by, even for a file synced to a second host, which
-// shares its session, line numbers, and times.
-func TestTranscriptLinesAreKeptExactlyOnce(t *testing.T) {
+// Every transcript line is exactly one message or event, which names it by
+// host, path, and ID, and every reference resolves: a message built from
+// inside a line to the line and the item or entry it names, and a call to
+// its file. No two rows share the key ClickHouse replaces by, even for a
+// file synced to a second host, which shares its session, line numbers,
+// and times.
+func TestTranscriptReferencesResolve(t *testing.T) {
 	_, files := transcriptBatch(t, nil)
 	for _, f := range files {
 		if strings.HasSuffix(f[0].Path, "019f6478-0000-7000-8000-000000000004.jsonl") {
@@ -328,36 +365,30 @@ func TestTranscriptLinesAreKeptExactlyOnce(t *testing.T) {
 	for _, f := range files {
 		n.Transcript(f, replies, nil)
 	}
-	items := itemsOf(&n.Batch)
-	type file struct{ session, host, path string }
-	sources := map[file]string{}
-	for _, s := range n.Sessions {
-		sources[file{s.SessionID, s.Host, s.Path}] = s.Client
-	}
-	rebuilt := map[TranscriptLine]int{}
-	add := func(f file, line string, item Hash) {
-		source, ok := sources[f]
-		if !ok {
-			t.Fatalf("no session row for %+v", f)
-		}
-		// The file-name session is the path's, or for an OpenCode database,
-		// which holds many sessions, the canonical session's.
-		session := strings.TrimSuffix(path.Base(f.path), ".jsonl")
-		if source == "opencode" {
-			session = strings.TrimPrefix(f.session, "opencode:")
-		}
-		rebuilt[TranscriptLine{Source: source, Host: f.host, Session: session, ID: line, Path: f.path, Line: items[item]}]++
-	}
+	lines := linesOf(files)
+	referenced := map[lineRef]int{}
 	ids := map[Hash]bool{}
 	for _, m := range n.Messages {
 		if ids[m.ID] {
 			t.Fatalf("two rows for message %v", m.ID)
 		}
 		ids[m.ID] = true
-		// Compaction items and the context Pi sends again are messages from
-		// inside a line, as line#item.
-		if !strings.Contains(m.Line, "#") {
-			add(file{m.SessionID, m.Host, m.Path}, m.Line, m.Item)
+		ref := lineRef{m.Host, m.Path, m.Line}
+		line, ok := lines[ref]
+		if !ok {
+			t.Fatalf("message %+v names no line", m)
+		}
+		if m.Part == "" {
+			referenced[ref]++
+			continue
+		}
+		// Compaction items and the context Pi sends again come from inside a
+		// line: a Codex replacement history index, or the entry Pi keeps.
+		e := parse([]byte(line))
+		if i, err := strconv.Atoi(m.Part); e.str("type") == "compacted" &&
+			(err != nil || i >= len(e.obj("payload").arr("replacement_history"))) ||
+			e.str("type") == "compaction" && !strings.Contains(strings.Join(fileLines(files, ref), "\n"), `"id":"`+m.Part+`"`) {
+			t.Fatalf("message %+v names a part its line lacks", m)
 		}
 	}
 	keys := map[[5]string]bool{}
@@ -367,25 +398,38 @@ func TestTranscriptLinesAreKeptExactlyOnce(t *testing.T) {
 			t.Fatalf("two events share the key %q", key)
 		}
 		keys[key] = true
-		add(file{e.SessionID, e.Host, e.Path}, e.Line, e.Item)
+		ref := lineRef{e.Host, e.Path, e.Line}
+		if _, ok := lines[ref]; !ok {
+			t.Fatalf("event %+v names no line", e)
+		}
+		referenced[ref]++
 	}
-	total := 0
-	for _, f := range files {
-		for _, l := range f {
-			total++
-			l.TS = ""
-			if rebuilt[l] != 1 {
-				t.Fatalf("%s line %s on %s is rebuilt %d times", l.Path, l.ID, l.Host, rebuilt[l])
-			}
-			delete(rebuilt, l)
+	for _, c := range n.Calls {
+		if len(fileLines(files, lineRef{c.Host, c.Path, ""})) == 0 {
+			t.Fatalf("call %+v names no file", c)
 		}
 	}
-	if len(rebuilt) > 0 {
-		t.Fatalf("rows that are no line: %v", rebuilt)
+	for ref := range lines {
+		if referenced[ref] != 1 {
+			t.Fatalf("%s line %s on %s is referenced %d times", ref.path, ref.id, ref.host, referenced[ref])
+		}
 	}
-	if total != 59 {
-		t.Fatalf("checked %d lines", total)
+	if len(lines) != 59 {
+		t.Fatalf("checked %d lines", len(lines))
 	}
+}
+
+// fileLines returns the lines of the file a reference names.
+func fileLines(files [][]TranscriptLine, ref lineRef) []string {
+	var out []string
+	for _, f := range files {
+		for _, l := range f {
+			if l.Host == ref.host && l.Path == ref.path {
+				out = append(out, l.Line)
+			}
+		}
+	}
+	return out
 }
 
 func TestTranscriptConversations(t *testing.T) {
@@ -708,17 +752,17 @@ func TestSubAgentTranscriptsKeepTheirOwnSession(t *testing.T) {
 // Claude Code writes an entry again when it resumes a session. The node
 // keeps the first line, and the repeat stays referenced as an event.
 func TestRepeatedTranscriptEntriesKeepEveryLine(t *testing.T) {
-	n, _ := transcriptBatch(t, nil)
-	items := itemsOf(&n.Batch)
+	n, files := transcriptBatch(t, nil)
+	lines := linesOf(files)
 	session := "claude:22222222-2222-4222-8222-222222222222"
 	var first, repeat int
 	for _, m := range n.Messages {
-		if m.SessionID == session && strings.Contains(items[m.Item], `"uuid":"x2"`) {
+		if m.SessionID == session && strings.Contains(lines[lineRef{m.Host, m.Path, m.Line}], `"uuid":"x2"`) {
 			first++
 		}
 	}
 	for _, e := range n.Events {
-		if e.SessionID == session && e.Type == "repeat" && strings.Contains(items[e.Item], `"slug":"debug-ingress"`) {
+		if e.SessionID == session && e.Type == "repeat" && strings.Contains(lines[lineRef{e.Host, e.Path, e.Line}], `"slug":"debug-ingress"`) {
 			repeat++
 		}
 	}
@@ -763,15 +807,15 @@ var contentKeys = map[string]bool{"text": true, "thinking": true, "arguments": t
 // drop nor invent content.
 func TestBlocksMatchRawItems(t *testing.T) {
 	p, _ := proxyBatch(t)
-	tr, _ := transcriptBatch(t, nil)
+	tr, files := transcriptBatch(t, nil)
+	lines := linesOf(files)
 	checked := 0
 	for _, b := range []*Batch{&p.Batch, &tr.Batch} {
-		items := itemsOf(b)
 		for _, m := range b.Messages {
-			if m.Format == "proxy" || m.Line != "" && strings.Contains(m.Line, "#") {
+			raw, ok := rawOf(t, b, lines, m)
+			if !ok || m.Format == "proxy" {
 				continue
 			}
-			raw := []byte(items[m.Item])
 			if m.Format == "opencode" && len(m.Blocks) > 0 {
 				// Older OpenCode parts are separate records.
 				if parse(raw).obj("data")["content"] == nil {
@@ -931,7 +975,7 @@ func TestExportsKeepBlockOrder(t *testing.T) {
 // what its response echoed.
 func TestExportsCarryCallContext(t *testing.T) {
 	n, _ := proxyBatch(t)
-	items := itemsOf(&n.Batch)
+	requests := storedRequests(t)
 	for _, tc := range []struct {
 		call, system string
 		tools        []string
@@ -943,17 +987,18 @@ func TestExportsCarryCallContext(t *testing.T) {
 		{"codex-2", "", []string{"exec", "update_plan"}},
 	} {
 		c := callByID(t, &n.Batch, tc.call)
+		r := requests[c.RequestID]
 		var ctx Context
-		env := parse([]byte(c.RequestEnvelope))
+		env := parse([]byte(r.RequestEnvelope))
 		for _, field := range []string{"system", "instructions", "tools"} {
 			if raw, ok := env[field]; ok {
 				ctx.Add(field, raw)
 			}
 		}
-		for _, p := range c.RequestParts {
-			ctx.Add(p.Field, []byte(items[p.Hash]))
+		for i, p := range r.RequestParts {
+			ctx.Add(p.Field, []byte(r.Items[i]))
 		}
-		ctx.Add("response", []byte(c.ResponseBody))
+		ctx.Add("response", []byte(r.ResponseBody))
 		path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
 		if err := ForTraining(ctx, path, c.OutputIDs); err != nil {
 			t.Fatalf("%s: %v", tc.call, err)
@@ -999,9 +1044,10 @@ func TestExportsCarryCallContext(t *testing.T) {
 func TestExportsConvertCustomToolsConsistently(t *testing.T) {
 	n, _ := proxyBatch(t)
 	c := callByID(t, &n.Batch, "codex-1")
+	r := storedRequests(t)[c.RequestID]
 	var ctx Context
-	for _, p := range c.RequestParts {
-		ctx.Add(p.Field, []byte(itemsOf(&n.Batch)[p.Hash]))
+	for i, p := range r.RequestParts {
+		ctx.Add(p.Field, []byte(r.Items[i]))
 	}
 	path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
 	script := `"const r = await tools.exec_command({cmd: 'rg luna'});\ntext(r)"`
@@ -1038,25 +1084,8 @@ func TestRowsEncodeForClickHouse(t *testing.T) {
 	calls := n.Calls
 	sort.Slice(calls, func(i, j int) bool { return calls[i].CallID < calls[j].CallID })
 	c, _ := json.Marshal(calls[0])
-	if !bytes.Contains(c, []byte(`"output_ids":["`)) || !bytes.Contains(c, []byte(`"request_parts":[{"field":`)) {
+	if !bytes.Contains(c, []byte(`"output_ids":["`)) || !bytes.Contains(c, []byte(`"request_id":"`)) {
 		t.Fatalf("call row %s", c)
-	}
-}
-
-func TestProxyRunsDoNotRewriteArchivedItems(t *testing.T) {
-	n, fixtures := proxyBatch(t)
-	written := map[Hash]bool{}
-	for _, it := range n.Items {
-		written[it.Hash] = true
-	}
-	for _, f := range fixtures {
-		for _, p := range f.stored().RequestParts {
-			// System prompts and tools are per-call context and never become
-			// messages, so the run has no reason to write them.
-			if (p.Field == "system" || p.Field == "tools" || p.Field == "instructions") && written[p.Hash] {
-				t.Fatalf("%s: archived %s item written again", f.Request.RequestID, p.Field)
-			}
-		}
 	}
 }
 

@@ -3,13 +3,16 @@
 // the canonical rows for each table into a directory, one JSONEachRow file
 // per table.
 //
-// With -requests, input rows are llm.requests rows with their items, in
-// start order, from requests.sql. A run first prints the sessions they
-// touch with -sessions, then passes those sessions' state from state.sql
-// with -state. Otherwise input rows are llm.transcripts rows from
-// transcripts.sql, and -proxied names a file of the proxy's calls, each a
-// session ID, its parent session and client, a response ID, and a start
-// time, tab-separated.
+// The rows only reference the raw capture; none copies a raw record.
+//
+// With -requests, input rows on stdin are llm.requests rows with their
+// items, in start order, from requests.sql. A run first prints the sessions
+// they touch with -sessions, then passes those sessions' state from
+// state.sql with -state. Otherwise -in names a file of llm.transcripts rows
+// from transcripts.sql, plain or gzip-compressed as ClickHouse's HTTP
+// interface sends it, which is read twice, and -proxied names a file of the
+// proxy's calls, each a session ID, its parent session and client, a
+// response ID, and a start time, tab-separated.
 //
 // With -export openai or -export anthropic, it instead reads one call or
 // conversation, as the call and conversation queries in the design doc
@@ -21,6 +24,7 @@ package main
 
 import (
 	"bufio"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -41,6 +45,7 @@ func main() {
 	sessions := flag.Bool("sessions", false, "print the sessions the requests touch, for state.sql")
 	state := flag.String("state", "", "file of state.sql rows from earlier runs")
 	hold := flag.Duration("hold", 10*time.Minute, "hold back requests that continue an unseen response and started this recently, or lack usage and completed this recently")
+	in := flag.String("in", "", "file of transcript lines from transcripts.sql, plain or gzip-compressed")
 	proxied := flag.String("proxied", "", "file of the proxy's calls: session, parent session, client, response ID, and start")
 	out := flag.String("out", ".", "directory for the output files")
 	export := flag.String("export", "", "print a call or conversation as openai or anthropic messages")
@@ -57,8 +62,10 @@ func main() {
 			n.HoldAfter = time.Now().UTC().Add(-*hold).Format("2006-01-02 15:04:05.000")
 		}
 		if err = restore(n, *state); err == nil {
-			err = run(os.Stdin, *out, n, nil)
+			err = run(*out, n, func(drain func() error) error { return normalizeRequests(os.Stdin, n, drain) })
 		}
+	case *in == "":
+		err = errors.New("-in names no file of transcript lines")
 	default:
 		p := &conversations.Proxied{}
 		if *proxied != "" {
@@ -72,7 +79,8 @@ func main() {
 				}
 			}
 		}
-		err = run(os.Stdin, *out, conversations.NewNormalizer(), p)
+		n := conversations.NewNormalizer()
+		err = run(*out, n, func(drain func() error) error { return normalizeTranscripts(*in, n, p, drain) })
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -125,11 +133,11 @@ func restore(n *conversations.Normalizer, path string) error {
 	return eachRow(f, func(s conversations.State) error { n.Restore(s); return nil })
 }
 
-var tables = []string{"llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events"}
+var tables = []string{"llm.sessions", "llm.messages", "llm.calls", "llm.events"}
 
-// run normalizes requests when proxied is nil, and transcript lines
-// otherwise.
-func run(r io.Reader, dir string, n *conversations.Normalizer, proxied *conversations.Proxied) (err error) {
+// run creates an output file per table and calls normalize, whose drain
+// writes the rows normalized so far.
+func run(dir string, n *conversations.Normalizer, normalize func(drain func() error) error) (err error) {
 	files := map[string]*bufio.Writer{}
 	for _, table := range tables {
 		f, createErr := os.Create(filepath.Join(dir, table+".jsonl"))
@@ -143,52 +151,44 @@ func run(r io.Reader, dir string, n *conversations.Normalizer, proxied *conversa
 		files[table] = w
 	}
 	// Rows are written as each unit is normalized, so memory holds only the
-	// normalizer's index of nodes and items.
-	drain := func() error {
+	// normalizer's index of nodes.
+	return normalize(func() error {
 		b := &n.Batch
-		for _, err := range []error{writeRows(files["llm.request_items"], b.Items),
-			writeRows(files["llm.sessions"], b.Sessions), writeRows(files["llm.messages"], b.Messages),
-			writeRows(files["llm.calls"], b.Calls), writeRows(files["llm.events"], b.Events)} {
+		for _, err := range []error{writeRows(files["llm.sessions"], b.Sessions),
+			writeRows(files["llm.messages"], b.Messages), writeRows(files["llm.calls"], b.Calls),
+			writeRows(files["llm.events"], b.Events)} {
 			if err != nil {
 				return err
 			}
 		}
-		b.Items, b.Sessions, b.Messages, b.Calls, b.Events = nil, nil, nil, nil, nil
+		b.Sessions, b.Messages, b.Calls, b.Events = nil, nil, nil, nil
 		return nil
-	}
-	if proxied == nil {
-		held := 0
-		err := eachRow(r, func(req conversations.Request) error {
-			if !n.Request(req) {
-				held++
-			}
-			return drain()
-		})
-		if held > 0 {
-			log.Printf("held back %d recent requests whose usage or previous response is not archived yet", held)
+	})
+}
+
+func normalizeRequests(r io.Reader, n *conversations.Normalizer, drain func() error) error {
+	held := 0
+	err := eachRow(r, func(req conversations.Request) error {
+		if !n.Request(req) {
+			held++
 		}
-		return err
+		return drain()
+	})
+	if held > 0 {
+		log.Printf("held back %d recent requests whose usage or previous response is not archived yet", held)
 	}
-	// The import is two passes over every file: the first decides which file
-	// holds each reply's call, and the second normalizes. The input is kept
-	// in the output directory in between.
-	spool, err := os.CreateTemp(dir, "transcripts-*.jsonl")
-	if err != nil {
-		return err
-	}
-	defer func() { err = errors.Join(err, spool.Close(), os.Remove(spool.Name())) }()
-	if _, err := io.Copy(spool, r); err != nil {
-		return err
-	}
+	return err
+}
+
+// normalizeTranscripts reads the file twice: the first pass decides which
+// transcript file holds each reply's call, and the second normalizes.
+func normalizeTranscripts(path string, n *conversations.Normalizer, proxied *conversations.Proxied, drain func() error) error {
 	replies := &conversations.Replies{}
 	for _, pass := range []func([]conversations.TranscriptLine) error{
 		func(file []conversations.TranscriptLine) error { replies.Add(file, proxied); return nil },
 		func(file []conversations.TranscriptLine) error { n.Transcript(file, replies, proxied); return drain() },
 	} {
-		if _, err := spool.Seek(0, io.SeekStart); err != nil {
-			return err
-		}
-		if err := eachFile(spool, pass); err != nil {
+		if err := readFile(path, func(r io.Reader) error { return eachFile(r, pass) }); err != nil {
 			return err
 		}
 	}
@@ -198,6 +198,25 @@ func run(r io.Reader, dir string, n *conversations.Normalizer, proxied *conversa
 		log.Printf("%d Codex item keys name more than one response ID:\n%s", len(conflicts), strings.Join(conflicts, "\n"))
 	}
 	return nil
+}
+
+// readFile reads a file, decompressing it if it is gzip.
+func readFile(path string, read func(io.Reader) error) (err error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, f.Close()) }()
+	r := bufio.NewReaderSize(f, 1<<20)
+	if magic, _ := r.Peek(2); len(magic) == 2 && magic[0] == 0x1f && magic[1] == 0x8b {
+		z, err := gzip.NewReader(r)
+		if err != nil {
+			return err
+		}
+		// Reading the rows to EOF verifies the checksum.
+		return read(z)
+	}
+	return read(r)
 }
 
 // eachFile reads transcript lines grouped by file, as transcripts.sql

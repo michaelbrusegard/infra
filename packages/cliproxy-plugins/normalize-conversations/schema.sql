@@ -1,6 +1,9 @@
 -- Canonical LLM conversations, proposed in docs/llm-conversations.md and
--- written by packages/cliproxy-plugins/normalize-conversations. Raw JSON
--- lives once in llm.request_items, referenced by content hash.
+-- written by packages/cliproxy-plugins/normalize-conversations. These tables
+-- are a view derived from the raw capture, which stays the only copy of
+-- every source record: llm.requests and llm.request_items for the proxy,
+-- llm.transcripts for agent logs. Rows reference raw rows instead of
+-- copying them, so the tables can be dropped and rebuilt at any time.
 
 -- What does not change as a session grows, per source: a session captured
 -- by both the proxy and transcripts has a row for the proxy and one for each
@@ -22,10 +25,14 @@ ORDER BY (session_id, origin, host, path);
 
 -- One row per node of a session's conversation tree. A node's ID covers its
 -- parent's, so resent context maps to existing nodes. The extracted blocks
--- are for querying; item is the exact source JSON. A node written again
--- keeps the row with the highest version: a model's output over a resent
--- copy, then the earliest, whatever order the calls were normalized in.
--- Transcript messages record the line and the host and path of its file.
+-- are for querying, and the raw source is referenced: a proxy input by the
+-- llm.request_items hash it was read from (zero when the request's envelope
+-- held it), a proxy output by call_id, whose llm.requests row holds the
+-- response, and a transcript message by its llm.transcripts line, as host,
+-- path, and line ID. part names what inside the line a message was built
+-- from, if not the whole line. A node written again keeps the row with the
+-- highest version: a model's output over a resent copy, then the earliest,
+-- whatever order the calls were normalized in.
 CREATE TABLE IF NOT EXISTS llm.messages
 (
     session_id String,
@@ -49,30 +56,32 @@ CREATE TABLE IF NOT EXISTS llm.messages
         media LowCardinality(String))) CODEC(ZSTD(3)),
     format LowCardinality(String),
     item UInt128,
-    line String,
     host LowCardinality(String),
     path String,
+    line String,
+    part String,
     version UInt64
 )
 ENGINE = ReplacingMergeTree(version)
 -- Conversation order keeps a session's text adjacent, which compresses.
 ORDER BY (session_id, seq, id);
 
--- One row per model call. Proxy calls keep every llm.requests column
--- verbatim, so the archived row rebuilds exactly: request_id is call_id, and
--- session_id and model, whose names here hold the canonical session and the
--- responding model, are source_session_id and source_model. Transcript
--- calls carry the usage their lines recorded.
+-- One row per model call. A proxy call names its llm.requests row, which
+-- holds the request and response bodies, trace, status, and error. A
+-- transcript call names its file by host and path, and carries the usage its
+-- lines recorded; its messages and events name the lines.
 CREATE TABLE IF NOT EXISTS llm.calls
 (
     call_id String,
     session_id String,
-    trace_id String,
     response_id String,
     started_at DateTime64(3, 'UTC'),
     completed_at DateTime64(3, 'UTC'),
     origin LowCardinality(String),
     client LowCardinality(String),
+    request_id String,
+    host LowCardinality(String),
+    path String,
     source_format LowCardinality(String),
     model LowCardinality(String),
     input_id UInt128,
@@ -81,28 +90,16 @@ CREATE TABLE IF NOT EXISTS llm.calls
     cache_read_tokens UInt64,
     cache_write_tokens UInt64,
     output_tokens UInt64,
-    reasoning_tokens UInt64,
-    source_session_id String,
-    source_model LowCardinality(String),
-    requested_model LowCardinality(String),
-    stream Bool,
-    outcome LowCardinality(String),
-    status_code UInt16,
-    error String,
-    user_agent LowCardinality(String),
-    truncated Bool,
-    request_envelope String CODEC(ZSTD(3)),
-    request_parts Array(Tuple(field LowCardinality(String), position Int32, hash UInt128)) CODEC(ZSTD(3)),
-    response_body String CODEC(ZSTD(3))
+    reasoning_tokens UInt64
 )
 ENGINE = ReplacingMergeTree
 PARTITION BY toYYYYMM(started_at)
 ORDER BY (session_id, started_at, call_id);
 
--- Transcript records that are not messages, such as token counts, turn
--- settings, or attachments the model never saw. Files that share a session,
--- such as one synced to two hosts, share line numbers and times, so the
--- file is part of the key.
+-- Transcript lines that are not messages, such as token counts, turn
+-- settings, or attachments the model never saw, by their llm.transcripts
+-- line. Files that share a session, such as one synced to two hosts, share
+-- line numbers and times, so the file is part of the key.
 CREATE TABLE IF NOT EXISTS llm.events
 (
     session_id String,
@@ -110,8 +107,7 @@ CREATE TABLE IF NOT EXISTS llm.events
     host LowCardinality(String),
     path String,
     line String,
-    type LowCardinality(String),
-    item UInt128
+    type LowCardinality(String)
 )
 ENGINE = ReplacingMergeTree
 ORDER BY (session_id, ts, host, path, line);

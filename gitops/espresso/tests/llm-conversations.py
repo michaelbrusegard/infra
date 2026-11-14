@@ -30,7 +30,10 @@ NOW = "toDateTime64('2026-11-14 00:00:00', 3, 'UTC')"
 
 
 def run(*args, input=None, check=True, **kwargs):
-    return subprocess.run(args, input=input, text=True, capture_output=True, check=check, **kwargs)
+    result = subprocess.run(args, input=input, text=True, capture_output=True, **kwargs)
+    if check and result.returncode != 0:
+        raise RuntimeError(f"{args[-3:]} failed:\n{result.stderr}")
+    return result
 
 
 def examples():
@@ -118,9 +121,17 @@ def main():
                                    if (row[key].removeprefix("usage-") in later) == (batch == 2))
                     query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + data, "cliproxy")
 
+            canonical = ("llm.sessions", "llm.messages", "llm.calls", "llm.events")
+
             def load(out):
-                for table in ("llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events"):
+                for table in canonical:
                     insert(table, out / f"{table}.jsonl")
+
+            # The normalizer reads raw rows and writes only canonical ones.
+            raw_tables = ("llm.requests", "llm.request_items", "llm.transcripts")
+
+            def checksums():
+                return {table: scalar(f"SELECT count(), sum(cityHash64(*)) FROM {table}") for table in raw_tables}
 
             # One run of the job: the requests not normalized yet, the state of
             # the sessions they touch, then the normalizer.
@@ -146,6 +157,7 @@ def main():
             assert sorted(job("proxy-2-early", recent)[0]) == sorted(later)
             assert scalar("SELECT count() FROM llm.calls") == str(len(first)), "placed requests without usage"
             arrive(2, ["llm.usage"])
+            before = checksums()
             second, second_messages = job("proxy-2")
             assert sorted(first) == sorted(r["request_id"] for r in requests_rows if r["request_id"] not in later), first
             assert sorted(second) == sorted(later), second
@@ -169,7 +181,8 @@ def main():
             def import_transcripts(name, lines):
                 out = temp / name
                 out.mkdir()
-                run(str(normalizer), "-proxied", str(proxied), "-out", str(out), input=lines)
+                (temp / f"{name}.jsonl").write_text(lines)
+                run(str(normalizer), "-in", str(temp / f"{name}.jsonl"), "-proxied", str(proxied), "-out", str(out))
                 return out
 
             out = import_transcripts("transcripts", transcripts)
@@ -179,56 +192,55 @@ def main():
                 transcripts.splitlines(keepends=True),
                 lambda line: [json.loads(line)[k] for k in ("source", "host", "session", "path")])]
             reversed_out = import_transcripts("transcripts-reversed", "".join(itertools.chain(*files[::-1])))
-            for table in ("llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events"):
+            for table in canonical:
                 rows = [sorted((directory / f"{table}.jsonl").read_text().splitlines()) for directory in (out, reversed_out)]
                 assert rows[0] == rows[1], table
+            assert checksums() == before, "normalizing changed the raw capture"
 
-            # Proxy calls keep every llm.requests column verbatim, so
-            # llm.requests could be dropped. The column list comes from the
-            # deployed schema, so a new column there fails this.
-            columns = scalar("SELECT groupArray(name) FROM (SELECT name FROM system.columns "
-                             "WHERE database = 'llm' AND table = 'requests' ORDER BY position) FORMAT JSONEachRow")
-            columns = json.loads(columns)["groupArray(name)"]
-            renamed = {"request_id": "call_id", "session_id": "source_session_id", "model": "source_model"}
-            source = ", ".join(columns)
-            kept = ", ".join(f"{renamed.get(c, c)} AS {c}" for c in columns)
-            calls = f"SELECT {kept} FROM llm.calls FINAL WHERE origin = 'proxy'"
-            assert len(columns) == 17, columns
-            assert scalar(f"SELECT count() FROM (SELECT {source} FROM llm.requests EXCEPT {calls})") == "0"
-            assert scalar(f"SELECT count() FROM ({calls} EXCEPT SELECT {source} FROM llm.requests)") == "0"
-            assert scalar(f"SELECT count() FROM ({calls})") == "10"
+            # Every request is exactly one proxy call, which names it, and no
+            # call names a missing request.
+            calls = "SELECT request_id FROM llm.calls FINAL WHERE origin = 'proxy'"
+            assert scalar(f"SELECT count() FROM ({calls})") == scalar("SELECT count() FROM llm.requests") == "10"
+            assert scalar(f"SELECT count() FROM (SELECT request_id FROM llm.requests EXCEPT {calls})") == "0"
+            assert scalar(f"SELECT count() FROM ({calls} EXCEPT SELECT request_id FROM llm.requests)") == "0"
             # Only the unarchived previous response starts at a marker.
             assert scalar("SELECT count() FROM llm.messages FINAL WHERE format = 'proxy'") == "1"
-            # Every transcript row is one message or event with its exact line
-            # and file, so llm.transcripts could be dropped: its rows rebuild,
-            # compared both ways. The source is the file's session row's
-            # client, and the file-name session is the path's, or for an
-            # OpenCode database, the canonical session's. Messages from inside
-            # a line, such as compaction items, are line#item.
-            rebuilt = r"""
-                SELECT s.client AS source, r.host AS host,
-                    if(s.client = 'opencode', substring(r.session_id, 10),
-                        replaceRegexpOne(r.path, '^(.*/)?([^/]*)\.jsonl$', '\2')) AS session,
-                    r.line AS id, r.path AS path, i.item AS line
-                FROM (SELECT session_id, host, path, line, item FROM llm.messages FINAL
-                      WHERE path != '' AND NOT like(line, '%#%')
-                      UNION ALL SELECT session_id, host, path, line, item FROM llm.events FINAL) AS r
-                INNER JOIN (SELECT session_id, host, path, client FROM llm.sessions FINAL
-                            WHERE origin = 'transcript') AS s
-                    ON s.session_id = r.session_id AND s.host = r.host AND s.path = r.path
-                INNER JOIN (SELECT hash, any(item) AS item FROM llm.request_items GROUP BY hash) AS i
-                    ON i.hash = r.item"""
-            lines = "SELECT source, host, session, id, path, line FROM llm.transcripts FINAL"
-            assert scalar(f"SELECT count() FROM ({rebuilt})") == scalar(f"SELECT count() FROM ({lines})") == "59"
-            assert scalar(f"SELECT count() FROM ({rebuilt} EXCEPT {lines})") == "0"
-            assert scalar(f"SELECT count() FROM ({lines} EXCEPT {rebuilt})") == "0"
-            # Raw items exist for every row and hash the way the plugin's do.
+            # Every message's raw source resolves: a proxy input's item, which
+            # its call's request sent, a proxy output's call, and a
+            # transcript message's line.
             assert scalar("""
-                SELECT count() FROM (SELECT item FROM llm.messages UNION ALL SELECT item FROM llm.events)
-                WHERE item NOT IN (SELECT hash FROM llm.request_items)
+                SELECT count() FROM llm.messages FINAL
+                WHERE item != 0 AND ((call_id, item) NOT IN (
+                        SELECT request_id, part.hash FROM llm.requests ARRAY JOIN request_parts AS part)
+                    OR item NOT IN (SELECT hash FROM llm.request_items))
             """) == "0"
-            assert scalar("SELECT count() FROM llm.request_items "
-                          "WHERE hash != reinterpretAsUInt128(substring(SHA256(item), 1, 16))") == "0"
+            assert scalar("SELECT countIf(item != 0) > 0 FROM llm.messages") == "1"
+            assert scalar("""
+                SELECT count() FROM llm.messages FINAL
+                WHERE path = '' AND output AND call_id NOT IN (SELECT request_id FROM llm.requests)
+            """) == "0"
+            # Every transcript row is exactly one message or event, which names
+            # it by host, path, and ID, and nothing names a missing row.
+            # Messages built from inside a line, such as compaction items,
+            # have a part and name the line too.
+            lines = "SELECT toString(host), path, id FROM llm.transcripts FINAL"
+            refs = """SELECT * FROM (
+                SELECT toString(host), path, line FROM llm.messages FINAL WHERE path != '' AND part = ''
+                UNION ALL SELECT toString(host), path, line FROM llm.events FINAL)"""
+            assert scalar(f"SELECT count() FROM ({refs})") == scalar(f"SELECT count() FROM ({lines})") == "59"
+            assert scalar(f"SELECT count() FROM ({refs} EXCEPT {lines})") == "0"
+            assert scalar(f"SELECT count() FROM ({lines} EXCEPT {refs})") == "0"
+            assert scalar("""
+                SELECT count() FROM llm.messages FINAL
+                WHERE part != '' AND (host, path, line) NOT IN (SELECT host, path, id FROM llm.transcripts)
+            """) == "0"
+            assert scalar("""
+                SELECT count() FROM llm.calls FINAL
+                WHERE origin = 'transcript' AND (host, path) NOT IN (SELECT host, path FROM llm.transcripts)
+            """) == "0"
+            # Two Codex compaction items, and two entries Pi sends again.
+            assert scalar("SELECT groupArray((line, part)) FROM (SELECT line, part FROM llm.messages FINAL "
+                          "WHERE part != '' ORDER BY line, part)") == "[('12','0'),('12','1'),('7','p2'),('7','p3')]"
             # Both captured this session. The transcript keeps the line from
             # before the proxy's first call as a message, and the later one
             # as an event; its calls and tokens are the proxy's.
@@ -278,7 +290,8 @@ def main():
                        if not line.endswith("\\N"))
             live = float(scalar("SELECT sum(estimated_cost_usd) FROM llm.usage_metrics WHERE origin = 'live'"))
             by_trace = float(scalar("SELECT sum(u.estimated_cost_usd) FROM llm.calls AS c FINAL "
-                                    "INNER JOIN llm.usage_metrics AS u ON u.trace_id = c.trace_id"))
+                                    "INNER JOIN llm.requests AS r ON r.request_id = c.request_id "
+                                    "INNER JOIN llm.usage_metrics AS u ON u.trace_id = r.trace_id"))
             assert live > 0 and abs(cost - live) < 1e-9 and by_trace > live, (cost, live, by_trace)
 
             session = ("session", "claude:11111111-1111-4111-8111-111111111111")
@@ -324,7 +337,8 @@ def main():
             assert failed.returncode != 0 and "no output" in failed.stderr, failed
 
             raw = query(sql["raw"], params=(session,)).stdout
-            assert '"cache_control"' in raw and "signature" in raw, raw
+            # The request items, a response body, and the transcript's line.
+            assert '"cache_control"' in raw and "signature_delta" in raw and '"parentUuid"' in raw, raw
 
             agents = query(sql["subagents"]).stdout
             assert "codex:01a1da81-0000-7000-8000-000000000001\tcodex:01a1da81-0000-7000-8000-000000000001:agent:pricing_review" in agents, agents
@@ -350,7 +364,7 @@ def main():
                     "input_tokens": 1000, "output_tokens": 10}), "cliproxy")
             assert sorted(job("proxy-tight")[0]) == ["tight-a", "tight-b"]
             assert scalar("SELECT groupArray((call_id, session_id)) FROM (SELECT call_id, session_id "
-                          "FROM llm.calls FINAL WHERE trace_id = 'ws-tight' ORDER BY call_id)") \
+                          "FROM llm.calls FINAL WHERE call_id LIKE 'tight-%' ORDER BY call_id)") \
                 == "[('tight-a','codex:tight-a'),('tight-b','codex:tight-b')]"
             cost = [line.split("\t") for line in query(sql["cost"]).stdout.splitlines()]
             assert sorted((session, attempts) for session, _, attempts, _ in cost if "tight" in session) \
@@ -410,11 +424,12 @@ def main():
             audit = [line.split("\t") for line in query(sql["collisions"]).stdout.splitlines()]
             out = temp / "collisions"
             out.mkdir()
-            reported = run(str(normalizer), "-proxied", str(proxied), "-out", str(out),
-                           input=query((NORMALIZER / "transcripts.sql").read_text()).stdout).stderr
+            (temp / "collisions.jsonl").write_text(query((NORMALIZER / "transcripts.sql").read_text()).stdout)
+            reported = run(str(normalizer), "-in", str(temp / "collisions.jsonl"), "-proxied", str(proxied),
+                           "-out", str(out)).stderr
             assert audit == [["item:call_shared", "['resp_c1','resp_c2']"]], audit
             assert reported.splitlines()[1:] == ["item:call_shared resp_c1 resp_c2"], reported
-            print(f"PASS: {len(sql)} doc examples, lossless proxy and transcript round trips, permissions")
+            print(f"PASS: {len(sql)} doc examples, raw references both ways, unchanged raw capture, permissions")
         finally:
             run("docker", "rm", "--force", container, check=False)
 

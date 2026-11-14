@@ -30,7 +30,7 @@ func TestDumpSources(t *testing.T) {
 		for i, p := range r.RequestParts {
 			if !seen[p.Hash] {
 				seen[p.Hash] = true
-				rows["llm.request_items"] = append(rows["llm.request_items"], Item{p.Hash, r.Items[i]})
+				rows["llm.request_items"] = append(rows["llm.request_items"], map[string]any{"hash": p.Hash, "item": r.Items[i]})
 			}
 		}
 		rows["llm.requests"] = append(rows["llm.requests"], map[string]any{

@@ -1,7 +1,6 @@
 package conversations
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -65,34 +64,6 @@ func stateOf(b *Batch, requests []Request) []State {
 		}
 	}
 	return out
-}
-
-// Proxy calls keep every llm.requests column verbatim, so the archive could
-// be dropped: request_id is call_id, and the two columns whose names hold
-// canonical values are kept as source_session_id and source_model.
-func TestProxyCallsKeepEveryRequestColumn(t *testing.T) {
-	n, fixtures := proxyBatch(t)
-	renamed := map[string]string{"request_id": "call_id", "session_id": "source_session_id", "model": "source_model"}
-	for _, f := range fixtures {
-		var request, call map[string]json.RawMessage
-		data, _ := json.Marshal(f.stored())
-		json.Unmarshal(data, &request)
-		data, _ = json.Marshal(callByID(t, &n.Batch, f.Name))
-		json.Unmarshal(data, &call)
-		for column, v := range request {
-			// Joined in by requests.sql, not columns of llm.requests.
-			if column == "items" || strings.HasPrefix(column, "usage_") {
-				continue
-			}
-			name := column
-			if r, ok := renamed[column]; ok {
-				name = r
-			}
-			if !bytes.Equal(call[name], v) {
-				t.Fatalf("%s: %s is %s in the call, %s in the request", f.Name, column, call[name], v)
-			}
-		}
-	}
 }
 
 // A run restores the nodes and response leaves of the sessions it touches,
@@ -185,7 +156,7 @@ func TestRecentDeltaRequestsWaitForTheirPreviousResponse(t *testing.T) {
 	if early.Request(requests["codex-2"]) {
 		t.Fatal("placed a request before its previous response")
 	}
-	if len(early.Messages)+len(early.Calls)+len(early.Sessions)+len(early.Items) != 0 {
+	if len(early.Messages)+len(early.Calls)+len(early.Sessions) != 0 {
 		t.Fatal("a held request wrote rows")
 	}
 	later := NewNormalizer()
@@ -221,7 +192,7 @@ func TestRecentRequestsWaitForTheirUsage(t *testing.T) {
 	if n.Request(early) {
 		t.Fatalf("placed a request before its usage, in %s", n.Calls[0].SessionID)
 	}
-	if len(n.Messages)+len(n.Calls)+len(n.Sessions)+len(n.Items) != 0 {
+	if len(n.Messages)+len(n.Calls)+len(n.Sessions) != 0 {
 		t.Fatal("a held request wrote rows")
 	}
 	if !n.Request(agent) || n.Calls[0].SessionID != agent.UsageSessionID {

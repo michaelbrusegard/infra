@@ -21,7 +21,7 @@ WITH
         SELECT * FROM llm.requests
         WHERE started_at >= {after:DateTime64(3)}
             AND request_id NOT IN (
-                SELECT call_id FROM llm.calls
+                SELECT request_id FROM llm.calls
                 WHERE origin = 'proxy' AND started_at >= {after:DateTime64(3)})
     ),
     items AS (

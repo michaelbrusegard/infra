@@ -700,26 +700,33 @@ ORDER BY day, input_tokens DESC
 ```sql
 -- example: cost
 -- Estimated cost per session and model of proxy calls, as the dashboard
--- prices them. A websocket trace carries many calls, so joining on
--- trace_id alone would count each upstream attempt once per call. Each
--- attempt belongs to one call of its trace instead: the latest to start
--- whose span holds it, or else the first to start within 50 ms after it.
--- The view has no attempt ID, but the owner depends only on the trace and
--- time. Unpriced attempts are NULL and left out of the sum.
-WITH owners AS (
-    SELECT u.trace_id AS trace_id, u.requested_at AS requested_at,
-        argMin(c.call_id, (c.started_at > u.requested_at,
-            abs(dateDiff('millisecond', c.started_at, u.requested_at)), c.call_id)) AS call_id
-    FROM (SELECT DISTINCT trace_id, requested_at FROM llm.usage_metrics WHERE origin = 'live') AS u
-    INNER JOIN (SELECT call_id, trace_id, started_at, completed_at FROM llm.calls FINAL WHERE origin = 'proxy') AS c
-        ON c.trace_id = u.trace_id
-    WHERE u.requested_at BETWEEN c.started_at - INTERVAL 50 MILLISECOND AND c.completed_at
-    GROUP BY trace_id, requested_at)
+-- prices them. Usage links to a call's llm.requests row by trace_id. A
+-- websocket trace carries many calls, so joining on trace_id alone would
+-- count each upstream attempt once per call. Each attempt belongs to one
+-- call of its trace instead: the latest to start whose span holds it, or
+-- else the first to start within 50 ms after it. The view has no attempt
+-- ID, but the owner depends only on the trace and time. Unpriced attempts
+-- are NULL and left out of the sum.
+WITH
+    calls AS (
+        SELECT c.call_id AS call_id, c.session_id AS session_id, c.model AS model,
+            r.trace_id AS trace_id, r.started_at AS started_at, r.completed_at AS completed_at
+        FROM (SELECT call_id, session_id, model, request_id FROM llm.calls FINAL WHERE origin = 'proxy') AS c
+        INNER JOIN (SELECT request_id, trace_id, started_at, completed_at FROM llm.requests) AS r
+            ON r.request_id = c.request_id),
+    owners AS (
+        SELECT u.trace_id AS trace_id, u.requested_at AS requested_at,
+            argMin(c.call_id, (c.started_at > u.requested_at,
+                abs(dateDiff('millisecond', c.started_at, u.requested_at)), c.call_id)) AS call_id
+        FROM (SELECT DISTINCT trace_id, requested_at FROM llm.usage_metrics WHERE origin = 'live') AS u
+        INNER JOIN calls AS c ON c.trace_id = u.trace_id
+        WHERE u.requested_at BETWEEN c.started_at - INTERVAL 50 MILLISECOND AND c.completed_at
+        GROUP BY trace_id, requested_at)
 SELECT c.session_id AS session, c.model AS model, count() AS attempts,
     sum(u.estimated_cost_usd) AS cost_usd
 FROM llm.usage_metrics AS u
 INNER JOIN owners AS o ON o.trace_id = u.trace_id AND o.requested_at = u.requested_at
-INNER JOIN (SELECT call_id, session_id, model FROM llm.calls FINAL) AS c ON c.call_id = o.call_id
+INNER JOIN calls AS c ON c.call_id = o.call_id
 GROUP BY session, model
 ORDER BY cost_usd DESC
 LIMIT 50
@@ -748,8 +755,9 @@ FORMAT JSONEachRow
 -- example: call
 -- One call as training data: the system prompt or instructions and the
 -- tools it ran with, which are per-call context outside the message tree,
--- and the conversation it saw and produced. Context rows have a field, and
--- call_output marks the call's own outputs, which the export checks.
+-- and the conversation it saw and produced. The context comes from the
+-- call's llm.requests row. Context rows have a field, and call_output
+-- marks the call's own outputs, which the export checks.
 WITH RECURSIVE
     path AS (
         SELECT id, parent_id, seq, role, output, model, blocks
@@ -763,24 +771,28 @@ WITH RECURSIVE
         INNER JOIN path AS p ON m.id = p.parent_id
         WHERE m.session_id = (SELECT session_id FROM llm.calls FINAL WHERE call_id = {call:String})
     ),
+    request AS (
+        SELECT request_envelope, request_parts, response_body FROM llm.requests
+        WHERE request_id = (SELECT request_id FROM llm.calls FINAL WHERE call_id = {call:String})
+    ),
     context AS (
         -- Split into items, or small enough to stay in the envelope.
         SELECT part.field AS field, part.position AS position, any(i.item) AS value
-        FROM (SELECT request_parts FROM llm.calls FINAL WHERE call_id = {call:String})
+        FROM (SELECT request_parts FROM request)
         ARRAY JOIN request_parts AS part
         INNER JOIN llm.request_items AS i ON i.hash = part.hash
         WHERE part.field IN ('system', 'instructions', 'tools')
         GROUP BY field, position
         UNION ALL
         SELECT field, -1, JSONExtractRaw(request_envelope, field)
-        FROM llm.calls FINAL
+        FROM request
         ARRAY JOIN ['system', 'instructions', 'tools'] AS field
-        WHERE call_id = {call:String} AND JSONHas(request_envelope, field)
+        WHERE JSONHas(request_envelope, field)
         UNION ALL
         -- What a Responses API response echoed as in effect, which the
         -- export prefers: Codex sends no tools over websockets, and a delta
         -- request sends no instructions or tools at all.
-        SELECT 'response', 0, response_body FROM llm.calls FINAL WHERE call_id = {call:String}
+        SELECT 'response', 0, response_body FROM request
     )
 SELECT * FROM (
     SELECT field, position, value, 0 AS seq, 0 AS id, '' AS role, false AS output, '' AS model, [] AS blocks,
@@ -874,14 +886,23 @@ What training exports can cover is limited by what the sources record:
 
 ```sql
 -- example: raw
--- The exact source JSON behind each message: images, signatures, encrypted
--- reasoning, and anything else the blocks leave out.
-SELECT m.seq, m.role, i.item
-FROM llm.messages AS m FINAL
-INNER JOIN llm.request_items AS i ON i.hash = m.item
-WHERE m.session_id = {session:String}
-ORDER BY m.seq
-LIMIT 1 BY m.id
+-- The raw source behind each message of a session, which holds images,
+-- signatures, encrypted reasoning, and anything else the blocks leave out:
+-- the request item a proxy input was read from, the response body of the
+-- call that produced a proxy output, or the transcript line. A message
+-- built from inside a line, such as a compaction item, names its part.
+WITH messages AS (SELECT * FROM llm.messages FINAL WHERE session_id = {session:String})
+SELECT m.seq AS seq, m.role AS role, m.part AS part,
+    multiIf(m.item != 0, i.item, m.path != '', t.line, m.output, r.response_body, '') AS raw
+FROM messages AS m
+LEFT JOIN (SELECT hash, any(item) AS item FROM llm.request_items
+    WHERE hash IN (SELECT item FROM messages) GROUP BY hash) AS i ON i.hash = m.item
+LEFT JOIN (SELECT host, path, id, line FROM llm.transcripts FINAL
+    WHERE (host, path) IN (SELECT host, path FROM messages)) AS t
+    ON t.host = m.host AND t.path = m.path AND t.id = m.line
+LEFT JOIN (SELECT request_id, response_body FROM llm.requests
+    WHERE request_id IN (SELECT call_id FROM messages WHERE output)) AS r ON r.request_id = m.call_id
+ORDER BY seq
 ```
 
 ```sql
