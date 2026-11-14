@@ -187,7 +187,7 @@ func (r *Replies) codexResponses(lines []TranscriptLine) (map[string]bool, map[s
 	key, output := "", false
 	// Whether the call has a usage record yet, and its response ID.
 	used, response := false, ""
-	counts := codexCounts{points: map[uint64]bool{}}
+	counts := newCodexCounts(lines)
 	for _, l := range lines {
 		e := parse([]byte(l.Line))
 		count := counts.key(e)
@@ -243,15 +243,32 @@ func (r *Replies) codexResponses(lines []TranscriptLine) (map[string]bool, map[s
 // codexCounts follows the token counts of a Codex file. Older logs only
 // have token counts: the last response's usage, at a cumulative point.
 // Codex repeats a point it reported, even within the next response, and a
-// repeat is no call's usage. Newer logs repeat each usage record in a
-// count, at a point that drifts from the record's after a compaction, so
-// there the records alone are the usage.
+// repeat is no call's usage. Newer logs echo each usage record in a count,
+// before or after it, at a point that drifts from the record's after a
+// compaction, so a count whose usage a record of the file reports is that
+// record's echo. A file can mix both, so any other count stays a response's
+// usage.
 type codexCounts struct {
-	records bool
 	// The thread of the last session_meta line. A sub-agent's file writes a
 	// copy of its parent's before the history it copies from the parent.
 	thread string
-	points map[uint64]bool
+	// The points already counted, by thread: threads report their own
+	// cumulative totals, which can coincide.
+	points map[string]bool
+	// The usage records of the whole file not yet matched to an echo, by
+	// input and output tokens.
+	records map[[2]uint64]int
+}
+
+func newCodexCounts(lines []TranscriptLine) *codexCounts {
+	c := &codexCounts{points: map[string]bool{}, records: map[[2]uint64]int{}}
+	for _, l := range lines {
+		if e := parse([]byte(l.Line)); e.str("type") == "token_usage_record" {
+			u := e.obj("payload").obj("usage")
+			c.records[[2]uint64{u.num("input_tokens"), u.num("output_tokens")}]++
+		}
+	}
+	return c
 }
 
 // key returns the key of the usage point a line records, or "" if it
@@ -262,15 +279,22 @@ func (c *codexCounts) key(e obj) string {
 	switch e.str("type") {
 	case "session_meta":
 		c.thread = p.str("id")
-	case "token_usage_record":
-		c.records = true
 	case "event_msg":
 		point := p.obj("info").obj("total_token_usage").num("total_tokens")
-		if p.str("type") != "token_count" || c.records || point == 0 || c.points[point] {
+		if p.str("type") != "token_count" || point == 0 {
 			return ""
 		}
-		c.points[point] = true
-		return "count:" + c.thread + ":" + strconv.FormatUint(point, 10)
+		key := "count:" + c.thread + ":" + strconv.FormatUint(point, 10)
+		if c.points[key] {
+			return ""
+		}
+		c.points[key] = true
+		last := p.obj("info").obj("last_token_usage")
+		if echo := [2]uint64{last.num("input_tokens"), last.num("output_tokens")}; c.records[echo] > 0 {
+			c.records[echo]--
+			return ""
+		}
+		return key
 	}
 	return ""
 }
@@ -726,7 +750,7 @@ func (f *file) codex(lines []TranscriptLine) {
 	model, call, lastWasOutput := "", "", false
 	// The call whose usage record came last.
 	recorded := ""
-	counts := codexCounts{points: map[uint64]bool{}}
+	counts := newCodexCounts(lines)
 	for _, l := range lines {
 		e := parse([]byte(l.Line))
 		t, p := e.str("type"), e.obj("payload")

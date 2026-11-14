@@ -410,6 +410,21 @@ func TestTranscriptCodexTokenCountsCountEachPointOnce(t *testing.T) {
 			count(13675681, 0, 0, 0), tool("ctc_2", "call_2"), record("resp_2", 13933730, 25001, 47), output("call_2"),
 			count(13700729, 25001, 0, 47),
 		}, []string{"226073/636 1 outputs", "228018/4983 0 outputs", "25001/47 1 outputs"}},
+		// Threads report their own cumulative totals, which can coincide.
+		{"threads share a point", []string{
+			codexReplyLine("Two pods."), count(105, 100, 0, 5),
+			`{"type":"session_meta","payload":{"id":"019f6a2b-0000-7000-8000-00000000000c"}}`,
+			codexReplyLine("Both ready."), count(105, 100, 0, 5),
+		}, []string{"100/5 1 outputs", "100/5 1 outputs"}},
+		// A count written before its usage record is ignored like the rest.
+		{"count before its record", []string{
+			tool("ctc_1", "call_1"), count(13675681, 226073, 0, 636), record("resp_1", 13675681, 226073, 636), output("call_1"),
+		}, []string{"226073/636 1 outputs"}},
+		// A file can mix both: a response with only a count keeps its usage.
+		{"count-only response before records", []string{
+			codexReplyLine("Two pods."), count(105, 100, 0, 5), tool("ctc_1", "call_1"), record("resp_1", 500, 200, 30), output("call_1"),
+			count(500, 200, 0, 30),
+		}, []string{"100/5 1 outputs", "200/30 1 outputs"}},
 	} {
 		file := codexFile("lungo", ".codex/sessions/2026/07/16/rollout-2026-07-16T02-04-50-019f6a2b-0000-7000-8000-00000000000a.jsonl",
 			"2026-07-16 09:07", append([]string{`{"type":"session_meta","payload":{"id":"019f6a2b-0000-7000-8000-00000000000a"}}`,
