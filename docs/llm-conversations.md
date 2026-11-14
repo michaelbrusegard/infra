@@ -553,6 +553,45 @@ Run it from a workstation with that much free, such as `ristretto`, over a
 the files with `clickhouse-client`. Neither the ClickHouse volume nor a pod's
 ephemeral storage should hold the spool.
 
+### Acceptance
+
+The backfill starts as an additive trial: it only inserts into the new
+tables. The canonical tables become authoritative, so that anything reads
+from them or a source table gets a TTL or is dropped, only once all of the
+following hold on live data. Every difference found is listed and explained,
+not just counted.
+
+- **Unchanged sources.** `llm.requests` and `llm.transcripts` are unchanged
+  throughout: their row counts and a checksum over every column, such as
+  `sum(cityHash64(*))`, match before the trial, after each step, and at the
+  end.
+- **Round trips.** Every `llm.requests` row equals its proxy call on every
+  column, and every `llm.transcripts` row rebuilds from exactly one message
+  or event with identical bytes, compared both ways with `EXCEPT`, as in
+  [Losslessness](#losslessness).
+- **Invocation identity.** No response ID belongs to more than one call, no
+  transcript call has a response ID the proxy returned, the
+  [collision audit](#collision-audit) returns no rows, and the normalizer
+  reports no collisions. Calls whose source records a response ID, model or
+  usage have them.
+- **Calls and tokens.** Proxy calls reconcile with `llm.usage` by
+  `trace_id`, and transcript calls with `llm.historical_usage`, in calls and
+  in each token kind, per day, client and model.
+- **Tree integrity.** Every message's parent is in its session, or it is a
+  root, and no chain loops. Every call's input and outputs exist, its
+  outputs are output messages of its session, and no message is the output
+  of two calls.
+- **Exports.** A sample of calls of every client and source format exports
+  to both dialects, and the training check passes or names its reason.
+- **Repeatability and recovery.** Normalizing the same input again, in
+  another file order or split into other runs, gives identical rows, and a
+  job run interrupted and run again leaves no extra rows after `FINAL`. A
+  rebuild from scratch, as described above, gives the same rows.
+- **Operational viability.** The transcript pass stays within its disk
+  budget, every query stays within the server's memory, the job finishes
+  well inside its interval, and storage grows as estimated in
+  [Sizes](#sizes).
+
 `llm.calls` holds every `llm.requests` column, so once the job has run
 cleanly for a while, `llm.requests` can become staging with a short TTL, such
 as 14 days. Rebuilds then read `llm.calls` and the items. Until then both are
