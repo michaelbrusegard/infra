@@ -2,6 +2,8 @@ package conversations
 
 import (
 	"encoding/json"
+	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -87,43 +89,130 @@ func (c *Context) Add(field string, raw []byte) {
 	}
 }
 
+// exported is what an export writes beside the messages: the system prompt,
+// and the tools under the names the export gives them.
+type exported struct {
+	system []string
+	tools  []exportedTool
+	// Export names by namespace and name, for the bare names that more than
+	// one namespace defines.
+	qualified map[[2]string]string
+}
+
+type exportedTool struct {
+	name string
+	def  map[string]any
+}
+
+// The namespace the Responses API echoes top-level tools in. Calls to its
+// tools name no namespace.
+const defaultNamespace = "functions"
+
 // effective is the context the model ran with: what the response echoed
 // where it echoed anything, and what the request sent otherwise. Namespaces,
-// which only the Responses API has, are flattened into their tools, since a
-// call names its tool without the namespace; a name defined twice keeps its
-// first definition.
-func (c Context) effective() Context {
-	out := Context{System: c.System}
+// which only the Responses API has, are flattened into their tools, since
+// the export dialects have none. Tools keep their bare names unless more than
+// one namespace defines the name; then those tools, and the calls naming
+// them, become namespace__name, as MCP tools are named elsewhere. An export
+// that would have to guess which tool a name means fails instead.
+func (c Context) effective() (exported, error) {
+	out := exported{system: c.System, qualified: map[[2]string]string{}}
 	tools := c.Tools
 	if c.echo != nil && len(c.echo.System) > 0 {
-		out.System = c.echo.System
+		out.system = c.echo.System
 	}
 	if c.echo != nil && len(c.echo.Tools) > 0 {
 		tools = c.echo.Tools
 	}
-	seen := map[string]bool{}
-	var add func(t map[string]any)
-	add = func(t map[string]any) {
+	type defined struct {
+		namespace string
+		exportedTool
+	}
+	var all []defined
+	namespaces := map[string]map[string]bool{}
+	var add func(namespace string, t map[string]any) error
+	add = func(namespace string, t map[string]any) error {
 		if t["type"] == "namespace" {
 			nested, _ := t["tools"].([]any)
+			ns := text(t["name"])
+			if ns == defaultNamespace {
+				ns = ""
+			}
 			for _, n := range nested {
 				if n, ok := n.(map[string]any); ok {
-					add(n)
+					if err := add(ns, n); err != nil {
+						return err
+					}
 				}
 			}
-			return
+			return nil
 		}
-		name, _, _, _ := function(t)
-		if name = firstNonEmpty(name, text(t["name"])); name != "" && seen[name] {
-			return
+		name := toolName(t)
+		if name != "" {
+			if namespaces[name] == nil {
+				namespaces[name] = map[string]bool{}
+			}
+			if namespaces[name][namespace] {
+				for _, d := range all {
+					if d.namespace == namespace && d.name == name && !reflect.DeepEqual(d.def, t) {
+						return fmt.Errorf("tool %q is defined twice, differently", qualify(namespace, name))
+					}
+				}
+				return nil
+			}
+			namespaces[name][namespace] = true
 		}
-		seen[name] = true
-		out.Tools = append(out.Tools, t)
+		all = append(all, defined{namespace, exportedTool{name, t}})
+		return nil
 	}
 	for _, t := range tools {
-		add(t)
+		if err := add("", t); err != nil {
+			return exported{}, err
+		}
 	}
-	return out
+	names := map[string]bool{}
+	for _, d := range all {
+		if len(namespaces[d.name]) > 1 {
+			d.name = qualify(d.namespace, d.name)
+			out.qualified[[2]string{d.namespace, toolName(d.def)}] = d.name
+		}
+		if d.name != "" && names[d.name] {
+			return exported{}, fmt.Errorf("two tools are exported as %q", d.name)
+		}
+		names[d.name] = true
+		out.tools = append(out.tools, d.exportedTool)
+	}
+	return out, nil
+}
+
+func qualify(namespace, name string) string {
+	if namespace == "" {
+		return name
+	}
+	return namespace + "__" + name
+}
+
+// toolName reads the name a call uses for a tool definition.
+func toolName(t map[string]any) string {
+	name, _, _, _ := function(t)
+	return firstNonEmpty(name, text(t["name"]))
+}
+
+// call returns the name an export gives a tool call's tool.
+func (e exported) call(b Block) (string, error) {
+	ns := b.ToolNamespace
+	if ns == defaultNamespace {
+		ns = ""
+	}
+	if name, ok := e.qualified[[2]string{ns, b.ToolName}]; ok {
+		return name, nil
+	}
+	for key := range e.qualified {
+		if key[1] == b.ToolName {
+			return "", fmt.Errorf("call %s to %q matches none of the namespaces defining it", b.ToolCallID, qualify(ns, b.ToolName))
+		}
+	}
+	return b.ToolName, nil
 }
 
 // function reads a tool definition in any dialect as a function name,
@@ -165,11 +254,14 @@ func isCustomCall(b Block) bool { return b.SourceType == "custom_tool_call" }
 // Code blocks, become one message until a tool result ends the turn. Images
 // and files are left out: their data is only in the raw items. Freeform
 // custom tools stay custom in both their definitions and their calls.
-func OpenAIChat(ctx Context, path []Message) map[string]any {
-	ctx = ctx.effective()
+func OpenAIChat(ctx Context, path []Message) (map[string]any, error) {
+	e, err := ctx.effective()
+	if err != nil {
+		return nil, err
+	}
 	var out []map[string]any
-	if len(ctx.System) > 0 {
-		out = append(out, map[string]any{"role": "system", "content": strings.Join(ctx.System, "\n\n")})
+	if len(e.system) > 0 {
+		out = append(out, map[string]any{"role": "system", "content": strings.Join(e.system, "\n\n")})
 	}
 	var assistant map[string]any
 	turn := func() map[string]any {
@@ -207,12 +299,16 @@ func OpenAIChat(ctx Context, path []Message) map[string]any {
 				}
 			case "tool_call":
 				if m.Role == "assistant" {
+					name, err := e.call(b)
+					if err != nil {
+						return nil, err
+					}
 					prior, _ := turn()["tool_calls"].([]any)
 					call := map[string]any{"id": b.ToolCallID, "type": "function",
-						"function": map[string]any{"name": b.ToolName, "arguments": b.ToolInput}}
+						"function": map[string]any{"name": name, "arguments": b.ToolInput}}
 					if isCustomCall(b) {
 						call = map[string]any{"id": b.ToolCallID, "type": "custom",
-							"custom": map[string]any{"name": b.ToolName, "input": b.ToolInput}}
+							"custom": map[string]any{"name": name, "input": b.ToolInput}}
 					}
 					turn()["tool_calls"] = append(prior, call)
 				}
@@ -228,14 +324,15 @@ func OpenAIChat(ctx Context, path []Message) map[string]any {
 	}
 	request := map[string]any{"messages": out}
 	var tools []any
-	for _, t := range ctx.Tools {
-		if name, description, schema, ok := function(t); ok {
+	for _, et := range e.tools {
+		t, name := et.def, et.name
+		if _, description, schema, ok := function(t); ok {
 			f := map[string]any{"name": name, "description": description}
 			if schema != nil {
 				f["parameters"] = schema
 			}
 			tools = append(tools, map[string]any{"type": "function", "function": f})
-		} else if name, description, format, ok := customTool(t); ok {
+		} else if _, description, format, ok := customTool(t); ok {
 			c := map[string]any{"name": name, "description": description}
 			if f, ok := format.(map[string]any); ok && f["type"] == "grammar" && f["grammar"] == nil {
 				// Chat Completions nests a grammar one level deeper.
@@ -253,7 +350,7 @@ func OpenAIChat(ctx Context, path []Message) map[string]any {
 	if len(tools) > 0 {
 		request["tools"] = tools
 	}
-	return request
+	return request, nil
 }
 
 // AnthropicMessages renders a call or conversation as an Anthropic Messages
@@ -262,9 +359,12 @@ func OpenAIChat(ctx Context, path []Message) map[string]any {
 // as the API requires. Anthropic has no freeform custom tools, so they
 // become tools taking their raw text as input, in both their definitions
 // and their calls.
-func AnthropicMessages(ctx Context, path []Message) map[string]any {
-	ctx = ctx.effective()
-	system := append([]string{}, ctx.System...)
+func AnthropicMessages(ctx Context, path []Message) (map[string]any, error) {
+	e, err := ctx.effective()
+	if err != nil {
+		return nil, err
+	}
+	system := append([]string{}, e.system...)
 	var out []map[string]any
 	add := func(role string, blocks []any) {
 		if len(blocks) == 0 {
@@ -301,6 +401,10 @@ func AnthropicMessages(ctx Context, path []Message) map[string]any {
 					blocks = append(blocks, map[string]any{"type": "thinking", "thinking": b.Text})
 				}
 			case "tool_call":
+				name, err := e.call(b)
+				if err != nil {
+					return nil, err
+				}
 				var input any = map[string]any{}
 				if isCustomCall(b) {
 					// Anthropic has no freeform tools; the definition takes
@@ -309,7 +413,7 @@ func AnthropicMessages(ctx Context, path []Message) map[string]any {
 				} else if b.ToolInput != "" && json.Unmarshal([]byte(b.ToolInput), &input) != nil {
 					input = map[string]any{"input": b.ToolInput}
 				}
-				blocks = append(blocks, map[string]any{"type": "tool_use", "id": b.ToolCallID, "name": b.ToolName, "input": input})
+				blocks = append(blocks, map[string]any{"type": "tool_use", "id": b.ToolCallID, "name": name, "input": input})
 			case "tool_result":
 				result := map[string]any{"type": "tool_result", "tool_use_id": b.ToolCallID,
 					"content": b.Text, "is_error": b.IsError}
@@ -329,14 +433,15 @@ func AnthropicMessages(ctx Context, path []Message) map[string]any {
 	}
 	request := map[string]any{"system": strings.Join(system, "\n\n"), "messages": out}
 	var tools []any
-	for _, t := range ctx.Tools {
-		if name, description, schema, ok := function(t); ok {
+	for _, et := range e.tools {
+		t, name := et.def, et.name
+		if _, description, schema, ok := function(t); ok {
 			tool := map[string]any{"name": name, "description": description}
 			if schema != nil {
 				tool["input_schema"] = schema
 			}
 			tools = append(tools, tool)
-		} else if name, description, _, ok := customTool(t); ok {
+		} else if _, description, _, ok := customTool(t); ok {
 			tools = append(tools, map[string]any{"name": name, "description": description,
 				"input_schema": map[string]any{"type": "object", "required": []any{"input"},
 					"properties": map[string]any{"input": map[string]any{"type": "string"}}}})
@@ -347,7 +452,7 @@ func AnthropicMessages(ctx Context, path []Message) map[string]any {
 	if len(tools) > 0 {
 		request["tools"] = tools
 	}
-	return request
+	return request, nil
 }
 
 func join(prior any, s string) string {

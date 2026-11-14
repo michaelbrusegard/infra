@@ -30,7 +30,9 @@ type Block struct {
 	SourceType string `json:"source_type"`
 	Text       string `json:"text"`
 	ToolName   string `json:"tool_name"`
-	ToolCallID string `json:"tool_call_id"`
+	// The namespace a Responses API call names its tool in, if any.
+	ToolNamespace string `json:"tool_namespace"`
+	ToolCallID    string `json:"tool_call_id"`
 	// Tool call arguments as JSON, or a custom tool's raw input.
 	ToolInput string `json:"tool_input"`
 	IsError   bool   `json:"is_error"`

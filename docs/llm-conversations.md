@@ -144,7 +144,7 @@ messages and calls, so they never need updating.
 | `ts` | When the message was first seen: the transcript time, or the proxy call's start (inputs) or completion (outputs). |
 | `role` | `system`, `developer`, `user`, `assistant` or `tool`. A message made only of tool results is `tool` in every dialect. |
 | `output`, `model`, `call_id` | Whether a model produced it, which model, and in which call. Inputs name the call that first sent them. |
-| `blocks` | `Array(Tuple(type, source_type, text, tool_name, tool_call_id, tool_input, is_error, media))`. `type` is one of text, thinking, tool_call, tool_result, image, file, compaction, other; `source_type` keeps the dialect's own name. Image and file data, signatures and encrypted reasoning are not copied here. |
+| `blocks` | `Array(Tuple(type, source_type, text, tool_name, tool_namespace, tool_call_id, tool_input, is_error, media))`. `type` is one of text, thinking, tool_call, tool_result, image, file, compaction, other; `source_type` keeps the dialect's own name. `tool_namespace` is the namespace a Responses API call names, such as an MCP server's. Image and file data, signatures and encrypted reasoning are not copied here. |
 | `format`, `item`, `line` | The raw dialect (anthropic, openai-responses, openai-chat, claude-code, codex, pi, opencode), the hash of the exact source JSON in `llm.request_items`, and the transcript line. |
 | `version` | Ranks the rows written for one node; `ReplacingMergeTree(version)` keeps the highest. See [Identity](#identity-and-deduplication). |
 
@@ -595,7 +595,13 @@ calls had their tools only in the echo; responses CLIProxy translates from
 other providers echo nothing, and failed calls often have no echo and no
 output. The export puts the system prompt first, flattens the echo's tool
 namespaces, and converts tool definitions between dialects, keeping hosted
-tools as they are. Freeform custom tools, such as Codex's `exec`, take raw
+tools as they are. Flattened tools keep their bare names, which is what a
+call names, unless two namespaces define the same name: then those tools and
+the calls to them, which name their namespace, become `namespace__name`, the
+way MCP tools are named elsewhere. The echo puts top-level tools in a
+`functions` namespace that calls never name, so it counts as none. A call
+that matches none of the colliding namespaces, or a tool defined twice
+differently, fails the export rather than pick a schema. Freeform custom tools, such as Codex's `exec`, take raw
 text: they stay custom tools in Chat Completions, and become tools taking
 the text as `input` in Anthropic Messages, which has no freeform tools and
 loses their grammar. Definitions and calls convert the same way. It keeps text, reasoning, tool calls and results

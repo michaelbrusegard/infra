@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS llm.messages
         source_type LowCardinality(String),
         text String,
         tool_name LowCardinality(String),
+        tool_namespace LowCardinality(String),
         tool_call_id String,
         tool_input String,
         is_error Bool,

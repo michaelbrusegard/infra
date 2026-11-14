@@ -222,11 +222,14 @@ func exportConversation(r io.Reader, w io.Writer, format string) error {
 	var out any
 	switch format {
 	case "openai":
-		out = conversations.OpenAIChat(ctx, path)
+		out, err = conversations.OpenAIChat(ctx, path)
 	case "anthropic":
-		out = conversations.AnthropicMessages(ctx, path)
+		out, err = conversations.AnthropicMessages(ctx, path)
 	default:
 		return fmt.Errorf("unknown export format %q", format)
+	}
+	if err != nil {
+		return err
 	}
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)

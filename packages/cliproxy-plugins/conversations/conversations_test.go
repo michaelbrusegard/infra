@@ -809,10 +809,18 @@ func jsonContains(raw []byte, s string) bool {
 	return found
 }
 
+// must returns an export that cannot fail.
+func must(request map[string]any, err error) map[string]any {
+	if err != nil {
+		panic(err)
+	}
+	return request
+}
+
 func TestExports(t *testing.T) {
 	n, _ := proxyBatch(t)
 	path := Path(n.Messages, callByID(t, &n.Batch, "claude-2").OutputIDs[0])
-	chat, _ := json.Marshal(OpenAIChat(Context{}, path)["messages"])
+	chat, _ := json.Marshal(must(OpenAIChat(Context{}, path))["messages"])
 	want := `[{"content":"The nightly backup job fails; find out why.","role":"user"},` +
 		`{"content":"Checking the job logs.","reasoning_content":"I should look at the CronJob logs first.","role":"assistant",` +
 		`"tool_calls":[{"function":{"arguments":"{\"command\":\"kubectl logs job/backup\"}","name":"Bash"},"id":"toolu_01","type":"function"}]},` +
@@ -824,7 +832,7 @@ func TestExports(t *testing.T) {
 	}
 
 	codex := Path(n.Messages, callByID(t, &n.Batch, "codex-2").OutputIDs[0])
-	request := AnthropicMessages(Context{}, codex)
+	request := must(AnthropicMessages(Context{}, codex))
 	if request["system"] != "<permissions instructions>Sandbox: workspace-write.</permissions instructions>" {
 		t.Fatalf("system %q", request["system"])
 	}
@@ -853,7 +861,7 @@ func TestExportsKeepBlockOrder(t *testing.T) {
 			path = append(path, m)
 		}
 	}
-	chat, _ := json.Marshal(OpenAIChat(Context{}, path)["messages"])
+	chat, _ := json.Marshal(must(OpenAIChat(Context{}, path))["messages"])
 	want := `[{"content":"What does the worker return?","role":"user"},` +
 		`{"content":"","reasoning_content":"Look up the worker.","role":"assistant","tool_calls":[{"function":{"arguments":"{\"code\":\"return 1\"}","name":"execute"},"id":"tool_HD0","type":"function"}]},` +
 		`{"content":"1","role":"tool","tool_call_id":"tool_HD0"},` +
@@ -861,7 +869,7 @@ func TestExportsKeepBlockOrder(t *testing.T) {
 	if string(chat) != want {
 		t.Fatalf("openai chat\n%s\nwant\n%s", chat, want)
 	}
-	anthropic, _ := json.Marshal(AnthropicMessages(Context{}, path)["messages"])
+	anthropic, _ := json.Marshal(must(AnthropicMessages(Context{}, path))["messages"])
 	want = `[{"content":[{"text":"What does the worker return?","type":"text"}],"role":"user"},` +
 		`{"content":[{"thinking":"Look up the worker.","type":"thinking"},{"id":"tool_HD0","input":{"code":"return 1"},"name":"execute","type":"tool_use"}],"role":"assistant"},` +
 		`{"content":[{"content":"1","is_error":false,"tool_use_id":"tool_HD0","type":"tool_result"}],"role":"user"},` +
@@ -900,7 +908,7 @@ func TestExportsCarryCallContext(t *testing.T) {
 		}
 		ctx.Add("response", []byte(c.ResponseBody))
 		path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
-		chat := OpenAIChat(ctx, path)
+		chat := must(OpenAIChat(ctx, path))
 		first := chat["messages"].([]map[string]any)[0]
 		if (first["role"] == "system") != (tc.system != "") || !strings.HasPrefix(first["content"].(string), tc.system) {
 			t.Fatalf("%s: first message %v", tc.call, first)
@@ -919,7 +927,7 @@ func TestExportsCarryCallContext(t *testing.T) {
 		if !reflect.DeepEqual(names, tc.tools) {
 			t.Fatalf("%s: openai tools %v", tc.call, names)
 		}
-		anthropic := AnthropicMessages(ctx, path)
+		anthropic := must(AnthropicMessages(ctx, path))
 		names = nil
 		tools, _ = anthropic["tools"].([]any)
 		for _, tool := range tools {
@@ -947,7 +955,7 @@ func TestExportsConvertCustomToolsConsistently(t *testing.T) {
 	}
 	path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
 	script := `"const r = await tools.exec_command({cmd: 'rg luna'});\ntext(r)"`
-	chat := OpenAIChat(ctx, path)
+	chat := must(OpenAIChat(ctx, path))
 	def := chat["tools"].([]any)[0].(map[string]any)
 	delete(def["custom"].(map[string]any), "description")
 	messages := chat["messages"].([]map[string]any)
@@ -957,7 +965,7 @@ func TestExportsConvertCustomToolsConsistently(t *testing.T) {
 	if string(got) != want {
 		t.Fatalf("openai custom tool\n%s\nwant\n%s", got, want)
 	}
-	anthropic := AnthropicMessages(ctx, path)
+	anthropic := must(AnthropicMessages(ctx, path))
 	tool := anthropic["tools"].([]any)[0].(map[string]any)
 	turns := anthropic["messages"].([]map[string]any)
 	blocks := turns[len(turns)-1]["content"].([]any)
@@ -999,5 +1007,71 @@ func TestProxyRunsDoNotRewriteArchivedItems(t *testing.T) {
 				t.Fatalf("%s: archived %s item written again", f.Request.RequestID, p.Field)
 			}
 		}
+	}
+}
+
+// Namespaces flatten into their tools, and a bare name two namespaces define
+// is qualified in both the definitions and the calls, so a call keeps the
+// schema of the tool it called. A call that names no matching namespace
+// fails the export instead of picking one.
+func TestExportsQualifyCollidingToolNames(t *testing.T) {
+	var ctx Context
+	ctx.Add("tools", []byte(`[
+		{"type":"namespace","name":"a","tools":[{"type":"function","name":"run","parameters":{"type":"object","required":["path"]}}]},
+		{"type":"namespace","name":"b","tools":[{"type":"function","name":"run","parameters":{"type":"object","required":["query"]}},
+			{"type":"function","name":"js","parameters":{"type":"object","required":["code"]}}]},
+		{"type":"function","name":"exec","parameters":{"type":"object","required":["cmd"]}}]`))
+	call := func(namespace, name, input string) []Message {
+		return []Message{{Role: "user", Blocks: []Block{{Type: "text", Text: "Search for hello."}}},
+			{Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
+				ToolName: name, ToolNamespace: namespace, ToolCallID: "call_1", ToolInput: input}}}}
+	}
+	schemas := func(tools []any, schema func(map[string]any) (string, any)) map[string]string {
+		out := map[string]string{}
+		for _, tool := range tools {
+			name, s := schema(tool.(map[string]any))
+			b, _ := json.Marshal(s)
+			out[name] = string(b)
+		}
+		return out
+	}
+	openai := func(t map[string]any) (string, any) {
+		f := t["function"].(map[string]any)
+		return f["name"].(string), f["parameters"].(map[string]any)["required"]
+	}
+	anthropic := func(t map[string]any) (string, any) {
+		return t["name"].(string), t["input_schema"].(map[string]any)["required"]
+	}
+	want := map[string]string{"a__run": `["path"]`, "b__run": `["query"]`, "js": `["code"]`, "exec": `["cmd"]`}
+	for _, tc := range []struct{ namespace, name, want string }{
+		{"b", "run", "b__run"}, {"a", "run", "a__run"}, {"b", "js", "js"}, {"", "exec", "exec"},
+	} {
+		path := call(tc.namespace, tc.name, `{"query":"hello"}`)
+		chat := must(OpenAIChat(ctx, path))
+		if got := schemas(chat["tools"].([]any), openai); !reflect.DeepEqual(got, want) {
+			t.Fatalf("openai tools %v", got)
+		}
+		messages := chat["messages"].([]map[string]any)
+		called := messages[len(messages)-1]["tool_calls"].([]any)[0].(map[string]any)["function"].(map[string]any)["name"]
+		request := must(AnthropicMessages(ctx, path))
+		if got := schemas(request["tools"].([]any), anthropic); !reflect.DeepEqual(got, want) {
+			t.Fatalf("anthropic tools %v", got)
+		}
+		turns := request["messages"].([]map[string]any)
+		used := turns[len(turns)-1]["content"].([]any)[0].(map[string]any)["name"]
+		if called != tc.want || used != tc.want {
+			t.Fatalf("call to %s.%s exported as %v and %v, want %s", tc.namespace, tc.name, called, used, tc.want)
+		}
+	}
+	for _, export := range []func(Context, []Message) (map[string]any, error){OpenAIChat, AnthropicMessages} {
+		if _, err := export(ctx, call("", "run", `{"query":"hello"}`)); err == nil {
+			t.Fatal("exported a call to run without the namespace that says which")
+		}
+	}
+	var twice Context
+	twice.Add("tools", []byte(`[{"type":"function","name":"run","parameters":{"required":["path"]}},
+		{"type":"function","name":"run","parameters":{"required":["query"]}}]`))
+	if _, err := OpenAIChat(twice, call("", "run", "{}")); err == nil {
+		t.Fatal("exported a tool defined twice differently")
 	}
 }

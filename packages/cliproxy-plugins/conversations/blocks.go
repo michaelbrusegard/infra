@@ -80,7 +80,7 @@ func responsesItem(raw []byte) (string, []Block) {
 			input = it["input"]
 		}
 		return "assistant", []Block{{Type: "tool_call", SourceType: t, ToolName: it.str("name"),
-			ToolCallID: it.str("call_id"), ToolInput: compactJSON(input)}}
+			ToolNamespace: it.str("namespace"), ToolCallID: it.str("call_id"), ToolInput: compactJSON(input)}}
 	case "function_call_output", "custom_tool_call_output", "tool_search_output":
 		result := Block{Type: "tool_result", SourceType: t, ToolCallID: it.str("call_id")}
 		output := it["output"]
