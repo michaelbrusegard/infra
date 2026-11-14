@@ -1,0 +1,25 @@
+# The archive is the only copy of the LLM history. ClickHouse writes
+# immutable parts, so a crash-consistent volume snapshot restores cleanly.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: clickhouse-data-backup
+  namespace: clickhouse
+spec:
+  sourcePVC: data-clickhouse-0
+  trigger:
+    schedule: "40 3 * * *"
+  restic:
+    repository: freddo-restic-clickhouse-pvc
+    pruneIntervalDays: 36500
+    retain:
+      within: 100y
+    moverSecurityContext:
+      runAsUser: 101
+      runAsGroup: 101
+      fsGroup: 101
+      fsGroupChangePolicy: OnRootMismatch
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: openebs-single-replica
+    cacheCapacity: 2Gi

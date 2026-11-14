@@ -23,6 +23,8 @@
 
   services.restic.server.initializeRepositories = {
     bazarr = ["repo-config"];
+    # The LLM archive: proxy capture and its derived conversation tables.
+    clickhouse = ["pvc"];
     cliproxy = ["pvc"];
     hermes-agent = ["pvc"];
     healthlog = ["postgres"];
