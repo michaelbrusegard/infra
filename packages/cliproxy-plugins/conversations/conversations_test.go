@@ -85,7 +85,7 @@ func transcriptBatch(t *testing.T, proxied *Proxied) (*Normalizer, [][]Transcrip
 		files[len(files)-1] = append(files[len(files)-1], l)
 	}
 	n := NewNormalizer()
-	replies := repliesOf(files...)
+	replies := repliesOf(proxied, files...)
 	for _, f := range files {
 		n.Transcript(f, replies, proxied)
 	}
@@ -93,10 +93,10 @@ func transcriptBatch(t *testing.T, proxied *Proxied) (*Normalizer, [][]Transcrip
 }
 
 // repliesOf is the first pass of the transcript import, over every file.
-func repliesOf(files ...[]TranscriptLine) *Replies {
+func repliesOf(proxied *Proxied, files ...[]TranscriptLine) *Replies {
 	r := &Replies{}
 	for _, f := range files {
-		r.Add(f)
+		r.Add(f, proxied)
 	}
 	return r
 }
@@ -324,7 +324,7 @@ func TestTranscriptLinesAreKeptExactlyOnce(t *testing.T) {
 		}
 	}
 	n := NewNormalizer()
-	replies := repliesOf(files...)
+	replies := repliesOf(nil, files...)
 	for _, f := range files {
 		n.Transcript(f, replies, nil)
 	}
@@ -596,7 +596,7 @@ func TestTranscriptsSharingASessionKeepEverySource(t *testing.T) {
 	}
 	n := NewNormalizer()
 	proxied := proxiedBy(&p.Batch)
-	replies := repliesOf(pi, copied)
+	replies := repliesOf(proxied, pi, copied)
 	n.Transcript(pi, replies, proxied)
 	n.Transcript(copied, replies, proxied)
 	session := callByID(t, &p.Batch, "chat-1").SessionID
@@ -669,7 +669,7 @@ func TestSubAgentTranscriptsKeepTheirOwnSession(t *testing.T) {
 			proxied = &Proxied{}
 			tc.proxied(proxied)
 		}
-		replies := repliesOf(tc.files...)
+		replies := repliesOf(proxied, tc.files...)
 		for _, f := range tc.files {
 			n.Transcript(f, replies, proxied)
 		}

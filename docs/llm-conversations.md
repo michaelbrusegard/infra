@@ -321,8 +321,11 @@ the reply is earliest holds the call, and ties go to the first by host,
 path and session. A forked file copies its parent's replies after the parent
 wrote them, so the parent keeps them, whatever the paths: path order is not
 ancestry order in live Codex files. Sibling forks holding a reply none of
-them wrote, or one file synced to two hosts, tie and fall to the first. In
-every other file the reply is a copy. It stays a message in that file's
+them wrote, or one file synced to two hosts, tie and fall to the first.
+Only lines from before the proxy took a file's session over count, because
+the file writes no call after that: a reply the proxy never returned, seen
+after the parent's handover and in a child's earlier copy, is the child's
+call rather than nobody's. In every other file the reply is a copy. It stays a message in that file's
 tree, because the model was sent it, but as input (`output = false`, no
 model or call) like Pi's compaction copies, and it adds no call.
 

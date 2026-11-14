@@ -98,24 +98,31 @@ func (p *Proxied) sessionOf(s Session, lines []TranscriptLine) string {
 // files record: the file whose line recording it is earliest, then the first
 // by host, path, and session. A forked sub-agent's file copies its parent's
 // replies after the parent wrote them, so the parent keeps them, and copies
-// that tie, such as one file synced to two hosts, fall to the first. Every
-// file is added before any is normalized, so which file holds a call
-// depends on all of them, never on which run together or in what order.
+// that tie, such as one file synced to two hosts, fall to the first. Only
+// lines from before the proxy took a file's session over count, since a
+// file writes no call after that, so a reply the proxy never returned stays
+// with a file that can write it. Every file is added before any is
+// normalized, so which file holds a call depends on all of them, never on
+// which run together or in what order.
 type Replies struct {
 	// Response IDs to their earliest sighting: the time, then the file.
 	first map[string]string
 }
 
-// Add records the replies of one file.
-func (r *Replies) Add(lines []TranscriptLine) {
+// Add records the replies of one file, with the proxied calls that
+// Transcript is given.
+func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
+	if len(lines) == 0 {
+		return
+	}
 	if r.first == nil {
 		r.first = map[string]string{}
 	}
-	f := &file{}
+	f := newFile(nil, lines, proxied)
 	for _, l := range lines {
-		ts := f.stamp(l)
-		if id := replyID(l); id != "" {
-			s := ts + "\x00" + fileKey(l)
+		owned := f.owned(l)
+		if id := replyID(l); id != "" && owned {
+			s := f.stamp(l) + "\x00" + f.key
 			if first, ok := r.first[id]; !ok || s < first {
 				r.first[id] = s
 			}
@@ -160,13 +167,7 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 	if len(lines) == 0 {
 		return
 	}
-	f := &file{n: n, key: fileKey(lines[0]), parents: map[string]string{}, nodes: map[string]Hash{},
-		calls: map[string]*Call{}, kept: map[string]keptMessage{}}
-	f.session = transcriptSession(lines)
-	if proxied != nil {
-		f.session.SessionID = proxied.sessionOf(f.session, lines)
-		f.proxiedSince = proxied.since[f.session.SessionID]
-	}
+	f := newFile(n, lines, proxied)
 	start := len(n.Messages)
 	switch lines[0].Source {
 	case "claude-code":
@@ -191,6 +192,19 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 		}
 		n.Calls = append(n.Calls, *c)
 	}
+}
+
+// newFile starts a transcript file: its session, and when the proxy took
+// the session over, if it did.
+func newFile(n *Normalizer, lines []TranscriptLine, proxied *Proxied) *file {
+	f := &file{n: n, key: fileKey(lines[0]), parents: map[string]string{}, nodes: map[string]Hash{},
+		calls: map[string]*Call{}, kept: map[string]keptMessage{}}
+	f.session = transcriptSession(lines)
+	if proxied != nil {
+		f.session.SessionID = proxied.sessionOf(f.session, lines)
+		f.proxiedSince = proxied.since[f.session.SessionID]
+	}
+	return f
 }
 
 // returned reports whether the proxy returned a response, and in which

@@ -2,6 +2,7 @@ package conversations
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -94,7 +95,7 @@ func permutations(n int) [][]int {
 func TestTranscriptReplyOwnershipIgnoresBatches(t *testing.T) {
 	files := forkedFiles()
 	parent, child := "codex:019f6478-0000-7000-8000-00000000000a", "codex:019f6478-0000-7000-8000-00000000000a:agent:review"
-	replies := repliesOf(files...)
+	replies := repliesOf(nil, files...)
 	want := ""
 	for _, order := range permutations(len(files)) {
 		for _, split := range []bool{false, true} {
@@ -124,5 +125,28 @@ func TestTranscriptReplyOwnershipIgnoresBatches(t *testing.T) {
 				t.Fatalf("order %v, split %v: rows\n%s\nwant\n%s", order, split, got, want)
 			}
 		}
+	}
+}
+
+// A file writes no call from the proxy's handover on, so its sighting of a
+// reply the proxy never returned cannot hold the call. The child's earlier
+// copy, from before any handover, holds it, and its usage still counts.
+func TestTranscriptReplyOwnerCanWriteTheCall(t *testing.T) {
+	files := forkedFiles()[:2]
+	parent, child := "codex:019f6478-0000-7000-8000-00000000000a", "codex:019f6478-0000-7000-8000-00000000000a:agent:review"
+	proxied := &Proxied{}
+	proxied.Add(parent, "", "codex", "resp_other", "2026-11-12 10:00:00.000")
+	replies := repliesOf(proxied, files...)
+	n := NewNormalizer()
+	for _, f := range files {
+		n.Transcript(f, replies, proxied)
+	}
+	var calls []string
+	for _, c := range n.Calls {
+		calls = append(calls, c.SessionID+" "+c.ResponseID)
+	}
+	sort.Strings(calls)
+	if want := []string{child + " resp_child", child + " resp_parent"}; !reflect.DeepEqual(calls, want) {
+		t.Fatalf("calls %v, want %v", calls, want)
 	}
 }

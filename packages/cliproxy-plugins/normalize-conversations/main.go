@@ -182,7 +182,7 @@ func run(r io.Reader, dir string, n *conversations.Normalizer, proxied *conversa
 	}
 	replies := &conversations.Replies{}
 	for _, pass := range []func([]conversations.TranscriptLine) error{
-		func(file []conversations.TranscriptLine) error { replies.Add(file); return nil },
+		func(file []conversations.TranscriptLine) error { replies.Add(file, proxied); return nil },
 		func(file []conversations.TranscriptLine) error { n.Transcript(file, replies, proxied); return drain() },
 	} {
 		if _, err := spool.Seek(0, io.SeekStart); err != nil {
