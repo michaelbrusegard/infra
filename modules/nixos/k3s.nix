@@ -8,7 +8,8 @@
     # threshold. Expire them by age as well; imageMaximumGCAge has no kubelet
     # flag, so it has to come through the config file.
     extraKubeletConfig = {
-      imageMinimumGCAge = "24h";
+      # Kubelet restarts reset image age, so a long minimum blocks reclaiming cached images.
+      imageMinimumGCAge = "2m";
       imageMaximumGCAge = "168h";
       imageGCHighThresholdPercent = 75;
       imageGCLowThresholdPercent = 60;
