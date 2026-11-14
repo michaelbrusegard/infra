@@ -34,7 +34,8 @@ results.
   rebuilt unless an export is restored.
 - **The dashboard's usage history moves to the canonical calls.**
   `llm.usage_metrics` reads pre-proxy history from transcript calls instead
-  of `llm.historical_usage`, which counts Codex about 6.8% too high.
+  of `llm.historical_usage`, which counts Codex about 6.8% too high, as soon
+  as the transcript import lands.
 - **Deferred**, since the proxy's view can be rebuilt with them later:
   recording the client headers that tell typed prompts from injected
   context, and the Codex base instructions in `session_meta`.
@@ -156,8 +157,9 @@ sessions and a handful of Codex and Pi sessions appear in both.
 
 ## Schema
 
-The DDL is in
-[`normalize-conversations/schema.sql`](../packages/cliproxy-plugins/normalize-conversations/schema.sql).
+The DDL is part of the production schema, ClickHouse's `schema.sql` in
+[`apps/clickhouse/configmap.yaml`](../gitops/espresso/apps/clickhouse/configmap.yaml),
+which ClickHouse runs on every start; every statement is idempotent.
 
 **`llm.sessions`**: one row per session and source: the proxy, or each
 transcript file, by `host` and `path`, since several files can continue one
@@ -697,13 +699,18 @@ are dropped.
 own, and counts Codex's drifted repeats of token counts again (12,963 live,
 about 6.8% of Codex history). The transcript calls count each response once,
 so they replace it: `llm.call_history` presents them in
-`llm.historical_usage`'s columns, and the cutover changes one line of
-`llm.usage_metrics`:
+`llm.historical_usage`'s columns, and `llm.usage_metrics` reads its history
+from `llm.call_history`, and from `llm.historical_usage` only while
+`llm.calls` holds no transcript call. The cutover is in the production
+schema, so it needs no change at the time:
 
-```diff
--    FROM llm.historical_usage FINAL
-+    FROM llm.call_history
-```
+- Before the transcript import lands, the dashboard shows the old import's
+  history, as it does today.
+- When the import's calls are inserted, it shows theirs. If verification
+  fails and they are deleted, it shows the old import's again.
+- After the drop, `schema.sql` creates no `llm.transcripts` again, and the
+  empty `llm.historical_usage` it creates on the next start is never read,
+  since transcript calls exist. A restart never empties the history.
 
 Its fixed handover (`requested_at < min(llm.usage.requested_at)`) stays.
 The rows follow the importer's rules: the provider from the model's prefix
@@ -711,8 +718,9 @@ The rows follow the importer's rules: the provider from the model's prefix
 Claude's thinking tokens as reasoning, Pi compactions
 under the model in use (the importer recorded them as `(unknown)`), OpenCode's reasoning added to output
 unless its recorded total excludes it, cache writes by lifetime, and calls
-with no tokens left out. Origins stay `history:<client>`. The prototype
-test runs the deployed view with that change.
+with no tokens left out. Origins stay `history:<client>`. The tests run the
+production schema before and after the import, after a restart, and after
+the drop.
 
 ## Ongoing capture
 
@@ -892,8 +900,9 @@ explained, not just counted.
 1. **Coverage**: the transcript coverage check above passes, and the dropped
    kinds and counts match the table.
 2. **Tokens**: the transcript calls reconcile with `llm.historical_usage` as
-   above, and `llm.usage_metrics` with `llm.call_history` gives the expected
-   history per day, client and model on the dashboard.
+   above, and `llm.usage_metrics`, which reads `llm.call_history` once the
+   import lands, gives the expected history per day, client and model on
+   the dashboard.
 3. **Spot checks per agent**: for Claude Code, Codex, Pi and OpenCode, read a
    few conversations with the conversation query against the transcript
    files, including a compaction, a sub-agent and a session the proxy took
@@ -903,8 +912,8 @@ explained, not just counted.
    `llm.historical_usage` as compressed JSON lines (about 3 GiB), so the
    transcript period can be rebuilt later. Without it, the canonical rows are
    the only record.
-5. **Cut over** `llm.usage_metrics` to `llm.call_history`.
-6. **Drop** `llm.transcripts` and `llm.historical_usage`.
+5. **Drop** `llm.transcripts` and `llm.historical_usage`. The dashboard
+   already reads the transcript calls; see [Usage history](#usage-history).
 
 ## Sizes
 
@@ -1242,7 +1251,7 @@ ORDER BY parent, agent
   (`export.go`). The tests use hand-written, redacted fixtures in the shapes
   profiled from live data, covering every source format.
 - [`packages/cliproxy-plugins/normalize-conversations`](../packages/cliproxy-plugins/normalize-conversations):
-  the CLI the job would run, the DDL, and the input and state queries.
+  the CLI the job runs, and the input and state queries.
 - [`gitops/espresso/tests/llm-conversations.py`](../gitops/espresso/tests/llm-conversations.py):
   loads the fixtures into a real ClickHouse running the deployed schema, then
   normalizes them the way the job would, in runs with requests landing late

@@ -250,12 +250,33 @@ def main():
             year_cost = float(query("SELECT sumOrNull(estimated_cost_usd) FROM llm.usage_metrics WHERE requested_at >= now() - INTERVAL 1 YEAR", 'grafana').stdout)
             assert math.isclose(year_cost - day_cost, 0.00731, rel_tol=1e-8)
 
+            # Once the transcript import lands, history comes from its calls
+            # instead, and the old import is ignored, so dropping it later
+            # changes nothing.
+            calls = [dict(call_id='transcript-claude', session_id='claude:s', started_at=old_stamp, origin='transcript',
+                          client='claude-code', model='claude-opus-5-5', uncached_input_tokens=100, cache_read_tokens=200,
+                          cache_write_tokens=100, cache_write_5m_tokens=60, cache_write_1h_tokens=40, output_tokens=25),
+                     dict(call_id='transcript-empty', session_id='pi:s', started_at=old_stamp, origin='transcript',
+                          client='pi', model='kimi-k3.1-pro'),
+                     dict(call_id='proxy-call', session_id='claude:s', started_at=old_stamp, origin='proxy',
+                          client='claude-code', model='claude-opus-5-5', output_tokens=1)]
+            query("INSERT INTO llm.calls FORMAT JSONEachRow\n" + "\n".join(map(json.dumps, calls)))
+            switched = {json.loads(line)["trace_id"]: json.loads(line) for line in query(
+                "SELECT * FROM llm.usage_metrics WHERE origin LIKE 'history:%' FORMAT JSONEachRow", "grafana").stdout.splitlines()}
+            assert sorted(switched) == ["transcript-claude"], switched
+            assert switched["transcript-claude"]["origin"] == "history:claude-code"
+            assert math.isclose(switched["transcript-claude"]["estimated_cost_usd"], 0.00156, rel_tol=1e-9)
+            query("DROP TABLE llm.historical_usage")
+            run("docker", "exec", "-i", container, "clickhouse-client", "--multiquery", input=config["schema.sql"])
+            assert query("SELECT count() FROM llm.usage_metrics WHERE origin LIKE 'history:%'", "grafana").stdout.strip() == "1"
+
             query("SELECT count() FROM llm.usage_metrics SETTINGS max_execution_time=10", "grafana")
             # The HTTP driver's connection health check uses a 60-second timeout.
             query("SELECT 1 SETTINGS max_execution_time=60", "grafana")
             denied = ["SELECT * FROM llm.usage", "SELECT * FROM llm.requests",
                       "SELECT * FROM llm.request_items", "SELECT * FROM llm.request_bodies",
                       "SELECT * FROM llm.transcripts", "SELECT * FROM llm.historical_usage",
+                      "SELECT * FROM llm.calls", "SELECT * FROM llm.messages", "SELECT * FROM llm.call_history",
                       "SELECT failure_body FROM llm.usage_metrics",
                       "INSERT INTO llm.usage (request_id) VALUES ('forbidden')",
                       "DROP VIEW llm.usage_metrics", "SET readonly=0",

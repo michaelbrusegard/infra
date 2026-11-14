@@ -29,6 +29,23 @@ DOC = ROOT / "docs/llm-conversations.md"
 NOW = "toDateTime64('2026-11-14 00:00:00', 3, 'UTC')"
 
 
+TRANSCRIPTS = """
+CREATE TABLE IF NOT EXISTS llm.transcripts
+(
+    source LowCardinality(String),
+    host LowCardinality(String),
+    session String,
+    id String,
+    path String,
+    line String CODEC(ZSTD(3)),
+    ts DateTime64(3, 'UTC') DEFAULT parseDateTime64BestEffortOrZero(JSONExtractString(line, 'timestamp'), 3, 'UTC'),
+    ingested_at DateTime DEFAULT now()
+)
+ENGINE = ReplacingMergeTree(ingested_at)
+ORDER BY (source, host, session, path, id);
+"""
+
+
 def run(*args, input=None, check=True, **kwargs):
     result = subprocess.run(args, input=input, text=True, capture_output=True, **kwargs)
     if check and result.returncode != 0:
@@ -50,7 +67,9 @@ def main():
     config = json.loads(run("yq", "-o=json", str(BASE / "apps/clickhouse/configmap.yaml")).stdout)["data"]
     statefulset = json.loads(run("yq", "-o=json", str(BASE / "apps/clickhouse/statefulset.yaml")).stdout)
     image = statefulset["spec"]["template"]["spec"]["containers"][0]["image"]
-    schema = config["schema.sql"] + "\n" + (NORMALIZER / "schema.sql").read_text()
+    # The production schema, and the one-off transcript import as it exists
+    # live until it is dropped; the schema no longer creates it.
+    schema = config["schema.sql"] + "\n" + TRANSCRIPTS
     container = f"infra-llm-conversations-test-{os.getpid()}"
     with tempfile.TemporaryDirectory(prefix="infra-llm-conversations-") as directory:
         temp = Path(directory)
@@ -179,6 +198,15 @@ def main():
             # their nodes again, and found the response codex-2 continues.
             written = {m["id"] for m in first_messages}
             assert not [m for m in second_messages if m["id"] in written], second_messages
+
+            # Until the transcript import lands, the dashboard's history is
+            # the old import's.
+            history = "SELECT trace_id, origin, input_tokens, output_tokens, estimated_cost_usd FROM llm.usage_metrics " \
+                      "WHERE origin LIKE 'history:%' ORDER BY trace_id FORMAT JSONEachRow"
+            query("INSERT INTO llm.historical_usage FORMAT JSONEachRow\n" + json.dumps({
+                "event_id": "old-import", "source": "codex", "requested_at": "2026-07-01 00:00:00.000",
+                "provider": "codex", "model": "gpt-5.5", "uncached_input_tokens": 100, "output_tokens": 10}))
+            assert [json.loads(r)["trace_id"] for r in query(history, "grafana").stdout.splitlines()] == ["old-import"]
 
             # Transcripts once, after the proxy, which owns each session it
             # captured from its first call on.
@@ -346,23 +374,24 @@ def main():
             for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions", "llm.call_history"):
                 assert query(f"SELECT * FROM {table}", "grafana", check=False).returncode != 0, table
 
-            # The dashboard's history moves from llm.historical_usage to the
-            # transcript calls: llm.usage_metrics reads llm.call_history
-            # instead, which has the same columns, and nothing else changes.
-            # Each transcript call with usage before the proxy is one row,
-            # priced as the importer's rows were: the Claude Code call wrote
-            # 2,000 tokens to the one-hour cache.
-            view = re.search(r"CREATE OR REPLACE VIEW llm\.usage_metrics\b.*?;\n", config["schema.sql"], re.S).group(0)
-            assert view.count("FROM llm.historical_usage FINAL") == 1, view
-            query(view.replace("FROM llm.historical_usage FINAL", "FROM llm.call_history"))
-            history = "SELECT trace_id, origin, input_tokens, output_tokens, estimated_cost_usd FROM llm.usage_metrics " \
-                      "WHERE origin LIKE 'history:%' ORDER BY trace_id FORMAT JSONEachRow"
-            rows = {r["trace_id"]: r for r in map(json.loads, query(history, "grafana").stdout.splitlines())}
-            assert sorted(rows) == sorted(scalar("SELECT groupArray(event_id) FROM llm.call_history WHERE requested_at < "
-                                                 "(SELECT min(requested_at) FROM llm.usage)").strip("[]").replace("'", "")
-                                          .split(",")), rows
+            # Once the transcript calls landed, the production view reads the
+            # dashboard's history from them through llm.call_history, and no
+            # longer from llm.historical_usage. Each transcript call with
+            # usage before the proxy is one row, priced as the importer's
+            # rows were: the Claude Code call wrote 2,000 tokens to the
+            # one-hour cache.
+            def history_rows():
+                return {r["trace_id"]: r for r in map(json.loads, query(history, "grafana").stdout.splitlines())}
+
+            def expected_history():
+                return sorted(scalar("SELECT groupArray(event_id) FROM llm.call_history WHERE requested_at < "
+                                     "(SELECT min(requested_at) FROM llm.usage)").strip("[]").replace("'", "").split(","))
+
+            rows = history_rows()
+            assert sorted(rows) == expected_history() and "old-import" not in rows, rows
             assert rows["req_011"]["origin"] == "history:claude-code" and rows["req_011"]["input_tokens"] == 2010, rows
             assert abs(rows["req_011"]["estimated_cost_usd"] - (10 * 5 + 2000 * 10 + 64 * 25) / 1e6) < 1e-12, rows
+
 
             sql = examples()
             prompts = query(sql["prompts"]).stdout
@@ -584,8 +613,24 @@ def main():
                 assert rows[0] == rows[1], table
             events = sorted((e["type"], e["detail"]) for e in jsonl(outs[1] / "llm.events.jsonl"))
             assert events == [("api_error", "Can't reach the API server"), ("turn_aborted", "interrupted")], events
+
+            # ClickHouse runs schema.sql on every restart. Rerunning it keeps
+            # the history, and so does dropping the old import after it is
+            # verified: schema.sql does not create llm.transcripts again, and
+            # the empty llm.historical_usage it creates is ignored.
+            def restart():
+                run("docker", "exec", "-i", container, "clickhouse-client", "--multiquery", input=config["schema.sql"])
+
+            kept = history_rows()
+            restart()
+            assert history_rows() == kept
+            query("DROP TABLE llm.transcripts")
+            query("DROP TABLE llm.historical_usage")
+            restart()
+            assert scalar("EXISTS TABLE llm.transcripts") == "0" and scalar("SELECT count() FROM llm.historical_usage") == "0"
+            assert history_rows() == kept and sorted(kept) == expected_history(), kept
             print(f"PASS: {len(sql)} doc examples, proxy references both ways, transcript coverage, "
-                  "unchanged raw capture, usage history, permissions")
+                  "unchanged raw capture, usage history cutover and drop, permissions")
         finally:
             run("docker", "rm", "--force", container, check=False)
 
