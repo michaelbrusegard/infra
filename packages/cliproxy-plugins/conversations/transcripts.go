@@ -1,11 +1,14 @@
 package conversations
 
 import (
+	"bytes"
 	"encoding/json"
 	"path"
 	"sort"
 	"strconv"
 	"strings"
+
+	"cliproxy-plugins/requestitems"
 )
 
 // TranscriptLine is a row of llm.transcripts.
@@ -42,6 +45,12 @@ type file struct {
 	// The usage point of each Codex call that a token count gives its
 	// usage; see codexCounts.
 	counts map[string]string
+	// Claude Code's request logs: the shapes, holding the system prompt and
+	// tools, by hash, the shape of each request, and the request of each
+	// call, by the requestRef of its replies.
+	shapes   map[string]json.RawMessage
+	requests map[string]string
+	refs     map[string]string
 }
 
 // Proxied is what the proxy captured, for handing sessions over from
@@ -403,7 +412,7 @@ func fileKey(l TranscriptLine) string {
 }
 
 // Transcript normalizes the lines of one transcript file, in file order.
-// Every line becomes exactly one message or event that references it. A transcript and the proxy share a session when they share
+// Every line is counted once in Coverage, by what became of it. A transcript and the proxy share a session when they share
 // their replies, by response ID (see sessionOf), or else when their session
 // IDs match. From the session's first proxied call on, the proxy owns its
 // messages and calls, and its transcript lines are kept as events only.
@@ -433,7 +442,7 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 		f.opencode(lines)
 	default:
 		for _, l := range lines {
-			f.event(l, "")
+			f.other(l, parse([]byte(l.Line)))
 		}
 	}
 	n.session(f.session)
@@ -455,6 +464,7 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 			continue
 		}
 		c.ResponseID = responseID
+		c.Context = f.context(c.CallID)
 		n.Calls = append(n.Calls, *c)
 	}
 }
@@ -463,7 +473,8 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 // the session over, if it did.
 func newFile(n *Normalizer, lines []TranscriptLine, proxied *Proxied) *file {
 	f := &file{n: n, key: fileKey(lines[0]), parents: map[string]string{}, nodes: map[string]Hash{},
-		calls: map[string]*Call{}, kept: map[string]Message{}, items: map[string]string{}, counts: map[string]string{}}
+		calls: map[string]*Call{}, kept: map[string]Message{}, items: map[string]string{}, counts: map[string]string{},
+		shapes: map[string]json.RawMessage{}, requests: map[string]string{}, refs: map[string]string{}}
 	f.session = transcriptSession(lines)
 	if proxied != nil {
 		f.session.SessionID = proxied.sessionOf(f.session, lines)
@@ -611,24 +622,142 @@ func (f *file) owned(l TranscriptLine) bool {
 	return f.proxiedSince == "" || f.stamp(l) < f.proxiedSince
 }
 
-func (f *file) event(l TranscriptLine, kind string) {
-	f.n.Events = append(f.n.Events, Event{SessionID: f.session.SessionID, TS: f.stamp(l), Host: l.Host,
-		Path: l.Path, Line: l.ID, Type: kind})
+// Covered is what became of transcript lines of a source and kind: a
+// message, an event, folded into a call, a session, or the tree's structure,
+// a repeat of an entry that is a message already, a line the proxy holds
+// the call of, or dropped. llm.transcripts is dropped after the import, so
+// every line must be one of these, and the dropped kinds are listed in
+// docs/llm-conversations.md.
+type Covered struct {
+	Source, Kind, Disposition string
+}
+
+// folded names what the lines of each kind that is no message are folded
+// into. Lines of any other kind are dropped, unless they are events.
+var folded = map[string]string{
+	"claude-code/ai-title": "session", "claude-code/api-request": "call",
+	"claude-code/api-request-shape": "call", "claude-code/system:compact_boundary": "structure",
+	"codex/session_meta": "session", "codex/turn_context": "call", "codex/token_usage_record": "call",
+	"codex/event_msg:token_count": "call", "codex/compacted": "structure",
+	"pi/session": "session", "pi/session_info": "session",
+	"opencode/part": "structure", "opencode/session": "session",
+}
+
+// eventKinds names the kinds kept as events: how a session went, which no
+// message or call records.
+var eventKinds = map[string]string{
+	"claude-code/system:api_error": "api_error", "claude-code/system:model_refusal_fallback": "model_refusal_fallback",
+	"codex/event_msg:turn_aborted": "turn_aborted", "codex/event_msg:thread_rolled_back": "thread_rolled_back",
+}
+
+// kindOf names the kind of a transcript line, for coverage: its type, with
+// the subtype that tells Claude Code system lines and attachments, Codex
+// payloads, and OpenCode messages apart.
+func kindOf(source string, e obj) string {
+	switch source {
+	case "claude-code":
+		switch t := e.str("type"); t {
+		case "system":
+			return t + ":" + e.str("subtype")
+		case "attachment":
+			return t + ":" + e.obj("attachment").str("type")
+		default:
+			return t
+		}
+	case "codex":
+		if sub := e.obj("payload").str("type"); sub != "" {
+			return e.str("type") + ":" + sub
+		}
+	case "opencode":
+		if k := e.str("kind"); k != "message" {
+			return k
+		}
+		return "message:" + firstNonEmpty(e.obj("data").str("role"), e.str("type"))
+	}
+	return e.str("type")
+}
+
+func (f *file) cover(l TranscriptLine, e obj, disposition string) {
+	if f.n.Coverage == nil {
+		f.n.Coverage = map[Covered]int{}
+	}
+	f.n.Coverage[Covered{l.Source, kindOf(l.Source, e), disposition}]++
+}
+
+// other accounts for a line that is no message: an event, folded into a
+// call, a session, or the tree's structure, or dropped. After the proxy
+// took the session over, only what sessions keep counts; the proxy holds
+// the rest.
+func (f *file) other(l TranscriptLine, e obj) {
+	key := l.Source + "/" + kindOf(l.Source, e)
+	disposition := firstNonEmpty(folded[key], "dropped")
+	kind, event := eventKinds[key]
+	if event {
+		disposition = "event"
+	}
+	switch {
+	case !f.owned(l) && disposition != "session":
+		disposition = "proxied"
+	case event:
+		f.n.Events = append(f.n.Events, Event{SessionID: f.session.SessionID, TS: f.stamp(l), Host: l.Host,
+			Path: l.Path, Line: l.ID, Type: kind, Detail: eventDetail(kind, e)})
+	}
+	f.cover(l, e, disposition)
+}
+
+// eventDetail reads what an event says: the error, the notice, why a turn
+// stopped, or how many turns were rolled back.
+func eventDetail(kind string, e obj) string {
+	p := e.obj("payload")
+	switch kind {
+	case "api_error":
+		return firstNonEmpty(e.obj("error").str("formatted"), e.obj("error").str("message"))
+	case "model_refusal_fallback":
+		return e.str("content")
+	case "turn_aborted":
+		return p.str("reason")
+	case "thread_rolled_back":
+		return strconv.FormatUint(p.num("num_turns"), 10)
+	}
+	return ""
+}
+
+// context stores the system prompt and tools of a Claude Code call that its
+// request log records, as the archive splits request bodies: each array
+// element is an item.
+func (f *file) context(callID string) []requestitems.Part {
+	parts := []requestitems.Part{}
+	shape := parse(f.shapes[f.requests[f.refs[callID]]])
+	for _, field := range []string{"system", "tools"} {
+		raw := bytes.TrimSpace(shape[field])
+		if len(raw) == 0 {
+			continue
+		}
+		if raw[0] != '[' {
+			parts = append(parts, requestitems.Part{Field: field, Position: -1, Hash: f.n.item(raw)})
+			continue
+		}
+		for i, item := range array(raw) {
+			parts = append(parts, requestitems.Part{Field: field, Position: int32(i), Hash: f.n.item(item)})
+		}
+	}
+	return parts
 }
 
 // message adds a line as a message under parent, keyed by its entry ID,
 // and reports whether it did. An entry the source wrote again, as Claude
 // Code does when it resumes a session, keeps its first line as the message,
-// and the repeat is kept as an event.
-func (f *file) message(l TranscriptLine, parent Hash, key string, m Message) (Hash, bool) {
+// and the repeat is counted as one.
+func (f *file) message(l TranscriptLine, e obj, parent Hash, key string, m Message) (Hash, bool) {
 	m.Line = l.ID
 	m.Role = roleOf(m.Role, m.Blocks)
 	id, added := f.node(parent, key, f.stamp(l), m)
 	f.last = id
 	if !added {
-		f.event(l, "repeat")
+		f.cover(l, e, "repeat")
 		return id, false
 	}
+	f.cover(l, e, "message")
 	if m.Output && m.CallID != "" {
 		c := f.calls[m.CallID]
 		if c == nil {
@@ -693,6 +822,12 @@ func (f *file) claudeCode(lines []TranscriptLine) {
 		if f.session.Cwd == "" {
 			f.session.Cwd = e.str("cwd")
 		}
+		switch t {
+		case "api-request-shape":
+			f.shapes[e.str("shapeHash")] = e["shape"]
+		case "api-request":
+			f.requests[e.str("id")] = e.str("shapeHash")
+		}
 		m := Message{Format: "claude-code"}
 		switch {
 		case uuid == "" || !f.owned(l):
@@ -725,12 +860,16 @@ func (f *file) claudeCode(lines []TranscriptLine) {
 			}
 		}
 		if m.Role == "" {
-			f.event(l, t)
+			f.other(l, e)
 			continue
 		}
-		id, added := f.message(l, f.treeParent(e.str("parentUuid")), uuid, m)
+		id, added := f.message(l, e, f.treeParent(e.str("parentUuid")), uuid, m)
 		f.nodes[uuid] = id
 		if added && m.Output {
+			// The call's request log, from Claude Code 2.1 on.
+			if f.refs[m.CallID] == "" {
+				f.refs[m.CallID] = e.str("requestRef")
+			}
 			// Each streamed block is a line; the last one carries final usage.
 			msg := e.obj("message")
 			f.setUsage(m.CallID, msg.str("id"), anthropicUsage(msg.obj("usage")))
@@ -754,7 +893,7 @@ func (f *file) codex(lines []TranscriptLine) {
 		case t == "compacted":
 			// The replacement history is the context from here on: a new
 			// root, built from the items inside this line.
-			f.event(l, t)
+			f.other(l, e)
 			parent := Hash{}
 			for i, raw := range p.arr("replacement_history") {
 				role, blocks := responsesItem(raw)
@@ -774,7 +913,7 @@ func (f *file) codex(lines []TranscriptLine) {
 				m.Output, m.Model, m.CallID = true, model, call
 			}
 			lastWasOutput = m.Output
-			f.message(l, f.last, l.ID, m)
+			f.message(l, e, f.last, l.ID, m)
 			if m.Output && f.items[call] == "" {
 				f.items[call] = itemKey(l)
 			}
@@ -803,11 +942,7 @@ func (f *file) codex(lines []TranscriptLine) {
 			recorded, lastWasOutput, f.counts[call] = call, false, count
 			f.setUsage(call, "", codexUsage(p.obj("info").obj("last_token_usage")))
 		}
-		kind := t
-		if sub := p.str("type"); sub != "" {
-			kind += ":" + sub
-		}
-		f.event(l, kind)
+		f.other(l, e)
 	}
 }
 
@@ -846,7 +981,7 @@ func (f *file) pi(lines []TranscriptLine) {
 			m.Blocks = []Block{{Type: "compaction", SourceType: t, Text: e.str("summary")}}
 		}
 		if m.Role == "" {
-			f.event(l, t)
+			f.other(l, e)
 			continue
 		}
 		if t == "compaction" {
@@ -854,7 +989,7 @@ func (f *file) pi(lines []TranscriptLine) {
 			continue
 		}
 		var added bool
-		f.nodes[id], added = f.message(l, f.treeParent(e.str("parentId")), id, m)
+		f.nodes[id], added = f.message(l, e, f.treeParent(e.str("parentId")), id, m)
 		if added {
 			f.kept[id] = f.n.Messages[len(f.n.Messages)-1]
 		}
@@ -872,7 +1007,7 @@ func (f *file) pi(lines []TranscriptLine) {
 // model was sent again, and the original branch stays as it was. It
 // returns the node later entries continue from.
 func (f *file) piCompaction(l TranscriptLine, e obj, m Message) Hash {
-	leaf, added := f.message(l, Hash{}, e.str("id"), m)
+	leaf, added := f.message(l, e, Hash{}, e.str("id"), m)
 	if !added {
 		return leaf
 	}
@@ -909,14 +1044,14 @@ func (f *file) opencode(lines []TranscriptLine) {
 		switch e.str("kind") {
 		case "part":
 			parts[e.str("message_id")] = append(parts[e.str("message_id")], e["data"])
-			f.event(l, "part")
+			f.other(l, e)
 		case "message":
 			messages = append(messages, l)
 		default:
 			if e.str("kind") == "session" {
 				f.session.Title, f.session.Cwd = e.str("title"), e.str("directory")
 			}
-			f.event(l, e.str("kind"))
+			f.other(l, e)
 		}
 	}
 	sort.SliceStable(messages, func(i, j int) bool {
@@ -948,14 +1083,25 @@ func (f *file) opencode(lines []TranscriptLine) {
 		}
 		m.Blocks = append(m.Blocks, opencodeParts(append(d.arr("content"), parts[e.str("id")]...))...)
 		if !f.owned(l) || m.Role == "" {
-			f.event(l, firstNonEmpty(e.str("type"), "message"))
+			f.other(l, e)
 			continue
 		}
-		if _, added := f.message(l, f.last, e.str("id"), m); added && m.Output {
-			t := d.obj("tokens")
-			cache := t.obj("cache")
-			f.setUsage(m.CallID, "", usage{uncached: t.num("input"), read: cache.num("read"),
-				write: cache.num("write"), output: t.num("output"), reasoning: t.num("reasoning")})
+		if _, added := f.message(l, e, f.last, e.str("id"), m); added && m.Output {
+			f.setUsage(m.CallID, "", opencodeUsage(d.obj("tokens")))
 		}
 	}
+}
+
+// opencodeUsage reads OpenCode's tokens the way the usage importer did.
+// Current OpenCode counts reasoning apart from output; older records can
+// include it, and only a recorded total that adds up without it tells them
+// apart.
+func opencodeUsage(t obj) usage {
+	cache := t.obj("cache")
+	u := usage{uncached: t.num("input"), read: cache.num("read"), write: cache.num("write"),
+		output: t.num("output"), reasoning: t.num("reasoning")}
+	if _, ok := t["total"]; !ok || t.num("total") != u.uncached+u.read+u.write+u.output {
+		u.output += u.reasoning
+	}
+	return u
 }

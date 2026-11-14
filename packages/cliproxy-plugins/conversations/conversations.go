@@ -2,12 +2,13 @@
 // into one canonical form: sessions, a tree of messages, model calls, and
 // events. docs/llm-conversations.md describes the schema.
 //
-// The raw capture stays the only copy of every source record, and the
-// canonical rows reference it rather than copy it: a proxy call names its
-// llm.requests row, a proxy message the llm.request_items hash it was read
-// from, and a transcript message or event its llm.transcripts line. The
-// canonical tables are a view that can be dropped and rebuilt from the raw
-// capture whenever the extraction improves.
+// The proxy's raw capture is kept for good, and canonical rows reference it
+// rather than copy it: a proxy call names its llm.requests row, and a proxy
+// message the llm.request_items hash it was read from. The one-off import of
+// agent transcripts is dropped once normalized, so transcript rows hold
+// their own content: what the extraction keeps, plus the system prompt and
+// tools Claude Code's request logs record, as items. Coverage accounts for
+// every transcript line.
 package conversations
 
 import (
@@ -23,7 +24,8 @@ import (
 type Hash = requestitems.Hash
 
 // Block is one piece of message content in a dialect-neutral form. Image and
-// file data, signatures, and encrypted reasoning stay only in the raw item.
+// file data, signatures, and encrypted reasoning are not extracted: a proxy
+// message keeps them in its raw item, and a transcript message drops them.
 type Block struct {
 	// text, thinking, tool_call, tool_result, image, file, compaction, other
 	Type string `json:"type"`
@@ -67,11 +69,11 @@ type Message struct {
 	// was read from, or zero when the request's envelope held it. A proxy
 	// output was assembled from its call's response body in llm.requests.
 	Item Hash `json:"item"`
-	// For a transcript message, its llm.transcripts line by host, path, and
-	// ID. Part is empty when the message is the whole line, and otherwise
-	// names what inside the line it was built from: the index of a Codex
-	// compaction's replacement history item, or the entry a Pi compaction
-	// sends again.
+	// For a transcript message, the line it came from, by its file's host
+	// and path and its ID in the file. Part is empty when the message is the
+	// whole line, and otherwise names what inside the line it was built
+	// from: the index of a Codex compaction's replacement history item, or
+	// the entry a Pi compaction sends again.
 	Host string `json:"host"`
 	Path string `json:"path"`
 	Line string `json:"line"`
@@ -91,9 +93,8 @@ type Call struct {
 	// proxy or transcript
 	Origin string `json:"origin"`
 	Client string `json:"client"`
-	// The call's raw source: its llm.requests row for the proxy, or the
-	// host and path of its transcript file, whose lines its messages and
-	// events name.
+	// Where the call comes from: its llm.requests row for the proxy, or the
+	// host and path of its transcript file.
 	RequestID    string `json:"request_id"`
 	Host         string `json:"host"`
 	Path         string `json:"path"`
@@ -103,16 +104,24 @@ type Call struct {
 	InputID   Hash   `json:"input_id"`
 	OutputIDs []Hash `json:"output_ids"`
 	// Token counts as the response reported them, with cached input split
-	// out the way llm.usage_metrics does.
+	// out the way llm.usage_metrics does. Anthropic splits cache writes by
+	// their lifetime, which prices them.
 	UncachedInputTokens uint64 `json:"uncached_input_tokens"`
 	CacheReadTokens     uint64 `json:"cache_read_tokens"`
 	CacheWriteTokens    uint64 `json:"cache_write_tokens"`
+	CacheWrite5mTokens  uint64 `json:"cache_write_5m_tokens"`
+	CacheWrite1hTokens  uint64 `json:"cache_write_1h_tokens"`
 	OutputTokens        uint64 `json:"output_tokens"`
 	ReasoningTokens     uint64 `json:"reasoning_tokens"`
+	// The system prompt and tools a transcript call ran with, as items in
+	// llm.request_items, where its transcript records them, as Claude
+	// Code's request logs do. A proxy call's are in its llm.requests row.
+	Context []requestitems.Part `json:"context"`
 }
 
-// Event is any transcript record that is not a message, such as Codex token
-// counts or Claude Code attachments, by its llm.transcripts line.
+// Event is a transcript record of how a session went that no message or
+// call holds: an API error, a refusal fallback, an interrupted turn, or a
+// rollback, with its line and a detail such as the error.
 type Event struct {
 	SessionID string `json:"session_id"`
 	TS        string `json:"ts"`
@@ -120,6 +129,7 @@ type Event struct {
 	Path      string `json:"path"`
 	Line      string `json:"line"`
 	Type      string `json:"type"`
+	Detail    string `json:"detail"`
 }
 
 // Session holds the attributes of a session that do not change as it grows.
@@ -136,13 +146,38 @@ type Session struct {
 	Cwd    string `json:"cwd"`
 }
 
-// Batch collects normalized rows. It never holds raw records, only
-// references to them.
+// Batch collects normalized rows. Its items are only the context of
+// transcript calls; proxy rows reference the items the archive holds.
 type Batch struct {
 	Sessions []Session
 	Messages []Message
 	Calls    []Call
 	Events   []Event
+	Items    []Item
+	items    map[Hash]bool
+	// Transcript lines by what became of them; see Covered.
+	Coverage map[Covered]int
+}
+
+type Item struct {
+	Hash Hash   `json:"hash"`
+	Item string `json:"item"`
+}
+
+// item stores bytes as an item, once, and returns their hash. Invalid UTF-8
+// is replaced first, as requestitems does, because ClickHouse would replace
+// it on insert and the item would no longer match its hash.
+func (b *Batch) item(raw []byte) Hash {
+	raw = bytes.ToValidUTF8(raw, []byte("\uFFFD"))
+	h := requestitems.HashOf(raw)
+	if b.items == nil {
+		b.items = map[Hash]bool{}
+	}
+	if !b.items[h] {
+		b.items[h] = true
+		b.Items = append(b.Items, Item{h, string(raw)})
+	}
+	return h
 }
 
 // version ranks the rows written for one node, highest first: a model's

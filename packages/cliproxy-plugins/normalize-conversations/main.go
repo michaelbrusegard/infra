@@ -3,7 +3,11 @@
 // the canonical rows for each table into a directory, one JSONEachRow file
 // per table.
 //
-// The rows only reference the raw capture; none copies a raw record.
+// Proxy rows reference the raw capture and copy none of it. Transcript rows
+// hold their own content, since llm.transcripts is dropped after the import,
+// and the transcript run also writes llm.request_items rows for the system
+// prompts and tools of Claude Code calls, and coverage.tsv: how many lines
+// of each source and kind became what.
 //
 // With -requests, input rows on stdin are llm.requests rows with their
 // items, in start order, from requests.sql. A run first prints the sessions
@@ -33,6 +37,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -81,6 +86,9 @@ func main() {
 		}
 		n := conversations.NewNormalizer()
 		err = run(*out, n, func(drain func() error) error { return normalizeTranscripts(*in, n, p, drain) })
+		if err == nil {
+			err = writeCoverage(filepath.Join(*out, "coverage.tsv"), n.Coverage)
+		}
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -133,7 +141,7 @@ func restore(n *conversations.Normalizer, path string) error {
 	return eachRow(f, func(s conversations.State) error { n.Restore(s); return nil })
 }
 
-var tables = []string{"llm.sessions", "llm.messages", "llm.calls", "llm.events"}
+var tables = []string{"llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events"}
 
 // run creates an output file per table and calls normalize, whose drain
 // writes the rows normalized so far.
@@ -154,14 +162,14 @@ func run(dir string, n *conversations.Normalizer, normalize func(drain func() er
 	// normalizer's index of nodes.
 	return normalize(func() error {
 		b := &n.Batch
-		for _, err := range []error{writeRows(files["llm.sessions"], b.Sessions),
-			writeRows(files["llm.messages"], b.Messages), writeRows(files["llm.calls"], b.Calls),
-			writeRows(files["llm.events"], b.Events)} {
+		for _, err := range []error{writeRows(files["llm.request_items"], b.Items),
+			writeRows(files["llm.sessions"], b.Sessions), writeRows(files["llm.messages"], b.Messages),
+			writeRows(files["llm.calls"], b.Calls), writeRows(files["llm.events"], b.Events)} {
 			if err != nil {
 				return err
 			}
 		}
-		b.Sessions, b.Messages, b.Calls, b.Events = nil, nil, nil, nil
+		b.Items, b.Sessions, b.Messages, b.Calls, b.Events = nil, nil, nil, nil, nil
 		return nil
 	})
 }
@@ -198,6 +206,17 @@ func normalizeTranscripts(path string, n *conversations.Normalizer, proxied *con
 		log.Printf("%d Codex item keys name more than one response ID:\n%s", len(conflicts), strings.Join(conflicts, "\n"))
 	}
 	return nil
+}
+
+// writeCoverage writes the source, kind, disposition, and number of lines
+// of every kind of transcript line, sorted.
+func writeCoverage(path string, coverage map[conversations.Covered]int) error {
+	var rows []string
+	for c, lines := range coverage {
+		rows = append(rows, fmt.Sprintf("%s\t%s\t%s\t%d", c.Source, c.Kind, c.Disposition, lines))
+	}
+	sort.Strings(rows)
+	return os.WriteFile(path, []byte(strings.Join(rows, "\n")+"\n"), 0o644)
 }
 
 // readFile reads a file, decompressing it if it is gzip.

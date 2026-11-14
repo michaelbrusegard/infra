@@ -121,17 +121,19 @@ def main():
                                    if (row[key].removeprefix("usage-") in later) == (batch == 2))
                     query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + data, "cliproxy")
 
-            canonical = ("llm.sessions", "llm.messages", "llm.calls", "llm.events")
+            canonical = ("llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events")
 
             def load(out):
                 for table in canonical:
                     insert(table, out / f"{table}.jsonl")
 
-            # The normalizer reads raw rows and writes only canonical ones.
-            raw_tables = ("llm.requests", "llm.request_items", "llm.transcripts")
-
+            # The normalizer never changes the proxy's raw capture. It adds
+            # items only for the context of transcript calls.
             def checksums():
-                return {table: scalar(f"SELECT count(), sum(cityHash64(*)) FROM {table}") for table in raw_tables}
+                return [scalar(f"SELECT count(), sum(cityHash64(*)) FROM {table}") for table in (
+                    "llm.requests", "llm.transcripts",
+                    "llm.request_items FINAL WHERE hash IN (SELECT part.hash FROM llm.requests "
+                    "ARRAY JOIN request_parts AS part)")]
 
             # One run of the job: the requests not normalized yet, the state of
             # the sessions they touch, then the normalizer.
@@ -192,8 +194,9 @@ def main():
                 transcripts.splitlines(keepends=True),
                 lambda line: [json.loads(line)[k] for k in ("source", "host", "session", "path")])]
             reversed_out = import_transcripts("transcripts-reversed", "".join(itertools.chain(*files[::-1])))
-            for table in canonical:
-                rows = [sorted((directory / f"{table}.jsonl").read_text().splitlines()) for directory in (out, reversed_out)]
+            for table in (*canonical, "coverage.tsv"):
+                name = table if table.endswith(".tsv") else f"{table}.jsonl"
+                rows = [sorted((directory / name).read_text().splitlines()) for directory in (out, reversed_out)]
                 assert rows[0] == rows[1], table
             assert checksums() == before, "normalizing changed the raw capture"
 
@@ -205,9 +208,8 @@ def main():
             assert scalar(f"SELECT count() FROM ({calls} EXCEPT SELECT request_id FROM llm.requests)") == "0"
             # Only the unarchived previous response starts at a marker.
             assert scalar("SELECT count() FROM llm.messages FINAL WHERE format = 'proxy'") == "1"
-            # Every message's raw source resolves: a proxy input's item, which
-            # its call's request sent, a proxy output's call, and a
-            # transcript message's line.
+            # Every proxy message's raw source resolves: an input's item, which
+            # its call's request sent, and an output's call.
             assert scalar("""
                 SELECT count() FROM llm.messages FINAL
                 WHERE item != 0 AND ((call_id, item) NOT IN (
@@ -219,17 +221,26 @@ def main():
                 SELECT count() FROM llm.messages FINAL
                 WHERE path = '' AND output AND call_id NOT IN (SELECT request_id FROM llm.requests)
             """) == "0"
-            # Every transcript row is exactly one message or event, which names
-            # it by host, path, and ID, and nothing names a missing row.
-            # Messages built from inside a line, such as compaction items,
-            # have a part and name the line too.
+            # llm.transcripts is dropped after the import, so every line is
+            # covered: the normalizer counts each line once, by what became of
+            # it, and the lines messages and events name are exactly those it
+            # counts as messages and events. Every kind it drops is in the
+            # design doc's table of dropped kinds.
+            coverage = [line.split("\t") for line in (out / "coverage.tsv").read_text().splitlines()]
+            assert sum(int(c[3]) for c in coverage) == int(scalar("SELECT count() FROM llm.transcripts FINAL")) == 62
             lines = "SELECT toString(host), path, id FROM llm.transcripts FINAL"
-            refs = """SELECT * FROM (
+            named = """SELECT * FROM (
                 SELECT toString(host), path, line FROM llm.messages FINAL WHERE path != '' AND part = ''
                 UNION ALL SELECT toString(host), path, line FROM llm.events FINAL)"""
-            assert scalar(f"SELECT count() FROM ({refs})") == scalar(f"SELECT count() FROM ({lines})") == "59"
-            assert scalar(f"SELECT count() FROM ({refs} EXCEPT {lines})") == "0"
-            assert scalar(f"SELECT count() FROM ({lines} EXCEPT {refs})") == "0"
+            assert scalar(f"SELECT count() FROM ({named})") \
+                == str(sum(int(c[3]) for c in coverage if c[2] in ("message", "event")))
+            assert scalar(f"SELECT count() FROM ({named} EXCEPT {lines})") == "0"
+            assert scalar(f"SELECT count() FROM (SELECT DISTINCT * FROM ({named}))") \
+                == scalar(f"SELECT count() FROM ({named})")
+            documented = set(re.findall(r"^\| `([a-z-]+)` \| `([^`]+)` \|", DOC.read_text(), re.M))
+            assert documented, "no table of dropped kinds"
+            assert not {(c[0], c[1]) for c in coverage if c[2] == "dropped"} - documented, coverage
+            # Messages built from inside a line name it, and calls their file.
             assert scalar("""
                 SELECT count() FROM llm.messages FINAL
                 WHERE part != '' AND (host, path, line) NOT IN (SELECT host, path, id FROM llm.transcripts)
@@ -241,15 +252,23 @@ def main():
             # Two Codex compaction items, and two entries Pi sends again.
             assert scalar("SELECT groupArray((line, part)) FROM (SELECT line, part FROM llm.messages FINAL "
                           "WHERE part != '' ORDER BY line, part)") == "[('12','0'),('12','1'),('7','p2'),('7','p3')]"
+            # The Claude Code call whose request log the transcript holds
+            # carries its system prompt and tools as items.
+            assert scalar("SELECT arrayMap(p -> (p.field, p.position), context) FROM llm.calls FINAL "
+                          "WHERE call_id = 'req_011'") == "[('system',0),('system',1),('tools',0),('tools',1)]"
+            assert scalar("SELECT count() FROM (SELECT arrayJoin(context).hash AS hash FROM llm.calls) "
+                          "WHERE hash NOT IN (SELECT hash FROM llm.request_items)") == "0"
+            assert scalar("SELECT count() FROM llm.request_items "
+                          "WHERE hash != reinterpretAsUInt128(substring(SHA256(item), 1, 16))") == "0"
             # Both captured this session. The transcript keeps the line from
-            # before the proxy's first call as a message, and the later one
-            # as an event; its calls and tokens are the proxy's.
+            # before the proxy's first call as a message, and the later one is
+            # the proxy's; so are its calls and tokens.
             both = "'claude:11111111-1111-4111-8111-111111111111'"
             assert scalar(f"SELECT arraySort(groupArray(origin)) FROM llm.sessions FINAL WHERE session_id = {both}") \
                 == "['proxy','transcript']"
             assert scalar(f"SELECT groupArray(line) FROM llm.messages FINAL WHERE session_id = {both} AND line != ''") \
                 == "['1']"
-            assert scalar(f"SELECT groupArray(line) FROM llm.events FINAL WHERE session_id = {both}") == "['2']"
+            assert ["claude-code", "assistant", "proxied", "1"] in coverage, coverage
             assert scalar(f"SELECT groupUniqArray(origin) FROM llm.calls FINAL WHERE session_id = {both}") == "['proxy']"
             # Pi's proxied calls have only CLIProxy's session. The replies both
             # recorded put the transcript in it, so its replies count once.
@@ -260,8 +279,26 @@ def main():
                 == "['2']"
             assert scalar("SELECT count() FROM llm.calls FINAL WHERE response_id IN ('chatcmpl-1', 'chatcmpl-2')") == "2"
             # Grafana keeps seeing only the metrics view.
-            for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions"):
+            for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions", "llm.call_history"):
                 assert query(f"SELECT * FROM {table}", "grafana", check=False).returncode != 0, table
+
+            # The dashboard's history moves from llm.historical_usage to the
+            # transcript calls: llm.usage_metrics reads llm.call_history
+            # instead, which has the same columns, and nothing else changes.
+            # Each transcript call with usage before the proxy is one row,
+            # priced as the importer's rows were: the Claude Code call wrote
+            # 2,000 tokens to the one-hour cache.
+            view = re.search(r"CREATE OR REPLACE VIEW llm\.usage_metrics\b.*?;\n", config["schema.sql"], re.S).group(0)
+            assert view.count("FROM llm.historical_usage FINAL") == 1, view
+            query(view.replace("FROM llm.historical_usage FINAL", "FROM llm.call_history"))
+            history = "SELECT trace_id, origin, input_tokens, output_tokens, estimated_cost_usd FROM llm.usage_metrics " \
+                      "WHERE origin LIKE 'history:%' ORDER BY trace_id FORMAT JSONEachRow"
+            rows = {r["trace_id"]: r for r in map(json.loads, query(history, "grafana").stdout.splitlines())}
+            assert sorted(rows) == sorted(scalar("SELECT groupArray(event_id) FROM llm.call_history WHERE requested_at < "
+                                                 "(SELECT min(requested_at) FROM llm.usage)").strip("[]").replace("'", "")
+                                          .split(",")), rows
+            assert rows["req_011"]["origin"] == "history:claude-code" and rows["req_011"]["input_tokens"] == 2010, rows
+            assert abs(rows["req_011"]["estimated_cost_usd"] - (10 * 5 + 2000 * 10 + 64 * 25) / 1e6) < 1e-12, rows
 
             sql = examples()
             prompts = query(sql["prompts"]).stdout
@@ -337,8 +374,15 @@ def main():
             assert failed.returncode != 0 and "no output" in failed.stderr, failed
 
             raw = query(sql["raw"], params=(session,)).stdout
-            # The request items, a response body, and the transcript's line.
-            assert '"cache_control"' in raw and "signature_delta" in raw and '"parentUuid"' in raw, raw
+            # The request items and a response body.
+            assert '"cache_control"' in raw and "signature_delta" in raw, raw
+
+            # The Claude Code call exports as a training example with the system
+            # prompt and tools its request log recorded.
+            rows = query(sql["call"], params=(("call", "req_011"),)).stdout
+            anthropic = json.loads(run(str(normalizer), "-export", "anthropic", input=rows).stdout)
+            assert anthropic["system"].startswith("You are Claude Code") \
+                and [t["name"] for t in anthropic["tools"]] == ["Bash", "Read"], anthropic
 
             agents = query(sql["subagents"]).stdout
             assert "codex:01a1da81-0000-7000-8000-000000000001\tcodex:01a1da81-0000-7000-8000-000000000001:agent:pricing_review" in agents, agents
@@ -429,7 +473,44 @@ def main():
                            "-out", str(out)).stderr
             assert audit == [["item:call_shared", "['resp_c1','resp_c2']"]], audit
             assert reported.splitlines()[1:] == ["item:call_shared resp_c1 resp_c2"], reported
-            print(f"PASS: {len(sql)} doc examples, raw references both ways, unchanged raw capture, permissions")
+
+            # transcripts.sql sends only the type of the largest kinds of line
+            # the import drops, such as Claude Code's request blobs and Codex's
+            # item events, and the normalizer writes the same rows as from the
+            # whole lines. Errors and interruptions stay events.
+            claude = ".claude/projects/-Users-michaelbrusegard-Projects-infra/22222222-2222-4222-8222-222222222222.jsonl"
+            codex = ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-01a1da81-0000-7000-8000-0000000000ee.jsonl"
+            codex_session = codex.rsplit("/", 1)[1].removesuffix(".jsonl")
+            added = (
+                ("claude-code", claude, "22222222-2222-4222-8222-222222222222", "100",
+                 {"type": "api-request-blob", "hash": "h1", "sessionId": "s",
+                  "message": {"role": "user", "content": "x" * 4096}}),
+                ("claude-code", claude, "22222222-2222-4222-8222-222222222222", "101",
+                 {"type": "system", "subtype": "api_error", "uuid": "e1", "parentUuid": "x2",
+                  "timestamp": "2026-10-01T09:00:05.000Z", "error": {"message": "Connection error.",
+                                                                    "formatted": "Can't reach the API server"}}),
+                ("codex", codex, codex_session, "100", {"timestamp": "2026-11-12T10:01:00.000Z", "type": "world_state",
+                                                        "payload": {"cwd": "/" * 4096}}),
+                ("codex", codex, codex_session, "101", {"timestamp": "2026-11-12T10:01:01.000Z", "type": "event_msg",
+                                                        "payload": {"type": "item_completed", "item": "/" * 4096}}),
+                ("codex", codex, codex_session, "102", {"timestamp": "2026-11-12T10:01:02.000Z", "type": "event_msg",
+                                                        "payload": {"type": "turn_aborted", "reason": "interrupted"}}))
+            query("INSERT INTO llm.transcripts FORMAT JSONEachRow\n" + "\n".join(json.dumps({
+                "source": source, "host": "lungo", "session": session, "id": id, "path": path,
+                "line": json.dumps(line)}) for source, path, session, id, line in added))
+            whole = query("SELECT source, host, session, id, path, line, toString(ts) AS ts FROM llm.transcripts FINAL "
+                          "ORDER BY source, host, path, session, toUInt64OrZero(id), id FORMAT JSONEachRow").stdout
+            stripped = query((NORMALIZER / "transcripts.sql").read_text()).stdout
+            assert len(stripped) < len(whole) - 12000, (len(stripped), len(whole))
+            outs = [import_transcripts(name, lines) for name, lines in (("whole", whole), ("stripped", stripped))]
+            for table in (*canonical, "coverage.tsv"):
+                name = table if table.endswith(".tsv") else f"{table}.jsonl"
+                rows = [(directory / name).read_text() for directory in outs]
+                assert rows[0] == rows[1], table
+            events = sorted((e["type"], e["detail"]) for e in jsonl(outs[1] / "llm.events.jsonl"))
+            assert events == [("api_error", "Can't reach the API server"), ("turn_aborted", "interrupted")], events
+            print(f"PASS: {len(sql)} doc examples, proxy references both ways, transcript coverage, "
+                  "unchanged raw capture, usage history, permissions")
         finally:
             run("docker", "rm", "--force", container, check=False)
 

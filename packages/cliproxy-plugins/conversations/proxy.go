@@ -374,11 +374,12 @@ func clientOf(userAgent string) string {
 }
 
 type usage struct {
-	uncached, read, write, output, reasoning uint64
+	uncached, read, write, write5m, write1h, output, reasoning uint64
 }
 
 func (u usage) apply(c *Call) {
 	c.UncachedInputTokens, c.CacheReadTokens, c.CacheWriteTokens = u.uncached, u.read, u.write
+	c.CacheWrite5mTokens, c.CacheWrite1hTokens = u.write5m, u.write1h
 	c.OutputTokens, c.ReasoningTokens = u.output, u.reasoning
 }
 
@@ -393,9 +394,14 @@ func openaiUsage(u obj) usage {
 		output: u.num("output_tokens") + u.num("completion_tokens"), reasoning: out.num("reasoning_tokens")}
 }
 
+// anthropicUsage reads Anthropic usage, whose cache writes split by
+// lifetime, and the thinking tokens Claude Code's providers report.
 func anthropicUsage(u obj) usage {
+	cache := u.obj("cache_creation")
 	return usage{uncached: u.num("input_tokens"), read: u.num("cache_read_input_tokens"),
-		write: u.num("cache_creation_input_tokens"), output: u.num("output_tokens")}
+		write: u.num("cache_creation_input_tokens"), write5m: cache.num("ephemeral_5m_input_tokens"),
+		write1h: cache.num("ephemeral_1h_input_tokens"), output: u.num("output_tokens"),
+		reasoning: u.obj("output_tokens_details").num("thinking_tokens")}
 }
 
 func firstObj(objs ...obj) obj {

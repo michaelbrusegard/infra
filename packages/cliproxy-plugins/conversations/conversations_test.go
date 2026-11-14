@@ -343,13 +343,15 @@ func TestProxyNormalizationIsIdempotent(t *testing.T) {
 	}
 }
 
-// Every transcript line is exactly one message or event, which names it by
-// host, path, and ID, and every reference resolves: a message built from
-// inside a line to the line and the item or entry it names, and a call to
-// its file. No two rows share the key ClickHouse replaces by, even for a
-// file synced to a second host, which shares its session, line numbers,
-// and times.
-func TestTranscriptReferencesResolve(t *testing.T) {
+// llm.transcripts is dropped after the import, so every line must be
+// accounted for exactly once: a message or an event, which names its line by
+// host, path, and ID, folded into a call, a session, or the tree's
+// structure, a repeat of a message, or a dropped kind, which the design doc
+// lists. A message built from inside a line names the line and the item or
+// entry, and a call its file. No two rows share the key ClickHouse replaces
+// by, even for a file synced to a second host, which shares its session,
+// line numbers, and times.
+func TestTranscriptLinesAreCovered(t *testing.T) {
 	_, files := transcriptBatch(t, nil)
 	for _, f := range files {
 		if strings.HasSuffix(f[0].Path, "019f6478-0000-7000-8000-000000000004.jsonl") {
@@ -366,7 +368,7 @@ func TestTranscriptReferencesResolve(t *testing.T) {
 		n.Transcript(f, replies, nil)
 	}
 	lines := linesOf(files)
-	referenced := map[lineRef]int{}
+	named := map[lineRef]int{}
 	ids := map[Hash]bool{}
 	for _, m := range n.Messages {
 		if ids[m.ID] {
@@ -379,7 +381,7 @@ func TestTranscriptReferencesResolve(t *testing.T) {
 			t.Fatalf("message %+v names no line", m)
 		}
 		if m.Part == "" {
-			referenced[ref]++
+			named[ref]++
 			continue
 		}
 		// Compaction items and the context Pi sends again come from inside a
@@ -394,28 +396,40 @@ func TestTranscriptReferencesResolve(t *testing.T) {
 	keys := map[[5]string]bool{}
 	for _, e := range n.Events {
 		key := [5]string{e.SessionID, e.TS, e.Host, e.Path, e.Line}
-		if keys[key] {
-			t.Fatalf("two events share the key %q", key)
+		ref := lineRef{e.Host, e.Path, e.Line}
+		if _, ok := lines[ref]; !ok || keys[key] {
+			t.Fatalf("event %+v names no line, or another event's", e)
 		}
 		keys[key] = true
-		ref := lineRef{e.Host, e.Path, e.Line}
-		if _, ok := lines[ref]; !ok {
-			t.Fatalf("event %+v names no line", e)
-		}
-		referenced[ref]++
+		named[ref]++
 	}
 	for _, c := range n.Calls {
 		if len(fileLines(files, lineRef{c.Host, c.Path, ""})) == 0 {
 			t.Fatalf("call %+v names no file", c)
 		}
 	}
-	for ref := range lines {
-		if referenced[ref] != 1 {
-			t.Fatalf("%s line %s on %s is referenced %d times", ref.path, ref.id, ref.host, referenced[ref])
+	for ref, times := range named {
+		if times != 1 {
+			t.Fatalf("%s line %s on %s is named %d times", ref.path, ref.id, ref.host, times)
 		}
 	}
-	if len(lines) != 59 {
-		t.Fatalf("checked %d lines", len(lines))
+	total, dispositions := 0, map[string]int{}
+	var dropped []string
+	for c, lines := range n.Coverage {
+		total += lines
+		dispositions[c.Disposition] += lines
+		if c.Disposition == "dropped" {
+			dropped = append(dropped, c.Source+"/"+c.Kind)
+		}
+	}
+	if total != len(lines) || total != 62 || dispositions["message"]+dispositions["event"] != len(named) {
+		t.Fatalf("%d lines covered as %v, %d named, of %d", total, dispositions, len(named), len(lines))
+	}
+	sort.Strings(dropped)
+	if want := []string{"claude-code/api-request-blob", "claude-code/last-prompt", "claude-code/queue-operation",
+		"codex/event_msg:context_compacted", "codex/event_msg:user_message", "opencode/message:idle", "pi/model_change",
+		"pi/thinking_level_change"}; !reflect.DeepEqual(dropped, want) {
+		t.Fatalf("dropped %q, want %q", dropped, want)
 	}
 }
 
@@ -556,14 +570,8 @@ func TestTranscriptsOwnHistoryBeforeTheProxy(t *testing.T) {
 	if !reflect.DeepEqual(lines, []string{"1"}) {
 		t.Fatalf("transcript messages %v, want the line before the proxy", lines)
 	}
-	var events []string
-	for _, e := range n.Events {
-		if e.SessionID == session {
-			events = append(events, e.Line)
-		}
-	}
-	if !reflect.DeepEqual(events, []string{"2"}) {
-		t.Fatalf("transcript events %v, want the line after the proxy", events)
+	if got := n.Coverage[Covered{"claude-code", "assistant", "proxied"}]; got != 1 {
+		t.Fatalf("%d lines after the proxy, want 1", got)
 	}
 	for _, c := range n.Calls {
 		if c.SessionID == session {
@@ -750,20 +758,15 @@ func TestSubAgentTranscriptsKeepTheirOwnSession(t *testing.T) {
 }
 
 // Claude Code writes an entry again when it resumes a session. The node
-// keeps the first line, and the repeat stays referenced as an event.
+// keeps the first line, and the repeat is counted as one.
 func TestRepeatedTranscriptEntriesKeepEveryLine(t *testing.T) {
 	n, files := transcriptBatch(t, nil)
 	lines := linesOf(files)
 	session := "claude:22222222-2222-4222-8222-222222222222"
-	var first, repeat int
+	first, repeat := 0, n.Coverage[Covered{"claude-code", "assistant", "repeat"}]
 	for _, m := range n.Messages {
 		if m.SessionID == session && strings.Contains(lines[lineRef{m.Host, m.Path, m.Line}], `"uuid":"x2"`) {
 			first++
-		}
-	}
-	for _, e := range n.Events {
-		if e.SessionID == session && e.Type == "repeat" && strings.Contains(lines[lineRef{e.Host, e.Path, e.Line}], `"slug":"debug-ingress"`) {
-			repeat++
 		}
 	}
 	if first != 1 || repeat != 1 {
@@ -1396,5 +1399,51 @@ func TestExportsKeepRemovedToolNamespaces(t *testing.T) {
 			!strings.Contains(got, `"name":"read"`) {
 			t.Fatalf("%s export names %s", name, got)
 		}
+	}
+}
+
+// Claude Code logs each request's system prompt and tools from 2.1 on. A
+// call whose replies name the request carries them as items, so it exports
+// as a tool-using training example; a call without a log has none.
+func TestClaudeCodeRequestLogsGiveCallsTheirContext(t *testing.T) {
+	n, _ := transcriptBatch(t, nil)
+	items := map[Hash]string{}
+	for _, it := range n.Items {
+		if requestitems.HashOf([]byte(it.Item)) != it.Hash {
+			t.Fatalf("item %s does not match its hash", it.Item)
+		}
+		items[it.Hash] = it.Item
+	}
+	c := callByID(t, &n.Batch, "req_011")
+	var ctx Context
+	var fields []string
+	for _, p := range c.Context {
+		item, ok := items[p.Hash]
+		if !ok {
+			t.Fatalf("context part %+v has no item", p)
+		}
+		fields = append(fields, fmt.Sprintf("%s/%d", p.Field, p.Position))
+		ctx.Add(p.Field, []byte(item))
+	}
+	if !reflect.DeepEqual(fields, []string{"system/0", "system/1", "tools/0", "tools/1"}) {
+		t.Fatalf("context %v", fields)
+	}
+	path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
+	if err := ForTraining(ctx, path, c.OutputIDs); err != nil {
+		t.Fatal(err)
+	}
+	request := must(AnthropicMessages(ctx, path, c.OutputIDs))
+	var names []string
+	for _, tool := range request["tools"].([]any) {
+		names = append(names, tool.(map[string]any)["name"].(string))
+	}
+	if !strings.HasPrefix(request["system"].(string), "You are Claude Code") || !reflect.DeepEqual(names, []string{"Bash", "Read"}) {
+		t.Fatalf("exported %v with tools %v", request["system"], names)
+	}
+	if c := callByID(t, &n.Batch, "req_012"); len(c.Context) != 0 {
+		t.Fatalf("call without a request log has context %+v", c.Context)
+	}
+	if c.CacheWrite1hTokens != 2000 || c.CacheWrite5mTokens != 0 {
+		t.Fatalf("cache writes by lifetime %+v", c)
 	}
 }
