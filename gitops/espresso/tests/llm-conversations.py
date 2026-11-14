@@ -139,8 +139,8 @@ def main():
             # Transcripts once, after the proxy, which owns each session it
             # captured from its first call on.
             proxied = temp / "proxied.tsv"
-            proxied.write_text(query("SELECT session_id, min(started_at) FROM llm.calls FINAL "
-                                     "WHERE origin = 'proxy' GROUP BY session_id FORMAT TSV").stdout)
+            proxied.write_text(query("SELECT session_id, response_id, started_at FROM llm.calls FINAL "
+                                     "WHERE origin = 'proxy' FORMAT TSV").stdout)
             out = temp / "transcripts"
             out.mkdir()
             run(str(normalizer), "-proxied", str(proxied), "-out", str(out),
@@ -176,7 +176,7 @@ def main():
                     GROUP BY item, line)
                 SELECT countIf(r.n = 1), count() FROM llm.transcripts AS t
                 LEFT JOIN refs AS r ON r.item = reinterpretAsUInt128(substring(SHA256(t.line), 1, 16)) AND r.line = t.id
-            """) == "52\t52"
+            """) == "57\t57"
             # Raw items exist for every row and hash the way the plugin's do.
             assert scalar("""
                 SELECT count() FROM (SELECT item FROM llm.messages UNION ALL SELECT item FROM llm.events)
@@ -194,6 +194,14 @@ def main():
                 == "['1']"
             assert scalar(f"SELECT groupArray(line) FROM llm.events FINAL WHERE session_id = {both}") == "['2']"
             assert scalar(f"SELECT groupUniqArray(origin) FROM llm.calls FINAL WHERE session_id = {both}") == "['proxy']"
+            # Pi's proxied calls have only CLIProxy's session. The replies both
+            # recorded put the transcript in it, so its replies count once.
+            pi = scalar("SELECT session_id FROM llm.calls FINAL WHERE call_id = 'chat-1'")
+            assert scalar(f"SELECT arraySort(groupArray(origin)) FROM llm.sessions FINAL WHERE session_id = '{pi}'") \
+                == "['proxy','transcript']"
+            assert scalar(f"SELECT groupArray(line) FROM llm.messages FINAL WHERE session_id = '{pi}' AND line != ''") \
+                == "['2']"
+            assert scalar("SELECT count() FROM llm.calls FINAL WHERE response_id IN ('chatcmpl-1', 'chatcmpl-2')") == "2"
             # Grafana keeps seeing only the metrics view.
             for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions"):
                 assert query(f"SELECT * FROM {table}", "grafana", check=False).returncode != 0, table
@@ -202,6 +210,7 @@ def main():
             prompts = query(sql["prompts"]).stdout
             # Both sources hold the first prompt; it counts once.
             assert prompts.count("The nightly backup job fails; find out why.") == 1, prompts
+            assert prompts.count("List the flake inputs.") == 1, prompts
             assert "Why does the dashboard show no cost for luna?" in prompts, prompts
             assert "Add a Renovate rule" not in prompts, prompts  # July, not last week
             assert "permissions instructions" not in prompts, prompts

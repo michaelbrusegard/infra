@@ -70,7 +70,7 @@ func proxyBatch(t *testing.T) (*Normalizer, []proxyFixture) {
 // with, which the normalizer does not write again.
 var archived = map[Hash]string{}
 
-func transcriptBatch(t *testing.T, proxiedSince func(string) string) (*Normalizer, [][]TranscriptLine) {
+func transcriptBatch(t *testing.T, proxied *Proxied) (*Normalizer, [][]TranscriptLine) {
 	t.Helper()
 	var lines []TranscriptLine
 	load(t, "transcripts.json", &lines)
@@ -83,7 +83,7 @@ func transcriptBatch(t *testing.T, proxiedSince func(string) string) (*Normalize
 	}
 	n := NewNormalizer()
 	for _, f := range files {
-		n.Transcript(f, proxiedSince)
+		n.Transcript(f, proxied)
 	}
 	return n, files
 }
@@ -337,7 +337,7 @@ func TestTranscriptLinesAreKeptExactlyOnce(t *testing.T) {
 			t.Fatalf("session %+v lost the file's host or path", s)
 		}
 	}
-	if total != 52 {
+	if total != 57 {
 		t.Fatalf("checked %d lines", total)
 	}
 }
@@ -454,13 +454,9 @@ func TestTranscriptConversations(t *testing.T) {
 // events, so earlier history is kept and nothing is counted twice.
 func TestTranscriptsOwnHistoryBeforeTheProxy(t *testing.T) {
 	session := "claude:11111111-1111-4111-8111-111111111111"
-	since := func(s string) string {
-		if s == session {
-			return "2026-11-10 09:00:00.000"
-		}
-		return ""
-	}
-	n, _ := transcriptBatch(t, since)
+	proxied := &Proxied{}
+	proxied.Add(session, "", "2026-11-10 09:00:00.000")
+	n, _ := transcriptBatch(t, proxied)
 	var lines []string
 	for _, m := range n.Messages {
 		if m.SessionID == session {
@@ -488,6 +484,40 @@ func TestTranscriptsOwnHistoryBeforeTheProxy(t *testing.T) {
 	all, _ := transcriptBatch(t, nil)
 	if len(all.Messages) != len(n.Messages)+1 {
 		t.Fatalf("%d messages with the boundary, %d without", len(n.Messages), len(all.Messages))
+	}
+}
+
+// Pi calls through the proxy carry no session, so CLIProxy names one the
+// transcript cannot derive. The replies both recorded, matched by response
+// ID, put the transcript in the proxy's session, which then owns its calls.
+func TestTranscriptsShareTheProxySessionOfTheirReplies(t *testing.T) {
+	p, _ := proxyBatch(t)
+	proxied := &Proxied{}
+	for _, c := range p.Calls {
+		proxied.Add(c.SessionID, c.ResponseID, c.StartedAt)
+	}
+	n, _ := transcriptBatch(t, proxied)
+	session := callByID(t, &p.Batch, "chat-1").SessionID
+	var lines []string
+	for _, m := range n.Messages {
+		if m.SessionID == session {
+			lines = append(lines, m.Line)
+		}
+	}
+	// The prompt came before the proxy's first call; the replies are the
+	// proxy's, so they are events here.
+	if !reflect.DeepEqual(lines, []string{"2"}) {
+		t.Fatalf("transcript messages %v in %s, want the prompt before the proxy", lines, session)
+	}
+	for _, c := range n.Calls {
+		if c.SessionID == session || strings.HasPrefix(c.ResponseID, "chatcmpl-") {
+			t.Fatalf("transcript call %+v counted again", c)
+		}
+	}
+	for _, s := range n.Sessions {
+		if strings.HasPrefix(s.SessionID, "pi:01a1c000") {
+			t.Fatalf("transcript kept its own session %+v", s)
+		}
 	}
 }
 

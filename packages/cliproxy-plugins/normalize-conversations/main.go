@@ -7,8 +7,8 @@
 // start order, from requests.sql. A run first prints the sessions they
 // touch with -sessions, then passes those sessions' state from state.sql
 // with -state. Otherwise input rows are llm.transcripts rows from
-// transcripts.sql, and -proxied names a file of session IDs and the time
-// the proxy's capture of each starts, tab-separated.
+// transcripts.sql, and -proxied names a file of the proxy's calls, each a
+// session ID, response ID, and start time, tab-separated.
 //
 // With -export openai or -export anthropic, it instead reads one call or
 // conversation, as the call and conversation queries in the design doc
@@ -36,7 +36,7 @@ func main() {
 	sessions := flag.Bool("sessions", false, "print the sessions the requests touch, for state.sql")
 	state := flag.String("state", "", "file of state.sql rows from earlier runs")
 	hold := flag.Duration("hold", 10*time.Minute, "hold back requests this recent that continue an unseen response")
-	proxied := flag.String("proxied", "", "file of session IDs the proxy captured, each with when it started")
+	proxied := flag.String("proxied", "", "file of the proxy's calls: session ID, response ID, and start")
 	out := flag.String("out", ".", "directory for the output files")
 	export := flag.String("export", "", "print a call or conversation as openai or anthropic messages")
 	flag.Parse()
@@ -55,19 +55,19 @@ func main() {
 			err = run(os.Stdin, *out, n, nil)
 		}
 	default:
-		since := map[string]string{}
+		p := &conversations.Proxied{}
 		if *proxied != "" {
 			var data []byte
 			if data, err = os.ReadFile(*proxied); err != nil {
 				log.Fatal(err)
 			}
 			for _, line := range strings.Split(string(data), "\n") {
-				if session, ts, ok := strings.Cut(line, "\t"); ok {
-					since[session] = ts
+				if f := strings.Split(line, "\t"); len(f) == 3 {
+					p.Add(f[0], f[1], f[2])
 				}
 			}
 		}
-		err = run(os.Stdin, *out, conversations.NewNormalizer(), func(s string) string { return since[s] })
+		err = run(os.Stdin, *out, conversations.NewNormalizer(), p)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -122,9 +122,9 @@ func restore(n *conversations.Normalizer, path string) error {
 
 var tables = []string{"llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events"}
 
-// run normalizes requests when proxiedSince is nil, and transcript lines
+// run normalizes requests when proxied is nil, and transcript lines
 // otherwise.
-func run(r io.Reader, dir string, n *conversations.Normalizer, proxiedSince func(string) string) error {
+func run(r io.Reader, dir string, n *conversations.Normalizer, proxied *conversations.Proxied) error {
 	files := map[string]*bufio.Writer{}
 	for _, table := range tables {
 		f, err := os.Create(filepath.Join(dir, table+".jsonl"))
@@ -150,7 +150,7 @@ func run(r io.Reader, dir string, n *conversations.Normalizer, proxiedSince func
 		b.Items, b.Sessions, b.Messages, b.Calls, b.Events = nil, nil, nil, nil, nil
 		return nil
 	}
-	if proxiedSince == nil {
+	if proxied == nil {
 		held := 0
 		err := eachRow(r, func(req conversations.Request) error {
 			if !n.Request(req) {
@@ -159,13 +159,13 @@ func run(r io.Reader, dir string, n *conversations.Normalizer, proxiedSince func
 			return drain()
 		})
 		if held > 0 {
-			log.Printf("held back %d requests whose previous response is not archived yet", held)
+			log.Printf("held back %d recent requests whose usage or previous response is not archived yet", held)
 		}
 		return err
 	}
 	var file []conversations.TranscriptLine
 	flush := func() error {
-		n.Transcript(file, proxiedSince)
+		n.Transcript(file, proxied)
 		file = file[:0]
 		return drain()
 	}

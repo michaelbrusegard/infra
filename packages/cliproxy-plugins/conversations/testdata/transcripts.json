@@ -466,5 +466,50 @@
   "path": ".pi/agent/sessions/--Users-michaelbrusegard-Projects-infra--/2026-08-25T17-16-23-878Z_01a039ec-0000-7000-8000-000000000005.jsonl",
   "line": "{\"type\":\"session_info\",\"id\":\"i1\",\"parentId\":\"p4\",\"timestamp\":\"2026-08-25T18:00:06.000Z\",\"name\":\"Tofu approval\"}",
   "ts": "2026-08-25 18:00:06.000"
+ },
+ {
+  "source": "pi",
+  "host": "lungo",
+  "session": "2026-11-10T10-59-58-000Z_01a1c000-0000-7000-8000-000000000006",
+  "id": "1",
+  "path": ".pi/agent/sessions/--Users-michaelbrusegard-Projects-infra--/2026-11-10T10-59-58-000Z_01a1c000-0000-7000-8000-000000000006.jsonl",
+  "line": "{\"type\":\"session\",\"version\":3,\"id\":\"01a1c000-0000-7000-8000-000000000006\",\"timestamp\":\"2026-11-10T10:59:58.000Z\",\"cwd\":\"/Users/michaelbrusegard/Projects/infra\"}",
+  "ts": "2026-11-10 10:59:58.000"
+ },
+ {
+  "source": "pi",
+  "host": "lungo",
+  "session": "2026-11-10T10-59-58-000Z_01a1c000-0000-7000-8000-000000000006",
+  "id": "2",
+  "path": ".pi/agent/sessions/--Users-michaelbrusegard-Projects-infra--/2026-11-10T10-59-58-000Z_01a1c000-0000-7000-8000-000000000006.jsonl",
+  "line": "{\"type\":\"message\",\"id\":\"q1\",\"parentId\":null,\"timestamp\":\"2026-11-10T10:59:59.500Z\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"List the flake inputs.\"}],\"timestamp\":1794221999500}}",
+  "ts": "2026-11-10 10:59:59.500"
+ },
+ {
+  "source": "pi",
+  "host": "lungo",
+  "session": "2026-11-10T10-59-58-000Z_01a1c000-0000-7000-8000-000000000006",
+  "id": "3",
+  "path": ".pi/agent/sessions/--Users-michaelbrusegard-Projects-infra--/2026-11-10T10-59-58-000Z_01a1c000-0000-7000-8000-000000000006.jsonl",
+  "line": "{\"type\":\"message\",\"id\":\"q2\",\"parentId\":\"q1\",\"timestamp\":\"2026-11-10T11:00:03.000Z\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"Read flake.nix.\"},{\"type\":\"text\",\"text\":\"Reading it.\"},{\"type\":\"toolCall\",\"id\":\"call_r\",\"name\":\"read\",\"arguments\":{\"path\":\"flake.nix\"}}],\"api\":\"openai-completions\",\"provider\":\"cliproxyapi\",\"model\":\"kimi-k3.1-pro\",\"usage\":{\"input\":100,\"output\":30,\"cacheRead\":800,\"cacheWrite\":0},\"stopReason\":\"toolUse\",\"timestamp\":1794222003000,\"responseId\":\"chatcmpl-1\"}}",
+  "ts": "2026-11-10 11:00:03.000"
+ },
+ {
+  "source": "pi",
+  "host": "lungo",
+  "session": "2026-11-10T10-59-58-000Z_01a1c000-0000-7000-8000-000000000006",
+  "id": "4",
+  "path": ".pi/agent/sessions/--Users-michaelbrusegard-Projects-infra--/2026-11-10T10-59-58-000Z_01a1c000-0000-7000-8000-000000000006.jsonl",
+  "line": "{\"type\":\"message\",\"id\":\"q3\",\"parentId\":\"q2\",\"timestamp\":\"2026-11-10T11:00:04.000Z\",\"message\":{\"role\":\"toolResult\",\"toolCallId\":\"call_r\",\"toolName\":\"read\",\"content\":[{\"type\":\"text\",\"text\":\"inputs = { nixpkgs.url = ...; };\"}],\"isError\":false,\"timestamp\":1794222004000}}",
+  "ts": "2026-11-10 11:00:04.000"
+ },
+ {
+  "source": "pi",
+  "host": "lungo",
+  "session": "2026-11-10T10-59-58-000Z_01a1c000-0000-7000-8000-000000000006",
+  "id": "5",
+  "path": ".pi/agent/sessions/--Users-michaelbrusegard-Projects-infra--/2026-11-10T10-59-58-000Z_01a1c000-0000-7000-8000-000000000006.jsonl",
+  "line": "{\"type\":\"message\",\"id\":\"q4\",\"parentId\":\"q3\",\"timestamp\":\"2026-11-10T11:00:06.000Z\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The only input is nixpkgs.\"}],\"api\":\"openai-completions\",\"provider\":\"cliproxyapi\",\"model\":\"kimi-k3.1-pro\",\"usage\":{\"input\":150,\"output\":8,\"cacheRead\":800,\"cacheWrite\":0},\"stopReason\":\"stop\",\"timestamp\":1794222006000,\"responseId\":\"chatcmpl-2\"}}",
+  "ts": "2026-11-10 11:00:06.000"
  }
 ]

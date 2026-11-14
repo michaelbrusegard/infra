@@ -44,22 +44,52 @@ type keptMessage struct {
 	item Hash
 }
 
+// Proxied is what the proxy captured, for handing sessions over from
+// transcripts: when each session's first proxied call started, and the
+// session of each response the proxy returned.
+type Proxied struct {
+	since    map[string]string
+	sessions map[string]string
+}
+
+// Add records a proxy call.
+func (p *Proxied) Add(session, responseID, startedAt string) {
+	if p.since == nil {
+		p.since, p.sessions = map[string]string{}, map[string]string{}
+	}
+	if s, ok := p.since[session]; !ok || startedAt < s {
+		p.since[session] = startedAt
+	}
+	if responseID != "" {
+		p.sessions[responseID] = session
+	}
+}
+
 // Transcript normalizes the lines of one transcript file, in file order.
 // Every line becomes exactly one message or event that references the line
-// verbatim. proxiedSince gives the time the proxy's capture of a session
-// starts, or empty: from then on the proxy owns the session's messages and
-// calls, and its transcript lines are kept as events only. Everything
-// before, which the proxy never saw, keeps its messages and calls here, so
-// nothing is counted twice and no history is lost.
-func (n *Normalizer) Transcript(lines []TranscriptLine, proxiedSince func(session string) string) {
+// verbatim. A transcript and the proxy share a session when they share a
+// reply, by its response ID, or else when their session IDs match. From the
+// session's first proxied call on, the proxy owns its messages and calls,
+// and its transcript lines are kept as events only. Everything before,
+// which the proxy never saw, keeps its messages and calls here, so nothing
+// is counted twice and no history is lost.
+func (n *Normalizer) Transcript(lines []TranscriptLine, proxied *Proxied) {
 	if len(lines) == 0 {
 		return
 	}
 	f := &file{n: n, parents: map[string]string{}, nodes: map[string]Hash{}, calls: map[string]*Call{},
 		kept: map[string]keptMessage{}}
 	f.session = transcriptSession(lines)
-	if proxiedSince != nil {
-		f.proxiedSince = proxiedSince(f.session.SessionID)
+	if proxied != nil {
+		// Sessionless clients such as Pi get a session from CLIProxy that
+		// the transcript cannot derive, so a shared reply decides.
+		for _, l := range lines {
+			if s, ok := proxied.sessions[replyID(l)]; ok {
+				f.session.SessionID = s
+				break
+			}
+		}
+		f.proxiedSince = proxied.since[f.session.SessionID]
 	}
 	switch lines[0].Source {
 	case "claude-code":
@@ -132,6 +162,22 @@ func transcriptSession(lines []TranscriptLine) Session {
 		s.SessionID = l.Source + ":" + l.Session
 	}
 	return s
+}
+
+// replyID reads the response ID a transcript line records for a model
+// reply, which the proxy's call for the reply has too. OpenCode records
+// none.
+func replyID(l TranscriptLine) string {
+	e := parse([]byte(l.Line))
+	switch {
+	case l.Source == "claude-code" && e.str("type") == "assistant":
+		return e.obj("message").str("id")
+	case l.Source == "codex" && e.str("type") == "token_usage_record":
+		return e.obj("payload").str("response_id")
+	case l.Source == "pi" && e.str("type") == "message":
+		return e.obj("message").str("responseId")
+	}
+	return ""
 }
 
 func indexOf(list []string, v string) int {

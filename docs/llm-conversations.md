@@ -35,7 +35,9 @@ dropped later without losing anything.
   extractor bug cannot lose data.
 - **Session IDs follow CLIProxy's scheme** (`claude:<id>`,
   `claude:<id>:agent:<agent>`, `codex:<thread>`, …), and transcripts are
-  mapped into it too. A session captured by both sources then has a single
+  mapped into it too. A transcript that shares a reply with the proxy, by
+  response ID, takes the proxy's session, which also covers sessionless
+  clients such as Pi. A session captured by both sources then has a single
   ID. The proxy owns it from its first proxied call, and the transcript keeps
   everything before.
 - A **normalizer job** derives the canonical rows from the raw capture. Each
@@ -268,6 +270,18 @@ into CLIProxy's scheme: `claude:<session>`, `claude:<parent>:agent:<agent>`,
 
 ### Overlap with the proxy
 
+**A shared session, by reply.** Both sources record each reply's response
+ID (Claude Code's message `id`, Codex's `token_usage_record`, Pi's
+`responseId`), so a transcript with a reply the proxy also returned takes
+the session of that proxy call. This matters for Pi: its calls through the
+proxy carry no session, so CLIProxy names them `lcp:v1:<hash>`, which a
+transcript cannot derive, and in live data all three Pi sessions that both
+captured shared replies (37) only by response ID. Claude Code and Codex
+session IDs already agree; in live data all 236 shared Codex replies were in
+the same session, and Claude Code and OpenCode transcripts end before the
+proxy captured their sessions. Without a shared reply, a transcript keeps
+its own session ID.
+
 **A handover at the session's first proxied call.** Transcript lines from
 before it become messages and calls as usual, and lines from then on are
 kept only as events, because the proxy has those calls with their exact
@@ -349,7 +363,8 @@ Deterministic IDs make reruns harmless. The job needs a ClickHouse user with
 SELECT on the sources and INSERT on the new tables. The transcripts run
 once, after the proxy backfill, with
 [`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql)
-and the proxy's sessions, each with its first call's start, as `-proxied`.
+and the proxy's calls, each with its session, response ID and start, as
+`-proxied`.
 
 `llm.calls` holds every `llm.requests` column, so once the job has run
 cleanly for a while, `llm.requests` can become staging with a short TTL, such
