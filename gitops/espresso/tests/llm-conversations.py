@@ -303,6 +303,10 @@ def main():
                     names = [(t.get("function") or t.get("custom") or t)["name"] for t in exported.get("tools", [])]
                     assert names == tools, (call, exported)
                     assert exported["messages"][-1]["role"] == "assistant", (call, exported)
+                # Only the call's own output is a target; earlier turns are
+                # context.
+                weights = [m.get("weight") for m in openai["messages"] if m["role"] == "assistant"]
+                assert weights[-1] is None and all(w == 0 for w in weights[:-1]), (call, weights)
                 if call == "codex-1":
                     # The freeform exec tool and its call agree in each dialect.
                     assert openai["tools"][0]["type"] == "custom", openai["tools"]

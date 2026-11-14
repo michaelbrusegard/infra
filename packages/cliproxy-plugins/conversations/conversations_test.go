@@ -3,6 +3,7 @@ package conversations
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"reflect"
@@ -866,7 +867,7 @@ func must(request map[string]any, err error) map[string]any {
 func TestExports(t *testing.T) {
 	n, _ := proxyBatch(t)
 	path := Path(n.Messages, callByID(t, &n.Batch, "claude-2").OutputIDs[0])
-	chat, _ := json.Marshal(must(OpenAIChat(Context{}, path))["messages"])
+	chat, _ := json.Marshal(must(OpenAIChat(Context{}, path, nil))["messages"])
 	want := `[{"content":"The nightly backup job fails; find out why.","role":"user"},` +
 		`{"content":"Checking the job logs.","reasoning_content":"I should look at the CronJob logs first.","role":"assistant",` +
 		`"tool_calls":[{"function":{"arguments":"{\"command\":\"kubectl logs job/backup\"}","name":"Bash"},"id":"toolu_01","type":"function"}]},` +
@@ -878,7 +879,7 @@ func TestExports(t *testing.T) {
 	}
 
 	codex := Path(n.Messages, callByID(t, &n.Batch, "codex-2").OutputIDs[0])
-	request := must(AnthropicMessages(Context{}, codex))
+	request := must(AnthropicMessages(Context{}, codex, nil))
 	if request["system"] != "<permissions instructions>Sandbox: workspace-write.</permissions instructions>" {
 		t.Fatalf("system %q", request["system"])
 	}
@@ -907,7 +908,7 @@ func TestExportsKeepBlockOrder(t *testing.T) {
 			path = append(path, m)
 		}
 	}
-	chat, _ := json.Marshal(must(OpenAIChat(Context{}, path))["messages"])
+	chat, _ := json.Marshal(must(OpenAIChat(Context{}, path, nil))["messages"])
 	want := `[{"content":"What does the worker return?","role":"user"},` +
 		`{"content":"","reasoning_content":"Look up the worker.","role":"assistant","tool_calls":[{"function":{"arguments":"{\"code\":\"return 1\"}","name":"execute"},"id":"tool_HD0","type":"function"}]},` +
 		`{"content":"1","role":"tool","tool_call_id":"tool_HD0"},` +
@@ -915,7 +916,7 @@ func TestExportsKeepBlockOrder(t *testing.T) {
 	if string(chat) != want {
 		t.Fatalf("openai chat\n%s\nwant\n%s", chat, want)
 	}
-	anthropic, _ := json.Marshal(must(AnthropicMessages(Context{}, path))["messages"])
+	anthropic, _ := json.Marshal(must(AnthropicMessages(Context{}, path, nil))["messages"])
 	want = `[{"content":[{"text":"What does the worker return?","type":"text"}],"role":"user"},` +
 		`{"content":[{"thinking":"Look up the worker.","type":"thinking"},{"id":"tool_HD0","input":{"code":"return 1"},"name":"execute","type":"tool_use"}],"role":"assistant"},` +
 		`{"content":[{"content":"1","is_error":false,"tool_use_id":"tool_HD0","type":"tool_result"}],"role":"user"},` +
@@ -957,7 +958,7 @@ func TestExportsCarryCallContext(t *testing.T) {
 		if err := ForTraining(ctx, path, c.OutputIDs); err != nil {
 			t.Fatalf("%s: %v", tc.call, err)
 		}
-		chat := must(OpenAIChat(ctx, path))
+		chat := must(OpenAIChat(ctx, path, nil))
 		first := chat["messages"].([]map[string]any)[0]
 		if (first["role"] == "system") != (tc.system != "") || !strings.HasPrefix(first["content"].(string), tc.system) {
 			t.Fatalf("%s: first message %v", tc.call, first)
@@ -976,7 +977,7 @@ func TestExportsCarryCallContext(t *testing.T) {
 		if !reflect.DeepEqual(names, tc.tools) {
 			t.Fatalf("%s: openai tools %v", tc.call, names)
 		}
-		anthropic := must(AnthropicMessages(ctx, path))
+		anthropic := must(AnthropicMessages(ctx, path, nil))
 		names = nil
 		tools, _ = anthropic["tools"].([]any)
 		for _, tool := range tools {
@@ -1004,7 +1005,7 @@ func TestExportsConvertCustomToolsConsistently(t *testing.T) {
 	}
 	path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
 	script := `"const r = await tools.exec_command({cmd: 'rg luna'});\ntext(r)"`
-	chat := must(OpenAIChat(ctx, path))
+	chat := must(OpenAIChat(ctx, path, nil))
 	def := chat["tools"].([]any)[0].(map[string]any)
 	delete(def["custom"].(map[string]any), "description")
 	messages := chat["messages"].([]map[string]any)
@@ -1014,7 +1015,7 @@ func TestExportsConvertCustomToolsConsistently(t *testing.T) {
 	if string(got) != want {
 		t.Fatalf("openai custom tool\n%s\nwant\n%s", got, want)
 	}
-	anthropic := must(AnthropicMessages(ctx, path))
+	anthropic := must(AnthropicMessages(ctx, path, nil))
 	tool := anthropic["tools"].([]any)[0].(map[string]any)
 	turns := anthropic["messages"].([]map[string]any)
 	blocks := turns[len(turns)-1]["content"].([]any)
@@ -1096,13 +1097,13 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 		{"b", "run", "b__run"}, {"a", "run", "a__run"}, {"b", "js", "js"}, {"", "exec", "exec"},
 	} {
 		path := call(tc.namespace, tc.name, `{"query":"hello"}`)
-		chat := must(OpenAIChat(ctx, path))
+		chat := must(OpenAIChat(ctx, path, nil))
 		if got := schemas(chat["tools"].([]any), openai); !reflect.DeepEqual(got, want) {
 			t.Fatalf("openai tools %v", got)
 		}
 		messages := chat["messages"].([]map[string]any)
 		called := messages[len(messages)-1]["tool_calls"].([]any)[0].(map[string]any)["function"].(map[string]any)["name"]
-		request := must(AnthropicMessages(ctx, path))
+		request := must(AnthropicMessages(ctx, path, nil))
 		if got := schemas(request["tools"].([]any), anthropic); !reflect.DeepEqual(got, want) {
 			t.Fatalf("anthropic tools %v", got)
 		}
@@ -1112,8 +1113,8 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 			t.Fatalf("call to %s.%s exported as %v and %v, want %s", tc.namespace, tc.name, called, used, tc.want)
 		}
 	}
-	for _, export := range []func(Context, []Message) (map[string]any, error){OpenAIChat, AnthropicMessages} {
-		if _, err := export(ctx, call("", "run", `{"query":"hello"}`)); err == nil {
+	for _, export := range []func(Context, []Message, []Hash) (map[string]any, error){OpenAIChat, AnthropicMessages} {
+		if _, err := export(ctx, call("", "run", `{"query":"hello"}`), nil); err == nil {
 			t.Fatal("exported a call to run without the namespace that says which")
 		}
 	}
@@ -1121,12 +1122,12 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 	// name is unique.
 	var one Context
 	one.Add("tools", []byte(`[{"type":"namespace","name":"a","tools":[{"type":"function","name":"run","parameters":{"type":"object"}}]}]`))
-	for _, export := range []func(Context, []Message) (map[string]any, error){OpenAIChat, AnthropicMessages} {
-		if _, err := export(one, call("a", "run", `{}`)); err != nil {
+	for _, export := range []func(Context, []Message, []Hash) (map[string]any, error){OpenAIChat, AnthropicMessages} {
+		if _, err := export(one, call("a", "run", `{}`), nil); err != nil {
 			t.Fatal(err)
 		}
 		for _, namespace := range []string{"b", ""} {
-			if _, err := export(one, call(namespace, "run", `{}`)); err == nil {
+			if _, err := export(one, call(namespace, "run", `{}`), nil); err == nil {
 				t.Fatalf("exported a call to %q with the schema of a.run", qualify(namespace, "run"))
 			}
 		}
@@ -1137,7 +1138,7 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 	var twice Context
 	twice.Add("tools", []byte(`[{"type":"function","name":"run","parameters":{"required":["path"]}},
 		{"type":"function","name":"run","parameters":{"required":["query"]}}]`))
-	if _, err := OpenAIChat(twice, call("", "run", "{}")); err == nil {
+	if _, err := OpenAIChat(twice, call("", "run", "{}"), nil); err == nil {
 		t.Fatal("exported a tool defined twice differently")
 	}
 }
@@ -1162,7 +1163,7 @@ func TestExportsLeaveOutHostedToolsTogether(t *testing.T) {
 			{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`}}},
 	}
 	for name, request := range map[string]map[string]any{
-		"openai": must(OpenAIChat(ctx, path)), "anthropic": must(AnthropicMessages(ctx, path))} {
+		"openai": must(OpenAIChat(ctx, path, nil)), "anthropic": must(AnthropicMessages(ctx, path, nil))} {
 		got, _ := json.Marshal(request)
 		for _, hosted := range []string{"web_search", "tool_search", "ws_1", "srvtoolu_1", "ts_1", "results"} {
 			if strings.Contains(string(got), hosted) {
@@ -1243,7 +1244,7 @@ func TestExportsKeepNumbersExact(t *testing.T) {
 		{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
 			ToolName: "get", ToolCallID: "call_1", ToolInput: args}}}}
 	for _, tc := range []struct {
-		export func(Context, []Message) (map[string]any, error)
+		export func(Context, []Message, []Hash) (map[string]any, error)
 		want   string
 	}{
 		{OpenAIChat, `"arguments":` + strconv.Quote(args)},
@@ -1252,11 +1253,54 @@ func TestExportsKeepNumbersExact(t *testing.T) {
 		var b bytes.Buffer
 		enc := json.NewEncoder(&b)
 		enc.SetEscapeHTML(false)
-		if err := enc.Encode(must(tc.export(ctx, path))); err != nil {
+		if err := enc.Encode(must(tc.export(ctx, path, nil))); err != nil {
 			t.Fatal(err)
 		}
 		if !strings.Contains(b.String(), tc.want) || !strings.Contains(b.String(), `"maximum":9007199254740993`) {
 			t.Fatalf("export changed numbers: %s", b.String())
 		}
+	}
+}
+
+// A call's export teaches only the call's outputs. Earlier assistant turns
+// are context: weight 0 in Chat Completions, and never merged into the
+// last Anthropic message, which is the call's output alone. An earlier
+// interrupted tool call then never becomes a target.
+func TestExportsTrainOnlyTheCallsOutputs(t *testing.T) {
+	var ctx Context
+	ctx.Add("tools", []byte(`[{"type":"function","name":"exec","parameters":{"type":"object"}}]`))
+	user := Message{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "List the pods."}}}
+	interrupted := Message{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{
+		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{"path":`}}}
+	result := Message{ID: Hash{3}, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1", Text: "bad arguments"}}}
+	answer := Message{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "Two pods."}}}
+	for name, path := range map[string][]Message{
+		"after a result": {user, interrupted, result, answer},
+		// The call continues the interrupted one without input between.
+		"adjacent": {user, interrupted, answer},
+	} {
+		if err := ForTraining(ctx, path, []Hash{answer.ID}); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		var weights []string
+		for _, m := range must(OpenAIChat(ctx, path, []Hash{answer.ID}))["messages"].([]map[string]any) {
+			if m["role"] == "assistant" {
+				w, _ := json.Marshal(m["weight"])
+				weights = append(weights, fmt.Sprintf("%s:%v", w, m["content"]))
+			}
+		}
+		if !reflect.DeepEqual(weights, []string{"0:", "null:Two pods."}) {
+			t.Fatalf("%s: openai assistant turns %v", name, weights)
+		}
+		messages := must(AnthropicMessages(ctx, path, []Hash{answer.ID}))["messages"].([]map[string]any)
+		last, _ := json.Marshal(messages[len(messages)-1])
+		if string(last) != `{"content":[{"text":"Two pods.","type":"text"}],"role":"assistant"}` {
+			t.Fatalf("%s: anthropic last message %s", name, last)
+		}
+	}
+	// Without targets, as for a whole conversation, nothing is weighted.
+	chat, _ := json.Marshal(must(OpenAIChat(ctx, []Message{user, interrupted, result, answer}, nil)))
+	if strings.Contains(string(chat), "weight") {
+		t.Fatalf("conversation export weighted: %s", chat)
 	}
 }

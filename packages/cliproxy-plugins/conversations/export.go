@@ -289,28 +289,38 @@ func isHostedCall(b Block) bool {
 // Code blocks, become one message until a tool result ends the turn. Images
 // and files are left out: their data is only in the raw items. Freeform
 // custom tools stay custom in both their definitions and their calls.
-func OpenAIChat(ctx Context, path []Message) (map[string]any, error) {
+//
+// With targets, a call's outputs, every other assistant message gets weight
+// 0, so fine-tuning learns only what the call produced, and a turn never
+// merges context with a target.
+func OpenAIChat(ctx Context, path []Message, targets []Hash) (map[string]any, error) {
 	e, err := ctx.effective()
 	if err != nil {
 		return nil, err
 	}
+	own := set(targets)
 	var out []map[string]any
 	if len(e.system) > 0 {
 		out = append(out, map[string]any{"role": "system", "content": strings.Join(e.system, "\n\n")})
 	}
 	dropped := hosted(path)
 	var assistant map[string]any
+	target := false
 	turn := func() map[string]any {
 		if assistant == nil {
 			assistant = map[string]any{"role": "assistant", "content": ""}
+			if targets != nil && !target {
+				assistant["weight"] = 0
+			}
 			out = append(out, assistant)
 		}
 		return assistant
 	}
 	for _, m := range path {
-		if m.Role != "assistant" {
+		if m.Role != "assistant" || own[m.ID] != target {
 			assistant = nil
 		}
+		target = own[m.ID]
 		var texts []string
 		flushTexts := func() {
 			if len(texts) > 0 {
@@ -392,29 +402,40 @@ func OpenAIChat(ctx Context, path []Message) (map[string]any, error) {
 
 // AnthropicMessages renders a call or conversation as an Anthropic Messages
 // request: system prompt, tools, and messages in the order they happened.
-// Tool results are user content, and consecutive messages of a role merge,
-// as the API requires. Anthropic has no freeform custom tools, so they
-// become tools taking their raw text as input, in both their definitions
-// and their calls.
-func AnthropicMessages(ctx Context, path []Message) (map[string]any, error) {
+// Tool results are user content, and consecutive messages of a role merge.
+// Anthropic has no freeform custom tools, so they become tools taking their
+// raw text as input, in both their definitions and their calls.
+//
+// Messages have no weights, so with targets, a call's outputs, the outputs
+// start a message of their own, even after assistant context, which the API
+// would merge itself. A call's outputs end its path, so the last message is
+// exactly what the call produced, and the only one to train on.
+func AnthropicMessages(ctx Context, path []Message, targets []Hash) (map[string]any, error) {
 	e, err := ctx.effective()
 	if err != nil {
 		return nil, err
 	}
+	own := set(targets)
 	system := append([]string{}, e.system...)
 	dropped := hosted(path)
 	var out []map[string]any
+	target, split := false, false
 	add := func(role string, blocks []any) {
 		if len(blocks) == 0 {
 			return
 		}
-		if n := len(out); n > 0 && out[n-1]["role"] == role {
+		if n := len(out); n > 0 && out[n-1]["role"] == role && !split {
 			out[n-1]["content"] = append(out[n-1]["content"].([]any), blocks...)
 			return
 		}
+		split = false
 		out = append(out, map[string]any{"role": role, "content": blocks})
 	}
 	for _, m := range path {
+		if own[m.ID] && !target {
+			split = true
+		}
+		target = own[m.ID]
 		role := "user"
 		switch m.Role {
 		case "assistant":
@@ -524,10 +545,7 @@ func ForTraining(ctx Context, path []Message, outputs []Hash) error {
 	for _, t := range e.tools {
 		defined[t.name] = true
 	}
-	own := map[Hash]bool{}
-	for _, id := range outputs {
-		own[id] = true
-	}
+	own := set(outputs)
 	dropped := hosted(path)
 	kept := 0
 	for _, m := range path {
@@ -564,6 +582,14 @@ func ForTraining(ctx Context, path []Message, outputs []Hash) error {
 		return fmt.Errorf("the call produced no output to train on")
 	}
 	return nil
+}
+
+func set(ids []Hash) map[Hash]bool {
+	s := map[Hash]bool{}
+	for _, id := range ids {
+		s[id] = true
+	}
+	return s
 }
 
 func join(prior any, s string) string {

@@ -265,9 +265,9 @@ func exportConversation(r io.Reader, w io.Writer, format string) error {
 	var out any
 	switch format {
 	case "openai":
-		out, err = conversations.OpenAIChat(ctx, path)
+		out, err = conversations.OpenAIChat(ctx, path, outputs)
 	case "anthropic":
-		out, err = conversations.AnthropicMessages(ctx, path)
+		out, err = conversations.AnthropicMessages(ctx, path, outputs)
 	default:
 		return fmt.Errorf("unknown export format %q", format)
 	}

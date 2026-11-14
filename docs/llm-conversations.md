@@ -664,6 +664,15 @@ checked. Earlier turns are context, even when they end the path: a failed
 delta call that sent nothing new ends at the output of the call it
 continues, and is refused.
 
+Only those outputs are training targets. In the OpenAI export of a call,
+every other assistant message has `weight: 0`, so fine-tuning learns
+nothing from earlier turns, such as an earlier interrupted tool call.
+Anthropic Messages has no weights: the call's outputs end its path, and the
+export starts them in a message of their own even right after assistant
+context, which the API would merge itself, so the last message is exactly
+the call's output and the only one to train on. A conversation export
+weights nothing.
+
 ```sql
 -- example: raw
 -- The exact source JSON behind each message: images, signatures, encrypted
