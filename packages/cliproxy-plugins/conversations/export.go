@@ -27,79 +27,146 @@ func Path(messages []Message, leaf Hash) []Message {
 	return path
 }
 
-// OpenAIChat renders a conversation as Chat Completions messages for
-// training: text, reasoning, tool calls, and tool results. Consecutive
-// assistant messages, such as Responses items or streamed Claude Code
-// blocks, become one message. Images and files are left out: their data is
-// only in the raw items.
-func OpenAIChat(path []Message) []map[string]any {
-	var out []map[string]any
-	var assistant map[string]any
-	flush := func() {
-		if assistant != nil {
-			out = append(out, assistant)
-			assistant = nil
+// Context is what a call sent beside its messages: the system prompt or
+// instructions, and the tool definitions. It is not part of the message
+// tree, so an export of a call adds it from the call's request.
+type Context struct {
+	System []string
+	Tools  []map[string]any
+}
+
+// Add reads a system, instructions, or tools value of a request body: the
+// whole value, or one element of an array, as the request's parts and
+// envelope hold them.
+func (c *Context) Add(field string, raw []byte) {
+	v := value(raw)
+	values, ok := v.([]any)
+	if !ok {
+		values = []any{v}
+	}
+	for _, v := range values {
+		switch field {
+		case "system", "instructions":
+			switch v := v.(type) {
+			case string:
+				if v != "" {
+					c.System = append(c.System, v)
+				}
+			case map[string]any:
+				if s := text(v["text"]); s != "" {
+					c.System = append(c.System, s)
+				}
+			}
+		case "tools":
+			if t, ok := v.(map[string]any); ok {
+				c.Tools = append(c.Tools, t)
+			}
 		}
 	}
+}
+
+// function reads a tool definition in any dialect as a function name,
+// description, and JSON schema. Hosted tools, such as web search, have no
+// schema and are kept as they are.
+func function(t map[string]any) (name, description string, schema any, ok bool) {
+	if f, isChat := t["function"].(map[string]any); isChat {
+		return text(f["name"]), text(f["description"]), f["parameters"], true
+	}
+	if schema, ok := t["input_schema"]; ok {
+		return text(t["name"]), text(t["description"]), schema, true
+	}
+	if t["type"] == "function" {
+		return text(t["name"]), text(t["description"]), t["parameters"], true
+	}
+	return "", "", nil, false
+}
+
+// OpenAIChat renders a call or conversation as a Chat Completions request
+// for training: the context's system prompt and tools, then text,
+// reasoning, tool calls, and tool results in the order they happened.
+// Consecutive assistant messages, such as Responses items or streamed Claude
+// Code blocks, become one message until a tool result ends the turn. Images
+// and files are left out: their data is only in the raw items.
+func OpenAIChat(ctx Context, path []Message) map[string]any {
+	var out []map[string]any
+	if len(ctx.System) > 0 {
+		out = append(out, map[string]any{"role": "system", "content": strings.Join(ctx.System, "\n\n")})
+	}
+	var assistant map[string]any
+	turn := func() map[string]any {
+		if assistant == nil {
+			assistant = map[string]any{"role": "assistant", "content": ""}
+			out = append(out, assistant)
+		}
+		return assistant
+	}
 	for _, m := range path {
-		var texts, thinking []string
-		var calls []any
-		var results []map[string]any
+		if m.Role != "assistant" {
+			assistant = nil
+		}
+		var texts []string
+		flushTexts := func() {
+			if len(texts) > 0 {
+				out = append(out, map[string]any{"role": m.Role, "content": strings.Join(texts, "\n\n")})
+				texts = nil
+			}
+		}
 		for _, b := range m.Blocks {
 			switch b.Type {
 			case "text", "compaction":
-				if b.Text != "" {
+				if b.Text == "" {
+					continue
+				}
+				if m.Role == "assistant" {
+					turn()["content"] = join(turn()["content"], b.Text)
+				} else {
 					texts = append(texts, b.Text)
 				}
 			case "thinking":
-				if b.Text != "" {
-					thinking = append(thinking, b.Text)
+				if b.Text != "" && m.Role == "assistant" {
+					turn()["reasoning_content"] = join(turn()["reasoning_content"], b.Text)
 				}
 			case "tool_call":
-				calls = append(calls, map[string]any{"id": b.ToolCallID, "type": "function",
-					"function": map[string]any{"name": b.ToolName, "arguments": b.ToolInput}})
-			case "tool_result":
-				results = append(results, map[string]any{"role": "tool", "tool_call_id": b.ToolCallID, "content": b.Text})
-			}
-		}
-		if m.Role == "assistant" {
-			if assistant == nil {
-				assistant = map[string]any{"role": "assistant", "content": ""}
-			}
-			assistant["content"] = join(assistant["content"], texts)
-			if len(thinking) > 0 {
-				assistant["reasoning_content"] = join(assistant["reasoning_content"], thinking)
-			}
-			if len(calls) > 0 {
-				prior, _ := assistant["tool_calls"].([]any)
-				assistant["tool_calls"] = append(prior, calls...)
-			}
-			if len(results) > 0 {
-				// OpenCode keeps a tool's result in the assistant message.
-				flush()
-				for _, r := range results {
-					out = append(out, r)
+				if m.Role == "assistant" {
+					prior, _ := turn()["tool_calls"].([]any)
+					turn()["tool_calls"] = append(prior, map[string]any{"id": b.ToolCallID, "type": "function",
+						"function": map[string]any{"name": b.ToolName, "arguments": b.ToolInput}})
 				}
+			case "tool_result":
+				// OpenCode keeps a tool's result in the assistant message;
+				// the result ends the assistant's turn either way.
+				flushTexts()
+				assistant = nil
+				out = append(out, map[string]any{"role": "tool", "tool_call_id": b.ToolCallID, "content": b.Text})
 			}
-			continue
 		}
-		flush()
-		for _, r := range results {
-			out = append(out, r)
-		}
-		if len(texts) > 0 {
-			out = append(out, map[string]any{"role": m.Role, "content": strings.Join(texts, "\n\n")})
+		flushTexts()
+	}
+	request := map[string]any{"messages": out}
+	var tools []any
+	for _, t := range ctx.Tools {
+		if name, description, schema, ok := function(t); ok {
+			f := map[string]any{"name": name, "description": description}
+			if schema != nil {
+				f["parameters"] = schema
+			}
+			tools = append(tools, map[string]any{"type": "function", "function": f})
+		} else {
+			tools = append(tools, t)
 		}
 	}
-	flush()
-	return out
+	if len(tools) > 0 {
+		request["tools"] = tools
+	}
+	return request
 }
 
-// AnthropicMessages renders a conversation as an Anthropic Messages system
-// prompt and messages. Tool results are user content, and consecutive
-// messages of a role merge, as the API requires.
-func AnthropicMessages(path []Message) (string, []map[string]any) {
-	var system []string
+// AnthropicMessages renders a call or conversation as an Anthropic Messages
+// request: system prompt, tools, and messages in the order they happened.
+// Tool results are user content, and consecutive messages of a role merge,
+// as the API requires.
+func AnthropicMessages(ctx Context, path []Message) map[string]any {
+	system := append([]string{}, ctx.System...)
 	var out []map[string]any
 	add := func(role string, blocks []any) {
 		if len(blocks) == 0 {
@@ -112,11 +179,23 @@ func AnthropicMessages(path []Message) (string, []map[string]any) {
 		out = append(out, map[string]any{"role": role, "content": blocks})
 	}
 	for _, m := range path {
-		var blocks, results []any
+		role := "user"
+		switch m.Role {
+		case "assistant":
+			role = "assistant"
+		case "system", "developer":
+			role = "system"
+		}
+		var blocks []any
 		for _, b := range m.Blocks {
 			switch b.Type {
 			case "text", "compaction":
-				if b.Text != "" {
+				if b.Text == "" {
+					continue
+				}
+				if role == "system" {
+					system = append(system, b.Text)
+				} else {
 					blocks = append(blocks, map[string]any{"type": "text", "text": b.Text})
 				}
 			case "thinking":
@@ -130,34 +209,45 @@ func AnthropicMessages(path []Message) (string, []map[string]any) {
 				}
 				blocks = append(blocks, map[string]any{"type": "tool_use", "id": b.ToolCallID, "name": b.ToolName, "input": input})
 			case "tool_result":
-				results = append(results, map[string]any{"type": "tool_result", "tool_use_id": b.ToolCallID,
-					"content": b.Text, "is_error": b.IsError})
-			}
-		}
-		switch m.Role {
-		case "system", "developer":
-			for _, b := range blocks {
-				if text, ok := b.(map[string]any)["text"].(string); ok {
-					system = append(system, text)
+				result := map[string]any{"type": "tool_result", "tool_use_id": b.ToolCallID,
+					"content": b.Text, "is_error": b.IsError}
+				if role == "assistant" {
+					// OpenCode keeps a tool's result in the assistant message.
+					add("assistant", blocks)
+					blocks = nil
+					add("user", []any{result})
+				} else {
+					blocks = append(blocks, result)
 				}
 			}
-		case "assistant":
-			add("assistant", blocks)
-			add("user", results)
-		default:
-			add("user", append(results, blocks...))
+		}
+		if role != "system" {
+			add(role, blocks)
 		}
 	}
-	return strings.Join(system, "\n\n"), out
+	request := map[string]any{"system": strings.Join(system, "\n\n"), "messages": out}
+	var tools []any
+	for _, t := range ctx.Tools {
+		if name, description, schema, ok := function(t); ok {
+			tool := map[string]any{"name": name, "description": description}
+			if schema != nil {
+				tool["input_schema"] = schema
+			}
+			tools = append(tools, tool)
+		} else {
+			tools = append(tools, t)
+		}
+	}
+	if len(tools) > 0 {
+		request["tools"] = tools
+	}
+	return request
 }
 
-func join(prior any, texts []string) string {
-	s, _ := prior.(string)
-	if len(texts) == 0 {
+func join(prior any, s string) string {
+	p, _ := prior.(string)
+	if p == "" {
 		return s
 	}
-	if s != "" {
-		s += "\n\n"
-	}
-	return s + strings.Join(texts, "\n\n")
+	return p + "\n\n" + s
 }

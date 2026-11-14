@@ -3,8 +3,8 @@
 -- lives once in llm.request_items, referenced by content hash.
 
 -- What does not change as a session grows. A session captured by both the
--- proxy and a transcript has a row per origin; its messages come from the
--- proxy.
+-- proxy and a transcript has a row per origin; the transcript's messages end
+-- where the proxy's calls begin.
 CREATE TABLE IF NOT EXISTS llm.sessions
 (
     session_id String,
@@ -21,7 +21,9 @@ ORDER BY (session_id, origin);
 
 -- One row per node of a session's conversation tree. A node's ID covers its
 -- parent's, so resent context maps to existing nodes. The extracted blocks
--- are for querying; item is the exact source JSON.
+-- are for querying; item is the exact source JSON. A node written again
+-- keeps the row with the highest version: a model's output over a resent
+-- copy, then the earliest, whatever order the calls were normalized in.
 CREATE TABLE IF NOT EXISTS llm.messages
 (
     session_id String,
@@ -44,15 +46,18 @@ CREATE TABLE IF NOT EXISTS llm.messages
         media LowCardinality(String))) CODEC(ZSTD(3)),
     format LowCardinality(String),
     item UInt128,
-    line String
+    line String,
+    version UInt64
 )
-ENGINE = ReplacingMergeTree
+ENGINE = ReplacingMergeTree(version)
 -- Conversation order keeps a session's text adjacent, which compresses.
 ORDER BY (session_id, seq, id);
 
--- One row per model call. Proxy calls keep every llm.requests column, so
--- the request body and response rebuild exactly; transcript calls carry the
--- usage their lines recorded.
+-- One row per model call. Proxy calls keep every llm.requests column
+-- verbatim, so the archived row rebuilds exactly: request_id is call_id, and
+-- session_id and model, whose names here hold the canonical session and the
+-- responding model, are source_session_id and source_model. Transcript
+-- calls carry the usage their lines recorded.
 CREATE TABLE IF NOT EXISTS llm.calls
 (
     call_id String,
@@ -72,6 +77,8 @@ CREATE TABLE IF NOT EXISTS llm.calls
     cache_write_tokens UInt64,
     output_tokens UInt64,
     reasoning_tokens UInt64,
+    source_session_id String,
+    source_model LowCardinality(String),
     requested_model LowCardinality(String),
     stream Bool,
     outcome LowCardinality(String),

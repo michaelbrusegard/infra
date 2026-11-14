@@ -1,6 +1,8 @@
 -- Input for `normalize-conversations`: transcript lines, grouped by file in
--- line order. Pass the proxy's sessions with -proxied, from
--- SELECT DISTINCT session_id FROM llm.calls WHERE origin = 'proxy'.
+-- line order. Pass the proxy's sessions, each with the start of its first
+-- proxied call, with -proxied, from
+-- SELECT session_id, min(started_at) FROM llm.calls FINAL WHERE origin = 'proxy'
+-- GROUP BY session_id FORMAT TSV
 SELECT source, host, session, id, path, line, toString(ts) AS ts
 FROM llm.transcripts FINAL
 ORDER BY source, host, session, path, toUInt64OrZero(id), id

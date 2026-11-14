@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"cliproxy-plugins/requestitems"
 )
@@ -40,12 +41,26 @@ func TestDumpSources(t *testing.T) {
 			"request_envelope": r.RequestEnvelope, "request_parts": nonNil(r.RequestParts),
 			"response_body": r.ResponseBody,
 		})
-		if r.UsageSessionID != "" {
-			rows["llm.usage"] = append(rows["llm.usage"], map[string]any{
-				"request_id": "usage-" + r.RequestID, "trace_id": r.TraceID, "session_id": r.UsageSessionID,
-				"parent_session_id": r.UsageParentSessionID, "requested_at": r.StartedAt,
-			})
+		// CLIProxy's usage row for the attempt, which starts just after the
+		// request, with the response's tokens counted the way it counts them.
+		started, err := time.Parse(time.DateTime, r.StartedAt)
+		if err != nil {
+			t.Fatal(err)
 		}
+		resp := parseResponse(r.SourceFormat, r.ResponseBody)
+		u, provider := resp.usage, map[string]string{"claude": "claude", "openai-response": "codex"}[r.SourceFormat]
+		input := u.uncached
+		if provider != "claude" {
+			input += u.read + u.write
+		}
+		rows["llm.usage"] = append(rows["llm.usage"], map[string]any{
+			"request_id": "usage-" + r.RequestID, "trace_id": r.TraceID, "session_id": r.UsageSessionID,
+			"parent_session_id": r.UsageParentSessionID,
+			"requested_at":      started.Add(time.Millisecond).Format("2006-01-02 15:04:05.000"),
+			"provider":          firstNonEmpty(provider, "openai-compatibility"), "model": firstNonEmpty(resp.model, r.Model),
+			"input_tokens": input, "output_tokens": u.output, "reasoning_tokens": u.reasoning,
+			"cached_tokens": u.read, "cache_read_tokens": u.read, "cache_creation_tokens": u.write,
+		})
 	}
 	for _, l := range lines {
 		// ClickHouse derives ts from the line, as it did for the backfill.

@@ -12,7 +12,9 @@ package conversations
 import (
 	"bytes"
 	"encoding/json"
+	"strconv"
 	"strings"
+	"time"
 
 	"cliproxy-plugins/requestitems"
 )
@@ -62,6 +64,9 @@ type Message struct {
 	Item Hash `json:"item"`
 	// The transcript line, empty for proxy messages.
 	Line string `json:"line"`
+	// Ranks the rows written for one node; ReplacingMergeTree keeps the
+	// highest. See version.
+	Version uint64 `json:"version"`
 }
 
 // Call is one model request and its response.
@@ -87,8 +92,12 @@ type Call struct {
 	CacheWriteTokens    uint64 `json:"cache_write_tokens"`
 	OutputTokens        uint64 `json:"output_tokens"`
 	ReasoningTokens     uint64 `json:"reasoning_tokens"`
-	// Proxy calls keep the llm.requests columns, so the request body and the
-	// response rebuild exactly.
+	// Proxy calls keep every llm.requests column verbatim, so the row
+	// rebuilds exactly. The two that differ from a canonical column of the
+	// same name are renamed: session_id is the header session, and model the
+	// model the archive recorded.
+	SourceSessionID string              `json:"source_session_id"`
+	SourceModel     string              `json:"source_model"`
 	RequestedModel  string              `json:"requested_model"`
 	Stream          bool                `json:"stream"`
 	Outcome         string              `json:"outcome"`
@@ -154,6 +163,32 @@ func (b *Batch) item(raw []byte) Hash {
 		b.Items = append(b.Items, Item{h, string(raw)})
 	}
 	return h
+}
+
+// version ranks the rows written for one node, highest first: a model's
+// output over a copy sent back as input, then the earliest sighting. The row
+// ClickHouse keeps then does not depend on the order or the runs in which
+// calls were normalized, so a later resend cannot replace the call, model,
+// and time that produced a message.
+func version(output bool, ts string) uint64 {
+	var ms uint64
+	if t, err := time.Parse(time.DateTime, ts); err == nil && t.UnixMilli() > 0 {
+		ms = uint64(t.UnixMilli())
+	}
+	v := uint64(1<<63-1) - ms
+	if output {
+		v |= 1 << 63
+	}
+	return v
+}
+
+// Uint64 reads a UInt64 that ClickHouse may write quoted.
+type Uint64 uint64
+
+func (u *Uint64) UnmarshalJSON(data []byte) error {
+	n, err := strconv.ParseUint(strings.Trim(string(data), `"`), 10, 64)
+	*u = Uint64(n)
+	return err
 }
 
 // nodeID derives a message ID from its parent and a key: the item hash for

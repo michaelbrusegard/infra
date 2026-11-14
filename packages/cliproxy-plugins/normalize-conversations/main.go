@@ -4,13 +4,15 @@
 // per table.
 //
 // With -requests, input rows are llm.requests rows with their items, in
-// start order, from requests.sql. Otherwise they are llm.transcripts rows
-// from transcripts.sql, and -proxied names a file of session IDs whose
-// messages the proxy owns.
+// start order, from requests.sql. A run first prints the sessions they
+// touch with -sessions, then passes those sessions' state from state.sql
+// with -state. Otherwise input rows are llm.transcripts rows from
+// transcripts.sql, and -proxied names a file of session IDs and the time
+// the proxy's capture of each starts, tab-separated.
 //
-// With -export openai or -export anthropic, it instead reads the messages
-// of one conversation in order, as the conversation query in the design
-// doc returns them, and prints them for training.
+// With -export openai or -export anthropic, it instead reads one call or
+// conversation, as the call and conversation queries in the design doc
+// return them, and prints it for training.
 package main
 
 import (
@@ -23,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"cliproxy-plugins/conversations"
 )
@@ -30,34 +33,98 @@ import (
 func main() {
 	log.SetFlags(0)
 	requests := flag.Bool("requests", false, "read llm.requests rows instead of transcript lines")
-	proxied := flag.String("proxied", "", "file of session IDs the proxy captured")
+	sessions := flag.Bool("sessions", false, "print the sessions the requests touch, for state.sql")
+	state := flag.String("state", "", "file of state.sql rows from earlier runs")
+	hold := flag.Duration("hold", 10*time.Minute, "hold back requests this recent that continue an unseen response")
+	proxied := flag.String("proxied", "", "file of session IDs the proxy captured, each with when it started")
 	out := flag.String("out", ".", "directory for the output files")
-	export := flag.String("export", "", "print a conversation as openai or anthropic messages")
+	export := flag.String("export", "", "print a call or conversation as openai or anthropic messages")
 	flag.Parse()
-	if *export != "" {
-		if err := exportConversation(os.Stdin, os.Stdout, *export); err != nil {
-			log.Fatal(err)
+	var err error
+	switch {
+	case *export != "":
+		err = exportConversation(os.Stdin, os.Stdout, *export)
+	case *sessions:
+		err = printSessions(os.Stdin, os.Stdout)
+	case *requests:
+		n := conversations.NewNormalizer()
+		if *hold > 0 {
+			n.HoldAfter = time.Now().UTC().Add(-*hold).Format("2006-01-02 15:04:05.000")
 		}
-		return
+		if err = restore(n, *state); err == nil {
+			err = run(os.Stdin, *out, n, nil)
+		}
+	default:
+		since := map[string]string{}
+		if *proxied != "" {
+			var data []byte
+			if data, err = os.ReadFile(*proxied); err != nil {
+				log.Fatal(err)
+			}
+			for _, line := range strings.Split(string(data), "\n") {
+				if session, ts, ok := strings.Cut(line, "\t"); ok {
+					since[session] = ts
+				}
+			}
+		}
+		err = run(os.Stdin, *out, conversations.NewNormalizer(), func(s string) string { return since[s] })
 	}
-	sessions := map[string]bool{}
-	if *proxied != "" {
-		data, err := os.ReadFile(*proxied)
-		if err != nil {
-			log.Fatal(err)
-		}
-		for _, s := range strings.Fields(string(data)) {
-			sessions[s] = true
-		}
-	}
-	if err := run(os.Stdin, *out, *requests, func(s string) bool { return sessions[s] }); err != nil {
+	if err != nil {
 		log.Fatal(err)
 	}
 }
 
+func eachRow[T any](r io.Reader, f func(T) error) error {
+	dec := json.NewDecoder(bufio.NewReaderSize(r, 1<<20))
+	for {
+		var row T
+		if err := dec.Decode(&row); err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		if err := f(row); err != nil {
+			return err
+		}
+	}
+}
+
+// printSessions prints the sessions of the requests as a ClickHouse array,
+// for the sessions parameter of state.sql.
+func printSessions(r io.Reader, w io.Writer) error {
+	seen := map[string]bool{}
+	var quoted []string
+	err := eachRow(r, func(req conversations.Request) error {
+		if s := conversations.SessionOf(req); !seen[s] {
+			seen[s] = true
+			quoted = append(quoted, "'"+strings.NewReplacer(`\`, `\\`, `'`, `\'`).Replace(s)+"'")
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(w, "[%s]\n", strings.Join(quoted, ","))
+	return err
+}
+
+func restore(n *conversations.Normalizer, path string) error {
+	if path == "" {
+		return nil
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return eachRow(f, func(s conversations.State) error { n.Restore(s); return nil })
+}
+
 var tables = []string{"llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events"}
 
-func run(r io.Reader, dir string, requests bool, proxied func(string) bool) error {
+// run normalizes requests when proxiedSince is nil, and transcript lines
+// otherwise.
+func run(r io.Reader, dir string, n *conversations.Normalizer, proxiedSince func(string) string) error {
 	files := map[string]*bufio.Writer{}
 	for _, table := range tables {
 		f, err := os.Create(filepath.Join(dir, table+".jsonl"))
@@ -69,7 +136,6 @@ func run(r io.Reader, dir string, requests bool, proxied func(string) bool) erro
 		defer w.Flush()
 		files[table] = w
 	}
-	n := conversations.NewNormalizer()
 	// Rows are written as each unit is normalized, so memory holds only the
 	// normalizer's index of nodes and items.
 	drain := func() error {
@@ -84,38 +150,39 @@ func run(r io.Reader, dir string, requests bool, proxied func(string) bool) erro
 		b.Items, b.Sessions, b.Messages, b.Calls, b.Events = nil, nil, nil, nil, nil
 		return nil
 	}
-	dec := json.NewDecoder(bufio.NewReaderSize(r, 1<<20))
-	var file []conversations.TranscriptLine
-	for {
-		if requests {
-			var req conversations.Request
-			if err := dec.Decode(&req); err == io.EOF {
-				break
-			} else if err != nil {
-				return err
+	if proxiedSince == nil {
+		held := 0
+		err := eachRow(r, func(req conversations.Request) error {
+			if !n.Request(req) {
+				held++
 			}
-			n.Request(req)
-		} else {
-			var line conversations.TranscriptLine
-			err := dec.Decode(&line)
-			if err != nil && err != io.EOF {
-				return err
-			}
-			if len(file) > 0 && (err == io.EOF || line.Source != file[0].Source || line.Host != file[0].Host ||
-				line.Session != file[0].Session || line.Path != file[0].Path) {
-				n.Transcript(file, proxied)
-				file = file[:0]
-			}
-			if err == io.EOF {
-				break
-			}
-			file = append(file, line)
+			return drain()
+		})
+		if held > 0 {
+			log.Printf("held back %d requests whose previous response is not archived yet", held)
 		}
-		if err := drain(); err != nil {
-			return err
-		}
+		return err
 	}
-	return drain()
+	var file []conversations.TranscriptLine
+	flush := func() error {
+		n.Transcript(file, proxiedSince)
+		file = file[:0]
+		return drain()
+	}
+	err := eachRow(r, func(line conversations.TranscriptLine) error {
+		if len(file) > 0 && (line.Source != file[0].Source || line.Host != file[0].Host ||
+			line.Session != file[0].Session || line.Path != file[0].Path) {
+			if err := flush(); err != nil {
+				return err
+			}
+		}
+		file = append(file, line)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return flush()
 }
 
 func writeRows[T any](w *bufio.Writer, rows []T) error {
@@ -129,25 +196,34 @@ func writeRows[T any](w *bufio.Writer, rows []T) error {
 	return nil
 }
 
+// exportConversation reads message rows in conversation order, and for a
+// call, rows with a field and value: the system prompt, instructions, or
+// tools the call sent.
 func exportConversation(r io.Reader, w io.Writer, format string) error {
+	var ctx conversations.Context
 	var path []conversations.Message
-	dec := json.NewDecoder(r)
-	for {
-		var m conversations.Message
-		if err := dec.Decode(&m); err == io.EOF {
-			break
-		} else if err != nil {
-			return err
+	type row struct {
+		conversations.Message
+		Field string `json:"field"`
+		Value string `json:"value"`
+	}
+	err := eachRow(r, func(row row) error {
+		if row.Field != "" {
+			ctx.Add(row.Field, []byte(row.Value))
+		} else {
+			path = append(path, row.Message)
 		}
-		path = append(path, m)
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 	var out any
 	switch format {
 	case "openai":
-		out = map[string]any{"messages": conversations.OpenAIChat(path)}
+		out = conversations.OpenAIChat(ctx, path)
 	case "anthropic":
-		system, messages := conversations.AnthropicMessages(path)
-		out = map[string]any{"system": system, "messages": messages}
+		out = conversations.AnthropicMessages(ctx, path)
 	default:
 		return fmt.Errorf("unknown export format %q", format)
 	}

@@ -25,29 +25,42 @@ type TranscriptLine struct {
 type file struct {
 	n       *Normalizer
 	session Session
-	// Whether the proxy owns this session's messages.
-	proxied bool
-	ts      string
+	// When the proxy's capture of this session starts, or empty.
+	proxiedSince string
+	ts           string
 	// Entry IDs to their parent entry, and entries that became messages, for
 	// sources that record a tree.
 	parents map[string]string
 	nodes   map[string]Hash
-	last    Hash
-	calls   map[string]*Call
-	order   []string
+	// Pi entries that became messages, for the context after a compaction.
+	kept  map[string]keptMessage
+	last  Hash
+	calls map[string]*Call
+	order []string
+}
+
+type keptMessage struct {
+	m    Message
+	item Hash
 }
 
 // Transcript normalizes the lines of one transcript file, in file order.
 // Every line becomes exactly one message or event that references the line
-// verbatim. A session the proxy also captured keeps its lines as events
-// only: its messages come from the proxy, so nothing is counted twice.
-func (n *Normalizer) Transcript(lines []TranscriptLine, proxied func(session string) bool) {
+// verbatim. proxiedSince gives the time the proxy's capture of a session
+// starts, or empty: from then on the proxy owns the session's messages and
+// calls, and its transcript lines are kept as events only. Everything
+// before, which the proxy never saw, keeps its messages and calls here, so
+// nothing is counted twice and no history is lost.
+func (n *Normalizer) Transcript(lines []TranscriptLine, proxiedSince func(session string) string) {
 	if len(lines) == 0 {
 		return
 	}
-	f := &file{n: n, parents: map[string]string{}, nodes: map[string]Hash{}, calls: map[string]*Call{}}
+	f := &file{n: n, parents: map[string]string{}, nodes: map[string]Hash{}, calls: map[string]*Call{},
+		kept: map[string]keptMessage{}}
 	f.session = transcriptSession(lines)
-	f.proxied = proxied != nil && proxied(f.session.SessionID)
+	if proxiedSince != nil {
+		f.proxiedSince = proxiedSince(f.session.SessionID)
+	}
 	switch lines[0].Source {
 	case "claude-code":
 		f.claudeCode(lines)
@@ -141,17 +154,30 @@ func (f *file) stamp(l TranscriptLine) string {
 	return f.ts
 }
 
+// owned reports whether a line falls before the proxy's capture, so its
+// message is this transcript's to write.
+func (f *file) owned(l TranscriptLine) bool {
+	return f.proxiedSince == "" || f.stamp(l) < f.proxiedSince
+}
+
 func (f *file) event(l TranscriptLine, kind string) {
 	f.n.Events = append(f.n.Events, Event{SessionID: f.session.SessionID, TS: f.stamp(l), Line: l.ID,
 		Type: kind, Item: f.n.item([]byte(l.Line))})
 }
 
-// message adds a line as a message under parent, keyed by its entry ID.
-func (f *file) message(l TranscriptLine, parent Hash, key string, m Message) Hash {
+// message adds a line as a message under parent, keyed by its entry ID,
+// and reports whether it did. An entry the source wrote again, as Claude
+// Code does when it resumes a session, keeps its first line as the message,
+// and the repeat is kept as an event.
+func (f *file) message(l TranscriptLine, parent Hash, key string, m Message) (Hash, bool) {
 	m.Line = l.ID
 	m.Role = roleOf(m.Role, m.Blocks)
-	id := f.n.node(f.session.SessionID, parent, key, f.n.item([]byte(l.Line)), f.stamp(l), m)
+	id, added := f.n.node(f.session.SessionID, parent, key, f.n.item([]byte(l.Line)), f.stamp(l), m, false)
 	f.last = id
+	if !added {
+		f.event(l, "repeat")
+		return id, false
+	}
 	if m.Output && m.CallID != "" {
 		c := f.calls[m.CallID]
 		if c == nil {
@@ -165,7 +191,7 @@ func (f *file) message(l TranscriptLine, parent Hash, key string, m Message) Has
 		c.CompletedAt = f.stamp(l)
 		c.Model = firstNonEmpty(c.Model, m.Model)
 	}
-	return id
+	return id, true
 }
 
 // treeParent finds the nearest ancestor entry that is a message, skipping
@@ -203,7 +229,7 @@ func (f *file) claudeCode(lines []TranscriptLine) {
 		}
 		m := Message{Format: "claude-code"}
 		switch {
-		case f.proxied || uuid == "":
+		case uuid == "" || !f.owned(l):
 		case t == "user" || t == "assistant":
 			msg := e.obj("message")
 			m.Role, m.Blocks = msg.str("role"), anthropicContent(msg["content"])
@@ -236,8 +262,9 @@ func (f *file) claudeCode(lines []TranscriptLine) {
 			f.event(l, t)
 			continue
 		}
-		f.nodes[uuid] = f.message(l, f.treeParent(e.str("parentUuid")), uuid, m)
-		if m.Output {
+		id, added := f.message(l, f.treeParent(e.str("parentUuid")), uuid, m)
+		f.nodes[uuid] = id
+		if added && m.Output {
 			// Each streamed block is a line; the last one carries final usage.
 			msg := e.obj("message")
 			f.setUsage(m.CallID, msg.str("id"), anthropicUsage(msg.obj("usage")))
@@ -253,7 +280,7 @@ func (f *file) codex(lines []TranscriptLine) {
 		switch {
 		case t == "turn_context":
 			model = firstNonEmpty(p.str("model"), model)
-		case f.proxied:
+		case !f.owned(l):
 		case t == "compacted":
 			// The replacement history is the context from here on: a new
 			// root, built from the items inside this line.
@@ -261,8 +288,8 @@ func (f *file) codex(lines []TranscriptLine) {
 			parent := Hash{}
 			for i, raw := range p.arr("replacement_history") {
 				role, blocks := responsesItem(raw)
-				parent = f.n.node(f.session.SessionID, parent, l.ID+"#"+strconv.Itoa(i), f.n.item(raw), f.stamp(l),
-					Message{Role: roleOf(role, blocks), Blocks: blocks, Format: "openai-responses", Line: l.ID})
+				parent, _ = f.n.node(f.session.SessionID, parent, l.ID+"#"+strconv.Itoa(i), f.n.item(raw), f.stamp(l),
+					Message{Role: roleOf(role, blocks), Blocks: blocks, Format: "openai-responses", Line: l.ID}, false)
 			}
 			f.last, lastWasOutput = parent, false
 			continue
@@ -317,7 +344,7 @@ func (f *file) pi(lines []TranscriptLine) {
 		}
 		m := Message{Format: "pi"}
 		switch {
-		case f.proxied || id == "":
+		case id == "" || !f.owned(l):
 		case t == "message":
 			msg := e.obj("message")
 			m.Role, m.Blocks = piMessage(msg)
@@ -326,7 +353,6 @@ func (f *file) pi(lines []TranscriptLine) {
 				m.CallID = firstNonEmpty(msg.str("responseId"), id)
 			}
 		case t == "compaction" || t == "branch_summary":
-			// Pi sends the summary in place of the entries it replaces.
 			m.Role = "user"
 			m.Blocks = []Block{{Type: "compaction", SourceType: t, Text: e.str("summary")}}
 		}
@@ -334,13 +360,54 @@ func (f *file) pi(lines []TranscriptLine) {
 			f.event(l, t)
 			continue
 		}
-		f.nodes[id] = f.message(l, f.treeParent(e.str("parentId")), id, m)
-		if m.Output {
+		if t == "compaction" {
+			f.nodes[id] = f.piCompaction(l, e, m)
+			continue
+		}
+		var added bool
+		f.nodes[id], added = f.message(l, f.treeParent(e.str("parentId")), id, m)
+		if added {
+			f.kept[id] = keptMessage{f.n.Messages[len(f.n.Messages)-1], f.n.item([]byte(l.Line))}
+		}
+		if added && m.Output {
 			u := e.obj("message").obj("usage")
 			f.setUsage(m.CallID, e.obj("message").str("responseId"), usage{uncached: u.num("input"),
 				read: u.num("cacheRead"), write: u.num("cacheWrite"), output: u.num("output"), reasoning: u.num("reasoning")})
 		}
 	}
+}
+
+// piCompaction builds the context Pi sends after a compaction: the summary,
+// then the entries from firstKeptEntryId to the compaction. The summary
+// starts a new root, the kept entries are copied under it as context the
+// model was sent again, and the original branch stays as it was. It
+// returns the node later entries continue from.
+func (f *file) piCompaction(l TranscriptLine, e obj, m Message) Hash {
+	leaf, added := f.message(l, Hash{}, e.str("id"), m)
+	if !added {
+		return leaf
+	}
+	var tail []string
+	first := e.str("firstKeptEntryId")
+	for id, seen := e.str("parentId"), 0; id != "" && first != "" && seen < 1<<20; id, seen = f.parents[id], seen+1 {
+		tail = append(tail, id)
+		if id == first {
+			break
+		}
+	}
+	if len(tail) == 0 || tail[len(tail)-1] != first {
+		return leaf
+	}
+	for i := len(tail) - 1; i >= 0; i-- {
+		k, ok := f.kept[tail[i]]
+		if !ok {
+			continue
+		}
+		c := k.m
+		c.Output, c.Model, c.CallID, c.Line = false, "", "", l.ID+"#"+tail[i]
+		leaf, _ = f.n.node(f.session.SessionID, leaf, c.Line, k.item, f.stamp(l), c, false)
+	}
+	return leaf
 }
 
 // opencode handles both exports: messages with inline content, and older
@@ -392,12 +459,11 @@ func (f *file) opencode(lines []TranscriptLine) {
 			m.Role = ""
 		}
 		m.Blocks = append(m.Blocks, opencodeParts(append(d.arr("content"), parts[e.str("id")]...))...)
-		if f.proxied || m.Role == "" {
+		if !f.owned(l) || m.Role == "" {
 			f.event(l, firstNonEmpty(e.str("type"), "message"))
 			continue
 		}
-		f.message(l, f.last, e.str("id"), m)
-		if m.Output {
+		if _, added := f.message(l, f.last, e.str("id"), m); added && m.Output {
 			t := d.obj("tokens")
 			cache := t.obj("cache")
 			f.setUsage(m.CallID, "", usage{uncached: t.num("input"), read: cache.num("read"),

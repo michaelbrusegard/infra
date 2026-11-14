@@ -12,8 +12,7 @@ import (
 )
 
 // Request is a row of llm.requests with the items its parts reference, in
-// part order, and the session CLIProxy recorded in llm.usage when the trace
-// holds this one request.
+// part order, and the session CLIProxy recorded in llm.usage for it.
 type Request struct {
 	RequestID            string              `json:"request_id"`
 	TraceID              string              `json:"trace_id"`
@@ -39,16 +38,50 @@ type Request struct {
 
 // Normalizer turns sources into canonical rows. Requests must arrive in
 // start order: a Codex request that continues a previous response needs
-// that response's messages first.
+// that response's messages first. Restore loads what earlier runs left.
 type Normalizer struct {
 	Batch
-	seq      map[Hash]uint32
-	after    map[string]Hash
-	sessions map[string]struct{}
+	// Requests that continue a response nobody has seen are held back when
+	// they started at or after this time, as "2006-01-02 15:04:05.000" in
+	// UTC, so a later run can place them once the response arrives. Empty
+	// holds nothing.
+	HoldAfter string
+	nodes     map[Hash]node
+	after     map[string]Hash
+	sessions  map[string]struct{}
+}
+
+// node is what the normalizer knows of a written message.
+type node struct {
+	seq     uint32
+	version uint64
 }
 
 func NewNormalizer() *Normalizer {
-	return &Normalizer{seq: map[Hash]uint32{}, after: map[string]Hash{}, sessions: map[string]struct{}{}}
+	return &Normalizer{nodes: map[Hash]node{}, after: map[string]Hash{}, sessions: map[string]struct{}{}}
+}
+
+// State is a row of state.sql, which earlier runs left: a node of a
+// session, or with ResponseID set, the leaf a response ended at.
+type State struct {
+	SessionID  string `json:"session_id"`
+	ID         Hash   `json:"id"`
+	Seq        uint32 `json:"seq"`
+	Version    Uint64 `json:"version"`
+	ResponseID string `json:"response_id"`
+}
+
+// Restore loads state from earlier runs, so this run extends their trees:
+// existing nodes are not written again, and delta requests find the
+// response they continue.
+func (n *Normalizer) Restore(s State) {
+	if s.ResponseID != "" {
+		n.after[s.SessionID+"\x00"+s.ResponseID] = s.ID
+		return
+	}
+	if known, ok := n.nodes[s.ID]; !ok || uint64(s.Version) > known.version {
+		n.nodes[s.ID] = node{s.Seq, uint64(s.Version)}
+	}
 }
 
 // The fields holding the conversation; the others, such as system prompts
@@ -57,13 +90,10 @@ var conversationFields = map[string]bool{"messages": true, "input": true}
 
 var formats = map[string]string{"claude": "anthropic", "openai-response": "openai-responses", "openai": "openai-chat"}
 
-func (n *Normalizer) Request(r Request) {
-	env := parse([]byte(r.RequestEnvelope))
-	var conversation [][]byte
-	var metadata obj
+// split reads a request's conversation items and client metadata.
+func split(r Request, env obj) (conversation [][]byte, metadata obj) {
 	for i, p := range r.RequestParts {
 		item := []byte(r.Items[i])
-		n.item(item)
 		switch {
 		case conversationFields[p.Field] && p.Position >= 0:
 			conversation = append(conversation, item)
@@ -80,24 +110,48 @@ func (n *Normalizer) Request(r Request) {
 	if metadata == nil {
 		metadata = env.obj("client_metadata")
 	}
+	return conversation, metadata
+}
+
+// SessionOf names the session a request belongs to, so a run can restore
+// the state of the sessions it touches before normalizing.
+func SessionOf(r Request) string {
+	env := parse([]byte(r.RequestEnvelope))
+	conversation, metadata := split(r, env)
+	session, _ := proxySession(r, env, metadata, conversation)
+	return session
+}
+
+// Request normalizes one request. It reports false, and writes nothing,
+// when the request is held back; see HoldAfter.
+func (n *Normalizer) Request(r Request) bool {
+	env := parse([]byte(r.RequestEnvelope))
+	conversation, metadata := split(r, env)
 	session, parentSession := proxySession(r, env, metadata, conversation)
+	var parent Hash
+	prev := env.str("previous_response_id")
+	known := true
+	if prev != "" {
+		parent, known = n.after[session+"\x00"+prev]
+		if !known && n.HoldAfter != "" && r.StartedAt >= n.HoldAfter {
+			return false
+		}
+	}
+	for _, item := range r.Items {
+		n.item([]byte(item))
+	}
 	client := clientOf(r.UserAgent)
 	n.session(Session{SessionID: session, ParentSessionID: parentSession, Client: client, Origin: "proxy"})
 	format := formats[r.SourceFormat]
-
-	var parent Hash
-	if prev := env.str("previous_response_id"); prev != "" {
-		var ok bool
-		if parent, ok = n.after[session+"\x00"+prev]; !ok {
-			// The response this continues was not archived. Its context is
-			// unknown, so the chain starts at a marker instead of merging
-			// into an unrelated conversation.
-			marker := encode(map[string]string{"type": "missing_context", "previous_response_id": prev})
-			parent = n.message(session, Hash{}, marker, r.StartedAt, Message{
-				Role: "system", CallID: r.RequestID, Format: "proxy",
-				Blocks: []Block{{Type: "other", SourceType: "missing_context", Text: prev}},
-			})
-		}
+	if !known {
+		// The response this continues was never archived. Its context is
+		// unknown, so the chain starts at a marker instead of merging into
+		// an unrelated conversation.
+		marker := encode(map[string]string{"type": "missing_context", "previous_response_id": prev})
+		parent = n.message(session, Hash{}, marker, r.StartedAt, Message{
+			Role: "system", CallID: r.RequestID, Format: "proxy",
+			Blocks: []Block{{Type: "other", SourceType: "missing_context", Text: prev}},
+		})
 	}
 	for _, raw := range conversation {
 		role, blocks := dialectMessage(format, raw)
@@ -108,9 +162,9 @@ func (n *Normalizer) Request(r Request) {
 	call := Call{
 		CallID: r.RequestID, SessionID: session, TraceID: r.TraceID, StartedAt: r.StartedAt,
 		CompletedAt: r.CompletedAt, Origin: "proxy", Client: client, SourceFormat: r.SourceFormat,
-		Model: r.Model, InputID: parent, OutputIDs: []Hash{}, RequestedModel: r.RequestedModel,
-		Stream: r.Stream, Outcome: r.Outcome, StatusCode: r.StatusCode, Error: r.Error,
-		UserAgent: r.UserAgent, Truncated: r.Truncated, RequestEnvelope: r.RequestEnvelope,
+		InputID: parent, OutputIDs: []Hash{}, SourceSessionID: r.SessionID, SourceModel: r.Model,
+		RequestedModel: r.RequestedModel, Stream: r.Stream, Outcome: r.Outcome, StatusCode: r.StatusCode,
+		Error: r.Error, UserAgent: r.UserAgent, Truncated: r.Truncated, RequestEnvelope: r.RequestEnvelope,
 		RequestParts: r.RequestParts, ResponseBody: r.ResponseBody,
 	}
 	if call.RequestParts == nil {
@@ -132,13 +186,15 @@ func (n *Normalizer) Request(r Request) {
 		n.after[session+"\x00"+resp.id] = parent
 	}
 	n.Calls = append(n.Calls, call)
+	return true
 }
 
 // message adds a node under parent unless one with the same content
-// exists, and returns its ID. The node keeps the first bytes seen; a call's
-// own bytes stay in its request parts.
+// exists, and returns its ID. The node keeps the row with the highest
+// version; every call's own bytes stay in its request parts.
 func (n *Normalizer) message(session string, parent Hash, raw []byte, ts string, m Message) Hash {
-	return n.node(session, parent, contentKey(m.Format, raw), n.item(raw), ts, m)
+	id, _ := n.node(session, parent, contentKey(m.Format, raw), n.item(raw), ts, m, true)
+	return id
 }
 
 // contentKey identifies a message by what it says, ignoring what changes
@@ -173,46 +229,64 @@ func contentKey(format string, raw []byte) string {
 	if s, ok := key["content"].(string); ok {
 		key["content"] = []any{map[string]any{"type": "text", "text": s}}
 	}
-	return string(encode(stripTransport(key)))
+	if c, ok := key["content"]; ok {
+		key["content"] = stripTransport(c)
+	}
+	return string(encode(key))
 }
 
-// stripTransport removes fields that only steer caching or decoding.
-func stripTransport(v any) any {
-	switch v := v.(type) {
-	case map[string]any:
-		out := make(map[string]any, len(v))
-		for k, c := range v {
-			if k != "cache_control" && k != "logprobs" {
-				out[k] = stripTransport(c)
+// stripTransport removes the fields that only steer caching or decoding
+// from content blocks, and from the blocks a tool result nests, which is
+// where the dialects put them. Anywhere else, such as in a tool's input,
+// the same names are content.
+func stripTransport(content any) any {
+	blocks, ok := content.([]any)
+	if !ok {
+		return content
+	}
+	out := make([]any, len(blocks))
+	for i, b := range blocks {
+		block, ok := b.(map[string]any)
+		if !ok {
+			out[i] = b
+			continue
+		}
+		clean := make(map[string]any, len(block))
+		for k, v := range block {
+			switch k {
+			case "cache_control", "logprobs":
+			case "content":
+				clean[k] = stripTransport(v)
+			default:
+				clean[k] = v
 			}
 		}
-		return out
-	case []any:
-		out := make([]any, len(v))
-		for i, c := range v {
-			out[i] = stripTransport(c)
-		}
-		return out
+		out[i] = clean
 	}
-	return v
+	return out
 }
 
-func (n *Normalizer) node(session string, parent Hash, key string, item Hash, ts string, m Message) Hash {
+// node writes a message under parent, keyed by key, and reports whether it
+// wrote a row. An existing node gets another row only when replace is set
+// and the new row outranks the written one.
+func (n *Normalizer) node(session string, parent Hash, key string, item Hash, ts string, m Message, replace bool) (Hash, bool) {
 	id := nodeID(session, parent, key)
-	if _, ok := n.seq[id]; ok {
-		return id
+	v := version(m.Output, ts)
+	known, ok := n.nodes[id]
+	if ok && (!replace || v <= known.version) {
+		return id, false
 	}
-	seq := uint32(0)
-	if parent != (Hash{}) {
-		seq = n.seq[parent] + 1
+	seq := known.seq
+	if !ok && parent != (Hash{}) {
+		seq = n.nodes[parent].seq + 1
 	}
-	n.seq[id] = seq
-	m.SessionID, m.ID, m.ParentID, m.Seq, m.TS, m.Item = session, id, parent, seq, ts, item
+	n.nodes[id] = node{seq, v}
+	m.SessionID, m.ID, m.ParentID, m.Seq, m.TS, m.Item, m.Version = session, id, parent, seq, ts, item, v
 	if m.Blocks == nil {
 		m.Blocks = []Block{}
 	}
 	n.Messages = append(n.Messages, m)
-	return id
+	return id, true
 }
 
 func (n *Normalizer) session(s Session) {
@@ -391,6 +465,20 @@ func anthropicResponse(evs []json.RawMessage) response {
 	var msg map[string]any
 	blocks := map[int]map[string]any{}
 	partial := map[int]*strings.Builder{}
+	// finish sets a tool block's input from its argument deltas.
+	finish := func(i int) {
+		p := partial[i]
+		if p == nil || blocks[i] == nil {
+			return
+		}
+		if v := value(json.RawMessage(p.String())); v != nil {
+			blocks[i]["input"] = v
+		} else {
+			// An interrupted stream can end inside the arguments.
+			blocks[i]["input"] = p.String()
+		}
+		delete(partial, i)
+	}
 	var u obj
 	for _, raw := range evs {
 		e := parse(raw)
@@ -432,15 +520,7 @@ func anthropicResponse(evs []json.RawMessage) response {
 				b["citations"] = append(citations, value(d["citation"]))
 			}
 		case "content_block_stop":
-			i := int(e.num("index"))
-			if p := partial[i]; p != nil && blocks[i] != nil {
-				if v := value(json.RawMessage(p.String())); v != nil {
-					blocks[i]["input"] = v
-				} else {
-					// An interrupted stream can end inside the arguments.
-					blocks[i]["input"] = p.String()
-				}
-			}
+			finish(int(e.num("index")))
 		case "message_delta":
 			if msg != nil {
 				if d, ok := value(e["delta"]).(map[string]any); ok {
@@ -464,6 +544,11 @@ func anthropicResponse(evs []json.RawMessage) response {
 	}
 	if msg == nil {
 		return r
+	}
+	// A stream cut off before a block's stop event still streamed its
+	// arguments.
+	for i := range partial {
+		finish(i)
 	}
 	indexes := make([]int, 0, len(blocks))
 	for i := range blocks {

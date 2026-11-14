@@ -62,7 +62,7 @@ func proxyBatch(t *testing.T) (*Normalizer, []proxyFixture) {
 	return n, fixtures
 }
 
-func transcriptBatch(t *testing.T, proxied func(string) bool) (*Normalizer, [][]TranscriptLine) {
+func transcriptBatch(t *testing.T, proxiedSince func(string) string) (*Normalizer, [][]TranscriptLine) {
 	t.Helper()
 	var lines []TranscriptLine
 	load(t, "transcripts.json", &lines)
@@ -75,7 +75,7 @@ func transcriptBatch(t *testing.T, proxied func(string) bool) (*Normalizer, [][]
 	}
 	n := NewNormalizer()
 	for _, f := range files {
-		n.Transcript(f, proxied)
+		n.Transcript(f, proxiedSince)
 	}
 	return n, files
 }
@@ -326,7 +326,7 @@ func TestTranscriptLinesAreKeptExactlyOnce(t *testing.T) {
 			t.Fatalf("session %+v lost the file's host or path", s)
 		}
 	}
-	if total != 50 {
+	if total != 52 {
 		t.Fatalf("checked %d lines", total)
 	}
 }
@@ -395,15 +395,28 @@ func TestTranscriptConversations(t *testing.T) {
 		t.Fatalf("codex agent session %+v", sessions)
 	}
 
-	// Pi: entries that are not messages are skipped in the tree.
+	// Pi: entries that are not messages are skipped in the tree. After a
+	// compaction the context is the summary and the entries from
+	// firstKeptEntryId on, sent again; the original branch stays.
 	pi := "pi:01a039ec-0000-7000-8000-000000000005"
 	if got := leaf(pi); !reflect.DeepEqual(got, []string{
+		"user compaction:## Goal\nMake the tofu approval test pass.",
+		"assistant thinking:Run the script. | tool_call:{\"command\":\"bash gitops/espresso/tests/tofu-approval.sh\"}",
+		"tool tool_result:FAIL: unapproved plan",
+		"assistant* text:Approved the plan; the test passes."}) {
+		t.Fatalf("pi after compaction %q", got)
+	}
+	var piOriginal Hash
+	for _, m := range bySession[pi] {
+		if m.Line == "5" {
+			piOriginal = m.ID
+		}
+	}
+	if got := texts(Path(n.Messages, piOriginal)); !reflect.DeepEqual(got, []string{
 		"user text:Run the tofu approval test.",
 		"assistant* thinking:Run the script. | tool_call:{\"command\":\"bash gitops/espresso/tests/tofu-approval.sh\"}",
-		"tool tool_result:FAIL: unapproved plan",
-		"user compaction:## Goal\nMake the tofu approval test pass.",
-		"assistant* text:Approved the plan; the test passes."}) {
-		t.Fatalf("pi %q", got)
+		"tool tool_result:FAIL: unapproved plan"}) {
+		t.Fatalf("pi before compaction %q", got)
 	}
 	for _, m := range bySession[pi] {
 		if m.Role == "tool" && !m.Blocks[0].IsError {
@@ -425,22 +438,70 @@ func TestTranscriptConversations(t *testing.T) {
 	}
 }
 
-func TestProxiedSessionsKeepTranscriptsAsEvents(t *testing.T) {
-	proxied := func(s string) bool { return s == "claude:11111111-1111-4111-8111-111111111111" }
-	n, _ := transcriptBatch(t, proxied)
+// The proxy owns a session from its first proxied call on. The transcript
+// keeps what came before as messages and calls, and its later lines as
+// events, so earlier history is kept and nothing is counted twice.
+func TestTranscriptsOwnHistoryBeforeTheProxy(t *testing.T) {
+	session := "claude:11111111-1111-4111-8111-111111111111"
+	since := func(s string) string {
+		if s == session {
+			return "2026-11-10 09:00:00.000"
+		}
+		return ""
+	}
+	n, _ := transcriptBatch(t, since)
+	var lines []string
 	for _, m := range n.Messages {
-		if proxied(m.SessionID) {
-			t.Fatalf("proxied session produced message %+v", m)
+		if m.SessionID == session {
+			lines = append(lines, m.Line)
 		}
 	}
-	events := 0
+	if !reflect.DeepEqual(lines, []string{"1"}) {
+		t.Fatalf("transcript messages %v, want the line before the proxy", lines)
+	}
+	var events []string
 	for _, e := range n.Events {
-		if proxied(e.SessionID) {
-			events++
+		if e.SessionID == session {
+			events = append(events, e.Line)
 		}
 	}
-	if events != 1 {
-		t.Fatalf("%d events for the proxied session", events)
+	if !reflect.DeepEqual(events, []string{"2"}) {
+		t.Fatalf("transcript events %v, want the line after the proxy", events)
+	}
+	for _, c := range n.Calls {
+		if c.SessionID == session {
+			t.Fatalf("transcript call %+v after the proxy took over", c)
+		}
+	}
+	// Other sessions are untouched.
+	all, _ := transcriptBatch(t, nil)
+	if len(all.Messages) != len(n.Messages)+1 {
+		t.Fatalf("%d messages with the boundary, %d without", len(n.Messages), len(all.Messages))
+	}
+}
+
+// Claude Code writes an entry again when it resumes a session. The node
+// keeps the first line, and the repeat stays referenced as an event.
+func TestRepeatedTranscriptEntriesKeepEveryLine(t *testing.T) {
+	n, _ := transcriptBatch(t, nil)
+	items := itemsOf(&n.Batch)
+	session := "claude:22222222-2222-4222-8222-222222222222"
+	var first, repeat int
+	for _, m := range n.Messages {
+		if m.SessionID == session && strings.Contains(items[m.Item], `"uuid":"x2"`) {
+			first++
+		}
+	}
+	for _, e := range n.Events {
+		if e.SessionID == session && e.Type == "repeat" && strings.Contains(items[e.Item], `"slug":"debug-ingress"`) {
+			repeat++
+		}
+	}
+	if first != 1 || repeat != 1 {
+		t.Fatalf("%d messages and %d repeat events for the repeated entry", first, repeat)
+	}
+	if c := callByID(t, &n.Batch, "req_011"); len(c.OutputIDs) != 2 {
+		t.Fatalf("repeated output counted again: %+v", c.OutputIDs)
 	}
 }
 
@@ -573,7 +634,7 @@ func jsonContains(raw []byte, s string) bool {
 func TestExports(t *testing.T) {
 	n, _ := proxyBatch(t)
 	path := Path(n.Messages, callByID(t, &n.Batch, "claude-2").OutputIDs[0])
-	chat, _ := json.Marshal(OpenAIChat(path))
+	chat, _ := json.Marshal(OpenAIChat(Context{}, path)["messages"])
 	want := `[{"content":"The nightly backup job fails; find out why.","role":"user"},` +
 		`{"content":"Checking the job logs.","reasoning_content":"I should look at the CronJob logs first.","role":"assistant",` +
 		`"tool_calls":[{"function":{"arguments":"{\"command\":\"kubectl logs job/backup\"}","name":"Bash"},"id":"toolu_01","type":"function"}]},` +
@@ -585,10 +646,11 @@ func TestExports(t *testing.T) {
 	}
 
 	codex := Path(n.Messages, callByID(t, &n.Batch, "codex-2").OutputIDs[0])
-	system, messages := AnthropicMessages(codex)
-	if system != "<permissions instructions>Sandbox: workspace-write.</permissions instructions>" {
-		t.Fatalf("system %q", system)
+	request := AnthropicMessages(Context{}, codex)
+	if request["system"] != "<permissions instructions>Sandbox: workspace-write.</permissions instructions>" {
+		t.Fatalf("system %q", request["system"])
 	}
+	messages := request["messages"].([]map[string]any)
 	roles := []string{}
 	for _, m := range messages {
 		roles = append(roles, m["role"].(string))
@@ -600,6 +662,90 @@ func TestExports(t *testing.T) {
 	got, _ := json.Marshal(messages[2])
 	if string(got) != `{"content":[{"content":"Script running with cell ID g2:102\nWall time 1.0 seconds\nOutput:\ngitops/espresso/apps/clickhouse/configmap.yaml: gpt-6-luna","is_error":false,"tool_use_id":"call_1","type":"tool_result"}],"role":"user"}` {
 		t.Fatalf("anthropic tool result %s", got)
+	}
+}
+
+// OpenCode keeps reasoning, a tool call, its result, and the answer in one
+// assistant message; the export keeps them in that order.
+func TestExportsKeepBlockOrder(t *testing.T) {
+	n, _ := transcriptBatch(t, nil)
+	var path []Message
+	for _, m := range n.Messages {
+		if m.SessionID == "opencode:ses_e43a828d7ffeFixtureNewBBBB" {
+			path = append(path, m)
+		}
+	}
+	chat, _ := json.Marshal(OpenAIChat(Context{}, path)["messages"])
+	want := `[{"content":"What does the worker return?","role":"user"},` +
+		`{"content":"","reasoning_content":"Look up the worker.","role":"assistant","tool_calls":[{"function":{"arguments":"{\"code\":\"return 1\"}","name":"execute"},"id":"tool_HD0","type":"function"}]},` +
+		`{"content":"1","role":"tool","tool_call_id":"tool_HD0"},` +
+		`{"content":"The worker returns 1.","role":"assistant"}]`
+	if string(chat) != want {
+		t.Fatalf("openai chat\n%s\nwant\n%s", chat, want)
+	}
+	anthropic, _ := json.Marshal(AnthropicMessages(Context{}, path)["messages"])
+	want = `[{"content":[{"text":"What does the worker return?","type":"text"}],"role":"user"},` +
+		`{"content":[{"thinking":"Look up the worker.","type":"thinking"},{"id":"tool_HD0","input":{"code":"return 1"},"name":"execute","type":"tool_use"}],"role":"assistant"},` +
+		`{"content":[{"content":"1","is_error":false,"tool_use_id":"tool_HD0","type":"tool_result"}],"role":"user"},` +
+		`{"content":[{"text":"The worker returns 1.","type":"text"}],"role":"assistant"}]`
+	if string(anthropic) != want {
+		t.Fatalf("anthropic\n%s\nwant\n%s", anthropic, want)
+	}
+}
+
+// A call's export carries what the call sent beside its messages: the
+// system prompt or instructions, and the tools, from its request parts.
+func TestExportsCarryCallContext(t *testing.T) {
+	n, _ := proxyBatch(t)
+	items := itemsOf(&n.Batch)
+	for _, tc := range []struct {
+		call, system string
+		tools        []string
+	}{
+		{"claude-2", "You are Claude Code, Anthropic's official CLI for Claude.", []string{"Bash", "Read"}},
+		// Freeform custom tools have no schema and are kept as they are.
+		{"codex-1", "You are Codex", []string{"raw:exec", "update_plan"}},
+	} {
+		c := callByID(t, &n.Batch, tc.call)
+		var ctx Context
+		env := parse([]byte(c.RequestEnvelope))
+		for _, field := range []string{"system", "instructions", "tools"} {
+			if raw, ok := env[field]; ok {
+				ctx.Add(field, raw)
+			}
+		}
+		for _, p := range c.RequestParts {
+			ctx.Add(p.Field, []byte(items[p.Hash]))
+		}
+		path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
+		chat := OpenAIChat(ctx, path)
+		first := chat["messages"].([]map[string]any)[0]
+		if first["role"] != "system" || !strings.HasPrefix(first["content"].(string), tc.system) {
+			t.Fatalf("%s: first message %v", tc.call, first)
+		}
+		var names []string
+		for _, tool := range chat["tools"].([]any) {
+			if fn, ok := tool.(map[string]any)["function"].(map[string]any); ok && fn["parameters"] != nil {
+				names = append(names, fn["name"].(string))
+			} else {
+				names = append(names, "raw:"+tool.(map[string]any)["name"].(string))
+			}
+		}
+		if !reflect.DeepEqual(names, tc.tools) {
+			t.Fatalf("%s: openai tools %v", tc.call, names)
+		}
+		anthropic := AnthropicMessages(ctx, path)
+		names = nil
+		for _, tool := range anthropic["tools"].([]any) {
+			if tool := tool.(map[string]any); tool["input_schema"] != nil {
+				names = append(names, tool["name"].(string))
+			} else {
+				names = append(names, "raw:"+tool["name"].(string))
+			}
+		}
+		if !strings.HasPrefix(anthropic["system"].(string), tc.system) || !reflect.DeepEqual(names, tc.tools) {
+			t.Fatalf("%s: anthropic context %v %v", tc.call, anthropic["system"], names)
+		}
 	}
 }
 
