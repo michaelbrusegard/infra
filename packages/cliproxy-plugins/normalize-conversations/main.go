@@ -206,7 +206,7 @@ func normalizeTranscripts(path string, n *conversations.Normalizer, proxied *con
 	if conflicts := replies.Conflicts(); len(conflicts) > 0 {
 		log.Printf("%d Codex item keys name more than one response ID:\n%s", len(conflicts), strings.Join(conflicts, "\n"))
 	}
-	return nil
+	return n.CoverageError()
 }
 
 // writeCoverage writes the source, kind, disposition, and number of lines

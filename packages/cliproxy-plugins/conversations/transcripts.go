@@ -3,6 +3,7 @@ package conversations
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"path"
 	"sort"
 	"strconv"
@@ -51,6 +52,10 @@ type file struct {
 	shapes   map[string]json.RawMessage
 	requests map[string]string
 	refs     map[string]string
+	// The tool definitions Codex's additional_tools items add to the
+	// context from where they appear, and those each call was sent with.
+	tools     []json.RawMessage
+	callTools map[string][]json.RawMessage
 }
 
 // Proxied is what the proxy captured, for handing sessions over from
@@ -474,7 +479,8 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 func newFile(n *Normalizer, lines []TranscriptLine, proxied *Proxied) *file {
 	f := &file{n: n, key: fileKey(lines[0]), parents: map[string]string{}, nodes: map[string]Hash{},
 		calls: map[string]*Call{}, kept: map[string]Message{}, items: map[string]string{}, counts: map[string]string{},
-		shapes: map[string]json.RawMessage{}, requests: map[string]string{}, refs: map[string]string{}}
+		shapes: map[string]json.RawMessage{}, requests: map[string]string{}, refs: map[string]string{},
+		callTools: map[string][]json.RawMessage{}}
 	f.session = transcriptSession(lines)
 	if proxied != nil {
 		f.session.SessionID = proxied.sessionOf(f.session, lines)
@@ -638,9 +644,36 @@ var folded = map[string]string{
 	"claude-code/ai-title": "session", "claude-code/api-request": "call",
 	"claude-code/api-request-shape": "call", "claude-code/system:compact_boundary": "structure",
 	"codex/session_meta": "session", "codex/turn_context": "call", "codex/token_usage_record": "call",
-	"codex/event_msg:token_count": "call", "codex/compacted": "structure",
+	"codex/event_msg:token_count": "call", "codex/compacted": "structure", "codex/response_item:additional_tools": "call",
 	"pi/session": "session", "pi/session_info": "session",
 	"opencode/part": "structure", "opencode/session": "session",
+}
+
+// droppedKinds are the kinds whose lines the import drops, as listed in
+// docs/llm-conversations.md: client state, progress, and copies of what
+// other lines hold. A kind in none of folded, eventKinds, and droppedKinds
+// is unknown, and fails the import rather than being dropped unseen.
+var droppedKinds = map[string]bool{}
+
+func init() {
+	for source, kinds := range map[string][]string{
+		"claude-code": {"api-request-blob", "attachment:deferred_tools_record", "last-prompt", "atis-latch",
+			"queue-operation", "mode", "pr-link", "attachment:prompt_snapshot", "cost-state",
+			"attachment:command_permissions", "result", "started", "attachment:thinking_drop",
+			"attachment:structured_output", "attachment:session_context", "fork-context-ref", "system:informational",
+			"launched", "permission-mode", "file-history-snapshot", "system:local_command", "attachment:credential_org",
+			"system:turn_duration"},
+		"codex": {"event_msg:item_completed", "event_msg:agent_message", "event_msg:mcp_tool_call_end",
+			"event_msg:patch_apply_end", "event_msg:task_started", "event_msg:thread_settings_applied",
+			"event_msg:task_complete", "event_msg:user_message", "event_msg:sub_agent_activity", "world_state",
+			"event_msg:web_search_end", "inter_agent_communication_metadata", "event_msg:context_compacted"},
+		"opencode": {"message:idle"},
+		"pi":       {"thinking_level_change", "model_change", "context_edit"},
+	} {
+		for _, kind := range kinds {
+			droppedKinds[source+"/"+kind] = true
+		}
+	}
 }
 
 // eventKinds names the kinds kept as events: how a session went, which no
@@ -677,6 +710,31 @@ func kindOf(source string, e obj) string {
 	return e.str("type")
 }
 
+// unknown records a kind of line or block the import does not know, which
+// CoverageError reports: it would otherwise be dropped or kept as an
+// empty other block without anyone deciding so.
+func (n *Normalizer) unknown(what string) {
+	if n.unknowns == nil {
+		n.unknowns = map[string]int{}
+	}
+	n.unknowns[what]++
+}
+
+// CoverageError reports what the transcript import could not account for:
+// kinds of line or block it does not know. The import must not be inserted
+// with any, since llm.transcripts is dropped after it.
+func (n *Normalizer) CoverageError() error {
+	if len(n.unknowns) == 0 {
+		return nil
+	}
+	var list []string
+	for what, lines := range n.unknowns {
+		list = append(list, fmt.Sprintf("%s (%d)", what, lines))
+	}
+	sort.Strings(list)
+	return fmt.Errorf("the transcript import does not know %s", strings.Join(list, ", "))
+}
+
 func (f *file) cover(l TranscriptLine, e obj, disposition string) {
 	if f.n.Coverage == nil {
 		f.n.Coverage = map[Covered]int{}
@@ -698,6 +756,8 @@ func (f *file) other(l TranscriptLine, e obj) {
 	switch {
 	case !f.owned(l) && disposition != "session":
 		disposition = "proxied"
+	case disposition == "dropped" && !droppedKinds[key]:
+		f.n.unknown("kind " + key)
 	case event:
 		f.n.Events = append(f.n.Events, Event{SessionID: f.session.SessionID, TS: f.stamp(l), Host: l.Host,
 			Path: l.Path, Line: l.ID, Type: kind, Detail: eventDetail(kind, e)})
@@ -722,11 +782,15 @@ func eventDetail(kind string, e obj) string {
 	return ""
 }
 
-// context stores the system prompt and tools of a Claude Code call that its
-// request log records, as the archive splits request bodies: each array
-// element is an item.
+// context stores the system prompt and tools of a call that its transcript
+// records, as the archive splits request bodies: each array element is an
+// item. Claude Code's request logs record both, and Codex's
+// additional_tools items the tools.
 func (f *file) context(callID string) []requestitems.Part {
 	parts := []requestitems.Part{}
+	for i, tool := range f.callTools[callID] {
+		parts = append(parts, requestitems.Part{Field: "tools", Position: int32(i), Hash: f.n.item(tool)})
+	}
 	shape := parse(f.shapes[f.requests[f.refs[callID]]])
 	for _, field := range []string{"system", "tools"} {
 		raw := bytes.TrimSpace(shape[field])
@@ -777,6 +841,9 @@ func (f *file) call(callID, format, model string, input Hash, ts string) *Call {
 		StartedAt: ts, CompletedAt: ts, OutputIDs: []Hash{}}
 	f.calls[callID] = c
 	f.order = append(f.order, callID)
+	if len(f.tools) > 0 {
+		f.callTools[callID] = f.tools[:len(f.tools):len(f.tools)]
+	}
 	return c
 }
 
@@ -785,6 +852,11 @@ func (f *file) call(callID, format, model string, input Hash, ts string) *Call {
 // shares a session with, such as a copy on another host, keeps its own
 // nodes, and no file's rows depend on another's.
 func (f *file) node(parent Hash, key string, ts string, m Message) (Hash, bool) {
+	for _, b := range m.Blocks {
+		if b.Type == "other" {
+			f.n.unknown(f.session.Client + " " + m.Format + " block " + b.SourceType)
+		}
+	}
 	m.Host, m.Path = f.session.Host, f.session.Path
 	return f.n.node(f.session.SessionID, parent, f.key+"\x00"+key, ts, m, false)
 }
@@ -895,7 +967,12 @@ func (f *file) codex(lines []TranscriptLine) {
 			// root, built from the items inside this line.
 			f.other(l, e)
 			parent := Hash{}
+			f.tools = nil
 			for i, raw := range p.arr("replacement_history") {
+				if tools, ok := additionalTools(raw); ok {
+					f.tools = append(f.tools, tools...)
+					continue
+				}
 				role, blocks := responsesItem(raw)
 				index := strconv.Itoa(i)
 				parent, _ = f.node(parent, l.ID+"#"+index, f.stamp(l), Message{Role: roleOf(role, blocks),
@@ -903,6 +980,11 @@ func (f *file) codex(lines []TranscriptLine) {
 			}
 			f.last, lastWasOutput = parent, false
 			continue
+		case t == "response_item" && p.str("type") == "additional_tools":
+			// Tool definitions sent with every call from here on: per-call
+			// context, as in a request, rather than a message.
+			tools, _ := additionalTools(e["payload"])
+			f.tools = append(f.tools, tools...)
 		case t == "response_item":
 			role, blocks := responsesItem(e["payload"])
 			m := Message{Role: role, Blocks: blocks, Format: "codex"}
@@ -944,6 +1026,16 @@ func (f *file) codex(lines []TranscriptLine) {
 		}
 		f.other(l, e)
 	}
+}
+
+// additionalTools reads the tool definitions of a Codex additional_tools
+// item, which may hold namespaces of tools.
+func additionalTools(raw json.RawMessage) ([]json.RawMessage, bool) {
+	it := parse(raw)
+	if it.str("type") != "additional_tools" {
+		return nil, false
+	}
+	return it.arr("tools"), true
 }
 
 func codexUsage(u obj) usage {

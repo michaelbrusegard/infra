@@ -58,6 +58,9 @@ type Normalizer struct {
 	sessions map[string]struct{}
 	// The items read this run, by hash.
 	read map[Hash]string
+	// Kinds of transcript line or block the import does not know; see
+	// CoverageError.
+	unknowns map[string]int
 }
 
 // node is what the normalizer knows of a written message.

@@ -343,7 +343,12 @@ into CLIProxy's scheme: `claude:<session>`, `claude:<parent>:agent:<agent>`,
   live). The model
   comes from `turn_context`. A `compacted` line's `replacement_history`
   items become a new root chain, each with the line and its index as
-  `part`.
+  `part`. `agent_message` items, the messages a sub-agent and its parent
+  send each other, are input messages with their header text (sender, task
+  and message type; the payload is encrypted). `additional_tools` items are
+  tool definitions Codex sends with every later call, so each call after
+  one takes its tools as context, as Claude Code calls take their request
+  logs; a compaction's replacement history replaces them with its own.
 - **pi**: `message` entries are messages, and a `branch_summary` is a user
   message with a `compaction` block, in place. A `compaction` rebuilds what
   Pi sends from then on: the summary, then the entries from
@@ -544,7 +549,14 @@ Codex base instructions in `session_meta` and the turn settings in
 `turn_context` other than the model, the request parameters of Claude Code's
 request logs (betas, effort, `max_tokens`), the usage details no column
 holds, and the exact JSON of each line, including the order and spelling of
-its keys.
+its keys. It also drops the encrypted payloads of Codex agent messages
+and OpenCode's step markers and patch records (snapshot hashes and the
+files an edit touched; the tool parts hold the edits).
+
+A kind of line that is in none of these lists, or a block of a type the
+extractor does not know, fails the import instead of being dropped or kept
+as a type alone: the normalizer reports each with its count and writes
+nothing to insert.
 
 The kinds it drops, with their live counts on 2026-11-14 (all 2.2M lines,
 before the proxy took any session over). These losses are approved:
@@ -597,6 +609,32 @@ Codex's copies of response items). By kind, the other lines are 1,248,579
 messages (6.3 GiB), 510,140 folded into calls, sessions and the tree, and
 3,170 events. Each kind of Claude Code attachment is a message when its line
 carries rendered content, as all lines of the kinds not listed do.
+
+### Extraction audit
+
+Every record kind and every block type in the live import, on 2026-11-14,
+and what the extractor makes of it. Types marked new were kept as a type
+alone before this audit.
+
+| Source | Type | Live | Extracted as |
+| --- | --- | ---: | --- |
+| codex | `response_item:reasoning` | 175,698 | thinking (summary and content text; encrypted content dropped) |
+| codex | `response_item:custom_tool_call`, `function_call` | 142,056, 57,562 | tool call |
+| codex | `response_item:custom_tool_call_output`, `function_call_output` | 142,126, 57,540 | tool result (`input_text`, string, `input_image`) |
+| codex | `response_item:message` | 81,628 | message (`output_text`, `input_text`, `input_image`) |
+| codex | `response_item:agent_message` (new) | 1,793 | input message with its header text; `encrypted_content` dropped |
+| codex | `response_item:additional_tools` (new) | 927 | tools context of every later call |
+| codex | `response_item:web_search_call`, `tool_search_call` | 361, 83 | hosted tool call |
+| codex | `response_item:tool_search_output` | 83 | tool result (its `tools`) |
+| codex | `compacted` history items | 52,487 | `message` and `compaction` nodes; `agent_message` (125) and `additional_tools` (88) as above |
+| claude-code | `assistant` blocks | 153,252 lines | `tool_use`, `thinking`, `text` |
+| claude-code | `user` blocks | 87,981 lines | `tool_result`, string, `text`, `image`; inside results `text`, `image` and `tool_reference` (new, 1,322: the tool's name) |
+| claude-code | `attachment:*` with `rendered` | 30 kinds | message of the rendered text |
+| pi | `message` blocks | 306,680 lines | `text`, `toolCall`, `thinking`, `image`, string |
+| opencode | parts, inline and as records | 50,546 | `text`, `reasoning`, `tool`, `file`, `compaction`; `step-start`, `step-finish` and `patch` carry no content |
+
+Every other record kind is a message, folded into a call, session or the
+tree, an event, or a dropped kind in the table above.
 
 Claude Code has logged its requests since 2026-10-26: an `api-request` per
 call, naming a deduplicated `api-request-shape` with the system prompt and

@@ -44,6 +44,9 @@ func anthropicContent(content json.RawMessage) []Block {
 				result.Text = strings.Join(texts, "\n")
 			}
 			out = append(append(out, result), media...)
+		case t == "tool_reference":
+			// A tool that a tool search loaded, in its result.
+			out = append(out, Block{Type: "text", SourceType: t, Text: b.str("tool_name")})
 		case t == "image" || t == "document":
 			kind := map[string]string{"image": "image", "document": "file"}[t]
 			out = append(out, Block{Type: kind, SourceType: t, Media: b.obj("source").str("media_type")})
@@ -66,6 +69,11 @@ func responsesItem(raw []byte) (string, []Block) {
 	switch t {
 	case "message":
 		return role, responsesContent(it["content"], "")
+	case "agent_message":
+		// A message between Codex agents, which its recipient is sent as
+		// input. The header names the sender and the task; the payload is
+		// encrypted.
+		return "user", responsesContent(it["content"], "")
 	case "reasoning":
 		var texts []string
 		for _, key := range []string{"summary", "content"} {
@@ -141,6 +149,8 @@ func responsesContent(content json.RawMessage, callID string) []Block {
 		case "input_file":
 			out = append(out, Block{Type: "file", SourceType: t, ToolCallID: callID,
 				Text: p.str("filename"), Media: mediaOf(p.str("file_data"))})
+		case "encrypted_content":
+			// Encrypted, like reasoning; not extracted.
 		default:
 			out = append(out, Block{Type: "other", SourceType: t, ToolCallID: callID})
 		}
@@ -273,9 +283,12 @@ func opencodeParts(parts []json.RawMessage) []Block {
 			}
 		case "compaction":
 			out = append(out, Block{Type: "compaction", SourceType: t})
+		case "step-start", "step-finish", "patch", "snapshot", "agent":
+			// Step markers, and the snapshot hashes and file lists of the
+			// edits the tool parts hold.
+		default:
+			out = append(out, Block{Type: "other", SourceType: t})
 		}
-		// step-start, step-finish, patch, snapshot, and agent parts carry no
-		// content; their records stay as events.
 	}
 	return out
 }

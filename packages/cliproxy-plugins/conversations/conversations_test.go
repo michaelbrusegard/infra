@@ -367,6 +367,9 @@ func TestTranscriptLinesAreCovered(t *testing.T) {
 	for _, f := range files {
 		n.Transcript(f, replies, nil)
 	}
+	if err := n.CoverageError(); err != nil {
+		t.Fatal(err)
+	}
 	lines := linesOf(files)
 	named := map[lineRef]int{}
 	ids := map[Hash]bool{}
