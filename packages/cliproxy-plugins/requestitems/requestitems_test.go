@@ -171,3 +171,18 @@ func TestSplitKeepsBodiesWithOversizedPartsWhole(t *testing.T) {
 		t.Fatalf("split into %d parts", len(split.Parts))
 	}
 }
+
+func TestHashRoundTripsThroughJSON(t *testing.T) {
+	h := HashOf([]byte("item"))
+	data, err := json.Marshal(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var back Hash
+	if err := json.Unmarshal(data, &back); err != nil || back != h {
+		t.Fatalf("%s decoded to %v, %v", data, back, err)
+	}
+	if json.Unmarshal([]byte(`"340282366920938463463374607431768211456"`), &back) == nil {
+		t.Fatal("accepted a value beyond UInt128")
+	}
+}

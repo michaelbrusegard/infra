@@ -13,8 +13,10 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 )
 
 // Values at least this long leave the envelope even when they are not arrays,
@@ -51,6 +53,20 @@ func (h Hash) String() string {
 
 func (h Hash) MarshalJSON() ([]byte, error) {
 	return strconv.AppendQuote(nil, h.String()), nil
+}
+
+// UnmarshalJSON reads the decimal UInt128 ClickHouse writes, quoted or not.
+func (h *Hash) UnmarshalJSON(data []byte) error {
+	n, ok := new(big.Int).SetString(strings.Trim(string(data), `"`), 10)
+	if !ok || n.Sign() < 0 || n.BitLen() > 128 {
+		return fmt.Errorf("invalid UInt128 %s", data)
+	}
+	var be [16]byte
+	n.FillBytes(be[:])
+	for i, b := range be {
+		h[15-i] = b
+	}
+	return nil
 }
 
 // Part references one item. Position is the index within a top-level array,
