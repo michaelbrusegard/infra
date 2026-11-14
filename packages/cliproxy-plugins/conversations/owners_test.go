@@ -150,3 +150,33 @@ func TestTranscriptReplyOwnerCanWriteTheCall(t *testing.T) {
 		t.Fatalf("calls %v, want %v", calls, want)
 	}
 }
+
+// A sub-agent copies the replies it starts from, so its parent's file holds
+// their calls even when the copy's time ties with the parent's, or a
+// skewed clock puts it first, and the copy's path sorts first.
+func TestTranscriptReplyOwnerPrefersTheParent(t *testing.T) {
+	parent := "codex:019f6478-0000-7000-8000-00000000000a"
+	for _, childStart := range []string{"2026-11-12 10:00", "2026-11-12 09:59"} {
+		files := forkedFiles()[:2]
+		history := len(files[0])
+		for i := range files[1] {
+			files[1][i].TS = fmt.Sprintf("%s:%02d.000", childStart, i)
+		}
+		if childStart == "2026-11-12 10:00" && files[1][history-1].TS != files[0][history-1].TS {
+			t.Fatal("the copy does not tie")
+		}
+		replies := repliesOf(nil, files...)
+		n := NewNormalizer()
+		for _, f := range files {
+			n.Transcript(f, replies, nil)
+		}
+		var calls []string
+		for _, c := range n.Calls {
+			calls = append(calls, c.SessionID+" "+c.ResponseID)
+		}
+		sort.Strings(calls)
+		if want := []string{parent + " resp_parent", parent + ":agent:review resp_child"}; !reflect.DeepEqual(calls, want) {
+			t.Fatalf("child from %s: calls %v, want %v", childStart, calls, want)
+		}
+	}
+}

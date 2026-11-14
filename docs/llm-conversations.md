@@ -316,12 +316,20 @@ one). Otherwise, or without a shared reply, the transcript keeps its own
 session ID.
 
 **Each reply is one call.** A transcript reply that the proxy returned, in
-any session, is the proxy's call. Otherwise the file whose line recording
-the reply is earliest holds the call, and ties go to the first by host,
-path and session. A forked file copies its parent's replies after the parent
-wrote them, so the parent keeps them, whatever the paths: path order is not
-ancestry order in live Codex files. Sibling forks holding a reply none of
-them wrote, or one file synced to two hosts, tie and fall to the first.
+any session, is the proxy's call. Otherwise one file holds it. A sub-agent
+or fork copies the replies it starts from, so where the files record that
+ancestry, by their parent session, an ancestor's file holds the call over
+its descendants', even when a skewed clock or timestamps of equal precision
+put the copy first, and whatever the paths: path order is not ancestry
+order in live Codex files. Between files of different lineages, the
+lineage that recorded the reply earliest holds it, and within a lineage
+level, the file with the earliest line, then the first by host, path and
+session. Sibling forks holding a reply none of them wrote, or one file
+synced to two hosts, tie and fall to the first. Where ancestry is not
+recorded, such as a Claude Code session forked into a new session ID, or a
+Codex agent spawned by another sub-agent, whose parent thread ID is not
+that sub-agent's session ID, the earliest file is a surrogate owner: the
+call counts once, but possibly in the copy's session.
 Only lines from before the proxy took a file's session over count, because
 the file writes no call after that: a reply the proxy never returned, seen
 after the parent's handover and in a child's earlier copy, is the child's

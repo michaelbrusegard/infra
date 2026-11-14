@@ -95,19 +95,29 @@ func (p *Proxied) sessionOf(s Session, lines []TranscriptLine) string {
 }
 
 // Replies records which transcript file holds the call of each reply that
-// files record: the file whose line recording it is earliest, then the first
-// by host, path, and session. A forked sub-agent's file copies its parent's
-// replies after the parent wrote them, so the parent keeps them, and copies
-// that tie, such as one file synced to two hosts, fall to the first. Only
-// lines from before the proxy took a file's session over count, since a
-// file writes no call after that, so a reply the proxy never returned stays
-// with a file that can write it. Every file is added before any is
+// files record. Within a lineage of sessions, recorded by each file's
+// parent session, an ancestor's file holds it over its sub-agents' and
+// forks', since they copy the replies they start from, even when clocks or
+// timestamps of equal precision say otherwise. Otherwise the file whose
+// line recording it is earliest holds it, then the first by host, path,
+// and session. Copies that tie, such as sibling forks holding a reply
+// neither wrote, or one file synced to two hosts, fall to the first.
+//
+// Only lines from before the proxy took a file's session over count, since
+// a file writes no call after that, so a reply the proxy never returned
+// stays with a file that can write it. Every file is added before any is
 // normalized, so which file holds a call depends on all of them, never on
 // which run together or in what order.
 type Replies struct {
-	// Response IDs to their earliest sighting: the time, then the file.
-	first map[string]string
+	// Response IDs to the lines recording them.
+	seen map[string][]sighting
+	// Sessions to their parent session, as files record them.
+	parents map[string]string
+	// Response IDs to the file holding the call, once every file is added.
+	owners map[string]string
 }
+
+type sighting struct{ ts, file, session string }
 
 // Add records the replies of one file, with the proxied calls that
 // Transcript is given.
@@ -115,30 +125,103 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 	if len(lines) == 0 {
 		return
 	}
-	if r.first == nil {
-		r.first = map[string]string{}
+	if r.seen == nil {
+		r.seen, r.parents = map[string][]sighting{}, map[string]string{}
 	}
+	r.owners = nil
 	f := newFile(nil, lines, proxied)
+	// Copies of a session agree on its parent; the smaller one keeps the
+	// result independent of order if they do not.
+	if p, ok := r.parents[f.session.SessionID]; !ok || f.session.ParentSessionID < p {
+		r.parents[f.session.SessionID] = f.session.ParentSessionID
+	}
 	for _, l := range lines {
 		owned := f.owned(l)
-		if id := replyID(l); id != "" && owned {
-			s := f.stamp(l) + "\x00" + f.key
-			if first, ok := r.first[id]; !ok || s < first {
-				r.first[id] = s
-			}
+		id := replyID(l)
+		if id == "" || !owned {
+			continue
 		}
+		// Claude Code writes a line per streamed block of a reply; the
+		// file's earliest counts.
+		s := sighting{f.stamp(l), f.key, f.session.SessionID}
+		if seen := r.seen[id]; len(seen) > 0 && seen[len(seen)-1].file == f.key {
+			seen[len(seen)-1].ts = min(seen[len(seen)-1].ts, s.ts)
+			continue
+		}
+		r.seen[id] = append(r.seen[id], s)
 	}
 }
 
-// owns reports whether a file, by its fileKey, holds the call of a reply. Calls
-// without a response ID cannot be copied elsewhere, and nil Replies know no
-// other files.
-func (r *Replies) owns(file, responseID string) bool {
-	first, ok := "", false
-	if r != nil {
-		first, ok = r.first[responseID]
+// elect decides the owner of every reply, as Replies describes. Each
+// sighting ranks by its lineage's earliest sighting and root, then its
+// depth in the lineage, its time, and its file: a total order, so the
+// owner never depends on the order files were added in.
+func (r *Replies) elect() {
+	r.owners = map[string]string{}
+	type rank struct {
+		first, root string
+		depth       int
+		ts, file    string
 	}
-	_, owner, _ := strings.Cut(first, "\x00")
+	less := func(a, b rank) bool {
+		switch {
+		case a.first != b.first:
+			return a.first < b.first
+		case a.root != b.root:
+			return a.root < b.root
+		case a.depth != b.depth:
+			return a.depth < b.depth
+		case a.ts != b.ts:
+			return a.ts < b.ts
+		}
+		return a.file < b.file
+	}
+	for id, seen := range r.seen {
+		ranks := make([]rank, len(seen))
+		first := map[string]string{}
+		for i, s := range seen {
+			root, depth := r.lineage(s.session)
+			ranks[i] = rank{root: root, depth: depth, ts: s.ts, file: s.file}
+			if t, ok := first[root]; !ok || s.ts < t {
+				first[root] = s.ts
+			}
+		}
+		best := rank{}
+		for i, k := range ranks {
+			k.first = first[k.root]
+			if i == 0 || less(k, best) {
+				best = k
+			}
+		}
+		r.owners[id] = best.file
+	}
+}
+
+// lineage returns the topmost known ancestor of a session, and how many
+// parent sessions lead to it.
+func (r *Replies) lineage(session string) (string, int) {
+	depth := 0
+	for ; depth < 64; depth++ {
+		parent := r.parents[session]
+		if parent == "" {
+			break
+		}
+		session = parent
+	}
+	return session, depth
+}
+
+// owns reports whether a file, by its fileKey, holds the call of a reply.
+// Calls without a response ID cannot be copied elsewhere, and nil Replies
+// know no other files.
+func (r *Replies) owns(file, responseID string) bool {
+	if r == nil || responseID == "" {
+		return true
+	}
+	if r.owners == nil {
+		r.elect()
+	}
+	owner, ok := r.owners[responseID]
 	return !ok || owner == file
 }
 
