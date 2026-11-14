@@ -14,8 +14,9 @@
 // With -export openai or -export anthropic, it instead reads one call or
 // conversation, as the call and conversation queries in the design doc
 // return them, and prints it for training. A call that is no training
-// example, because it produced nothing or its output calls tools its context
-// does not define, fails with the reason.
+// example, because it produced nothing, or its output calls tools its
+// context does not define or with arguments cut short, fails with the
+// reason.
 package main
 
 import (

@@ -655,10 +655,13 @@ A call export is checked as a training example first, and fails with the
 reason instead of printing one when the call produced nothing an export
 keeps, such as a failed call that returned nothing, or when its output calls
 a tool its context does not define, such as a failed delta call with output
-but no echo, or a transcript call, whose transcript records no tools.
-Only the call's own outputs, by `output_ids`, are checked. Earlier turns
-are context, even when they end the path: a failed delta call that sent
-nothing new ends at the output of the call it continues, and is refused.
+but no echo, or a transcript call, whose transcript records no tools. It
+also fails when a call to a JSON-schema tool has arguments that are no JSON
+object, such as `{"path":` from an interrupted stream; the canonical rows
+keep what streamed. Only the call's own outputs, by `output_ids`, are
+checked. Earlier turns are context, even when they end the path: a failed
+delta call that sent nothing new ends at the output of the call it
+continues, and is refused.
 
 ```sql
 -- example: raw

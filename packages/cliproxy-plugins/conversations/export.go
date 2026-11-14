@@ -504,6 +504,9 @@ func AnthropicMessages(ctx Context, path []Message) (map[string]any, error) {
 // with output but no echo after a request that sent no tools, or a
 // transcript call, whose tools the transcript does not record. Writing
 // those as examples would teach calls to tools the model was never given.
+// A call to a JSON-schema tool also needs a JSON object as arguments: an
+// interrupted stream keeps what streamed in the canonical rows, but
+// partial arguments would teach invalid calls.
 //
 // Only the call's own outputs, by ID, are checked. Others on the path are
 // context, even when they end it: a failed delta call that sent nothing new
@@ -541,6 +544,10 @@ func ForTraining(ctx Context, path []Message, outputs []Hash) error {
 				}
 				if !defined[name] {
 					return fmt.Errorf("the output calls %q, which the call's context does not define", name)
+				}
+				var args map[string]any
+				if !isCustomCall(b) && (json.Unmarshal([]byte(b.ToolInput), &args) != nil || args == nil) {
+					return fmt.Errorf("the arguments of call %s to %q are no JSON object, as an interrupted stream leaves them", b.ToolCallID, name)
 				}
 				kept++
 			}

@@ -1184,8 +1184,13 @@ func TestExportsLeaveOutHostedToolsTogether(t *testing.T) {
 // call's own outputs count: others on its path are context.
 func TestTrainingNeedsOutputAndItsTools(t *testing.T) {
 	var tools Context
-	tools.Add("tools", []byte(`[{"type":"function","name":"exec","parameters":{"type":"object"}},{"type":"web_search"}]`))
+	tools.Add("tools", []byte(`[{"type":"function","name":"exec","parameters":{"type":"object"}},{"type":"web_search"},
+		{"type":"custom","name":"script"}]`))
 	user := Message{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "List the pods."}}}
+	interrupted := Message{ID: Hash{7}, Role: "assistant", Output: true, Blocks: []Block{
+		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_2", ToolInput: `{"path":`}}}
+	script := Message{ID: Hash{8}, Role: "assistant", Output: true, Blocks: []Block{
+		{Type: "tool_call", SourceType: "custom_tool_call", ToolName: "script", ToolCallID: "call_3", ToolInput: `print(1)`}}}
 	call := Message{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{
 		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`}}}
 	search := Message{ID: Hash{3}, Role: "assistant", Output: true, Blocks: []Block{
@@ -1216,6 +1221,10 @@ func TestTrainingNeedsOutputAndItsTools(t *testing.T) {
 		// The call it continues ended in a tool call this call's context
 		// lacks, and this call answered without input in between.
 		{"adjacent earlier output", Context{}, []Message{user, call, answer}, []Hash{answer.ID}, true},
+		// An interrupted stream cut the arguments short. A freeform custom
+		// tool takes raw text, which is no JSON.
+		{"interrupted arguments", tools, []Message{user, interrupted}, []Hash{interrupted.ID}, false},
+		{"custom tool", tools, []Message{user, script}, []Hash{script.ID}, true},
 	} {
 		if err := ForTraining(tc.ctx, tc.path, tc.outputs); (err == nil) != tc.ok {
 			t.Fatalf("%s: %v", tc.name, err)
