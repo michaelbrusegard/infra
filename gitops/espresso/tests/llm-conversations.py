@@ -102,8 +102,14 @@ def main():
                   "SELECT source, 'ristretto', session, id, path, line FROM llm.transcripts "
                   "WHERE path LIKE '%019f6478-0000-7000-8000-000000000004.jsonl'")
 
+            def jsonl_text(text):
+                return [json.loads(line) for line in text.splitlines()]
+
             def jsonl(path):
-                return [json.loads(line) for line in path.read_text().splitlines()]
+                return jsonl_text(path.read_text())
+
+            def sql_string(value):
+                return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
 
             # The proxy's rows arrive in two batches, the way the plugin writes
             # requests as they complete. The second holds a delta request and a
@@ -181,10 +187,16 @@ def main():
                                      "FROM llm.calls AS c FINAL INNER JOIN (SELECT session_id, parent_session_id "
                                      "FROM llm.sessions FINAL WHERE origin = 'proxy') AS s ON s.session_id = c.session_id "
                                      "WHERE c.origin = 'proxy' FORMAT TSV").stdout)
-            # The import's input, downloaded in three parts and concatenated.
+            # The import's input, downloaded in parts of a few files each,
+            # largest first, and concatenated.
             def transcript_lines():
-                return "".join(query((NORMALIZER / "transcripts.sql").read_text(),
-                                     params=(("part", part), ("parts", 3))).stdout for part in range(3))
+                files = sorted(jsonl_text(query((NORMALIZER / "files.sql").read_text()).stdout),
+                               key=lambda f: -int(f["bytes"]))
+                parts = [files[i:i + 4] for i in range(0, len(files), 4)]
+                assert len(parts) > 2, parts
+                return "".join(query((NORMALIZER / "transcripts.sql").read_text(), params=(
+                    ("files", "[" + ",".join("(" + ",".join(sql_string(f[k]) for k in ("source", "host", "session"))
+                                             + ")" for f in part) + "]"),)).stdout for part in parts)
 
             transcripts = transcript_lines()
 

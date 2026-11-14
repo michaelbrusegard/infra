@@ -685,13 +685,17 @@ ssh -L 18123:127.0.0.1:18123 deploy-espresso-0 \
 
 Queries go to `http://127.0.0.1:18123/` with
 `enable_http_compression=1` and `readonly=2`, and inserts send their files
-compressed (`Content-Encoding`). A long stream through the port-forward can
-break off and leave the tunnel hung: in a trial on 2026-11-14 the whole
-transcript download stopped after 21 minutes. So every download is in parts
-that are checked (`gzip -t`) and retried alone, with the tunnel restarted
-and a stall timeout on `curl` (`--speed-limit`, `--speed-time`). In order,
-because which transcript file holds a reply's call depends on the proxy's
-calls:
+compressed (`Content-Encoding`). A long stream does not survive the link:
+in a trial on 2026-11-14 the tunnel stalled for 30 seconds or more every
+few minutes, and ClickHouse ends an HTTP response whose socket write blocks
+that long (`SOCKET_TIMEOUT`; the query settings `http_send_timeout` and
+`send_timeout` do not lengthen it). So every download is in parts that take
+a minute or two, each checked (`gzip -t`) and retried alone over a new
+tunnel, with a stall timeout on `curl` (`--speed-limit`, `--speed-time`).
+Each tunnel forwards a fresh port on the node with `ssh -tt`, so a hung
+port-forward ends with its connection instead of holding the port. In
+order, because which transcript file holds a reply's call depends on the
+proxy's calls:
 
 1. **The proxy**, from 2026-11-09, in start order, so `llm.calls` holds every
    proxied call: the job's three steps, run a day at a time (`after` and
@@ -705,11 +709,13 @@ calls:
    response bodies, 8.9 GiB uncompressed.
 2. **The transcripts**, once, in one pass: `-proxied` from the query in
    [`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql),
-   then `transcripts.sql` itself in 16 parts (`part` 0 to 15 of `parts`
-   16), each saved gzip-compressed (`Accept-Encoding: gzip`, which Go reads
-   without a dependency). The parts concatenate into one gzip file in any
-   order, which is passed as `normalize-conversations -in
-   transcripts.jsonl.gz`, which reads it twice
+   then `transcripts.sql` itself in parts: `files.sql` lists the files with
+   their sizes, and each part names about 48 MiB of them in `files`, which
+   the table's key finds without a scan (200 parts on 2026-11-14). Each part
+   is saved gzip-compressed (`Accept-Encoding: gzip`, which Go reads without
+   a dependency). The parts concatenate into one gzip file in any order,
+   which is passed as `normalize-conversations -in transcripts.jsonl.gz`,
+   which reads it twice
    without a decompressed copy. The largest dropped kinds arrive as their
    type alone. Insert the five files it writes, `llm.request_items`
    included, and keep `coverage.tsv`.
