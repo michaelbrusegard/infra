@@ -198,7 +198,7 @@ func writeRows[T any](w *bufio.Writer, rows []T) error {
 
 // exportConversation reads message rows in conversation order, and for a
 // call, rows with a field and value: the system prompt, instructions, or
-// tools the call sent.
+// tools the call sent, and its response, which may echo them.
 func exportConversation(r io.Reader, w io.Writer, format string) error {
 	var ctx conversations.Context
 	var path []conversations.Message

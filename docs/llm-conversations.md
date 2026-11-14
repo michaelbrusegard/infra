@@ -47,7 +47,8 @@ dropped later without losing anything.
   [Ongoing capture](#ongoing-capture)).
 - **Training exports take one call**: its system prompt or instructions and
   tools, which are per-call context, plus the conversation it saw and
-  produced.
+  produced. Responses API calls take them from the response's echo, since
+  Codex often sends no tools and delta requests send neither.
 
 ## What the data looks like
 
@@ -497,8 +498,8 @@ FORMAT JSONEachRow
 ```sql
 -- example: call
 -- One call as training data: the system prompt or instructions and the
--- tools it sent, which are per-call context outside the message tree, and
--- the conversation it saw and produced. Context rows have a field.
+-- tools it ran with, which are per-call context outside the message tree,
+-- and the conversation it saw and produced. Context rows have a field.
 WITH RECURSIVE
     path AS (
         SELECT id, parent_id, seq, role, output, model, blocks
@@ -525,6 +526,11 @@ WITH RECURSIVE
         FROM llm.calls FINAL
         ARRAY JOIN ['system', 'instructions', 'tools'] AS field
         WHERE call_id = {call:String} AND JSONHas(request_envelope, field)
+        UNION ALL
+        -- What a Responses API response echoed as in effect, which the
+        -- export prefers: Codex sends no tools over websockets, and a delta
+        -- request sends no instructions or tools at all.
+        SELECT 'response', 0, response_body FROM llm.calls FINAL WHERE call_id = {call:String}
     )
 SELECT * FROM (
     SELECT field, position, value, 0 AS seq, '' AS role, false AS output, '' AS model, [] AS blocks
@@ -537,9 +543,14 @@ FORMAT JSONEachRow
 
 Pipe either into `normalize-conversations -export openai` (or `anthropic`)
 for training data; use the call query for training, since a conversation
-alone lacks the system prompt and tools. The export puts the system prompt
-first and converts tool definitions between dialects, keeping hosted and
-freeform tools as they are. It keeps text, reasoning, tool calls and results
+alone lacks the system prompt and tools. The export takes the instructions
+and tools a Responses API response echoed, where it echoed them, and the
+request's otherwise. On 2026-11-14, 3,420 of 4,063 successful Responses
+calls had their tools only in the echo; responses CLIProxy translates from
+other providers echo nothing, and failed calls often have no echo and no
+output. The export puts the system prompt first, flattens the echo's tool
+namespaces, and converts tool definitions between dialects, keeping hosted
+and freeform tools as they are. It keeps text, reasoning, tool calls and results
 in the order they happened, merges consecutive assistant items into one turn
 until a tool result ends it, and puts reasoning in `reasoning_content` or
 `thinking` blocks. Images are left out; their data is in the raw items.

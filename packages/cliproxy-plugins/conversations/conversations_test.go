@@ -734,8 +734,9 @@ func TestExportsKeepBlockOrder(t *testing.T) {
 	}
 }
 
-// A call's export carries what the call sent beside its messages: the
-// system prompt or instructions, and the tools, from its request parts.
+// A call's export carries what the call ran with beside its messages: the
+// system prompt or instructions, and the tools, from its request parts or
+// what its response echoed.
 func TestExportsCarryCallContext(t *testing.T) {
 	n, _ := proxyBatch(t)
 	items := itemsOf(&n.Batch)
@@ -746,6 +747,9 @@ func TestExportsCarryCallContext(t *testing.T) {
 		{"claude-2", "You are Claude Code, Anthropic's official CLI for Claude.", []string{"Bash", "Read"}},
 		// Freeform custom tools have no schema and are kept as they are.
 		{"codex-1", "You are Codex", []string{"raw:exec", "update_plan"}},
+		// The delta request sent neither; its response echoes the tools in
+		// effect, in a namespace, and no instructions.
+		{"codex-2", "", []string{"raw:exec", "update_plan"}},
 	} {
 		c := callByID(t, &n.Batch, tc.call)
 		var ctx Context
@@ -758,14 +762,16 @@ func TestExportsCarryCallContext(t *testing.T) {
 		for _, p := range c.RequestParts {
 			ctx.Add(p.Field, []byte(items[p.Hash]))
 		}
+		ctx.Add("response", []byte(c.ResponseBody))
 		path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
 		chat := OpenAIChat(ctx, path)
 		first := chat["messages"].([]map[string]any)[0]
-		if first["role"] != "system" || !strings.HasPrefix(first["content"].(string), tc.system) {
+		if (first["role"] == "system") != (tc.system != "") || !strings.HasPrefix(first["content"].(string), tc.system) {
 			t.Fatalf("%s: first message %v", tc.call, first)
 		}
 		var names []string
-		for _, tool := range chat["tools"].([]any) {
+		tools, _ := chat["tools"].([]any)
+		for _, tool := range tools {
 			if fn, ok := tool.(map[string]any)["function"].(map[string]any); ok && fn["parameters"] != nil {
 				names = append(names, fn["name"].(string))
 			} else {
@@ -777,7 +783,8 @@ func TestExportsCarryCallContext(t *testing.T) {
 		}
 		anthropic := AnthropicMessages(ctx, path)
 		names = nil
-		for _, tool := range anthropic["tools"].([]any) {
+		tools, _ = anthropic["tools"].([]any)
+		for _, tool := range tools {
 			if tool := tool.(map[string]any); tool["input_schema"] != nil {
 				names = append(names, tool["name"].(string))
 			} else {

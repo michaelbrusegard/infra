@@ -245,11 +245,12 @@ def main():
             assert [m["role"] for m in exported["messages"]] == ["user", "assistant", "tool", "user", "assistant"], exported
             assert exported["messages"][1]["tool_calls"][0]["function"]["name"] == "Bash", exported
 
-            # A call exports with what it sent beside its messages. The delta
-            # request codex-2 sent no instructions or tools of its own.
+            # A call exports with what it ran with beside its messages. The
+            # delta request codex-2 sent no instructions or tools; its
+            # response echoes the tools in effect.
             for call, system, tools in (("claude-2", "You are Claude Code", ["Bash", "Read"]),
                                         ("codex-1", "You are Codex", ["exec", "update_plan"]),
-                                        ("codex-2", "", [])):
+                                        ("codex-2", "", ["exec", "update_plan"])):
                 rows = query(sql["call"], params=(("call", call),)).stdout
                 openai = json.loads(run(str(normalizer), "-export", "openai", input=rows).stdout)
                 anthropic = json.loads(run(str(normalizer), "-export", "anthropic", input=rows).stdout)

@@ -27,18 +27,40 @@ func Path(messages []Message, leaf Hash) []Message {
 	return path
 }
 
-// Context is what a call sent beside its messages: the system prompt or
+// Context is what a call ran with beside its messages: the system prompt or
 // instructions, and the tool definitions. It is not part of the message
-// tree, so an export of a call adds it from the call's request.
+// tree, so an export of a call adds it from the call's request and
+// response.
 type Context struct {
 	System []string
 	Tools  []map[string]any
+	// The instructions and tools a Responses API response echoed as in
+	// effect. Codex leaves tools out of its websocket requests, and a request
+	// continuing a previous response sends neither, so often only the echo
+	// has them.
+	echo *Context
 }
 
 // Add reads a system, instructions, or tools value of a request body: the
 // whole value, or one element of an array, as the request's parts and
-// envelope hold them.
+// envelope hold them. A response body, as field response, adds what the
+// response echoed.
 func (c *Context) Add(field string, raw []byte) {
+	if field == "response" {
+		for _, e := range events(string(raw)) {
+			r := parse(e).obj("response")
+			if r == nil && parse(e).str("object") == "response" {
+				r = parse(e)
+			}
+			if r != nil {
+				c.echo = &Context{}
+				c.echo.Add("instructions", r["instructions"])
+				c.echo.Add("tools", r["tools"])
+				return
+			}
+		}
+		return
+	}
 	v := value(raw)
 	values, ok := v.([]any)
 	if !ok {
@@ -65,6 +87,45 @@ func (c *Context) Add(field string, raw []byte) {
 	}
 }
 
+// effective is the context the model ran with: what the response echoed
+// where it echoed anything, and what the request sent otherwise. Namespaces,
+// which only the Responses API has, are flattened into their tools, since a
+// call names its tool without the namespace; a name defined twice keeps its
+// first definition.
+func (c Context) effective() Context {
+	out := Context{System: c.System}
+	tools := c.Tools
+	if c.echo != nil && len(c.echo.System) > 0 {
+		out.System = c.echo.System
+	}
+	if c.echo != nil && len(c.echo.Tools) > 0 {
+		tools = c.echo.Tools
+	}
+	seen := map[string]bool{}
+	var add func(t map[string]any)
+	add = func(t map[string]any) {
+		if t["type"] == "namespace" {
+			nested, _ := t["tools"].([]any)
+			for _, n := range nested {
+				if n, ok := n.(map[string]any); ok {
+					add(n)
+				}
+			}
+			return
+		}
+		name, _, _, _ := function(t)
+		if name = firstNonEmpty(name, text(t["name"])); name != "" && seen[name] {
+			return
+		}
+		seen[name] = true
+		out.Tools = append(out.Tools, t)
+	}
+	for _, t := range tools {
+		add(t)
+	}
+	return out
+}
+
 // function reads a tool definition in any dialect as a function name,
 // description, and JSON schema. Hosted tools, such as web search, have no
 // schema and are kept as they are.
@@ -88,6 +149,7 @@ func function(t map[string]any) (name, description string, schema any, ok bool) 
 // Code blocks, become one message until a tool result ends the turn. Images
 // and files are left out: their data is only in the raw items.
 func OpenAIChat(ctx Context, path []Message) map[string]any {
+	ctx = ctx.effective()
 	var out []map[string]any
 	if len(ctx.System) > 0 {
 		out = append(out, map[string]any{"role": "system", "content": strings.Join(ctx.System, "\n\n")})
@@ -166,6 +228,7 @@ func OpenAIChat(ctx Context, path []Message) map[string]any {
 // Tool results are user content, and consecutive messages of a role merge,
 // as the API requires.
 func AnthropicMessages(ctx Context, path []Message) map[string]any {
+	ctx = ctx.effective()
 	system := append([]string{}, ctx.System...)
 	var out []map[string]any
 	add := func(role string, blocks []any) {
