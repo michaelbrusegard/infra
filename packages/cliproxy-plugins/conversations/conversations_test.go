@@ -954,7 +954,7 @@ func TestExportsCarryCallContext(t *testing.T) {
 		}
 		ctx.Add("response", []byte(c.ResponseBody))
 		path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
-		if err := ForTraining(ctx, path); err != nil {
+		if err := ForTraining(ctx, path, c.OutputIDs); err != nil {
 			t.Fatalf("%s: %v", tc.call, err)
 		}
 		chat := must(OpenAIChat(ctx, path))
@@ -1135,13 +1135,13 @@ func TestExportsLeaveOutHostedToolsTogether(t *testing.T) {
 		{"type":"web_search"},{"type":"tool_search"},{"type":"web_search_20250305","name":"web_search","max_uses":5}]`))
 	path := []Message{
 		{Role: "user", Blocks: []Block{{Type: "text", Text: "Which ClickHouse release added JSON?"}}},
-		{Role: "assistant", Output: true, Blocks: []Block{
+		{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{
 			{Type: "tool_call", SourceType: "web_search_call", ToolName: "web_search", ToolCallID: "ws_1", ToolInput: `{"query":"clickhouse json"}`},
 			{Type: "tool_call", SourceType: "server_tool_use", ToolName: "web_search", ToolCallID: "srvtoolu_1", ToolInput: `{"query":"clickhouse json"}`},
 			{Type: "tool_result", SourceType: "web_search_tool_result", ToolCallID: "srvtoolu_1", Text: "results"},
 			{Type: "tool_call", SourceType: "tool_search_call", ToolName: "tool_search", ToolCallID: "ts_1", ToolInput: `{"query":"shell"}`}}},
 		{Role: "tool", Blocks: []Block{{Type: "tool_result", SourceType: "tool_search_output", ToolCallID: "ts_1", Text: "exec"}}},
-		{Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "24.8."},
+		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "24.8."},
 			{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`}}},
 	}
 	for name, request := range map[string]map[string]any{
@@ -1157,40 +1157,50 @@ func TestExportsLeaveOutHostedToolsTogether(t *testing.T) {
 			t.Fatalf("%s export lost the rest: %s", name, got)
 		}
 	}
-	if err := ForTraining(ctx, path); err != nil {
+	if err := ForTraining(ctx, path, []Hash{{1}, {2}}); err != nil {
 		t.Fatal(err)
 	}
 }
 
 // A call makes a training example only with output an export keeps, and
-// with every tool that output calls defined in its context.
+// with every tool that output calls defined in its context. Only the
+// call's own outputs count: others on its path are context.
 func TestTrainingNeedsOutputAndItsTools(t *testing.T) {
 	var tools Context
 	tools.Add("tools", []byte(`[{"type":"function","name":"exec","parameters":{"type":"object"}},{"type":"web_search"}]`))
-	user := Message{Role: "user", Blocks: []Block{{Type: "text", Text: "List the pods."}}}
-	call := Message{Role: "assistant", Output: true, Blocks: []Block{
+	user := Message{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "List the pods."}}}
+	call := Message{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{
 		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`}}}
-	search := Message{Role: "assistant", Output: true, Blocks: []Block{
+	search := Message{ID: Hash{3}, Role: "assistant", Output: true, Blocks: []Block{
 		{Type: "tool_call", SourceType: "web_search_call", ToolName: "web_search", ToolCallID: "ws_1"}}}
+	answer := Message{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "Two pods."}}}
+	result := Message{ID: Hash{5}, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1"}}}
 	for _, tc := range []struct {
-		name string
-		ctx  Context
-		path []Message
-		ok   bool
+		name    string
+		ctx     Context
+		path    []Message
+		outputs []Hash
+		ok      bool
 	}{
-		{"complete", tools, []Message{user, call}, true},
+		{"complete", tools, []Message{user, call}, []Hash{call.ID}, true},
 		// A failed call that returned nothing ends at its input.
-		{"no output", tools, []Message{user}, false},
-		{"empty output", tools, []Message{user, {Role: "assistant", Output: true, Blocks: []Block{{Type: "text"}}}}, false},
+		{"no output", tools, []Message{user}, nil, false},
+		{"empty output", tools, []Message{user, {ID: Hash{6}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text"}}}},
+			[]Hash{{6}}, false},
 		// Only a hosted call, which the export leaves out.
-		{"hosted only", tools, []Message{user, search}, false},
+		{"hosted only", tools, []Message{user, search}, []Hash{search.ID}, false},
 		// A failed delta call with output but no echo knows no tools.
-		{"unknown tools", Context{}, []Message{user, call}, false},
+		{"unknown tools", Context{}, []Message{user, call}, []Hash{call.ID}, false},
 		// Earlier outputs are context, not what the example teaches.
-		{"earlier call", Context{}, []Message{user, call, {Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1"}}},
-			{Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "Two pods."}}}}, true},
+		{"earlier call", Context{}, []Message{user, call, result, answer}, []Hash{answer.ID}, true},
+		// A failed delta call that sent nothing new and returned nothing
+		// ends at the output of the call it continues.
+		{"previous output", tools, []Message{user, call}, nil, false},
+		// The call it continues ended in a tool call this call's context
+		// lacks, and this call answered without input in between.
+		{"adjacent earlier output", Context{}, []Message{user, call, answer}, []Hash{answer.ID}, true},
 	} {
-		if err := ForTraining(tc.ctx, tc.path); (err == nil) != tc.ok {
+		if err := ForTraining(tc.ctx, tc.path, tc.outputs); (err == nil) != tc.ok {
 			t.Fatalf("%s: %v", tc.name, err)
 		}
 	}

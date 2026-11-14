@@ -500,7 +500,11 @@ func AnthropicMessages(ctx Context, path []Message) (map[string]any, error) {
 // with output but no echo after a request that sent no tools, or a
 // transcript call, whose tools the transcript does not record. Writing
 // those as examples would teach calls to tools the model was never given.
-func ForTraining(ctx Context, path []Message) error {
+//
+// Only the call's own outputs, by ID, are checked. Others on the path are
+// context, even when they end it: a failed delta call that sent nothing new
+// ends at the output of the call it continues.
+func ForTraining(ctx Context, path []Message, outputs []Hash) error {
 	e, err := ctx.effective()
 	if err != nil {
 		return err
@@ -509,10 +513,18 @@ func ForTraining(ctx Context, path []Message) error {
 	for _, t := range e.tools {
 		defined[t.name] = true
 	}
+	own := map[Hash]bool{}
+	for _, id := range outputs {
+		own[id] = true
+	}
 	dropped := hosted(path)
 	kept := 0
-	for i := len(path) - 1; i >= 0 && path[i].Output; i-- {
-		for _, b := range path[i].Blocks {
+	for _, m := range path {
+		if !own[m.ID] {
+			continue
+		}
+		delete(own, m.ID)
+		for _, b := range m.Blocks {
 			switch {
 			case b.Type == "text" || b.Type == "thinking":
 				if b.Text != "" {
@@ -529,6 +541,9 @@ func ForTraining(ctx Context, path []Message) error {
 				kept++
 			}
 		}
+	}
+	if len(own) > 0 {
+		return fmt.Errorf("the call's outputs are not on its conversation")
 	}
 	if kept == 0 {
 		return fmt.Errorf("the call produced no output to train on")

@@ -353,6 +353,25 @@ def main():
                 == [("codex:tight-a", "1"), ("codex:tight-b", "1")], cost
             live = float(scalar("SELECT sum(estimated_cost_usd) FROM llm.usage_metrics WHERE origin = 'live'"))
             assert abs(sum(float(c[3]) for c in cost if c[3] != "\\N") - live) < 1e-9, (cost, live)
+
+            # A failed delta request that sent nothing new and got nothing back
+            # ends where codex-2, which it continues, ended. That output is
+            # codex-2's, so this call is no training example.
+            query("INSERT INTO llm.requests FORMAT JSONEachRow\n" + json.dumps({
+                "request_id": "codex-failed", "trace_id": "ws-failed", "started_at": "2026-11-10 10:00:20.000",
+                "completed_at": "2026-11-10 10:00:21.000", "source_format": "openai-response", "model": "gpt-6.1-sol",
+                "outcome": "failed", "status_code": 502, "user_agent": "T3 Code/0.0.30",
+                "request_envelope": json.dumps({"previous_response_id": "resp_B", "input": []}),
+                "request_parts": [], "response_body": ""}), "cliproxy")
+            query("INSERT INTO llm.usage FORMAT JSONEachRow\n" + json.dumps({
+                "request_id": "usage-codex-failed", "trace_id": "ws-failed",
+                "session_id": "codex:01a1da81-0000-7000-8000-000000000001", "requested_at": "2026-11-10 10:00:20.001",
+                "provider": "codex", "model": "gpt-6.1-sol"}), "cliproxy")
+            assert job("proxy-failed")[0] == ["codex-failed"]
+            rows = query(sql["call"], params=(("call", "codex-failed"),)).stdout
+            assert json.loads(rows.splitlines()[-1])["output"], rows
+            failed = run(str(normalizer), "-export", "openai", input=rows, check=False)
+            assert failed.returncode != 0 and "no output" in failed.stderr, failed
             print(f"PASS: {len(sql)} doc examples, lossless proxy and transcript round trips, permissions")
         finally:
             run("docker", "rm", "--force", container, check=False)

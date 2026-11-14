@@ -568,7 +568,8 @@ FORMAT JSONEachRow
 -- example: call
 -- One call as training data: the system prompt or instructions and the
 -- tools it ran with, which are per-call context outside the message tree,
--- and the conversation it saw and produced. Context rows have a field.
+-- and the conversation it saw and produced. Context rows have a field, and
+-- call_output marks the call's own outputs, which the export checks.
 WITH RECURSIVE
     path AS (
         SELECT id, parent_id, seq, role, output, model, blocks
@@ -602,10 +603,13 @@ WITH RECURSIVE
         SELECT 'response', 0, response_body FROM llm.calls FINAL WHERE call_id = {call:String}
     )
 SELECT * FROM (
-    SELECT field, position, value, 0 AS seq, '' AS role, false AS output, '' AS model, [] AS blocks
+    SELECT field, position, value, 0 AS seq, 0 AS id, '' AS role, false AS output, '' AS model, [] AS blocks,
+        false AS call_output
     FROM context
     UNION ALL
-    SELECT '', 0, '', seq, role, output, model, blocks FROM path)
+    SELECT '', 0, '', seq, id, role, output, model, blocks,
+        id IN (SELECT arrayJoin(output_ids) FROM llm.calls FINAL WHERE call_id = {call:String})
+    FROM path)
 ORDER BY field = '', field, position, seq
 FORMAT JSONEachRow
 ```
@@ -650,7 +654,9 @@ reason instead of printing one when the call produced nothing an export
 keeps, such as a failed call that returned nothing, or when its output calls
 a tool its context does not define, such as a failed delta call with output
 but no echo, or a transcript call, whose transcript records no tools.
-Earlier turns are context and are not checked.
+Only the call's own outputs, by `output_ids`, are checked. Earlier turns
+are context, even when they end the path: a failed delta call that sent
+nothing new ends at the output of the call it continues, and is refused.
 
 ```sql
 -- example: raw
