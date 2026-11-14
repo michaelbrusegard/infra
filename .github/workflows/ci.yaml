@@ -173,6 +173,29 @@ jobs:
           }
           EOF
           echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/tofurc" >> "$GITHUB_ENV"
+      # michaelbrusegard/stalwart is not on the public registry. The cluster
+      # installs it from this image, so validate against the same build.
+      - name: Install Stalwart provider mirror
+        if: matrix.tofu-dir == 'gitops/espresso/tofu/stalwart'
+        run: |
+          image=$(grep -m1 -o 'ghcr.io/michaelbrusegard/terraform-provider-stalwart:[^ ]*' \
+            gitops/espresso/infrastructure/configs/stalwart-tofu/kustomization.yaml)
+          mkdir -p "$RUNNER_TEMP/provider-mirror"
+          docker create --name stalwart-provider "$image" /bin/cp >/dev/null
+          docker cp stalwart-provider:/provider-mirror/. "$RUNNER_TEMP/provider-mirror/"
+          docker rm stalwart-provider >/dev/null
+          cat > "$RUNNER_TEMP/tofurc" <<EOF
+          provider_installation {
+            filesystem_mirror {
+              path    = "$RUNNER_TEMP/provider-mirror"
+              include = ["registry.opentofu.org/michaelbrusegard/stalwart"]
+            }
+            direct {
+              exclude = ["registry.opentofu.org/michaelbrusegard/stalwart"]
+            }
+          }
+          EOF
+          echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/tofurc" >> "$GITHUB_ENV"
       - name: Check OpenTofu formatting
         run: tofu -chdir=${{ matrix.tofu-dir }} fmt -check
       - name: Initialize OpenTofu
