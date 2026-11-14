@@ -745,11 +745,10 @@ func TestExportsCarryCallContext(t *testing.T) {
 		tools        []string
 	}{
 		{"claude-2", "You are Claude Code, Anthropic's official CLI for Claude.", []string{"Bash", "Read"}},
-		// Freeform custom tools have no schema and are kept as they are.
-		{"codex-1", "You are Codex", []string{"raw:exec", "update_plan"}},
+		{"codex-1", "You are Codex", []string{"exec", "update_plan"}},
 		// The delta request sent neither; its response echoes the tools in
 		// effect, in a namespace, and no instructions.
-		{"codex-2", "", []string{"raw:exec", "update_plan"}},
+		{"codex-2", "", []string{"exec", "update_plan"}},
 	} {
 		c := callByID(t, &n.Batch, tc.call)
 		var ctx Context
@@ -774,6 +773,8 @@ func TestExportsCarryCallContext(t *testing.T) {
 		for _, tool := range tools {
 			if fn, ok := tool.(map[string]any)["function"].(map[string]any); ok && fn["parameters"] != nil {
 				names = append(names, fn["name"].(string))
+			} else if c, ok := tool.(map[string]any)["custom"].(map[string]any); ok {
+				names = append(names, c["name"].(string))
 			} else {
 				names = append(names, "raw:"+tool.(map[string]any)["name"].(string))
 			}
@@ -794,6 +795,40 @@ func TestExportsCarryCallContext(t *testing.T) {
 		if !strings.HasPrefix(anthropic["system"].(string), tc.system) || !reflect.DeepEqual(names, tc.tools) {
 			t.Fatalf("%s: anthropic context %v %v", tc.call, anthropic["system"], names)
 		}
+	}
+}
+
+// A freeform custom tool takes raw text. Each export writes its definition
+// and its calls the same way: custom in Chat Completions, and in Anthropic
+// Messages, which has no freeform tools, a tool taking the text as input.
+func TestExportsConvertCustomToolsConsistently(t *testing.T) {
+	n, _ := proxyBatch(t)
+	c := callByID(t, &n.Batch, "codex-1")
+	var ctx Context
+	for _, p := range c.RequestParts {
+		ctx.Add(p.Field, []byte(itemsOf(&n.Batch)[p.Hash]))
+	}
+	path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
+	script := `"const r = await tools.exec_command({cmd: 'rg luna'});\ntext(r)"`
+	chat := OpenAIChat(ctx, path)
+	def := chat["tools"].([]any)[0].(map[string]any)
+	delete(def["custom"].(map[string]any), "description")
+	messages := chat["messages"].([]map[string]any)
+	got, _ := json.Marshal([]any{def, messages[len(messages)-1]["tool_calls"]})
+	want := `[{"custom":{"format":{"grammar":{"definition":"start: /.+/","syntax":"lark"},"type":"grammar"},"name":"exec"},"type":"custom"},` +
+		`[{"custom":{"input":` + script + `,"name":"exec"},"id":"call_1","type":"custom"}]]`
+	if string(got) != want {
+		t.Fatalf("openai custom tool\n%s\nwant\n%s", got, want)
+	}
+	anthropic := AnthropicMessages(ctx, path)
+	tool := anthropic["tools"].([]any)[0].(map[string]any)
+	turns := anthropic["messages"].([]map[string]any)
+	blocks := turns[len(turns)-1]["content"].([]any)
+	got, _ = json.Marshal([]any{tool["input_schema"], blocks[len(blocks)-1]})
+	want = `[{"properties":{"input":{"type":"string"}},"required":["input"],"type":"object"},` +
+		`{"id":"call_1","input":{"input":` + script + `},"name":"exec","type":"tool_use"}]`
+	if string(got) != want {
+		t.Fatalf("anthropic custom tool\n%s\nwant\n%s", got, want)
 	}
 }
 

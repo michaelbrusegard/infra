@@ -255,8 +255,15 @@ def main():
                 openai = json.loads(run(str(normalizer), "-export", "openai", input=rows).stdout)
                 anthropic = json.loads(run(str(normalizer), "-export", "anthropic", input=rows).stdout)
                 for exported in (openai, anthropic):
-                    assert [t.get("function", t)["name"] for t in exported.get("tools", [])] == tools, (call, exported)
+                    names = [(t.get("function") or t.get("custom") or t)["name"] for t in exported.get("tools", [])]
+                    assert names == tools, (call, exported)
                     assert exported["messages"][-1]["role"] == "assistant", (call, exported)
+                if call == "codex-1":
+                    # The freeform exec tool and its call agree in each dialect.
+                    assert openai["tools"][0]["type"] == "custom", openai["tools"]
+                    assert openai["messages"][-1]["tool_calls"][0]["type"] == "custom", openai["messages"]
+                    assert anthropic["messages"][-1]["content"][-1]["input"] == {
+                        "input": "const r = await tools.exec_command({cmd: 'rg luna'});\ntext(r)"}, anthropic["messages"]
                 first = openai["messages"][0]
                 assert (first["role"] == "system") == bool(system) and first["content"].startswith(system), (call, first)
                 assert anthropic["system"].startswith(system or "<permissions instructions>"), (call, anthropic)

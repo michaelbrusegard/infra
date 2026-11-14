@@ -142,12 +142,29 @@ func function(t map[string]any) (name, description string, schema any, ok bool) 
 	return "", "", nil, false
 }
 
+// customTool reads a freeform custom tool definition, in the Responses or
+// Chat Completions shape. Its calls carry raw text rather than JSON
+// arguments.
+func customTool(t map[string]any) (name, description string, format any, ok bool) {
+	if t["type"] != "custom" {
+		return "", "", nil, false
+	}
+	if c, isChat := t["custom"].(map[string]any); isChat {
+		t = c
+	}
+	return text(t["name"]), text(t["description"]), t["format"], true
+}
+
+// isCustomCall reports whether a tool call invokes a freeform custom tool.
+func isCustomCall(b Block) bool { return b.SourceType == "custom_tool_call" }
+
 // OpenAIChat renders a call or conversation as a Chat Completions request
 // for training: the context's system prompt and tools, then text,
 // reasoning, tool calls, and tool results in the order they happened.
 // Consecutive assistant messages, such as Responses items or streamed Claude
 // Code blocks, become one message until a tool result ends the turn. Images
-// and files are left out: their data is only in the raw items.
+// and files are left out: their data is only in the raw items. Freeform
+// custom tools stay custom in both their definitions and their calls.
 func OpenAIChat(ctx Context, path []Message) map[string]any {
 	ctx = ctx.effective()
 	var out []map[string]any
@@ -191,8 +208,13 @@ func OpenAIChat(ctx Context, path []Message) map[string]any {
 			case "tool_call":
 				if m.Role == "assistant" {
 					prior, _ := turn()["tool_calls"].([]any)
-					turn()["tool_calls"] = append(prior, map[string]any{"id": b.ToolCallID, "type": "function",
-						"function": map[string]any{"name": b.ToolName, "arguments": b.ToolInput}})
+					call := map[string]any{"id": b.ToolCallID, "type": "function",
+						"function": map[string]any{"name": b.ToolName, "arguments": b.ToolInput}}
+					if isCustomCall(b) {
+						call = map[string]any{"id": b.ToolCallID, "type": "custom",
+							"custom": map[string]any{"name": b.ToolName, "input": b.ToolInput}}
+					}
+					turn()["tool_calls"] = append(prior, call)
 				}
 			case "tool_result":
 				// OpenCode keeps a tool's result in the assistant message;
@@ -213,6 +235,17 @@ func OpenAIChat(ctx Context, path []Message) map[string]any {
 				f["parameters"] = schema
 			}
 			tools = append(tools, map[string]any{"type": "function", "function": f})
+		} else if name, description, format, ok := customTool(t); ok {
+			c := map[string]any{"name": name, "description": description}
+			if f, ok := format.(map[string]any); ok && f["type"] == "grammar" && f["grammar"] == nil {
+				// Chat Completions nests a grammar one level deeper.
+				format = map[string]any{"type": "grammar",
+					"grammar": map[string]any{"definition": f["definition"], "syntax": f["syntax"]}}
+			}
+			if format != nil {
+				c["format"] = format
+			}
+			tools = append(tools, map[string]any{"type": "custom", "custom": c})
 		} else {
 			tools = append(tools, t)
 		}
@@ -226,7 +259,9 @@ func OpenAIChat(ctx Context, path []Message) map[string]any {
 // AnthropicMessages renders a call or conversation as an Anthropic Messages
 // request: system prompt, tools, and messages in the order they happened.
 // Tool results are user content, and consecutive messages of a role merge,
-// as the API requires.
+// as the API requires. Anthropic has no freeform custom tools, so they
+// become tools taking their raw text as input, in both their definitions
+// and their calls.
 func AnthropicMessages(ctx Context, path []Message) map[string]any {
 	ctx = ctx.effective()
 	system := append([]string{}, ctx.System...)
@@ -267,7 +302,11 @@ func AnthropicMessages(ctx Context, path []Message) map[string]any {
 				}
 			case "tool_call":
 				var input any = map[string]any{}
-				if b.ToolInput != "" && json.Unmarshal([]byte(b.ToolInput), &input) != nil {
+				if isCustomCall(b) {
+					// Anthropic has no freeform tools; the definition takes
+					// the raw text as input.
+					input = map[string]any{"input": b.ToolInput}
+				} else if b.ToolInput != "" && json.Unmarshal([]byte(b.ToolInput), &input) != nil {
 					input = map[string]any{"input": b.ToolInput}
 				}
 				blocks = append(blocks, map[string]any{"type": "tool_use", "id": b.ToolCallID, "name": b.ToolName, "input": input})
@@ -297,6 +336,10 @@ func AnthropicMessages(ctx Context, path []Message) map[string]any {
 				tool["input_schema"] = schema
 			}
 			tools = append(tools, tool)
+		} else if name, description, _, ok := customTool(t); ok {
+			tools = append(tools, map[string]any{"name": name, "description": description,
+				"input_schema": map[string]any{"type": "object", "required": []any{"input"},
+					"properties": map[string]any{"input": map[string]any{"type": "string"}}}})
 		} else {
 			tools = append(tools, t)
 		}

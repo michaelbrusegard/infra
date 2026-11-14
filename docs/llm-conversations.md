@@ -550,7 +550,10 @@ calls had their tools only in the echo; responses CLIProxy translates from
 other providers echo nothing, and failed calls often have no echo and no
 output. The export puts the system prompt first, flattens the echo's tool
 namespaces, and converts tool definitions between dialects, keeping hosted
-and freeform tools as they are. It keeps text, reasoning, tool calls and results
+tools as they are. Freeform custom tools, such as Codex's `exec`, take raw
+text: they stay custom tools in Chat Completions, and become tools taking
+the text as `input` in Anthropic Messages, which has no freeform tools and
+loses their grammar. Definitions and calls convert the same way. It keeps text, reasoning, tool calls and results
 in the order they happened, merges consecutive assistant items into one turn
 until a tool result ends it, and puts reasoning in `reasoning_content` or
 `thinking` blocks. Images are left out; their data is in the raw items.
