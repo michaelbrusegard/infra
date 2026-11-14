@@ -192,6 +192,11 @@ func run(r io.Reader, dir string, n *conversations.Normalizer, proxied *conversa
 			return err
 		}
 	}
+	// Calls under these keys are matched by response ID only, so a copy
+	// without one counts again; the collision audit needs every key.
+	if conflicts := replies.Conflicts(); len(conflicts) > 0 {
+		log.Printf("%d Codex item keys name more than one response ID:\n%s", len(conflicts), strings.Join(conflicts, "\n"))
+	}
 	return nil
 }
 

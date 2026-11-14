@@ -376,6 +376,27 @@ def main():
             assert json.loads(rows.splitlines()[-1])["output"], rows
             failed = run(str(normalizer), "-export", "openai", input=rows, check=False)
             assert failed.returncode != 0 and "no output" in failed.stderr, failed
+
+            # The collision audit finds the item keys the normalizer reports:
+            # two Codex calls whose first items share a call ID.
+            for name, item, response in (("c", "fc_1", "resp_c1"), ("d", "fc_2", "resp_c2")):
+                thread = f"01a1da81-0000-7000-8000-0000000000{name}{name}"
+                path = f".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-{thread}.jsonl"
+                lines = [{"type": "session_meta", "payload": {"id": thread}},
+                         {"type": "response_item", "payload": {"type": "function_call", "id": item, "name": "exec",
+                                                               "arguments": "{}", "call_id": "call_shared"}},
+                         {"type": "token_usage_record", "payload": {"response_id": response, "usage": {}}}]
+                query("INSERT INTO llm.transcripts FORMAT JSONEachRow\n" + "\n".join(json.dumps({
+                    "source": "codex", "host": "lungo", "session": path.removesuffix(".jsonl").rsplit("/", 1)[1],
+                    "id": str(i + 1), "path": path,
+                    "line": json.dumps({"timestamp": f"2026-11-12T10:00:0{i}.000Z", **line})}) for i, line in enumerate(lines)))
+            audit = [line.split("\t") for line in query(sql["collisions"]).stdout.splitlines()]
+            out = temp / "collisions"
+            out.mkdir()
+            reported = run(str(normalizer), "-proxied", str(proxied), "-out", str(out),
+                           input=query((NORMALIZER / "transcripts.sql").read_text()).stdout).stderr
+            assert audit == [["item:call_shared", "['resp_c1','resp_c2']"]], audit
+            assert reported.splitlines()[1:] == ["item:call_shared resp_c1 resp_c2"], reported
             print(f"PASS: {len(sql)} doc examples, lossless proxy and transcript round trips, permissions")
         finally:
             run("docker", "rm", "--force", container, check=False)

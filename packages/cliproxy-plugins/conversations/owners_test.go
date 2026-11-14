@@ -281,3 +281,37 @@ func TestTranscriptReplyOwnerRecordsTheUsage(t *testing.T) {
 		}
 	}
 }
+
+// Codex calls whose first items share a call ID but whose items and
+// response IDs differ are distinct calls. The colliding key matches
+// neither, so each stays a call, and the collision is reported.
+func TestTranscriptItemKeyCollisionsStayDistinct(t *testing.T) {
+	call := func(item string) string {
+		return `{"type":"response_item","payload":{"type":"function_call","id":"` + item +
+			`","name":"exec","arguments":"{}","call_id":"call_1"}}`
+	}
+	a := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-019f6478-0000-7000-8000-00000000000a.jsonl",
+		"2026-11-12 10:00", `{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000a"}}`,
+		codexUserLine("Check the pods."), call("fc_1"), codexUsageLine("resp_1"))
+	b := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-019f6478-0000-7000-8000-00000000000b.jsonl",
+		"2026-11-12 10:00", `{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000b"}}`,
+		codexUserLine("Check the nodes."), call("fc_2"), codexUsageLine("resp_2"))
+	for _, files := range [][][]TranscriptLine{{a, b}, {b, a}} {
+		replies := repliesOf(nil, files...)
+		n := NewNormalizer()
+		for _, f := range files {
+			n.Transcript(f, replies, nil)
+		}
+		var calls []string
+		for _, c := range n.Calls {
+			calls = append(calls, c.ResponseID)
+		}
+		sort.Strings(calls)
+		if want := []string{"resp_1", "resp_2"}; !reflect.DeepEqual(calls, want) {
+			t.Fatalf("calls %v, want %v", calls, want)
+		}
+		if got, want := replies.Conflicts(), []string{"item:call_1 resp_1 resp_2"}; !reflect.DeepEqual(got, want) {
+			t.Fatalf("conflicts %v, want %v", got, want)
+		}
+	}
+}

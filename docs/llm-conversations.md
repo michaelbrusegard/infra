@@ -351,7 +351,13 @@ call counts once, but possibly in the copy's session, and for Codex only
 when no file records its usage. Replies with no ID
 at all, such as OpenCode's, or Codex replies whose items carry none, like
 text-only messages from June 2026, cannot be matched to a copy, so each file
-keeps its own call; no live OpenCode session is in two files.
+keeps its own call; no live OpenCode session is in two files. Item IDs
+should be unique to the call that produced them, but where files map one
+item key to more than one response ID, the key matches none of its calls:
+each is matched by its own response ID, so they stay distinct calls, and a
+copy without a response ID keeps a call of its own. `normalize-conversations`
+prints every such key with its response IDs, and the
+[collision audit](#collision-audit) lists them from `llm.transcripts`.
 Only lines from before the proxy took a file's session over count, because
 the file writes no call after that: a reply the proxy never returned, seen
 after the parent's handover and in a child's earlier copy, is the child's
@@ -387,6 +393,62 @@ block) for little gain. Calls and tokens need nothing, since each call has
 one owner; counting prompts or messages should dedupe by content per
 session, as the prompts example does. Usage already uses a fixed handover;
 `llm.historical_usage` stays the dashboard's source for history.
+
+### Collision audit
+
+This lists the Codex item keys that `llm.transcripts` maps to more than one
+response ID, grouping each file's output items into calls as the normalizer
+does. It reads only the columns it needs, one thread at a time, and spills
+sorts and aggregations to disk, so it stays within the server's memory: on
+the live table it reads the 1.3M Codex lines in about 40 seconds.
+
+```sql
+-- example: collisions
+WITH
+    lines AS (
+        SELECT host, path, session, toUInt64OrZero(id) AS n,
+            JSONExtract(line, 'Tuple(type String, payload Tuple(type String, role String, call_id String, id String, response_id String))') AS e,
+            e.payload.type AS t,
+            -- Output items are 1, input items and compactions 0, and usage
+            -- records NULL, which leave the call as it is.
+            multiIf(e.type = 'compacted', 0,
+                e.type = 'token_usage_record', NULL,
+                t IN ('reasoning', 'function_call', 'custom_tool_call')
+                    OR (t = 'message' OR (t = '' AND e.payload.role != '')) AND e.payload.role = 'assistant'
+                    OR t LIKE '%\_call', 1,
+                0) AS output,
+            if(output = 1, if(e.payload.call_id != '', e.payload.call_id, e.payload.id), '') AS item,
+            if(e.type = 'token_usage_record', e.payload.response_id, '') AS response_id
+        FROM llm.transcripts
+        WHERE source = 'codex'
+            AND JSONExtractString(line, 'type') IN ('response_item', 'compacted', 'token_usage_record')
+    ),
+    calls AS (
+        SELECT host, path, session, n, item, response_id,
+            sum(output = 1 AND coalesce(previous, 0) = 0)
+                OVER (PARTITION BY host, path, session ORDER BY n ROWS UNBOUNDED PRECEDING) AS call
+        FROM (
+            SELECT *, last_value(output)
+                OVER (PARTITION BY host, path, session ORDER BY n ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS previous
+            FROM lines
+        )
+    ),
+    keyed AS (
+        SELECT argMinIf(item, n, item != '') AS item, groupUniqArrayIf(response_id, response_id != '') AS responses
+        FROM calls
+        WHERE call > 0
+        GROUP BY host, path, session, call
+        HAVING item != ''
+    )
+SELECT 'item:' || item AS key, arraySort(groupUniqArray(response)) AS response_ids
+FROM keyed
+ARRAY JOIN responses AS response
+GROUP BY item
+HAVING length(response_ids) > 1
+ORDER BY key
+SETTINGS max_threads = 1, max_block_size = 1024, max_bytes_before_external_sort = 1000000000,
+    max_bytes_before_external_group_by = 1000000000, max_execution_time = 600
+```
 
 ## Losslessness
 

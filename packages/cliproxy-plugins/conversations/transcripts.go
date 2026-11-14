@@ -122,6 +122,9 @@ type Replies struct {
 	// Item keys of Codex calls to their response ID. Codex records it after
 	// the call's items, and copies of the items in other files lack it.
 	responses map[string]string
+	// Item keys that files map to more than one response ID, to those IDs.
+	// Their calls are distinct, so each is matched by its own response ID.
+	conflicts map[string]map[string]bool
 	// Response IDs to the file holding the call, once every file is added.
 	owners map[string]string
 }
@@ -140,6 +143,7 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 	}
 	if r.seen == nil {
 		r.seen, r.parents, r.responses = map[string][]sighting{}, map[string]string{}, map[string]string{}
+		r.conflicts = map[string]map[string]bool{}
 	}
 	r.owners = nil
 	f := newFile(nil, lines, proxied)
@@ -189,6 +193,12 @@ func (r *Replies) codexResponses(lines []TranscriptLine) map[string]bool {
 			output = false
 		case "token_usage_record":
 			if id := e.obj("payload").str("response_id"); id != "" && key != "" {
+				if old, ok := r.responses[key]; ok && old != id {
+					if r.conflicts[key] == nil {
+						r.conflicts[key] = map[string]bool{}
+					}
+					r.conflicts[key][old], r.conflicts[key][id] = true, true
+				}
 				r.responses[key] = id
 			}
 			recorded[key] = true
@@ -204,10 +214,28 @@ func (r *Replies) codexResponses(lines []TranscriptLine) map[string]bool {
 // response returns the response ID of a call by its item key, from any
 // file that records it.
 func (r *Replies) response(key string) string {
-	if r == nil || key == "" {
+	if r == nil || key == "" || r.conflicts[key] != nil {
 		return ""
 	}
 	return r.responses[key]
+}
+
+// Conflicts lists the item keys that files map to more than one response
+// ID, each with those IDs, for the collision audit. Their calls stay
+// distinct, but a copy without a response ID cannot be matched to any of
+// them, so it keeps a call of its own.
+func (r *Replies) Conflicts() []string {
+	var out []string
+	for key, ids := range r.conflicts {
+		line := []string{key}
+		for id := range ids {
+			line = append(line, id)
+		}
+		sort.Strings(line[1:])
+		out = append(out, strings.Join(line, " "))
+	}
+	sort.Strings(out)
+	return out
 }
 
 // elect decides the owner of every reply, as Replies describes. Each
@@ -332,9 +360,14 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 	for _, id := range f.order {
 		c := f.calls[id]
 		// A copy of a Codex reply lacks its response ID, which the file it
-		// was copied from records.
-		responseID := firstNonEmpty(c.ResponseID, replies.response(f.items[id]))
-		reply := firstNonEmpty(f.items[id], responseID)
+		// was copied from records. An item key of distinct responses
+		// matches none of them.
+		key := f.items[id]
+		if replies != nil && replies.conflicts[key] != nil {
+			key = ""
+		}
+		responseID := firstNonEmpty(c.ResponseID, replies.response(key))
+		reply := firstNonEmpty(key, responseID)
 		if _, returned := proxied.returned(responseID); returned || !replies.owns(f.key, reply) {
 			n.copied(n.Messages[start:], c.CallID)
 			continue
@@ -452,8 +485,9 @@ func replyID(l TranscriptLine) string {
 // call ID, or else the item's own. Unlike response IDs, which older Codex
 // logs lack, every Codex log records them, and a sub-agent's copy of its
 // parent's history keeps them, so a Codex call is matched to its copies by
-// its first output item's key. They are unique to the call that produced
-// the item.
+// its first output item's key. They should be unique to the call that
+// produced the item; a key that files map to more than one response ID is
+// a conflict, which Replies reports and never merges.
 func itemKey(l TranscriptLine) string {
 	e := parse([]byte(l.Line))
 	if l.Source != "codex" || e.str("type") != "response_item" {
