@@ -138,6 +138,13 @@ type Replies struct {
 	conflicts map[string]map[string]bool
 	// Response IDs to the file holding the call, once every file is added.
 	owners map[string]string
+	// Claude Code's request logs over all files: the request each reply
+	// names, by response ID, the shape of each request, and the shapes.
+	// The file that holds a reply's call may lack the log another copy
+	// has, as a parent's does when only its sub-agent's file logged it.
+	refs     map[string]string
+	requests map[string]string
+	shapes   map[string]json.RawMessage
 }
 
 type sighting struct {
@@ -155,9 +162,13 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 	if r.seen == nil {
 		r.seen, r.parents, r.responses = map[string][]sighting{}, map[string]string{}, map[string]string{}
 		r.conflicts = map[string]map[string]bool{}
+		r.refs, r.requests, r.shapes = map[string]string{}, map[string]string{}, map[string]json.RawMessage{}
 	}
 	r.owners = nil
 	f := newFile(nil, lines, proxied)
+	if lines[0].Source == "claude-code" {
+		r.requestLogs(lines)
+	}
 	recorded, counts := map[string]bool{}, map[string]string{}
 	if lines[0].Source == "codex" {
 		recorded, counts = r.codexResponses(lines)
@@ -183,6 +194,35 @@ func (r *Replies) Add(lines []TranscriptLine, proxied *Proxied) {
 			r.seen[id] = append(r.seen[id], s)
 		}
 	}
+}
+
+// requestLogs records Claude Code's request logs of a file, for the call
+// of each reply whichever file holds it.
+func (r *Replies) requestLogs(lines []TranscriptLine) {
+	for _, l := range lines {
+		e := parse([]byte(l.Line))
+		switch e.str("type") {
+		case "api-request-shape":
+			if _, ok := r.shapes[e.str("shapeHash")]; !ok {
+				r.shapes[e.str("shapeHash")] = e["shape"]
+			}
+		case "api-request":
+			r.requests[e.str("id")] = e.str("shapeHash")
+		case "assistant":
+			id, ref := e.obj("message").str("id"), e.str("requestRef")
+			if _, ok := r.refs[id]; !ok && id != "" && ref != "" {
+				r.refs[id] = ref
+			}
+		}
+	}
+}
+
+// shape returns the shape of the request log of a reply, from any file.
+func (r *Replies) shape(responseID string) json.RawMessage {
+	if r == nil || responseID == "" {
+		return nil
+	}
+	return r.shapes[r.requests[r.refs[responseID]]]
 }
 
 // codexResponses records the response ID of each Codex call by its item
@@ -469,7 +509,7 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 			continue
 		}
 		c.ResponseID = responseID
-		c.Context = f.context(c.CallID)
+		c.Context = f.context(c.CallID, replies.shape(responseID))
 		n.Calls = append(n.Calls, *c)
 	}
 }
@@ -790,14 +830,19 @@ func eventDetail(kind string, e obj) string {
 
 // context stores the system prompt and tools of a call that its transcript
 // records, as the archive splits request bodies: each array element is an
-// item. Claude Code's request logs record both, and Codex's
-// additional_tools items the tools.
-func (f *file) context(callID string) []requestitems.Part {
+// item. Claude Code's request logs record both, in this file or, as shared
+// for a reply that files copy, another; Codex's additional_tools items
+// record the tools.
+func (f *file) context(callID string, shared json.RawMessage) []requestitems.Part {
 	parts := []requestitems.Part{}
 	for i, tool := range f.callTools[callID] {
 		parts = append(parts, requestitems.Part{Field: "tools", Position: int32(i), Hash: f.n.item(tool)})
 	}
-	shape := parse(f.shapes[f.requests[f.refs[callID]]])
+	raw, ok := f.shapes[f.requests[f.refs[callID]]]
+	if !ok {
+		raw = shared
+	}
+	shape := parse(raw)
 	for _, field := range []string{"system", "tools"} {
 		raw := bytes.TrimSpace(shape[field])
 		if len(raw) == 0 {

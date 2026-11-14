@@ -648,8 +648,12 @@ tools, and `api-request-blob` lines with message bodies. Each reply names its
 request (`requestRef`), so its call takes the shape's system prompt and tools
 as context items, one per system block and tool, as the archive splits
 request bodies. 134,405 of 137,230 replies with a `requestRef` find their
-request in their own file, the rest in none or another file and get no
-context. Those calls export as tool-using training examples.
+request in their own file. A reply that several files hold takes its
+request log from any of them, since the first pass over all files records
+every log: of the 47 live Claude Code replies in more than one file, the
+file that holds the call lacks the log for 28, which a sub-agent's or a
+sibling fork's copy has. The file that holds the call stays the same. Those
+calls export as tool-using training examples.
 
 ### Usage history
 

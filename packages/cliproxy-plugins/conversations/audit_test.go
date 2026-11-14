@@ -1,7 +1,10 @@
 package conversations
 
 import (
+	"fmt"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -144,5 +147,73 @@ func TestOpenCodeSessionsKeepTheirParent(t *testing.T) {
 	n.Transcript(file, repliesOf(nil, file), nil)
 	if len(n.Sessions) != 1 || n.Sessions[0].SessionID != "opencode:ses_child" || n.Sessions[0].ParentSessionID != "opencode:ses_parent" {
 		t.Fatalf("sessions %+v", n.Sessions)
+	}
+}
+
+// claudeFile writes a Claude Code transcript whose lines are a second
+// apart from start.
+func claudeFile(path, start string, lines ...string) []TranscriptLine {
+	var out []TranscriptLine
+	for i, l := range lines {
+		out = append(out, TranscriptLine{Source: "claude-code", Host: "lungo", Session: path, ID: strconv.Itoa(i + 1),
+			Path: path, Line: l, TS: fmt.Sprintf("%s:%02d.000", start, i)})
+	}
+	return out
+}
+
+func claudeUser(uuid, parent, text string) string {
+	return fmt.Sprintf(`{"type":"user","uuid":%q,"parentUuid":%q,"message":{"role":"user","content":%q}}`, uuid, parent, text)
+}
+
+func claudeReply(uuid, parent, id, ref string) string {
+	return fmt.Sprintf(`{"type":"assistant","uuid":%q,"parentUuid":%q,"requestId":"req_%s","requestRef":%q,`+
+		`"message":{"id":%q,"role":"assistant","model":"claude-opus-5-5","content":[{"type":"tool_use","id":"toolu_%s",`+
+		`"name":"Bash","input":{"command":"ls"}}],"usage":{"input_tokens":10,"output_tokens":5}}}`, uuid, parent, id, ref, id, id)
+}
+
+func claudeRequestLog(ref string) []string {
+	return []string{`{"type":"api-request-shape","shapeHash":"sh1","shape":{"system":[{"type":"text","text":"You are Claude Code."}],` +
+		`"tools":[{"name":"Bash","description":"Run a command.","input_schema":{"type":"object"}}]}}`,
+		fmt.Sprintf(`{"type":"api-request","id":%q,"shapeHash":"sh1","keep":0,"tail":[]}`, ref)}
+}
+
+// A reply that several files hold is one call, of the file that owns it,
+// with the system prompt and tools of its request log wherever a copy
+// logged it: a sub-agent's copy of its parent's reply, or a sibling fork's
+// copy of a reply both forks start from.
+func TestClaudeCodeCallsTakeTheRequestLogOfAnyCopy(t *testing.T) {
+	project := ".claude/projects/-Users-michaelbrusegard-Projects-infra/"
+	session := "33333333-3333-4333-8333-333333333333"
+	shared := []string{claudeUser("u1", "", "Find the failing test."), claudeReply("x1", "u1", "msg_shared", "r_shared")}
+	parent := claudeFile(project+session+".jsonl", "2026-11-01 10:00", shared...)
+	agent := claudeFile(project+session+"/subagents/agent-a1.jsonl", "2026-11-01 10:00",
+		append(append(claudeRequestLog("r_shared"), shared...), claudeUser("u2", "x1", "Look closer."),
+			claudeReply("x2", "u2", "msg_agent", "r_shared"))...)
+	fork := []string{claudeUser("v1", "", "Fork the review."), claudeReply("y1", "v1", "msg_fork", "r_fork")}
+	first := claudeFile(project+session+"/subagents/agent-f1.jsonl", "2026-11-01 11:00", fork...)
+	second := claudeFile(project+session+"/subagents/agent-f2.jsonl", "2026-11-01 11:00",
+		append(claudeRequestLog("r_fork"), fork...)...)
+	files := [][]TranscriptLine{parent, agent, first, second}
+	replies := repliesOf(nil, files...)
+	n := NewNormalizer()
+	for _, f := range files {
+		n.Transcript(f, replies, nil)
+	}
+	var calls []string
+	for _, c := range n.Calls {
+		var fields []string
+		for _, p := range c.Context {
+			fields = append(fields, fmt.Sprintf("%s/%d", p.Field, p.Position))
+		}
+		calls = append(calls, c.SessionID+" "+c.ResponseID+" "+strings.Join(fields, ","))
+	}
+	sort.Strings(calls)
+	want := []string{
+		"claude:" + session + " msg_shared system/0,tools/0",
+		"claude:" + session + ":agent:a1 msg_agent system/0,tools/0",
+		"claude:" + session + ":agent:f1 msg_fork system/0,tools/0",
+	}
+	if !reflect.DeepEqual(calls, want) {
+		t.Fatalf("calls %q, want %q", calls, want)
 	}
 }
