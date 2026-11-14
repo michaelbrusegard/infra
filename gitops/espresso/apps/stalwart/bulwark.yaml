@@ -44,7 +44,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: webmail
-          image: ghcr.io/bulwarkmail/webmail:1.21.0@sha256:420069671e7776f49cf40882f35bc37b57593f224c7dddbeb6f78e52341fa207
+          image: ghcr.io/bulwarkmail/webmail:1.21.2@sha256:037b85b1433233d2d7eebb83f928df5ecc3b4adc91dc7e4c55f0a2f69024e754
           ports:
             - name: http
               containerPort: 3000

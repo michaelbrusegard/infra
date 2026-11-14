@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:1.27.3-alpine@sha256:fa3d596898d9f126af7c01d14ee7597bab3f39cccf392ef36b69fe77cd681f18 AS build
+FROM docker.io/library/golang:1.27.4-alpine@sha256:0a5f7fe796599ff487605987432e7619ae45beeb2fba4c2ce0b907879932aebf AS build
 WORKDIR /src
 RUN apk add --no-cache patch
 ADD --checksum=sha256:d28a439cf8dcd56214ad248eb2fe576bd4303567a32166c6696e33c1fdbee108 https://codeload.github.com/netbirdio/netbird/tar.gz/f47ace7d52a182d2ee75e6d821c26260e601c89e /tmp/netbird.tar.gz
