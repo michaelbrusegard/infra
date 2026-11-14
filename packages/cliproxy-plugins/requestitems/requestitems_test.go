@@ -151,3 +151,23 @@ func TestHashMatchesClickHouse(t *testing.T) {
 		t.Fatalf("part encodes as %s", data)
 	}
 }
+
+func TestSplitKeepsRepeatedKeysVerbatim(t *testing.T) {
+	// Which value wins depends on member order, which splitting changes.
+	for _, body := range []string{`{"a":[1],"a":2}`, `{"messages":[1],"messages":[2]}`} {
+		split := Split([]byte(body))
+		if split.Envelope != "" || len(split.Parts) != 1 || string(split.Items[0]) != body {
+			t.Fatalf("%s split into %+v", body, split)
+		}
+	}
+}
+
+func TestSplitKeepsBodiesWithOversizedPartsWhole(t *testing.T) {
+	// Ten thousand one-byte elements under a long key would need far more
+	// bytes of parts than the body itself.
+	body := `{"` + strings.Repeat("k", 1000) + `":[` + strings.TrimSuffix(strings.Repeat("1,", 10000), ",") + `]}`
+	split := Split([]byte(body))
+	if split.Envelope != "" || len(split.Parts) != 1 || string(split.Items[0]) != body {
+		t.Fatalf("split into %d parts", len(split.Parts))
+	}
+}

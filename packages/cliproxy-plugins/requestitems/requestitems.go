@@ -21,6 +21,15 @@ import (
 // such as a long system prompt or instructions string.
 const LargeValueBytes = 1024
 
+// A part's encoded size beyond its field name: position, hash and JSON
+// punctuation. Bodies whose parts would outweigh both the body and
+// smallPartsBytes are kept whole, which bounds how much splitting can grow a
+// row; small bodies split normally.
+const (
+	partOverheadBytes = 64
+	smallPartsBytes   = 64 << 10
+)
+
 // Hash is the first 16 bytes of an item's SHA-256. ClickHouse reads them as a
 // little-endian UInt128, which equals
 // reinterpretAsUInt128(substring(SHA256(item), 1, 16)).
@@ -68,27 +77,41 @@ type Body struct {
 // bytes. Each top-level array element becomes an item, and so does any other
 // value of at least LargeValueBytes. Empty arrays, small values, and keys
 // containing escapes stay in the envelope. Anything else, such as a truncated
-// body, is kept verbatim as one item.
+// body, is kept verbatim as one item. So are objects with a repeated key,
+// whose meaning depends on member order, and objects whose parts would
+// outweigh the body, such as huge arrays of tiny values.
 func Split(body []byte) Body {
 	// Rows reach ClickHouse as JSON, which would replace invalid UTF-8 after
 	// hashing. Replace it first so a stored item always matches its hash.
 	body = bytes.ToValidUTF8(body, []byte("\uFFFD"))
+	whole := Body{Parts: []Part{{Position: -1, Hash: HashOf(body)}}, Items: [][]byte{body}}
 	var compact bytes.Buffer
 	if json.Compact(&compact, body) != nil || compact.Len() == 0 || compact.Bytes()[0] != '{' {
-		return Body{Parts: []Part{{Position: -1, Hash: HashOf(body)}}, Items: [][]byte{body}}
+		return whole
 	}
 	b := compact.Bytes()
 	var out Body
+	partBytes := 0
 	add := func(field []byte, position int, item []byte) {
 		out.Parts = append(out.Parts, Part{Field: string(field), Position: int32(position), Hash: HashOf(item)})
 		out.Items = append(out.Items, item)
+		partBytes += len(field) + partOverheadBytes
 	}
+	seen := map[string]struct{}{}
 	envelope := []byte{'{'}
 	for i := 1; b[i] != '}'; {
 		keyEnd := valueEnd(b, i)
 		field := b[i+1 : keyEnd-1]
 		value := b[keyEnd+1 : valueEnd(b, keyEnd+1)]
 		end := keyEnd + 1 + len(value)
+		var key string
+		if json.Unmarshal(b[i:keyEnd], &key) != nil {
+			return whole
+		}
+		if _, dup := seen[key]; dup {
+			return whole
+		}
+		seen[key] = struct{}{}
 		switch {
 		case bytes.IndexByte(field, '\\') >= 0:
 			envelope = appendMember(envelope, b[i:end])
@@ -110,6 +133,9 @@ func Split(body []byte) Body {
 		if b[i] == ',' {
 			i++
 		}
+	}
+	if partBytes > max(len(body), smallPartsBytes) {
+		return whole
 	}
 	out.Envelope = string(append(envelope, '}'))
 	return out

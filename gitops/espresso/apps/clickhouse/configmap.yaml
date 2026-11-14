@@ -49,6 +49,13 @@ data:
   users.xml: |
     <clickhouse>
       <profiles>
+        <!-- Reject rows with unknown columns instead of dropping the fields:
+             an old archive plugin writing request_body after the
+             request_items migration must fail loudly, not lose the body. -->
+        <cliproxy>
+          <profile>default</profile>
+          <input_format_skip_unknown_fields>0</input_format_skip_unknown_fields>
+        </cliproxy>
         <grafana>
           <readonly>1</readonly>
           <max_execution_time>30</max_execution_time>
@@ -80,7 +87,7 @@ data:
           <networks>
             <ip>::/0</ip>
           </networks>
-          <profile>default</profile>
+          <profile>cliproxy</profile>
           <quota>default</quota>
           <grants>
             <query>GRANT INSERT ON llm.requests</query>

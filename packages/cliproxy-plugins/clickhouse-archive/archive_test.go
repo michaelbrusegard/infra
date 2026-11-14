@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -317,5 +318,33 @@ func TestRequestRowsMatchTheBackfill(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
+	}
+}
+
+func TestSplitRowsStayWithinTheByteBudget(t *testing.T) {
+	rec := &recorder{}
+	a := testArchive(t, rec)
+	// Escaped quotes double in size when an item is encoded as a JSON string,
+	// so these items outgrow the raw body the hook reserved.
+	var messages []string
+	for i := range 1000 {
+		messages = append(messages, fmt.Sprintf(`"%d%s"`, i, strings.Repeat(`\"`, 50)))
+	}
+	body := `{"messages":[` + strings.Join(messages, ",") + `]}`
+	const left = 150_000
+	a.queuedBytes.Store(maxQueueBytes - left)
+	a.request("big", body)
+	if a.queuedBytes.Load() == maxQueueBytes-left {
+		t.Fatal("the hook did not reserve the raw body")
+	}
+	a.flushOnce()
+	if rows := rec.rows(t, "llm.requests"); len(rows) != 0 {
+		t.Fatalf("row past the budget was batched: %d rows", len(rows))
+	}
+	if rows := rec.rows(t, "llm.request_items"); len(rows) != 0 {
+		t.Fatalf("items of a dropped row were batched: %d rows", len(rows))
+	}
+	if got := a.queuedBytes.Load(); got != maxQueueBytes-left {
+		t.Fatalf("dropped row left %d bytes reserved", got-(maxQueueBytes-left))
 	}
 }

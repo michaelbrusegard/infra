@@ -133,6 +133,10 @@ def check_request_items(query, container, schema, temp):
     assert "'legacy-tricky'" in copied.stdout, copied.stdout
     assert "chunk " not in run(migrate, "copy", env=env).stdout  # resumable: nothing left
     run(migrate, "drop", env=env)
+    # An old plugin still writing request_body must fail, not lose the body.
+    old = json.dumps({"request_id": "old-plugin", "request_body": "{}"})
+    rejected = query("INSERT INTO llm.requests FORMAT JSONEachRow\n" + old, "cliproxy", check=False)
+    assert rejected.returncode != 0 and "request_body" in rejected.stderr, rejected.stderr
 
     assert query("SHOW CREATE TABLE llm.requests").stdout == fresh
     tables = query("SHOW TABLES FROM llm").stdout.split()

@@ -488,8 +488,25 @@ func (a *archive) flushLoop() {
 			write(r.table, r.json)
 			return
 		}
-		// Swap the reservation for the bytes actually batched.
-		a.queuedBytes.Add(int64(a.encodeRequest(r, unsent, write)) - r.size)
+		items, request, ok := a.encodeRequest(r, unsent)
+		size := int64(len(request) + 1)
+		for _, item := range items {
+			size += int64(len(item.json) + 1)
+		}
+		// Swap the reservation for the bytes this row really batches, and
+		// drop it rather than exceed the budget when splitting grew it.
+		if !ok || (size > r.size && !a.reserve("llm.requests", size-r.size)) {
+			a.queuedBytes.Add(-r.size)
+			return
+		}
+		if size < r.size {
+			a.queuedBytes.Add(size - r.size)
+		}
+		for _, item := range items {
+			unsent[item.hash] = struct{}{}
+			write("llm.request_items", item.json)
+		}
+		write("llm.requests", request)
 	}
 	full := func() bool {
 		for _, buf := range batches {
@@ -551,10 +568,15 @@ func (a *archive) flushLoop() {
 	}
 }
 
-// encodeRequest splits a request body and batches the request row together
-// with any of its items not already stored or batched. It returns the bytes
-// batched.
-func (a *archive) encodeRequest(r row, unsent map[requestitems.Hash]struct{}, write func(string, []byte) int) int {
+type encodedItem struct {
+	hash requestitems.Hash
+	json []byte
+}
+
+// encodeRequest splits a request body and encodes the request row together
+// with any of its items not already stored or batched. Nothing is batched
+// yet, so the caller can still drop the row.
+func (a *archive) encodeRequest(r row, unsent map[requestitems.Hash]struct{}) ([]encodedItem, []byte, bool) {
 	body := requestitems.Split(r.body)
 	rec := *r.request
 	rec.RequestEnvelope = body.Envelope
@@ -562,22 +584,27 @@ func (a *archive) encodeRequest(r row, unsent map[requestitems.Hash]struct{}, wr
 	data, err := json.Marshal(rec)
 	if err != nil {
 		log.Printf("clickhouse-archive: encode llm.requests row: %v", err)
-		return 0
+		return nil, nil, false
 	}
-	n := 0
+	var items []encodedItem
+	// A body can repeat an item, such as two identical messages.
+	seen := map[requestitems.Hash]struct{}{}
 	for i, part := range body.Parts {
+		if _, ok := seen[part.Hash]; ok {
+			continue
+		}
+		seen[part.Hash] = struct{}{}
 		if _, ok := unsent[part.Hash]; ok || a.sent.has(part.Hash) {
 			continue
 		}
 		item, err := json.Marshal(itemRow{Hash: part.Hash, Item: string(body.Items[i])})
 		if err != nil {
 			log.Printf("clickhouse-archive: encode llm.request_items row: %v", err)
-			return n
+			return nil, nil, false
 		}
-		unsent[part.Hash] = struct{}{}
-		n += write("llm.request_items", item)
+		items = append(items, encodedItem{hash: part.Hash, json: item})
 	}
-	return n + write("llm.requests", data)
+	return items, data, true
 }
 
 // sentItems is a set with two generations: when the current one fills up,
