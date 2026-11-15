@@ -1,8 +1,9 @@
 # LLM conversations: one canonical format
 
-Status: ready to roll out as in [Rollout](#rollout). Merging creates the
-canonical tables and a suspended job; nothing is normalized until the
-backfill runs.
+Status: rolled out on 2026-11-15. The backfill normalized the proxy
+archive and imported the transcripts, `llm.transcripts` and
+`llm.historical_usage` are dropped, and the job keeps the canonical tables
+current.
 
 All LLM history currently sits in two raw shapes: the proxy archive
 (`llm.requests`, `llm.request_items`, `llm.usage`) since 2026-11-09, and a
@@ -820,8 +821,8 @@ through `llm.old_import_usage`), SELECT and INSERT
 on `llm.sessions`, `llm.messages`, `llm.calls`, `llm.events` and
 `llm.transcript_import`, SELECT on `system.mutations`, and INSERT
 on `llm.request_items`; it cannot read the dashboard's view, write the raw
-capture, delete, or drop. The CronJob starts suspended, so it waits for the
-backfill.
+capture, delete, or drop. The CronJob is suspended while a backfill or
+rebuild runs.
 
 ### Backfill
 

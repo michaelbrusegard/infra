@@ -1,7 +1,7 @@
 # The LLM conversation normalizer of docs/llm-conversations.md: every 10
 # minutes, it normalizes the proxy requests that are not in llm.calls yet.
-# It starts suspended; the backfill (llm-backfill-job.yaml) runs first, and
-# the job is resumed after it, as the design doc's rollout describes.
+# The backfill (llm-backfill-job.yaml) ran first, as the design doc's
+# rollout describes; a rebuild suspends the job again while it runs.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -9,7 +9,7 @@ metadata:
   namespace: clickhouse
 spec:
   schedule: "*/10 * * * *"
-  suspend: true
+  suspend: false
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
