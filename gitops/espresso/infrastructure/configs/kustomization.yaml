@@ -10,6 +10,7 @@ resources:
   - grafana
   - hermes-auth-tofu
   - hubble-ui
+  - kata
   - manafishrov-pocket-id-tofu
   - manafishrov-dns-tofu
   - manafishrov-postgres-tofu

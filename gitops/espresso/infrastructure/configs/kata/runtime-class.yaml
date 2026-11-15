@@ -1,0 +1,13 @@
+# Pods opt into a Kata Containers microVM (Cloud Hypervisor) with
+# runtimeClassName: kata. The handler is registered on every espresso node by
+# modules/nixos/kata.nix. The overhead covers the VMM, virtiofsd, and guest
+# kernel, so the scheduler and pod cgroup account for them.
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: kata
+handler: kata
+overhead:
+  podFixed:
+    memory: 160Mi
+    cpu: 250m
