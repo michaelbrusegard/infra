@@ -22,6 +22,21 @@ spec:
         runAsGroup: 2000
         fsGroup: 2000
         fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        # Stalwart builds the OIDC directory once at startup and never retries.
+        # A transient discovery failure (e.g. a 403 from the Gateway while
+        # Cilium converges after a node reboot) otherwise leaves every OIDC
+        # login failing until the next restart.
+        - name: wait-for-oidc
+          image: ghcr.io/michaelbrusegard/stalwart-native-scim:1.0.3@sha256:67083aba390b26e3ee97c0f3c016bc473f10831dad4f7244b979e5dfcaf29ad8
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until curl -fsS --max-time 5 -o /dev/null https://id.asgard.michaelbrusegard.com/.well-known/openid-configuration; do
+                echo "waiting for Pocket ID discovery"
+                sleep 5
+              done
       containers:
         - name: stalwart
           # Same patched native-SCIM build as the manafishrov tenant.
