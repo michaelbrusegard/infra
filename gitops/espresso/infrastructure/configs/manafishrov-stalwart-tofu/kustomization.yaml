@@ -22,6 +22,8 @@ patches:
       spec:
         # Keep the committed mirror checksums, including the Linux runner.
         upgradeOnInit: false
+        # Concurrent registry writes fail with serverUnavailable; apply serially.
+        parallelism: 1
         path: ./tofu/stalwart
         vars:
           - name: smtp_edge_activation_ready
@@ -45,7 +47,7 @@ patches:
                   name: manafishrov-stalwart-tofu
             initContainers:
               - name: install-stalwart-provider
-                image: ghcr.io/michaelbrusegard/terraform-provider-stalwart:1.0.3@sha256:4832706a856de04f0af6a1a7b4aee5277f74eab0285f089b3c585de3cf7dd1aa
+                image: ghcr.io/michaelbrusegard/terraform-provider-stalwart:1.0.3@sha256:6920dc9387923a42a381dca1e7b37e2aa7468dd80261be2b48fe4d3623662c59
                 command: ["/bin/cp", "-R", "/provider-mirror/.", "/mnt/provider-mirror/"]
                 volumeMounts:
                   - name: provider-mirror
