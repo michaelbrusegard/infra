@@ -47,16 +47,22 @@ WITH
     ),
     contents AS (
         -- Items are unique only after merges; duplicates are identical.
-        SELECT hash, any(item) AS item FROM llm.request_items
-        WHERE hash IN (SELECT hash FROM sent)
-        GROUP BY hash
+        -- Each joins its first use alone: a resent message's bytes would
+        -- otherwise be copied to every request that resends it, which in a
+        -- busy hour exceeds the server's memory.
+        SELECT s.first.1 AS request_id, s.first.2 AS n, c.item AS item
+        FROM sent AS s
+        INNER JOIN (
+            SELECT hash, any(item) AS item FROM llm.request_items
+            WHERE hash IN (SELECT hash FROM sent)
+            GROUP BY hash
+        ) AS c ON c.hash = s.hash
     ),
     items AS (
         SELECT p.request_id AS request_id,
-            arrayMap(x -> x.2, arraySort(groupArray((p.n, if((p.request_id, p.n) = s.first, c.item, ''))))) AS items
+            arrayMap(x -> x.2, arraySort(groupArray((p.n, c.item)))) AS items
         FROM parts AS p
-        LEFT JOIN sent AS s ON s.hash = p.hash
-        LEFT JOIN contents AS c ON c.hash = p.hash
+        LEFT JOIN contents AS c ON c.request_id = p.request_id AND c.n = p.n
         GROUP BY p.request_id
     ),
     attempts AS (
