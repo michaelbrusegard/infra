@@ -682,6 +682,22 @@
         "type": "github"
       }
     },
+    "homebrew-steipete": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794033127,
+        "narHash": "sha256-4hlbk+aM3P4LLVaTMyHgMoa27t2buvHTH8nTC5IJNRU=",
+        "owner": "steipete",
+        "repo": "homebrew-tap",
+        "rev": "d58355736b4c93e2128ca58e599835fa2a1f1d54",
+        "type": "github"
+      },
+      "original": {
+        "owner": "steipete",
+        "repo": "homebrew-tap",
+        "type": "github"
+      }
+    },
     "hyprcursor": {
       "inputs": {
         "hyprlang": [
@@ -1400,6 +1416,7 @@
         "homebrew-core": "homebrew-core",
         "homebrew-extras": "homebrew-extras",
         "homebrew-netbird": "homebrew-netbird",
+        "homebrew-steipete": "homebrew-steipete",
         "hyprland": "hyprland",
         "impermanence": "impermanence",
         "lanzaboote": "lanzaboote",

@@ -70,6 +70,10 @@
       url = "github:netbirdio/homebrew-tap";
       flake = false;
     };
+    homebrew-steipete = {
+      url = "github:steipete/homebrew-tap";
+      flake = false;
+    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs-unstable";

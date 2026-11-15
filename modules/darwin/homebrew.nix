@@ -15,6 +15,7 @@
       "homebrew/homebrew-cask" = inputs.homebrew-cask;
       "michaelbrusegard/homebrew-extras" = inputs.homebrew-extras;
       "netbirdio/homebrew-tap" = inputs.homebrew-netbird;
+      "steipete/homebrew-tap" = inputs.homebrew-steipete;
     };
     mutableTaps = false;
     autoMigrate = true;
@@ -66,6 +67,8 @@
       tap "netbirdio/tap", trusted: { formulae: ["netbird"], casks: ["netbird-ui"] }
       brew "netbirdio/tap/netbird"
       cask "netbirdio/tap/netbird-ui"
+      tap "steipete/tap", trusted: { formulae: ["peekaboo"] }
+      brew "steipete/tap/peekaboo"
     '';
     masApps = {
       "Proton Pass for Safari" = 6502835663;
