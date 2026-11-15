@@ -57,6 +57,17 @@ data:
           <profile>default</profile>
           <input_format_skip_unknown_fields>0</input_format_skip_unknown_fields>
         </cliproxy>
+        <!-- The normalizer joins each trace's usage with its requests, which
+             grows with the square of a websocket trace's calls; one hour
+             of them needed 3.7 GiB in memory. Spill joins, sorts and
+             aggregations to disk instead of failing. -->
+        <llm_normalizer>
+          <profile>default</profile>
+          <join_algorithm>auto</join_algorithm>
+          <max_bytes_in_join>1073741824</max_bytes_in_join>
+          <max_bytes_before_external_group_by>1073741824</max_bytes_before_external_group_by>
+          <max_bytes_before_external_sort>1073741824</max_bytes_before_external_sort>
+        </llm_normalizer>
         <grafana>
           <readonly>1</readonly>
           <max_execution_time>30</max_execution_time>
@@ -108,7 +119,7 @@ data:
           <networks>
             <ip>::/0</ip>
           </networks>
-          <profile>default</profile>
+          <profile>llm_normalizer</profile>
           <quota>default</quota>
           <grants>
             <query>GRANT SELECT ON llm.requests</query>

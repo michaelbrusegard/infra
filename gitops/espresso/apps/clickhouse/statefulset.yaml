@@ -69,7 +69,8 @@ spec:
               memory: 512Mi
             limits:
               cpu: "2"
-              memory: 4Gi
+              # Normalizer runs need headroom beside the archive's inserts.
+              memory: 8Gi
           startupProbe:
             httpGet:
               path: /ping
