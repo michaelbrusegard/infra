@@ -73,6 +73,12 @@ spec:
                 constraints:
                   - DoNotSchedule
                   - ScheduleAnyway
+                # nodeFit ignores where a pod's volume lives, so a pod bound
+                # to a node-local volume elsewhere would be evicted and land
+                # back on its node every run. Only the proxies need this.
+                namespaces:
+                  include:
+                    - netbird
           plugins:
             balance:
               enabled:
