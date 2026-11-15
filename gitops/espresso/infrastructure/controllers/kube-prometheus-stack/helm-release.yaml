@@ -53,7 +53,7 @@ spec:
             resources: ["helmreleases"]
             verbs: ["list", "watch"]
           - apiGroups: ["source.toolkit.fluxcd.io"]
-            resources: ["gitrepositories", "ocirepositories", "helmcharts"]
+            resources: ["gitrepositories", "ocirepositories", "helmrepositories", "helmcharts"]
             verbs: ["list", "watch"]
           - apiGroups: ["infra.contrib.fluxcd.io"]
             resources: ["terraforms"]
@@ -165,6 +165,23 @@ spec:
                   suspended: [spec, suspend]
                 metrics:
                   - name: ocirepository_info
+                    help: The Ready condition of a Flux object.
+                    each:
+                      type: Info
+                      info:
+                        labelsFromPath:
+                          obj_name: [metadata, name]
+              - groupVersionKind:
+                  group: source.toolkit.fluxcd.io
+                  version: v1
+                  kind: HelmRepository
+                metricNamePrefix: flux
+                labelsFromPath:
+                  obj_namespace: [metadata, namespace]
+                  ready: [status, conditions, "[type=Ready]", status]
+                  suspended: [spec, suspend]
+                metrics:
+                  - name: helmrepository_info
                     help: The Ready condition of a Flux object.
                     each:
                       type: Info
