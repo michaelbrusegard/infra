@@ -138,6 +138,58 @@ Success criteria:
   region data.
 - No live Minecraft PVC is mounted or modified.
 
+### Stalwart Drill
+
+Restore `stalwart-data-backup` into a scratch PVC through VolSync, then start
+the same image in recovery mode against it. Recovery mode serves only the HTTP
+management/JMAP listener, so the copy binds no SMTP, IMAP or queue. Label the pod
+`app: restore-drill-stalwart`, never `app: stalwart`, so the production
+Services and policies do not select it.
+
+```sh
+k() { ssh -o BatchMode=yes deploy-espresso-1 "sudo -n k3s kubectl -n stalwart $*"; }
+```
+
+1. Create a 2Gi `openebs-single-replica` PVC `restore-drill-stalwart` and a
+   `ReplicationDestination` with `trigger.manual: drill-1`,
+   `restic.repository: freddo-restic-mail-stalwart`,
+   `destinationPVC: restore-drill-stalwart`, `copyMethod: Direct` and the
+   source's `moverSecurityContext` (2000/2000). Wait for
+   `status.lastManualSync == drill-1`; the mover log names the snapshot.
+2. Create a secret `restore-drill-stalwart` with a random password as
+   `DRILL_PASSWORD` and `STALWART_RECOVERY_ADMIN=drill:{PLAIN}<password>`.
+   Never reuse a production credential.
+3. Add a deny-all `NetworkPolicy` (`policyTypes: [Ingress, Egress]`, no rules)
+   for `app: restore-drill-stalwart`. Start a `restartPolicy: Never` pod from
+   the production image with `STALWART_RECOVERY_MODE=true`,
+   `STALWART_RECOVERY_MODE_PORT=8080`, the secret as `envFrom`, the PVC at
+   `/var/lib/stalwart` and the `stalwart-config` ConfigMap at
+   `/var/lib/stalwart/config.json`. Startup takes about a minute because OIDC
+   discovery times out behind the policy.
+4. Query it from inside the pod with
+   `curl -u "drill:$DRILL_PASSWORD" http://127.0.0.1:8080/jmap`:
+   `x:Account/get`, `x:Domain/get`, `x:NetworkListener/get`,
+   `x:DkimSignature/get`, `x:MtaRoute/get`, `x:Directory/get`, then
+   `Mailbox/get` and `Email/query` (`calculateTotal`) with each account's
+   `accountId`. Compare the settings objects with production using the
+   runner's `STALWART_TOKEN`. That key cannot read accounts or mail, so
+   compare message counts with what the owner sees in webmail or with the
+   `message-ingest` events in the production log.
+5. Delete the pod, `ReplicationDestination`, NetworkPolicy, secret and PVC.
+   Then confirm that nothing matching `drill` or `volsync-dst` is left in the
+   namespace and that the released PV is gone.
+
+Success criteria:
+
+- The mover restores the latest snapshot and the server answers
+  `/api/account` with 200.
+- Accounts, domains with catch-alls, listeners, DKIM signatures, routes and
+  the OIDC directory match production. Mailboxes and message counts match.
+
+Last run 2026-11-15 from snapshot `d0be40f9` (06:20Z): all of the above
+matched. The mailbox held 0 messages at that point, so message bodies were not
+exercised. Repeat after the cutover.
+
 ## Notes
 
 Cluster writers use `retain.within: 100y` so they do not meaningfully prune
