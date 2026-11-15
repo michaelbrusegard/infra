@@ -97,11 +97,14 @@ data:
           </grants>
         </cliproxy>
         <!-- The LLM normalizer reads the raw capture and the state of the
-             canonical tables, and appends to the canonical tables. As with
-             the others, the network policy, which admits only its pods to
-             the native port, is the boundary. -->
+             canonical tables, and appends to the canonical tables. Pods that
+             reach the HTTP port, such as CLIProxy's and Grafana's, could
+             otherwise read the raw history as this user, so it needs the
+             password of the clickhouse-llm-normalizer secret; only its pods
+             have that secret and reach the native port. No network tells
+             its pods from theirs. -->
         <llm_normalizer>
-          <no_password/>
+          <password from_env="LLM_NORMALIZER_PASSWORD"/>
           <networks>
             <ip>::/0</ip>
           </networks>
@@ -123,7 +126,8 @@ data:
         </llm_normalizer>
         <!-- Network policy trusts only CLIProxy and Grafana pods. As with the
              writer, authentication is at that boundary; allowed pods can select
-             either passwordless identity. Expose only the metrics view here. -->
+             either passwordless identity, but not the normalizer's. Expose only
+             the metrics view here. -->
         <grafana>
           <no_password/>
           <networks>

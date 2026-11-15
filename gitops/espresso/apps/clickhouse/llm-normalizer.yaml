@@ -61,6 +61,12 @@ spec:
                   value: /scratch
                 - name: SCRATCH
                   value: /scratch
+                # clickhouse-client reads it as llm_normalizer's password.
+                - name: CLICKHOUSE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: clickhouse-llm-normalizer
+                      key: LLM_NORMALIZER_PASSWORD
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:

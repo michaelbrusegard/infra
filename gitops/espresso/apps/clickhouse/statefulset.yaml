@@ -15,6 +15,7 @@ spec:
         app: clickhouse
       annotations:
         configmap.reloader.stakater.com/reload: clickhouse
+        secret.reloader.stakater.com/reload: clickhouse-llm-normalizer
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -35,6 +36,14 @@ spec:
             # schema.sql is idempotent, so new tables land on restart.
             - name: CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS
               value: "1"
+            # users.xml reads llm_normalizer's password from it. An unset or
+            # empty password would let any pod that reaches the HTTP port
+            # use that user, so the secret is required.
+            - name: LLM_NORMALIZER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: clickhouse-llm-normalizer
+                  key: LLM_NORMALIZER_PASSWORD
           ports:
             - name: http
               containerPort: 8123

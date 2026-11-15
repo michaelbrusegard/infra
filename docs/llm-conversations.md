@@ -773,7 +773,10 @@ does into CLIProxyAPI. An init container copies `/normalizer` next to
 `clickhouse-client` in the ClickHouse server image, and `normalize.sh cron`
 runs the four steps over the native protocol. ClickHouse's network policy
 admits only the normalizer's pods to the native port, and they reach
-nothing else. They connect as `llm_normalizer`, which has SELECT on the
+nothing else. They connect as `llm_normalizer`, with the password of the
+`clickhouse-llm-normalizer` secret, which ClickHouse reads too: CLIProxy's
+and Grafana's pods reach the HTTP port, and without it could use the user
+to read the raw history. It has SELECT on the
 sources (`llm.requests`, `llm.request_items`, `llm.usage`, and until they
 are dropped `llm.transcripts` and `llm.historical_usage`), SELECT and INSERT
 on `llm.sessions`, `llm.messages`, `llm.calls` and `llm.events`, and INSERT

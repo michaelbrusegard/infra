@@ -15,6 +15,7 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
 import subprocess
 import tempfile
 import time
@@ -27,6 +28,8 @@ NORMALIZER = PLUGINS / "normalize-conversations"
 DOC = ROOT / "docs/llm-conversations.md"
 # The fixtures are from November 2026; pin "now" so the examples stay stable.
 NOW = "toDateTime64('2026-11-14 00:00:00', 3, 'UTC')"
+# llm_normalizer's password, which the cluster reads from a secret.
+PASSWORD = secrets.token_hex(16)
 
 
 TRANSCRIPTS = """
@@ -87,6 +90,7 @@ def main():
         try:
             run("docker", "run", "--detach", "--name", container, "--network", "none",
                 "--memory", "2g", "--cpus", "2", "-e", "CLICKHOUSE_SKIP_USER_SETUP=1",
+                "-e", f"LLM_NORMALIZER_PASSWORD={PASSWORD}",
                 "-v", f"{temp}/config.xml:/etc/clickhouse-server/config.d/archive.xml:ro",
                 "-v", f"{temp}/users.xml:/etc/clickhouse-server/users.d/archive.xml:ro",
                 "-v", f"{temp}/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro", image)
@@ -644,6 +648,7 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
     try:
         run("docker", "run", "--detach", "--name", container, "--network", "none",
             "--memory", "2g", "--cpus", "2", "-e", "CLICKHOUSE_SKIP_USER_SETUP=1",
+            "-e", f"LLM_NORMALIZER_PASSWORD={PASSWORD}",
             "-v", f"{temp}/config.xml:/etc/clickhouse-server/config.d/archive.xml:ro",
             "-v", f"{temp}/users.xml:/etc/clickhouse-server/users.d/archive.xml:ro",
             "-v", f"{temp}/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro",
@@ -668,7 +673,8 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
 
         def normalize(mode):
             return run("docker", "exec", "-u", "101", "-e", "CLICKHOUSE_HOST=localhost", "-e", "SCRATCH=/tmp/scratch",
-                       "-e", "HOME=/tmp", container, "/opt/normalizer/normalize.sh", mode, check=False)
+                       "-e", "HOME=/tmp", "-e", f"CLICKHOUSE_PASSWORD={PASSWORD}", container,
+                       "/opt/normalizer/normalize.sh", mode, check=False)
 
         result = normalize("backfill")
         assert result.returncode == 0, result.stdout + result.stderr
@@ -686,11 +692,30 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
         assert result.returncode != 0 and "delete the transcript rows first" in result.stderr, result.stderr
         # The normalizer's user reads the sources and appends to the
         # canonical tables, and nothing else.
+        def as_normalizer(sql, *password):
+            return run("docker", "exec", "-i", container, "clickhouse-client", "--user", "llm_normalizer",
+                       *password, input=sql, check=False)
+
+        assert as_normalizer("SELECT count() FROM llm.requests", "--password", PASSWORD).stdout.strip() == "10"
         for sql in ("SELECT * FROM llm.usage_metrics", "INSERT INTO llm.requests (request_id) VALUES ('x')",
                     "ALTER TABLE llm.calls DELETE WHERE 1", "DROP TABLE llm.events"):
-            denied = run("docker", "exec", "-i", container, "clickhouse-client", "--user", "llm_normalizer",
-                         input=sql, check=False)
-            assert denied.returncode != 0, sql
+            denied = as_normalizer(sql, "--password", PASSWORD)
+            assert denied.returncode != 0 and "ACCESS_DENIED" in denied.stderr, (sql, denied.stderr)
+        # CLIProxy's and Grafana's pods reach the HTTP port, and cannot read
+        # the raw history as the normalizer without its password, there or
+        # on the native port; with it, the same request reads it.
+        def over_http(password):
+            url = "http://localhost:8123/?user=llm_normalizer" + (f"&password={password}" if password else "") \
+                + "&query=SELECT%20count()%20FROM%20llm.requests"
+            return run("docker", "exec", "-i", container, "clickhouse-client", input=f"SELECT * FROM url('{url}', "
+                       "TSV, 'n UInt64')", check=False)
+
+        assert over_http(PASSWORD).stdout.strip() == "10"
+        for password in ("", "wrong"):
+            denied = over_http(password)
+            assert denied.returncode != 0 and "AUTHENTICATION_FAILED" in denied.stderr, denied.stderr
+            denied = as_normalizer("SELECT count() FROM llm.requests", *(["--password", password] if password else []))
+            assert denied.returncode != 0 and "AUTHENTICATION_FAILED" in denied.stderr, denied.stderr
         print("PASS: the in-cluster backfill and job, with the normalizer's grants")
     finally:
         run("docker", "rm", "--force", container, check=False)

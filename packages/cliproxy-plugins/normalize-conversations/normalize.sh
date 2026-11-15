@@ -10,8 +10,9 @@
 #                          then the transcript import, then the checks
 #   normalize.sh verify    only the checks
 #
-# CLICKHOUSE_HOST and CLICKHOUSE_USER name the server and its user, and
-# SCRATCH a directory for the downloads and the rows to insert.
+# CLICKHOUSE_HOST and CLICKHOUSE_USER name the server and its user, whose
+# password clickhouse-client reads from CLICKHOUSE_PASSWORD, and SCRATCH a
+# directory for the downloads and the rows to insert.
 set -euo pipefail
 
 here=$(dirname "$(readlink -f "$0")")
