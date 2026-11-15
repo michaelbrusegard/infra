@@ -58,3 +58,22 @@ spec:
             deschedule:
               enabled:
                 - RemoveFailedPods
+        - name: rebalance-soft-spread
+          pluginConfig:
+            # Move a pod only where it fits, so a node that is still down or
+            # full leaves the pile-up in place rather than evicting in a loop.
+            - name: DefaultEvictor
+              args:
+                nodeFit: true
+            - name: RemovePodsViolatingTopologySpreadConstraint
+              args:
+                # A soft spread is ignored when its nodes are down, and nothing
+                # restores it once they return: the NetBird cluster proxies
+                # stayed doubled up on one node after the reboots.
+                constraints:
+                  - DoNotSchedule
+                  - ScheduleAnyway
+          plugins:
+            balance:
+              enabled:
+                - RemovePodsViolatingTopologySpreadConstraint
