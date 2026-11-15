@@ -687,12 +687,26 @@ the request's ID as `call_id`, its model, and the time it was logged. Its
 input is the conversation as the file had it then, and its context holds
 the shape's system prompt and tools and, as `messages` parts at their
 positions in the request, the messages Claude Code logged as blobs: the
-first `keep` messages of its `base` request and its own `tail`, each a blob
-hash. Claude Code logs a message as a blob only when it is not one of the
-file's own lines (161,125 of 243,141 tail references name no blob, as all
-blobs resolve within their file), so the other positions are messages of
-the tree. The blobs these requests hold are counted as `call`; the others
-are dropped.
+first `keep` messages of its `base` request and its own `tail`, each named
+by a hash. Claude Code logs a message as a blob only when it is not one of
+the file's own lines (161,125 of 243,141 tail references name no blob, as
+all blobs resolve within their file), so the other positions are messages
+of the tree. The blobs these requests hold are counted as `call`; the
+others are dropped.
+
+The hash is the SHA-256 of the message as the API received it, `{role,
+content}` as JSON with sorted keys and no whitespace, so the import
+resolves every other position to the file's message lines, and fails on
+any it cannot, or on a base request the file lacks. On 2026-11-14 this
+resolved all 6,249 tail references of the 952 requests, 200,835 with
+their base requests' messages, and left none: 2,257 tail references are
+blobs, 2,636 a line's message as written, 205 a line whose string content
+went as a single text block (Claude Code sends the last message so, to
+mark it for the cache), 1,037 a reply whose streamed blocks are a line
+each, as one message, and 114 consecutive user lines as one message, such
+as a turn's tool results and a prompt queued after them, since the API
+takes no two user messages in a row. None of the requests falls after the
+proxy took its session over.
 
 ### Usage history
 

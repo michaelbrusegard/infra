@@ -74,6 +74,9 @@ type file struct {
 	// The calls of requests no reply names: each request's messages, as
 	// far as its blobs hold them, by position.
 	requestMessages map[string][]requestMessage
+	// The message lines the file keeps, which hold the messages of those
+	// requests that are no blob.
+	sent []sentLine
 }
 
 // fold is a line folded into a call: its usage, model, or context. What
@@ -1279,6 +1282,10 @@ func (f *file) claudeCode(lines []TranscriptLine) {
 		}
 		id, added := f.message(l, e, f.treeParent(e.str("parentUuid")), uuid, m)
 		f.nodes[uuid] = id
+		if added && (t == "user" || t == "assistant") {
+			msg := e.obj("message")
+			f.sent = append(f.sent, sentLine{role: msg.str("role"), content: msg["content"], reply: msg.str("id")})
+		}
 		if added && m.Output {
 			// The call's request log, from Claude Code 2.1 on.
 			if f.refs[m.CallID] == "" {
@@ -1297,8 +1304,10 @@ func (f *file) claudeCode(lines []TranscriptLine) {
 // they sent. Each is a call without outputs, whose input is the
 // conversation as the file had it when the request was logged, and whose
 // context holds its system prompt, tools, and the messages it sent that
-// Claude Code logged as blobs. It names the others by hash only; they are
-// the file's own lines, which are messages.
+// Claude Code logged as blobs. Every other message it sent must be one of
+// the file's message lines, which are messages (see sentMessages); a
+// message neither holds, or a base request the file lacks, fails the
+// import.
 func (f *file) unansweredRequests() {
 	named := map[string]bool{}
 	for _, ref := range f.refs {
@@ -1308,28 +1317,43 @@ func (f *file) unansweredRequests() {
 	for _, r := range f.requestLines {
 		byID[r.id] = r
 	}
-	var messages func(id string, depth int) []string
-	messages = func(id string, depth int) []string {
+	// The messages of a request, from its base's first keep, or false
+	// when the file lacks a base or holds fewer.
+	var messages func(id string, depth int) ([]string, bool)
+	messages = func(id string, depth int) ([]string, bool) {
 		r, ok := byID[id]
 		if !ok || depth > 1<<12 {
-			return nil
+			return nil, false
 		}
 		var out []string
 		if r.base != "" {
-			base := messages(r.base, depth+1)
-			out = append(out, base[:min(r.keep, len(base))]...)
+			base, ok := messages(r.base, depth+1)
+			if !ok || len(base) < r.keep {
+				return nil, false
+			}
+			out = append(out, base[:r.keep]...)
 		}
-		return append(out, r.tail...)
+		return append(out, r.tail...), true
 	}
+	var sent map[string]bool
 	for _, r := range f.requestLines {
 		if _, ok := f.replies.referenced(r.id); ok || named[r.id] {
 			continue
 		}
-		for i, hash := range messages(r.id, 0) {
+		if sent == nil {
+			sent = sentMessages(f.sent)
+		}
+		hashes, ok := messages(r.id, 0)
+		if !ok {
+			f.n.unknown("base of claude-code/api-request " + r.id)
+		}
+		for i, hash := range hashes {
 			if b, ok := f.blobs[hash]; ok {
 				b.used = true
 				f.blobs[hash] = b
 				f.requestMessages[r.id] = append(f.requestMessages[r.id], requestMessage{i, b.message})
+			} else if !sent[hash] {
+				f.n.unknown("message " + hash + " of claude-code/api-request " + r.id)
 			}
 		}
 		f.refs[r.id] = r.id

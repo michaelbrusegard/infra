@@ -1,6 +1,7 @@
 package conversations
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -222,8 +223,10 @@ func TestClaudeCodeCallsTakeTheRequestLogOfAnyCopy(t *testing.T) {
 // interrupted ones: 952 live requests no reply in any file names. Each is
 // kept as a call without outputs, whose context holds its system prompt,
 // tools, and the messages it logged as blobs, which its base request's
-// first messages and its own tail make up. Coverage names the call as the
-// destination of its lines, and drops only blobs no such request holds.
+// first messages and its own tail make up. Its other messages are the
+// file's lines, here the reply x1 by its hash. Coverage names the call as
+// the destination of its lines, and drops only blobs no such request
+// holds.
 func TestClaudeCodeUnansweredRequestsAreKept(t *testing.T) {
 	project := ".claude/projects/-Users-michaelbrusegard-Projects-infra/"
 	log := claudeRequestLog("r_answered")
@@ -234,7 +237,7 @@ func TestClaudeCodeUnansweredRequestsAreKept(t *testing.T) {
 		`{"type":"api-request-blob","hash":"b_first","message":{"role":"user","content":"Deploy it."}}`,
 		`{"type":"api-request-blob","hash":"b_second","message":{"role":"user","content":"Retry the deploy."}}`,
 		`{"type":"api-request-blob","hash":"b_unused","message":{"role":"user","content":"Never sent."}}`,
-		`{"type":"api-request","id":"r_base","shapeHash":"sh1","params":{"model":"claude-opus-5-5"},"keep":0,"tail":["b_first","h_line"]}`,
+		`{"type":"api-request","id":"r_base","shapeHash":"sh1","params":{"model":"claude-opus-5-5"},"keep":0,"tail":["b_first","0f45c677fd56c9eb9529416de5cac31bb2227242c6706039c68fa564af93f969"]}`,
 		`{"type":"api-request","id":"r_failed","shapeHash":"sh1","params":{"model":"claude-opus-5-5"},"base":"r_base","keep":2,"tail":["b_second"]}`)
 	n := NewNormalizer()
 	n.Transcript(file, repliesOf(nil, file), nil)
@@ -275,6 +278,76 @@ func TestClaudeCodeUnansweredRequestsAreKept(t *testing.T) {
 	} {
 		if n.Coverage[c] != lines {
 			t.Fatalf("coverage %+v: %d lines, want %d, in %v", c, n.Coverage[c], lines, n.Coverage)
+		}
+	}
+}
+
+// The messages of a request no reply names that are no blob resolve to
+// the file's lines by Claude Code's hash, in every form a live reference
+// took: a line, a string sent as a text block, a reply streamed over
+// lines, and consecutive user lines as one message. A reference that no
+// blob or line holds, or a base request the file lacks, fails the import
+// and is named, rather than kept as a hash nothing resolves.
+func TestClaudeCodeRequestMessagesResolve(t *testing.T) {
+	project := ".claude/projects/-Users-michaelbrusegard-Projects-infra/"
+	prompt := `{"type":"user","uuid":"u1","parentUuid":"","message":{"role":"user","content":"Check the disk \u2013 it\u2019s full\u2028<now>"}}`
+	reply := func(uuid, parent, block string) string {
+		return fmt.Sprintf(`{"type":"assistant","uuid":%q,"parentUuid":%q,"requestId":"req_r1",`+
+			`"message":{"id":"msg_r1","role":"assistant","model":"claude-opus-5-5","content":[%s]}}`, uuid, parent, block)
+	}
+	result := func(uuid, parent, id, output string) string {
+		return fmt.Sprintf(`{"type":"user","uuid":%q,"parentUuid":%q,"message":{"role":"user","content":`+
+			`[{"tool_use_id":%q,"type":"tool_result","content":%q,"is_error":false}]}}`, uuid, parent, id, output)
+	}
+	request := func(id, base string, keep int, tail ...string) string {
+		quoted, _ := json.Marshal(tail)
+		return fmt.Sprintf(`{"type":"api-request","id":%q,"shapeHash":"sh1","params":{"model":"claude-opus-5-5"},`+
+			`"base":%q,"keep":%d,"tail":%s}`, id, base, keep, quoted)
+	}
+	const (
+		promptHash  = "a8fcc9583c5af636b56e36c12591db589896eeef800b98e68d5cbbff04ae17d6"
+		promptBlock = "45175f71f3079507087b8d2f52988012c810cdefc02876a9339d1d55b40c52ef"
+		replyHash   = "6505107c76eada2642a07372005e3ba04c73605521151ba83a04a4c499a21564"
+		resultsHash = "e7bb5b3aebf755cd33b494832b1cff8fabb9b037dca797d54cf2cec657f8eb94"
+		queuedHash  = "52b1a00eb22e4ad481565c5d82e33e647cd87c84299db2ddbc0ff82358ca42d2"
+		invented    = "1111111111111111111111111111111111111111111111111111111111111111"
+	)
+	lines := []string{
+		prompt,
+		claudeRequestLog("r_none")[0],
+		request("r_first", "", 0, promptBlock),
+		reply("x1", "u1", `{"type":"thinking","thinking":"Look first.","signature":"c2ln"}`),
+		reply("x2", "x1", `{"type":"tool_use","id":"toolu_a","name":"Bash","input":{"command":"df -h","timeout":120000}}`),
+		reply("x3", "x2", `{"type":"tool_use","id":"toolu_b","name":"Bash","input":{"command":"du -s /"}}`),
+		result("t1", "x3", "toolu_a", "/ 100%"),
+		result("t2", "t1", "toolu_b", "9\t/"),
+		request("r_results", "r_first", 1, replyHash, resultsHash),
+		claudeUser("u2", "t2", "Free some space."),
+		request("r_queued", "r_results", 2, queuedHash),
+	}
+	for _, c := range []struct {
+		name  string
+		extra []string
+		err   string
+	}{
+		{"resolved", nil, ""},
+		{"invented", []string{request("r_invented", "r_first", 1, promptHash, invented)},
+			"message " + invented + " of claude-code/api-request r_invented (1)"},
+		{"base", []string{request("r_orphan", "r_elsewhere", 3, promptHash)},
+			"base of claude-code/api-request r_orphan (1)"},
+		{"short base", []string{request("r_short", "r_first", 2)},
+			"base of claude-code/api-request r_short (1)"},
+	} {
+		file := claudeFile(project+"66666666-6666-4666-8666-666666666666.jsonl", "2026-11-01 12:00",
+			append(append([]string{}, lines...), c.extra...)...)
+		n := NewNormalizer()
+		n.Transcript(file, repliesOf(nil, file), nil)
+		err := n.CoverageError()
+		switch {
+		case c.err == "" && err != nil:
+			t.Fatalf("%s: %v", c.name, err)
+		case c.err != "" && (err == nil || !strings.Contains(err.Error(), c.err)):
+			t.Fatalf("%s: %v, want %q", c.name, err, c.err)
 		}
 	}
 }
