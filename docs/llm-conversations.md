@@ -213,7 +213,8 @@ of it once **`llm.transcript_import`** has the row the backfill writes when
 the transcript import is complete (see [Usage history](#usage-history)).
 
 **`llm.request_items`** stays as is: the proxy's items, plus the per-call
-context of transcript calls.
+context of transcript calls and the tools of Codex's `additional_tools`
+items, which proxy calls name in their context.
 
 ## Identity and deduplication
 
@@ -633,7 +634,6 @@ before the proxy took any session over). These losses are approved:
 | `codex` | `inter_agent_communication_metadata` | 1,677 | 0.2 | Routing metadata of sub-agent messages. |
 | `codex` | `event_msg:context_compacted` | 1,168 | 0.1 | Progress; the `compacted` line holds the new context. |
 | `codex` | `turn_context` | ≤ 2,391 | 0.0 | Settings of a turn that made no call, such as an interrupted one. The others give their calls the model. |
-| `codex` | `response_item:additional_tools` | 1 | 0.1 | Tool definitions of a turn that made no call; the calls that have them record them in their context. |
 | `opencode` | `message:idle` | 63 | 0.0 | Status. |
 | `pi` | `thinking_level_change` | 811 | 0.1 | Settings. |
 | `pi` | `model_change` | 803 | 0.1 | Settings; each reply names its model. |
@@ -658,7 +658,7 @@ alone before this audit.
 | codex | `response_item:custom_tool_call_output`, `function_call_output` | 142,126, 57,540 | tool result (`input_text`, string, `input_image`) |
 | codex | `response_item:message` | 81,628 | message (`output_text`, `input_text`, `input_image`) |
 | codex | `response_item:agent_message` (new) | 1,793 | input message with its header text; `encrypted_content` dropped |
-| codex | `response_item:additional_tools` (new) | 927 | tools context of every later call |
+| codex | `response_item:additional_tools` (new) | 927 | tools context of every later call; the proxy's call when the proxy took the session over before the next call |
 | codex | `response_item:web_search_call`, `tool_search_call` | 361, 83 | hosted tool call |
 | codex | `response_item:tool_search_output` | 83 | tool result, its `tools` (definitions, namespaces included) as JSON text |
 | codex | `compacted` history items | 52,487 | `message` and `compaction` nodes; `agent_message` (125) and `additional_tools` (88) as above |
@@ -1159,7 +1159,7 @@ FORMAT JSONEachRow
 -- One call as training data: the system prompt or instructions and the
 -- tools it ran with, which are per-call context outside the message tree,
 -- and the conversation it saw and produced. The context comes from a proxy
--- call's llm.requests row, or a transcript call's context. Context rows
+-- call's llm.requests row and the call's context. Context rows
 -- have a field, a call row marks the call, and call_output marks the
 -- call's own outputs, which the export checks.
 WITH RECURSIVE
@@ -1291,7 +1291,8 @@ What training exports can cover is limited by what the sources record:
 - **Hosted tools** are left out with their results, so text the model wrote
   from a search result stands without the result.
 - **Transcripts record no tool definitions or system prompts**, except
-  Claude Code's request logs since 2026-10-26, which calls take as context.
+  Claude Code's request logs since 2026-10-26 and Codex's `additional_tools`
+  items since 2026-10-25, which calls take as context.
   Any other transcript call that calls a tool is refused, and one that
   answers in text exports without its real context.
 

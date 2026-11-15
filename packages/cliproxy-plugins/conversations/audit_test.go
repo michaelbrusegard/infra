@@ -89,16 +89,14 @@ func toolNames(request map[string]any) []string {
 }
 
 // Codex's tool search returns the definitions it found, which may be
-// namespaces of tools, as the tool result's text. Tool definitions a turn
-// added before ending without a call are dropped, like its settings.
-func TestCodexToolSearchAndUnusedTools(t *testing.T) {
+// namespaces of tools, as the tool result's text.
+func TestCodexToolSearchResults(t *testing.T) {
 	found := `[{"type":"namespace","name":"mcp__paseo","tools":[{"type":"function","name":"speak","parameters":{"type":"object"}}]}]`
 	file := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-019f6478-0000-7000-8000-00000000000a.jsonl",
 		"2026-11-12 10:00", `{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000a"}}`,
 		`{"type":"response_item","payload":{"type":"tool_search_call","call_id":"ts_1","arguments":{"query":"speak"}}}`,
 		codexUsageLine("resp_1"),
-		`{"type":"response_item","payload":{"type":"tool_search_output","call_id":"ts_1","status":"completed","tools":`+found+`}}`,
-		`{"type":"response_item","payload":{"type":"additional_tools","id":"at_1","role":"developer","tools":[]}}`)
+		`{"type":"response_item","payload":{"type":"tool_search_output","call_id":"ts_1","status":"completed","tools":`+found+`}}`)
 	n := NewNormalizer()
 	n.Transcript(file, repliesOf(nil, file), nil)
 	if err := n.CoverageError(); err != nil {
@@ -114,9 +112,6 @@ func TestCodexToolSearchAndUnusedTools(t *testing.T) {
 	}
 	if result == nil || result.Type != "tool_result" || result.Text != found {
 		t.Fatalf("tool search result %+v", result)
-	}
-	if got := n.Coverage[Covered{"codex", "response_item:additional_tools", "dropped", ""}]; got != 1 {
-		t.Fatalf("coverage %+v", n.Coverage)
 	}
 }
 
@@ -364,11 +359,11 @@ func TestClaudeCodeRequestMessagesResolve(t *testing.T) {
 	}{
 		{"resolved", nil, ""},
 		{"invented", []string{request("r_invented", "r_first", 1, promptHash, invented)},
-			"message " + invented + " of claude-code/api-request r_invented (1)"},
+			"message " + invented + " of claude-code/api-request r_invented (1, first in lungo:"},
 		{"base", []string{request("r_orphan", "r_elsewhere", 3, promptHash)},
-			"base of claude-code/api-request r_orphan (1)"},
+			"base of claude-code/api-request r_orphan (1, first in lungo:"},
 		{"short base", []string{request("r_short", "r_first", 2)},
-			"base of claude-code/api-request r_short (1)"},
+			"base of claude-code/api-request r_short (1, first in lungo:"},
 	} {
 		file := claudeFile(project+"66666666-6666-4666-8666-666666666666.jsonl", "2026-11-01 12:00",
 			append(append([]string{}, lines...), c.extra...)...)
@@ -467,5 +462,30 @@ func TestAnthropicSearchResultsAndFallbacks(t *testing.T) {
 	if len(blocks) != 2 || blocks[0].Type != "fallback" || !strings.Contains(blocks[0].Text, `"to":{"model":"claude-opus-4-8"}`) ||
 		blocks[1].Type != "tool_result" || blocks[1].Text != "Signal stats\nhttps://example.com/signal" {
 		t.Fatalf("blocks %+v", blocks)
+	}
+}
+
+// Codex can add tools in the turn the proxy takes the session over in:
+// the line comes before the handover, but the call that sent the tools is
+// the proxy's, whose request holds them.
+func TestCodexToolsBeforeTheProxyGoWithItsCall(t *testing.T) {
+	tools := `{"type":"response_item","payload":{"type":"additional_tools","id":"at_1","role":"developer","tools":[` +
+		`{"type":"function","name":"exec","parameters":{"type":"object"}}]}}`
+	file := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-019f6478-0000-7000-8000-00000000000a.jsonl",
+		"2026-11-12 10:00", `{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000a"}}`,
+		codexUserLine("Plan it."), codexReplyLine("Planned."), codexUsageLine("resp_1"),
+		tools, codexUserLine("Run it."), codexReplyLine("Done."), codexUsageLine("resp_P"))
+	proxied := &Proxied{}
+	proxied.Add(transcriptSession(file).SessionID, "", "codex", "resp_P", "2026-11-12 10:00:06.000")
+	n := NewNormalizer()
+	n.Transcript(file, repliesOf(nil, file), proxied)
+	if err := n.CoverageError(); err != nil {
+		t.Fatal(err)
+	}
+	if got := n.Coverage[Covered{"codex", "response_item:additional_tools", "proxied", "llm.calls"}]; got != 1 {
+		t.Fatalf("coverage %+v", n.Coverage)
+	}
+	if len(n.Calls) != 1 || n.Calls[0].ResponseID != "resp_1" {
+		t.Fatalf("calls %+v", n.Calls)
 	}
 }

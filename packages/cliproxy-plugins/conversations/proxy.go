@@ -61,6 +61,8 @@ type Normalizer struct {
 	// Kinds of transcript line or block the import does not know, or lines
 	// no written row holds; see CoverageError.
 	unknowns map[string]int
+	// The first file with each of unknowns.
+	examples map[string]string
 	// The context items of written transcript calls, and the context of
 	// lines whose call another file holds, which they must be among.
 	held   map[Hash]bool

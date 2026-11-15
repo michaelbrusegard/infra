@@ -66,6 +66,9 @@ type file struct {
 	// Lines after the proxy took the session over whose reply the proxy
 	// returned; see owned.
 	proxied map[string]bool
+	// Lines from before the takeover whose reply the proxy returned, such
+	// as the tools Codex adds just before the proxy's first call.
+	toProxy map[string]bool
 	// Claude Code's request logs as the file wrote them: each request's
 	// line, its shapes' lines, and its message blobs by hash.
 	requestLines []requestLine
@@ -602,15 +605,18 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 }
 
 // settle counts a folded line by what became of its call. A line no call
-// took fails the import, except the turn settings or tool definitions of a
-// turn that made no call, which hold nothing else the import keeps: the
-// calls that have the tools record them themselves.
+// took fails the import, except a line whose reply the proxy returned,
+// whose call the proxy holds, and the turn settings of a turn that made no
+// call, which hold nothing else the import keeps.
 func (f *file) settle(fd fold, fate string) {
+	if fate == "" && f.toProxy[fd.l.ID] {
+		fate = "proxied"
+	}
 	switch {
-	case fate == "" && (fd.kind == "turn_context" || fd.kind == "response_item:additional_tools"):
+	case fate == "" && fd.kind == "turn_context":
 		f.count(fd.l.Source, fd.kind, "dropped", "")
 	case fate == "":
-		f.n.unknown("no call for " + fd.l.Source + "/" + fd.kind)
+		f.unknown("no call for " + fd.l.Source + "/" + fd.kind)
 	case fate == "proxied":
 		f.count(fd.l.Source, fd.kind, fate, "llm.calls")
 	default:
@@ -716,7 +722,7 @@ func newFile(n *Normalizer, lines []TranscriptLine, proxied *Proxied) *file {
 	f := &file{n: n, key: fileKey(lines[0]), parents: map[string]string{}, nodes: map[string]Hash{},
 		calls: map[string]*Call{}, kept: map[string]Message{}, items: map[string]string{}, counts: map[string]string{},
 		shapes: map[string]json.RawMessage{}, requests: map[string]string{}, refs: map[string]string{},
-		callTools: map[string][]json.RawMessage{}, callSystem: map[string]json.RawMessage{}, proxied: map[string]bool{}, shapeLines: map[string][]TranscriptLine{},
+		callTools: map[string][]json.RawMessage{}, callSystem: map[string]json.RawMessage{}, proxied: map[string]bool{}, toProxy: map[string]bool{}, shapeLines: map[string][]TranscriptLine{},
 		blobs: map[string]blob{}, requestMessages: map[string][]requestMessage{}}
 	f.session = transcriptSession(lines)
 	if proxied != nil {
@@ -740,6 +746,8 @@ func newFile(n *Normalizer, lines []TranscriptLine, proxied *Proxied) *file {
 			}
 			if _, returned := proxied.returned(next); returned && stamps[i] >= f.proxiedSince {
 				f.proxied[lines[i].ID] = true
+			} else if returned {
+				f.toProxy[lines[i].ID] = true
 			}
 		}
 	}
@@ -988,6 +996,18 @@ func (n *Normalizer) unknown(what string) {
 	n.unknowns[what]++
 }
 
+// unknown records what a file's import does not know, and the first file
+// with it, for CoverageError to name.
+func (f *file) unknown(what string) {
+	f.n.unknown(what)
+	if f.n.examples == nil {
+		f.n.examples = map[string]string{}
+	}
+	if _, ok := f.n.examples[what]; !ok {
+		f.n.examples[what] = f.session.Host + ":" + f.session.Path
+	}
+}
+
 // CoverageError reports what the transcript import could not account for:
 // kinds of line or block it does not know. The import must not be inserted
 // with any, since llm.transcripts is dropped after it.
@@ -1006,6 +1026,10 @@ func (n *Normalizer) CoverageError() error {
 	}
 	var list []string
 	for what, lines := range n.unknowns {
+		if example := n.examples[what]; example != "" {
+			list = append(list, fmt.Sprintf("%s (%d, first in %s)", what, lines, example))
+			continue
+		}
 		list = append(list, fmt.Sprintf("%s (%d)", what, lines))
 	}
 	sort.Strings(list)
@@ -1039,10 +1063,10 @@ func (f *file) other(l TranscriptLine, e obj) {
 	case !f.owned(l) && disposition != "session":
 		disposition = "proxied"
 	case disposition == "dropped" && !droppedKinds[key]:
-		f.n.unknown("kind " + key)
+		f.unknown("kind " + key)
 	case disposition == "call":
 		// Lines folded into calls count by what became of the call.
-		f.n.unknown("no call for " + key)
+		f.unknown("no call for " + key)
 	case event:
 		f.n.Events = append(f.n.Events, Event{SessionID: f.session.SessionID, TS: f.stamp(l), Host: l.Host,
 			Path: l.Path, Line: l.ID, Type: kind, Detail: eventDetail(kind, e)})
@@ -1178,7 +1202,7 @@ func (f *file) call(callID, format, model string, input Hash, ts string) *Call {
 func (f *file) node(parent Hash, key string, ts string, m Message) (Hash, bool) {
 	for _, b := range m.Blocks {
 		if b.Type == "other" {
-			f.n.unknown(f.session.Client + " " + m.Format + " block " + b.SourceType)
+			f.unknown(f.session.Client + " " + m.Format + " block " + b.SourceType)
 		}
 	}
 	m.Host, m.Path = f.session.Host, f.session.Path
@@ -1346,7 +1370,7 @@ func (f *file) unansweredRequests() {
 		}
 		hashes, ok := messages(r.id, 0)
 		if !ok {
-			f.n.unknown("base of claude-code/api-request " + r.id)
+			f.unknown("base of claude-code/api-request " + r.id)
 		}
 		for i, hash := range hashes {
 			if b, ok := f.blobs[hash]; ok {
@@ -1354,7 +1378,7 @@ func (f *file) unansweredRequests() {
 				f.blobs[hash] = b
 				f.requestMessages[r.id] = append(f.requestMessages[r.id], requestMessage{i, b.message})
 			} else if !sent[hash] {
-				f.n.unknown("message " + hash + " of claude-code/api-request " + r.id)
+				f.unknown("message " + hash + " of claude-code/api-request " + r.id)
 			}
 		}
 		f.refs[r.id] = r.id
@@ -1657,7 +1681,7 @@ func (f *file) opencode(lines []TranscriptLine) {
 		case "proxied":
 			f.cover(l, e, "proxied", "llm.calls")
 		default:
-			f.n.unknown("no message for opencode/part")
+			f.unknown("no message for opencode/part")
 		}
 	}
 }
