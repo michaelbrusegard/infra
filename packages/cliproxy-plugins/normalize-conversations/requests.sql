@@ -16,8 +16,9 @@
 --
 -- The plugin writes a request when it completes, so a long request arrives
 -- after later ones. Selecting what is missing, rather than what started
--- after a watermark, picks it up whenever it lands; {after} only bounds the
--- scan and must reach back past the longest request and any outage.
+-- after a watermark, picks it up whenever it lands: {after} and {before}
+-- are a window that missing.sql lists while any of its requests is
+-- missing.
 --
 -- llm.usage has a row per upstream attempt, and a websocket trace carries
 -- many requests one after another. An attempt belongs to exactly one

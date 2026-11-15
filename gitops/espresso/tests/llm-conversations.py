@@ -9,7 +9,7 @@ Run with `nix develop --command python3 gitops/espresso/tests/llm-conversations.
 Requires Docker and Go.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import itertools
 import json
 import os
@@ -678,9 +678,9 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
             query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + (sources / f"{table}.jsonl").read_text(), user)
         query(SYNCED)
 
-        def normalize(mode):
+        def normalize(mode, *env):
             return run("docker", "exec", "-u", "101", "-e", "CLICKHOUSE_HOST=localhost", "-e", "SCRATCH=/tmp/scratch",
-                       "-e", "HOME=/tmp", "-e", f"CLICKHOUSE_PASSWORD={PASSWORD}", container,
+                       "-e", "HOME=/tmp", "-e", f"CLICKHOUSE_PASSWORD={PASSWORD}", *env, container,
                        "/opt/normalizer/normalize.sh", mode, check=False)
 
         result = normalize("backfill")
@@ -697,6 +697,30 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
         assert result.returncode == 0 and query("SELECT count() FROM llm.messages") == rows, result.stderr
         result = normalize("backfill")
         assert result.returncode != 0 and "delete the transcript rows first" in result.stderr, result.stderr
+        # After a stop of any length, the job catches up an hour at a time
+        # from the oldest request it misses. Once its budget is spent it
+        # stops after the window it ran, and the next run goes on.
+        late = (("late-6d", 150), ("late-3d", 75), ("late-2h", 2))
+        for call, hours in late:
+            started = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")
+            body = json.dumps({"type": "response.completed", "response": {
+                "id": f"resp_{call}", "object": "response", "model": "gpt-6.1-sol", "output": [],
+                "usage": {"input_tokens": 100, "output_tokens": 1}}})
+            query("INSERT INTO llm.requests FORMAT JSONEachRow\n" + json.dumps({
+                "request_id": call, "trace_id": call, "started_at": f"{started}.000", "completed_at": f"{started}.500",
+                "source_format": "openai-response", "model": "gpt-6.1-sol", "outcome": "succeeded", "status_code": 200,
+                "user_agent": "T3 Code/0.0.30", "request_envelope": "{}", "request_parts": [], "response_body": body}),
+                "cliproxy")
+            query("INSERT INTO llm.usage FORMAT JSONEachRow\n" + json.dumps({
+                "request_id": f"usage-{call}", "trace_id": call, "session_id": f"codex:{call}",
+                "requested_at": f"{started}.001", "provider": "codex", "model": "gpt-6.1-sol"}), "cliproxy")
+        caught_up = "SELECT groupArray(call_id) FROM (SELECT call_id FROM llm.calls FINAL WHERE call_id LIKE 'late-%' ORDER BY started_at)"
+        for done in (1, 2, 3):
+            result = normalize("cron", "-e", "BUDGET=0")
+            assert result.returncode == 0 and "the budget is spent" in result.stdout, result.stdout + result.stderr
+            assert query(caught_up) == "[" + ",".join(f"'{call}'" for call, _ in late[:done]) + "]", (done, result.stdout)
+        result = normalize("cron")
+        assert result.returncode == 0 and len(result.stdout.splitlines()) == 1, result.stdout + result.stderr
         # The checks run after the old import is dropped, too.
         query("DROP TABLE llm.transcripts")
         query("DROP TABLE llm.historical_usage")
@@ -709,7 +733,8 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
             return run("docker", "exec", "-i", container, "clickhouse-client", "--user", "llm_normalizer",
                        *password, input=sql, check=False)
 
-        assert as_normalizer("SELECT count() FROM llm.requests", "--password", PASSWORD).stdout.strip() == "10"
+        requests = query("SELECT count() FROM llm.requests")
+        assert as_normalizer("SELECT count() FROM llm.requests", "--password", PASSWORD).stdout.strip() == requests
         for sql in ("SELECT * FROM llm.usage_metrics", "INSERT INTO llm.requests (request_id) VALUES ('x')",
                     "ALTER TABLE llm.calls DELETE WHERE 1", "DROP TABLE llm.events"):
             denied = as_normalizer(sql, "--password", PASSWORD)
@@ -723,7 +748,7 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
             return run("docker", "exec", "-i", container, "clickhouse-client", input=f"SELECT * FROM url('{url}', "
                        "TSV, 'n UInt64')", check=False)
 
-        assert over_http(PASSWORD).stdout.strip() == "10"
+        assert over_http(PASSWORD).stdout.strip() == requests
         for password in ("", "wrong"):
             denied = over_http(password)
             assert denied.returncode != 0 and "AUTHENTICATION_FAILED" in denied.stderr, denied.stderr

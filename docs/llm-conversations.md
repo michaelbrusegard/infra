@@ -759,16 +759,23 @@ derives the canonical rows.**
 The job runs the same Go package as a CronJob, for example every 10 minutes.
 Each run:
 
-1. Selects the requests of the last day that are not in `llm.calls` yet,
-   with
+1. Selects the requests that are not in `llm.calls` yet, an hour at a
+   time from the oldest hour that has any, which
+   [`missing.sql`](../packages/cliproxy-plugins/normalize-conversations/missing.sql)
+   lists, with
    [`requests.sql`](../packages/cliproxy-plugins/normalize-conversations/requests.sql).
    Requests land when they complete, so a watermark on start times would skip
    every request that outlived the gap; selecting what is missing picks them
-   up whenever they land. The day only bounds the scan, and must exceed the
-   longest request and any outage; `before` is open. Only the items the
-   normalizer reads are sent, conversation messages and client metadata,
-   each once per run, with the first request that uses it, and the
-   normalizer keeps them for the run.
+   up whenever they land, and catches up after a stop or outage of any
+   length. The current hour's window is open (`before` is far in the
+   future). Only the items the normalizer reads are sent, conversation
+   messages and client metadata, each once per window, with the first
+   request that uses it, and the normalizer keeps them for the window. An
+   hour bounds them to the CronJob's memory: the busiest live hour held
+   140 MiB of items and 250 MiB of bodies, the busiest day 840 MiB and
+   2.2 GiB. A run starts no window after 5 minutes, and the next run goes
+   on from the oldest window left. Steps 2 to 4 run for each window, which
+   is inserted before the next reads its state.
 2. Lists the sessions those requests touch with
    `normalize-conversations -requests -sessions`.
 3. Reads those sessions' nodes and response leaves from `llm.messages` and
@@ -819,8 +826,8 @@ in order, because which transcript file holds a reply's call depends on the
 proxy's calls:
 
 1. **The proxy**, from its first request, in start order, so `llm.calls`
-   holds every proxied call: the job's steps a day at a time (`after` and
-   `before` a day apart), each day inserted before the next reads its
+   holds every proxied call: the job's steps a day at a time rather than an
+   hour, with no time limit, each day inserted before the next reads its
    state. A day bounds the items the server joins at once: joined in full,
    the items of every request would be 68 GiB rather than 2.6 GiB, and each
    run sends an item once. The last day reaches into the future; its
@@ -869,8 +876,8 @@ bounded by a day of requests or a part of files, on one thread.
    days are safe to run again. The dashboard reads the transcript calls'
    history from the moment they are inserted.
 4. **Resume the job**: set `suspend: false` in `llm-normalizer.yaml` and
-   push. It picks up every request since the backfill's last day, however
-   late it landed.
+   push. It picks up every request the backfill left, however late it
+   landed or long the job waited.
 5. **Verify** with the log and
    [Before dropping the transcripts](#before-dropping-the-transcripts), then
    drop the old import there. A later run of the checks alone is

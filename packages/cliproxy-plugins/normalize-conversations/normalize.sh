@@ -4,8 +4,9 @@
 # docs/llm-conversations.md. It runs in the ClickHouse server image, for
 # clickhouse-client, with this directory copied from the plugin image.
 #
-#   normalize.sh cron      one run of the job: the last day's requests that
-#                          are not normalized yet
+#   normalize.sh cron      one run of the job: the requests that are not
+#                          normalized yet, an hour at a time from the
+#                          oldest, starting none after BUDGET seconds (300)
 #   normalize.sh backfill  the proxy from its first request, a day at a time,
 #                          then the transcript import, then the checks
 #   normalize.sh verify    only the checks
@@ -48,19 +49,35 @@ proxy() {
 	echo "proxy $1 to $2: $(wc -l < "$out/llm.calls.jsonl") calls"
 }
 
-# The proxy's capture, in start order and a day at a time, which bounds
-# the items the server joins at once; each day's rows are inserted before
-# the next day reads its state. The last day reaches into the future, and
-# its recent requests are held back for the job.
-backfill_proxy() {
-	local day last
-	day=$(ch --query "SELECT toDate(if(count() = 0, today(), min(started_at))) FROM llm.requests")
-	last=$(date -u +%F)
-	while [[ $day < $last ]]; do
-		proxy "$day 00:00:00" "$(date -u -d "$day + 1 day" +%F) 00:00:00"
-		day=$(date -u -d "$day + 1 day" +%F)
-	done
-	proxy "$last 00:00:00" "2100-01-01 00:00:00"
+# The requests that are not normalized yet, in start order and $1 hours at
+# a time from the oldest window with any, which bounds the items the server
+# joins and the normalizer keeps at once: a busy day holds 840 MiB of them,
+# and an hour 140 MiB. Each window's rows are inserted before the next
+# window reads its state. The current window reaches into the future, and
+# its recent requests are held back for the next run. With a budget of $2
+# seconds, no window starts once it is spent, and the next run goes on from
+# the first window left; every run normalizes one at least.
+proxy_windows() {
+	local seconds=$(($1 * 3600)) now start windows
+	now=$(date -u -d "@$(($(date -u +%s) / seconds * seconds))" '+%F %T')
+	windows=$(ch --param_hours="$1" --queries-file "$here/missing.sql" < /dev/null)
+	while IFS= read -r start; do
+		if [[ -z $start || ! $start < $now ]]; then
+			break
+		fi
+		proxy "$start" "$(date -u -d "@$(($(date -u -d "$start" +%s) + seconds))" '+%F %T')"
+		spent "${2:-}" && return
+	done <<< "$windows"
+	proxy "$now" "2100-01-01 00:00:00"
+}
+
+# Whether the budget of $1 seconds, if there is one, is spent.
+spent() {
+	if [[ -n $1 && $SECONDS -ge $1 ]]; then
+		echo "the budget is spent; the next run goes on from the next window"
+		return 0
+	fi
+	return 1
 }
 
 # The transcript import, once, after the proxy: which file holds a reply's
@@ -110,11 +127,11 @@ verify() {
 case ${1:-} in
 cron)
 	mkdir -p "$scratch"
-	proxy "$(date -u -d '1 day ago' '+%F %T')" "2100-01-01 00:00:00"
+	proxy_windows 1 "${BUDGET:-300}"
 	;;
 backfill)
 	mkdir -p "$scratch"
-	backfill_proxy
+	proxy_windows 24
 	backfill_transcripts
 	verify
 	;;
