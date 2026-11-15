@@ -33,10 +33,13 @@ while IFS=$'\t' read -r name state; do
 done <<< "$attempts"
 
 # The scratch volume lives on ClickHouse's node, whose free space the
-# volume's 40Gi size does not reserve.
+# volume's 40Gi size does not reserve. It is under /var/local/openebs, on
+# the persistent disk that also holds containerd's images, which the
+# kubelet reports as the image filesystem; the node filesystem is the
+# tmpfs root.
 node=$("${kubectl[@]}" -n clickhouse get pod clickhouse-0 -o jsonpath='{.spec.nodeName}' < /dev/null)
 read -r free inodes < <("${kubectl[@]}" get --raw "/api/v1/nodes/$node/proxy/stats/summary" < /dev/null |
-	jq -r '"\(.node.fs.availableBytes) \(.node.fs.inodesFree)"')
+	jq -r '"\(.node.runtime.imageFs.availableBytes) \(.node.runtime.imageFs.inodesFree)"')
 if ((free < min_free_bytes || inodes < 1000000)); then
 	echo "$node has $((free >> 30)) GiB and $inodes inodes free; the backfill needs $((min_free_bytes >> 30)) GiB" >&2
 	exit 1

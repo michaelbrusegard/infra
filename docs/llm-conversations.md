@@ -882,8 +882,10 @@ bounded by a day of requests or a part of files, on one thread.
    is not reserved: the Job writes about 14 GiB (2 GiB of compressed
    lines, 8 GiB of rows, and up to 3 GiB for a day of proxy requests) to
    `/var/local/openebs`, the node's own disk, so before each attempt the
-   script checks that ClickHouse's node has 20 GiB and a million inodes
-   free, and refuses otherwise. On 2026-11-14 ClickHouse ran on
+   script checks that the persistent disk of ClickHouse's node, which the
+   kubelet reports as its image filesystem, has 20 GiB and a million
+   inodes free, and refuses otherwise. The node filesystem is the tmpfs
+   root, so its figure does not count. On 2026-11-14 ClickHouse ran on
    espresso-2, which had 41 GiB of 118 free, and room for the Job's 2 CPUs
    and 6 GiB at most (34% of its CPU and 18% of its memory were
    requested); espresso-1 had 25 GiB free. A finished attempt keeps its

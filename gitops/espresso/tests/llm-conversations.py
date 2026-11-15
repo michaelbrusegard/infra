@@ -811,7 +811,8 @@ case "$*" in
 	echo espresso-2
 	;;
 "get --raw /api/v1/nodes/espresso-2/proxy/stats/summary")
-	echo "{\"node\":{\"fs\":{\"availableBytes\":$(cat "$state/free"),\"inodesFree\":5000000}}}"
+	# The tmpfs root has room; only the persistent disk's figure counts.
+	echo "{\"node\":{\"fs\":{\"availableBytes\":$((100 << 30)),\"inodesFree\":9000000},\"runtime\":{\"imageFs\":{\"availableBytes\":$(cat "$state/free"),\"inodesFree\":5000000}}}}"
 	;;
 "-n clickhouse create -o name -f -")
 	cat > "$state/manifest.yaml"
