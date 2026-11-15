@@ -1,0 +1,395 @@
+Subject: [PATCH] fix(provider): send only changed fields on update
+
+Update sent every planned attribute and cleared null ones, so an
+unrelated change also wrote fields the server refuses. The OSS build
+rejects any enterprise property in a patch, even null: a domain update
+failed on directoryId, an imported OIDC directory on memberTenantId.
+Compare the plan with prior state and send only attributes that differ,
+plus write-only values set in config. Adoption has no prior state and
+still writes every mutable field. Skip the request if nothing remains.
+
+diff --git a/internal/provider/convert_test.go b/internal/provider/convert_test.go
+index b69a235..6c30b5a 100644
+--- a/internal/provider/convert_test.go
++++ b/internal/provider/convert_test.go
+@@ -335,7 +335,7 @@ func TestPayloadMergesWriteOnlySecrets(t *testing.T) {
+ 		t.Fatalf("unexpected diagnostics: %v", diags)
+ 	}
+ 
+-	payload, err := r.payload(context.Background(), plan, config, false)
++	payload, err := r.payload(context.Background(), plan, config, types.Object{}, false)
+ 	if err != nil {
+ 		t.Fatalf("unexpected error: %v", err)
+ 	}
+@@ -407,7 +407,7 @@ func TestNestedServerSetAttributesAreNotSent(t *testing.T) {
+ 		t.Fatalf("unexpected diagnostics: %v", diags)
+ 	}
+ 
+-	payload, err := r.payload(context.Background(), plan, plan, true)
++	payload, err := r.payload(context.Background(), plan, plan, types.Object{}, true)
+ 	if err != nil {
+ 		t.Fatalf("unexpected error: %v", err)
+ 	}
+@@ -476,7 +476,7 @@ func TestPayloadKeepsMaskedSecretsOnServer(t *testing.T) {
+ 			}},
+ 		}}
+ 
+-		payload, err := r.payload(context.Background(), plan, plan, true)
++		payload, err := r.payload(context.Background(), plan, plan, types.Object{}, true)
+ 		if err != nil {
+ 			t.Fatalf("unexpected error: %v", err)
+ 		}
+diff --git a/internal/provider/generic_resource.go b/internal/provider/generic_resource.go
+index c17dd24..378d2a5 100644
+--- a/internal/provider/generic_resource.go
++++ b/internal/provider/generic_resource.go
+@@ -79,7 +79,7 @@ func (r *genericResource) Create(ctx context.Context, req resource.CreateRequest
+ 		return
+ 	}
+ 
+-	object, err := r.payload(ctx, plan, config, false)
++	object, err := r.payload(ctx, plan, config, types.Object{}, false)
+ 	if err != nil {
+ 		resp.Diagnostics.AddError("Unable to build request", err.Error())
+ 		return
+@@ -153,15 +153,19 @@ func (r *genericResource) Update(ctx context.Context, req resource.UpdateRequest
+ 	}
+ 
+ 	id := attributeString(current, "id")
+-	patch, err := r.updatePayload(ctx, plan, config)
++	patch, err := r.updatePayload(ctx, plan, current, config)
+ 	if err != nil {
+ 		resp.Diagnostics.AddError("Unable to build request", err.Error())
+ 		return
+ 	}
+ 
+-	if err := r.client.Update(ctx, r.descriptor.JMAPType, id, patch); err != nil {
+-		resp.Diagnostics.AddError("Unable to update "+r.descriptor.Name, err.Error())
+-		return
++	// A plan can differ only in attributes the server does not store, such
++	// as a write-only version without a value.
++	if len(patch) > 0 {
++		if err := r.client.Update(ctx, r.descriptor.JMAPType, id, patch); err != nil {
++			resp.Diagnostics.AddError("Unable to update "+r.descriptor.Name, err.Error())
++			return
++		}
+ 	}
+ 
+ 	state, err := r.read(ctx, id, plan)
+@@ -237,7 +241,8 @@ func (r *genericResource) createOrAdopt(ctx context.Context, plan, config types.
+ 		return "", err
+ 	}
+ 
+-	patch, err := r.updatePayload(ctx, plan, config)
++	// Without prior state, write every mutable field of the adopted object.
++	patch, err := r.updatePayload(ctx, plan, types.Object{}, config)
+ 	if err != nil {
+ 		return "", err
+ 	}
+@@ -254,8 +259,8 @@ func (r *genericResource) createOrAdopt(ctx context.Context, plan, config types.
+ 	return conflict.ID, nil
+ }
+ 
+-func (r *genericResource) updatePayload(ctx context.Context, plan, config types.Object) (map[string]any, error) {
+-	patch, err := r.payload(ctx, plan, config, true)
++func (r *genericResource) updatePayload(ctx context.Context, plan, prior, config types.Object) (map[string]any, error) {
++	patch, err := r.payload(ctx, plan, config, prior, true)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+@@ -267,13 +272,19 @@ func (r *genericResource) updatePayload(ctx context.Context, plan, config types.
+ 	return patch, nil
+ }
+ 
+-func (r *genericResource) payload(ctx context.Context, plan, config types.Object, clearOmitted bool) (map[string]any, error) {
++// payload encodes the plan for a write. With prior state, it sends only
++// attributes whose planned value differs: Stalwart rejects some unchanged
++// fields in a patch, such as a null Domain.directoryId.
++func (r *genericResource) payload(ctx context.Context, plan, config, prior types.Object, clearOmitted bool) (map[string]any, error) {
+ 	out := make(map[string]any)
+ 
+ 	for name, value := range plan.Attributes() {
+ 		if name == "id" || r.serverOwned(name) || writeOnlyBookkeeping(name) || value.IsUnknown() {
+ 			continue
+ 		}
++		if !prior.IsNull() && value.Equal(prior.Attributes()[name]) {
++			continue
++		}
+ 
+ 		if value.IsNull() {
+ 			if clearOmitted {
+@@ -308,7 +319,7 @@ func (r *genericResource) payload(ctx context.Context, plan, config types.Object
+ 		out[rootFieldName(strings.TrimSuffix(name, writeOnlySuffix))] = converted
+ 	}
+ 
+-	if r.descriptor.Variant != "" {
++	if r.descriptor.Variant != "" && (len(out) > 0 || prior.IsNull()) {
+ 		out["@type"] = r.descriptor.Variant
+ 	}
+ 
+diff --git a/internal/provider/update_payload_test.go b/internal/provider/update_payload_test.go
+new file mode 100644
+index 0000000..efee6b7
+--- /dev/null
++++ b/internal/provider/update_payload_test.go
+@@ -0,0 +1,260 @@
++package provider
++
++import (
++	"context"
++	"encoding/json"
++	"net/http"
++	"net/http/httptest"
++	"reflect"
++	"testing"
++
++	"github.com/hashicorp/terraform-plugin-framework/attr"
++	"github.com/hashicorp/terraform-plugin-framework/resource"
++	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
++	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
++	"github.com/hashicorp/terraform-plugin-framework/types"
++	"github.com/tahacodes/terraform-provider-stalwart/internal/client"
++)
++
++var (
++	certificateType = types.ObjectType{AttrTypes: map[string]attr.Type{
++		"type":                      types.StringType,
++		"subject_alternative_names": types.SetType{ElemType: types.StringType},
++	}}
++	domainTypes = map[string]attr.Type{
++		"id":                     types.StringType,
++		"name":                   types.StringType,
++		"catch_all_address":      types.StringType,
++		"directory_id":           types.StringType,
++		"aliases":                types.SetType{ElemType: types.StringType},
++		"certificate_management": certificateType,
++		"secret":                 types.StringType,
++		"secret_wo":              types.StringType,
++		"secret_wo_version":      types.Int64Type,
++	}
++)
++
++func domainResource(variant string) *genericResource {
++	return &genericResource{descriptor: resourceDescriptor{
++		Name:      "domain",
++		JMAPType:  "x:Domain",
++		Variant:   variant,
++		Immutable: []string{"name"},
++		Schema: rschema.Schema{Attributes: map[string]rschema.Attribute{
++			"id":                rschema.StringAttribute{Computed: true},
++			"name":              rschema.StringAttribute{Required: true},
++			"catch_all_address": rschema.StringAttribute{Optional: true, Computed: true},
++			"directory_id":      rschema.StringAttribute{Optional: true, Computed: true},
++			"aliases":           rschema.SetAttribute{Optional: true, Computed: true, ElementType: types.StringType},
++			"certificate_management": rschema.SingleNestedAttribute{Optional: true, Computed: true, Attributes: map[string]rschema.Attribute{
++				"type":                      rschema.StringAttribute{Required: true},
++				"subject_alternative_names": rschema.SetAttribute{Optional: true, Computed: true, ElementType: types.StringType},
++			}},
++			"secret":            rschema.StringAttribute{Optional: true, Computed: true, Sensitive: true},
++			"secret_wo":         rschema.StringAttribute{Optional: true, WriteOnly: true, Sensitive: true},
++			"secret_wo_version": rschema.Int64Attribute{Optional: true},
++		}},
++	}}
++}
++
++// domainObject returns a stored domain with the given attributes replaced.
++func domainObject(t *testing.T, changes map[string]attr.Value) types.Object {
++	t.Helper()
++
++	names := types.SetValueMust(types.StringType, []attr.Value{types.StringValue("mail.example.org")})
++	values := map[string]attr.Value{
++		"id":                types.StringValue("d"),
++		"name":              types.StringValue("example.org"),
++		"catch_all_address": types.StringValue("old@example.org"),
++		"directory_id":      types.StringNull(),
++		"aliases":           types.SetValueMust(types.StringType, []attr.Value{types.StringValue("b.example.org"), types.StringValue("a.example.org")}),
++		"certificate_management": types.ObjectValueMust(certificateType.AttrTypes, map[string]attr.Value{
++			"type":                      types.StringValue("Automatic"),
++			"subject_alternative_names": names,
++		}),
++		"secret":            types.StringValue("hunter2"),
++		"secret_wo":         types.StringNull(),
++		"secret_wo_version": types.Int64Null(),
++	}
++	for name, value := range changes {
++		values[name] = value
++	}
++
++	object, diags := types.ObjectValue(domainTypes, values)
++	if diags.HasError() {
++		t.Fatalf("unexpected diagnostics: %v", diags)
++	}
++
++	return object
++}
++
++func TestUpdatePayloadSendsOnlyChangedAttributes(t *testing.T) {
++	t.Parallel()
++
++	reordered := types.SetValueMust(types.StringType, []attr.Value{types.StringValue("a.example.org"), types.StringValue("b.example.org")})
++	certificate := types.ObjectValueMust(certificateType.AttrTypes, map[string]attr.Value{
++		"type":                      types.StringValue("Automatic"),
++		"subject_alternative_names": types.SetValueMust(types.StringType, []attr.Value{types.StringValue("mta-sts.example.org")}),
++	})
++
++	for name, test := range map[string]struct {
++		variant string
++		plan    map[string]attr.Value
++		config  map[string]attr.Value
++		want    map[string]any
++	}{
++		"unchanged": {
++			plan: map[string]attr.Value{"aliases": reordered},
++			want: map[string]any{},
++		},
++		"unchanged variant": {
++			variant: "Domain",
++			want:    map[string]any{},
++		},
++		"changed scalar": {
++			plan: map[string]attr.Value{"catch_all_address": types.StringValue("new@example.org")},
++			want: map[string]any{"catchAllAddress": "new@example.org"},
++		},
++		"changed scalar of a variant": {
++			variant: "Domain",
++			plan:    map[string]attr.Value{"catch_all_address": types.StringValue("new@example.org")},
++			want:    map[string]any{"catchAllAddress": "new@example.org", "@type": "Domain"},
++		},
++		"changed nested object": {
++			plan: map[string]attr.Value{"certificate_management": certificate},
++			want: map[string]any{"certificateManagement": map[string]any{
++				"@type":                   "Automatic",
++				"subjectAlternativeNames": map[string]any{"mta-sts.example.org": true},
++			}},
++		},
++		"cleared fields": {
++			plan: map[string]attr.Value{
++				"catch_all_address": types.StringNull(),
++				"aliases":           types.SetNull(types.StringType),
++			},
++			want: map[string]any{"catchAllAddress": nil, "aliases": map[string]any{}},
++		},
++		"immutable field": {
++			plan: map[string]attr.Value{"name": types.StringValue("example.net")},
++			want: map[string]any{},
++		},
++		"write-only secret": {
++			plan:   map[string]attr.Value{"secret_wo_version": types.Int64Value(1)},
++			config: map[string]attr.Value{"secret_wo": types.StringValue("rotated"), "secret_wo_version": types.Int64Value(1)},
++			want:   map[string]any{"secret": "rotated"},
++		},
++		"unchanged write-only secret": {
++			config: map[string]attr.Value{"secret_wo": types.StringValue("rotated")},
++			want:   map[string]any{"secret": "rotated"},
++		},
++		"masked secret": {
++			plan: map[string]attr.Value{"secret": types.StringValue(maskedSecret)},
++			want: map[string]any{},
++		},
++	} {
++		t.Run(name, func(t *testing.T) {
++			t.Parallel()
++
++			config := map[string]attr.Value{"id": types.StringNull()}
++			for name, value := range test.plan {
++				config[name] = value
++			}
++			for name, value := range test.config {
++				config[name] = value
++			}
++
++			patch, err := domainResource(test.variant).updatePayload(context.Background(),
++				domainObject(t, test.plan), domainObject(t, nil), domainObject(t, config))
++			if err != nil {
++				t.Fatalf("unexpected error: %v", err)
++			}
++			if !reflect.DeepEqual(patch, test.want) {
++				t.Errorf("patch = %#v, want %#v", patch, test.want)
++			}
++		})
++	}
++}
++
++func TestAdoptionPayloadSendsEveryMutableAttribute(t *testing.T) {
++	t.Parallel()
++
++	plan := domainObject(t, nil)
++	patch, err := domainResource("Domain").updatePayload(context.Background(), plan, types.Object{}, plan)
++	if err != nil {
++		t.Fatalf("unexpected error: %v", err)
++	}
++
++	want := map[string]any{
++		"@type":           "Domain",
++		"catchAllAddress": "old@example.org",
++		"directoryId":     nil,
++		"aliases":         map[string]any{"a.example.org": true, "b.example.org": true},
++		"certificateManagement": map[string]any{
++			"@type":                   "Automatic",
++			"subjectAlternativeNames": map[string]any{"mail.example.org": true},
++		},
++		"secret": "hunter2",
++	}
++	if !reflect.DeepEqual(patch, want) {
++		t.Errorf("patch = %#v, want %#v", patch, want)
++	}
++}
++
++func TestUpdateWithoutChangesSendsNoPatch(t *testing.T) {
++	t.Parallel()
++
++	ctx := context.Background()
++	mux := http.NewServeMux()
++	mux.HandleFunc("/jmap/session", func(w http.ResponseWriter, _ *http.Request) {
++		_ = json.NewEncoder(w).Encode(map[string]any{"apiUrl": "/jmap", "accounts": map[string]any{"a": map[string]any{}}})
++	})
++	mux.HandleFunc("/jmap", func(w http.ResponseWriter, req *http.Request) {
++		var input struct {
++			MethodCalls []client.MethodCall `json:"methodCalls"`
++		}
++		if err := json.NewDecoder(req.Body).Decode(&input); err != nil {
++			t.Error(err)
++			return
++		}
++		call := input.MethodCalls[0]
++		if call.Name != "x:Test/get" {
++			t.Errorf("unexpected method %s", call.Name)
++		}
++		result := map[string]any{"list": []any{map[string]any{"id": "saved", "description": "stored"}}}
++		_ = json.NewEncoder(w).Encode(map[string]any{"methodResponses": []any{[]any{call.Name, result, call.CallID}}})
++	})
++	server := httptest.NewServer(mux)
++	defer server.Close()
++
++	c, err := client.New(ctx, client.Config{Endpoint: server.URL})
++	if err != nil {
++		t.Fatal(err)
++	}
++	s := rschema.Schema{Attributes: map[string]rschema.Attribute{
++		"id":                     rschema.StringAttribute{Computed: true},
++		"description":            rschema.StringAttribute{Optional: true},
++		"description_wo_version": rschema.Int64Attribute{Optional: true},
++	}}
++	attrTypes := map[string]attr.Type{"id": types.StringType, "description": types.StringType, "description_wo_version": types.Int64Type}
++	object := func(version int64) tfsdk.State {
++		value := types.ObjectValueMust(attrTypes, map[string]attr.Value{
++			"id":                     types.StringValue("saved"),
++			"description":            types.StringValue("stored"),
++			"description_wo_version": types.Int64Value(version),
++		})
++		raw, _ := value.ToTerraformValue(ctx)
++		return tfsdk.State{Raw: raw, Schema: s}
++	}
++
++	r := &genericResource{client: c, descriptor: resourceDescriptor{Name: "test", JMAPType: "x:Test", Variant: "Test", Schema: s}}
++	planned := object(2)
++	resp := resource.UpdateResponse{State: object(1)}
++	r.Update(ctx, resource.UpdateRequest{
++		Plan:   tfsdk.Plan{Raw: planned.Raw, Schema: s},
++		Config: tfsdk.Config{Raw: planned.Raw, Schema: s},
++		State:  object(1),
++	}, &resp)
++	if resp.Diagnostics.HasError() {
++		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
++	}
++}

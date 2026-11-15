@@ -149,6 +149,19 @@ try:
         jmap("x:SystemSettings/set", update={"singleton": {"includeSecrets": False}})
         jmap("x:Action/set", create={"reload": {"@type": "ReloadSettings"}})
     print("Imported relay secret preserved across both applies", flush=True)
+
+    # An update must send only changed fields: Stalwart rejects the unchanged
+    # null directoryId that every domain update used to include.
+    folder = args.work_dir / "smoke"
+    for address in ("first@manafishrov.test", "second@manafishrov.test"):
+        env["TF_VAR_catch_all_address"] = address
+        plan = tofu(folder, "plan", "-input=false", "-no-color", "-out=update.tfplan")
+        assert "stalwart_domain.mail will be updated in-place" in plan, plan
+        assert "0 to add, 1 to change, 0 to destroy" in plan, plan
+        tofu(folder, "apply", "-input=false", "-no-color", "update.tfplan")
+        tofu(folder, "plan", "-input=false", "-no-color", "-detailed-exitcode", "-out=empty.tfplan")
+        assert get("Domain", domain_id)["catchAllAddress"] == address
+    print("Domain catch-all set and changed in place, second plan empty", flush=True)
     schema = tofu(args.work_dir / "smoke", "providers", "schema", "-json")
     (args.work_dir / "provider-v1-schema.json").write_text(schema)
     (args.work_dir / "evidence.json").write_text(json.dumps({"resource_ids": states[0], "inventory": before}, indent=2) + "\n")

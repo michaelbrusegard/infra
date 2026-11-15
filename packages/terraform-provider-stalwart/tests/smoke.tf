@@ -13,6 +13,10 @@ variable "issuer_url" { type = string }
 variable "directory_id" { type = string }
 variable "application_id" { type = string }
 variable "relay_id" { type = string }
+variable "catch_all_address" {
+  type    = string
+  default = null
+}
 
 # These types have no unique key, so creation would duplicate the objects.
 import {
@@ -70,9 +74,10 @@ resource "stalwart_imap" "server" {
 }
 
 resource "stalwart_domain" "mail" {
-  name        = "manafishrov.test"
-  description = "managed by provider smoke"
-  enable      = true
+  name              = "manafishrov.test"
+  description       = "managed by provider smoke"
+  enable            = true
+  catch_all_address = var.catch_all_address
   dkim_management = {
     type = "Manual"
   }

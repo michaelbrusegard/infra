@@ -67,6 +67,19 @@ text equal to `****` remains writable. Account credentials retain the
 server's own mask handling. Singleton destroy only removes state; destroying
 an imported or adopted non-singleton deletes the server object.
 
+## Updates
+
+Patch 0006 makes an update send only attributes whose planned value differs
+from state, plus write-only values set in the configuration. An attribute
+changed to null is cleared; immutable fields are never sent. The OSS server
+rejects enterprise properties in a patch even when null, such as
+`Domain.directoryId` or `memberTenantId`, so resending unchanged fields failed
+unrelated updates. Adoption has no prior state and writes every known mutable
+field. A plan that changes nothing the server stores sends no update.
+
+A secret changed outside OpenTofu still reads back as `****`, so state cannot
+see the drift. Change its configured value or `_wo_version` to write it again.
+
 ## Reloads
 
 Application changes invoke `UpdateApps` to reload and unpack bundles. Lookup
@@ -92,7 +105,7 @@ check served assets as well as the action response.
 ## Local verification
 
 Use a disposable upstream `stalwartlabs/stalwart:v1.0.3` container. In a
-source tree made from the pinned upstream commit, apply the five patches,
+source tree made from the pinned upstream commit, apply the six patches,
 decompress the pinned schema to `schema/v1.0.3.json`, then regenerate:
 
 ```sh
@@ -130,12 +143,22 @@ listener adoption, application and directory imports, and preservation of
 an imported relay secret. It applies twice from separate empty states,
 checks the same IDs and object counts, requires an empty second plan in
 each state, and checks that an HTTP response header took effect after reload.
+It then sets and changes a domain's catch-all address in place, requiring an
+empty plan after each update.
 The acceptance suite also changes an enabled application's bundle and verifies
 its HTML and JavaScript without restarting the server. Its local bundle server
 uses `host.docker.internal`; set `STALWART_FIXTURE_HOST` for other runtimes.
 A proxy fixture rejects reload to verify apply fails, then explicitly retries
 activation of the persisted settings. Unit tests cover create, singleton create,
 update and delete failures, including transport errors and cancellation.
+
+To check the OSS build the stacks run, pass its image as `STALWART_IMAGE`.
+It rejects enterprise fields that the upstream image accepts. Concurrent
+writes can fail there with `serverUnavailable` (`store.assert-value-failed`),
+so run it with `TF_CLI_ARGS_apply=-parallelism=1`. On Linux Docker without
+Colima, start the container with `--network host --add-host
+host.docker.internal:127.0.0.1` and pass `--endpoint http://127.0.0.1:8080`
+so it can reach the OIDC fixture.
 
 Logs, state and a provider schema dump go in the evidence directory.
 The smoke fixture does not test OIDC token authentication or serve application
