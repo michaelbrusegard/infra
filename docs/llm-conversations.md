@@ -36,7 +36,7 @@ results.
 - **The dashboard's usage history moves to the canonical calls.**
   `llm.usage_metrics` reads pre-proxy history from transcript calls instead
   of `llm.historical_usage`, which counts Codex about 6.8% too high, as soon
-  as the transcript import lands.
+  as the transcript import is complete.
 - **Deferred**, since the proxy's view can be rebuilt with them later:
   recording the client headers that tell typed prompts from injected
   context, and the Codex base instructions in `session_meta`.
@@ -209,7 +209,8 @@ the file is part of the key. The proxy's failures are in `llm.requests`.
 
 **`llm.call_history`**: a view of the transcript calls with usage in
 `llm.historical_usage`'s columns, which `llm.usage_metrics` reads instead
-of it (see [Usage history](#usage-history)).
+of it once **`llm.transcript_import`** has the row the backfill writes when
+the transcript import is complete (see [Usage history](#usage-history)).
 
 **`llm.request_items`** stays as is: the proxy's items, plus the per-call
 context of transcript calls.
@@ -715,22 +716,27 @@ own, and counts Codex's drifted repeats of token counts again (12,963 live,
 about 6.8% of Codex history). The transcript calls count each response once,
 so they replace it: `llm.call_history` presents them in
 `llm.historical_usage`'s columns, and `llm.usage_metrics` reads its history
-from `llm.call_history`, and from the old import only while `llm.calls`
-holds no transcript call. It reads the old import through
+from `llm.call_history` once `llm.transcript_import` has a row, and from
+the old import until then. The backfill writes that row last, after the
+import's insert and checks: inserts are not atomic across tables or
+retries, so an import that fails part way can leave some of its calls,
+which would otherwise replace the history with part of it. It reads the
+old import through
 `llm.old_import_usage`, a `Merge` table over `llm.historical_usage` that
 is empty while no such table exists: ClickHouse resolves every table a
 query names, even in a branch whose condition is false, so a view naming
 `llm.historical_usage` would fail from its drop on. The cutover is in the
 production schema, so it needs no change at the time:
 
-- Before the transcript import lands, the dashboard shows the old import's
-  history, as it does today.
-- When the import's calls are inserted, it shows theirs. If verification
-  fails and they are deleted, it shows the old import's again.
+- Until the transcript import is complete, the dashboard shows the old
+  import's history, as it does today, even if a failed run left calls.
+- Once the backfill's checks pass and it marks the import complete, it
+  shows the transcript calls'. If the import is deleted later, with its
+  row in `llm.transcript_import`, it shows the old import's again.
 - After the drop, the history stays, at once and after restarts:
   `schema.sql` creates no `llm.transcripts` again, and the empty
   `llm.historical_usage` it creates on the next start is never read, since
-  transcript calls exist. `verify.sql` reads the old import the same way,
+  the import is complete. `verify.sql` reads the old import the same way,
   and reports no old import rows after the drop.
 
 Its fixed handover (`requested_at < min(llm.usage.requested_at)`) stays.
@@ -807,7 +813,8 @@ to read the raw history. It has SELECT on the
 sources (`llm.requests`, `llm.request_items`, `llm.usage`, and until they
 are dropped `llm.transcripts` and `llm.historical_usage`, which it reads
 through `llm.old_import_usage`), SELECT and INSERT
-on `llm.sessions`, `llm.messages`, `llm.calls` and `llm.events`, and INSERT
+on `llm.sessions`, `llm.messages`, `llm.calls`, `llm.events` and
+`llm.transcript_import`, SELECT on `system.mutations`, and INSERT
 on `llm.request_items`; it cannot read the dashboard's view, write the raw
 capture, delete, or drop. The CronJob starts suspended, so it waits for the
 backfill.
@@ -878,8 +885,8 @@ bounded by a day of requests or a part of files, on one thread.
    transcript rows as in [Rebuild](#rebuild) first, since the Job refuses
    to import twice. The Job waits for those deletes to finish before it
    inserts anything. The proxy's days are safe to run again. The
-   dashboard reads the transcript calls' history from the moment they are
-   inserted.
+   dashboard reads the transcript calls' history once the Job's checks
+   pass, when it marks the import complete in `llm.transcript_import`.
 4. **Resume the job**: set `suspend: false` in `llm-normalizer.yaml` and
    push. It picks up every request the backfill left, however late it
    landed or long the job waited.
@@ -911,8 +918,9 @@ from the optional export to `freddo` (see the checklist). If the export of
 backfill rebuilds them too. To redo the transcript import before the drop,
 delete its rows first: `ALTER TABLE llm.calls DELETE WHERE origin =
 'transcript'`, the same for `llm.sessions`, `ALTER TABLE llm.messages DELETE
-WHERE path != ''`, and `ALTER TABLE llm.events DELETE WHERE 1`, as the
-`default` user through `kubectl exec`. ClickHouse applies the deletes in
+WHERE path != ''`, `ALTER TABLE llm.events DELETE WHERE 1`, and `TRUNCATE
+TABLE llm.transcript_import`, as the `default` user through `kubectl
+exec`. ClickHouse applies the deletes in
 the background; `SETTINGS mutations_sync = 1` after each makes it return
 once they are done, and the backfill waits for any still going. Their items are content-addressed,
 so the rerun's collapse with them. A proxy rebuild changes which transcript calls
@@ -977,8 +985,8 @@ explained, not just counted.
    kinds and counts match the table.
 2. **Tokens**: the transcript calls reconcile with `llm.historical_usage` as
    above, and `llm.usage_metrics`, which reads `llm.call_history` once the
-   import lands, gives the expected history per day, client and model on
-   the dashboard.
+   import is complete, gives the expected history per day, client and
+   model on the dashboard.
 3. **Spot checks per agent**: for Claude Code, Codex, Pi and OpenCode, read a
    few conversations with the conversation query against the transcript
    files, including a compaction, a sub-agent and a session the proxy took

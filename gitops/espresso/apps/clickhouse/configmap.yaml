@@ -122,6 +122,7 @@ data:
             <query>GRANT SELECT, INSERT ON llm.messages</query>
             <query>GRANT SELECT, INSERT ON llm.calls</query>
             <query>GRANT SELECT, INSERT ON llm.events</query>
+            <query>GRANT SELECT, INSERT ON llm.transcript_import</query>
             <query>GRANT INSERT ON llm.request_items</query>
             <!-- To wait for deletes before a backfill inserts again. -->
             <query>GRANT SELECT ON system.mutations</query>
@@ -443,9 +444,20 @@ data:
     ENGINE = ReplacingMergeTree
     ORDER BY (session_id, ts, host, path, line);
 
+    -- A row once the transcript import is inserted and its checks passed,
+    -- which the backfill writes last. Inserts are not atomic across tables
+    -- or retries, so a failed import can leave some of its calls; the
+    -- dashboard switches its history to them only with this row.
+    CREATE TABLE IF NOT EXISTS llm.transcript_import
+    (
+        completed_at DateTime64(3, 'UTC')
+    )
+    ENGINE = MergeTree
+    ORDER BY completed_at;
+
     -- Usage history from before the proxy, in llm.historical_usage's columns:
     -- one row per transcript call with usage. llm.usage_metrics reads it once
-    -- the transcript import has landed, in place of llm.historical_usage, whose
+    -- the transcript import is complete, in place of llm.historical_usage, whose
     -- importer counted Codex's repeated token counts again. The provider
     -- follows the model, as the importer's did.
     CREATE OR REPLACE VIEW llm.call_history AS
@@ -540,12 +552,13 @@ data:
             cache_write_5m_tokens, cache_write_1h_tokens, output_tokens, reasoning_tokens
         FROM (
             -- History moves to the canonical transcript calls when their
-            -- import lands, and back if they are deleted; the old import is
-            -- read only while there are none, so its drop changes nothing.
+            -- import is complete, and back if it is deleted; the old import
+            -- is read only until then, so its drop changes nothing.
             SELECT * FROM llm.call_history
+            WHERE (SELECT count() FROM llm.transcript_import) > 0
             UNION ALL
             SELECT * FROM llm.old_import_usage FINAL
-            WHERE (SELECT count() FROM llm.calls WHERE origin = 'transcript') = 0
+            WHERE (SELECT count() FROM llm.transcript_import) = 0
         )
         -- A fixed handover avoids counting transcript copies of proxied calls.
         -- The importer and the transcript import apply the same boundary.

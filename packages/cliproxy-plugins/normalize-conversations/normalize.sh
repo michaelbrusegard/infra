@@ -103,8 +103,9 @@ settled() {
 # input, and inserts only if the normalizer accounts for every line.
 backfill_transcripts() {
 	local out=$scratch/transcripts files
-	if [[ $(ch --query "SELECT count() FROM llm.calls WHERE origin = 'transcript'") != 0 ]]; then
-		echo "llm.calls holds transcript calls already; delete the transcript rows first" >&2
+	if [[ $(ch --query "SELECT (SELECT count() FROM llm.calls WHERE origin = 'transcript')
+		+ (SELECT count() FROM llm.transcript_import)") != 0 ]]; then
+		echo "llm holds a transcript import already; delete the transcript rows first" >&2
 		exit 1
 	fi
 	rm -rf "$out"
@@ -152,6 +153,8 @@ backfill)
 	proxy_windows 24
 	backfill_transcripts
 	verify
+	# The dashboard reads the transcript calls' history from here on.
+	ch --query "INSERT INTO llm.transcript_import VALUES (now64(3))"
 	;;
 verify)
 	mkdir -p "$scratch"

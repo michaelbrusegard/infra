@@ -261,6 +261,11 @@ def main():
                      dict(call_id='proxy-call', session_id='claude:s', started_at=old_stamp, origin='proxy',
                           client='claude-code', model='claude-opus-5-5', output_tokens=1)]
             query("INSERT INTO llm.calls FORMAT JSONEachRow\n" + "\n".join(map(json.dumps, calls)))
+            # Until the backfill marks the import complete, the history stays
+            # the old import's, so a failed import cannot show part of its own.
+            assert query("SELECT count() FROM llm.usage_metrics WHERE origin LIKE 'history:%'",
+                         "grafana").stdout.strip() == "3"
+            query("INSERT INTO llm.transcript_import VALUES (now64(3))")
             switched = {json.loads(line)["trace_id"]: json.loads(line) for line in query(
                 "SELECT * FROM llm.usage_metrics WHERE origin LIKE 'history:%' FORMAT JSONEachRow", "grafana").stdout.splitlines()}
             assert sorted(switched) == ["transcript-claude"], switched
@@ -279,6 +284,7 @@ def main():
             denied = ["SELECT * FROM llm.usage", "SELECT * FROM llm.requests",
                       "SELECT * FROM llm.request_items", "SELECT * FROM llm.request_bodies",
                       "SELECT * FROM llm.transcripts", "SELECT * FROM llm.historical_usage", "SELECT * FROM llm.old_import_usage",
+                      "SELECT * FROM llm.transcript_import",
                       "SELECT * FROM llm.calls", "SELECT * FROM llm.messages", "SELECT * FROM llm.call_history",
                       "SELECT failure_body FROM llm.usage_metrics",
                       "INSERT INTO llm.usage (request_id) VALUES ('forbidden')",

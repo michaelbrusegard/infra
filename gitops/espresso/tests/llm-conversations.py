@@ -369,7 +369,8 @@ def main():
                 == "['2']"
             assert scalar("SELECT count() FROM llm.calls FINAL WHERE response_id IN ('chatcmpl-1', 'chatcmpl-2')") == "2"
             # Grafana keeps seeing only the metrics view.
-            for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions", "llm.call_history", "llm.old_import_usage"):
+            for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions", "llm.call_history", "llm.old_import_usage",
+                          "llm.transcript_import"):
                 assert query(f"SELECT * FROM {table}", "grafana", check=False).returncode != 0, table
 
             # Once the transcript calls landed, the production view reads the
@@ -385,6 +386,11 @@ def main():
                 return sorted(scalar("SELECT groupArray(event_id) FROM llm.call_history WHERE requested_at < "
                                      "(SELECT min(requested_at) FROM llm.usage)").strip("[]").replace("'", "").split(","))
 
+            # Until the backfill marks the import complete, which it does
+            # after its checks, the history stays the old import's: an
+            # import that failed part way leaves some calls.
+            assert list(history_rows()) == ["old-import"]
+            query("INSERT INTO llm.transcript_import VALUES (now64(3))")
             rows = history_rows()
             assert sorted(rows) == expected_history() and "old-import" not in rows, rows
             assert rows["req_011"]["origin"] == "history:claude-code" and rows["req_011"]["input_tokens"] == 2010, rows
@@ -691,6 +697,7 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
         assert "coverage (source, kind, disposition, destination, lines):" in result.stdout, result.stdout
         assert query("SELECT count() FROM llm.calls FINAL WHERE origin = 'proxy'") == "10"
         assert query("SELECT count() FROM llm.calls FINAL WHERE origin = 'transcript'") == transcript_calls
+        assert query("SELECT count() FROM llm.transcript_import") == "1"
         # The job finds nothing left.
         rows = query("SELECT count() FROM llm.messages")
         result = normalize("cron")
