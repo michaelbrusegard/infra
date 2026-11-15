@@ -73,10 +73,21 @@ def examples():
     return found
 
 
+def check_password_guard(image, command):
+    """The server refuses to start without the normalizer's password, which
+    ClickHouse would otherwise treat as no password at all."""
+    for env in ([], ["-e", "LLM_NORMALIZER_PASSWORD="]):
+        refused = run("docker", "run", "--rm", "--network", "none", *env,
+                      "--entrypoint", command[0], image, *command[1:], check=False)
+        assert refused.returncode != 0 and "refusing to start" in refused.stderr, (env, refused)
+
+
 def main():
     config = json.loads(run("yq", "-o=json", str(BASE / "apps/clickhouse/configmap.yaml")).stdout)["data"]
     statefulset = json.loads(run("yq", "-o=json", str(BASE / "apps/clickhouse/statefulset.yaml")).stdout)
-    image = statefulset["spec"]["template"]["spec"]["containers"][0]["image"]
+    server = statefulset["spec"]["template"]["spec"]["containers"][0]
+    image, command = server["image"], server["command"]
+    check_password_guard(image, command)
     # The production schema, and the one-off transcript import as it exists
     # live until it is dropped; the schema no longer creates it.
     schema = config["schema.sql"] + "\n" + TRANSCRIPTS
@@ -93,7 +104,8 @@ def main():
                 "-e", f"LLM_NORMALIZER_PASSWORD={PASSWORD}",
                 "-v", f"{temp}/config.xml:/etc/clickhouse-server/config.d/archive.xml:ro",
                 "-v", f"{temp}/users.xml:/etc/clickhouse-server/users.d/archive.xml:ro",
-                "-v", f"{temp}/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro", image)
+                "-v", f"{temp}/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro",
+                "--entrypoint", command[0], image, *command[1:])
 
             def query(sql, user="default", check=True, params=()):
                 args = ["docker", "exec", "-i", container, "clickhouse-client", "--user", user]
@@ -784,11 +796,30 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
 KUBECTL = r"""#!/usr/bin/env bash
 set -euo pipefail
 state=$(dirname "$0")
+touch "$state/jobs"
 case "$*" in
+"-n clickhouse get jobs -o json")
+	jq -Rn '{items: [inputs | split(" ") | {metadata: {name: .[0]},
+		status: {conditions: (if .[1] == "Running" then [] else [{type: .[1], status: "True"}] end)}}]}' < "$state/jobs"
+	;;
+"-n clickhouse delete job "*" --wait=true")
+	grep -v "^$5 " "$state/jobs" > "$state/jobs.new" || true
+	mv "$state/jobs.new" "$state/jobs"
+	echo "$5" >> "$state/deleted"
+	;;
+"-n clickhouse get pod clickhouse-0 -o jsonpath={.spec.nodeName}")
+	echo espresso-2
+	;;
+"get --raw /api/v1/nodes/espresso-2/proxy/stats/summary")
+	echo "{\"node\":{\"fs\":{\"availableBytes\":$(cat "$state/free"),\"inodesFree\":5000000}}}"
+	;;
 "-n clickhouse create -o name -f -")
 	cat > "$state/manifest.yaml"
 	runs=$(($(cat "$state/runs" 2>/dev/null || echo 0) + 1))
 	echo "$runs" > "$state/runs"
+	result=Failed
+	[[ $runs == 2 ]] && result=Complete
+	echo "llm-backfill-run$runs $result" >> "$state/jobs"
 	echo "job.batch/llm-backfill-run$runs"
 	;;
 "-n clickhouse get job.batch/llm-backfill-run1 -o json")
@@ -810,20 +841,30 @@ esac
 
 def backfill_runner(temp):
     """llm-backfill.sh against a stand-in for kubectl: each run is a Job of
-    its own, so a rerun after a failed run, whose Job is kept, creates
-    another, and the Job's conditions decide the result."""
+    its own, a rerun first deletes the finished attempt, whose kept pod would
+    hold its scratch volume, and the Job's conditions decide the result. It
+    refuses to start beside a running attempt or on a node short of disk."""
     stub = temp / "kubectl"
     stub.write_text(KUBECTL)
     stub.chmod(0o755)
     script = BASE / "apps/clickhouse/llm-backfill.sh"
     env = {**os.environ, "KUBECTL": str(stub), "LOG": str(temp / "llm-backfill.log")}
+    (temp / "free").write_text(str(5 << 30))
+    short = run(str(script), env=env, check=False, cwd=ROOT)
+    assert short.returncode == 1 and "espresso-2 has 5 GiB" in short.stderr, short
+    assert not (temp / "runs").exists(), "a Job was created on a node short of disk"
+    (temp / "free").write_text(str(50 << 30))
     failed = run(str(script), env=env, check=False, cwd=ROOT)
     assert failed.returncode == 1 and "job.batch/llm-backfill-run1 failed" in failed.stderr, failed
     manifest = (temp / "manifest.yaml").read_text()
     assert "generateName: llm-backfill-" in manifest and "\n  name:" not in manifest, manifest
     rerun = run(str(script), env=env, check=False, cwd=ROOT)
     assert rerun.returncode == 0 and (temp / "llm-backfill.log").read_text() == "log of job.batch/llm-backfill-run2\n", rerun
-    print("PASS: the backfill runner, a rerun after a failed Job, and Job conditions")
+    assert (temp / "deleted").read_text() == "llm-backfill-run1\n", "the failed attempt was not removed"
+    (temp / "jobs").write_text("llm-backfill-run3 Running\n")
+    busy = run(str(script), env=env, check=False, cwd=ROOT)
+    assert busy.returncode == 1 and "llm-backfill-run3 is still running" in busy.stderr, busy
+    print("PASS: the backfill runner, a rerun after a failed Job, Job conditions, and its disk and overlap checks")
 
 
 if __name__ == "__main__":
