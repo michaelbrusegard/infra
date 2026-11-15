@@ -562,21 +562,30 @@ data:
                 toUInt64(greatest(toInt64(input_tokens) - toInt64(reads) - toInt64(cache_creation_tokens), 0))) AS uncached_input_tokens,
             reads AS cache_read_tokens,
             -- llm.usage has no TTL split of cache writes. A trace's one proxy
-            -- call has it from the response when its writes are the same.
-            if(split.calls = 1 AND split.writes = live.cache_creation_tokens, split.writes_5m, 0)
-                AS cache_write_5m_tokens,
-            if(split.calls = 1 AND split.writes = live.cache_creation_tokens, split.writes_1h, 0)
-                AS cache_write_1h_tokens,
+            -- call has it from the response, which is the attempt's when
+            -- that attempt alone in the trace wrote as much.
+            split.writes_5m AS cache_write_5m_tokens,
+            split.writes_1h AS cache_write_1h_tokens,
             output_tokens, reasoning_tokens
         FROM llm.usage AS live
         LEFT JOIN (
-            SELECT r.trace_id AS split_trace, count() AS calls, sum(k.cache_write_tokens) AS writes,
-                sum(k.cache_write_5m_tokens) AS writes_5m, sum(k.cache_write_1h_tokens) AS writes_1h
-            FROM llm.calls AS k FINAL
-            INNER JOIN llm.requests AS r ON r.request_id = k.request_id
-            WHERE k.origin = 'proxy'
-            GROUP BY r.trace_id
-        ) AS split ON split.split_trace = live.trace_id
+            SELECT c.split_trace AS split_trace, c.writes AS writes, c.writes_5m AS writes_5m,
+                c.writes_1h AS writes_1h
+            FROM (
+                SELECT r.trace_id AS split_trace, sum(k.cache_write_tokens) AS writes,
+                    sum(k.cache_write_5m_tokens) AS writes_5m, sum(k.cache_write_1h_tokens) AS writes_1h
+                FROM llm.calls AS k FINAL
+                INNER JOIN llm.requests AS r ON r.request_id = k.request_id
+                WHERE k.origin = 'proxy'
+                GROUP BY r.trace_id
+                HAVING count() = 1
+            ) AS c
+            INNER JOIN (
+                SELECT trace_id, cache_creation_tokens FROM llm.usage
+                GROUP BY trace_id, cache_creation_tokens
+                HAVING count() = 1
+            ) AS a ON a.trace_id = c.split_trace AND a.cache_creation_tokens = c.writes
+        ) AS split ON split.split_trace = live.trace_id AND split.writes = live.cache_creation_tokens
         UNION ALL
         SELECT
             requested_at, provider, model, 'history' AS auth_type, event_id AS trace_id,
