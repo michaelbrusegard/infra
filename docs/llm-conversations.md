@@ -878,8 +878,16 @@ bounded by a day of requests or a part of files, on one thread.
    commits `chore(cliproxy): update plugin image`, which names the new
    image in the CLIProxyAPI installer, the CronJob and the Job. Pull it.
 3. **Run the backfill** from the repo root, in the dev shell:
-   `gitops/espresso/apps/clickhouse/llm-backfill.sh`. It exits non-zero
-   when the Job fails, with the log in `llm-backfill.log`. To retry, run
+   `gitops/espresso/apps/clickhouse/llm-backfill.sh`. First check the
+   room on ClickHouse's node: the scratch volume is not reserved, and the
+   Job writes about 14 GiB (2 GiB of compressed lines, 8 GiB of rows, and
+   up to 3 GiB for a day of proxy requests) to `/var/local/openebs`, which
+   is the node's own disk, so it needs that and headroom above the
+   kubelet's eviction threshold. On 2026-11-14 ClickHouse ran on
+   espresso-2, which had 41 GiB of 118 free, and room for the Job's 2 CPUs
+   and 6 GiB at most (34% of its CPU and 18% of its memory were
+   requested); espresso-1 had 25 GiB free, which the Job would bring under
+   10%. The script exits non-zero when the Job fails, with the log in `llm-backfill.log`. To retry, run
    it again: each run is a new Job. A failed run inserted nothing of the
    transcripts if it failed before their insert; otherwise delete the
    transcript rows as in [Rebuild](#rebuild) first, since the Job refuses
