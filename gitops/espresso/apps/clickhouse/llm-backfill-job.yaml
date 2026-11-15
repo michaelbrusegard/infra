@@ -40,7 +40,7 @@ spec:
         - name: install-normalizer
           # CI swaps this for each plugin image it builds, which holds the
           # normalizer in /normalizer.
-          image: ghcr.io/michaelbrusegard/cliproxy-plugins:sha-79be6da924f7ba5df1664bf2ed3841fe94c75dc6@sha256:cb8309a309aff028c749b2ed5524aede050728eb9cb1d53b6b3b9882e8fff3b5
+          image: ghcr.io/michaelbrusegard/cliproxy-plugins:sha-39327ac02cde69b45322424cc1ef4c559b3b9ea2@sha256:58327a993ba466f60d44a4e68089fba24e0d636f6b2553bcc4527329e0c14238
           command:
             - cp
             - -r
