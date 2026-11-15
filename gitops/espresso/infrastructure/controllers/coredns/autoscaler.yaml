@@ -1,0 +1,16 @@
+# k3s deploys CoreDNS from a plain manifest that leaves the replica count
+# unset, so a rebuilt cluster would run one copy, and a partial Deployment
+# cannot be applied through Flux. The autoscaler holds it at one per node
+# under its hostname spread, raising it to the minimum even without metrics.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: coredns
+  namespace: kube-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: coredns
+  minReplicas: 3
+  maxReplicas: 3

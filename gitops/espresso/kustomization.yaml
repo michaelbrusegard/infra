@@ -6,7 +6,6 @@ resources:
   - manafishrov-source.yaml
   - manafishrov-secrets-source.yaml
   - infrastructure-controllers.yaml
-  - coredns.yaml
   - infrastructure-configs.yaml
   - infrastructure-secrets.yaml
   - netbird-operator.yaml
