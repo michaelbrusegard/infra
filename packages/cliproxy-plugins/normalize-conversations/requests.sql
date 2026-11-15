@@ -7,8 +7,9 @@
 -- each is sent once, with the first request of the run that uses it; the
 -- normalizer keeps it for later ones. Other items are empty. Joined in full,
 -- every request's items would be 68 GiB rather than 2.6 GiB for the
--- archive. A backfill runs this a day at a time, with state between runs,
--- which bounds the items the server joins at once.
+-- archive. Runs take an hour at a time, with state between them, which
+-- bounds the items the server joins at once: a busy day's do not fit in its
+-- memory.
 --
 -- The plugin writes a request before CLIProxy writes its usage, so a request
 -- without usage attempts may only be early; the normalizer holds recent ones

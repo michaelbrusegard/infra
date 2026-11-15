@@ -836,11 +836,13 @@ runs, in order, because which transcript file holds a reply's call depends
 on the proxy's calls:
 
 1. **The proxy**, from its first request, in start order, so `llm.calls`
-   holds every proxied call: the job's steps a day at a time rather than an
-   hour, with no time limit, each day inserted before the next reads its
-   state. A day bounds the items the server joins at once: joined in full,
+   holds every proxied call: the job's steps an hour at a time, with no
+   time limit, each hour inserted before the next reads its state. A day's
+   requests and items exceed the server's memory in one join (the first
+   backfill attempt failed at 4 GiB), and an hour bounds the items the
+   server joins at once: joined in full,
    the items of every request would be 68 GiB rather than 2.6 GiB, and each
-   run sends an item once. The last day reaches into the future; its
+   run sends an item once. The last hour reaches into the future; its
    requests from the last 10 minutes are held back for the job.
 2. **The transcripts**, once, in one pass, and only into tables without
    transcript calls: the proxy's calls from

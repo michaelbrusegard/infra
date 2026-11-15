@@ -7,8 +7,8 @@
 #   normalize.sh cron      one run of the job: the requests that are not
 #                          normalized yet, an hour at a time from the
 #                          oldest, starting none after BUDGET seconds (300)
-#   normalize.sh backfill  the proxy from its first request, a day at a time,
-#                          then the transcript import, then the checks
+#   normalize.sh backfill  the proxy from its first request, an hour at a
+#                          time, then the transcript import, then the checks
 #   normalize.sh verify    only the checks
 #
 # CLICKHOUSE_HOST and CLICKHOUSE_USER name the server and its user, whose
@@ -150,7 +150,9 @@ cron)
 backfill)
 	mkdir -p "$scratch"
 	settled
-	proxy_windows 24
+	# A busy day's requests and items exceed the server's memory in one
+	# join, so the backfill works an hour at a time, like the job.
+	proxy_windows 1
 	backfill_transcripts
 	verify
 	# The dashboard reads the transcript calls' history from here on.
