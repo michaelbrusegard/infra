@@ -94,6 +94,9 @@ resource "github_repository_ruleset" "infra_main" {
       required_check {
         context = "validate-tofu"
       }
+      required_check {
+        context = "stalwart-image"
+      }
     }
   }
 }

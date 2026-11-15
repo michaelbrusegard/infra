@@ -243,13 +243,17 @@
         // secretsTools.${system}
     );
     # Stalwart takes over an hour to compile on a hosted runner, so its build
-    # and source check run in the Stalwart Image workflow instead.
+    # runs in the Stalwart Image workflow, a required check. The source check
+    # reads only the patched source.
     checks = lib.forAllSystems (
       system:
         nixpkgs.lib.optionalAttrs nixpkgs.legacyPackages.${system}.stdenv.hostPlatform.isLinux {
           ai-images = inputs.self.packages.${system}.ai-images;
           smtp-edge = nixpkgs.legacyPackages.${system}.callPackage ./packages/smtp-edge/source-check.nix {};
           smtp-backup = nixpkgs.legacyPackages.${system}.callPackage ./packages/smtp-backup/test.nix {};
+          stalwart-native-scim-source = nixpkgs.legacyPackages.${system}.callPackage ./packages/stalwart-oss/source-check.nix {
+            server = inputs.self.packages.${system}.stalwart-native-scim;
+          };
         }
     );
     overlays = {

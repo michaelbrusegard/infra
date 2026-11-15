@@ -9,18 +9,37 @@ name: Stalwart Image
       - flake.lock
       - packages/stalwart-oss/**
       - .github/workflows/stalwart-image.yaml
+  # Every pull request runs it, so stalwart-image can be a required check;
+  # the build is skipped, which passes, unless Stalwart's inputs changed.
   pull_request:
-    paths:
-      - flake.lock
-      - packages/stalwart-oss/**
-      - .github/workflows/stalwart-image.yaml
-
-concurrency:
-  group: stalwart-native-scim-build
-  cancel-in-progress: false
 
 jobs:
-  build:
+  stalwart-changes:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-26.04
+    outputs:
+      stalwart: ${{ steps.filter.outputs.stalwart }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
+        id: filter
+        with:
+          filters: |
+            stalwart:
+              - 'flake.lock'
+              - 'packages/stalwart-oss/**'
+              - '.github/workflows/stalwart-image.yaml'
+  stalwart-image:
+    needs: stalwart-changes
+    # Runs when the change check failed, rather than pass unchecked.
+    if: >-
+      !cancelled() && (github.event_name != 'pull_request'
+      || needs.stalwart-changes.result != 'success'
+      || needs.stalwart-changes.outputs.stalwart == 'true')
+    # Publishes from main run one at a time; pull requests only build.
+    concurrency:
+      group: stalwart-native-scim-${{ github.event_name == 'pull_request' && github.ref || 'publish' }}
+      cancel-in-progress: false
     runs-on: ubuntu-26.04
     timeout-minutes: 120
     permissions:
