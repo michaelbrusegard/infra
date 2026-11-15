@@ -7,7 +7,6 @@ resources:
   - volsync
   - metrics-server
   - gateway-api
-  - coredns
   - kube-prometheus-stack
   - loki
   - alloy
