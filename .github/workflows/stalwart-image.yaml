@@ -36,9 +36,10 @@ jobs:
       !cancelled() && (github.event_name != 'pull_request'
       || needs.stalwart-changes.result != 'success'
       || needs.stalwart-changes.outputs.stalwart == 'true')
-    # Publishes from main run one at a time; pull requests only build.
+    # Publishes from main run one at a time. A pull request's builds only
+    # build, each for its own head, so no run replaces the current head's.
     concurrency:
-      group: stalwart-native-scim-${{ github.event_name == 'pull_request' && github.ref || 'publish' }}
+      group: stalwart-native-scim-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'publish' }}
       cancel-in-progress: false
     runs-on: ubuntu-26.04
     timeout-minutes: 120
