@@ -38,9 +38,11 @@ FROM (SELECT session_id, arrayJoin(output_ids) AS id FROM llm.calls FINAL)
 WHERE (session_id, id) NOT IN (SELECT session_id, id FROM llm.messages FINAL WHERE output)
 SETTINGS max_threads = 1;
 
-SELECT 'check', 'messages that are the output of two calls', count()
-FROM (SELECT id FROM (SELECT arrayJoin(output_ids) AS id, call_id FROM llm.calls FINAL)
-    GROUP BY id HAVING uniqExact(call_id) > 1);
+-- The same reply to the same conversation is one node, which proxy calls
+-- can share; a transcript call's output is its own.
+SELECT 'check', 'transcript call outputs another call shares', count()
+FROM (SELECT id FROM (SELECT arrayJoin(output_ids) AS id, call_id, origin FROM llm.calls FINAL)
+    GROUP BY id HAVING uniqExact(call_id) > 1 AND has(groupUniqArray(origin), 'transcript'));
 
 -- A block the extractor does not know keeps only its type. The transcript
 -- import fails on one; the proxy's raw request still holds it, so the

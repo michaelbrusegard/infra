@@ -985,8 +985,10 @@ explained, not just counted.
   without a timestamp. Every remaining difference is explained.
 - **Tree integrity.** Every message's parent is in its session, or it is a
   root, and no chain loops. Every call's input and outputs exist, its
-  outputs are output messages of its session, and no message is the output
-  of two calls.
+  outputs are output messages of its session, and no transcript call shares
+  an output with another call. Proxy calls can: a node is its parent and
+  content, so the same reply to the same conversation, such as a scheduled
+  prompt's or a retry's, is one message that each call names.
 - **Exports.** A sample of calls of every client and source format exports
   to both dialects, and the training check passes or names its reason. Claude
   Code calls with a request log export with their tools.
