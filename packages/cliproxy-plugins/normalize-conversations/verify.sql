@@ -48,7 +48,8 @@ GROUP BY origin, client
 ORDER BY origin, client;
 
 -- Transcript calls against the old import, per client: they differ where
--- the importer counted differently, such as Codex's drifted repeats.
+-- the importer counted differently, such as Codex's drifted repeats. Once
+-- the old import is dropped, it has no rows.
 SELECT 'report', concat('history ', source, ' ', what), value
 FROM (
     SELECT source, 'calls' AS what, count() AS value FROM llm.call_history
@@ -57,10 +58,10 @@ FROM (
     SELECT source, 'tokens', sum(uncached_input_tokens + cache_read_tokens + cache_creation_tokens + output_tokens)
     FROM llm.call_history WHERE requested_at < (SELECT min(requested_at) FROM llm.usage) GROUP BY source
     UNION ALL
-    SELECT toString(source), 'old import calls', count() FROM llm.historical_usage FINAL GROUP BY source
+    SELECT toString(source), 'old import calls', count() FROM llm.old_import_usage FINAL GROUP BY source
     UNION ALL
     SELECT toString(source), 'old import tokens',
         sum(uncached_input_tokens + cache_read_tokens + cache_creation_tokens + output_tokens)
-    FROM llm.historical_usage FINAL GROUP BY source
+    FROM llm.old_import_usage FINAL GROUP BY source
 )
 ORDER BY source, what;

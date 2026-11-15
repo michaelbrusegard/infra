@@ -266,7 +266,10 @@ def main():
             assert sorted(switched) == ["transcript-claude"], switched
             assert switched["transcript-claude"]["origin"] == "history:claude-code"
             assert math.isclose(switched["transcript-claude"]["estimated_cost_usd"], 0.00156, rel_tol=1e-9)
+            # The view reads the old import through a Merge table, so it keeps
+            # working from the drop on, before and after schema.sql reruns.
             query("DROP TABLE llm.historical_usage")
+            assert query("SELECT count() FROM llm.usage_metrics WHERE origin LIKE 'history:%'", "grafana").stdout.strip() == "1"
             run("docker", "exec", "-i", container, "clickhouse-client", "--multiquery", input=config["schema.sql"])
             assert query("SELECT count() FROM llm.usage_metrics WHERE origin LIKE 'history:%'", "grafana").stdout.strip() == "1"
 
@@ -275,7 +278,7 @@ def main():
             query("SELECT 1 SETTINGS max_execution_time=60", "grafana")
             denied = ["SELECT * FROM llm.usage", "SELECT * FROM llm.requests",
                       "SELECT * FROM llm.request_items", "SELECT * FROM llm.request_bodies",
-                      "SELECT * FROM llm.transcripts", "SELECT * FROM llm.historical_usage",
+                      "SELECT * FROM llm.transcripts", "SELECT * FROM llm.historical_usage", "SELECT * FROM llm.old_import_usage",
                       "SELECT * FROM llm.calls", "SELECT * FROM llm.messages", "SELECT * FROM llm.call_history",
                       "SELECT failure_body FROM llm.usage_metrics",
                       "INSERT INTO llm.usage (request_id) VALUES ('forbidden')",

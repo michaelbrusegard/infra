@@ -369,7 +369,7 @@ def main():
                 == "['2']"
             assert scalar("SELECT count() FROM llm.calls FINAL WHERE response_id IN ('chatcmpl-1', 'chatcmpl-2')") == "2"
             # Grafana keeps seeing only the metrics view.
-            for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions", "llm.call_history"):
+            for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions", "llm.call_history", "llm.old_import_usage"):
                 assert query(f"SELECT * FROM {table}", "grafana", check=False).returncode != 0, table
 
             # Once the transcript calls landed, the production view reads the
@@ -614,16 +614,23 @@ def main():
 
             # ClickHouse runs schema.sql on every restart. Rerunning it keeps
             # the history, and so does dropping the old import after it is
-            # verified: schema.sql does not create llm.transcripts again, and
-            # the empty llm.historical_usage it creates is ignored.
+            # verified, at once and after the next restart: no view names
+            # llm.historical_usage, schema.sql does not create llm.transcripts
+            # again, and the empty llm.historical_usage it creates is ignored.
             def restart():
                 run("docker", "exec", "-i", container, "clickhouse-client", "--multiquery", input=config["schema.sql"])
+
+            def checks():
+                return query((NORMALIZER / "verify.sql").read_text()).stdout
 
             kept = history_rows()
             restart()
             assert history_rows() == kept
+            assert "old import calls" in checks()
             query("DROP TABLE llm.transcripts")
             query("DROP TABLE llm.historical_usage")
+            assert history_rows() == kept and sorted(kept) == expected_history(), kept
+            assert "old import calls" not in checks()
             restart()
             assert scalar("EXISTS TABLE llm.transcripts") == "0" and scalar("SELECT count() FROM llm.historical_usage") == "0"
             assert history_rows() == kept and sorted(kept) == expected_history(), kept
@@ -690,6 +697,12 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
         assert result.returncode == 0 and query("SELECT count() FROM llm.messages") == rows, result.stderr
         result = normalize("backfill")
         assert result.returncode != 0 and "delete the transcript rows first" in result.stderr, result.stderr
+        # The checks run after the old import is dropped, too.
+        query("DROP TABLE llm.transcripts")
+        query("DROP TABLE llm.historical_usage")
+        result = normalize("verify")
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert query("SELECT countIf(origin LIKE 'history:%') > 0 FROM llm.usage_metrics", "grafana") == "1"
         # The normalizer's user reads the sources and appends to the
         # canonical tables, and nothing else.
         def as_normalizer(sql, *password):

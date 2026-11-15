@@ -116,6 +116,7 @@ data:
             <query>GRANT SELECT ON llm.usage</query>
             <query>GRANT SELECT ON llm.transcripts</query>
             <query>GRANT SELECT ON llm.historical_usage</query>
+            <query>GRANT SELECT ON llm.old_import_usage</query>
             <query>GRANT SELECT ON llm.call_history</query>
             <query>GRANT SELECT, INSERT ON llm.sessions</query>
             <query>GRANT SELECT, INSERT ON llm.messages</query>
@@ -277,8 +278,7 @@ data:
     -- One normalized usage record per historical provider response, from
     -- packages/llm-usage-backfill, never the live proxy. It is replaced by
     -- llm.call_history and dropped after the transcript import is verified;
-    -- this statement then makes an empty table, which llm.usage_metrics
-    -- ignores once transcript calls exist, so the view never depends on it.
+    -- this statement then makes an empty table on the next start.
     CREATE TABLE IF NOT EXISTS llm.historical_usage
     (
         event_id String,
@@ -299,6 +299,28 @@ data:
     )
     ENGINE = ReplacingMergeTree(ingested_at)
     ORDER BY event_id;
+
+    -- llm.historical_usage while it exists, and nothing from its drop until
+    -- a start creates it again, so the views that read the old import never
+    -- fail on the drop. A view naming the table would.
+    CREATE TABLE IF NOT EXISTS llm.old_import_usage
+    (
+        event_id String,
+        source LowCardinality(String),
+        host LowCardinality(String),
+        session_id String,
+        requested_at DateTime64(3, 'UTC'),
+        provider LowCardinality(String),
+        model LowCardinality(String),
+        uncached_input_tokens UInt64,
+        cache_read_tokens UInt64,
+        cache_creation_tokens UInt64,
+        cache_write_5m_tokens UInt64,
+        cache_write_1h_tokens UInt64,
+        output_tokens UInt64,
+        reasoning_tokens UInt64
+    )
+    ENGINE = Merge(llm, '^historical_usage$');
 
     -- Canonical LLM conversations, described in docs/llm-conversations.md and
     -- written by packages/cliproxy-plugins/normalize-conversations. Proxy rows
@@ -520,7 +542,7 @@ data:
             -- read only while there are none, so its drop changes nothing.
             SELECT * FROM llm.call_history
             UNION ALL
-            SELECT * EXCEPT ingested_at FROM llm.historical_usage FINAL
+            SELECT * FROM llm.old_import_usage FINAL
             WHERE (SELECT count() FROM llm.calls WHERE origin = 'transcript') = 0
         )
         -- A fixed handover avoids counting transcript copies of proxied calls.

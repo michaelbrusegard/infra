@@ -701,17 +701,23 @@ own, and counts Codex's drifted repeats of token counts again (12,963 live,
 about 6.8% of Codex history). The transcript calls count each response once,
 so they replace it: `llm.call_history` presents them in
 `llm.historical_usage`'s columns, and `llm.usage_metrics` reads its history
-from `llm.call_history`, and from `llm.historical_usage` only while
-`llm.calls` holds no transcript call. The cutover is in the production
-schema, so it needs no change at the time:
+from `llm.call_history`, and from the old import only while `llm.calls`
+holds no transcript call. It reads the old import through
+`llm.old_import_usage`, a `Merge` table over `llm.historical_usage` that
+is empty while no such table exists: ClickHouse resolves every table a
+query names, even in a branch whose condition is false, so a view naming
+`llm.historical_usage` would fail from its drop on. The cutover is in the
+production schema, so it needs no change at the time:
 
 - Before the transcript import lands, the dashboard shows the old import's
   history, as it does today.
 - When the import's calls are inserted, it shows theirs. If verification
   fails and they are deleted, it shows the old import's again.
-- After the drop, `schema.sql` creates no `llm.transcripts` again, and the
-  empty `llm.historical_usage` it creates on the next start is never read,
-  since transcript calls exist. A restart never empties the history.
+- After the drop, the history stays, at once and after restarts:
+  `schema.sql` creates no `llm.transcripts` again, and the empty
+  `llm.historical_usage` it creates on the next start is never read, since
+  transcript calls exist. `verify.sql` reads the old import the same way,
+  and reports no old import rows after the drop.
 
 Its fixed handover (`requested_at < min(llm.usage.requested_at)`) stays.
 The rows follow the importer's rules: the provider from the model's prefix
@@ -720,8 +726,8 @@ Claude's thinking tokens as reasoning, Pi compactions
 under the model in use (the importer recorded them as `(unknown)`), OpenCode's reasoning added to output
 unless its recorded total excludes it, cache writes by lifetime, and calls
 with no tokens left out. Origins stay `history:<client>`. The tests run the
-production schema before and after the import, after a restart, and after
-the drop.
+production schema before and after the import, after a restart, right after
+the drop, and after the next restart.
 
 ## Ongoing capture
 
@@ -778,7 +784,8 @@ nothing else. They connect as `llm_normalizer`, with the password of the
 and Grafana's pods reach the HTTP port, and without it could use the user
 to read the raw history. It has SELECT on the
 sources (`llm.requests`, `llm.request_items`, `llm.usage`, and until they
-are dropped `llm.transcripts` and `llm.historical_usage`), SELECT and INSERT
+are dropped `llm.transcripts` and `llm.historical_usage`, which it reads
+through `llm.old_import_usage`), SELECT and INSERT
 on `llm.sessions`, `llm.messages`, `llm.calls` and `llm.events`, and INSERT
 on `llm.request_items`; it cannot read the dashboard's view, write the raw
 capture, delete, or drop. The CronJob starts suspended, so it waits for the
@@ -954,7 +961,8 @@ explained, not just counted.
    transcript period can be rebuilt later. Without it, the canonical rows are
    the only record.
 5. **Drop** `llm.transcripts` and `llm.historical_usage`. The dashboard
-   already reads the transcript calls; see [Usage history](#usage-history).
+   already reads the transcript calls, and no view names either table, so
+   nothing needs a restart; see [Usage history](#usage-history).
 
 ## Sizes
 
