@@ -41,9 +41,23 @@ spec:
     # reports pools it has imported, so a pool that fails to import vanishes.
     # ReplicationSources for backup-rules.yaml: VolSync keeps reporting
     # deleted sources and cannot tell a paused source from a failing one.
+    # Flux objects and tofu stacks for flux-rules.yaml: the controllers
+    # export reconcile timings but not whether an object is Ready.
     kube-state-metrics:
       rbac:
         extraRules:
+          - apiGroups: ["kustomize.toolkit.fluxcd.io"]
+            resources: ["kustomizations"]
+            verbs: ["list", "watch"]
+          - apiGroups: ["helm.toolkit.fluxcd.io"]
+            resources: ["helmreleases"]
+            verbs: ["list", "watch"]
+          - apiGroups: ["source.toolkit.fluxcd.io"]
+            resources: ["gitrepositories", "ocirepositories", "helmcharts"]
+            verbs: ["list", "watch"]
+          - apiGroups: ["infra.contrib.fluxcd.io"]
+            resources: ["terraforms"]
+            verbs: ["list", "watch"]
           - apiGroups: ["openebs.io"]
             resources: ["diskpools"]
             verbs: ["list", "watch"]
@@ -89,6 +103,108 @@ spec:
                       gauge:
                         path: [spec, paused]
                         nilIsZero: true
+              - groupVersionKind:
+                  group: kustomize.toolkit.fluxcd.io
+                  version: v1
+                  kind: Kustomization
+                metricNamePrefix: flux
+                labelsFromPath:
+                  obj_namespace: [metadata, namespace]
+                  ready: [status, conditions, "[type=Ready]", status]
+                  suspended: [spec, suspend]
+                metrics:
+                  - name: kustomization_info
+                    help: The Ready condition of a Flux object.
+                    each:
+                      type: Info
+                      info:
+                        labelsFromPath:
+                          obj_name: [metadata, name]
+              - groupVersionKind:
+                  group: helm.toolkit.fluxcd.io
+                  version: v2
+                  kind: HelmRelease
+                metricNamePrefix: flux
+                labelsFromPath:
+                  obj_namespace: [metadata, namespace]
+                  ready: [status, conditions, "[type=Ready]", status]
+                  suspended: [spec, suspend]
+                metrics:
+                  - name: helmrelease_info
+                    help: The Ready condition of a Flux object.
+                    each:
+                      type: Info
+                      info:
+                        labelsFromPath:
+                          obj_name: [metadata, name]
+              - groupVersionKind:
+                  group: source.toolkit.fluxcd.io
+                  version: v1
+                  kind: GitRepository
+                metricNamePrefix: flux
+                labelsFromPath:
+                  obj_namespace: [metadata, namespace]
+                  ready: [status, conditions, "[type=Ready]", status]
+                  suspended: [spec, suspend]
+                metrics:
+                  - name: gitrepository_info
+                    help: The Ready condition of a Flux object.
+                    each:
+                      type: Info
+                      info:
+                        labelsFromPath:
+                          obj_name: [metadata, name]
+              - groupVersionKind:
+                  group: source.toolkit.fluxcd.io
+                  version: v1
+                  kind: OCIRepository
+                metricNamePrefix: flux
+                labelsFromPath:
+                  obj_namespace: [metadata, namespace]
+                  ready: [status, conditions, "[type=Ready]", status]
+                  suspended: [spec, suspend]
+                metrics:
+                  - name: ocirepository_info
+                    help: The Ready condition of a Flux object.
+                    each:
+                      type: Info
+                      info:
+                        labelsFromPath:
+                          obj_name: [metadata, name]
+              - groupVersionKind:
+                  group: source.toolkit.fluxcd.io
+                  version: v1
+                  kind: HelmChart
+                metricNamePrefix: flux
+                labelsFromPath:
+                  obj_namespace: [metadata, namespace]
+                  ready: [status, conditions, "[type=Ready]", status]
+                  suspended: [spec, suspend]
+                metrics:
+                  - name: helmchart_info
+                    help: The Ready condition of a Flux object.
+                    each:
+                      type: Info
+                      info:
+                        labelsFromPath:
+                          obj_name: [metadata, name]
+              - groupVersionKind:
+                  group: infra.contrib.fluxcd.io
+                  version: v1alpha2
+                  kind: Terraform
+                metricNamePrefix: flux
+                labelsFromPath:
+                  obj_namespace: [metadata, namespace]
+                  ready: [status, conditions, "[type=Ready]", status]
+                  suspended: [spec, suspend]
+                metrics:
+                  - name: terraform_info
+                    help: The Ready condition of a Flux object.
+                    each:
+                      type: Info
+                      info:
+                        labelsFromPath:
+                          obj_name: [metadata, name]
 
     prometheus-node-exporter:
       extraArgs:

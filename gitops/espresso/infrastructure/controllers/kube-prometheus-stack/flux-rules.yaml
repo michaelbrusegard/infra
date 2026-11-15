@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: flux
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: flux
+      rules:
+        # Each kind has its own metric: kube-state-metrics drops kinds that
+        # share one. A retrying object alternates between False and Unknown;
+        # grouping away the ready label keeps it one series for the outage.
+        - alert: FluxObjectNotReady
+          expr: |
+            max by (customresource_kind, obj_namespace, obj_name) (
+              {__name__=~"flux_.+_info", ready!="True", suspended!="true"}
+            )
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: Flux object has not been Ready for an hour
+            description: "{{ $labels.customresource_kind }} {{ $labels.obj_namespace }}/{{ $labels.obj_name }} has not been Ready for over an hour."
