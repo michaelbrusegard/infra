@@ -1,5 +1,5 @@
 # Records that decide where mail for both domains is delivered and who may
-# send it. Proton's are adopted in imports.tf with their exact live content and
+# send it. Proton's were adopted from their exact live content (see imports.tf) and
 # share keys with Stalwart's, so flipping mail_on_stalwart rewrites them in
 # place instead of publishing both providers side by side. Every record has
 # the same attributes so either map can feed the same resource.
