@@ -9,7 +9,7 @@
  use email::identity::{EmailAddress, Identity};
  use jmap_proto::{
      error::set::{SetError, SetErrorType},
-@@ -27,7 +27,7 @@ use types::{
+@@ -27,7 +27,7 @@
      collection::{Collection, SyncCollection},
      id::Id,
  };
@@ -18,7 +18,7 @@
  
  type CreatedValue = Value<'static, IdentityProperty, IdentityValue>;
  
-@@ -115,6 +115,9 @@ impl IdentitySet for Server {
+@@ -115,6 +115,9 @@
                      .addresses()
                      .iter()
                      .any(|e| e == &identity.email)
@@ -28,18 +28,19 @@
                  {
                      response.not_created.append(
                          id,
-@@ -277,6 +280,53 @@ impl IdentitySet for Server {
+@@ -277,6 +280,54 @@
      }
  }
  
 +/// Whether an account may send as an address no principal claims, because the
 +/// address's domain has a catch-all that delivers to that account.
 +///
-+/// This only governs which identities exist. The lookups read cached data, so
-+/// an address reassigned concurrently can still get an identity, and one left
++/// It governs which identities exist and which envelope senders a submission
++/// may use besides its identity's address. The lookups read cached data, so an
++/// address reassigned concurrently can still get an identity, and one left
 +/// behind after ownership changes is kept. Neither grants sending: the SMTP
 +/// must_match_sender rule still decides which addresses a submission may use.
-+async fn is_catch_all_sender(
++pub(crate) async fn is_catch_all_sender(
 +    server: &Server,
 +    account_id: u32,
 +    address: &str,
@@ -82,7 +83,7 @@
  fn validate_identity_value(
      expected_id: Option<Id>,
      property: &Key<'_, IdentityProperty>,
-@@ -384,3 +434,65 @@ fn validate_identity_value(
+@@ -384,3 +435,65 @@
  
      Ok(())
  }
@@ -148,3 +149,32 @@
 +        assert!(!catch_all_sender(OWNER, exact, Some(OTHER), Some(OWNER)));
 +    }
 +}
+--- a/crates/jmap/src/submission/set.rs
++++ b/crates/jmap/src/submission/set.rs
+@@ -4,6 +4,7 @@
+  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
+  */
+ 
++use crate::identity::set::is_catch_all_sender;
+ use common::{
+     Server,
+     config::smtp::queue::QueueName,
+@@ -581,9 +582,16 @@
+                 .with_description("Identity not found.")));
+         };
+ 
+-        // Make sure the envelope address matches the identity email address
++        // Make sure the envelope address matches the identity email address,
++        // or is an address the account's catch-all lets it send as: a From
++        // set to such an address would otherwise go out, and be DKIM-signed,
++        // under the identity's domain.
+         let mail_from = if let Some(mail_from) = mail_from {
+-            if !mail_from.address.eq_ignore_ascii_case(&identity_mail_from) {
++            if !mail_from.address.eq_ignore_ascii_case(&identity_mail_from)
++                && !is_catch_all_sender(self, account_id, mail_from.address.as_ref())
++                    .await
++                    .caused_by(trc::location!())?
++            {
+                 return Ok(Err(SetError::new(SetErrorType::ForbiddenFrom)
+                     .with_description(
+                         "Envelope mailFrom does not match identity email address.",
