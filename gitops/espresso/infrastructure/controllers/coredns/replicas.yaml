@@ -1,0 +1,15 @@
+# k3s deploys CoreDNS from a plain manifest that leaves the replica count
+# unset, so a HelmChartConfig cannot reach it and a rebuilt cluster would
+# run one copy. Flux sets only the count, one per node under its hostname
+# spread; Merge keeps the fields k3s owns, and pruning stays off so
+# removing this file cannot delete CoreDNS.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredns
+  namespace: kube-system
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: Merge
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  replicas: 3
