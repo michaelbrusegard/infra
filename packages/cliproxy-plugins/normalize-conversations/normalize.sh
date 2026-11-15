@@ -80,6 +80,23 @@ spent() {
 	return 1
 }
 
+# Deletes are mutations, which ClickHouse applies in the background: the
+# rows that a recovery or a rebuild deletes, as the design doc's Rebuild
+# describes, stay until theirs finish. A backfill waits for them, rather
+# than refuse an import because old rows still count, or insert next to
+# rows that are still going.
+settled() {
+	local pending
+	while :; do
+		pending=$(ch --query "SELECT count() FROM system.mutations WHERE database = 'llm' AND NOT is_done")
+		if [[ $pending == 0 ]]; then
+			return
+		fi
+		echo "waiting for $pending deletes in llm to finish"
+		sleep 10
+	done
+}
+
 # The transcript import, once, after the proxy: which file holds a reply's
 # call depends on the proxy's calls. It reads every transcript line, in
 # parts of whole files that bound the server's sort, into one compressed
@@ -131,6 +148,7 @@ cron)
 	;;
 backfill)
 	mkdir -p "$scratch"
+	settled
 	proxy_windows 24
 	backfill_transcripts
 	verify

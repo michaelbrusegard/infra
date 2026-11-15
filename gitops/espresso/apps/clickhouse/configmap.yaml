@@ -123,6 +123,8 @@ data:
             <query>GRANT SELECT, INSERT ON llm.calls</query>
             <query>GRANT SELECT, INSERT ON llm.events</query>
             <query>GRANT INSERT ON llm.request_items</query>
+            <!-- To wait for deletes before a backfill inserts again. -->
+            <query>GRANT SELECT ON system.mutations</query>
           </grants>
         </llm_normalizer>
         <!-- Network policy trusts only CLIProxy and Grafana pods. As with the

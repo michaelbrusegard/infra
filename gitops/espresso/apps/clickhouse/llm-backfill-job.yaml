@@ -7,7 +7,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: llm-backfill
+  # Each run gets a name of its own, so a rerun never meets the Job a
+  # failed run left for its log.
+  generateName: llm-backfill-
   namespace: clickhouse
 spec:
   backoffLimit: 0

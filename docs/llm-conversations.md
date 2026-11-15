@@ -814,16 +814,19 @@ backfill.
 
 ### Backfill
 
-The backfill runs in the cluster as the one-off `llm-backfill` Job, on
+The backfill runs in the cluster as a one-off `llm-backfill-` Job, on
 ClickHouse's node, with a 40 GiB local scratch volume (`openebs-hostpath`)
 that goes with the pod. Nothing crosses the workstation's link but the
 Job's log. The Job's manifest,
 [`llm-backfill-job.yaml`](../gitops/espresso/apps/clickhouse/llm-backfill-job.yaml),
 is not in the Kustomization, so Flux never applies it;
 [`llm-backfill.sh`](../gitops/espresso/apps/clickhouse/llm-backfill.sh)
-creates it, waits for it, and saves its log. `normalize.sh backfill` runs,
-in order, because which transcript file holds a reply's call depends on the
-proxy's calls:
+creates it under a name of its own, waits until its conditions say it
+completed or failed, and saves its log. A finished Job is kept for a week,
+so a rerun never meets it. `normalize.sh backfill` first waits for deletes
+in `llm` that ClickHouse is still applying, such as a recovery's, then
+runs, in order, because which transcript file holds a reply's call depends
+on the proxy's calls:
 
 1. **The proxy**, from its first request, in start order, so `llm.calls`
    holds every proxied call: the job's steps a day at a time rather than an
@@ -867,14 +870,16 @@ bounded by a day of requests or a part of files, on one thread.
 2. **Wait for the image.** The plugin image's CI builds the normalizer and
    commits `chore(cliproxy): update plugin image`, which names the new
    image in the CLIProxyAPI installer, the CronJob and the Job. Pull it.
-3. **Run the backfill** from the repo root:
+3. **Run the backfill** from the repo root, in the dev shell:
    `gitops/espresso/apps/clickhouse/llm-backfill.sh`. It exits non-zero
-   when the Job fails, with the log in `llm-backfill.log`. A failed run
-   inserted nothing of the transcripts if it failed before their insert;
-   otherwise delete the transcript rows as in [Rebuild](#rebuild) before
-   running it again, since the Job refuses to import twice. The proxy's
-   days are safe to run again. The dashboard reads the transcript calls'
-   history from the moment they are inserted.
+   when the Job fails, with the log in `llm-backfill.log`. To retry, run
+   it again: each run is a new Job. A failed run inserted nothing of the
+   transcripts if it failed before their insert; otherwise delete the
+   transcript rows as in [Rebuild](#rebuild) first, since the Job refuses
+   to import twice. The Job waits for those deletes to finish before it
+   inserts anything. The proxy's days are safe to run again. The
+   dashboard reads the transcript calls' history from the moment they are
+   inserted.
 4. **Resume the job**: set `suspend: false` in `llm-normalizer.yaml` and
    push. It picks up every request the backfill left, however late it
    landed or long the job waited.
@@ -907,7 +912,9 @@ backfill rebuilds them too. To redo the transcript import before the drop,
 delete its rows first: `ALTER TABLE llm.calls DELETE WHERE origin =
 'transcript'`, the same for `llm.sessions`, `ALTER TABLE llm.messages DELETE
 WHERE path != ''`, and `ALTER TABLE llm.events DELETE WHERE 1`, as the
-`default` user through `kubectl exec`. Their items are content-addressed,
+`default` user through `kubectl exec`. ClickHouse applies the deletes in
+the background; `SETTINGS mutations_sync = 1` after each makes it return
+once they are done, and the backfill waits for any still going. Their items are content-addressed,
 so the rerun's collapse with them. A proxy rebuild changes which transcript calls
 are copies only if it changes the proxy's sessions or response IDs; if it
 does, rerun the transcript pass from the export as well.

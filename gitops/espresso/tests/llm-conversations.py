@@ -639,6 +639,7 @@ def main():
         finally:
             run("docker", "rm", "--force", container, check=False)
         backfill_in_cluster(image, temp, schema, sources, transcript_calls)
+        backfill_runner(temp)
 
 
 def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
@@ -690,13 +691,25 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
         assert "coverage (source, kind, disposition, destination, lines):" in result.stdout, result.stdout
         assert query("SELECT count() FROM llm.calls FINAL WHERE origin = 'proxy'") == "10"
         assert query("SELECT count() FROM llm.calls FINAL WHERE origin = 'transcript'") == transcript_calls
-        # The job finds nothing left, and a second import is refused rather
-        # than mixed with the first.
+        # The job finds nothing left.
         rows = query("SELECT count() FROM llm.messages")
         result = normalize("cron")
         assert result.returncode == 0 and query("SELECT count() FROM llm.messages") == rows, result.stderr
-        result = normalize("backfill")
-        assert result.returncode != 0 and "delete the transcript rows first" in result.stderr, result.stderr
+        # A second backfill waits for deletes still going, as a recovery's
+        # are, and is then refused rather than mixed with the first.
+        query("INSERT INTO llm.events (session_id, type) VALUES ('deleted', 'deleted')")
+        query("SYSTEM STOP MERGES llm.events")
+        query("ALTER TABLE llm.events DELETE WHERE type = 'deleted'")
+        backfill = subprocess.Popen(
+            ["docker", "exec", "-u", "101", "-e", "CLICKHOUSE_HOST=localhost", "-e", "SCRATCH=/tmp/scratch",
+             "-e", "HOME=/tmp", "-e", f"CLICKHOUSE_PASSWORD={PASSWORD}", container, "/opt/normalizer/normalize.sh",
+             "backfill"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        time.sleep(15)
+        assert backfill.poll() is None, backfill.communicate()
+        query("SYSTEM START MERGES llm.events")
+        out, err = backfill.communicate(timeout=120)
+        assert backfill.returncode != 0 and "waiting for 1 deletes in llm" in out \
+            and "delete the transcript rows first" in err, (out, err)
         # After a stop of any length, the job catches up an hour at a time
         # from the oldest request it misses. Once its budget is spent it
         # stops after the window it ran, and the next run goes on.
@@ -757,6 +770,53 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
         print("PASS: the in-cluster backfill and job, with the normalizer's grants")
     finally:
         run("docker", "rm", "--force", container, check=False)
+
+
+# kubectl for llm-backfill.sh: it names each Job it creates, and reports
+# the conditions of a run's outcome, with no pod counters.
+KUBECTL = r"""#!/usr/bin/env bash
+set -euo pipefail
+state=$(dirname "$0")
+case "$*" in
+"-n clickhouse create -o name -f -")
+	cat > "$state/manifest.yaml"
+	runs=$(($(cat "$state/runs" 2>/dev/null || echo 0) + 1))
+	echo "$runs" > "$state/runs"
+	echo "job.batch/llm-backfill-run$runs"
+	;;
+"-n clickhouse get job.batch/llm-backfill-run1 -o json")
+	echo '{"status":{"conditions":[{"type":"FailureTarget","status":"True"},{"type":"Failed","status":"True"}]}}'
+	;;
+"-n clickhouse get job.batch/llm-backfill-run2 -o json")
+	echo '{"status":{"conditions":[{"type":"Suspended","status":"False"},{"type":"Complete","status":"True"}]}}'
+	;;
+"-n clickhouse logs job.batch/llm-backfill-run"[12]" --all-containers")
+	echo "log of $4"
+	;;
+*)
+	echo "unexpected kubectl $*" >&2
+	exit 2
+	;;
+esac
+"""
+
+
+def backfill_runner(temp):
+    """llm-backfill.sh against a stand-in for kubectl: each run is a Job of
+    its own, so a rerun after a failed run, whose Job is kept, creates
+    another, and the Job's conditions decide the result."""
+    stub = temp / "kubectl"
+    stub.write_text(KUBECTL)
+    stub.chmod(0o755)
+    script = BASE / "apps/clickhouse/llm-backfill.sh"
+    env = {**os.environ, "KUBECTL": str(stub), "LOG": str(temp / "llm-backfill.log")}
+    failed = run(str(script), env=env, check=False, cwd=ROOT)
+    assert failed.returncode == 1 and "job.batch/llm-backfill-run1 failed" in failed.stderr, failed
+    manifest = (temp / "manifest.yaml").read_text()
+    assert "generateName: llm-backfill-" in manifest and "\n  name:" not in manifest, manifest
+    rerun = run(str(script), env=env, check=False, cwd=ROOT)
+    assert rerun.returncode == 0 and (temp / "llm-backfill.log").read_text() == "log of job.batch/llm-backfill-run2\n", rerun
+    print("PASS: the backfill runner, a rerun after a failed Job, and Job conditions")
 
 
 if __name__ == "__main__":
