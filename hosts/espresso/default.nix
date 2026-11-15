@@ -7,6 +7,7 @@
     inputs.self.nixosModules.disko
     inputs.self.nixosModules.impermanence
     inputs.self.nixosModules.k3s
+    inputs.self.nixosModules.kata
     inputs.self.nixosModules.home-manager
     inputs.self.nixosModules.lanzaboote
     inputs.self.nixosModules.locale
