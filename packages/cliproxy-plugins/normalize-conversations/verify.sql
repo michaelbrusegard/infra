@@ -42,6 +42,13 @@ SELECT 'check', 'messages that are the output of two calls', count()
 FROM (SELECT id FROM (SELECT arrayJoin(output_ids) AS id, call_id FROM llm.calls FINAL)
     GROUP BY id HAVING uniqExact(call_id) > 1);
 
+-- A block the extractor does not know keeps only its type. The transcript
+-- import fails on one; the proxy's raw request still holds it, so the
+-- extractor learns the type and the proxy windows are normalized again.
+SELECT 'check', 'blocks of unknown types', count()
+FROM llm.messages FINAL ARRAY JOIN blocks AS b
+WHERE b.type = 'other' AND b.source_type != 'missing_context';
+
 SELECT 'report', concat('calls ', origin, ' ', client), count()
 FROM llm.calls FINAL
 GROUP BY origin, client

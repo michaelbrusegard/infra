@@ -177,7 +177,7 @@ messages and calls, so they never need updating.
 | `ts` | When the message was first seen: the transcript time, or the proxy call's start (inputs) or completion (outputs). |
 | `role` | `system`, `developer`, `user`, `assistant` or `tool`. A message made only of tool results is `tool` in every dialect. |
 | `output`, `model`, `call_id` | Whether a model produced it, which model, and in which call. Inputs name the call that first sent them. |
-| `blocks` | `Array(Tuple(type, source_type, text, tool_name, tool_namespace, tool_call_id, tool_input, is_error, media))`. `type` is one of text, thinking, tool_call, tool_result, image, file, compaction, other; `source_type` keeps the dialect's own name. `tool_namespace` is the namespace a Responses API call names, such as an MCP server's. Image and file data, signatures and encrypted reasoning are not extracted. |
+| `blocks` | `Array(Tuple(type, source_type, text, tool_name, tool_namespace, tool_call_id, tool_input, is_error, media))`. `type` is one of text, thinking, tool_call, tool_result, image, file, compaction, fallback (Anthropic's record of another model taking over a refused reply, as JSON), other (a type the extractor does not know, which verification fails on); `source_type` keeps the dialect's own name. `tool_namespace` is the namespace a Responses API call names, such as an MCP server's. Image and file data, signatures and encrypted reasoning are not extracted. |
 | `format` | The source dialect: anthropic, openai-responses, openai-chat, claude-code, codex, pi or opencode. |
 | `item` | For a proxy input, the `llm.request_items` hash of the request part it was read from, or 0 when the request's envelope held it. A proxy output has none: its call's `llm.requests` row holds the response it was assembled from. |
 | `host`, `path`, `line`, `part` | For a transcript message, where it came from: the file and the line's ID in it. `part` is empty for a whole line, and otherwise names what inside the line the message was built from: a Codex compaction's replacement history index, or the entry a Pi compaction sends again. After the drop these are provenance, not references. |
@@ -282,7 +282,9 @@ Requests are processed in start order, with a little state per session.
    add only the new tail. `system`, `instructions` and `tools` are per-call
    context: they stay in the call's parts and are not tree nodes, so a changed
    system prompt (Claude Code puts the date and git status in it) does not
-   duplicate the conversation.
+   duplicate the conversation. Codex's `additional_tools` input items are
+   context too: the call's `context` names their tools, after the request's
+   own, rather than the tree holding them.
 3. **Outputs.** Assemble the response into messages: Anthropic SSE into the
    final message, Responses into the `output_item.done` items, chat chunks
    into one assistant message. Interrupted streams keep what streamed,
@@ -631,6 +633,7 @@ before the proxy took any session over). These losses are approved:
 | `codex` | `inter_agent_communication_metadata` | 1,677 | 0.2 | Routing metadata of sub-agent messages. |
 | `codex` | `event_msg:context_compacted` | 1,168 | 0.1 | Progress; the `compacted` line holds the new context. |
 | `codex` | `turn_context` | ≤ 2,391 | 0.0 | Settings of a turn that made no call, such as an interrupted one. The others give their calls the model. |
+| `codex` | `response_item:additional_tools` | 1 | 0.1 | Tool definitions of a turn that made no call; the calls that have them record them in their context. |
 | `opencode` | `message:idle` | 63 | 0.0 | Status. |
 | `pi` | `thinking_level_change` | 811 | 0.1 | Settings. |
 | `pi` | `model_change` | 803 | 0.1 | Settings; each reply names its model. |
@@ -657,9 +660,10 @@ alone before this audit.
 | codex | `response_item:agent_message` (new) | 1,793 | input message with its header text; `encrypted_content` dropped |
 | codex | `response_item:additional_tools` (new) | 927 | tools context of every later call |
 | codex | `response_item:web_search_call`, `tool_search_call` | 361, 83 | hosted tool call |
-| codex | `response_item:tool_search_output` | 83 | tool result (its `tools`) |
+| codex | `response_item:tool_search_output` | 83 | tool result, its `tools` (definitions, namespaces included) as JSON text |
 | codex | `compacted` history items | 52,487 | `message` and `compaction` nodes; `agent_message` (125) and `additional_tools` (88) as above |
 | claude-code | `assistant` blocks | 153,252 lines | `tool_use`, `thinking`, `text` |
+| proxy (Anthropic) | `web_search_result` in a `web_search_tool_result`, `fallback` | 838, 25 | the result's title and URL as text (page content is encrypted); a `fallback` block |
 | claude-code | `user` blocks | 87,981 lines | `tool_result`, string, `text`, `image`; inside results `text`, `image` and `tool_reference` (new, 1,322: the tool's name) |
 | claude-code | `attachment:*` with `rendered` | 30 kinds | message of the rendered text |
 | pi | `message` blocks | 306,680 lines | `text`, `toolCall`, `thinking`, `image`, string |

@@ -200,7 +200,14 @@ func (n *Normalizer) Request(r Request) bool {
 			Blocks: []Block{{Type: "other", SourceType: "missing_context", Text: prev}},
 		})
 	}
+	var tools []json.RawMessage
 	for _, p := range conversation {
+		if t, ok := additionalTools(p.raw); ok && format == "openai-responses" {
+			// Codex's tool definitions, per-call context as in its
+			// transcripts, rather than a message.
+			tools = append(tools, t...)
+			continue
+		}
 		role, blocks := dialectMessage(format, p.raw)
 		parent = n.message(session, parent, p.raw, r.StartedAt, Message{
 			Role: roleOf(role, blocks), CallID: r.RequestID, Format: format, Blocks: blocks, Item: p.item,
@@ -210,6 +217,18 @@ func (n *Normalizer) Request(r Request) bool {
 		CallID: r.RequestID, SessionID: session, StartedAt: r.StartedAt, CompletedAt: r.CompletedAt,
 		Origin: "proxy", Client: client, RequestID: r.RequestID, SourceFormat: r.SourceFormat,
 		InputID: parent, OutputIDs: []Hash{},
+	}
+	if len(tools) > 0 {
+		// After the request's own tools, which the export reads beside these.
+		next := int32(0)
+		for _, p := range r.RequestParts {
+			if p.Field == "tools" {
+				next = max(next, p.Position+1)
+			}
+		}
+		for i, tool := range tools {
+			call.Context = append(call.Context, requestitems.Part{Field: "tools", Position: next + int32(i), Hash: n.item(tool)})
+		}
 	}
 	resp := parseResponse(r.SourceFormat, r.ResponseBody)
 	call.ResponseID = resp.id

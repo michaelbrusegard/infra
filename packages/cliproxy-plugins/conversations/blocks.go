@@ -47,6 +47,13 @@ func anthropicContent(content json.RawMessage) []Block {
 		case t == "tool_reference":
 			// A tool that a tool search loaded, in its result.
 			out = append(out, Block{Type: "text", SourceType: t, Text: b.str("tool_name")})
+		case t == "web_search_result":
+			// A page a web search found, in its result; the page content is
+			// encrypted.
+			out = append(out, Block{Type: "text", SourceType: t, Text: b.str("title") + "\n" + b.str("url")})
+		case t == "fallback":
+			// The model refused and another answered the rest of the reply.
+			out = append(out, Block{Type: "fallback", SourceType: t, Text: compactJSON(raw)})
 		case t == "image" || t == "document":
 			kind := map[string]string{"image": "image", "document": "file"}[t]
 			out = append(out, Block{Type: kind, SourceType: t, Media: b.obj("source").str("media_type")})
@@ -93,7 +100,10 @@ func responsesItem(raw []byte) (string, []Block) {
 		result := Block{Type: "tool_result", SourceType: t, ToolCallID: it.str("call_id")}
 		output := it["output"]
 		if t == "tool_search_output" {
-			output = it["tools"]
+			// The tools found, which are definitions (functions, or
+			// namespaces of them) rather than content parts.
+			result.Text = compactJSON(it["tools"])
+			return "tool", []Block{result}
 		}
 		if isString(output) {
 			result.Text = str(output)

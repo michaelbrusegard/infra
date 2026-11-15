@@ -27,7 +27,8 @@ type Hash = requestitems.Hash
 // file data, signatures, and encrypted reasoning are not extracted: a proxy
 // message keeps them in its raw item, and a transcript message drops them.
 type Block struct {
-	// text, thinking, tool_call, tool_result, image, file, compaction, other
+	// text, thinking, tool_call, tool_result, image, file, compaction,
+	// fallback (a model handing the reply to another), other
 	Type string `json:"type"`
 	// The source dialect's type, such as tool_use, custom_tool_call, or input_image.
 	SourceType string `json:"source_type"`

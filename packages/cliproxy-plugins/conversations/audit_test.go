@@ -88,6 +88,38 @@ func toolNames(request map[string]any) []string {
 	return names
 }
 
+// Codex's tool search returns the definitions it found, which may be
+// namespaces of tools, as the tool result's text. Tool definitions a turn
+// added before ending without a call are dropped, like its settings.
+func TestCodexToolSearchAndUnusedTools(t *testing.T) {
+	found := `[{"type":"namespace","name":"mcp__paseo","tools":[{"type":"function","name":"speak","parameters":{"type":"object"}}]}]`
+	file := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-019f6478-0000-7000-8000-00000000000a.jsonl",
+		"2026-11-12 10:00", `{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000a"}}`,
+		`{"type":"response_item","payload":{"type":"tool_search_call","call_id":"ts_1","arguments":{"query":"speak"}}}`,
+		codexUsageLine("resp_1"),
+		`{"type":"response_item","payload":{"type":"tool_search_output","call_id":"ts_1","status":"completed","tools":`+found+`}}`,
+		`{"type":"response_item","payload":{"type":"additional_tools","id":"at_1","role":"developer","tools":[]}}`)
+	n := NewNormalizer()
+	n.Transcript(file, repliesOf(nil, file), nil)
+	if err := n.CoverageError(); err != nil {
+		t.Fatal(err)
+	}
+	var result *Block
+	for _, m := range n.Messages {
+		for i, b := range m.Blocks {
+			if b.SourceType == "tool_search_output" {
+				result = &m.Blocks[i]
+			}
+		}
+	}
+	if result == nil || result.Type != "tool_result" || result.Text != found {
+		t.Fatalf("tool search result %+v", result)
+	}
+	if got := n.Coverage[Covered{"codex", "response_item:additional_tools", "dropped", ""}]; got != 1 {
+		t.Fatalf("coverage %+v", n.Coverage)
+	}
+}
+
 // Claude Code's tool search returns tool references, which name the tools
 // it loaded.
 func TestClaudeCodeToolReferencesKeepTheirNames(t *testing.T) {
@@ -392,5 +424,48 @@ func TestOpenCodeCallsTakeTheirTurnsSystemPrompt(t *testing.T) {
 	c := callByID(t, &n.Batch, "msg_2")
 	if len(c.Context) != 1 || c.Context[0].Field != "system" || n.Items[0].Item != `"<available_skills>"` {
 		t.Fatalf("context %+v, items %+v", c.Context, n.Items)
+	}
+}
+
+// Codex sends its additional_tools items in a proxied request's input. They
+// are the call's tools context, as in its transcripts, rather than messages,
+// and come after the tools the request itself sent.
+func TestProxyAdditionalToolsAreContext(t *testing.T) {
+	tool := `{"type":"function","name":"exec","parameters":{"type":"object"}}`
+	f := proxyFixture{Request: Request{RequestID: "codex-tools", StartedAt: "2026-11-12 10:00:00.000",
+		CompletedAt: "2026-11-12 10:00:01.000", SourceFormat: "openai-response", UserAgent: "codex_cli_rs/0.200.0",
+		ResponseBody: `{"type":"response.completed","response":{"id":"resp_T","object":"response","model":"gpt-6.1-sol","output":[` +
+			`{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Done."}]}]}}`},
+		Body: json.RawMessage(`{"model":"gpt-6.1-sol","tools":[{"type":"web_search"}],"input":[` +
+			`{"type":"additional_tools","id":"at_1","role":"developer","tools":[{"type":"namespace","name":"functions","tools":[` + tool + `]}]},` +
+			`{"type":"message","role":"user","content":[{"type":"input_text","text":"Run it."}]}]}`)}
+	n := NewNormalizer()
+	n.Request(f.stored())
+	for _, m := range n.Messages {
+		for _, b := range m.Blocks {
+			if b.Type == "other" {
+				t.Fatalf("message %+v keeps only a type", m)
+			}
+		}
+	}
+	if got := texts(Path(n.Messages, n.Calls[0].OutputIDs[0])); !reflect.DeepEqual(got, []string{"user text:Run it.", "assistant* text:Done."}) {
+		t.Fatalf("path %v", got)
+	}
+	c := n.Calls[0].Context
+	if len(c) != 1 || c[0].Field != "tools" || c[0].Position != 1 || len(n.Items) != 1 ||
+		n.Items[0].Hash != c[0].Hash || !strings.Contains(n.Items[0].Item, `"name":"functions"`) {
+		t.Fatalf("context %+v, items %+v", c, n.Items)
+	}
+}
+
+// Anthropic's web search results keep each page's title and URL, and a
+// fallback block records which model took over the reply and why.
+func TestAnthropicSearchResultsAndFallbacks(t *testing.T) {
+	blocks := anthropicContent([]byte(`[{"type":"fallback","from":{"model":"claude-opus-5-5"},"to":{"model":"claude-opus-4-8"},` +
+		`"trigger":{"type":"refusal","category":"cyber"}},{"type":"web_search_tool_result","tool_use_id":"srvtoolu_1","content":[` +
+		`{"type":"web_search_result","title":"Signal stats","url":"https://example.com/signal","encrypted_content":"Eq"}]}]`))
+	if len(blocks) != 2 || blocks[0].Type != "fallback" || !strings.Contains(blocks[0].Text, `"to":{"model":"claude-opus-4-8"}`) ||
+		blocks[1].Type != "tool_result" || blocks[1].Text != "Signal stats\nhttps://example.com/signal" {
+		t.Fatalf("blocks %+v", blocks)
 	}
 }

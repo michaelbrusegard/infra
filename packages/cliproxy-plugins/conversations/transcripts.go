@@ -602,11 +602,12 @@ func (n *Normalizer) Transcript(lines []TranscriptLine, replies *Replies, proxie
 }
 
 // settle counts a folded line by what became of its call. A line no call
-// took fails the import, except the turn settings of a turn that made no
-// call, which hold nothing else the import keeps.
+// took fails the import, except the turn settings or tool definitions of a
+// turn that made no call, which hold nothing else the import keeps: the
+// calls that have the tools record them themselves.
 func (f *file) settle(fd fold, fate string) {
 	switch {
-	case fate == "" && fd.kind == "turn_context":
+	case fate == "" && (fd.kind == "turn_context" || fd.kind == "response_item:additional_tools"):
 		f.count(fd.l.Source, fd.kind, "dropped", "")
 	case fate == "":
 		f.n.unknown("no call for " + fd.l.Source + "/" + fd.kind)
