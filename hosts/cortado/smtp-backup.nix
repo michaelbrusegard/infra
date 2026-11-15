@@ -6,7 +6,7 @@
 }: let
   # Secondary MX: queue mail for these domains while Asgard is unreachable,
   # then hand it to the primary edge, which owns recipient checks and bounces.
-  domains = ["manafishrov.com"];
+  domains = ["manafishrov.com" "michaelbrusegard.com" "michbrus.com"];
   primary = "router.asgard.michaelbrusegard.com";
   certificate = "/var/lib/acme/midgard.michaelbrusegard.com";
   servedDomains = pkgs.writeText "smtp-backup-domains" (
