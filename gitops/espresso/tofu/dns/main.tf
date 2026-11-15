@@ -5,7 +5,7 @@ data "cloudflare_zone" "michaelbrusegard" {
 }
 
 locals {
-  dns_records = {
+  dns_records = merge({
     # external-dns owns the asgard CNAMEs, but midgard has no cluster to run
     # it, so cortado's relay name is a static CNAME onto the dyndns record
     # that already tracks that site's WAN address.
@@ -51,43 +51,34 @@ locals {
       type    = "TXT"
       content = "v=TLSRPTv1; rua=mailto:postmaster@michaelbrusegard.com"
     }
-    # mta_sts = {
-    #   name    = "mta-sts"
-    #   type    = "CNAME"
-    #   content = "mail.asgard.michaelbrusegard.com"
-    # }
-    # autoconfig = {
-    #   name    = "autoconfig"
-    #   type    = "CNAME"
-    #   content = "mail.asgard.michaelbrusegard.com"
-    # }
-    # autodiscover = {
-    #   name    = "autodiscover"
-    #   type    = "CNAME"
-    #   content = "mail.asgard.michaelbrusegard.com"
-    # }
-    # mx = {
-    #   name     = "@"
-    #   type     = "MX"
-    #   content  = "mail.asgard.michaelbrusegard.com"
-    #   priority = 10
-    # }
-    # spf = {
-    #   name    = "@"
-    #   type    = "TXT"
-    #   content = "v=spf1 mx -all"
-    # }
-    # dmarc = {
-    #   name    = "_dmarc"
-    #   type    = "TXT"
-    #   content = "v=DMARC1; p=quarantine; rua=mailto:postmaster@michaelbrusegard.com; ruf=mailto:postmaster@michaelbrusegard.com; adkim=s; aspf=s; fo=1"
-    # }
-    # mta_sts_policy = {
-    #   name    = "_mta-sts"
-    #   type    = "TXT"
-    #   content = "v=STSv1; id=${var.mta_sts_id}"
-    # }
-  }
+    # Proton's DKIM keys and domain verification stay while Proton can still
+    # send as this domain; they do not route mail. Proton created them with
+    # automatic TTL.
+    proton_verification = {
+      name    = "michaelbrusegard.com"
+      type    = "TXT"
+      content = "\"protonmail-verification=ede78d1c2406786df23d6874aae245da7c61b075\""
+      ttl     = 1
+    }
+    proton_dkim = {
+      name    = "protonmail._domainkey.michaelbrusegard.com"
+      type    = "CNAME"
+      content = "protonmail.domainkey.dxxn4pqwnzw6mzwwzvq6sha6443ciruhtismdampicgutgw6oe6xq.domains.proton.ch"
+      ttl     = 1
+    }
+    proton_dkim2 = {
+      name    = "protonmail2._domainkey.michaelbrusegard.com"
+      type    = "CNAME"
+      content = "protonmail2.domainkey.dxxn4pqwnzw6mzwwzvq6sha6443ciruhtismdampicgutgw6oe6xq.domains.proton.ch"
+      ttl     = 1
+    }
+    proton_dkim3 = {
+      name    = "protonmail3._domainkey.michaelbrusegard.com"
+      type    = "CNAME"
+      content = "protonmail3.domainkey.dxxn4pqwnzw6mzwwzvq6sha6443ciruhtismdampicgutgw6oe6xq.domains.proton.ch"
+      ttl     = 1
+    }
+  }, var.mail_on_stalwart ? local.stalwart_mail.michaelbrusegard : local.proton_mail.michaelbrusegard)
 }
 
 # Cloudflare only accepts automatic TTL (1) on proxied records.
@@ -98,7 +89,7 @@ resource "cloudflare_dns_record" "safe" {
   name     = each.value.name
   type     = each.value.type
   content  = each.value.content
-  ttl      = try(each.value.proxied, false) ? 1 : 300
+  ttl      = try(each.value.ttl, try(each.value.proxied, false) ? 1 : 300)
   proxied  = try(each.value.proxied, false)
   priority = try(each.value.priority, null)
 }
@@ -109,10 +100,8 @@ data "cloudflare_zone" "michbrus" {
   }
 }
 
-# Proton's existing MX, SPF, DKIM and DMARC records stay unmanaged until the
-# mail cutover replaces them.
 locals {
-  michbrus_records = {
+  michbrus_records = merge({
     # SMTP2GO outbound relay: bounce return path and DKIM. Its link-tracking
     # CNAME is deliberately absent because tracking stays disabled.
     smtp2go_return_path = {
@@ -136,16 +125,43 @@ locals {
       type    = "TXT"
       content = "v=DKIM1; k=ed25519; p=${var.dkim_ed25519_pub_michbrus}"
     }
-  }
+    # Proton Pass alias DKIM and domain verification; see the note on the
+    # michaelbrusegard.com equivalents.
+    proton_verification = {
+      name    = "michbrus.com"
+      type    = "TXT"
+      content = "\"pm-verification=upjbsplvugrbrpzczsfshlteddfkgd\""
+      ttl     = 1
+    }
+    proton_dkim = {
+      name    = "dkim._domainkey.michbrus.com"
+      type    = "CNAME"
+      content = "dkim._domainkey.alias.proton.me"
+      ttl     = 1
+    }
+    proton_dkim02 = {
+      name    = "dkim02._domainkey.michbrus.com"
+      type    = "CNAME"
+      content = "dkim02._domainkey.alias.proton.me"
+      ttl     = 1
+    }
+    proton_dkim03 = {
+      name    = "dkim03._domainkey.michbrus.com"
+      type    = "CNAME"
+      content = "dkim03._domainkey.alias.proton.me"
+      ttl     = 1
+    }
+  }, var.mail_on_stalwart ? local.stalwart_mail.michbrus : local.proton_mail.michbrus)
 }
 
 resource "cloudflare_dns_record" "michbrus" {
   for_each = local.michbrus_records
 
-  zone_id = data.cloudflare_zone.michbrus.zone_id
-  name    = each.value.name
-  type    = each.value.type
-  content = each.value.content
-  ttl     = 300
-  proxied = false
+  zone_id  = data.cloudflare_zone.michbrus.zone_id
+  name     = each.value.name
+  type     = each.value.type
+  content  = each.value.content
+  ttl      = try(each.value.ttl, 300)
+  proxied  = false
+  priority = try(each.value.priority, null)
 }
