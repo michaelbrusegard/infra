@@ -185,6 +185,33 @@ resource "stalwart_system_settings" "this" {
   }
 }
 
+# DNSBLs such as Spamhaus refuse queries from the public resolvers the
+# cluster DNS forwards to, so Stalwart uses its recursive resolver sidecar
+# (apps/stalwart stalwart-resolver) instead.
+resource "stalwart_dns_resolver" "this" {
+  type = "Custom"
+  # Stalwart only uses the transports listed here; TCP carries truncated
+  # answers such as large SPF and DKIM records.
+  servers = [
+    {
+      address  = "127.0.0.1"
+      port     = 5335
+      protocol = "udp"
+    },
+    {
+      address  = "127.0.0.1"
+      port     = 5335
+      protocol = "tcp"
+    },
+  ]
+  attempts                = 2
+  enable_edns             = true
+  max_concurrent_requests = 2
+  preserve_intermediates  = true
+  tcp_on_error            = true
+  timeout                 = 5000
+}
+
 resource "stalwart_mta_stage_data" "this" {
   dkim_sign_domain = {
     else = "false"
