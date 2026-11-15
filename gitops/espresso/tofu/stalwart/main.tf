@@ -51,6 +51,21 @@ resource "stalwart_tracer_stdout" "stdout" {
   multiline     = false
 }
 
+# The server seeds a daily file log under /var/log/stalwart, which the image
+# does not have. The stdout tracer already reaches the pod log.
+resource "stalwart_tracer_log" "seeded" {
+  ansi          = false
+  enable        = false
+  events        = null
+  events_policy = "exclude"
+  level         = "info"
+  lossy         = false
+  multiline     = false
+  path          = "/var/log/stalwart"
+  prefix        = "stalwart.log"
+  rotate        = "daily"
+}
+
 resource "stalwart_certificate" "wildcard" {
   certificate = {
     file_path     = "/var/lib/stalwart/private/tls/tls.crt"

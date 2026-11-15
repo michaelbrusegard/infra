@@ -6,3 +6,34 @@ metadata:
 data:
   config.json: |
     {"@type":"RocksDb","path":"/var/lib/stalwart/data/"}
+---
+# Spamhaus, URIBL, SURBL and DNSWL refuse queries relayed through public
+# resolvers, which is where the cluster's DNS ends up (macchiato's blocky
+# forwards to AdGuard). Stalwart sends its own lookups to this recursive
+# resolver instead; the tofu stack points Stalwart at it.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-resolver
+  namespace: stalwart
+data:
+  unbound.conf: |
+    server:
+      interface: 127.0.0.1@5335
+      do-daemonize: no
+      username: ""
+      chroot: ""
+      directory: /var/unbound
+      pidfile: ""
+      use-syslog: no
+      logfile: ""
+      verbosity: 1
+      num-threads: 1
+      root-hints: /var/unbound/root.hints
+      # The image's anchor; image updates carry root key rollovers.
+      trust-anchor-file: /var/unbound/root.key
+      qname-minimisation: yes
+      harden-dnssec-stripped: yes
+      prefetch: yes
+      msg-cache-size: 8m
+      rrset-cache-size: 16m

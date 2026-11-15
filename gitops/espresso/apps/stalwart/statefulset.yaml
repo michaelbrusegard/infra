@@ -4,7 +4,7 @@ metadata:
   name: stalwart
   namespace: stalwart
   annotations:
-    configmap.reloader.stakater.com/reload: stalwart-config
+    configmap.reloader.stakater.com/reload: stalwart-config,stalwart-resolver
     secret.reloader.stakater.com/reload: stalwart-env,stalwart-dkim,wildcard-tls
 spec:
   replicas: 1
@@ -111,9 +111,30 @@ spec:
               readOnly: true
             - mountPath: /tmp
               name: temp
+        # Recursive resolver for Stalwart's own lookups; see stalwart-resolver.
+        - name: resolver
+          image: docker.io/klutchell/unbound:v1.26.2@sha256:50cbeb32b5838a829a7226b19cb151f9535bd7f9f3190f950780f452fe807478
+          args:
+            - -d
+            - -c
+            - /etc/unbound/unbound.conf
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: /etc/unbound/unbound.conf
+              name: resolver
+              subPath: unbound.conf
+              readOnly: true
       volumes:
         - name: temp
           emptyDir: {}
+        - name: resolver
+          configMap:
+            name: stalwart-resolver
         - name: config
           configMap:
             name: stalwart-config

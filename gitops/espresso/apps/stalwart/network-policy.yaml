@@ -120,6 +120,15 @@ spec:
               protocol: TCP
             - port: "1411"
               protocol: TCP
+    # The resolver sidecar recurses from the authoritative servers itself.
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
     # SMTP2GO relay (587), spam rule downloads and OIDC discovery (443).
     - toEntities:
         - world

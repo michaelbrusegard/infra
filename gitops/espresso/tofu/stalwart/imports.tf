@@ -17,6 +17,11 @@ import {
 }
 
 import {
+  to = stalwart_tracer_log.seeded
+  id = "joeodhokaxqb"
+}
+
+import {
   to = stalwart_mta_route_relay.smtp2go
   id = "joepbgg1wwqa"
 }
