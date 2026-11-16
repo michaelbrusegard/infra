@@ -48,7 +48,7 @@ spec:
             # Space-separated domain=backend routes.
             - name: BACKENDS
               value: >-
-                manafishrov.com=backend.manafishrov.com
+                manafishrov.com=mail-backend.manafishrov.com
                 michaelbrusegard.com=mail-backend.asgard.michaelbrusegard.com
                 michbrus.com=mail-backend.asgard.michaelbrusegard.com
             - name: BACKEND_LMTP_PORT

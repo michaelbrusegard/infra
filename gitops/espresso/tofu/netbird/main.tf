@@ -137,6 +137,12 @@ locals {
       address = "mail.${local.domain}"
       group   = "infra"
     }
+    # Bulwark; the browser also calls mail.asgard (JMAP), so keep both in one group.
+    webmail = {
+      name    = "Webmail"
+      address = "webmail.${local.domain}"
+      group   = "infra"
+    }
     transmission = {
       name    = "Transmission"
       address = "transmission.${local.domain}"
