@@ -11,6 +11,18 @@ spec:
     requests:
       storage: 1Gi
 ---
+# Defaults for settings a user has not changed. Replies go out from the
+# address a message was sent to, including catch-all addresses; Stalwart
+# lets the mailbox send as any address nobody else owns.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bulwark-policy
+  namespace: stalwart
+data:
+  policy.json: |
+    {"defaults": {"autoSelectReplyIdentity": true, "replyIdentityMatch": "domain"}}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,6 +30,7 @@ metadata:
   namespace: stalwart
   annotations:
     secret.reloader.stakater.com/reload: bulwark
+    configmap.reloader.stakater.com/reload: bulwark-policy
 spec:
   replicas: 1
   # Zero surge avoids RWO mount conflicts on the settings volume.
@@ -113,6 +126,11 @@ spec:
               mountPath: /app/data
             - name: settings
               mountPath: /app/data/settings
+            # Bulwark's default admin config directory; ADMIN_CONFIG_READONLY
+            # keeps it file-managed.
+            - name: policy
+              mountPath: /app/data/admin
+              readOnly: true
             - name: tmp
               mountPath: /tmp
             - name: cache
@@ -124,6 +142,9 @@ spec:
             claimName: bulwark-settings
         - name: data
           emptyDir: {}
+        - name: policy
+          configMap:
+            name: bulwark-policy
         - name: tmp
           emptyDir: {}
         - name: cache
