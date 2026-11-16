@@ -229,3 +229,10 @@ spec:
         - ports:
             - port: "443"
               protocol: TCP
+    # Subscribed calendar feeds (holidays and other public .ics URLs). The
+    # feed fetcher refuses private and internal addresses itself.
+    - toEntities: [world]
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
