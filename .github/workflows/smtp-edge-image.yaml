@@ -106,10 +106,7 @@ jobs:
           sudo cp -r "$evidence"/. evidence/
           sudo chown -R "$(id -u):$(id -g)" evidence
           jq -e '.qualified == true' summary.json > /dev/null
-          {
-            echo "tag=$tag"
-            echo "image_id=$image_id"
-          } >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Retain qualification evidence
         if: always() && steps.image.outputs.changed == 'true'
@@ -151,7 +148,6 @@ jobs:
         if: github.event_name != 'pull_request' && steps.image.outputs.changed == 'true'
         env:
           CONFIG_ID: ${{ steps.image.outputs.config_id }}
-          IMAGE_ID: ${{ steps.qualify.outputs.image_id }}
           TARGET: ${{ steps.publish.outputs.target }}
           DIGEST: ${{ steps.publish.outputs.digest }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -174,28 +170,17 @@ jobs:
               raise SystemExit("Failed to update the smtp-edge image reference")
           statefulset.write_text(content)
 
-          report = json.loads(Path("evidence/report.json").read_text())
-          native = report["nativeReport"]
-          record_path = Path(env["RECORD"])
-          record = json.loads(record_path.read_text())
-          record.pop("docker29ManifestId", None)
-          record.update({
-              "fixtureQualified": True,
-              "qualifiedAt": date.today().isoformat(),
-              "sourceRevision": env["GITHUB_SHA"],
-              "evidence": env["RUN_URL"],
-              "registryManifestDigest": env["DIGEST"],
+          versions = json.loads(Path("evidence/report.json").read_text())["versions"]
+          record = {
               "dockerConfigId": env["CONFIG_ID"],
-              "dockerImageId": env["IMAGE_ID"],
-              "postfixVersion": report["versions"]["postfix"],
-              "curlVersion": report["versions"]["curl"].split()[1],
-              "stalwartBinarySha256": report["binarySha256"],
-              "nativeStages": len(native["tests"]),
-              "deliveredMessages": sum(1 for m in native["messages"].values() if m.get("deliveredTo")),
-              "postfixQueueEmpty": report["finalPostfixQueue"] == "",
-              "sourceSha256": report["sourceSha256"],
-          })
-          record_path.write_text(json.dumps(record, indent=2) + "\n")
+              "registryManifestDigest": env["DIGEST"],
+              "postfixVersion": versions["postfix"],
+              "curlVersion": versions["curl"],
+              "sourceRevision": env["GITHUB_SHA"],
+              "qualifiedAt": date.today().isoformat(),
+              "evidence": env["RUN_URL"],
+          }
+          Path(env["RECORD"]).write_text(json.dumps(record, indent=2) + "\n")
           PY
 
       - name: Commit image digest update
