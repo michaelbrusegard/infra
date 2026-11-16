@@ -158,7 +158,10 @@ resource "stalwart_application" "webui" {
   enable               = true
   # Pocket ID releases the groups claim only for this scope; OIDC admin
   # rights depend on it.
-  oauth_scopes     = ["groups"]
+  oauth_scopes = ["groups"]
+  # Pocket ID cannot read client metadata documents, so the sign-in page
+  # needs the registered public client (tofu/pocket-id "stalwart").
+  oauth_client_id  = "stalwart"
   resource_url     = "file:///nix/store/1fvy05k3j1spzk13ahp0rabmwfn2yphs-stalwart-webui-no-upsell-2.0.5"
   unpack_directory = null
   url_prefix       = ["/account", "/admin"]
