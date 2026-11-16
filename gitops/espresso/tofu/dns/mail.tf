@@ -10,6 +10,9 @@ locals {
   # cortado (midgard) queues mail while asgard is unreachable and hands it
   # back over the pinned port-2525 handoff; it never delivers locally.
   stalwart_backup_mx = "router.midgard.michaelbrusegard.com"
+  # Senders refetch the MTA-STS policy when this id changes: set it to the
+  # date whenever the policy (Stalwart's stalwart_mta_sts) changes.
+  mta_sts_id = "20261116"
   # SMTP2GO is the only outbound path; nothing sends from the MX. Its bounce
   # return path (em1206132) already carries the envelope SPF.
   stalwart_spf = "v=spf1 include:spf.smtp2go.com -all"
@@ -122,7 +125,7 @@ locals {
       mta_sts_policy = {
         name     = "_mta-sts.michaelbrusegard.com"
         type     = "TXT"
-        content  = "v=STSv1; id=${var.mta_sts_id}"
+        content  = "v=STSv1; id=${local.mta_sts_id}"
         priority = null
         ttl      = 300
       }
@@ -166,7 +169,7 @@ locals {
       mta_sts_policy = {
         name     = "_mta-sts.michbrus.com"
         type     = "TXT"
-        content  = "v=STSv1; id=${var.mta_sts_id}"
+        content  = "v=STSv1; id=${local.mta_sts_id}"
         priority = null
         ttl      = 300
       }
