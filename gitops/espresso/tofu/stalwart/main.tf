@@ -312,12 +312,3 @@ resource "stalwart_mta_stage_data" "this" {
     match = null
   }
 }
-
-# Files live in Nextcloud. A zero object quota refuses the first file or
-# folder over WebDAV and JMAP; only an unset limit is unlimited.
-resource "stalwart_file_storage" "this" {
-  compression_algorithm = "lz4"
-  max_files             = 0
-  max_folders           = 0
-  max_size              = 26214400
-}

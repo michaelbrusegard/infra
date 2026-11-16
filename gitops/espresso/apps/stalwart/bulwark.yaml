@@ -15,7 +15,7 @@ spec:
 # address a message was sent to, including catch-all addresses; Stalwart
 # lets the mailbox send as any address nobody else owns. Birthdays come
 # from contacts, replacing Nextcloud's generated birthday calendar. Files
-# live in Nextcloud, so the Files app is hidden (Stalwart refuses them too).
+# live in Nextcloud, so the Files app is hidden.
 apiVersion: v1
 kind: ConfigMap
 metadata:
