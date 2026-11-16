@@ -503,6 +503,7 @@ class Server:
         self.expected_edition = expected_edition
         self.process = None
         self.log = None
+        self.environment = {}
         self.password = client.redactor.add(secrets.token_urlsafe(40))
         client.recovery = client.redactor.add(
             "Basic " + base64.b64encode(("fixture:" + self.password).encode()).decode()
@@ -529,6 +530,7 @@ class Server:
             "STALWART_RECOVERY_MODE_PORT": str(
                 urllib.parse.urlsplit(self.client.origin).port
             ),
+            **self.environment,
         }
         try:
             self.process = subprocess.Popen(
@@ -2268,6 +2270,136 @@ class Acceptance:
             "Restart loaded adapter-only externalId",
         )
 
+    def ignored_groups(self):
+        """STALWART_SCIM_GROUPS=ignore acknowledges Pocket ID's group writes
+        without storing them, hides groups, and still deletes existing ones."""
+        user_path = self.needed_user()
+        require(self.group is not None, "Blocked: group creation failed (not skipped)")
+        group_path = ROOT + "/Groups/" + self.group["id"]
+        kept = self.c.expect("GET", group_path, 200).document()
+        retired = self.c.expect(
+            "POST",
+            ROOT + "/Groups",
+            201,
+            {
+                "schemas": [CORE + "Group"],
+                "displayName": "Retired Fixture Group",
+                "members": [{"value": self.user["id"]}],
+            },
+        ).document()
+        retired_path = ROOT + "/Groups/" + retired["id"]
+        self.server.environment = {"STALWART_SCIM_GROUPS": "ignore"}
+        try:
+            self.server.restart()
+            listed = self.c.expect("GET", query(ROOT + "/Groups", count=200), 200)
+            require(
+                listed.document()["totalResults"] == 0,
+                "Ignored groups are still listed",
+            )
+            searched = self.c.expect(
+                "POST",
+                ROOT + "/.search",
+                200,
+                {"schemas": [MESSAGE + "SearchRequest"], "count": 200},
+            ).document()
+            require(
+                all(CORE + "Group" not in r["schemas"] for r in searched["Resources"]),
+                "Root search exposes ignored groups",
+            )
+            self.c.expect("GET", group_path, 404)
+            require(
+                not self.c.expect("GET", user_path, 200).document().get("groups"),
+                "User still references ignored groups",
+            )
+            # Pocket ID's create payload: externalId, displayName, bare members.
+            created = self.c.expect(
+                "POST",
+                ROOT + "/Groups",
+                201,
+                {
+                    "schemas": [CORE + "Group"],
+                    "externalId": "ignored-pocket-id-group",
+                    "displayName": "Ignored Pocket ID Group",
+                    "members": [{"value": self.user["id"]}],
+                },
+            )
+            document = created.document()
+            require(
+                "id" not in document
+                and "Location" not in created.headers
+                and document.get("members") == []
+                and document.get("externalId") == "ignored-pocket-id-group",
+                f"Ignored group acknowledgement is not inert: {document}",
+            )
+            require(
+                self.c.expect("GET", ROOT + "/Groups", 200).document()["totalResults"]
+                == 0,
+                "Ignored group create became visible",
+            )
+            self.c.expect(
+                "PUT",
+                group_path,
+                404,
+                {"schemas": [CORE + "Group"], "displayName": "Renamed While Ignored"},
+            )
+            self.c.expect(
+                "PATCH",
+                group_path,
+                404,
+                patch({"op": "replace", "path": "displayName", "value": "Renamed"}),
+            )
+            bulk = self.c.expect(
+                "POST",
+                ROOT + "/Bulk",
+                200,
+                {
+                    "schemas": [MESSAGE + "BulkRequest"],
+                    "Operations": [
+                        {
+                            "method": "POST",
+                            "bulkId": "ignored",
+                            "path": "/Groups",
+                            "data": {
+                                "schemas": [CORE + "Group"],
+                                "displayName": "Ignored Bulk Group",
+                            },
+                        }
+                    ],
+                },
+            ).document()
+            require(
+                [op["status"] for op in bulk["Operations"]] == ["403"],
+                f"Bulk wrote an ignored group: {bulk}",
+            )
+            self.c.expect("DELETE", retired_path, 204)
+            self.c.expect("DELETE", retired_path, 404)
+        finally:
+            self.server.environment = {}
+            self.server.restart()
+        self.c.expect("GET", retired_path, 404)
+        require(
+            self.c.expect("GET", group_path, 200).document() == kept,
+            "Ignore mode changed an existing group",
+        )
+        names = {
+            group["displayName"]
+            for group in self.c.expect(
+                "GET", query(ROOT + "/Groups", count=200), 200
+            ).document()["Resources"]
+        }
+        require(
+            names.isdisjoint(
+                {"Ignored Pocket ID Group", "Ignored Bulk Group", "Retired Fixture Group"}
+            ),
+            f"Ignore mode stored a group: {names}",
+        )
+        # Rendered groups drop dangling ids, so check the native reverse index.
+        require(
+            set(self.native(self.user["id"]).get("memberGroupIds", {}))
+            == {self.group["id"]},
+            "Group deletion left reverse membership or lost the kept group",
+        )
+
     def cleanup_resources(self):
         path = self.needed_user()
         require(self.group is not None, "Blocked: group creation failed (not skipped)")
@@ -2434,6 +2566,7 @@ class Acceptance:
                 self.pagination_limits,
             ),
             ("restart persistence", self.persistence),
+            ("ignored group provisioning", self.ignored_groups),
             ("DELETE and native cleanup", self.cleanup_resources),
         ):
             self.stage(name, method)

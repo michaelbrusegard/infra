@@ -122,6 +122,23 @@ pub(super) struct Snapshot {
     pub epoch: Option<u64>,
     suspended: BTreeMap<Id, SavedState>,
     active: BTreeMap<Id, bool>,
+    /// STALWART_SCIM_GROUPS=ignore: groups are neither provisioned nor exposed.
+    /// Existing groups stay deletable so they can be retired through SCIM.
+    pub ignore_groups: bool,
+}
+
+/// Parse STALWART_SCIM_GROUPS. Unknown values fail closed rather than
+/// silently provisioning groups as shared mailboxes.
+fn ignore_groups(value: Result<String, std::env::VarError>) -> Result<bool, Error> {
+    match value.as_deref() {
+        Err(std::env::VarError::NotPresent) | Ok("" | "sync") => Ok(false),
+        Ok("ignore") => Ok(true),
+        _ => Err(error(
+            500,
+            None,
+            "STALWART_SCIM_GROUPS must be sync or ignore",
+        )),
+    }
 }
 fn scope(account: &Account) -> Id {
     match account {
@@ -366,6 +383,7 @@ impl Snapshot {
         if server.registry().is_bootstrap_mode() {
             return Err(error(403, None, "SCIM is unavailable during bootstrap"));
         }
+        let ignore_groups = ignore_groups(std::env::var("STALWART_SCIM_GROUPS"))?;
         for _ in 0..3 {
             let epoch = read_epoch(server).await?;
             let domains = native_rows::<Domain>(server)
@@ -425,6 +443,7 @@ impl Snapshot {
                     epoch,
                     suspended,
                     active,
+                    ignore_groups,
                 });
             }
         }
@@ -442,6 +461,10 @@ impl Snapshot {
                     (Account::User(_), "Users") | (Account::Group(_), "Groups")
                 )
         })
+    }
+    /// Whether reads and writes other than DELETE may see this account.
+    pub fn visible(&self, entry: &RegistryObject<Account>) -> bool {
+        !(self.ignore_groups && matches!(entry.object, Account::Group(_)))
     }
     /// Intersect public indexed equality terms using the native registry indexes.
     /// The snapshot remains the authoritative domain boundary and supplies
@@ -639,7 +662,7 @@ impl Snapshot {
                 let domain = self.domain(a.domain_id).expect("snapshot domain invariant");
                 let username = format!("{}@{}", a.name, domain.object.name);
                 let groups = a.member_group_ids.iter().filter_map(|id| {
-                    let entry = self.account(*id, "Groups")?;
+                    let entry = self.account(*id, "Groups").filter(|entry| self.visible(entry))?;
                     let Account::Group(group) = &entry.object else { return None; };
                     Some(json!({"value":id.to_string(), "$ref":format!("{base}/Groups/{id}"), "type":"direct", "display":group_display_name(group)}))
                 }).collect::<Vec<_>>();
@@ -1410,6 +1433,7 @@ mod tests {
             epoch: Some(1),
             suspended: BTreeMap::new(),
             active: BTreeMap::from([(alice, true), (bob, true)]),
+            ignore_groups: false,
         };
         let before = snapshot.etag(&snapshot.accounts[0]);
         let group_before = snapshot.etag(&snapshot.accounts[2]);
@@ -1476,10 +1500,84 @@ mod tests {
             epoch: Some(1),
             suspended: BTreeMap::new(),
             active: BTreeMap::new(),
+            ignore_groups: false,
         };
         assert_eq!(snapshot.group_domain(other, mail).ok(), Some(other));
         assert_eq!(snapshot.group_domain(system, mail).ok(), Some(mail));
         assert!(snapshot.group_domain(system, system).is_err());
+    }
+    #[test]
+    fn ignored_groups_are_hidden_from_users_and_reads() {
+        use std::env::VarError;
+        assert_eq!(ignore_groups(Err(VarError::NotPresent)).ok(), Some(false));
+        assert_eq!(ignore_groups(Ok("".into())).ok(), Some(false));
+        assert_eq!(ignore_groups(Ok("sync".into())).ok(), Some(false));
+        assert_eq!(ignore_groups(Ok("ignore".into())).ok(), Some(true));
+        assert_eq!(
+            ignore_groups(Ok("ignored".into()))
+                .err()
+                .map(|err| err.status),
+            Some(500)
+        );
+        assert_eq!(
+            ignore_groups(Err(VarError::NotUnicode("ignore\u{fffd}".into())))
+                .err()
+                .map(|err| err.status),
+            Some(500)
+        );
+        let domain = Id::from(4u32);
+        let user = Id::from(10u32);
+        let group = Id::from(12u32);
+        let mut snapshot = Snapshot {
+            domains: vec![RegistryObject {
+                id: ObjectId::new(ObjectType::Domain, domain),
+                revision: 1,
+                object: Domain {
+                    name: "example.test".into(),
+                    allow_scim_provisioning: true,
+                    ..Domain::default()
+                },
+            }],
+            accounts: vec![
+                RegistryObject {
+                    id: ObjectId::new(ObjectType::Account, user),
+                    revision: 2,
+                    object: Account::User(UserAccount {
+                        name: "alice".into(),
+                        domain_id: domain,
+                        member_group_ids: vec![group].into(),
+                        ..UserAccount::default()
+                    }),
+                },
+                RegistryObject {
+                    id: ObjectId::new(ObjectType::Account, group),
+                    revision: 3,
+                    object: Account::Group(GroupAccount {
+                        name: "mail".into(),
+                        domain_id: domain,
+                        description: Some("Mail".into()),
+                        ..GroupAccount::default()
+                    }),
+                },
+            ],
+            epoch: Some(1),
+            suspended: BTreeMap::new(),
+            active: BTreeMap::from([(user, true)]),
+            ignore_groups: false,
+        };
+        let groups = |snapshot: &Snapshot| {
+            snapshot.render(&snapshot.accounts[0], "/scim")["groups"]
+                .as_array()
+                .map(Vec::len)
+        };
+        assert_eq!(groups(&snapshot), Some(1));
+        assert!(snapshot.visible(&snapshot.accounts[1]));
+        snapshot.ignore_groups = true;
+        assert_eq!(groups(&snapshot), Some(0));
+        assert!(snapshot.visible(&snapshot.accounts[0]));
+        assert!(!snapshot.visible(&snapshot.accounts[1]));
+        // DELETE still resolves the hidden group so it can be retired.
+        assert!(snapshot.account(group, "Groups").is_some());
     }
     #[test]
     fn locale_uses_native_registry() {

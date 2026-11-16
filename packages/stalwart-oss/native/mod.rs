@@ -251,6 +251,15 @@ pub async fn handle(
     }
 }
 
+/// Acknowledge a group create without storing it. Pocket ID requires a 2xx JSON
+/// body for every create and re-creates groups missing from GET /Groups on each
+/// sync. There is no id, so nothing can later address this nonexistent group.
+fn ignored_group(mut group: Value) -> Value {
+    group["members"] = json!([]);
+    group["meta"] = json!({"resourceType":"Group"});
+    group
+}
+
 fn allowed_methods(path: &str) -> &'static str {
     if path == "Bulk" || path == ".search" || path.ends_with("/.search") {
         "POST, OPTIONS"
@@ -381,6 +390,9 @@ async fn dispatch(
         } else {
             protocol::normalize_group(&input)?
         };
+        if kind == "Groups" && snapshot.ignore_groups {
+            return protocol::project(&ignored_group(normalized), attributes, excluded);
+        }
         let id = snapshot
             .mutate(
                 server,
@@ -406,6 +418,7 @@ async fn dispatch(
         let kind = collection.ok_or_else(|| error(404, None, "Resource not found"))?;
         let account = snapshot
             .account(id, kind)
+            .filter(|account| *req.method() == Method::DELETE || snapshot.visible(account))
             .ok_or_else(|| error(404, None, "Resource not found"))?;
         snapshot.assert_match(account, if_match.as_deref())?;
         if req.method() != Method::GET
@@ -539,7 +552,13 @@ async fn dispatch(
         if !matches!(order.as_str(), "ascending" | "descending") {
             return Err(error(400, Some("invalidValue"), "Invalid sortOrder"));
         }
-        let cursor_context = cursor_context(snapshot.epoch, token.account_id(), path, &params);
+        let cursor_context = cursor_context(
+            snapshot.epoch,
+            snapshot.ignore_groups,
+            token.account_id(),
+            path,
+            &params,
+        );
         if let Some(cursor) = params.get("cursor").filter(|cursor| !cursor.is_empty()) {
             if params.contains_key("startIndex") {
                 return Err(error(
@@ -560,6 +579,7 @@ async fn dispatch(
                     .as_ref()
                     .is_none_or(|ids| ids.contains(&account.id.id()))
             })
+            .filter(|a| snapshot.visible(a))
             .filter(|a| collection.is_none_or(|kind| snapshot.account(a.id.id(), kind).is_some()))
             .map(|a| snapshot.render(a, base))
             .filter(|resource| {
@@ -888,6 +908,15 @@ async fn bulk_operation(
         },
     )?;
     let snapshot = Snapshot::load(server, token).await?;
+    // Bulk has no Pocket ID caller and its POST results require a location,
+    // so ignored group writes are refused rather than acknowledged.
+    if kind == "Groups" && method != "DELETE" && snapshot.ignore_groups {
+        return Err(error(
+            403,
+            None,
+            "Group provisioning is disabled on this server",
+        ));
+    }
     let version = operation
         .get("version")
         .map(|v| {
@@ -929,15 +958,18 @@ async fn bulk_operation(
 }
 
 // Cursors carry no authorization. They bind an offset to the principal, registry
-// snapshot and query; every resumed request reauthenticates and reapplies domain scope.
+// snapshot, group visibility and query; every resumed request reauthenticates and
+// reapplies domain scope.
 fn cursor_context(
     epoch: Option<u64>,
+    ignore_groups: bool,
     principal: u32,
     path: &str,
     params: &BTreeMap<String, String>,
 ) -> String {
     use std::hash::{Hash, Hasher};
     let mut hash = std::collections::hash_map::DefaultHasher::new();
+    ignore_groups.hash(&mut hash);
     path.trim_end_matches("/.search")
         .trim_end_matches(".search")
         .hash(&mut hash);
@@ -1266,15 +1298,37 @@ mod tests {
         );
     }
     #[test]
+    fn ignored_group_acknowledgement_has_no_identity_or_members() {
+        let normalized = protocol::normalize_group(&json!({
+            "schemas": [protocol::GROUP_SCHEMA],
+            "externalId": "c03ac9fd-1af9-4da2-a148-e21ed5d23424",
+            "displayName": "Mail",
+            "members": [{"value": "o"}],
+        }))
+        .unwrap_or_else(|_| panic!("valid group"));
+        let group = ignored_group(normalized);
+        assert!(group.get("id").is_none());
+        assert_eq!(group["externalId"], "c03ac9fd-1af9-4da2-a148-e21ed5d23424");
+        assert_eq!(group["displayName"], "Mail");
+        assert_eq!(group["members"], json!([]));
+        assert_eq!(group["schemas"], json!([protocol::GROUP_SCHEMA]));
+        assert!(group.pointer("/meta/location").is_none());
+    }
+    #[test]
     fn strong_match_and_cursor_bindings_are_not_ambiguous() {
         assert!(!etag_matches("W/\"v1\"", "\"v1\"", false));
         assert!(etag_matches("W/\"v1\"", "\"v1\"", true));
         let params = BTreeMap::from([("filter".into(), "active eq true".into())]);
-        let context = cursor_context(Some(9), 42, "Users", &params);
+        let context = cursor_context(Some(9), false, 42, "Users", &params);
         let cursor = format!("{context}.2");
         assert_eq!(cursor_offset(&cursor, &context).ok(), Some(2));
-        assert!(cursor_offset(&cursor, &cursor_context(Some(10), 42, "Users", &params)).is_err());
-        assert!(cursor_offset(&cursor, &cursor_context(Some(9), 43, "Users", &params)).is_err());
+        for other in [
+            cursor_context(Some(10), false, 42, "Users", &params),
+            cursor_context(Some(9), false, 43, "Users", &params),
+            cursor_context(Some(9), true, 42, "Users", &params),
+        ] {
+            assert!(cursor_offset(&cursor, &other).is_err());
+        }
     }
     #[test]
     fn bulk_ids_resolve_members_but_not_external_identifiers() {
