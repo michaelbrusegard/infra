@@ -7,6 +7,9 @@ locals {
   # macchiato's dyndns keeps this on the WAN address. The edge certificate
   # covers it and Stalwart's MTA-STS policy lists it.
   stalwart_mx = "mx.asgard.michaelbrusegard.com"
+  # cortado (midgard) queues mail while asgard is unreachable and hands it
+  # back over the pinned port-2525 handoff; it never delivers locally.
+  stalwart_backup_mx = "router.midgard.michaelbrusegard.com"
   # SMTP2GO is the only outbound path; nothing sends from the MX. Its bounce
   # return path (em1206132) already carries the envelope SPF.
   stalwart_spf = "v=spf1 include:spf.smtp2go.com -all"
@@ -88,6 +91,13 @@ locals {
         priority = 10
         ttl      = 300
       }
+      mx_secondary = {
+        name     = "michaelbrusegard.com"
+        type     = "MX"
+        content  = local.stalwart_backup_mx
+        priority = 20
+        ttl      = 300
+      }
       spf = {
         name     = "michaelbrusegard.com"
         type     = "TXT"
@@ -123,6 +133,13 @@ locals {
         type     = "MX"
         content  = local.stalwart_mx
         priority = 10
+        ttl      = 300
+      }
+      mx_secondary = {
+        name     = "michbrus.com"
+        type     = "MX"
+        content  = local.stalwart_backup_mx
+        priority = 20
         ttl      = 300
       }
       spf = {

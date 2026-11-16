@@ -4,9 +4,10 @@
 # New listeners only bind after a server restart; a reload is not enough.
 
 resource "stalwart_mta_sts" "this" {
-  max_age  = 604800000
-  mode     = "testing"
-  mx_hosts = ["mx.asgard.michaelbrusegard.com"]
+  max_age = 604800000
+  mode    = "testing"
+  # The backup MX on cortado must be listed or enforcing senders skip it.
+  mx_hosts = ["mx.asgard.michaelbrusegard.com", "router.midgard.michaelbrusegard.com"]
 }
 
 # Default role IDs stay as the server seeded them on first start.

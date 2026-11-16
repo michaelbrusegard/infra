@@ -21,7 +21,7 @@ variable "dkim_ed25519_pub_michbrus" {
 variable "mta_sts_id" {
   description = "MTA-STS policy id (bump to roll a new policy version). Only published while mail_on_stalwart is true."
   type        = string
-  default     = "v1"
+  default     = "v2"
 }
 
 variable "mail_on_stalwart" {
