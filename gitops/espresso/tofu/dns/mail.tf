@@ -139,8 +139,6 @@ locals {
         priority = null
         ttl      = 300
       }
-      # Senders can fetch this policy only once the Gateway's wildcard-tls
-      # certificate also covers mta-sts.michbrus.com.
       mta_sts = {
         name     = "mta-sts.michbrus.com"
         type     = "CNAME"
