@@ -7,13 +7,11 @@ name: SMTP Edge Image
     paths:
       - flake.lock
       - packages/smtp-edge/**
-      - packages/stalwart-oss/**
       - .github/workflows/smtp-edge-image.yaml
   pull_request:
     paths:
       - flake.lock
       - packages/smtp-edge/**
-      - packages/stalwart-oss/**
       - .github/workflows/smtp-edge-image.yaml
   workflow_dispatch:
 
@@ -64,7 +62,7 @@ jobs:
           config_id="sha256:$(tar -xOf result-image "$config_path" | sha256sum | cut -d ' ' -f 1)"
           echo "config_id=$config_id" >> "$GITHUB_OUTPUT"
           # A push with an unchanged image has nothing to roll out. Pull
-          # requests still qualify, since fixture or backend changes matter.
+          # requests always qualify, so harness changes are exercised there.
           if [[ "$GITHUB_EVENT_NAME" == push && "$config_id" == "$(jq -r .dockerConfigId "$RECORD")" ]]; then
             echo "Image $config_id is already qualified and deployed"
             echo "changed=false" >> "$GITHUB_OUTPUT"
