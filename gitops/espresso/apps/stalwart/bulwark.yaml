@@ -14,7 +14,8 @@ spec:
 # Defaults for settings a user has not changed. Replies go out from the
 # address a message was sent to, including catch-all addresses; Stalwart
 # lets the mailbox send as any address nobody else owns. Birthdays come
-# from contacts, replacing Nextcloud's generated birthday calendar.
+# from contacts, replacing Nextcloud's generated birthday calendar. Files
+# live in Nextcloud, so the Files app is hidden (Stalwart refuses them too).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -22,7 +23,7 @@ metadata:
   namespace: stalwart
 data:
   policy.json: |
-    {"defaults": {"autoSelectReplyIdentity": true, "replyIdentityMatch": "domain", "showBirthdayCalendar": true}}
+    {"defaults": {"autoSelectReplyIdentity": true, "replyIdentityMatch": "domain", "showBirthdayCalendar": true}, "features": {"filesEnabled": false}}
 ---
 apiVersion: apps/v1
 kind: Deployment
