@@ -531,5 +531,86 @@ data:
         "max_retries": 3,
         "retry_interval": 30,
         "active": true
+      },
+      {
+        "name": "Stalwart (personal)",
+        "type": "http",
+        "parent_name": "mail[0]",
+        "url": "https://mail.asgard.michaelbrusegard.com/healthz/ready",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Webmail (personal)",
+        "type": "http",
+        "parent_name": "mail[0]",
+        "url": "https://webmail.asgard.michaelbrusegard.com/api/config",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Stalwart (Manafish)",
+        "type": "http",
+        "parent_name": "mail[0]",
+        "url": "https://mail.manafishrov.com/healthz/ready",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Webmail (Manafish)",
+        "type": "http",
+        "parent_name": "mail[0]",
+        "url": "https://webmail.manafishrov.com/api/config",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "MTA-STS michaelbrusegard.com",
+        "type": "http",
+        "parent_name": "mail[0]",
+        "url": "https://mta-sts.michaelbrusegard.com/.well-known/mta-sts.txt",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "MTA-STS michbrus.com",
+        "type": "http",
+        "parent_name": "mail[0]",
+        "url": "https://mta-sts.michbrus.com/.well-known/mta-sts.txt",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "MTA-STS manafishrov.com",
+        "type": "http",
+        "parent_name": "mail[0]",
+        "url": "https://mta-sts.manafishrov.com/.well-known/mta-sts.txt",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
+        "name": "Backup MX (cortado)",
+        "type": "port",
+        "parent_name": "mail[0]",
+        "hostname": "router.midgard.michaelbrusegard.com",
+        "port": 25,
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
       }
     ]
