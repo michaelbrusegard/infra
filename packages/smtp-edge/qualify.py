@@ -341,7 +341,22 @@ def run(root, report, binary, postfix_port):
                     time.sleep(0.2)
             require(delivered is not None, 'Postfix-generated DSN did not reach the backend')
             record('postfix-generated-dsn', delivered, path='postfix-generated')
-        stage('postfixGeneratedDsnUsesLocalPath', local_dsn)
+            # Accelerate refresh only, not positive expiration: an observed
+            # authoritative negative must not revoke the unexpired positive.
+            control('refresh-cache')
+            require(recipient_probe(f'{alias}@{DOMAIN}') == 250, 'Finite positive-cache behavior changed')
+            deadline = time.monotonic() + 15
+            while time.monotonic() < deadline:
+                log = (server.root / 'server.log').read_text()
+                if any('smtp.mailbox-does-not-exist' in line and 'listenerId = "fixture-lmtp"' in line
+                       and f'to = "{alias}@{DOMAIN}"' in line for line in log.splitlines()):
+                    break
+                time.sleep(0.2)
+            else:
+                raise AssertionError('No authoritative negative refresh observed')
+            require(recipient_probe(f'{alias}@{DOMAIN}') == 250, 'Negative refresh revoked unexpired positive')
+            control('normal-cache')
+        stage('postfixGeneratedDsnUsesLocalPathAfterRecipientRevocation', local_dsn)
 
         def queue_survives_restarts():
             server.stop()
