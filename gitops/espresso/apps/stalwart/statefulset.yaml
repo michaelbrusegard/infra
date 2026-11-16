@@ -51,6 +51,9 @@ spec:
             # Pocket ID admins get session-only Stalwart administration.
             - name: STALWART_OIDC_ADMIN_GROUP
               value: admin
+            # Pocket ID groups here are access control, not shared mailboxes.
+            - name: STALWART_SCIM_GROUPS
+              value: ignore
           envFrom:
             - secretRef:
                 name: stalwart-env
