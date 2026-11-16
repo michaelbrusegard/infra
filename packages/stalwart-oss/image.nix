@@ -1,5 +1,4 @@
 {
-  lib,
   callPackage,
   dockerTools,
   buildEnv,
@@ -8,17 +7,15 @@
   curl,
   cacert,
   tzdata,
-  nativeScim ? false,
 }: let
-  server = callPackage ./default.nix {inherit nativeScim;};
+  server = callPackage ./default.nix {};
   layout = runCommand "stalwart-oss-image-layout" {} ''
     mkdir -p $out/usr/local/bin $out/var/lib/stalwart $out/tmp
     ln -s ${server}/bin/stalwart $out/usr/local/bin/stalwart
     chmod 1777 $out/tmp
-    ${lib.optionalString nativeScim ''
-      mkdir -p $out/usr/local/share/stalwart
-      ln -s ${callPackage ./webui.nix {}} $out/usr/local/share/stalwart/webui.zip
-    ''}
+    mkdir -p $out/usr/local/share/stalwart
+    ln -s ${callPackage ./webui.nix {}} $out/usr/local/share/stalwart/webui.zip
+
   '';
 in
   dockerTools.buildLayeredImage {
@@ -39,10 +36,7 @@ in
       ];
       WorkingDir = "/var/lib/stalwart";
       Labels = {
-        "org.opencontainers.image.title" =
-          if nativeScim
-          then "Stalwart OSS with independent native SCIM"
-          else "Stalwart OSS";
+        "org.opencontainers.image.title" = "Stalwart OSS with independent native SCIM";
         "org.opencontainers.image.version" = server.version;
         "org.opencontainers.image.source" = "https://github.com/michaelbrusegard/infra";
         "org.opencontainers.image.licenses" = "AGPL-3.0-only";

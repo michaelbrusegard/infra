@@ -4,10 +4,8 @@ pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
   helium-browser = pkgs.callPackage ./helium-browser {};
   rustdesk-flutter = pkgs.callPackage ./rustdesk {};
   smtp-edge-image = pkgs.callPackage ./smtp-edge/image.nix {};
-  stalwart-oss = pkgs.callPackage ./stalwart-oss {};
-  stalwart-oss-image = pkgs.callPackage ./stalwart-oss/image.nix {};
-  stalwart-native-scim = pkgs.callPackage ./stalwart-oss {nativeScim = true;};
-  stalwart-native-scim-image = pkgs.callPackage ./stalwart-oss/image.nix {nativeScim = true;};
+  stalwart-native-scim = pkgs.callPackage ./stalwart-oss {};
+  stalwart-native-scim-image = pkgs.callPackage ./stalwart-oss/image.nix {};
   terraform-provider-stalwart-image = pkgs.callPackage ./terraform-provider-stalwart/image.nix {};
 }
 // {

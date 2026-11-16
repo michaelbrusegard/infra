@@ -78,7 +78,7 @@ jobs:
             let
               lock = builtins.fromJSON (builtins.readFile ./flake.lock);
               upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.${lock.nodes.root.inputs.nixpkgs}.locked.rev);
-            in upstream.legacyPackages.x86_64-linux.callPackage ./packages/stalwart-oss/default.nix { nativeScim = true; }
+            in upstream.legacyPackages.x86_64-linux.callPackage ./packages/stalwart-oss/default.nix { }
           ')
           echo "binary=$server/bin/stalwart" >> "$GITHUB_OUTPUT"
 

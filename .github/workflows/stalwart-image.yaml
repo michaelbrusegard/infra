@@ -65,7 +65,7 @@ jobs:
               lock = builtins.fromJSON (builtins.readFile ./flake.lock);
               upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.${lock.nodes.root.inputs.nixpkgs}.locked.rev);
               pkgs = upstream.legacyPackages.x86_64-linux;
-              server = pkgs.callPackage ./packages/stalwart-oss/default.nix { nativeScim = true; };
+              server = pkgs.callPackage ./packages/stalwart-oss/default.nix { };
             in pkgs.callPackage ./packages/stalwart-oss/source-check.nix { inherit server; }
           '
       - name: Build without loading the private secrets flake
@@ -75,7 +75,7 @@ jobs:
               lock = builtins.fromJSON (builtins.readFile ./flake.lock);
               upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.${lock.nodes.root.inputs.nixpkgs}.locked.rev);
               pkgs = upstream.legacyPackages.x86_64-linux;
-            in pkgs.callPackage ./packages/stalwart-oss/image.nix { nativeScim = true; }
+            in pkgs.callPackage ./packages/stalwart-oss/image.nix { }
           '
           tag=$(tar -xOf result manifest.json | jq -er '.[0].RepoTags | if length == 1 then .[0] else error("expected one tag") end')
           echo "IMAGE_TAG=$tag" >> "$GITHUB_ENV"
@@ -94,7 +94,7 @@ jobs:
               lock = builtins.fromJSON (builtins.readFile ./flake.lock);
               upstream = builtins.getFlake ("github:NixOS/nixpkgs/" + lock.nodes.${lock.nodes.root.inputs.nixpkgs}.locked.rev);
               pkgs = upstream.legacyPackages.x86_64-linux;
-            in pkgs.callPackage ./packages/stalwart-oss/default.nix { nativeScim = true; }
+            in pkgs.callPackage ./packages/stalwart-oss/default.nix { }
           ')
           binary="$server/bin/stalwart"
           image_binary=$(docker run --rm --network none --read-only --cap-drop ALL \
