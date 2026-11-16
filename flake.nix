@@ -109,10 +109,6 @@
       url = "github:duxlabs-dev/dux-files";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
-    paseo = {
-      url = "github:getpaseo/paseo/v0.13.0";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
     t3code = {
       url = "github:omarcresp/t3code-flake";
       inputs.nixpkgs.follows = "nixpkgs-unstable";

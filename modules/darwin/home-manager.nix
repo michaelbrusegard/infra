@@ -1,7 +1,6 @@
 {
   inputs,
   config,
-  name,
   users,
   isWsl,
   ...
@@ -22,7 +21,6 @@
     inherit inputs isWsl;
     homePersistenceRoot = null;
     localTimeZone = config.time.timeZone;
-    paseoHostnames = [name "${name}.netbird.selfhosted"];
   };
 
   home-manager.users = builtins.listToAttrs (

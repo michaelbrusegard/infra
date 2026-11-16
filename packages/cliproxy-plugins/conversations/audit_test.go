@@ -91,7 +91,7 @@ func toolNames(request map[string]any) []string {
 // Codex's tool search returns the definitions it found, which may be
 // namespaces of tools, as the tool result's text.
 func TestCodexToolSearchResults(t *testing.T) {
-	found := `[{"type":"namespace","name":"mcp__paseo","tools":[{"type":"function","name":"speak","parameters":{"type":"object"}}]}]`
+	found := `[{"type":"namespace","name":"mcp__voice","tools":[{"type":"function","name":"speak","parameters":{"type":"object"}}]}]`
 	file := codexFile("lungo", ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-019f6478-0000-7000-8000-00000000000a.jsonl",
 		"2026-11-12 10:00", `{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000a"}}`,
 		`{"type":"response_item","payload":{"type":"tool_search_call","call_id":"ts_1","arguments":{"query":"speak"}}}`,

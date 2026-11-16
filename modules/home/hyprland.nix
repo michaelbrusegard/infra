@@ -90,7 +90,7 @@
       workspace = 3;
     }
     {
-      class = "^(paseo-desktop|t3code|com\\.t3tools\\.T3Code)$";
+      class = "^(t3code|com\\.t3tools\\.T3Code)$";
       workspace = 1;
     }
     {

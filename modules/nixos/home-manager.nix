@@ -2,8 +2,6 @@
   inputs,
   options,
   config,
-  lib,
-  name,
   users,
   isWsl,
   ...
@@ -33,7 +31,6 @@
     # Run launchers under gamemoderun so games trigger GameMode automatically.
     gamemodeRun = config.programs.gamemode.enable or false;
     localTimeZone = config.time.timeZone;
-    paseoHostnames = lib.optionals (!isWsl) [name "${name}.netbird.selfhosted"];
   };
 
   home-manager.users = builtins.listToAttrs (

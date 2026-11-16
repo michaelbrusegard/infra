@@ -1,55 +1,5 @@
 inputs: _: prev: let
   inherit (prev.stdenv.hostPlatform) system;
-  paseoBase = inputs.paseo.packages.${system}.paseo.override {
-    # fetchNpmDeps differs from the revision used by upstream's hash updater.
-    npmDepsHash = "sha256-DZOPOf81PkUxdD65BrfkTZhs6/DkfDWCFZ/SU+QrZbg=";
-  };
-  paseoElectron = inputs.paseo.inputs.nixpkgs.legacyPackages.${system}.electron;
-  paseoTerminalSmoke = ../packages/paseo/terminal-worker-smoke.mjs;
-  # Upstream installs with --ignore-scripts, which skips the root postinstall
-  # that applies patches/. The app depends on those patched exports, e.g.
-  # BottomSheetModalInternalProvider, and renders nothing without them.
-  paseoApplyDependencyPatches = ''
-    PATH="$PWD/node_modules/.bin:$PATH" node scripts/postinstall-patches.mjs
-  '';
-  paseoPackage = paseoBase.overrideAttrs (old: {
-    preBuild = (old.preBuild or "") + paseoApplyDependencyPatches;
-    doInstallCheck = prev.stdenv.buildPlatform.canExecute prev.stdenv.hostPlatform;
-    installCheckPhase = ''
-      runHook preInstallCheck
-      env -u NODE_PATH HOME="$TMPDIR/paseo-smoke-home" \
-        ${paseoBase.nodejs}/bin/node ${paseoTerminalSmoke} "$out/lib/paseo"
-      runHook postInstallCheck
-    '';
-  });
-  paseoDesktopPackage =
-    (inputs.paseo.packages.${system}.desktop.override {
-      paseo = paseoPackage;
-    }).overrideAttrs (old: {
-      nativeBuildInputs =
-        (old.nativeBuildInputs or [])
-        ++ prev.lib.optionals prev.stdenv.hostPlatform.isLinux [prev.autoPatchelfHook];
-      buildInputs =
-        (old.buildInputs or [])
-        ++ prev.lib.optionals prev.stdenv.hostPlatform.isLinux [prev.stdenv.cc.cc.lib];
-      autoPatchelfIgnoreMissingDeps = ["libc.musl-x86_64.so.1"];
-      preBuild = (old.preBuild or "") + paseoApplyDependencyPatches;
-      patches =
-        (old.patches or [])
-        ++ [
-          ../patches/paseo-keybinds.patch
-          ../patches/paseo-fonts.patch
-          ../patches/paseo-full-access-mcp-elicitations.patch
-        ];
-      # Darwin's app bundle uses electron-builder rather than the runtime trace.
-      doInstallCheck = prev.stdenv.hostPlatform.isLinux && prev.stdenv.buildPlatform.canExecute prev.stdenv.hostPlatform;
-      installCheckPhase = ''
-        runHook preInstallCheck
-        env -u NODE_PATH HOME="$TMPDIR/paseo-smoke-home" ELECTRON_RUN_AS_NODE=1 \
-          ${paseoElectron}/bin/electron ${paseoTerminalSmoke} "$out/share/paseo-desktop"
-        runHook postInstallCheck
-      '';
-    });
 in {
   inherit (inputs.hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
 
@@ -60,8 +10,6 @@ in {
   inherit (inputs.llm-agents.packages.${system}) chatgpt claude-code codex;
   opencode = inputs.llm-agents.packages.${system}.opencode2;
   pi-coding-agent = inputs.llm-agents.packages.${system}.pi;
-  paseo = paseoPackage;
-  paseo-desktop = paseoDesktopPackage;
   t3code = prev.callPackage ../packages/t3code {
     unwrapped = inputs.t3code.packages.${system}.t3-code;
   };

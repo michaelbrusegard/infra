@@ -46,7 +46,7 @@ in {
             run = "move-node-to-workspace 2";
           }
           {
-            "if".app-name-regex-substring = "^(Paseo|T3 Code.*)$";
+            "if".app-name-regex-substring = "^T3 Code.*$";
             run = "move-node-to-workspace 1";
           }
           {
