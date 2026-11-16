@@ -78,7 +78,8 @@ in {
     };
   };
 
-  # Activation gate: open WAN TCP 25 and publish the secondary MX only after
-  # an external outage drill.
-  # networking.firewall.interfaces.enp7s0.allowedTCPPorts = [25];
+  # Activated after an outage drill (2026-11-16): handoff over verified TLS,
+  # queueing while the primary was unreachable and across a restart, then
+  # delivery on recovery. The secondary MX records point here.
+  networking.firewall.interfaces.enp7s0.allowedTCPPorts = [25];
 }
