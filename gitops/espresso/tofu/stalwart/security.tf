@@ -19,3 +19,14 @@ resource "stalwart_security" "server" {
     }
   }
 }
+
+# NetBird's macchiato routing peer masquerades, so every NetBird client
+# reaches Stalwart from macchiato's server-VLAN address. One client retrying
+# a dead token tripped the login ban and locked out all of them. Internet
+# IPv4 is port-forwarded without SNAT and keeps its own address and ban.
+resource "stalwart_allowed_ip" "macchiato" {
+  for_each = toset(["10.0.187.1", "fd7a:115c:a1e0:187::1"])
+
+  address = each.value
+  reason  = "macchiato: NetBird routing peer (masquerade) and LAN router"
+}
