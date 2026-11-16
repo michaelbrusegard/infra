@@ -1,6 +1,6 @@
 # Build on the same Debian release as eceasy/cli-proxy-api, so the shared
 # libraries link against the glibc they are loaded into.
-FROM golang:1.26-bookworm@sha256:5de7c99eb78ca5e515a4c340235d0955ec5964a5071c492c15503d7c267da473 AS build
+FROM golang:1.26-bookworm@sha256:dc40a13b61304647ed7e5d581d246b86413dfc29d63c6d018310feb93cd98fc0 AS build
 WORKDIR /src
 COPY . .
 # Each directory with a main package is one plugin, named after it.
