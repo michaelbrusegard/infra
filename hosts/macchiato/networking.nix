@@ -319,6 +319,9 @@ in {
 
     # Advertise IPv6 prefixes on both bridges so LAN devices get public
     # GUA addresses (from ISP prefix delegation) via SLAAC
+    # The delegated prefix can change on a DHCPv6 renewal; radvd's default
+    # lifetimes would keep clients on a dead prefix for up to four hours.
+    # Short lifetimes let them move within half an hour (as on cortado).
     radvd = {
       enable = true;
       config = ''
@@ -327,6 +330,8 @@ in {
           prefix ::/64 {
             AdvOnLink on;
             AdvAutonomous on;
+            AdvPreferredLifetime 1800;
+            AdvValidLifetime 3600;
           };
         };
 
@@ -335,6 +340,8 @@ in {
           prefix ::/64 {
             AdvOnLink on;
             AdvAutonomous on;
+            AdvPreferredLifetime 1800;
+            AdvValidLifetime 3600;
           };
         };
 
@@ -343,6 +350,8 @@ in {
           prefix ::/64 {
             AdvOnLink on;
             AdvAutonomous on;
+            AdvPreferredLifetime 1800;
+            AdvValidLifetime 3600;
           };
         };
 
@@ -351,6 +360,8 @@ in {
           prefix ::/64 {
             AdvOnLink on;
             AdvAutonomous on;
+            AdvPreferredLifetime 1800;
+            AdvValidLifetime 3600;
           };
         };
       '';
