@@ -18,12 +18,6 @@ variable "dkim_ed25519_pub_michbrus" {
   type        = string
 }
 
-variable "mta_sts_id" {
-  description = "MTA-STS policy id (bump to roll a new policy version). Only published while mail_on_stalwart is true."
-  type        = string
-  default     = "v2"
-}
-
 variable "mail_on_stalwart" {
   description = "Point MX, SPF and DMARC for michaelbrusegard.com and michbrus.com at Stalwart and SMTP2GO, and publish MTA-STS. False keeps Proton's records."
   type        = bool

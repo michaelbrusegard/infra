@@ -22,9 +22,6 @@ patches:
         path: ./tofu/dns
         backendConfig:
           secretSuffix: manafishrov-dns
-        varsFrom:
-          - kind: Secret
-            name: manafishrov-dns-records
         runnerPodTemplate:
           spec:
             env:
