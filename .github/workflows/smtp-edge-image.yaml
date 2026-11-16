@@ -97,14 +97,13 @@ jobs:
           docker load < result-image
           image_id=$(docker image inspect "$tag" --format '{{.Id}}')
           rev=$(jq -r '.nodes[.nodes.root.inputs.nixpkgs].locked.rev' flake.lock)
-          nix shell "github:NixOS/nixpkgs/$rev#"{python3,bind,iproute2,openssl,util-linux} -c \
+          nix shell "github:NixOS/nixpkgs/$rev#"{python3,iproute2,openssl,util-linux} -c \
             python3 packages/smtp-edge/qualify_postfix.py --image "$image_id" --binary "$BINARY" \
             > summary.json || true
           cat summary.json
           evidence=$(jq -r .evidence summary.json)
           mkdir evidence
           sudo cp -r "$evidence"/. evidence/
-          sudo rm -f evidence/approved-stalwart
           sudo chown -R "$(id -u):$(id -g)" evidence
           jq -e '.qualified == true' summary.json > /dev/null
           {
