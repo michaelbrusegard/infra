@@ -4,8 +4,6 @@ set -euo pipefail
 umask 077
 
 : "${POSTFIX_HOSTNAME:=edge.asgard.michaelbrusegard.com}"
-# Space-separated domain=host routes; each domain is served by one backend.
-: "${BACKENDS:=manafishrov.com=backend.manafishrov.com}"
 # Fixtures that reach a backend by IP verify one shared certificate name.
 : "${BACKEND_TLS_SERVERNAME:=}"
 : "${BACKEND_LMTP_PORT:=24}"
@@ -21,8 +19,9 @@ fail() { printf 'smtp-edge: %s\n' "$1" >&2; exit 1; }
 dns_name='^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$'
 [[ $POSTFIX_HOSTNAME =~ $dns_name ]] || fail 'invalid POSTFIX_HOSTNAME'
 [[ -z $BACKEND_TLS_SERVERNAME || $BACKEND_TLS_SERVERNAME =~ $dns_name ]] || fail 'invalid BACKEND_TLS_SERVERNAME'
+# Required space-separated domain=host routes; each domain has one backend.
 declare -A backend_for=()
-read -ra routes <<< "$BACKENDS"
+read -ra routes <<< "${BACKENDS:-}"
 for route in "${routes[@]}"; do
   domain=${route%%=*}
   host=${route#*=}
