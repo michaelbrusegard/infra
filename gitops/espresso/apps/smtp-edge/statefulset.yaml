@@ -34,7 +34,7 @@ spec:
       containers:
         - name: postfix
           # .github/workflows/smtp-edge-image.yaml qualifies, publishes and pins this.
-          image: ghcr.io/michaelbrusegard/smtp-edge:postfix-3.11.7-curl-8.22.0-sha-c18ceba6f48fcedc5b2db073e592ca2645365a8a@sha256:05dfae1f5fd5864ea35908584473c8c099539516134fffa5f556d4a6c7adbd63
+          image: ghcr.io/michaelbrusegard/smtp-edge:postfix-3.11.7-curl-8.22.0-sha-842dd241cee954176ee2159128e48ee4216866a3@sha256:8ec6e1107b70b7d326bc3ab07b530e4ee79eee63178cc0730bf3bb8a6fbe0ac9
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false

@@ -1,9 +1,9 @@
 {
-  "dockerConfigId": "sha256:8dae6f8a645f4c33e2940c19bebee92f7c4d0ade774892eae34f3164b3fc4fcb",
-  "registryManifestDigest": "sha256:05dfae1f5fd5864ea35908584473c8c099539516134fffa5f556d4a6c7adbd63",
+  "dockerConfigId": "sha256:8047df32ed77e2cd76d8675dfee9bb061911cd0c75d26b94d04bad032de57d82",
+  "registryManifestDigest": "sha256:8ec6e1107b70b7d326bc3ab07b530e4ee79eee63178cc0730bf3bb8a6fbe0ac9",
   "postfixVersion": "3.11.7",
   "curlVersion": "8.22.0",
-  "sourceRevision": "c18ceba6f48fcedc5b2db073e592ca2645365a8a",
-  "qualifiedAt": "2026-11-12",
-  "evidence": "https://github.com/michaelbrusegard/infra/actions/runs/43174603760"
+  "sourceRevision": "842dd241cee954176ee2159128e48ee4216866a3",
+  "qualifiedAt": "2026-11-16",
+  "evidence": "https://github.com/michaelbrusegard/infra/actions/runs/43798958874"
 }
