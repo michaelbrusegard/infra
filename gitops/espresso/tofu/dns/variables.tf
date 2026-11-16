@@ -27,5 +27,5 @@ variable "mta_sts_id" {
 variable "mail_on_stalwart" {
   description = "Point MX, SPF and DMARC for michaelbrusegard.com and michbrus.com at Stalwart and SMTP2GO, and publish MTA-STS. False keeps Proton's records."
   type        = bool
-  default     = false
+  default     = true
 }
