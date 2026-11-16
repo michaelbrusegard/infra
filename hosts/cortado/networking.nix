@@ -54,7 +54,13 @@ in {
     };
 
     interfaces = {
-      "${wanInterface}".useDHCP = true;
+      "${wanInterface}" = {
+        useDHCP = true;
+        # Privacy addresses rotate daily, and cloudflare-dyndns publishes
+        # whatever address ipify sees, so the backup MX's AAAA kept changing.
+        # A router's WAN address should be stable.
+        tempAddress = "disabled";
+      };
       "${lanBridge}" = {
         useDHCP = false;
         ipv4.addresses = [
