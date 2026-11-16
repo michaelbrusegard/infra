@@ -182,6 +182,9 @@ in {
 
     # Advertise the delegated prefix so LAN devices get public GUA addresses
     # via SLAAC. The ULAs stay router-side stable service addresses.
+    # The ISP renumbers the delegated prefix without notice; radvd's default
+    # lifetimes kept clients on the dead prefix for up to four hours. Short
+    # lifetimes let them move to the new one within half an hour.
     radvd = {
       enable = true;
       config = ''
@@ -190,6 +193,8 @@ in {
           prefix ::/64 {
             AdvOnLink on;
             AdvAutonomous on;
+            AdvPreferredLifetime 1800;
+            AdvValidLifetime 3600;
           };
         };
 
@@ -198,6 +203,8 @@ in {
           prefix ::/64 {
             AdvOnLink on;
             AdvAutonomous on;
+            AdvPreferredLifetime 1800;
+            AdvValidLifetime 3600;
           };
         };
       '';
