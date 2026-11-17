@@ -497,6 +497,11 @@ in {
         # SMTP uses the shared edge; mail.* web names resolve through k8s-gateway.
         "mx.manafishrov.com" = "10.0.188.12,fd7a:115c:a1e0:188::12";
         "mx.${baseDomain}" = "10.0.188.12,fd7a:115c:a1e0:188::12";
+        # The personal MTA-STS names sit outside the k8s-gateway zones and
+        # would resolve to the WAN IP, which does not hairpin. Point them
+        # at the internal gateway so LAN clients and Uptime Kuma reach them.
+        "mta-sts.michaelbrusegard.com" = "10.0.188.3,fd7a:115c:a1e0:188::3";
+        "mta-sts.michbrus.com" = "10.0.188.3,fd7a:115c:a1e0:188::3";
       };
     };
 
