@@ -166,19 +166,6 @@ in
     # Wayland clipboard CLI: `cmd | wl-copy`, `wl-paste` to read back.
     home.packages = [pkgs.wl-clipboard];
 
-    # Upstream netbird.desktop ships `Exec=netbird-ui`, but the NixOS module
-    # only renames Name/Icon, leaving Exec pointing at a binary that isn't on
-    # PATH. The per-client wrapper `netbird-ui-default` carries the
-    # `--daemon-addr` the launcher needs, so override the entry to call it.
-    xdg.desktopEntries."netbird-default" = {
-      name = "NetBird @ netbird-default";
-      exec = "netbird-ui-default";
-      icon = "netbird";
-      terminal = false;
-      type = "Application";
-      categories = ["Utility"];
-    };
-
     systemd.user.services.netbird-ui = {
       Unit = {
         Description = "NetBird tray UI";
@@ -186,7 +173,7 @@ in
         After = ["graphical-session.target"];
       };
       Service = {
-        ExecStart = "/run/current-system/sw/bin/netbird-ui-default";
+        ExecStart = "/run/current-system/sw/bin/netbird-ui";
         Restart = "on-failure";
         RestartSec = 3;
       };

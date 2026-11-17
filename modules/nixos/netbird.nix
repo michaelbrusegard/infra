@@ -16,6 +16,9 @@
   services.netbird = {
     useRoutingFeatures = lib.mkDefault "client";
     clients.default = {
+      # Install the wrappers as plain `netbird` and `netbird-ui` instead of
+      # suffixing them with the client name.
+      bin.suffix = "";
       port = 51820;
       config = {
         WgIface = lib.mkForce config.services.netbird.clients.default.interface;
