@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs the LLM conversation normalizer next to ClickHouse, as the cluster's
-# llm-normalizer CronJob does; see docs/llm-conversations.md. It runs in the
+# llm-normalizer CronJob does. It runs in the
 # ClickHouse server image, for clickhouse-client, with this directory copied
 # from the plugin image.
 #
@@ -78,8 +78,8 @@ spent() {
 	return 1
 }
 
-# The checks of docs/llm-conversations.md that need no judgment fail the
-# run; the others print their differences.
+# The checks of verify.sql fail the run on a violation; its reports only
+# print.
 verify() {
 	local failed
 	ch --queries-file "$here/verify.sql" < /dev/null | tee "$scratch/verify.tsv"

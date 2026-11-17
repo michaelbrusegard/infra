@@ -1,5 +1,5 @@
--- The checks from Verification in docs/llm-conversations.md, which
--- `normalize.sh verify` runs. A check row counts violations, which
+-- The checks of the canonical tables, which `normalize.sh verify` runs.
+-- A check row counts violations, which
 -- must be 0; a report row is a figure to compare and explain. Requests of
 -- the last hour may still be held back for their usage.
 SELECT 'check', 'requests without a proxy call', count()

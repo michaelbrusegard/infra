@@ -274,8 +274,8 @@ data:
     PARTITION BY toYYYYMM(requested_at)
     ORDER BY (requested_at, trace_id, request_id);
 
-    -- Canonical LLM conversations, described in docs/llm-conversations.md and
-    -- written by packages/cliproxy-plugins/normalize-conversations. Proxy rows
+    -- Canonical LLM conversations, written by
+    -- packages/cliproxy-plugins/normalize-conversations. Proxy rows
     -- reference the raw capture above instead of copying it, and can be
     -- dropped and rebuilt from it. Transcript rows were imported once from a
     -- dump of agent logs that is dropped since, so they hold their own

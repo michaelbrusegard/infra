@@ -1,6 +1,6 @@
 // Package conversations normalizes archived LLM traffic into one canonical
 // form: sessions, a tree of messages, and model calls, and exports them for
-// training. docs/llm-conversations.md describes the schema.
+// training. The tables are in gitops/espresso/apps/clickhouse/configmap.yaml.
 //
 // The proxy's raw capture is kept for good, and canonical rows reference it
 // rather than copy it: a proxy call names its llm.requests row, and a proxy

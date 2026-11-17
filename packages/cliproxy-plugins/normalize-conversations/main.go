@@ -1,5 +1,5 @@
-// Command normalize-conversations is the normalizer described in
-// docs/llm-conversations.md. It reads source rows as JSONEachRow and writes
+// Command normalize-conversations is the normalizer the llm-normalizer
+// CronJob runs. It reads source rows as JSONEachRow and writes
 // the canonical rows for each table into a directory, one JSONEachRow file
 // per table. The rows reference the raw capture and copy none of it.
 //
@@ -9,8 +9,8 @@
 // state.sql with -state.
 //
 // With -export openai or -export anthropic, it instead reads one call or
-// conversation, as the call and conversation queries in the design doc
-// return them, and prints it for training. A call that is no training
+// conversation, as queries/call.sql and queries/conversation.sql return
+// them, and prints it for training. A call that is no training
 // example, because it produced nothing, or its output calls tools its
 // context does not define or with arguments cut short, fails with the
 // reason.

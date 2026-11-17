@@ -3,7 +3,7 @@
 
 Inserts the fixtures as source rows, normalizes them from there the way the
 normalizer job would, adds rows as the one-off transcript import left them,
-and runs the example queries from docs/llm-conversations.md. Nothing
+and runs the example queries in normalize-conversations/queries. Nothing
 touches the cluster.
 
 Run with `nix develop --command python3 gitops/espresso/tests/llm-conversations.py`.
@@ -26,7 +26,6 @@ ROOT = Path(__file__).resolve().parents[3]
 BASE = ROOT / "gitops/espresso"
 PLUGINS = ROOT / "packages/cliproxy-plugins"
 NORMALIZER = PLUGINS / "normalize-conversations"
-DOC = ROOT / "docs/llm-conversations.md"
 # The fixtures are from November 2026; pin "now" so the examples stay stable.
 NOW = "toDateTime64('2026-11-14 00:00:00', 3, 'UTC')"
 # llm_normalizer's password, which the cluster reads from a secret.
@@ -120,13 +119,8 @@ def run(*args, input=None, check=True, **kwargs):
 
 
 def examples():
-    """The ```sql blocks of the design doc that start with `-- example: <name>`."""
-    found = {}
-    for block in re.findall(r"```sql\n(.*?)```", DOC.read_text(), re.S):
-        match = re.match(r"-- example: (\S+)", block)
-        if match:
-            found[match.group(1)] = block.replace("now()", NOW)
-    return found
+    """The example queries by name, with "now" pinned."""
+    return {f.stem: f.read_text().replace("now()", NOW) for f in (NORMALIZER / "queries").glob("*.sql")}
 
 
 def check_password_guard(image, command):
@@ -464,7 +458,7 @@ def main():
             kept = history_rows()
             run("docker", "exec", "-i", container, "clickhouse-client", "--multiquery", input=config["schema.sql"])
             assert history_rows() == kept and sorted(kept) == expected_history(), kept
-            print(f"PASS: {len(sql)} doc examples, proxy references both ways, unchanged raw capture, "
+            print(f"PASS: {len(sql)} example queries, proxy references both ways, unchanged raw capture, "
                   "usage history, permissions")
         finally:
             run("docker", "rm", "--force", container, check=False)

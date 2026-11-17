@@ -1,6 +1,13 @@
-# The LLM conversation normalizer of docs/llm-conversations.md: every 10
-# minutes, it normalizes the proxy requests that are not in llm.calls yet.
-# A rebuild suspends the job while the proxy's rows are deleted.
+# The LLM conversation normalizer (packages/cliproxy-plugins/
+# normalize-conversations): every 10 minutes, it normalizes the proxy
+# requests that are not in llm.calls yet, an hour at a time from the
+# oldest, for up to 5 minutes a run.
+#
+# To rebuild the proxy's rows, for example after an extractor fix: suspend
+# the job, delete them as the default user through kubectl exec (llm.calls
+# and llm.sessions WHERE origin = 'proxy', llm.messages WHERE path = '',
+# each with SETTINGS mutations_sync = 1), and resume it; it catches up from
+# the first request. Keep the transcript rows: they cannot be rebuilt.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
