@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
 # Runs the LLM conversation normalizer next to ClickHouse, as the cluster's
-# llm-normalizer CronJob and the one-off llm-backfill Job do; see
-# docs/llm-conversations.md. It runs in the ClickHouse server image, for
-# clickhouse-client, with this directory copied from the plugin image.
+# llm-normalizer CronJob does; see docs/llm-conversations.md. It runs in the
+# ClickHouse server image, for clickhouse-client, with this directory copied
+# from the plugin image.
 #
 #   normalize.sh cron      one run of the job: the requests that are not
 #                          normalized yet, an hour at a time from the
 #                          oldest, starting none after BUDGET seconds (300)
-#   normalize.sh backfill  the proxy from its first request, an hour at a
-#                          time, then the transcript import, then the checks
 #   normalize.sh verify    only the checks
 #
 # CLICKHOUSE_HOST and CLICKHOUSE_USER name the server and its user, whose
 # password clickhouse-client reads from CLICKHOUSE_PASSWORD, and SCRATCH a
-# directory for the downloads and the rows to insert.
+# directory for the rows to insert.
 set -euo pipefail
 
 here=$(dirname "$(readlink -f "$0")")
@@ -28,7 +26,7 @@ ch() {
 # rows are deterministic, so a run interrupted and run again collapses.
 insert() {
 	local table
-	for table in llm.request_items llm.sessions llm.messages llm.calls llm.events; do
+	for table in llm.request_items llm.sessions llm.messages llm.calls; do
 		if [[ -s $1/$table.jsonl ]]; then
 			ch --query "INSERT INTO $table FORMAT JSONEachRow" < "$1/$table.jsonl"
 		fi
@@ -80,55 +78,6 @@ spent() {
 	return 1
 }
 
-# Deletes are mutations, which ClickHouse applies in the background: the
-# rows that a recovery or a rebuild deletes, as the design doc's Rebuild
-# describes, stay until theirs finish. A backfill waits for them, rather
-# than refuse an import because old rows still count, or insert next to
-# rows that are still going.
-settled() {
-	local pending
-	while :; do
-		pending=$(ch --query "SELECT count() FROM system.mutations WHERE database = 'llm' AND NOT is_done")
-		if [[ $pending == 0 ]]; then
-			return
-		fi
-		echo "waiting for $pending deletes in llm to finish"
-		sleep 10
-	done
-}
-
-# The transcript import, once, after the proxy: which file holds a reply's
-# call depends on the proxy's calls. It reads every transcript line, in
-# parts of whole files that bound the server's sort, into one compressed
-# input, and inserts only if the normalizer accounts for every line.
-backfill_transcripts() {
-	local out=$scratch/transcripts files
-	if [[ $(ch --query "SELECT (SELECT count() FROM llm.calls WHERE origin = 'transcript')
-		+ (SELECT count() FROM llm.transcript_import)") != 0 ]]; then
-		echo "llm holds a transcript import already; delete the transcript rows first" >&2
-		exit 1
-	fi
-	rm -rf "$out"
-	mkdir -p "$out"
-	ch --queries-file "$here/proxied.sql" < /dev/null > "$scratch/proxied.tsv"
-	ch --param_bytes=268435456 --queries-file "$here/files.sql" < /dev/null > "$scratch/files.txt"
-	: > "$scratch/transcripts.jsonl.gz"
-	while IFS= read -r files; do
-		ch --param_files="$files" --queries-file "$here/transcripts.sql" < /dev/null | gzip -1 >> "$scratch/transcripts.jsonl.gz"
-	done < "$scratch/files.txt"
-	"$normalizer" -in "$scratch/transcripts.jsonl.gz" -proxied "$scratch/proxied.tsv" -out "$out"
-	local lines covered
-	lines=$(ch --query "SELECT count() FROM llm.transcripts FINAL")
-	covered=$(awk -F '\t' '{ n += $5 } END { print n + 0 }' "$out/coverage.tsv")
-	if [[ $lines != "$covered" ]]; then
-		echo "coverage counts $covered lines of $lines" >&2
-		exit 1
-	fi
-	insert "$out"
-	echo "coverage (source, kind, disposition, destination, lines):"
-	cat "$out/coverage.tsv"
-}
-
 # The checks of docs/llm-conversations.md that need no judgment fail the
 # run; the others print their differences.
 verify() {
@@ -147,23 +96,12 @@ cron)
 	mkdir -p "$scratch"
 	proxy_windows 1 "${BUDGET:-300}"
 	;;
-backfill)
-	mkdir -p "$scratch"
-	settled
-	# A busy day's requests and items exceed the server's memory in one
-	# join, so the backfill works an hour at a time, like the job.
-	proxy_windows 1
-	backfill_transcripts
-	verify
-	# The dashboard reads the transcript calls' history from here on.
-	ch --query "INSERT INTO llm.transcript_import VALUES (now64(3))"
-	;;
 verify)
 	mkdir -p "$scratch"
 	verify
 	;;
 *)
-	echo "usage: $0 cron|backfill|verify" >&2
+	echo "usage: $0 cron|verify" >&2
 	exit 2
 	;;
 esac

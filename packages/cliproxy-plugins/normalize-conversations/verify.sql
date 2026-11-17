@@ -1,5 +1,5 @@
--- The checks of the backfill, from Verification in docs/llm-conversations.md,
--- which `normalize.sh verify` runs. A check row counts violations, which
+-- The checks from Verification in docs/llm-conversations.md, which
+-- `normalize.sh verify` runs. A check row counts violations, which
 -- must be 0; a report row is a figure to compare and explain. Requests of
 -- the last hour may still be held back for their usage.
 SELECT 'check', 'requests without a proxy call', count()
@@ -44,9 +44,9 @@ SELECT 'check', 'transcript call outputs another call shares', count()
 FROM (SELECT id FROM (SELECT arrayJoin(output_ids) AS id, call_id, origin FROM llm.calls FINAL)
     GROUP BY id HAVING uniqExact(call_id) > 1 AND has(groupUniqArray(origin), 'transcript'));
 
--- A block the extractor does not know keeps only its type. The transcript
--- import fails on one; the proxy's raw request still holds it, so the
--- extractor learns the type and the proxy windows are normalized again.
+-- A block the extractor does not know keeps only its type. The proxy's raw
+-- request still holds it, so the extractor learns the type and the proxy
+-- windows are normalized again.
 SELECT 'check', 'blocks of unknown types', count()
 FROM llm.messages FINAL ARRAY JOIN blocks AS b
 WHERE b.type = 'other' AND b.source_type != 'missing_context';
@@ -55,22 +55,3 @@ SELECT 'report', concat('calls ', origin, ' ', client), count()
 FROM llm.calls FINAL
 GROUP BY origin, client
 ORDER BY origin, client;
-
--- Transcript calls against the old import, per client: they differ where
--- the importer counted differently, such as Codex's drifted repeats. Once
--- the old import is dropped, it has no rows.
-SELECT 'report', concat('history ', source, ' ', what), value
-FROM (
-    SELECT source, 'calls' AS what, count() AS value FROM llm.call_history
-    WHERE requested_at < (SELECT min(requested_at) FROM llm.usage) GROUP BY source
-    UNION ALL
-    SELECT source, 'tokens', sum(uncached_input_tokens + cache_read_tokens + cache_creation_tokens + output_tokens)
-    FROM llm.call_history WHERE requested_at < (SELECT min(requested_at) FROM llm.usage) GROUP BY source
-    UNION ALL
-    SELECT toString(source), 'old import calls', count() FROM llm.old_import_usage FINAL GROUP BY source
-    UNION ALL
-    SELECT toString(source), 'old import tokens',
-        sum(uncached_input_tokens + cache_read_tokens + cache_creation_tokens + output_tokens)
-    FROM llm.old_import_usage FINAL GROUP BY source
-)
-ORDER BY source, what;

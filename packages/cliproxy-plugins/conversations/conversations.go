@@ -1,14 +1,12 @@
-// Package conversations normalizes archived LLM traffic and agent transcripts
-// into one canonical form: sessions, a tree of messages, model calls, and
-// events. docs/llm-conversations.md describes the schema.
+// Package conversations normalizes archived LLM traffic into one canonical
+// form: sessions, a tree of messages, and model calls, and exports them for
+// training. docs/llm-conversations.md describes the schema.
 //
 // The proxy's raw capture is kept for good, and canonical rows reference it
 // rather than copy it: a proxy call names its llm.requests row, and a proxy
-// message the llm.request_items hash it was read from. The one-off import of
-// agent transcripts is dropped once normalized, so transcript rows hold
-// their own content: what the extraction keeps, plus the system prompt and
-// tools Claude Code's request logs record, as items. Coverage accounts for
-// every transcript line.
+// message the llm.request_items hash it was read from. The canonical tables
+// also hold the rows of a one-off import of agent transcripts, which hold
+// their own content; the types describe their columns too.
 package conversations
 
 import (
@@ -115,22 +113,9 @@ type Call struct {
 	OutputTokens        uint64 `json:"output_tokens"`
 	ReasoningTokens     uint64 `json:"reasoning_tokens"`
 	// The system prompt and tools a transcript call ran with, as items in
-	// llm.request_items, where its transcript records them, as Claude
-	// Code's request logs do. A proxy call's are in its llm.requests row.
+	// llm.request_items, where its transcript recorded them. A proxy call's
+	// are in its llm.requests row, apart from Codex's additional tools.
 	Context []requestitems.Part `json:"context"`
-}
-
-// Event is a transcript record of how a session went that no message or
-// call holds: an API error, a refusal fallback, an interrupted turn, or a
-// rollback, with its line and a detail such as the error.
-type Event struct {
-	SessionID string `json:"session_id"`
-	TS        string `json:"ts"`
-	Host      string `json:"host"`
-	Path      string `json:"path"`
-	Line      string `json:"line"`
-	Type      string `json:"type"`
-	Detail    string `json:"detail"`
 }
 
 // Session holds the attributes of a session that do not change as it grows.
@@ -147,17 +132,15 @@ type Session struct {
 	Cwd    string `json:"cwd"`
 }
 
-// Batch collects normalized rows. Its items are only the context of
-// transcript calls; proxy rows reference the items the archive holds.
+// Batch collects normalized rows. Its items are only call context that the
+// request did not store as items, such as Codex's additional tools; proxy
+// rows otherwise reference the items the archive holds.
 type Batch struct {
 	Sessions []Session
 	Messages []Message
 	Calls    []Call
-	Events   []Event
 	Items    []Item
 	items    map[Hash]bool
-	// Transcript lines by what became of them; see Covered.
-	Coverage map[Covered]int
 }
 
 type Item struct {

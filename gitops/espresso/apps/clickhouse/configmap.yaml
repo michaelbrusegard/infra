@@ -51,8 +51,8 @@ data:
     <clickhouse>
       <profiles>
         <!-- Reject rows with unknown columns instead of dropping the fields:
-             an old archive plugin writing request_body after the
-             request_items migration must fail loudly, not lose the body. -->
+             a plugin writing a column the table lacks must fail loudly, not
+             lose the value. -->
         <cliproxy>
           <profile>default</profile>
           <input_format_skip_unknown_fields>0</input_format_skip_unknown_fields>
@@ -125,18 +125,10 @@ data:
             <query>GRANT SELECT ON llm.requests</query>
             <query>GRANT SELECT ON llm.request_items</query>
             <query>GRANT SELECT ON llm.usage</query>
-            <query>GRANT SELECT ON llm.transcripts</query>
-            <query>GRANT SELECT ON llm.historical_usage</query>
-            <query>GRANT SELECT ON llm.old_import_usage</query>
-            <query>GRANT SELECT ON llm.call_history</query>
             <query>GRANT SELECT, INSERT ON llm.sessions</query>
             <query>GRANT SELECT, INSERT ON llm.messages</query>
             <query>GRANT SELECT, INSERT ON llm.calls</query>
-            <query>GRANT SELECT, INSERT ON llm.events</query>
-            <query>GRANT SELECT, INSERT ON llm.transcript_import</query>
             <query>GRANT INSERT ON llm.request_items</query>
-            <!-- To wait for deletes before a backfill inserts again. -->
-            <query>GRANT SELECT ON system.mutations</query>
           </grants>
         </llm_normalizer>
         <!-- Network policy trusts only CLIProxy and Grafana pods. As with the
@@ -192,13 +184,6 @@ data:
     -- Requests in one session reference mostly the same items; keeping them
     -- adjacent makes their part lists compress.
     ORDER BY (session_id, started_at, request_id);
-
-    -- The table from before request_items still holds request_body until
-    -- migrate-request-items.sh replaces it; these are no-ops afterwards.
-    ALTER TABLE llm.requests
-        ADD COLUMN IF NOT EXISTS request_envelope String CODEC(ZSTD(3)) AFTER truncated,
-        ADD COLUMN IF NOT EXISTS request_parts Array(Tuple(field LowCardinality(String), position Int32, hash UInt128)) CODEC(ZSTD(3))
-            AFTER request_envelope;
 
     -- Each distinct message, tool, or large value of a request body, stored
     -- once however many turns resend it. packages/cliproxy-plugins/requestitems
@@ -289,58 +274,11 @@ data:
     PARTITION BY toYYYYMM(requested_at)
     ORDER BY (requested_at, trace_id, request_id);
 
-    -- One normalized usage record per historical provider response, from
-    -- packages/llm-usage-backfill, never the live proxy. It is replaced by
-    -- llm.call_history and dropped after the transcript import is verified;
-    -- this statement then makes an empty table on the next start.
-    CREATE TABLE IF NOT EXISTS llm.historical_usage
-    (
-        event_id String,
-        source LowCardinality(String),
-        host LowCardinality(String),
-        session_id String,
-        requested_at DateTime64(3, 'UTC'),
-        provider LowCardinality(String),
-        model LowCardinality(String),
-        uncached_input_tokens UInt64,
-        cache_read_tokens UInt64,
-        cache_creation_tokens UInt64,
-        cache_write_5m_tokens UInt64,
-        cache_write_1h_tokens UInt64,
-        output_tokens UInt64,
-        reasoning_tokens UInt64,
-        ingested_at DateTime64(3) DEFAULT now64(3)
-    )
-    ENGINE = ReplacingMergeTree(ingested_at)
-    ORDER BY event_id;
-
-    -- llm.historical_usage while it exists, and nothing from its drop until
-    -- a start creates it again, so the views that read the old import never
-    -- fail on the drop. A view naming the table would.
-    CREATE TABLE IF NOT EXISTS llm.old_import_usage
-    (
-        event_id String,
-        source LowCardinality(String),
-        host LowCardinality(String),
-        session_id String,
-        requested_at DateTime64(3, 'UTC'),
-        provider LowCardinality(String),
-        model LowCardinality(String),
-        uncached_input_tokens UInt64,
-        cache_read_tokens UInt64,
-        cache_creation_tokens UInt64,
-        cache_write_5m_tokens UInt64,
-        cache_write_1h_tokens UInt64,
-        output_tokens UInt64,
-        reasoning_tokens UInt64
-    )
-    ENGINE = Merge(llm, '^historical_usage$');
-
     -- Canonical LLM conversations, described in docs/llm-conversations.md and
     -- written by packages/cliproxy-plugins/normalize-conversations. Proxy rows
     -- reference the raw capture above instead of copying it, and can be
-    -- dropped and rebuilt from it. Transcript rows are the only record of the
-    -- agent logs once the one-off import is dropped, so they hold their own
+    -- dropped and rebuilt from it. Transcript rows were imported once from a
+    -- dump of agent logs that is dropped since, so they hold their own
     -- content.
 
     -- What does not change as a session grows, per source: a session captured
@@ -455,22 +393,8 @@ data:
     ENGINE = ReplacingMergeTree
     ORDER BY (session_id, ts, host, path, line);
 
-    -- A row once the transcript import is inserted and its checks passed,
-    -- which the backfill writes last. Inserts are not atomic across tables
-    -- or retries, so a failed import can leave some of its calls; the
-    -- dashboard switches its history to them only with this row.
-    CREATE TABLE IF NOT EXISTS llm.transcript_import
-    (
-        completed_at DateTime64(3, 'UTC')
-    )
-    ENGINE = MergeTree
-    ORDER BY completed_at;
-
-    -- Usage history from before the proxy, in llm.historical_usage's columns:
-    -- one row per transcript call with usage. llm.usage_metrics reads it once
-    -- the transcript import is complete, in place of llm.historical_usage, whose
-    -- importer counted Codex's repeated token counts again. The provider
-    -- follows the model, as the importer's did.
+    -- Usage history from before the proxy: one row per transcript call with
+    -- usage. The provider follows the model.
     CREATE OR REPLACE VIEW llm.call_history AS
     SELECT
         c.call_id AS event_id, c.client AS source, c.host AS host, c.session_id AS session_id,
@@ -594,21 +518,7 @@ data:
             CAST(NULL AS Nullable(UInt32)), CAST(NULL AS Nullable(UInt32)),
             cache_read_tokens AS reads, cache_creation_tokens, uncached_input_tokens, cache_read_tokens,
             cache_write_5m_tokens, cache_write_1h_tokens, output_tokens, reasoning_tokens
-        FROM (
-            -- History moves to the canonical transcript calls when their
-            -- import is complete, and back if it is deleted; the old import
-            -- is read only until then, so its drop changes nothing.
-            SELECT * FROM llm.call_history
-            WHERE (SELECT count() FROM llm.transcript_import) > 0
-            UNION ALL
-            SELECT * FROM llm.old_import_usage FINAL
-            WHERE (SELECT count() FROM llm.transcript_import) = 0
-        )
+        FROM llm.call_history
         -- A fixed handover avoids counting transcript copies of proxied calls.
-        -- The importer and the transcript import apply the same boundary.
         WHERE requested_at < (SELECT min(requested_at) FROM llm.usage)
     ) AS u;
-
-    -- llm.transcripts, the one-off import of agent transcripts, is not
-    -- created here: it exists until the transcript import is verified and it
-    -- is dropped, and nothing reads it after that.

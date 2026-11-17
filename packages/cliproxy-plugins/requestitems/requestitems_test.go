@@ -63,8 +63,8 @@ func TestSplitRoundTripsFixtures(t *testing.T) {
 			if !reflect.DeepEqual(decode(t, joined), decode(t, body)) {
 				t.Fatalf("reassembled body differs:\n%s", joined)
 			}
-			// The backfill and the plugin must agree on any body, including
-			// one that has already been through a round trip.
+			// Splitting must agree on any body, including one that has
+			// already been through a round trip.
 			if again := Split(joined); !reflect.DeepEqual(again, split) {
 				t.Fatalf("splitting the reassembled body changed it: %+v", again)
 			}

@@ -21,23 +21,6 @@ ROOT = Path(__file__).resolve().parents[3]
 BASE = ROOT / "gitops/espresso"
 PLUGINS = ROOT / "packages/cliproxy-plugins"
 
-# llm.requests as it was before request_items, to migrate from.
-LEGACY_REQUESTS = """
-CREATE TABLE llm.requests
-(
-    request_id String, trace_id String, session_id String,
-    started_at DateTime64(3, 'UTC'), completed_at DateTime64(3, 'UTC'),
-    source_format LowCardinality(String), model LowCardinality(String),
-    requested_model LowCardinality(String), stream Bool, outcome LowCardinality(String),
-    status_code UInt16, error String, user_agent LowCardinality(String), truncated Bool,
-    request_body String CODEC(ZSTD(3)), response_body String CODEC(ZSTD(3))
-)
-ENGINE = MergeTree
-PARTITION BY toYYYYMM(started_at)
-ORDER BY (session_id, started_at, request_id)
-"""
-
-
 def run(*args, input=None, check=True, **kwargs):
     return subprocess.run(args, input=input, text=True, capture_output=True, check=check, **kwargs)
 
@@ -66,14 +49,12 @@ def same_json(a, b):
     return load(a) == load(b)
 
 
-def check_request_items(query, container, schema, temp):
-    """Plugin rows, the backfill, and the view agree on the real schema."""
-    fresh = query("SHOW CREATE TABLE llm.requests").stdout
-    assert "request_body" not in fresh, fresh
+def check_request_items(query, temp):
+    """Plugin rows and the view agree on the real schema."""
     fixtures = json.loads((PLUGINS / "requestitems/testdata/bodies.json").read_text())
     dump = temp / "dump"
     dump.mkdir()
-    run("go", "test", "-count=1", "./clickhouse-archive", "-run", "TestRequestRowsMatchTheBackfill",
+    run("go", "test", "-count=1", "./clickhouse-archive", "-run", "TestRequestRowsMatchTheSplit",
         "-args", "-dump", str(dump), cwd=PLUGINS)
     items = (dump / "llm.request_items.jsonl").read_text()
     requests = (dump / "llm.requests.jsonl").read_text()
@@ -91,64 +72,21 @@ def check_request_items(query, container, schema, temp):
     stored_items = len(items.splitlines())
     assert int(query("SELECT uniqExact(hash) FROM llm.request_items").stdout) == stored_items
 
-    # ClickHouse's own JSON extraction rewrites the bytes, so it cannot split
-    # the same items; the backfill runs the plugin's Go code instead.
-    lossy = query("SELECT JSONExtractArrayRaw('[1.0, -0, 1E+2]')").stdout.strip()
-    assert lossy == "['1','0','100']", lossy
+    rows = query("SELECT request_id, request_body FROM llm.request_bodies FORMAT JSONEachRow").stdout
+    found = {r["request_id"]: r["request_body"] for r in map(json.loads, rows.splitlines())}
+    for f in fixtures:
+        body = found[f["name"]]
+        try:
+            json.loads(f["body"])
+            valid = f["body"].lstrip().startswith("{")
+        except ValueError:
+            valid = False
+        assert same_json(body, f["body"]) if valid else body == f["body"], (f["name"], body)
 
-    def bodies(prefix=""):
-        rows = query("SELECT request_id, request_body FROM llm.request_bodies FORMAT JSONEachRow").stdout
-        found = {r["request_id"]: r["request_body"] for r in map(json.loads, rows.splitlines())}
-        for f in fixtures:
-            body = found[prefix + f["name"]]
-            try:
-                json.loads(f["body"])
-                valid = f["body"].lstrip().startswith("{")
-            except ValueError:
-                valid = False
-            assert same_json(body, f["body"]) if valid else body == f["body"], (f["name"], body)
-
-    bodies()
-
-    # An existing install: the old table, upgraded by schema.sql on restart.
-    query("DROP TABLE llm.requests SYNC")
-    query(LEGACY_REQUESTS)
-    old = datetime.datetime(2026, 11, 10, 12)
-    legacy = [json.dumps({"request_id": "legacy-" + f["name"], "session_id": f"s{i % 3}",
-                          "started_at": (old + datetime.timedelta(minutes=i)).strftime("%Y-%m-%d %H:%M:%S.000"),
-                          "request_body": f["body"], "response_body": "response " + f["name"]})
-              for i, f in enumerate(fixtures)]
-    query("INSERT INTO llm.requests FORMAT JSONEachRow\n" + "\n".join(legacy))
-    run("docker", "exec", "-i", container, "clickhouse-client", "--multiquery", input=schema)
-
-    migrate = BASE / "apps/clickhouse/migrate-request-items.sh"
-    env = {**os.environ, "CLICKHOUSE_EXEC": f"docker exec -i {container}", "CHUNK_BYTES": "3000"}
-    refused = run(migrate, "copy", env=env, check=False)
-    assert refused.returncode != 0 and "roll out the new archive plugin first" in refused.stderr, refused.stderr
-    # The new plugin's rows land in the old table until the swap.
-    query("INSERT INTO llm.requests FORMAT JSONEachRow\n" + requests, "cliproxy")
-    copied = run(migrate, "copy", env=env)
-    assert copied.stdout.count("chunk ") > 1, copied.stdout
-    # Lone surrogate escapes are valid JSON to Go but not to ClickHouse.
-    assert "'legacy-tricky'" in copied.stdout, copied.stdout
-    assert "chunk " not in run(migrate, "copy", env=env).stdout  # resumable: nothing left
-    run(migrate, "drop", env=env)
-    # An old plugin still writing request_body must fail, not lose the body.
-    old = json.dumps({"request_id": "old-plugin", "request_body": "{}"})
-    rejected = query("INSERT INTO llm.requests FORMAT JSONEachRow\n" + old, "cliproxy", check=False)
+    # A plugin writing a column the table lacks must fail, not lose the value.
+    unknown = json.dumps({"request_id": "unknown-column", "request_body": "{}"})
+    rejected = query("INSERT INTO llm.requests FORMAT JSONEachRow\n" + unknown, "cliproxy", check=False)
     assert rejected.returncode != 0 and "request_body" in rejected.stderr, rejected.stderr
-
-    assert query("SHOW CREATE TABLE llm.requests").stdout == fresh
-    tables = query("SHOW TABLES FROM llm").stdout.split()
-    assert not [t for t in tables if t.startswith(("requests_", "request_backfill"))], tables
-    # Both paths produce the same items, so the backfill added none.
-    assert int(query("SELECT uniqExact(hash) FROM llm.request_items").stdout) == stored_items
-    assert query("SELECT count() FROM llm.requests AS a JOIN llm.requests AS b "
-                 "ON a.request_id = concat('legacy-', b.request_id) "
-                 "WHERE a.request_envelope = b.request_envelope AND a.request_parts = b.request_parts"
-                 ).stdout.strip() == str(len(fixtures))
-    assert query("SELECT response_body FROM llm.requests WHERE request_id = 'legacy-claude'").stdout == "response claude\n"
-    bodies("legacy-")
     return len(fixtures)
 
 
@@ -210,22 +148,26 @@ def main():
             ]
             query("INSERT INTO llm.usage FORMAT JSONEachRow\n" + "\n".join(map(json.dumps, rows)))
             old_stamp = (datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=90)).strftime("%Y-%m-%d %H:%M:%S.000")
-            history = [
-                dict(event_id='history-claude', source='claude-code', requested_at=old_stamp,
-                     provider='claude', model='claude-opus-5-5', uncached_input_tokens=100,
-                     cache_read_tokens=200, cache_creation_tokens=100,
+            # History before the proxy is the transcript calls with usage, as
+            # llm.call_history reads them; proxy calls and empty ones are not.
+            def call(id, client, model, started_at=old_stamp, origin="transcript", **tokens):
+                return {"call_id": id, "session_id": f"{client}:s", "started_at": started_at,
+                        "origin": origin, "client": client, "model": model, **tokens}
+
+            calls = [
+                call("history-claude", "claude-code", "claude-opus-5-5", uncached_input_tokens=100,
+                     cache_read_tokens=200, cache_write_tokens=100,
                      cache_write_5m_tokens=60, cache_write_1h_tokens=40, output_tokens=25),
-                dict(event_id='history-gpt', source='codex', requested_at=old_stamp,
-                     provider='codex', model='gpt-5.5', uncached_input_tokens=500,
+                call("history-gpt", "codex", "gpt-5.5", uncached_input_tokens=500,
                      cache_read_tokens=500, output_tokens=100),
-                dict(event_id='history-unknown', source='pi', requested_at=old_stamp,
-                     provider='kimi', model='future-model', uncached_input_tokens=100, output_tokens=10),
-                dict(event_id='overlap', source='pi', requested_at=stamp,
-                     provider='codex', model='gpt-6.1-sol', uncached_input_tokens=999999999),
+                call("history-unknown", "pi", "future-model", uncached_input_tokens=100, output_tokens=10),
+                call("overlap", "pi", "gpt-6.1-sol", stamp, uncached_input_tokens=999999999),
+                call("transcript-empty", "pi", "kimi-k3.1-pro"),
+                call("proxy-call", "claude-code", "claude-opus-5-5", origin="proxy", output_tokens=1),
             ]
             # Reruns may add physical rows, but must never increase dashboard totals.
             for _ in range(2):
-                query("INSERT INTO llm.historical_usage FORMAT JSONEachRow\n" + "\n".join(map(json.dumps, history)))
+                query("INSERT INTO llm.calls FORMAT JSONEachRow\n" + "\n".join(map(json.dumps, calls)))
             values = [json.loads(line) for line in query(
                 "SELECT * FROM llm.usage_metrics FORMAT JSONEachRow", "grafana").stdout.splitlines()]
             data = {r["trace_id"]: r for r in values}
@@ -242,6 +184,7 @@ def main():
             assert math.isclose(data['history-gpt']['estimated_cost_usd'], 0.00575, rel_tol=1e-9)
             assert data['history-unknown']['estimated_cost_usd'] is None
             assert data['history-claude']['input_tokens'] == 400
+            assert data['history-claude']['origin'] == 'history:claude-code'
             assert data['history-claude']['latency_ms'] is None
             assert data['history-claude']['failed'] is None
             assert 'overlap' not in data
@@ -250,41 +193,11 @@ def main():
             year_cost = float(query("SELECT sumOrNull(estimated_cost_usd) FROM llm.usage_metrics WHERE requested_at >= now() - INTERVAL 1 YEAR", 'grafana').stdout)
             assert math.isclose(year_cost - day_cost, 0.00731, rel_tol=1e-8)
 
-            # Once the transcript import lands, history comes from its calls
-            # instead, and the old import is ignored, so dropping it later
-            # changes nothing.
-            calls = [dict(call_id='transcript-claude', session_id='claude:s', started_at=old_stamp, origin='transcript',
-                          client='claude-code', model='claude-opus-5-5', uncached_input_tokens=100, cache_read_tokens=200,
-                          cache_write_tokens=100, cache_write_5m_tokens=60, cache_write_1h_tokens=40, output_tokens=25),
-                     dict(call_id='transcript-empty', session_id='pi:s', started_at=old_stamp, origin='transcript',
-                          client='pi', model='kimi-k3.1-pro'),
-                     dict(call_id='proxy-call', session_id='claude:s', started_at=old_stamp, origin='proxy',
-                          client='claude-code', model='claude-opus-5-5', output_tokens=1)]
-            query("INSERT INTO llm.calls FORMAT JSONEachRow\n" + "\n".join(map(json.dumps, calls)))
-            # Until the backfill marks the import complete, the history stays
-            # the old import's, so a failed import cannot show part of its own.
-            assert query("SELECT count() FROM llm.usage_metrics WHERE origin LIKE 'history:%'",
-                         "grafana").stdout.strip() == "3"
-            query("INSERT INTO llm.transcript_import VALUES (now64(3))")
-            switched = {json.loads(line)["trace_id"]: json.loads(line) for line in query(
-                "SELECT * FROM llm.usage_metrics WHERE origin LIKE 'history:%' FORMAT JSONEachRow", "grafana").stdout.splitlines()}
-            assert sorted(switched) == ["transcript-claude"], switched
-            assert switched["transcript-claude"]["origin"] == "history:claude-code"
-            assert math.isclose(switched["transcript-claude"]["estimated_cost_usd"], 0.00156, rel_tol=1e-9)
-            # The view reads the old import through a Merge table, so it keeps
-            # working from the drop on, before and after schema.sql reruns.
-            query("DROP TABLE llm.historical_usage")
-            assert query("SELECT count() FROM llm.usage_metrics WHERE origin LIKE 'history:%'", "grafana").stdout.strip() == "1"
-            run("docker", "exec", "-i", container, "clickhouse-client", "--multiquery", input=config["schema.sql"])
-            assert query("SELECT count() FROM llm.usage_metrics WHERE origin LIKE 'history:%'", "grafana").stdout.strip() == "1"
-
             query("SELECT count() FROM llm.usage_metrics SETTINGS max_execution_time=10", "grafana")
             # The HTTP driver's connection health check uses a 60-second timeout.
             query("SELECT 1 SETTINGS max_execution_time=60", "grafana")
             denied = ["SELECT * FROM llm.usage", "SELECT * FROM llm.requests",
                       "SELECT * FROM llm.request_items", "SELECT * FROM llm.request_bodies",
-                      "SELECT * FROM llm.transcripts", "SELECT * FROM llm.historical_usage", "SELECT * FROM llm.old_import_usage",
-                      "SELECT * FROM llm.transcript_import",
                       "SELECT * FROM llm.calls", "SELECT * FROM llm.messages", "SELECT * FROM llm.call_history",
                       "SELECT failure_body FROM llm.usage_metrics",
                       "INSERT INTO llm.usage (request_id) VALUES ('forbidden')",
@@ -303,8 +216,8 @@ def main():
                         raise RuntimeError(f"{title}: {error.stderr}") from error
             print(f"PASS: pricing fixtures, token accounting, {len(denied)} permission checks, "
                   f"{len(queries)} dashboard queries with all/specific/empty filters")
-            bodies = check_request_items(query, container, config["schema.sql"], temp)
-            print(f"PASS: {bodies} request body fixtures through the plugin, the backfill, and the view")
+            bodies = check_request_items(query, temp)
+            print(f"PASS: {bodies} request body fixtures through the plugin and the view")
 
             if args.live:
                 # Inline the uninstalled view so production queries remain strictly read-only.

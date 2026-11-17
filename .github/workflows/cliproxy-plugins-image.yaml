@@ -101,8 +101,7 @@ jobs:
           python3 packages/cliproxy-plugins/update-manifest.py \
             "$IMAGE_REF:sha-$GIT_SHA@$DIGEST"
           manifests=(gitops/espresso/apps/cliproxy/statefulset.yaml
-            gitops/espresso/apps/clickhouse/llm-normalizer.yaml
-            gitops/espresso/apps/clickhouse/llm-backfill-job.yaml)
+            gitops/espresso/apps/clickhouse/llm-normalizer.yaml)
           if git diff --quiet -- "${manifests[@]}"; then exit 0; fi
           git add "${manifests[@]}"
           git commit -m 'chore(cliproxy): update plugin image'

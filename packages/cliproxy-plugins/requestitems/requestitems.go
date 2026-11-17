@@ -3,10 +3,10 @@
 // each message, tool, and large value once makes the archive grow with new
 // content instead of with the square of the conversation length.
 //
-// The archive plugin and the one-off backfill both use this package, so the
-// items, and therefore their hashes, are byte-identical however a row was
-// written. ClickHouse's own JSON functions cannot reproduce them: they rewrite
-// numbers and escapes.
+// The archive plugin and the conversation normalizer both use this package,
+// so the items, and therefore their hashes, are byte-identical whichever
+// wrote them. ClickHouse's own JSON functions cannot reproduce them: they
+// rewrite numbers and escapes.
 package requestitems
 
 import (

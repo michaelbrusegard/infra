@@ -1,7 +1,6 @@
 package main
 
 import (
-	"compress/gzip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,21 +8,6 @@ import (
 
 	"cliproxy-plugins/conversations"
 )
-
-const line = `{"source":"pi","host":"lungo","session":"s","id":"1","path":"s.jsonl","ts":"2026-11-12 10:00:00.000",` +
-	`"line":"{\"type\":\"message\",\"id\":\"a\",\"message\":{\"role\":\"user\",\"content\":\"Hi\"}}"}` + "\n"
-
-func transcripts(t *testing.T, dir string) error {
-	t.Helper()
-	in := filepath.Join(t.TempDir(), "transcripts.jsonl")
-	if err := os.WriteFile(in, []byte(line), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	n := conversations.NewNormalizer()
-	return run(dir, n, func(drain func() error) error {
-		return normalizeTranscripts(in, n, &conversations.Proxied{}, drain)
-	})
-}
 
 // A run whose output cannot be written fails, even when every row fits in
 // the buffers and the write error only shows when they are flushed.
@@ -37,45 +21,13 @@ func TestRunFailsWhenOutputIsLost(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if transcripts(t, dir) == nil {
-		t.Fatal("the run succeeded with its rows lost")
-	}
-}
-
-// ClickHouse's HTTP interface sends the transcript lines gzip-compressed,
-// and the normalizer reads them as they arrived, without a decompressed copy.
-func TestTranscriptsReadGzip(t *testing.T) {
-	plain := t.TempDir()
-	if err := transcripts(t, plain); err != nil {
-		t.Fatal(err)
-	}
-	in := filepath.Join(t.TempDir(), "transcripts.jsonl.gz")
-	f, err := os.Create(in)
-	if err != nil {
-		t.Fatal(err)
-	}
-	z := gzip.NewWriter(f)
-	z.Write([]byte(line))
-	if err := z.Close(); err != nil {
-		t.Fatal(err)
-	}
-	f.Close()
-	compressed := t.TempDir()
 	n := conversations.NewNormalizer()
-	if err := run(compressed, n, func(drain func() error) error {
-		return normalizeTranscripts(in, n, &conversations.Proxied{}, drain)
-	}); err != nil {
-		t.Fatal(err)
-	}
-	for _, table := range tables {
-		a, _ := os.ReadFile(filepath.Join(plain, table+".jsonl"))
-		b, _ := os.ReadFile(filepath.Join(compressed, table+".jsonl"))
-		if string(a) != string(b) {
-			t.Fatalf("%s differs:\n%s\n%s", table, a, b)
-		}
-	}
-	if a, _ := os.ReadFile(filepath.Join(plain, "llm.messages.jsonl")); len(a) == 0 {
-		t.Fatal("no messages")
+	err := run(dir, n, func(drain func() error) error {
+		n.Calls = append(n.Calls, conversations.Call{CallID: "c", OutputIDs: []conversations.Hash{}})
+		return drain()
+	})
+	if err == nil {
+		t.Fatal("the run succeeded with its rows lost")
 	}
 }
 

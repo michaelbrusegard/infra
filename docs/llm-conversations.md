@@ -1,9 +1,12 @@
 # LLM conversations: one canonical format
 
-Status: rolled out on 2026-11-15. The backfill normalized the proxy
+Status: rolled out on 2026-11-15. A one-off backfill normalized the proxy
 archive and imported the transcripts, `llm.transcripts` and
 `llm.historical_usage` are dropped, and the job keeps the canonical tables
-current.
+current. The one-off tooling (the backfill Job, the transcript importer,
+the usage history importer and the `llm.request_items` migration) is
+removed; git history keeps it. The sections on transcripts describe how
+the transcript rows were made.
 
 All LLM history currently sits in two raw shapes: the proxy archive
 (`llm.requests`, `llm.request_items`, `llm.usage`) since 2026-11-09, and a
@@ -33,7 +36,8 @@ results.
   request logs, stored as items. What the import leaves out is listed in
   [What the transcript import keeps](#what-the-transcript-import-keeps) and
   approved as a loss. After the drop, the transcript period cannot be
-  rebuilt unless an export is restored.
+  rebuilt unless an export is restored and the importer brought back from
+  git history.
 - **The dashboard's usage history moves to the canonical calls.**
   `llm.usage_metrics` reads pre-proxy history from transcript calls instead
   of `llm.historical_usage`, which counts Codex about 6.8% too high, as soon
@@ -208,10 +212,9 @@ the turn stopped, or how many turns were rolled back. Files that share a
 session, such as one synced to two hosts, share line numbers and times, so
 the file is part of the key. The proxy's failures are in `llm.requests`.
 
-**`llm.call_history`**: a view of the transcript calls with usage in
-`llm.historical_usage`'s columns, which `llm.usage_metrics` reads instead
-of it once **`llm.transcript_import`** has the row the backfill writes when
-the transcript import is complete (see [Usage history](#usage-history)).
+**`llm.call_history`**: a view of the transcript calls with usage, which
+`llm.usage_metrics` reads as the history before the proxy (see
+[Usage history](#usage-history)).
 
 **`llm.request_items`** stays as is: the proxy's items, plus the per-call
 context of transcript calls and the tools of Codex's `additional_tools`
@@ -431,9 +434,8 @@ keeps its own call; no live OpenCode session is in two files. Item IDs
 should be unique to the call that produced them, but where files map one
 item key to more than one response ID, the key matches none of its calls:
 each is matched by its own response ID, so they stay distinct calls, and a
-copy without a response ID keeps a call of its own. `normalize-conversations`
-prints every such key with its response IDs, and the
-[collision audit](#collision-audit) lists them from `llm.transcripts`.
+copy without a response ID keeps a call of its own. The importer printed
+every such key with its response IDs, and found none in the live files.
 Only lines the file keeps count, not the proxy's (see the handover below),
 so a reply the proxy returned is in no file's election, and one it never
 returned stays with the file that made it. In every other file the reply is a copy. It
@@ -476,77 +478,12 @@ session, as the prompts example does. Usage already uses a fixed handover,
 which stays when its history moves to the transcript calls (see
 [Usage history](#usage-history)).
 
-### Collision audit
-
-This lists the Codex item keys that `llm.transcripts` maps to more than one
-response ID, grouping each file's output items into calls as the normalizer
-does. It extracts only the fields it needs, in small blocks on one thread,
-and orders each file's lines as one array rather than with window
-functions, whose sort took 2 GiB: on the live table it reads the 1.3M Codex
-lines in 10 seconds with a 330 MiB peak, and finds no collisions.
-
-```sql
--- example: collisions
-WITH
-    lines AS (
-        SELECT file, n,
-            -- Output items are 1, and anything else 0: a response's usage
-            -- record ends it.
-            multiIf(e.type != 'response_item', 0,
-                t IN ('reasoning', 'function_call', 'custom_tool_call')
-                    OR (t = 'message' OR (t = '' AND e.payload.role != '')) AND e.payload.role = 'assistant'
-                    OR t LIKE '%\_call', 1,
-                0) AS output,
-            if(output = 1, if(e.payload.call_id != '', e.payload.call_id, e.payload.id), '') AS item,
-            e.type = 'token_usage_record' AS usage,
-            if(usage, e.payload.response_id, '') AS response_id
-        FROM (
-            SELECT cityHash64(host, path, session) AS file, toUInt64OrZero(id) AS n,
-                JSONExtract(line, 'Tuple(type String, payload Tuple(type String, role String, call_id String, id String, response_id String))') AS e,
-                e.payload.type AS t
-            FROM llm.transcripts
-            WHERE source = 'codex'
-                AND JSONExtractString(line, 'type') IN ('response_item', 'compacted', 'token_usage_record')
-        )
-    ),
-    -- Each file's lines in order, numbered by call: an output item after
-    -- anything else starts one.
-    calls AS (
-        SELECT file, line.1 AS n, line.3 AS item, line.4 AS usage, line.5 AS response_id, call
-        FROM (
-            SELECT file, arraySort(groupArray((n, output, item, usage, response_id))) AS ordered,
-                arrayMap(l -> l.2, ordered) AS outputs
-            FROM lines
-            GROUP BY file
-        )
-        ARRAY JOIN ordered AS line,
-            arrayCumSum(arrayMap((o, previous) -> o = 1 AND previous = 0,
-                outputs, arrayPushFront(arrayPopBack(outputs), 0))) AS call
-    ),
-    -- A call's first usage record is its own. Later ones with another
-    -- response ID are responses without items, such as compactions.
-    keyed AS (
-        SELECT argMinIf(item, n, item != '') AS item, argMinIf(response_id, n, usage) AS response
-        FROM calls
-        WHERE call > 0
-        GROUP BY file, call
-        HAVING item != '' AND response != ''
-    )
-SELECT 'item:' || item AS key, arraySort(groupUniqArray(response)) AS response_ids
-FROM keyed
-GROUP BY item
-HAVING length(response_ids) > 1
-ORDER BY key
-SETTINGS max_threads = 1, max_block_size = 256, preferred_block_size_bytes = 1048576,
-    max_execution_time = 600
-```
-
 ## What the transcript import keeps
 
-`llm.transcripts` is dropped once the import is verified, so the import
-accounts for every line. Each line is counted once, by what became of it
-and where its content is now, in the `coverage.tsv` the normalizer writes
-(source, kind, disposition, destination, lines):
+`llm.transcripts` was dropped once the import was verified, so the import
+accounted for every line. It counted each line once, by what became of it
+and where its content is now (source, kind, disposition, destination,
+lines):
 
 - **message** (`llm.messages`): the line is a message row, which names it by
   `host`, `path` and `line`, with its role, time, model, blocks and tree
@@ -589,8 +526,8 @@ and OpenCode's step markers and patch records (snapshot hashes and the
 files an edit touched; the tool parts hold the edits).
 
 A kind of line that is in none of these lists, or a block of a type the
-extractor does not know, fails the import instead of being dropped or kept
-as a type alone: the normalizer reports each with its count and writes
+extractor did not know, failed the import instead of being dropped or kept
+as a type alone: the importer reported each with its count and wrote
 nothing to insert.
 
 The kinds it drops, with their live counts on 2026-11-14 (all 2.2M lines,
@@ -717,42 +654,18 @@ proxy took its session over.
 ### Usage history
 
 `llm.historical_usage` was imported from the same lines with rules of its
-own, and counts Codex's drifted repeats of token counts again (12,963 live,
-about 6.8% of Codex history). The transcript calls count each response once,
-so they replace it: `llm.call_history` presents them in
-`llm.historical_usage`'s columns, and `llm.usage_metrics` reads its history
-from `llm.call_history` once `llm.transcript_import` has a row, and from
-the old import until then. The backfill writes that row last, after the
-import's insert and checks: inserts are not atomic across tables or
-retries, so an import that fails part way can leave some of its calls,
-which would otherwise replace the history with part of it. It reads the
-old import through
-`llm.old_import_usage`, a `Merge` table over `llm.historical_usage` that
-is empty while no such table exists: ClickHouse resolves every table a
-query names, even in a branch whose condition is false, so a view naming
-`llm.historical_usage` would fail from its drop on. The cutover is in the
-production schema, so it needs no change at the time:
+own, and counted Codex's drifted repeats of token counts again (12,963,
+about 6.8% of Codex history). The transcript calls count each response
+once, so they replaced it: `llm.call_history` presents them in its old
+columns, and `llm.usage_metrics` reads its history from there.
 
-- Until the transcript import is complete, the dashboard shows the old
-  import's history, as it does today, even if a failed run left calls.
-- Once the backfill's checks pass and it marks the import complete, it
-  shows the transcript calls'. If the import is deleted later, with its
-  row in `llm.transcript_import`, it shows the old import's again.
-- After the drop, the history stays, at once and after restarts:
-  `schema.sql` creates no `llm.transcripts` again, and the empty
-  `llm.historical_usage` it creates on the next start is never read, since
-  the import is complete. `verify.sql` reads the old import the same way,
-  and reports no old import rows after the drop.
-
-Its fixed handover (`requested_at < min(llm.usage.requested_at)`) stays.
-The rows follow the importer's rules: the provider from the model's prefix
+It keeps the fixed handover (`requested_at < min(llm.usage.requested_at)`).
+The rows follow the old importer's rules: the provider from the model's prefix
 (`unknown` otherwise, where the importer used the provider the line named),
 Claude's thinking tokens as reasoning, Pi compactions
 under the model in use (the importer recorded them as `(unknown)`), OpenCode's reasoning added to output
 unless its recorded total excludes it, cache writes by lifetime, and calls
-with no tokens left out. Origins stay `history:<client>`. The tests run the
-production schema before and after the import, after a restart, right after
-the drop, and after the next restart.
+with no tokens left out. Origins stay `history:<client>`.
 
 ## Ongoing capture
 
@@ -806,8 +719,8 @@ The job is the `llm-normalizer` CronJob in
 every 10 minutes, next to ClickHouse. The plugin image's CI builds
 `normalize-conversations` into `/normalizer` of the image, with
 [`normalize.sh`](../packages/cliproxy-plugins/normalize-conversations/normalize.sh)
-and the queries, and promotes it into the CronJob and the backfill Job as it
-does into CLIProxyAPI. An init container copies `/normalizer` next to
+and the queries, and promotes it into the CronJob as it does into
+CLIProxyAPI. An init container copies `/normalizer` next to
 `clickhouse-client` in the ClickHouse server image, and `normalize.sh cron`
 runs the four steps over the native protocol. ClickHouse's network policy
 admits only the normalizer's pods to the native port, and they reach
@@ -815,143 +728,46 @@ nothing else. They connect as `llm_normalizer`, with the password of the
 `clickhouse-llm-normalizer` secret, which ClickHouse reads too: CLIProxy's
 and Grafana's pods reach the HTTP port, and without it could use the user
 to read the raw history. It has SELECT on the
-sources (`llm.requests`, `llm.request_items`, `llm.usage`, and until they
-are dropped `llm.transcripts` and `llm.historical_usage`, which it reads
-through `llm.old_import_usage`), SELECT and INSERT
-on `llm.sessions`, `llm.messages`, `llm.calls`, `llm.events` and
-`llm.transcript_import`, SELECT on `system.mutations`, and INSERT
-on `llm.request_items`; it cannot read the dashboard's view, write the raw
-capture, delete, or drop. The CronJob is suspended while a backfill or
-rebuild runs.
+sources (`llm.requests`, `llm.request_items`, `llm.usage`), SELECT and
+INSERT on `llm.sessions`, `llm.messages` and `llm.calls`, and
+INSERT on `llm.request_items`; it cannot read the dashboard's view, write
+the raw capture, delete, or drop. The CronJob is suspended while a rebuild
+deletes rows.
 
 ### Backfill
 
-The backfill runs in the cluster as a one-off `llm-backfill-` Job, on
-ClickHouse's node, with a 40 GiB local scratch volume (`openebs-hostpath`)
-that goes with the pod. Nothing crosses the workstation's link but the
-Job's log. The Job's manifest,
-[`llm-backfill-job.yaml`](../gitops/espresso/apps/clickhouse/llm-backfill-job.yaml),
-is not in the Kustomization, so Flux never applies it;
-[`llm-backfill.sh`](../gitops/espresso/apps/clickhouse/llm-backfill.sh)
-creates it under a name of its own, waits until its conditions say it
-completed or failed, and saves its log. A finished Job is kept for a week,
-so a rerun never meets it. `normalize.sh backfill` first waits for deletes
-in `llm` that ClickHouse is still applying, such as a recovery's, then
-runs, in order, because which transcript file holds a reply's call depends
-on the proxy's calls:
-
-1. **The proxy**, from its first request, in start order, so `llm.calls`
-   holds every proxied call: the job's steps an hour at a time, with no
-   time limit, each hour inserted before the next reads its state. A day's
-   requests and items exceed the server's memory in one join (the first
-   backfill attempt failed at 4 GiB), and an hour bounds the items the
-   server joins at once: joined in full,
-   the items of every request would be 68 GiB rather than 2.6 GiB, and each
-   run sends an item once. The last hour reaches into the future; its
-   requests from the last 10 minutes are held back for the job.
-2. **The transcripts**, once, in one pass, and only into tables without
-   transcript calls: the proxy's calls from
-   [`proxied.sql`](../packages/cliproxy-plugins/normalize-conversations/proxied.sql),
-   then the lines from
-   [`transcripts.sql`](../packages/cliproxy-plugins/normalize-conversations/transcripts.sql)
-   in parts of whole files of about 256 MiB that
-   [`files.sql`](../packages/cliproxy-plugins/normalize-conversations/files.sql)
-   lists, which the table's key finds, so each query sorts only its part.
-   The parts go gzip-compressed into one file, which
-   `normalize-conversations -in` reads twice without a decompressed copy.
-   The largest dropped kinds arrive as their type alone. If the normalizer
-   reports a coverage error, or its coverage counts other than
-   `llm.transcripts`' lines, nothing is inserted; otherwise the five files,
-   `llm.request_items` included, are, and the log has `coverage.tsv`.
-3. **The checks** of
-   [`verify.sql`](../packages/cliproxy-plugins/normalize-conversations/verify.sql):
-   the proxy's references both ways, unique response IDs, no transcript call
-   the proxy returned, context items and message items present, tree
-   integrity, and calls and tokens per client against the old import. A
-   check that finds a violation fails the Job; the reports are for
-   [Before dropping the transcripts](#before-dropping-the-transcripts).
-
-The transcript input is about 7.5 GiB of lines uncompressed, about 2 GiB on
-the scratch volume, plus the rows to insert. The server's work per query is
-bounded by a day of requests or a part of files, on one thread.
-
-### Rollout
-
-1. **Merge** the change. Flux applies the schema (the canonical tables and
-   `llm.call_history`, created on ClickHouse's restart), the normalizer's
-   user, port and network policy, and the suspended CronJob. The dashboard
-   keeps showing the old import's history.
-2. **Wait for the image.** The plugin image's CI builds the normalizer and
-   commits `chore(cliproxy): update plugin image`, which names the new
-   image in the CLIProxyAPI installer, the CronJob and the Job. Pull it.
-3. **Run the backfill** from the repo root, in the dev shell:
-   `gitops/espresso/apps/clickhouse/llm-backfill.sh`. The scratch volume
-   is not reserved: the Job writes about 14 GiB (2 GiB of compressed
-   lines, 8 GiB of rows, and up to 3 GiB for a day of proxy requests) to
-   `/var/local/openebs`, the node's own disk, so before each attempt the
-   script checks that the persistent disk of ClickHouse's node, which the
-   kubelet reports as its image filesystem, has 20 GiB and a million
-   inodes free, and refuses otherwise. The node filesystem is the tmpfs
-   root, so its figure does not count. On 2026-11-14 ClickHouse ran on
-   espresso-2, which had 41 GiB of 118 free, and room for the Job's 2 CPUs
-   and 6 GiB at most (34% of its CPU and 18% of its memory were
-   requested); espresso-1 had 25 GiB free. A finished attempt keeps its
-   pod, and with it its scratch, until its Job is deleted, so each run
-   first deletes earlier finished attempts, whose logs it already saved,
-   and refuses to start beside one still running. The script exits
-   non-zero when the Job fails, with the log in `<job name>.log`. To retry,
-   run it again: each run is a new Job. A failed run inserted nothing of the
-   transcripts if it failed before their insert; otherwise delete the
-   transcript rows as in [Rebuild](#rebuild) first, since the Job refuses
-   to import twice. The Job waits for those deletes to finish before it
-   inserts anything. The proxy's days are safe to run again. The
-   dashboard reads the transcript calls' history once the Job's checks
-   pass, when it marks the import complete in `llm.transcript_import`.
-4. **Resume the job**: set `suspend: false` in `llm-normalizer.yaml` and
-   push. It picks up every request the backfill left, however late it
-   landed or long the job waited.
-5. **Verify** with the log and
-   [Before dropping the transcripts](#before-dropping-the-transcripts), then
-   drop the old import there. A later run of the checks alone is
-   `normalize.sh verify` in a copy of the Job.
+The history up to the rollout went through a one-off Job next to
+ClickHouse, with a local scratch volume: first the proxy from its first
+request, an hour at a time as the job runs, then the transcripts in one
+pass, then the checks of
+[`verify.sql`](../packages/cliproxy-plugins/normalize-conversations/verify.sql).
+A day of requests and items in one join needed more than the server's
+memory, which is why every run works an hour at a time.
 
 ## Rebuild
 
 The proxy's canonical rows are derived and can be regenerated at any time,
 for example after an extractor fix:
 
-1. Stop the job.
-2. Delete the proxy's rows: `ALTER TABLE llm.calls DELETE WHERE origin =
-   'proxy'`, the same for `llm.sessions`, and `ALTER TABLE llm.messages DELETE
-   WHERE path = ''`. Or, if the schema changes, drop and recreate the four
-   tables and restore the transcript rows from their export (below).
-3. Run step 1 of the backfill: `normalize.sh` in a copy of the backfill
-   Job whose command runs the proxy's days, or the Job itself while the
-   transcript rows are absent.
-4. Start the job again.
+1. Suspend the job (`suspend: true` in `llm-normalizer.yaml`).
+2. Delete the proxy's rows, as the `default` user through `kubectl exec`:
+   `ALTER TABLE llm.calls DELETE WHERE origin = 'proxy'`, the same for
+   `llm.sessions`, and `ALTER TABLE llm.messages DELETE WHERE path = ''`,
+   each with `SETTINGS mutations_sync = 1` so it returns once the rows are
+   gone.
+3. Resume the job. Each run starts from the oldest hour with requests
+   missing from `llm.calls`, so it works through the whole archive, five
+   minutes per run, and then keeps up.
 
-The transcript period cannot be rebuilt from raw once `llm.transcripts` is
-dropped. Its canonical rows are then the only record, and a rebuild must keep
-them, `origin = 'transcript'` and messages with a `path`, or restore them
-from the optional export to `freddo` (see the checklist). If the export of
-`llm.transcripts` itself is kept, restoring it and rerunning step 2 of the
-backfill rebuilds them too. To redo the transcript import before the drop,
-delete its rows first: `ALTER TABLE llm.calls DELETE WHERE origin =
-'transcript'`, the same for `llm.sessions`, `ALTER TABLE llm.messages DELETE
-WHERE path != ''`, `ALTER TABLE llm.events DELETE WHERE 1`, and `TRUNCATE
-TABLE llm.transcript_import`, as the `default` user through `kubectl
-exec`. ClickHouse applies the deletes in
-the background; `SETTINGS mutations_sync = 1` after each makes it return
-once they are done, and the backfill waits for any still going. Their items are content-addressed,
-so the rerun's collapse with them. A proxy rebuild changes which transcript calls
-are copies only if it changes the proxy's sessions or response IDs; if it
-does, rerun the transcript pass from the export as well.
+The transcript rows cannot be rebuilt: keep them, `origin = 'transcript'`
+and messages with a `path`. A proxy rebuild changes which transcript calls
+are copies only if it changes the proxy's sessions or response IDs.
 
 ## Verification
 
-The backfill starts as an additive trial: it only inserts into the canonical
-tables and `llm.request_items`. Every difference found is listed and
-explained, not just counted.
+The backfill was accepted against these criteria; it only inserted into the
+canonical tables and `llm.request_items`. `normalize.sh verify` reruns the
+checks that need no judgment, and fails on a violation.
 
 - **Unchanged raw capture.** `llm.requests` and `llm.transcripts`, and the
   proxy's items in `llm.request_items`, are unchanged throughout: their row
@@ -961,7 +777,7 @@ explained, not just counted.
   proxy call, and every proxy call's `request_id` names one. Every message
   `item` is a part of the request its call names, and in
   `llm.request_items`, and every proxy output's call exists.
-- **Transcript coverage.** `coverage.tsv` counts every `llm.transcripts` row
+- **Transcript coverage.** The importer's coverage counts every `llm.transcripts` row
   once, its totals match the table's per source, every row but the dropped
   ones names a destination, and the rows there hold it: usage lines are
   calls with usage, request logs calls with context, proxied lines replies
@@ -973,9 +789,8 @@ explained, not just counted.
   and files. Every transcript call's `context` hash is in
   `llm.request_items`.
 - **Invocation identity.** No response ID belongs to more than one call, no
-  transcript call has a response ID the proxy returned, the
-  [collision audit](#collision-audit) returns no rows, and the normalizer
-  reports no collisions. Calls whose source records a response ID, model or
+  transcript call has a response ID the proxy returned, and the importer
+  reports no Codex item key with more than one response ID. Calls whose source records a response ID, model or
   usage have them.
 - **Calls and tokens.** Proxy calls reconcile with `llm.usage` by
   `trace_id`, through their `llm.requests` rows, in calls and each token
@@ -997,30 +812,9 @@ explained, not just counted.
   another file order or split into other runs, gives identical rows, and a
   job run interrupted and run again leaves no extra rows after `FINAL`. A
   rebuild of the proxy's rows, as above, gives the same rows.
-- **Resources.** The scratch volume stays within the estimates above,
-  every query stays within the server's memory, the job finishes well inside
-  its interval, and storage grows as estimated in [Sizes](#sizes).
-
-### Before dropping the transcripts
-
-1. **Coverage**: the transcript coverage check above passes, and the dropped
-   kinds and counts match the table.
-2. **Tokens**: the transcript calls reconcile with `llm.historical_usage` as
-   above, and `llm.usage_metrics`, which reads `llm.call_history` once the
-   import is complete, gives the expected history per day, client and
-   model on the dashboard.
-3. **Spot checks per agent**: for Claude Code, Codex, Pi and OpenCode, read a
-   few conversations with the conversation query against the transcript
-   files, including a compaction, a sub-agent and a session the proxy took
-   over, and export a call of each, a Claude Code call with its tools
-   among them.
-4. **Optional export to `freddo`**: `llm.transcripts` and
-   `llm.historical_usage` as compressed JSON lines (about 3 GiB), so the
-   transcript period can be rebuilt later. Without it, the canonical rows are
-   the only record.
-5. **Drop** `llm.transcripts` and `llm.historical_usage`. The dashboard
-   already reads the transcript calls, and no view names either table, so
-   nothing needs a restart; see [Usage history](#usage-history).
+- **Resources.** Every query stays within the server's memory, the job
+  finishes well inside its interval, and storage grows as estimated in
+  [Sizes](#sizes).
 
 ## Sizes
 
@@ -1355,20 +1149,24 @@ ORDER BY parent, agent
 
 - [`packages/cliproxy-plugins/conversations`](../packages/cliproxy-plugins/conversations):
   dialect extraction (`blocks.go`), proxy request and response assembly
-  (`proxy.go`), transcripts (`transcripts.go`), and the exporters
-  (`export.go`). The tests use hand-written, redacted fixtures in the shapes
-  profiled from live data, covering every source format.
+  (`proxy.go`), and the exporters (`export.go`). The tests use
+  hand-written, redacted fixtures in the shapes profiled from live data,
+  covering every source format.
 - [`packages/cliproxy-plugins/normalize-conversations`](../packages/cliproxy-plugins/normalize-conversations):
   the CLI the job runs, and the input and state queries.
 - [`gitops/espresso/tests/llm-conversations.py`](../gitops/espresso/tests/llm-conversations.py):
   loads the fixtures into a real ClickHouse running the production schema,
-  then normalizes them the way the job would, in runs with requests landing
-  late and usage landing after its requests, and runs the backfill Job's
-  `normalize.sh` in the ClickHouse image as `llm_normalizer`. It checks the proxy's references both
-  ways, the transcript coverage against the dropped kinds listed above, that
-  the raw capture is unchanged, that the second run continues the first
-  without writing its nodes again, the usage history cutover, and that
-  Grafana permissions are unchanged, and runs every example above.
+  with transcript rows written as the import left them, then normalizes
+  them the way the job would, in runs with requests landing late and usage
+  landing after its requests, and runs `normalize.sh cron` and `verify` in
+  the ClickHouse image as `llm_normalizer`. It checks the proxy's
+  references both ways, that the raw capture is unchanged, that the second
+  run continues the first without writing its nodes again, the usage
+  history, and that Grafana permissions are unchanged, and runs every
+  example above.
+
+The Python tests bind-mount files into Docker, so on macOS set `TMPDIR` to
+a directory Docker shares, such as one under `$HOME`.
 
 ```sh
 cd packages/cliproxy-plugins && go test -race ./...
@@ -1387,9 +1185,6 @@ nix develop --command python3 gitops/espresso/tests/ai-usage.py < /dev/null
   context) are deferred; the proxy's canonical rows can be rebuilt with them.
 - **Claude Code's request logs** are mapped into their calls' context, since
   the transcripts are dropped. The Codex base instructions in `session_meta`
-  are not mapped yet, and go with the drop unless that changes first.
-- **The backfill runs in the cluster**, as a Job next to ClickHouse, as in
-  [Backfill](#backfill); the workstation's link carries only its log.
-- **The transcript import is dropped after verification**, with
-  `llm.historical_usage`, as in
-  [Before dropping the transcripts](#before-dropping-the-transcripts).
+  were not mapped, and went with the drop.
+- **The transcript import was dropped after verification**, with
+  `llm.historical_usage`, on 2026-11-15.

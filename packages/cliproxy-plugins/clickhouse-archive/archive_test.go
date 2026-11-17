@@ -267,7 +267,7 @@ func TestSentItemsKeepReusedHashes(t *testing.T) {
 	}
 }
 
-func TestRequestRowsMatchTheBackfill(t *testing.T) {
+func TestRequestRowsMatchTheSplit(t *testing.T) {
 	data, err := os.ReadFile("../requestitems/testdata/bodies.json")
 	if err != nil {
 		t.Fatal(err)
@@ -298,7 +298,7 @@ func TestRequestRowsMatchTheBackfill(t *testing.T) {
 		envelope, _ := json.Marshal(split.Envelope)
 		parts, _ := json.Marshal(split.Parts)
 		if !bytes.Equal(rows[i]["request_envelope"], envelope) || !bytes.Equal(rows[i]["request_parts"], parts) {
-			t.Fatalf("%s: row differs from the backfill's split", f.Name)
+			t.Fatalf("%s: row differs from the split", f.Name)
 		}
 		for _, p := range split.Parts {
 			if !items[p.Hash.String()] {

@@ -2,15 +2,16 @@
 """Test the canonical conversation prototype against a real ClickHouse.
 
 Inserts the fixtures as source rows, normalizes them from there the way the
-normalizer job would, and runs the example queries from
-docs/llm-conversations.md. Nothing touches the cluster.
+normalizer job would, adds rows as the one-off transcript import left them,
+and runs the example queries from docs/llm-conversations.md. Nothing
+touches the cluster.
 
 Run with `nix develop --command python3 gitops/espresso/tests/llm-conversations.py`.
 Requires Docker and Go.
 """
 
 from datetime import datetime, timedelta, timezone
-import itertools
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -32,28 +33,83 @@ NOW = "toDateTime64('2026-11-14 00:00:00', 3, 'UTC')"
 PASSWORD = secrets.token_hex(16)
 
 
-TRANSCRIPTS = """
-CREATE TABLE IF NOT EXISTS llm.transcripts
-(
-    source LowCardinality(String),
-    host LowCardinality(String),
-    session String,
-    id String,
-    path String,
-    line String CODEC(ZSTD(3)),
-    ts DateTime64(3, 'UTC') DEFAULT parseDateTime64BestEffortOrZero(JSONExtractString(line, 'timestamp'), 3, 'UTC'),
-    ingested_at DateTime DEFAULT now()
-)
-ENGINE = ReplacingMergeTree(ingested_at)
-ORDER BY (source, host, session, path, id);
-"""
+# Rows the one-off transcript import left in the canonical tables, which
+# hold their own content: no raw source names them any more. A Claude Code
+# call with the system prompt and tools of its request log as items, a Codex
+# call whose transcript recorded no tools, a Pi compaction, which has no
+# outputs, and a prompt the proxy later sent again in the same session.
+SYSTEM = json.dumps([{"type": "text", "text": "You are Claude Code."}])
+TOOLS = json.dumps([{"name": "Bash", "description": "Run a command.", "input_schema": {"type": "object"}},
+                    {"name": "Read", "description": "Read a file.", "input_schema": {"type": "object"}}])
 
 
-# A file synced to a second host shares its session, line numbers, and
-# times with the first.
-SYNCED = ("INSERT INTO llm.transcripts (source, host, session, id, path, line) "
-          "SELECT source, 'ristretto', session, id, path, line FROM llm.transcripts "
-          "WHERE path LIKE '%019f6478-0000-7000-8000-000000000004.jsonl'")
+def item_hash(item):
+    """llm.request_items' hash: reinterpretAsUInt128(substring(SHA256(item), 1, 16))."""
+    return str(int.from_bytes(hashlib.sha256(item.encode()).digest()[:16], "little"))
+
+
+def transcript_rows():
+    claude = ".claude/projects/-Users-michaelbrusegard-Projects-infra/"
+    files = {
+        "claude:22222222-2222-4222-8222-222222222222": ("claude-code", claude + "22222222-2222-4222-8222-222222222222.jsonl"),
+        "claude:11111111-1111-4111-8111-111111111111": ("claude-code", claude + "11111111-1111-4111-8111-111111111111.jsonl"),
+        "codex:019f6478-0000-7000-8000-000000000003": (
+            "codex", ".codex/sessions/2026/07/15/rollout-2026-07-15T14-09-54-019f6478-0000-7000-8000-000000000003.jsonl"),
+        "pi:01a039ec-0000-7000-8000-000000000005": (
+            "pi", ".pi/agent/sessions/2026-08-25T17-16-23-878Z_01a039ec-0000-7000-8000-000000000005.jsonl"),
+    }
+
+    def message(session, id, parent, seq, ts, role, blocks, output=False, model="", call=""):
+        _, path = files[session]
+        return {"session_id": session, "id": id, "parent_id": parent, "seq": seq, "ts": ts, "role": role,
+                "output": output, "model": model, "call_id": call, "blocks": blocks, "format": files[session][0],
+                "host": "lungo", "path": path, "line": str(seq + 1)}
+
+    def text(t):
+        return {"type": "text", "source_type": "text", "text": t}
+
+    def tool_call(name, id, input):
+        return {"type": "tool_call", "source_type": "tool_use", "tool_name": name, "tool_call_id": id, "tool_input": input}
+
+    def call(session, id, started, model, input, outputs, context=(), **tokens):
+        client, path = files[session]
+        return {"call_id": id, "session_id": session, "started_at": started, "completed_at": started,
+                "origin": "transcript", "client": client, "host": "lungo", "path": path, "model": model,
+                "input_id": input, "output_ids": outputs, "context": list(context), **tokens}
+
+    cc, cx, pi = list(files)[0], list(files)[2], list(files)[3]
+    return {
+        "llm.request_items": [{"hash": item_hash(i), "item": i} for i in (SYSTEM, TOOLS)],
+        "llm.sessions": [{"session_id": s, "client": c, "origin": "transcript", "host": "lungo", "path": p}
+                         for s, (c, p) in files.items()],
+        "llm.messages": [
+            message(cc, "101", "0", 0, "2026-10-01 09:00:00.000", "user", [text("Why is the ingress returning 502?")]),
+            message(cc, "102", "101", 1, "2026-10-01 09:00:05.000", "assistant",
+                    [tool_call("Bash", "toolu_t1", '{"command":"kubectl -n ingress logs deploy/traefik"}')],
+                    output=True, model="claude-opus-5", call="req_011"),
+            message(list(files)[1], "111", "0", 0, "2026-11-10 08:59:00.000", "user",
+                    [text("The nightly backup job fails; find out why.")]),
+            message(cx, "201", "0", 0, "2026-07-15 14:09:54.865", "user", [text("Add a Renovate rule for flake inputs.")]),
+            message(cx, "202", "201", 1, "2026-07-15 14:10:00.000", "assistant",
+                    [tool_call("exec", "call_t1", '{"cmd":"ls"}')], output=True, model="gpt-5.5", call="codex-t1"),
+            message(pi, "301", "0", 0, "2026-08-25 17:16:30.000", "user", [text("Run the tofu approval test.")]),
+        ],
+        "llm.calls": [
+            call(cc, "req_011", "2026-10-01 09:00:01.000", "claude-opus-5", "101", ["102"],
+                 [{"field": "system", "position": 0, "hash": item_hash(SYSTEM)},
+                  {"field": "tools", "position": 0, "hash": item_hash(TOOLS)}],
+                 uncached_input_tokens=10, cache_write_tokens=2000, cache_write_1h_tokens=2000, output_tokens=64),
+            call(cx, "codex-t1", "2026-07-15 14:09:55.000", "gpt-5.5", "201", ["202"],
+                 uncached_input_tokens=8000, output_tokens=100),
+            call(pi, "c1", "2026-08-25 18:00:00.000", "gpt-5.6-sol", "301", [],
+                 uncached_input_tokens=180000, cache_read_tokens=10000, output_tokens=900),
+        ],
+    }
+
+
+def insert_transcript_rows(query):
+    for table, rows in transcript_rows().items():
+        query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + "".join(json.dumps(r) + "\n" for r in rows))
 
 
 def run(*args, input=None, check=True, **kwargs):
@@ -88,9 +144,7 @@ def main():
     server = statefulset["spec"]["template"]["spec"]["containers"][0]
     image, command = server["image"], server["command"]
     check_password_guard(image, command)
-    # The production schema, and the one-off transcript import as it exists
-    # live until it is dropped; the schema no longer creates it.
-    schema = config["schema.sql"] + "\n" + TRANSCRIPTS
+    schema = config["schema.sql"]
     container = f"infra-llm-conversations-test-{os.getpid()}"
     with tempfile.TemporaryDirectory(prefix="infra-llm-conversations-") as directory:
         temp = Path(directory)
@@ -122,14 +176,14 @@ def main():
                     query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + data, user)
 
             for _ in range(120):
-                ready = query("EXISTS TABLE llm.events", check=False)
+                ready = query("EXISTS TABLE llm.usage_metrics", check=False)
                 if ready.returncode == 0 and ready.stdout.strip() == "1":
                     break
                 time.sleep(0.5)
             else:
                 raise RuntimeError(run("docker", "logs", container).stdout)
 
-            # Source rows: the plugin's, with its grants, and the backfill's.
+            # Source rows, the plugin's, with its grants.
             sources = temp / "sources"
             sources.mkdir()
             run("go", "test", "-count=1", "./conversations", "-run", "TestDumpSources",
@@ -137,10 +191,6 @@ def main():
             normalizer = temp / "normalize-conversations"
             run("go", "build", "-o", str(normalizer), "./normalize-conversations", cwd=PLUGINS)
             insert("llm.request_items", sources / "llm.request_items.jsonl", "cliproxy")
-            insert("llm.transcripts", sources / "llm.transcripts.jsonl")
-            # A file synced to a second host shares its session, line numbers,
-            # and times with the first.
-            query(SYNCED)
 
             def jsonl(path):
                 return [json.loads(line) for line in path.read_text().splitlines()]
@@ -161,17 +211,17 @@ def main():
                                    if (row[key].removeprefix("usage-") in later) == (batch == 2))
                     query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + data, "cliproxy")
 
-            canonical = ("llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events")
+            canonical = ("llm.request_items", "llm.sessions", "llm.messages", "llm.calls")
 
             def load(out):
                 for table in canonical:
                     insert(table, out / f"{table}.jsonl")
 
             # The normalizer never changes the proxy's raw capture. It adds
-            # items only for the context of transcript calls.
+            # items only for call context a request did not store as items.
             def checksums():
                 return [scalar(f"SELECT count(), sum(cityHash64(*)) FROM {table}") for table in (
-                    "llm.requests", "llm.transcripts",
+                    "llm.requests",
                     "llm.request_items FINAL WHERE hash IN (SELECT part.hash FROM llm.requests "
                     "ARRAY JOIN request_parts AS part)")]
 
@@ -214,49 +264,14 @@ def main():
             written = {m["id"] for m in first_messages}
             assert not [m for m in second_messages if m["id"] in written], second_messages
 
-            # Until the transcript import lands, the dashboard's history is
-            # the old import's.
+            assert checksums() == before, "normalizing changed the raw capture"
+
+            # The dashboard's history before the proxy is the transcript
+            # calls', through llm.call_history.
             history = "SELECT trace_id, origin, input_tokens, output_tokens, estimated_cost_usd FROM llm.usage_metrics " \
                       "WHERE origin LIKE 'history:%' ORDER BY trace_id FORMAT JSONEachRow"
-            query("INSERT INTO llm.historical_usage FORMAT JSONEachRow\n" + json.dumps({
-                "event_id": "old-import", "source": "codex", "requested_at": "2026-07-01 00:00:00.000",
-                "provider": "codex", "model": "gpt-5.5", "uncached_input_tokens": 100, "output_tokens": 10}))
-            assert [json.loads(r)["trace_id"] for r in query(history, "grafana").stdout.splitlines()] == ["old-import"]
-
-            # Transcripts once, after the proxy, which owns each session it
-            # captured from its first call on.
-            proxied = temp / "proxied.tsv"
-            proxied.write_text(query((NORMALIZER / "proxied.sql").read_text()).stdout)
-            # The import's input, read in parts of whole files, as the
-            # backfill Job reads it, and concatenated.
-            def transcript_lines():
-                parts = query((NORMALIZER / "files.sql").read_text(), params=(("bytes", 4096),)).stdout.splitlines()
-                assert len(parts) > 2, parts
-                return "".join(query((NORMALIZER / "transcripts.sql").read_text(), params=(("files", part),)).stdout
-                               for part in parts)
-
-            transcripts = transcript_lines()
-
-            def import_transcripts(name, lines):
-                out = temp / name
-                out.mkdir()
-                (temp / f"{name}.jsonl").write_text(lines)
-                run(str(normalizer), "-in", str(temp / f"{name}.jsonl"), "-proxied", str(proxied), "-out", str(out))
-                return out
-
-            out = import_transcripts("transcripts", transcripts)
-            load(out)
-            transcript_calls = scalar("SELECT count() FROM llm.calls FINAL WHERE origin = 'transcript'")
-            # The import's rows do not depend on the order of the files.
-            files = [list(group) for _, group in itertools.groupby(
-                transcripts.splitlines(keepends=True),
-                lambda line: [json.loads(line)[k] for k in ("source", "host", "session", "path")])]
-            reversed_out = import_transcripts("transcripts-reversed", "".join(itertools.chain(*files[::-1])))
-            for table in (*canonical, "coverage.tsv"):
-                name = table if table.endswith(".tsv") else f"{table}.jsonl"
-                rows = [sorted((directory / name).read_text().splitlines()) for directory in (out, reversed_out)]
-                assert rows[0] == rows[1], table
-            assert checksums() == before, "normalizing changed the raw capture"
+            assert query(history, "grafana").stdout == ""
+            insert_transcript_rows(query)
 
             # Every request is exactly one proxy call, which names it, and no
             # call names a missing request.
@@ -279,118 +294,17 @@ def main():
                 SELECT count() FROM llm.messages FINAL
                 WHERE path = '' AND output AND call_id NOT IN (SELECT request_id FROM llm.requests)
             """) == "0"
-            # llm.transcripts is dropped after the import, so every line is
-            # covered: the normalizer counts each line once, by what became of
-            # it, and the lines messages and events name are exactly those it
-            # counts as messages and events. Every kind it drops is in the
-            # design doc's table of dropped kinds.
-            coverage = [line.split("\t") for line in (out / "coverage.tsv").read_text().splitlines()]
-            assert sum(int(c[4]) for c in coverage) == int(scalar("SELECT count() FROM llm.transcripts FINAL")) == 62
-            lines = "SELECT toString(host), path, id FROM llm.transcripts FINAL"
-            named = """SELECT * FROM (
-                SELECT toString(host), path, line FROM llm.messages FINAL WHERE path != '' AND part = ''
-                UNION ALL SELECT toString(host), path, line FROM llm.events FINAL)"""
-            assert scalar(f"SELECT count() FROM ({named})") \
-                == str(sum(int(c[4]) for c in coverage if c[2] in ("message", "event")))
-            assert scalar(f"SELECT count() FROM ({named} EXCEPT {lines})") == "0"
-            assert scalar(f"SELECT count() FROM (SELECT DISTINCT * FROM ({named}))") \
-                == scalar(f"SELECT count() FROM ({named})")
-            documented = set(re.findall(r"^\| `([a-z-]+)` \| `([^`]+)` \|", DOC.read_text(), re.M))
-            assert documented, "no table of dropped kinds"
-            assert not {(c[0], c[1]) for c in coverage if c[2] == "dropped"} - documented, coverage
-            # Every line that is no dropped kind names where its content is
-            # now, and that row holds it: each destination is checked against
-            # the canonical tables, not only counted.
-            def lines_to(source, disposition, destination, kind=None):
-                return sum(int(c[4]) for c in coverage if (c[0], c[2], c[3]) == (source, disposition, destination)
-                           and kind in (None, c[1]))
-            assert all((c[2] == "dropped") == (c[3] == "") for c in coverage), coverage
-            assert {c[3] for c in coverage} <= {"", "llm.messages", "llm.events", "llm.sessions", "llm.calls",
-                                               "llm.calls.usage", "llm.calls.model", "llm.calls.context",
-                                               "llm.messages.part", "llm.messages.parent_id", "llm.messages.blocks"}, coverage
-            # Codex usage lines are each the usage of one call of their file.
-            assert lines_to("codex", "call", "llm.calls.usage") == int(scalar(
-                "SELECT count() FROM llm.calls FINAL WHERE origin = 'transcript' AND client = 'codex' "
-                "AND uncached_input_tokens + cache_read_tokens + output_tokens > 0")) > 0, coverage
-            # Turn settings give the calls after them their model.
-            assert lines_to("codex", "call", "llm.calls.model") > 0 and scalar(
-                "SELECT countIf(model = '') FROM llm.calls FINAL WHERE origin = 'transcript' AND client = 'codex'") == "0"
-            # Claude Code's request logs are the context of the calls naming
-            # them, one call per request in these files.
-            assert lines_to("claude-code", "call", "llm.calls.context", "api-request") == int(scalar(
-                "SELECT count() FROM llm.calls FINAL WHERE origin = 'transcript' AND client = 'claude-code' "
-                "AND notEmpty(context)")) > 0, coverage
-            # Session lines are in the sessions of their files.
-            assert scalar("SELECT count() FROM (SELECT DISTINCT host, path FROM llm.transcripts FINAL "
-                          "EXCEPT SELECT DISTINCT host, path FROM llm.sessions FINAL WHERE origin = 'transcript')") == "0"
-            # Compacted histories are messages built from their lines, and
-            # OpenCode's part records hold blocks of messages that exist.
-            assert lines_to("codex", "structure", "llm.messages.part") == int(scalar(
-                "SELECT uniqExact(host, path, line) FROM llm.messages FINAL WHERE format = 'openai-responses' "
-                "AND part != ''"))
-            assert lines_to("opencode", "structure", "llm.messages.blocks") == int(scalar(
-                "SELECT count() FROM llm.transcripts FINAL WHERE source = 'opencode' "
-                "AND JSONExtractString(line, 'kind') = 'part' AND (host, path, concat('message:', "
-                "JSONExtractString(line, 'message_id'))) IN (SELECT host, path, line FROM llm.messages)")) > 0
-            # A line is the proxy's only when the proxy returned the reply it
-            # leads to: every reply among those lines is a proxy call's.
-            proxied_replies = scalar("""
-                SELECT count() FROM (SELECT ts, multiIf(source = 'claude-code', JSONExtractString(line, 'message', 'id'),
-                        source = 'pi', JSONExtractString(line, 'message', 'responseId'),
-                        JSONExtractString(line, 'payload', 'response_id')) AS reply FROM llm.transcripts FINAL)
-                WHERE reply != '' AND reply IN (SELECT response_id FROM llm.calls FINAL WHERE origin = 'proxy')
-                    AND ts >= (SELECT min(started_at) FROM llm.calls FINAL WHERE origin = 'proxy')""")
-            assert int(proxied_replies) > 0 and sum(int(c[4]) for c in coverage if c[2] == "proxied") \
-                >= int(proxied_replies), coverage
-            # Messages built from inside a line name it, and calls their file.
-            assert scalar("""
-                SELECT count() FROM llm.messages FINAL
-                WHERE part != '' AND (host, path, line) NOT IN (SELECT host, path, id FROM llm.transcripts)
-            """) == "0"
-            assert scalar("""
-                SELECT count() FROM llm.calls FINAL
-                WHERE origin = 'transcript' AND (host, path) NOT IN (SELECT host, path FROM llm.transcripts)
-            """) == "0"
-            # Two Codex compaction items, and two entries Pi sends again.
-            assert scalar("SELECT groupArray((line, part)) FROM (SELECT line, part FROM llm.messages FINAL "
-                          "WHERE part != '' ORDER BY line, part)") == "[('12','0'),('12','1'),('7','p2'),('7','p3')]"
-            # The Claude Code call whose request log the transcript holds
-            # carries its system prompt and tools as items.
-            assert scalar("SELECT arrayMap(p -> (p.field, p.position), context) FROM llm.calls FINAL "
-                          "WHERE call_id = 'req_011'") == "[('system',0),('system',1),('tools',0),('tools',1)]"
             assert scalar("SELECT count() FROM (SELECT arrayJoin(context).hash AS hash FROM llm.calls) "
                           "WHERE hash NOT IN (SELECT hash FROM llm.request_items)") == "0"
             assert scalar("SELECT count() FROM llm.request_items "
                           "WHERE hash != reinterpretAsUInt128(substring(SHA256(item), 1, 16))") == "0"
-            # Both captured this session. The transcript keeps the line from
-            # before the proxy's first call as a message, and the later one is
-            # the proxy's; so are its calls and tokens.
-            both = "'claude:11111111-1111-4111-8111-111111111111'"
-            assert scalar(f"SELECT arraySort(groupArray(origin)) FROM llm.sessions FINAL WHERE session_id = {both}") \
-                == "['proxy','transcript']"
-            assert scalar(f"SELECT groupArray(line) FROM llm.messages FINAL WHERE session_id = {both} AND line != ''") \
-                == "['1']"
-            assert ["claude-code", "assistant", "proxied", "llm.calls", "1"] in coverage, coverage
-            assert scalar(f"SELECT groupUniqArray(origin) FROM llm.calls FINAL WHERE session_id = {both}") == "['proxy']"
-            # Pi's proxied calls have only CLIProxy's session. The replies both
-            # recorded put the transcript in it, so its replies count once.
-            pi = scalar("SELECT session_id FROM llm.calls FINAL WHERE call_id = 'chat-1'")
-            assert scalar(f"SELECT arraySort(groupArray(origin)) FROM llm.sessions FINAL WHERE session_id = '{pi}'") \
-                == "['proxy','transcript']"
-            assert scalar(f"SELECT groupArray(line) FROM llm.messages FINAL WHERE session_id = '{pi}' AND line != ''") \
-                == "['2']"
-            assert scalar("SELECT count() FROM llm.calls FINAL WHERE response_id IN ('chatcmpl-1', 'chatcmpl-2')") == "2"
             # Grafana keeps seeing only the metrics view.
-            for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions", "llm.call_history", "llm.old_import_usage",
-                          "llm.transcript_import"):
+            for table in ("llm.messages", "llm.calls", "llm.events", "llm.sessions", "llm.call_history"):
                 assert query(f"SELECT * FROM {table}", "grafana", check=False).returncode != 0, table
 
-            # Once the transcript calls landed, the production view reads the
-            # dashboard's history from them through llm.call_history, and no
-            # longer from llm.historical_usage. Each transcript call with
-            # usage before the proxy is one row, priced as the importer's
-            # rows were: the Claude Code call wrote 2,000 tokens to the
-            # one-hour cache.
+            # Each transcript call with usage before the proxy is one row,
+            # priced as the proxy's are: the Claude Code call wrote 2,000
+            # tokens to the one-hour cache.
             def history_rows():
                 return {r["trace_id"]: r for r in map(json.loads, query(history, "grafana").stdout.splitlines())}
 
@@ -398,16 +312,10 @@ def main():
                 return sorted(scalar("SELECT groupArray(event_id) FROM llm.call_history WHERE requested_at < "
                                      "(SELECT min(requested_at) FROM llm.usage)").strip("[]").replace("'", "").split(","))
 
-            # Until the backfill marks the import complete, which it does
-            # after its checks, the history stays the old import's: an
-            # import that failed part way leaves some calls.
-            assert list(history_rows()) == ["old-import"]
-            query("INSERT INTO llm.transcript_import VALUES (now64(3))")
             rows = history_rows()
-            assert sorted(rows) == expected_history() and "old-import" not in rows, rows
+            assert sorted(rows) == expected_history() == ["c1", "codex-t1", "req_011"], rows
             assert rows["req_011"]["origin"] == "history:claude-code" and rows["req_011"]["input_tokens"] == 2010, rows
             assert abs(rows["req_011"]["estimated_cost_usd"] - (10 * 5 + 2000 * 10 + 64 * 25) / 1e6) < 1e-12, rows
-
 
             sql = examples()
             prompts = query(sql["prompts"]).stdout
@@ -421,8 +329,6 @@ def main():
             failures = [line.split("\t") for line in query(sql["tool-failures"]).stdout.splitlines()]
             failures = {(model, tool): (int(uses), int(failed)) for model, tool, uses, failed in failures}
             assert failures[("claude-opus-5-5", "Bash")] == (1, 1), failures
-            assert failures[("gpt-5.6-sol", "bash")] == (1, 1), failures
-            assert failures[("gpt-5.5", "read")] == (1, 1), failures
             assert failures[("gpt-6.1-sol", "exec")] == (1, 0), failures
 
             tokens = query(sql["tokens"]).stdout
@@ -480,9 +386,7 @@ def main():
             # rather than exported with its tool calls undefined, and so is a
             # call without outputs, such as a Pi compaction: the call query
             # marks its rows as a call's even without context or outputs.
-            bare = scalar("SELECT call_id FROM llm.calls FINAL WHERE origin = 'transcript' AND client = 'codex' "
-                          "AND empty(context) AND notEmpty(output_ids) ORDER BY started_at LIMIT 1")
-            for call, reason in ((bare, "does not define"), ("c1", "no output")):
+            for call, reason in (("codex-t1", "does not define"), ("c1", "no output")):
                 rows = query(sql["call"], params=(("call", call),)).stdout
                 failed = run(str(normalizer), "-export", "openai", input=rows, check=False)
                 assert failed.returncode != 0 and reason in failed.stderr, (call, failed)
@@ -497,8 +401,8 @@ def main():
             # The request items and a response body.
             assert '"cache_control"' in raw and "signature_delta" in raw, raw
 
-            # The Claude Code call exports as a training example with the system
-            # prompt and tools its request log recorded.
+            # The Claude Code transcript call exports as a training example
+            # with the system prompt and tools of its context.
             rows = query(sql["call"], params=(("call", "req_011"),)).stdout
             anthropic = json.loads(run(str(normalizer), "-export", "anthropic", input=rows).stdout)
             assert anthropic["system"].startswith("You are Claude Code") \
@@ -555,119 +459,28 @@ def main():
             failed = run(str(normalizer), "-export", "openai", input=rows, check=False)
             assert failed.returncode != 0 and "no output" in failed.stderr, failed
 
-            # The collision audit finds the item keys the normalizer reports:
-            # two Codex calls whose first items share a call ID. A response
-            # without items, such as a compaction's, and two responses with
-            # no input between are calls of their own, so they collide with
-            # nothing.
-            def usage(response):
-                return {"type": "token_usage_record", "payload": {"response_id": response, "usage": {}}}
-
-            def item(payload):
-                return {"type": "response_item", "payload": payload}
-
-            def tool_call(item_id, call_id):
-                return item({"type": "function_call", "id": item_id, "name": "exec", "arguments": "{}", "call_id": call_id})
-
-            def reply(item_id):
-                return item({"type": "message", "id": item_id, "role": "assistant", "content": []})
-
-            for name, lines in (("c", [tool_call("fc_1", "call_shared"), usage("resp_c1")]),
-                                ("d", [tool_call("fc_2", "call_shared"), usage("resp_c2")]),
-                                ("e", [tool_call("fc_3", "call_e"), usage("resp_e1"),
-                                       item({"type": "function_call_output", "call_id": "call_e", "output": "ok"}),
-                                       usage("resp_e2"), {"type": "compacted", "payload": {"replacement_history": []}},
-                                       reply("msg_e3"), usage("resp_e3"), reply("msg_e4"), usage("resp_e4")])):
-                thread = f"01a1da81-0000-7000-8000-0000000000{name}{name}"
-                path = f".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-{thread}.jsonl"
-                lines = [{"type": "session_meta", "payload": {"id": thread}}, *lines]
-                query("INSERT INTO llm.transcripts FORMAT JSONEachRow\n" + "\n".join(json.dumps({
-                    "source": "codex", "host": "lungo", "session": path.removesuffix(".jsonl").rsplit("/", 1)[1],
-                    "id": str(i + 1), "path": path,
-                    "line": json.dumps({"timestamp": f"2026-11-12T10:00:0{i}.000Z", **line})}) for i, line in enumerate(lines)))
-            audit = [line.split("\t") for line in query(sql["collisions"]).stdout.splitlines()]
-            out = temp / "collisions"
-            out.mkdir()
-            (temp / "collisions.jsonl").write_text(transcript_lines())
-            reported = run(str(normalizer), "-in", str(temp / "collisions.jsonl"), "-proxied", str(proxied),
-                           "-out", str(out)).stderr
-            assert audit == [["item:call_shared", "['resp_c1','resp_c2']"]], audit
-            assert reported.splitlines()[1:] == ["item:call_shared resp_c1 resp_c2"], reported
-
-            # transcripts.sql sends only the type of the largest kinds of line
-            # the import drops, such as Claude Code's request blobs and Codex's
-            # item events, and the normalizer writes the same rows as from the
-            # whole lines. Errors and interruptions stay events.
-            claude = ".claude/projects/-Users-michaelbrusegard-Projects-infra/22222222-2222-4222-8222-222222222222.jsonl"
-            codex = ".codex/sessions/2026/11/12/rollout-2026-11-12T10-00-00-01a1da81-0000-7000-8000-0000000000ee.jsonl"
-            codex_session = codex.rsplit("/", 1)[1].removesuffix(".jsonl")
-            added = (
-                ("claude-code", claude, "22222222-2222-4222-8222-222222222222", "100",
-                 {"type": "api-request-blob", "hash": "h1", "sessionId": "s",
-                  "message": {"role": "user", "content": "x" * 4096}}),
-                ("claude-code", claude, "22222222-2222-4222-8222-222222222222", "101",
-                 {"type": "system", "subtype": "api_error", "uuid": "e1", "parentUuid": "x2",
-                  "timestamp": "2026-10-01T09:00:05.000Z", "error": {"message": "Connection error.",
-                                                                    "formatted": "Can't reach the API server"}}),
-                ("codex", codex, codex_session, "100", {"timestamp": "2026-11-12T10:01:00.000Z", "type": "world_state",
-                                                        "payload": {"cwd": "/" * 4096}}),
-                ("codex", codex, codex_session, "101", {"timestamp": "2026-11-12T10:01:01.000Z", "type": "event_msg",
-                                                        "payload": {"type": "item_completed", "item": "/" * 4096}}),
-                ("codex", codex, codex_session, "102", {"timestamp": "2026-11-12T10:01:02.000Z", "type": "event_msg",
-                                                        "payload": {"type": "turn_aborted", "reason": "interrupted"}}))
-            query("INSERT INTO llm.transcripts FORMAT JSONEachRow\n" + "\n".join(json.dumps({
-                "source": source, "host": "lungo", "session": session, "id": id, "path": path,
-                "line": json.dumps(line)}) for source, path, session, id, line in added))
-            whole = query("SELECT source, host, session, id, path, line, toString(ts) AS ts FROM llm.transcripts FINAL "
-                          "ORDER BY source, host, path, session, toUInt64OrZero(id), id FORMAT JSONEachRow").stdout
-            stripped = transcript_lines()
-            assert len(stripped) < len(whole) - 8000, (len(stripped), len(whole))
-            outs = [import_transcripts(name, lines) for name, lines in (("whole", whole), ("stripped", stripped))]
-            for table in (*canonical, "coverage.tsv"):
-                name = table if table.endswith(".tsv") else f"{table}.jsonl"
-                rows = [sorted((directory / name).read_text().splitlines()) for directory in outs]
-                assert rows[0] == rows[1], table
-            events = sorted((e["type"], e["detail"]) for e in jsonl(outs[1] / "llm.events.jsonl"))
-            assert events == [("api_error", "Can't reach the API server"), ("turn_aborted", "interrupted")], events
-
-            # ClickHouse runs schema.sql on every restart. Rerunning it keeps
-            # the history, and so does dropping the old import after it is
-            # verified, at once and after the next restart: no view names
-            # llm.historical_usage, schema.sql does not create llm.transcripts
-            # again, and the empty llm.historical_usage it creates is ignored.
-            def restart():
-                run("docker", "exec", "-i", container, "clickhouse-client", "--multiquery", input=config["schema.sql"])
-
-            def checks():
-                return query((NORMALIZER / "verify.sql").read_text()).stdout
-
+            # ClickHouse runs schema.sql on every restart, which keeps the
+            # history and the checks.
             kept = history_rows()
-            restart()
-            assert history_rows() == kept
-            assert "old import calls" in checks()
-            query("DROP TABLE llm.transcripts")
-            query("DROP TABLE llm.historical_usage")
+            run("docker", "exec", "-i", container, "clickhouse-client", "--multiquery", input=config["schema.sql"])
             assert history_rows() == kept and sorted(kept) == expected_history(), kept
-            assert "old import calls" not in checks()
-            restart()
-            assert scalar("EXISTS TABLE llm.transcripts") == "0" and scalar("SELECT count() FROM llm.historical_usage") == "0"
-            assert history_rows() == kept and sorted(kept) == expected_history(), kept
-            print(f"PASS: {len(sql)} doc examples, proxy references both ways, transcript coverage, "
-                  "unchanged raw capture, usage history cutover and drop, permissions")
+            print(f"PASS: {len(sql)} doc examples, proxy references both ways, unchanged raw capture, "
+                  "usage history, permissions")
         finally:
             run("docker", "rm", "--force", container, check=False)
-        backfill_in_cluster(image, temp, schema, sources, transcript_calls)
-        backfill_runner(temp)
+        job_in_cluster(image, temp, sources)
 
 
-def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
-    """The cluster's backfill Job: normalize.sh in the ClickHouse image, as
-    llm_normalizer over the native port, from the same source rows."""
-    container = f"infra-llm-backfill-test-{os.getpid()}"
+def job_in_cluster(image, temp, sources):
+    """The cluster's llm-normalizer CronJob: normalize.sh in the ClickHouse
+    image, as llm_normalizer over the native port, from the same source rows."""
+    container = f"infra-llm-normalizer-test-{os.getpid()}"
     tools = temp / "normalizer"
     tools.mkdir()
+    # For the container's platform, which differs from the host's on macOS.
+    arch = run("docker", "version", "--format", "{{.Server.Arch}}").stdout.strip()
     run("go", "build", "-o", str(tools / "normalize-conversations"), "./normalize-conversations", cwd=PLUGINS,
-        env={**os.environ, "CGO_ENABLED": "0"})
+        env={**os.environ, "CGO_ENABLED": "0", "GOOS": "linux", "GOARCH": arch})
     for name in ["normalize.sh", *(p.name for p in NORMALIZER.glob("*.sql"))]:
         (tools / name).write_bytes((NORMALIZER / name).read_bytes())
         (tools / name).chmod(0o755)
@@ -688,47 +501,31 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
         ready = 0
         for _ in range(240):
             ready = ready + 1 if run("docker", "exec", container, "clickhouse-client", "--query",
-                                     "EXISTS TABLE llm.events", check=False).stdout.strip() == "1" else 0
+                                     "EXISTS TABLE llm.usage_metrics", check=False).stdout.strip() == "1" else 0
             if ready == 2:
                 break
             time.sleep(1)
-        for table, user in (("llm.request_items", "cliproxy"), ("llm.requests", "cliproxy"),
-                            ("llm.usage", "cliproxy"), ("llm.transcripts", "default")):
-            query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + (sources / f"{table}.jsonl").read_text(), user)
-        query(SYNCED)
+        for table in ("llm.request_items", "llm.requests", "llm.usage"):
+            query(f"INSERT INTO {table} FORMAT JSONEachRow\n" + (sources / f"{table}.jsonl").read_text(), "cliproxy")
+        insert_transcript_rows(query)
 
         def normalize(mode, *env):
             return run("docker", "exec", "-u", "101", "-e", "CLICKHOUSE_HOST=localhost", "-e", "SCRATCH=/tmp/scratch",
                        "-e", "HOME=/tmp", "-e", f"CLICKHOUSE_PASSWORD={PASSWORD}", *env, container,
                        "/opt/normalizer/normalize.sh", mode, check=False)
 
-        result = normalize("backfill")
+        result = normalize("cron")
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert query("SELECT count() FROM llm.calls FINAL WHERE origin = 'proxy'") == "10"
+        # The checks pass over the proxy's rows and the transcript import's.
+        result = normalize("verify")
         assert result.returncode == 0, result.stdout + result.stderr
         checks = [line.split("\t") for line in result.stdout.splitlines() if line.startswith("check\t")]
         assert len(checks) >= 10 and all(c[2] == "0" for c in checks), checks
-        assert "coverage (source, kind, disposition, destination, lines):" in result.stdout, result.stdout
-        assert query("SELECT count() FROM llm.calls FINAL WHERE origin = 'proxy'") == "10"
-        assert query("SELECT count() FROM llm.calls FINAL WHERE origin = 'transcript'") == transcript_calls
-        assert query("SELECT count() FROM llm.transcript_import") == "1"
         # The job finds nothing left.
         rows = query("SELECT count() FROM llm.messages")
         result = normalize("cron")
         assert result.returncode == 0 and query("SELECT count() FROM llm.messages") == rows, result.stderr
-        # A second backfill waits for deletes still going, as a recovery's
-        # are, and is then refused rather than mixed with the first.
-        query("INSERT INTO llm.events (session_id, type) VALUES ('deleted', 'deleted')")
-        query("SYSTEM STOP MERGES llm.events")
-        query("ALTER TABLE llm.events DELETE WHERE type = 'deleted'")
-        backfill = subprocess.Popen(
-            ["docker", "exec", "-u", "101", "-e", "CLICKHOUSE_HOST=localhost", "-e", "SCRATCH=/tmp/scratch",
-             "-e", "HOME=/tmp", "-e", f"CLICKHOUSE_PASSWORD={PASSWORD}", container, "/opt/normalizer/normalize.sh",
-             "backfill"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        time.sleep(15)
-        assert backfill.poll() is None, backfill.communicate()
-        query("SYSTEM START MERGES llm.events")
-        out, err = backfill.communicate(timeout=120)
-        assert backfill.returncode != 0 and "waiting for 1 deletes in llm" in out \
-            and "delete the transcript rows first" in err, (out, err)
         # After a stop of any length, the job catches up an hour at a time
         # from the oldest request it misses. Once its budget is spent it
         # stops after the window it ran, and the next run goes on.
@@ -753,11 +550,6 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
             assert query(caught_up) == "[" + ",".join(f"'{call}'" for call, _ in late[:done]) + "]", (done, result.stdout)
         result = normalize("cron")
         assert result.returncode == 0 and len(result.stdout.splitlines()) == 1, result.stdout + result.stderr
-        # The checks run after the old import is dropped, too.
-        query("DROP TABLE llm.transcripts")
-        query("DROP TABLE llm.historical_usage")
-        result = normalize("verify")
-        assert result.returncode == 0, result.stdout + result.stderr
         assert query("SELECT countIf(origin LIKE 'history:%') > 0 FROM llm.usage_metrics", "grafana") == "1"
         # The normalizer's user reads the sources and appends to the
         # canonical tables, and nothing else.
@@ -786,86 +578,9 @@ def backfill_in_cluster(image, temp, schema, sources, transcript_calls):
             assert denied.returncode != 0 and "AUTHENTICATION_FAILED" in denied.stderr, denied.stderr
             denied = as_normalizer("SELECT count() FROM llm.requests", *(["--password", password] if password else []))
             assert denied.returncode != 0 and "AUTHENTICATION_FAILED" in denied.stderr, denied.stderr
-        print("PASS: the in-cluster backfill and job, with the normalizer's grants")
+        print("PASS: the in-cluster job, its catch-up and checks, with the normalizer's grants")
     finally:
         run("docker", "rm", "--force", container, check=False)
-
-
-# kubectl for llm-backfill.sh: it names each Job it creates, and reports
-# the conditions of a run's outcome, with no pod counters.
-KUBECTL = r"""#!/usr/bin/env bash
-set -euo pipefail
-state=$(dirname "$0")
-touch "$state/jobs"
-case "$*" in
-"-n clickhouse get jobs -o json")
-	jq -Rn '{items: [inputs | split(" ") | {metadata: {name: .[0]},
-		status: {conditions: (if .[1] == "Running" then [] else [{type: .[1], status: "True"}] end)}}]}' < "$state/jobs"
-	;;
-"-n clickhouse delete job "*" --wait=true")
-	grep -v "^$5 " "$state/jobs" > "$state/jobs.new" || true
-	mv "$state/jobs.new" "$state/jobs"
-	echo "$5" >> "$state/deleted"
-	;;
-"-n clickhouse get pod clickhouse-0 -o jsonpath={.spec.nodeName}")
-	echo espresso-2
-	;;
-"get --raw /api/v1/nodes/espresso-2/proxy/stats/summary")
-	# The tmpfs root has room; only the persistent disk's figure counts.
-	echo "{\"node\":{\"fs\":{\"availableBytes\":$((100 << 30)),\"inodesFree\":9000000},\"runtime\":{\"imageFs\":{\"availableBytes\":$(cat "$state/free"),\"inodesFree\":5000000}}}}"
-	;;
-"-n clickhouse create -o name -f -")
-	cat > "$state/manifest.yaml"
-	runs=$(($(cat "$state/runs" 2>/dev/null || echo 0) + 1))
-	echo "$runs" > "$state/runs"
-	result=Failed
-	[[ $runs == 2 ]] && result=Complete
-	echo "llm-backfill-run$runs $result" >> "$state/jobs"
-	echo "job.batch/llm-backfill-run$runs"
-	;;
-"-n clickhouse get job.batch/llm-backfill-run1 -o json")
-	echo '{"status":{"conditions":[{"type":"FailureTarget","status":"True"},{"type":"Failed","status":"True"}]}}'
-	;;
-"-n clickhouse get job.batch/llm-backfill-run2 -o json")
-	echo '{"status":{"conditions":[{"type":"Suspended","status":"False"},{"type":"Complete","status":"True"}]}}'
-	;;
-"-n clickhouse logs job.batch/llm-backfill-run"[12]" --all-containers")
-	echo "log of $4"
-	;;
-*)
-	echo "unexpected kubectl $*" >&2
-	exit 2
-	;;
-esac
-"""
-
-
-def backfill_runner(temp):
-    """llm-backfill.sh against a stand-in for kubectl: each run is a Job of
-    its own, a rerun first deletes the finished attempt, whose kept pod would
-    hold its scratch volume, and the Job's conditions decide the result. It
-    refuses to start beside a running attempt or on a node short of disk."""
-    stub = temp / "kubectl"
-    stub.write_text(KUBECTL)
-    stub.chmod(0o755)
-    script = BASE / "apps/clickhouse/llm-backfill.sh"
-    env = {**os.environ, "KUBECTL": str(stub), "LOG": str(temp / "llm-backfill.log")}
-    (temp / "free").write_text(str(5 << 30))
-    short = run(str(script), env=env, check=False, cwd=ROOT)
-    assert short.returncode == 1 and "espresso-2 has 5 GiB" in short.stderr, short
-    assert not (temp / "runs").exists(), "a Job was created on a node short of disk"
-    (temp / "free").write_text(str(50 << 30))
-    failed = run(str(script), env=env, check=False, cwd=ROOT)
-    assert failed.returncode == 1 and "job.batch/llm-backfill-run1 failed" in failed.stderr, failed
-    manifest = (temp / "manifest.yaml").read_text()
-    assert "generateName: llm-backfill-" in manifest and "\n  name:" not in manifest, manifest
-    rerun = run(str(script), env=env, check=False, cwd=ROOT)
-    assert rerun.returncode == 0 and (temp / "llm-backfill.log").read_text() == "log of job.batch/llm-backfill-run2\n", rerun
-    assert (temp / "deleted").read_text() == "llm-backfill-run1\n", "the failed attempt was not removed"
-    (temp / "jobs").write_text("llm-backfill-run3 Running\n")
-    busy = run(str(script), env=env, check=False, cwd=ROOT)
-    assert busy.returncode == 1 and "llm-backfill-run3 is still running" in busy.stderr, busy
-    print("PASS: the backfill runner, a rerun after a failed Job, Job conditions, and its disk and overlap checks")
 
 
 if __name__ == "__main__":

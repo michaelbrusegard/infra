@@ -1,22 +1,12 @@
-// Command normalize-conversations is the prototype normalizer described in
+// Command normalize-conversations is the normalizer described in
 // docs/llm-conversations.md. It reads source rows as JSONEachRow and writes
 // the canonical rows for each table into a directory, one JSONEachRow file
-// per table.
-//
-// Proxy rows reference the raw capture and copy none of it. Transcript rows
-// hold their own content, since llm.transcripts is dropped after the import,
-// and the transcript run also writes llm.request_items rows for the system
-// prompts and tools of Claude Code calls, and coverage.tsv: how many lines
-// of each source and kind became what.
+// per table. The rows reference the raw capture and copy none of it.
 //
 // With -requests, input rows on stdin are llm.requests rows with their
 // items, in start order, from requests.sql. A run first prints the sessions
 // they touch with -sessions, then passes those sessions' state from
-// state.sql with -state. Otherwise -in names a file of llm.transcripts rows
-// from transcripts.sql, plain or gzip-compressed as the backfill writes
-// it, which is read twice, and -proxied names a file of the proxy's calls
-// from proxied.sql, each a session ID, its parent session and client, a
-// response ID, and a start time, tab-separated.
+// state.sql with -state.
 //
 // With -export openai or -export anthropic, it instead reads one call or
 // conversation, as the call and conversation queries in the design doc
@@ -28,7 +18,6 @@ package main
 
 import (
 	"bufio"
-	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -37,7 +26,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -46,12 +34,10 @@ import (
 
 func main() {
 	log.SetFlags(0)
-	requests := flag.Bool("requests", false, "read llm.requests rows instead of transcript lines")
+	requests := flag.Bool("requests", false, "read llm.requests rows from requests.sql")
 	sessions := flag.Bool("sessions", false, "print the sessions the requests touch, for state.sql")
 	state := flag.String("state", "", "file of state.sql rows from earlier runs")
 	hold := flag.Duration("hold", 10*time.Minute, "hold back requests that continue an unseen response and started this recently, or lack usage and completed this recently")
-	in := flag.String("in", "", "file of transcript lines from transcripts.sql, plain or gzip-compressed")
-	proxied := flag.String("proxied", "", "file of the proxy's calls: session, parent session, client, response ID, and start")
 	out := flag.String("out", ".", "directory for the output files")
 	export := flag.String("export", "", "print a call or conversation as openai or anthropic messages")
 	flag.Parse()
@@ -69,26 +55,8 @@ func main() {
 		if err = restore(n, *state); err == nil {
 			err = run(*out, n, func(drain func() error) error { return normalizeRequests(os.Stdin, n, drain) })
 		}
-	case *in == "":
-		err = errors.New("-in names no file of transcript lines")
 	default:
-		p := &conversations.Proxied{}
-		if *proxied != "" {
-			var data []byte
-			if data, err = os.ReadFile(*proxied); err != nil {
-				log.Fatal(err)
-			}
-			for _, line := range strings.Split(string(data), "\n") {
-				if f := strings.Split(line, "\t"); len(f) == 5 {
-					p.Add(f[0], f[1], f[2], f[3], f[4])
-				}
-			}
-		}
-		n := conversations.NewNormalizer()
-		err = run(*out, n, func(drain func() error) error { return normalizeTranscripts(*in, n, p, drain) })
-		if err == nil {
-			err = writeCoverage(filepath.Join(*out, "coverage.tsv"), n.Coverage)
-		}
+		err = errors.New("one of -requests, -sessions, or -export is needed")
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -142,7 +110,7 @@ func restore(n *conversations.Normalizer, path string) error {
 	return eachRow(f, func(s conversations.State) error { n.Restore(s); return nil })
 }
 
-var tables = []string{"llm.request_items", "llm.sessions", "llm.messages", "llm.calls", "llm.events"}
+var tables = []string{"llm.request_items", "llm.sessions", "llm.messages", "llm.calls"}
 
 // run creates an output file per table and calls normalize, whose drain
 // writes the rows normalized so far.
@@ -165,12 +133,12 @@ func run(dir string, n *conversations.Normalizer, normalize func(drain func() er
 		b := &n.Batch
 		for _, err := range []error{writeRows(files["llm.request_items"], b.Items),
 			writeRows(files["llm.sessions"], b.Sessions), writeRows(files["llm.messages"], b.Messages),
-			writeRows(files["llm.calls"], b.Calls), writeRows(files["llm.events"], b.Events)} {
+			writeRows(files["llm.calls"], b.Calls)} {
 			if err != nil {
 				return err
 			}
 		}
-		b.Items, b.Sessions, b.Messages, b.Calls, b.Events = nil, nil, nil, nil, nil
+		b.Items, b.Sessions, b.Messages, b.Calls = nil, nil, nil, nil
 		return nil
 	})
 }
@@ -187,77 +155,6 @@ func normalizeRequests(r io.Reader, n *conversations.Normalizer, drain func() er
 		log.Printf("held back %d recent requests whose usage or previous response is not archived yet", held)
 	}
 	return errors.Join(err, n.Err)
-}
-
-// normalizeTranscripts reads the file twice: the first pass decides which
-// transcript file holds each reply's call, and the second normalizes.
-func normalizeTranscripts(path string, n *conversations.Normalizer, proxied *conversations.Proxied, drain func() error) error {
-	replies := &conversations.Replies{}
-	for _, pass := range []func([]conversations.TranscriptLine) error{
-		func(file []conversations.TranscriptLine) error { replies.Add(file, proxied); return nil },
-		func(file []conversations.TranscriptLine) error { n.Transcript(file, replies, proxied); return drain() },
-	} {
-		if err := readFile(path, func(r io.Reader) error { return eachFile(r, pass) }); err != nil {
-			return err
-		}
-	}
-	// Calls under these keys are matched by response ID only, so a copy
-	// without one counts again; the collision audit needs every key.
-	if conflicts := replies.Conflicts(); len(conflicts) > 0 {
-		log.Printf("%d Codex item keys name more than one response ID:\n%s", len(conflicts), strings.Join(conflicts, "\n"))
-	}
-	return n.CoverageError()
-}
-
-// writeCoverage writes the source, kind, disposition, destination, and
-// number of lines of every kind of transcript line, sorted.
-func writeCoverage(path string, coverage map[conversations.Covered]int) error {
-	var rows []string
-	for c, lines := range coverage {
-		rows = append(rows, fmt.Sprintf("%s\t%s\t%s\t%s\t%d", c.Source, c.Kind, c.Disposition, c.Destination, lines))
-	}
-	sort.Strings(rows)
-	return os.WriteFile(path, []byte(strings.Join(rows, "\n")+"\n"), 0o644)
-}
-
-// readFile reads a file, decompressing it if it is gzip.
-func readFile(path string, read func(io.Reader) error) (err error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer func() { err = errors.Join(err, f.Close()) }()
-	r := bufio.NewReaderSize(f, 1<<20)
-	if magic, _ := r.Peek(2); len(magic) == 2 && magic[0] == 0x1f && magic[1] == 0x8b {
-		z, err := gzip.NewReader(r)
-		if err != nil {
-			return err
-		}
-		// Reading the rows to EOF verifies the checksum.
-		return read(z)
-	}
-	return read(r)
-}
-
-// eachFile reads transcript lines grouped by file, as transcripts.sql
-// orders them.
-func eachFile(r io.Reader, f func([]conversations.TranscriptLine) error) error {
-	var file []conversations.TranscriptLine
-	err := eachRow(r, func(line conversations.TranscriptLine) error {
-		if len(file) > 0 && (line.Source != file[0].Source || line.Host != file[0].Host ||
-			line.Session != file[0].Session || line.Path != file[0].Path) {
-			if err := f(file); err != nil {
-				return err
-			}
-			file = nil
-		}
-		file = append(file, line)
-		return nil
-	})
-	if err != nil || len(file) == 0 {
-		return err
-	}
-	return f(file)
 }
 
 func writeRows[T any](w *bufio.Writer, rows []T) error {

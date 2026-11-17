@@ -21,8 +21,6 @@ func TestDumpSources(t *testing.T) {
 	}
 	var fixtures []proxyFixture
 	load(t, "proxy.json", &fixtures)
-	var lines []TranscriptLine
-	load(t, "transcripts.json", &lines)
 	rows := map[string][]any{}
 	seen := map[Hash]bool{}
 	for _, f := range fixtures {
@@ -60,12 +58,6 @@ func TestDumpSources(t *testing.T) {
 			"provider":          firstNonEmpty(provider, "openai-compatibility"), "model": firstNonEmpty(resp.model, r.Model),
 			"input_tokens": input, "output_tokens": u.output, "reasoning_tokens": u.reasoning,
 			"cached_tokens": u.read, "cache_read_tokens": u.read, "cache_creation_tokens": u.write,
-		})
-	}
-	for _, l := range lines {
-		// ClickHouse derives ts from the line, as it did for the backfill.
-		rows["llm.transcripts"] = append(rows["llm.transcripts"], map[string]any{
-			"source": l.Source, "host": l.Host, "session": l.Session, "id": l.ID, "path": l.Path, "line": l.Line,
 		})
 	}
 	for table, list := range rows {

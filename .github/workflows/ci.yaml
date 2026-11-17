@@ -30,7 +30,6 @@ jobs:
             gitops:
               - 'gitops/**'
               - 'packages/ai-images/**'
-              - 'packages/llm-usage-backfill/**'
               - 'packages/cliproxy-plugins/**'
               - '.github/workflows/ci.yaml'
             tofu:
@@ -107,7 +106,6 @@ jobs:
           python3 -m unittest discover -s packages/ai-images -v
       - name: Test AI usage dashboard and ClickHouse permissions
         run: |
-          python3 -m unittest discover -s packages/llm-usage-backfill -v
           python3 gitops/espresso/tests/ai-usage.py
       - name: Run Hermes Android unit tests
         run: |

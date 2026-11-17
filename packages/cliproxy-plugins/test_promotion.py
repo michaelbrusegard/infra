@@ -12,7 +12,7 @@ MANIFESTS = [line.split('"')[1] for line in SCRIPT.read_text().splitlines() if l
 
 class PromotionTests(unittest.TestCase):
     def test_promotes_only_plugin_installers_and_supports_repeat_updates(self):
-        self.assertEqual(len(MANIFESTS), 3)
+        self.assertEqual(len(MANIFESTS), 2)
         with tempfile.TemporaryDirectory() as directory:
             previous = {}
             for manifest in MANIFESTS:

@@ -1,7 +1,6 @@
 # The LLM conversation normalizer of docs/llm-conversations.md: every 10
 # minutes, it normalizes the proxy requests that are not in llm.calls yet.
-# The backfill (llm-backfill-job.yaml) ran first, as the design doc's
-# rollout describes; a rebuild suspends the job again while it runs.
+# A rebuild suspends the job while the proxy's rows are deleted.
 apiVersion: batch/v1
 kind: CronJob
 metadata:

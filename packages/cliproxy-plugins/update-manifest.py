@@ -1,7 +1,7 @@
 """Pin the plugin image's installers only after the image passes CI.
 
-CLIProxyAPI's plugin installer and the LLM normalizer's installers in the
-CronJob and the one-off backfill Job all copy from the same image.
+CLIProxyAPI's plugin installer and the LLM normalizer's installer in its
+CronJob both copy from the same image.
 """
 
 import re
@@ -12,7 +12,6 @@ from pathlib import Path
 MANIFESTS = {
     Path("gitops/espresso/apps/cliproxy/statefulset.yaml"): "install-plugins",
     Path("gitops/espresso/apps/clickhouse/llm-normalizer.yaml"): "install-normalizer",
-    Path("gitops/espresso/apps/clickhouse/llm-backfill-job.yaml"): "install-normalizer",
 }
 
 image = sys.argv[1]

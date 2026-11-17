@@ -72,61 +72,13 @@ func proxyBatch(t *testing.T) (*Normalizer, []proxyFixture) {
 // with, which the normalizer does not write again.
 var archived = map[Hash]string{}
 
-func transcriptBatch(t *testing.T, proxied *Proxied) (*Normalizer, [][]TranscriptLine) {
-	t.Helper()
-	var lines []TranscriptLine
-	load(t, "transcripts.json", &lines)
-	var files [][]TranscriptLine
-	for i, l := range lines {
-		if i == 0 || l.Path != lines[i-1].Path || l.Host != lines[i-1].Host || l.Session != lines[i-1].Session {
-			files = append(files, nil)
-		}
-		files[len(files)-1] = append(files[len(files)-1], l)
-	}
-	n := NewNormalizer()
-	replies := repliesOf(proxied, files...)
-	for _, f := range files {
-		n.Transcript(f, replies, proxied)
-	}
-	return n, files
-}
-
-// repliesOf is the first pass of the transcript import, over every file.
-func repliesOf(proxied *Proxied, files ...[]TranscriptLine) *Replies {
-	r := &Replies{}
-	for _, f := range files {
-		r.Add(f, proxied)
-	}
-	return r
-}
-
-// lineRef is how canonical rows name an llm.transcripts row: by host,
-// path, and ID, which identify one row as uniquely as the table's key.
-type lineRef struct{ host, path, id string }
-
-func linesOf(files [][]TranscriptLine) map[lineRef]string {
-	out := map[lineRef]string{}
-	for _, f := range files {
-		for _, l := range f {
-			out[lineRef{l.Host, l.Path, l.ID}] = l.Line
-		}
-	}
-	return out
-}
-
 // rawOf follows a message's references to the raw JSON it was read from: a
-// request item, a transcript line, or for a proxy output, the response body
-// its call names, assembled again. Messages built from inside a line, and
-// the inputs a request's envelope held, have none of their own.
-func rawOf(t *testing.T, b *Batch, lines map[lineRef]string, m Message) ([]byte, bool) {
+// request item, or for an output, the response body its call names,
+// assembled again. The inputs a request's envelope held have none of their
+// own.
+func rawOf(t *testing.T, b *Batch, m Message) ([]byte, bool) {
 	t.Helper()
 	switch {
-	case m.Path != "":
-		line, ok := lines[lineRef{m.Host, m.Path, m.Line}]
-		if !ok {
-			t.Fatalf("message %v names no line", m.ID)
-		}
-		return []byte(line), m.Part == ""
 	case m.Output:
 		c := callByID(t, b, m.CallID)
 		r, ok := storedRequests(t)[c.RequestID]
@@ -207,7 +159,7 @@ func TestProxyReferencesResolve(t *testing.T) {
 		}
 	}
 	for _, m := range n.Messages {
-		raw, _ := rawOf(t, &n.Batch, nil, m)
+		raw, _ := rawOf(t, &n.Batch, m)
 		if m.Item == (Hash{}) {
 			continue
 		}
@@ -343,482 +295,9 @@ func TestProxyNormalizationIsIdempotent(t *testing.T) {
 	}
 }
 
-// llm.transcripts is dropped after the import, so every line must be
-// accounted for exactly once: a message or an event, which names its line by
-// host, path, and ID, folded into a call, a session, or the tree's
-// structure, a repeat of a message, or a dropped kind, which the design doc
-// lists. A message built from inside a line names the line and the item or
-// entry, and a call its file. No two rows share the key ClickHouse replaces
-// by, even for a file synced to a second host, which shares its session,
-// line numbers, and times.
-func TestTranscriptLinesAreCovered(t *testing.T) {
-	_, files := transcriptBatch(t, nil)
-	for _, f := range files {
-		if strings.HasSuffix(f[0].Path, "019f6478-0000-7000-8000-000000000004.jsonl") {
-			synced := append([]TranscriptLine{}, f...)
-			for i := range synced {
-				synced[i].Host = "ristretto"
-			}
-			files = append(files, synced)
-		}
-	}
-	n := NewNormalizer()
-	replies := repliesOf(nil, files...)
-	for _, f := range files {
-		n.Transcript(f, replies, nil)
-	}
-	if err := n.CoverageError(); err != nil {
-		t.Fatal(err)
-	}
-	lines := linesOf(files)
-	named := map[lineRef]int{}
-	ids := map[Hash]bool{}
-	for _, m := range n.Messages {
-		if ids[m.ID] {
-			t.Fatalf("two rows for message %v", m.ID)
-		}
-		ids[m.ID] = true
-		ref := lineRef{m.Host, m.Path, m.Line}
-		line, ok := lines[ref]
-		if !ok {
-			t.Fatalf("message %+v names no line", m)
-		}
-		if m.Part == "" {
-			named[ref]++
-			continue
-		}
-		// Compaction items and the context Pi sends again come from inside a
-		// line: a Codex replacement history index, or the entry Pi keeps.
-		e := parse([]byte(line))
-		if i, err := strconv.Atoi(m.Part); e.str("type") == "compacted" &&
-			(err != nil || i >= len(e.obj("payload").arr("replacement_history"))) ||
-			e.str("type") == "compaction" && !strings.Contains(strings.Join(fileLines(files, ref), "\n"), `"id":"`+m.Part+`"`) {
-			t.Fatalf("message %+v names a part its line lacks", m)
-		}
-	}
-	keys := map[[5]string]bool{}
-	for _, e := range n.Events {
-		key := [5]string{e.SessionID, e.TS, e.Host, e.Path, e.Line}
-		ref := lineRef{e.Host, e.Path, e.Line}
-		if _, ok := lines[ref]; !ok || keys[key] {
-			t.Fatalf("event %+v names no line, or another event's", e)
-		}
-		keys[key] = true
-		named[ref]++
-	}
-	for _, c := range n.Calls {
-		if len(fileLines(files, lineRef{c.Host, c.Path, ""})) == 0 {
-			t.Fatalf("call %+v names no file", c)
-		}
-	}
-	for ref, times := range named {
-		if times != 1 {
-			t.Fatalf("%s line %s on %s is named %d times", ref.path, ref.id, ref.host, times)
-		}
-	}
-	total, dispositions := 0, map[string]int{}
-	var dropped []string
-	for c, lines := range n.Coverage {
-		total += lines
-		dispositions[c.Disposition] += lines
-		if c.Disposition == "dropped" {
-			dropped = append(dropped, c.Source+"/"+c.Kind)
-		}
-	}
-	if total != len(lines) || total != 62 || dispositions["message"]+dispositions["event"] != len(named) {
-		t.Fatalf("%d lines covered as %v, %d named, of %d", total, dispositions, len(named), len(lines))
-	}
-	for c := range n.Coverage {
-		if (c.Disposition == "dropped") != (c.Destination == "") {
-			t.Fatalf("coverage %+v names no destination, or a dropped line one", c)
-		}
-	}
-	sort.Strings(dropped)
-	if want := []string{"claude-code/api-request-blob", "claude-code/last-prompt", "claude-code/queue-operation",
-		"codex/event_msg:context_compacted", "codex/event_msg:user_message", "opencode/message:idle", "pi/model_change",
-		"pi/thinking_level_change"}; !reflect.DeepEqual(dropped, want) {
-		t.Fatalf("dropped %q, want %q", dropped, want)
-	}
-}
-
-func must2[T, U any](v T, _ U) T { return v }
-
-// fileLines returns the lines of the file a reference names.
-func fileLines(files [][]TranscriptLine, ref lineRef) []string {
-	var out []string
-	for _, f := range files {
-		for _, l := range f {
-			if l.Host == ref.host && l.Path == ref.path {
-				out = append(out, l.Line)
-			}
-		}
-	}
-	return out
-}
-
-func TestTranscriptConversations(t *testing.T) {
-	n, _ := transcriptBatch(t, nil)
-	bySession := map[string][]Message{}
-	for _, m := range n.Messages {
-		bySession[m.SessionID] = append(bySession[m.SessionID], m)
-	}
-	leaf := func(session string) []string {
-		ms := bySession[session]
-		return texts(Path(n.Messages, ms[len(ms)-1].ID))
-	}
-
-	// Claude Code: the compaction boundary starts a new root, and the
-	// attachment is part of the context.
-	cc := "claude:22222222-2222-4222-8222-222222222222"
-	if got := leaf(cc); !reflect.DeepEqual(got, []string{
-		"user compaction:This session is being continued from a previous conversation. Summary: the 502s come from a stale endpoint.",
-		"assistant* text:Restarting the endpoint controller fixes it."}) {
-		t.Fatalf("claude code after compaction %q", got)
-	}
-	before := texts(Path(n.Messages, bySession[cc][4].ID))
-	if !reflect.DeepEqual(before, []string{
-		"user text:Why is the ingress returning 502?",
-		"user text:Contents of CLAUDE.md:\n# Engineering collaboration",
-		"assistant* thinking:Check the ingress controller logs.",
-		"assistant* tool_call:{\"command\":\"kubectl -n ingress logs deploy/traefik\"}",
-		"tool tool_result:upstream connect error"}) {
-		t.Fatalf("claude code before compaction %q", before)
-	}
-	streamed := callByID(t, &n.Batch, "req_011")
-	if len(streamed.OutputIDs) != 2 || streamed.OutputTokens != 64 || streamed.CacheWriteTokens != 2000 || streamed.Model != "claude-opus-5" {
-		t.Fatalf("streamed claude code call %+v", streamed)
-	}
-	sessions := map[string]Session{}
-	for _, s := range n.Sessions {
-		sessions[s.SessionID] = s
-	}
-	if s := sessions[cc]; s.Title != "Debug ingress 502" || s.Cwd != "/Users/michaelbrusegard/Projects/infra" {
-		t.Fatalf("claude code session %+v", s)
-	}
-	if s := sessions[cc+":agent:a77aa77aa77aa77aa"]; s.ParentSessionID != cc {
-		t.Fatalf("claude code agent session %+v", s)
-	}
-
-	// Codex: outputs between inputs form a call with the next usage record;
-	// compaction restarts the context from the replacement history.
-	cx := "codex:019f6478-0000-7000-8000-000000000003"
-	if got := leaf(cx); !reflect.DeepEqual(got, []string{
-		"user text:Add a Renovate rule for flake inputs.", "system compaction:", "user text:Now open a PR."}) {
-		t.Fatalf("codex after compaction %q", got)
-	}
-	var codexCalls []Call
-	for _, c := range n.Calls {
-		if c.SessionID == cx {
-			codexCalls = append(codexCalls, c)
-		}
-	}
-	if len(codexCalls) != 2 || codexCalls[0].UncachedInputTokens != 8000 || codexCalls[0].Model != "gpt-5.5" ||
-		codexCalls[1].CacheReadTokens != 8000 || codexCalls[1].ResponseID != "resp_h2" || len(codexCalls[0].OutputIDs) != 2 {
-		t.Fatalf("codex calls %+v", codexCalls)
-	}
-	if s := sessions["codex:019f6478-0000-7000-8000-000000000003:agent:renovate_review"]; s.ParentSessionID != cx {
-		t.Fatalf("codex agent session %+v", sessions)
-	}
-
-	// Pi: entries that are not messages are skipped in the tree. After a
-	// compaction the context is the summary and the entries from
-	// firstKeptEntryId on, sent again; the original branch stays.
-	pi := "pi:01a039ec-0000-7000-8000-000000000005"
-	if got := leaf(pi); !reflect.DeepEqual(got, []string{
-		"user compaction:## Goal\nMake the tofu approval test pass.",
-		"assistant thinking:Run the script. | tool_call:{\"command\":\"bash gitops/espresso/tests/tofu-approval.sh\"}",
-		"tool tool_result:FAIL: unapproved plan",
-		"assistant* text:Approved the plan; the test passes."}) {
-		t.Fatalf("pi after compaction %q", got)
-	}
-	var piOriginal Hash
-	for _, m := range bySession[pi] {
-		if m.Line == "5" {
-			piOriginal = m.ID
-		}
-	}
-	if got := texts(Path(n.Messages, piOriginal)); !reflect.DeepEqual(got, []string{
-		"user text:Run the tofu approval test.",
-		"assistant* thinking:Run the script. | tool_call:{\"command\":\"bash gitops/espresso/tests/tofu-approval.sh\"}",
-		"tool tool_result:FAIL: unapproved plan"}) {
-		t.Fatalf("pi before compaction %q", got)
-	}
-	for _, m := range bySession[pi] {
-		if m.Role == "tool" && !m.Blocks[0].IsError {
-			t.Fatal("pi tool failure lost")
-		}
-	}
-
-	// OpenCode: older exports keep parts as separate records; newer ones
-	// inline them, and records are ordered by time.
-	if got := leaf("opencode:ses_10bd0be90ffeFixtureOldAAAA"); !reflect.DeepEqual(got, []string{
-		"user text:t3code isnt saving conversations across reboots.",
-		"assistant* thinking:**Investigating the state directory** | tool_call:{\"filePath\":\"modules/home/t3code.nix\"} | tool_result:File not found"}) {
-		t.Fatalf("opencode %q", got)
-	}
-	if got := leaf("opencode:ses_e43a828d7ffeFixtureNewBBBB"); !reflect.DeepEqual(got, []string{
-		"user text:What does the worker return?",
-		"assistant* thinking:Look up the worker. | tool_call:{\"code\":\"return 1\"} | tool_result:1 | text:The worker returns 1."}) {
-		t.Fatalf("opencode inline %q", got)
-	}
-}
-
-// The proxy owns a session from its first proxied call on, for the lines
-// whose reply it returned. The transcript keeps what came before as
-// messages and calls, so earlier history is kept and nothing is counted
-// twice. A reply the proxy did not return stays the transcript's even
-// after the handover, since no other row would hold it.
-func TestTranscriptsOwnHistoryBeforeTheProxy(t *testing.T) {
-	session := "claude:11111111-1111-4111-8111-111111111111"
-	proxied := &Proxied{}
-	proxied.Add(session, "", "claude-code", "", "2026-11-10 09:00:00.000")
-	if n, _ := transcriptBatch(t, proxied); len(n.Calls) != len(must2(transcriptBatch(t, nil)).Calls) {
-		t.Fatalf("a reply the proxy never returned went with the handover: %+v", n.Calls)
-	}
-	proxied.Add(session, "", "claude-code", "msg_01A", "2026-11-10 09:00:00.000")
-	n, _ := transcriptBatch(t, proxied)
-	var lines []string
-	for _, m := range n.Messages {
-		if m.SessionID == session {
-			lines = append(lines, m.Line)
-		}
-	}
-	if !reflect.DeepEqual(lines, []string{"1"}) {
-		t.Fatalf("transcript messages %v, want the line before the proxy", lines)
-	}
-	if got := n.Coverage[Covered{"claude-code", "assistant", "proxied", "llm.calls"}]; got != 1 {
-		t.Fatalf("%d lines after the proxy, want 1", got)
-	}
-	for _, c := range n.Calls {
-		if c.SessionID == session {
-			t.Fatalf("transcript call %+v after the proxy took over", c)
-		}
-	}
-	// Other sessions are untouched.
-	all, _ := transcriptBatch(t, nil)
-	if len(all.Messages) != len(n.Messages)+1 {
-		t.Fatalf("%d messages with the boundary, %d without", len(n.Messages), len(all.Messages))
-	}
-}
-
-// Pi calls through the proxy carry no session, so CLIProxy names one the
-// transcript cannot derive. The replies both recorded, matched by response
-// ID, put the transcript in the proxy's session, which then owns its calls.
-func TestTranscriptsShareTheProxySessionOfTheirReplies(t *testing.T) {
-	p, _ := proxyBatch(t)
-	n, _ := transcriptBatch(t, proxiedBy(&p.Batch))
-	session := callByID(t, &p.Batch, "chat-1").SessionID
-	var lines []string
-	for _, m := range n.Messages {
-		if m.SessionID == session {
-			lines = append(lines, m.Line)
-		}
-	}
-	// The prompt came before the proxy's first call; the replies are the
-	// proxy's, so they are events here.
-	if !reflect.DeepEqual(lines, []string{"2"}) {
-		t.Fatalf("transcript messages %v in %s, want the prompt before the proxy", lines, session)
-	}
-	for _, c := range n.Calls {
-		if c.SessionID == session || strings.HasPrefix(c.ResponseID, "chatcmpl-") {
-			t.Fatalf("transcript call %+v counted again", c)
-		}
-	}
-	for _, s := range n.Sessions {
-		if strings.HasPrefix(s.SessionID, "pi:01a1c000") {
-			t.Fatalf("transcript kept its own session %+v", s)
-		}
-	}
-}
-
-// proxiedBy returns what -proxied passes for the proxy's rows.
-func proxiedBy(b *Batch) *Proxied {
-	parents := map[string]string{}
-	for _, s := range b.Sessions {
-		if s.Origin == "proxy" {
-			parents[s.SessionID] = s.ParentSessionID
-		}
-	}
-	p := &Proxied{}
-	for _, c := range b.Calls {
-		p.Add(c.SessionID, parents[c.SessionID], c.Client, c.ResponseID, c.StartedAt)
-	}
-	return p
-}
-
-// Several files can continue one proxy session. Each keeps a session row
-// with its host and path, so no file's source is lost.
-func TestTranscriptsSharingASessionKeepEverySource(t *testing.T) {
-	p, _ := proxyBatch(t)
-	var lines []TranscriptLine
-	load(t, "transcripts.json", &lines)
-	var pi []TranscriptLine
-	for _, l := range lines {
-		if strings.Contains(l.Path, "01a1c000") {
-			pi = append(pi, l)
-		}
-	}
-	copied := append([]TranscriptLine{}, pi...)
-	for i := range copied {
-		copied[i].Host = "forte"
-	}
-	n := NewNormalizer()
-	proxied := proxiedBy(&p.Batch)
-	replies := repliesOf(proxied, pi, copied)
-	n.Transcript(pi, replies, proxied)
-	n.Transcript(copied, replies, proxied)
-	session := callByID(t, &p.Batch, "chat-1").SessionID
-	var hosts []string
-	for _, s := range n.Sessions {
-		if s.SessionID == session && s.Path == pi[0].Path {
-			hosts = append(hosts, s.Host)
-		}
-	}
-	if !reflect.DeepEqual(hosts, []string{"lungo", "forte"}) {
-		t.Fatalf("session rows for hosts %v, want both files", hosts)
-	}
-}
-
-// A forked sub-agent's file starts with a copy of its parent's history,
-// replies included. A copied reply does not make the file its parent's: it
-// keeps its own session and parent, the copy is context sent to the model
-// with no call, and the sub-agent's own reply is its call, unless the proxy
-// has it. A reply another file recorded first is a copy the same way.
-func TestSubAgentTranscriptsKeepTheirOwnSession(t *testing.T) {
-	parent, child := "codex:019f6478-0000-7000-8000-00000000000a", "codex:019f6478-0000-7000-8000-00000000000a:agent:review"
-	file := func(id string, lines ...string) []TranscriptLine {
-		var out []TranscriptLine
-		for i, l := range lines {
-			out = append(out, TranscriptLine{Source: "codex", Host: "lungo", Session: "rollout-" + id, ID: strconv.Itoa(i + 1),
-				Path: ".codex/sessions/2026/11/12/rollout-" + id + ".jsonl", Line: l,
-				TS: "2026-11-12 10:00:0" + strconv.Itoa(i) + ".000"})
-		}
-		return out
-	}
-	user := func(text string) string {
-		return `{"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"` + text + `"}]}}`
-	}
-	reply := func(text string) string {
-		return `{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"` + text + `"}]}}`
-	}
-	usage := func(id string) string {
-		return `{"type":"token_usage_record","payload":{"response_id":"` + id + `","usage":{"input_tokens":10,"output_tokens":5}}}`
-	}
-	history := []string{user("Plan the migration."), reply("Plan: three steps."), usage("resp_parent")}
-	parentFile := file("2026-11-12T09-59-00-019f6478-0000-7000-8000-00000000000a", append([]string{
-		`{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000a"}}`}, history...)...)
-	childFile := file("2026-11-12T10-00-00-019f6478-0000-7000-8000-00000000000b", append(append([]string{
-		`{"type":"session_meta","payload":{"id":"019f6478-0000-7000-8000-00000000000b","source":{"subagent":{"thread_spawn":` +
-			`{"parent_thread_id":"019f6478-0000-7000-8000-00000000000a","agent_path":"/root/review"}}}}}`},
-		history...), user("Review the plan."), reply("The plan misses a rollback."), usage("resp_child"))...)
-
-	for _, tc := range []struct {
-		name    string
-		files   [][]TranscriptLine
-		proxied func(p *Proxied)
-		calls   []string
-	}{
-		// Only the parent went through the proxy.
-		{"parent proxied", [][]TranscriptLine{childFile}, func(p *Proxied) {
-			p.Add(parent, "", "codex", "resp_parent", "2026-11-12 09:59:00.000")
-		}, []string{"resp_child"}},
-		// Both did: the replies disagree, and the proxy owns the child's
-		// from its first call on.
-		{"both proxied", [][]TranscriptLine{childFile}, func(p *Proxied) {
-			p.Add(parent, "", "codex", "resp_parent", "2026-11-12 09:59:00.000")
-			p.Add(child, parent, "codex", "resp_child", "2026-11-12 10:00:05.000")
-		}, nil},
-		// Neither did; the parent's file holds the reply first.
-		{"no proxy", [][]TranscriptLine{parentFile, childFile}, nil, []string{"resp_parent", "resp_child"}},
-	} {
-		n := NewNormalizer()
-		var proxied *Proxied
-		if tc.proxied != nil {
-			proxied = &Proxied{}
-			tc.proxied(proxied)
-		}
-		replies := repliesOf(proxied, tc.files...)
-		for _, f := range tc.files {
-			n.Transcript(f, replies, proxied)
-		}
-		var sessions []string
-		for _, s := range n.Sessions {
-			if s.Path == childFile[0].Path {
-				sessions = append(sessions, s.SessionID+" < "+s.ParentSessionID)
-			}
-		}
-		if !reflect.DeepEqual(sessions, []string{child + " < " + parent}) {
-			t.Fatalf("%s: child file in sessions %v", tc.name, sessions)
-		}
-		var calls []string
-		for _, c := range n.Calls {
-			calls = append(calls, c.ResponseID)
-		}
-		if !reflect.DeepEqual(calls, tc.calls) {
-			t.Fatalf("%s: calls %v, want %v", tc.name, calls, tc.calls)
-		}
-		copies := 0
-		for _, m := range n.Messages {
-			if m.SessionID != child || m.Line != "3" {
-				continue
-			}
-			copies++
-			if m.Output || m.CallID != "" || collapse(n.Messages)[m.ID].Output {
-				t.Fatalf("%s: the copied reply is an output: %+v", tc.name, m)
-			}
-		}
-		if copies != 1 {
-			t.Fatalf("%s: %d messages for the copied reply", tc.name, copies)
-		}
-	}
-}
-
-// Claude Code writes an entry again when it resumes a session. The node
-// keeps the first line, and the repeat is counted as one.
-func TestRepeatedTranscriptEntriesKeepEveryLine(t *testing.T) {
-	n, files := transcriptBatch(t, nil)
-	lines := linesOf(files)
-	session := "claude:22222222-2222-4222-8222-222222222222"
-	first, repeat := 0, n.Coverage[Covered{"claude-code", "assistant", "repeat", "llm.messages"}]
-	for _, m := range n.Messages {
-		if m.SessionID == session && strings.Contains(lines[lineRef{m.Host, m.Path, m.Line}], `"uuid":"x2"`) {
-			first++
-		}
-	}
-	if first != 1 || repeat != 1 {
-		t.Fatalf("%d messages and %d repeat events for the repeated entry", first, repeat)
-	}
-	if c := callByID(t, &n.Batch, "req_011"); len(c.OutputIDs) != 2 {
-		t.Fatalf("repeated output counted again: %+v", c.OutputIDs)
-	}
-}
-
-// contentRoot is the part of a raw item that holds content: transcript
-// lines wrap it in their own metadata.
-func contentRoot(m Message, raw []byte) any {
-	o := parse(raw)
-	switch m.Format {
-	case "claude-code":
-		if r, ok := o["rendered"]; ok {
-			return map[string]any{"rendered": value(r)}
-		}
-		return value(o["message"])
-	case "codex":
-		return value(o["payload"])
-	case "pi":
-		if o["message"] == nil {
-			return map[string]any{"summary": value(o["summary"])}
-		}
-		return value(o["message"])
-	case "opencode":
-		return value(o["data"])
-	}
-	return value(raw)
-}
-
 // Keys whose strings are conversation content in some dialect.
 var contentKeys = map[string]bool{"text": true, "thinking": true, "arguments": true, "input": true,
-	"output": true, "content": true, "summary": true, "rendered": true, "refusal": true,
+	"output": true, "content": true, "summary": true, "refusal": true,
 	"reasoning_content": true, "error": true}
 
 // Every content string in a raw item must appear in an extracted block, and
@@ -826,67 +305,57 @@ var contentKeys = map[string]bool{"text": true, "thinking": true, "arguments": t
 // drop nor invent content.
 func TestBlocksMatchRawItems(t *testing.T) {
 	p, _ := proxyBatch(t)
-	tr, files := transcriptBatch(t, nil)
-	lines := linesOf(files)
 	checked := 0
-	for _, b := range []*Batch{&p.Batch, &tr.Batch} {
-		for _, m := range b.Messages {
-			raw, ok := rawOf(t, b, lines, m)
-			if !ok || m.Format == "proxy" {
-				continue
+	for _, m := range p.Messages {
+		raw, ok := rawOf(t, &p.Batch, m)
+		if !ok || m.Format == "proxy" {
+			continue
+		}
+		var leaves []string
+		var walk func(key string, v any)
+		walk = func(key string, v any) {
+			switch v := v.(type) {
+			case map[string]any:
+				for k, c := range v {
+					walk(k, c)
+				}
+			case []any:
+				for _, c := range v {
+					walk(key, c)
+				}
+			case string:
+				if contentKeys[key] && v != "" {
+					leaves = append(leaves, v)
+				}
 			}
-			if m.Format == "opencode" && len(m.Blocks) > 0 {
-				// Older OpenCode parts are separate records.
-				if parse(raw).obj("data")["content"] == nil {
+		}
+		walk("", value(raw))
+		var extracted []string
+		all := string(raw)
+		for _, b := range m.Blocks {
+			for _, s := range []string{b.Text, b.ToolInput} {
+				if s == "" {
 					continue
 				}
-			}
-			var leaves []string
-			var walk func(key string, v any)
-			walk = func(key string, v any) {
-				switch v := v.(type) {
-				case map[string]any:
-					for k, c := range v {
-						walk(k, c)
-					}
-				case []any:
-					for _, c := range v {
-						walk(key, c)
-					}
-				case string:
-					if contentKeys[key] && v != "" {
-						leaves = append(leaves, v)
+				extracted = append(extracted, s)
+				for _, piece := range strings.Split(s, "\n\n") {
+					quoted, _ := json.Marshal(piece)
+					if !strings.Contains(all, piece) && !strings.Contains(all, strings.Trim(string(quoted), `"`)) &&
+						!jsonContains(raw, piece) {
+						t.Fatalf("%s: extracted %q is not in the raw item %s", m.Format, piece, raw)
 					}
 				}
 			}
-			walk("", contentRoot(m, raw))
-			var extracted []string
-			all := string(raw)
-			for _, b := range m.Blocks {
-				for _, s := range []string{b.Text, b.ToolInput} {
-					if s == "" {
-						continue
-					}
-					extracted = append(extracted, s)
-					for _, piece := range strings.Split(s, "\n\n") {
-						quoted, _ := json.Marshal(piece)
-						if !strings.Contains(all, piece) && !strings.Contains(all, strings.Trim(string(quoted), `"`)) &&
-							!jsonContains(raw, piece) {
-							t.Fatalf("%s: extracted %q is not in the raw item %s", m.Format, piece, raw)
-						}
-					}
-				}
-			}
-			joined := strings.Join(extracted, "\n")
-			for _, leaf := range leaves {
-				if !strings.Contains(joined, leaf) {
-					t.Fatalf("%s: content %q missing from blocks %+v", m.Format, leaf, m.Blocks)
-				}
-			}
-			checked++
 		}
+		joined := strings.Join(extracted, "\n")
+		for _, leaf := range leaves {
+			if !strings.Contains(joined, leaf) {
+				t.Fatalf("%s: content %q missing from blocks %+v", m.Format, leaf, m.Blocks)
+			}
+		}
+		checked++
 	}
-	if checked < 40 {
+	if checked < 20 {
 		t.Fatalf("checked only %d messages", checked)
 	}
 }
@@ -961,15 +430,17 @@ func TestExports(t *testing.T) {
 	}
 }
 
-// OpenCode keeps reasoning, a tool call, its result, and the answer in one
-// assistant message; the export keeps them in that order.
+// An assistant message can hold reasoning, a tool call, its result, and the
+// answer, as OpenCode's transcript rows do; the export keeps them in that
+// order.
 func TestExportsKeepBlockOrder(t *testing.T) {
-	n, _ := transcriptBatch(t, nil)
-	var path []Message
-	for _, m := range n.Messages {
-		if m.SessionID == "opencode:ses_e43a828d7ffeFixtureNewBBBB" {
-			path = append(path, m)
-		}
+	path := []Message{
+		{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "What does the worker return?"}}},
+		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{
+			{Type: "thinking", Text: "Look up the worker."},
+			{Type: "tool_call", ToolName: "execute", ToolCallID: "tool_HD0", ToolInput: `{"code":"return 1"}`},
+			{Type: "tool_result", ToolCallID: "tool_HD0", Text: "1"},
+			{Type: "text", Text: "The worker returns 1."}}},
 	}
 	chat, _ := json.Marshal(must(OpenAIChat(Context{}, path, nil))["messages"])
 	want := `[{"content":"What does the worker return?","role":"user"},` +
@@ -1415,51 +886,5 @@ func TestExportsKeepRemovedToolNamespaces(t *testing.T) {
 			!strings.Contains(got, `"name":"read"`) {
 			t.Fatalf("%s export names %s", name, got)
 		}
-	}
-}
-
-// Claude Code logs each request's system prompt and tools from 2.1 on. A
-// call whose replies name the request carries them as items, so it exports
-// as a tool-using training example; a call without a log has none.
-func TestClaudeCodeRequestLogsGiveCallsTheirContext(t *testing.T) {
-	n, _ := transcriptBatch(t, nil)
-	items := map[Hash]string{}
-	for _, it := range n.Items {
-		if requestitems.HashOf([]byte(it.Item)) != it.Hash {
-			t.Fatalf("item %s does not match its hash", it.Item)
-		}
-		items[it.Hash] = it.Item
-	}
-	c := callByID(t, &n.Batch, "req_011")
-	var ctx Context
-	var fields []string
-	for _, p := range c.Context {
-		item, ok := items[p.Hash]
-		if !ok {
-			t.Fatalf("context part %+v has no item", p)
-		}
-		fields = append(fields, fmt.Sprintf("%s/%d", p.Field, p.Position))
-		ctx.Add(p.Field, []byte(item))
-	}
-	if !reflect.DeepEqual(fields, []string{"system/0", "system/1", "tools/0", "tools/1"}) {
-		t.Fatalf("context %v", fields)
-	}
-	path := Path(n.Messages, c.OutputIDs[len(c.OutputIDs)-1])
-	if err := ForTraining(ctx, path, c.OutputIDs); err != nil {
-		t.Fatal(err)
-	}
-	request := must(AnthropicMessages(ctx, path, c.OutputIDs))
-	var names []string
-	for _, tool := range request["tools"].([]any) {
-		names = append(names, tool.(map[string]any)["name"].(string))
-	}
-	if !strings.HasPrefix(request["system"].(string), "You are Claude Code") || !reflect.DeepEqual(names, []string{"Bash", "Read"}) {
-		t.Fatalf("exported %v with tools %v", request["system"], names)
-	}
-	if c := callByID(t, &n.Batch, "req_012"); len(c.Context) != 0 {
-		t.Fatalf("call without a request log has context %+v", c.Context)
-	}
-	if c.CacheWrite1hTokens != 2000 || c.CacheWrite5mTokens != 0 {
-		t.Fatalf("cache writes by lifetime %+v", c)
 	}
 }
