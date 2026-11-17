@@ -3,6 +3,20 @@
 # them by server-assigned ID. Seeded defaults are adopted in seeded.tf.
 # New listeners only bind after a server restart; a reload is not enough.
 
+# DMARC and TLS reports to postmaster@ are analysed and kept for review in the
+# web admin instead of landing in the mailbox. Other postmaster mail is still
+# delivered; only messages parsed as reports are held back.
+resource "stalwart_report_settings" "this" {
+  inbound_report_addresses  = ["postmaster@*"]
+  inbound_report_forwarding = false
+}
+
+# Keep 90 days of reports, enough history to judge DMARC and MTA-STS
+# enforcement.
+resource "stalwart_data_retention" "this" {
+  hold_mta_reports_for = 7776000000
+}
+
 resource "stalwart_mta_sts" "this" {
   max_age = 604800000
   mode    = "testing"
