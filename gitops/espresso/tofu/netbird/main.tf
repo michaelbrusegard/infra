@@ -372,26 +372,22 @@ resource "netbird_route" "hermes_cortado_exit_ipv6" {
   enabled     = true
 }
 
-# Opt-in exit nodes so admin devices can appear to be at either site. They
-# stay dormant until selected with `netbird networks select <site>-exit`. The
-# client pairs `<id>` (0.0.0.0/0) with `<id>-v6` (::/0) into one toggle, so
-# IPv6 follows the IPv4 selection instead of leaking from the local network.
-locals {
-  exit_routes = {
-    "asgard-exit"     = { network = "0.0.0.0/0", site = "Asgard", peer_group = netbird_group.asgard_routing_peers.id }
-    "asgard-exit-v6"  = { network = "::/0", site = "Asgard", peer_group = netbird_group.asgard_routing_peers.id }
-    "midgard-exit"    = { network = "0.0.0.0/0", site = "Midgard", peer_group = netbird_group.midgard_routing_peers.id }
-    "midgard-exit-v6" = { network = "::/0", site = "Midgard", peer_group = netbird_group.midgard_routing_peers.id }
-  }
-}
-
+# Opt-in exit node so admin devices can appear to be at home. It stays
+# dormant until selected with `netbird networks select asgard-exit`. The client
+# pairs `<id>` (0.0.0.0/0) with `<id>-v6` (::/0) into one toggle, so IPv6
+# follows the IPv4 selection instead of leaking from the local network.
+# Midgard has no equivalent: NetBird allows one route per prefix per peer, and
+# cortado's default routes must stay auto-applied for Hermes.
 resource "netbird_route" "exit" {
-  for_each = local.exit_routes
+  for_each = {
+    "asgard-exit"    = "0.0.0.0/0"
+    "asgard-exit-v6" = "::/0"
+  }
 
-  network         = each.value.network
+  network         = each.value
   network_id      = each.key
-  description     = "Opt-in internet egress through ${each.value.site}"
-  peer_groups     = [each.value.peer_group]
+  description     = "Opt-in internet egress through Asgard"
+  peer_groups     = [netbird_group.asgard_routing_peers.id]
   groups          = [netbird_group.admins.id]
   masquerade      = true
   metric          = 100
@@ -404,16 +400,13 @@ resource "netbird_policy" "exit_access" {
   enabled = true
 
   rule {
-    name          = "Admins to exit nodes"
+    name          = "Admins to Asgard exit"
     action        = "accept"
     bidirectional = false
     enabled       = true
     protocol      = "all"
     sources       = [netbird_group.admins.id]
-    destinations = [
-      netbird_group.asgard_routing_peers.id,
-      netbird_group.midgard_routing_peers.id,
-    ]
+    destinations  = [netbird_group.asgard_routing_peers.id]
   }
 }
 
