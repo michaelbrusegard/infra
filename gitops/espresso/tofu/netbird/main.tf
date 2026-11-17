@@ -205,8 +205,13 @@ resource "netbird_group" "quest" {
 # Network routers select every peer in their group, so these stay per-site: a
 # peer in the wrong one becomes an equal-metric router for a network it cannot
 # reach.
-resource "netbird_group" "routing_peers" {
+resource "netbird_group" "asgard_routing_peers" {
   name = "Asgard Routing Peers"
+}
+
+moved {
+  from = netbird_group.routing_peers
+  to   = netbird_group.asgard_routing_peers
 }
 
 resource "netbird_group" "midgard_routing_peers" {
@@ -295,7 +300,7 @@ resource "netbird_setup_key" "macchiato" {
   type                   = "reusable"
   usage_limit            = 0
   allow_extra_dns_labels = true
-  auto_groups            = [netbird_group.routing_peers.id]
+  auto_groups            = [netbird_group.asgard_routing_peers.id]
   ephemeral              = false
   revoked                = false
 }
@@ -367,6 +372,51 @@ resource "netbird_route" "hermes_cortado_exit_ipv6" {
   enabled     = true
 }
 
+# Opt-in exit nodes so admin devices can appear to be at either site. They
+# stay dormant until selected with `netbird networks select <site>-exit`. The
+# client pairs `<id>` (0.0.0.0/0) with `<id>-v6` (::/0) into one toggle, so
+# IPv6 follows the IPv4 selection instead of leaking from the local network.
+locals {
+  exit_routes = {
+    "asgard-exit"     = { network = "0.0.0.0/0", site = "Asgard", peer_group = netbird_group.asgard_routing_peers.id }
+    "asgard-exit-v6"  = { network = "::/0", site = "Asgard", peer_group = netbird_group.asgard_routing_peers.id }
+    "midgard-exit"    = { network = "0.0.0.0/0", site = "Midgard", peer_group = netbird_group.midgard_routing_peers.id }
+    "midgard-exit-v6" = { network = "::/0", site = "Midgard", peer_group = netbird_group.midgard_routing_peers.id }
+  }
+}
+
+resource "netbird_route" "exit" {
+  for_each = local.exit_routes
+
+  network         = each.value.network
+  network_id      = each.key
+  description     = "Opt-in internet egress through ${each.value.site}"
+  peer_groups     = [each.value.peer_group]
+  groups          = [netbird_group.admins.id]
+  masquerade      = true
+  metric          = 100
+  enabled         = true
+  skip_auto_apply = true
+}
+
+resource "netbird_policy" "exit_access" {
+  name    = "Exit Access"
+  enabled = true
+
+  rule {
+    name          = "Admins to exit nodes"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.admins.id]
+    destinations = [
+      netbird_group.asgard_routing_peers.id,
+      netbird_group.midgard_routing_peers.id,
+    ]
+  }
+}
+
 resource "netbird_network" "asgard" {
   name = "Asgard"
 }
@@ -395,7 +445,7 @@ resource "netbird_network_resource" "cortado_services" {
 
 resource "netbird_network_router" "macchiato" {
   network_id  = netbird_network.asgard.id
-  peer_groups = [netbird_group.routing_peers.id]
+  peer_groups = [netbird_group.asgard_routing_peers.id]
   enabled     = true
   masquerade  = true
   metric      = 100
@@ -578,7 +628,7 @@ resource "netbird_policy" "routing_peer_dns_udp" {
     protocol      = "udp"
     ports         = ["53"]
     sources       = [netbird_group.users.id]
-    destinations  = [netbird_group.routing_peers.id]
+    destinations  = [netbird_group.asgard_routing_peers.id]
   }
 }
 
@@ -594,7 +644,7 @@ resource "netbird_policy" "routing_peer_dns_tcp" {
     protocol      = "tcp"
     ports         = ["53"]
     sources       = [netbird_group.users.id]
-    destinations  = [netbird_group.routing_peers.id]
+    destinations  = [netbird_group.asgard_routing_peers.id]
   }
 }
 
