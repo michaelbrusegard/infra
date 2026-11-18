@@ -17,6 +17,20 @@ resource "stalwart_data_retention" "this" {
   hold_mta_reports_for = 7776000000
 }
 
+# Don't send DMARC reports to other domains. They only help the senders,
+# tell third parties who mails us, and bounce back into the mailbox when
+# a sender's report address is broken.
+resource "stalwart_dmarc_report_settings" "this" {
+  aggregate_send_frequency = {
+    match = []
+    else  = "disable"
+  }
+  failure_send_frequency = {
+    match = []
+    else  = "false"
+  }
+}
+
 resource "stalwart_mta_sts" "this" {
   max_age = 604800000
   mode    = "testing"
