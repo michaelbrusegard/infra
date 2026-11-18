@@ -46,6 +46,13 @@ resource "stalwart_dkim_report_settings" "this" {
   }
 }
 
+# Apple Contacts never asks for a vCard version and reads the default 4.0 as
+# Latin-1, garbling names with letters such as ø. Serve 3.0 unless a client
+# asks for 4.0.
+resource "stalwart_address_book" "this" {
+  v_card_version = "v3"
+}
+
 resource "stalwart_mta_sts" "this" {
   max_age = 604800000
   mode    = "testing"
