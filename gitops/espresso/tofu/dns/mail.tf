@@ -9,7 +9,7 @@ locals {
   stalwart_backup_mx = "router.midgard.michaelbrusegard.com"
   # Senders refetch the MTA-STS policy when this id changes: set it to the
   # date whenever the policy (Stalwart's stalwart_mta_sts) changes.
-  mta_sts_id = "20261116"
+  mta_sts_id = "20261119"
   # SMTP2GO is the only outbound path; nothing sends from the MX. Its bounce
   # return path (em1206132) already carries the envelope SPF.
   stalwart_spf = "v=spf1 include:spf.smtp2go.com -all"
