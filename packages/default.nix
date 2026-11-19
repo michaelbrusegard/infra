@@ -10,6 +10,7 @@ pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
 }
 // {
   ai-images = pkgs.callPackage ./ai-images {};
+  bulwark-desktop = pkgs.callPackage ./bulwark-desktop {};
   slack-cli = pkgs.callPackage ./slack-cli {};
   terraform-provider-stalwart = pkgs.callPackage ./terraform-provider-stalwart {};
   vite-plus = import ./vite-plus {inherit pkgs;};

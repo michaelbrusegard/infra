@@ -45,6 +45,7 @@ in {
           # Keep the desktop files while allowing slack-cli to own bin/slack.
           (lib.lowPrio slack)
           protonmail-desktop
+          bulwark-desktop
           inkscape-with-extensions
           audacity
         ]
@@ -129,6 +130,7 @@ in {
           ".config/Mattermost"
           ".config/Slack"
           ".config/Proton Mail"
+          ".config/Bulwark"
           ".config/Proton Pass"
           ".config/Nextcloud"
           ".config/legcord"
