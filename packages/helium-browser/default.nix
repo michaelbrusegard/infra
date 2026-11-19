@@ -3,6 +3,9 @@
   stdenvNoCC,
   fetchurl,
   appimageTools,
+  writeTextDir,
+  # Chromium enterprise policies, applied as mandatory.
+  policies ? {},
 }: let
   pname = "helium";
   version = "0.21.1.1";
@@ -22,9 +25,16 @@
     inherit (artifact) hash;
   };
   contents = appimageTools.extract {inherit pname version src;};
+  policyDir = writeTextDir "managed/nix.json" (builtins.toJSON policies);
 in
   appimageTools.wrapType2 {
     inherit pname version src;
+
+    # The sandbox gets its own /etc, so the host's /etc/chromium/policies is
+    # never visible; bind the policy directory in instead.
+    extraBwrapArgs = lib.optionals (policies != {}) [
+      "--ro-bind ${policyDir} /etc/chromium/policies"
+    ];
 
     extraInstallCommands = ''
       install -Dm444 ${contents}/helium.desktop $out/share/applications/helium.desktop
