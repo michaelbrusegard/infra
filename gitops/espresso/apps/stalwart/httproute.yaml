@@ -18,8 +18,7 @@ spec:
         - name: stalwart-internal
           port: 8080
 ---
-# Serves Stalwart's MTA-STS policy. Inert until the dns stack's
-# mail_on_stalwart publishes the mta-sts names.
+# Serves Stalwart's MTA-STS policy.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

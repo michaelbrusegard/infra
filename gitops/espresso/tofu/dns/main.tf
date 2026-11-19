@@ -51,34 +51,7 @@ locals {
       type    = "TXT"
       content = "v=TLSRPTv1; rua=mailto:postmaster@michaelbrusegard.com"
     }
-    # Proton's DKIM keys and domain verification stay while Proton can still
-    # send as this domain; they do not route mail. Proton created them with
-    # automatic TTL.
-    proton_verification = {
-      name    = "michaelbrusegard.com"
-      type    = "TXT"
-      content = "\"protonmail-verification=ede78d1c2406786df23d6874aae245da7c61b075\""
-      ttl     = 1
-    }
-    proton_dkim = {
-      name    = "protonmail._domainkey.michaelbrusegard.com"
-      type    = "CNAME"
-      content = "protonmail.domainkey.dxxn4pqwnzw6mzwwzvq6sha6443ciruhtismdampicgutgw6oe6xq.domains.proton.ch"
-      ttl     = 1
-    }
-    proton_dkim2 = {
-      name    = "protonmail2._domainkey.michaelbrusegard.com"
-      type    = "CNAME"
-      content = "protonmail2.domainkey.dxxn4pqwnzw6mzwwzvq6sha6443ciruhtismdampicgutgw6oe6xq.domains.proton.ch"
-      ttl     = 1
-    }
-    proton_dkim3 = {
-      name    = "protonmail3._domainkey.michaelbrusegard.com"
-      type    = "CNAME"
-      content = "protonmail3.domainkey.dxxn4pqwnzw6mzwwzvq6sha6443ciruhtismdampicgutgw6oe6xq.domains.proton.ch"
-      ttl     = 1
-    }
-  }, var.mail_on_stalwart ? local.stalwart_mail.michaelbrusegard : local.proton_mail.michaelbrusegard)
+  }, local.stalwart_mail.michaelbrusegard)
 }
 
 # Cloudflare only accepts automatic TTL (1) on proxied records.
@@ -125,33 +98,7 @@ locals {
       type    = "TXT"
       content = "v=DKIM1; k=ed25519; p=${var.dkim_ed25519_pub_michbrus}"
     }
-    # Proton Pass alias DKIM and domain verification; see the note on the
-    # michaelbrusegard.com equivalents.
-    proton_verification = {
-      name    = "michbrus.com"
-      type    = "TXT"
-      content = "\"pm-verification=upjbsplvugrbrpzczsfshlteddfkgd\""
-      ttl     = 1
-    }
-    proton_dkim = {
-      name    = "dkim._domainkey.michbrus.com"
-      type    = "CNAME"
-      content = "dkim._domainkey.alias.proton.me"
-      ttl     = 1
-    }
-    proton_dkim02 = {
-      name    = "dkim02._domainkey.michbrus.com"
-      type    = "CNAME"
-      content = "dkim02._domainkey.alias.proton.me"
-      ttl     = 1
-    }
-    proton_dkim03 = {
-      name    = "dkim03._domainkey.michbrus.com"
-      type    = "CNAME"
-      content = "dkim03._domainkey.alias.proton.me"
-      ttl     = 1
-    }
-  }, var.mail_on_stalwart ? local.stalwart_mail.michbrus : local.proton_mail.michbrus)
+  }, local.stalwart_mail.michbrus)
 }
 
 resource "cloudflare_dns_record" "michbrus" {

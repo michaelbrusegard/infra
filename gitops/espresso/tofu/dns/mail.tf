@@ -1,8 +1,5 @@
 # Records that decide where mail for both domains is delivered and who may
-# send it. Proton's were adopted from their exact live content (see imports.tf) and
-# share keys with Stalwart's, so flipping mail_on_stalwart rewrites them in
-# place instead of publishing both providers side by side. Every record has
-# the same attributes so either map can feed the same resource.
+# send it. main.tf merges each domain's map into its zone's records.
 locals {
   # macchiato's dyndns keeps this on the WAN address. The edge certificate
   # covers it and Stalwart's MTA-STS policy lists it.
@@ -18,69 +15,6 @@ locals {
   stalwart_spf = "v=spf1 include:spf.smtp2go.com -all"
   # The policy host is the HTTPS Gateway, not the SMTP edge's split-DNS VIP.
   stalwart_mta_sts_host = "router.asgard.michaelbrusegard.com"
-
-  proton_mail = {
-    michaelbrusegard = {
-      mx = {
-        name     = "michaelbrusegard.com"
-        type     = "MX"
-        content  = "mail.protonmail.ch"
-        priority = 10
-        ttl      = 1
-      }
-      mx_secondary = {
-        name     = "michaelbrusegard.com"
-        type     = "MX"
-        content  = "mailsec.protonmail.ch"
-        priority = 20
-        ttl      = 1
-      }
-      spf = {
-        name     = "michaelbrusegard.com"
-        type     = "TXT"
-        content  = "\"v=spf1 include:_spf.protonmail.ch ~all\""
-        priority = null
-        ttl      = 1
-      }
-      dmarc = {
-        name     = "_dmarc.michaelbrusegard.com"
-        type     = "TXT"
-        content  = "\"v=DMARC1; p=quarantine\""
-        priority = null
-        ttl      = 1
-      }
-    }
-    michbrus = {
-      mx = {
-        name     = "michbrus.com"
-        type     = "MX"
-        content  = "mx1.alias.proton.me"
-        priority = 10
-        ttl      = 1
-      }
-      mx_secondary = {
-        name     = "michbrus.com"
-        type     = "MX"
-        content  = "mx2.alias.proton.me"
-        priority = 20
-        ttl      = 1
-      }
-      spf = {
-        name     = "michbrus.com"
-        type     = "TXT"
-        content  = "\"v=spf1 include:alias.proton.me ~all\""
-        priority = null
-        ttl      = 1
-      }
-      dmarc = {
-        name     = "_dmarc.michbrus.com"
-        type     = "TXT"
-        content  = "\"v=DMARC1; p=quarantine; pct=100; adkim=s; aspf=s\""
-        priority = null
-        ttl      = 1
-      }
-    }
-  }
 
   # DMARC passes on Stalwart's and SMTP2GO's d=<domain> signatures. SPF only
   # aligns relaxed because SMTP2GO's envelope sender is the em1206132
