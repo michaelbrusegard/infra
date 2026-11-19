@@ -413,6 +413,8 @@ data:
     -- Grafana cannot read prompt bodies, failure bodies, headers, or account IDs.
     -- A definer view lets it query metrics without access to the source table.
     -- Current standard API-equivalent USD rates, verified 2026-11-09:
+    -- https://developers.openai.com/api/docs/models/gpt-6.2-sol (verified 2026-11-19)
+    -- https://developers.openai.com/api/docs/models/gpt-6.2-astra (verified 2026-11-19)
     -- https://developers.openai.com/api/docs/models/gpt-6.1-sol
     -- https://developers.openai.com/api/docs/models/gpt-6-astra
     -- https://developers.openai.com/api/docs/models/gpt-6-luna
@@ -436,6 +438,8 @@ data:
         -- USD per million tokens: input, reads, output, 5m writes, 1h writes.
         -- Zero write rates mean the archived TTL is insufficient to price them.
         multiIf(
+            provider = 'codex' AND model = 'gpt-6.2-sol', tuple(2., 0.1, 10., 0., 0.),
+            provider = 'codex' AND model = 'gpt-6.2-astra', tuple(8., 0.4, 40., 0., 0.),
             provider = 'codex' AND model = 'gpt-6.1-sol', tuple(2., 0.1, 10., 0., 0.),
             provider = 'codex' AND model = 'gpt-6.1-terra', tuple(1., 0.05, 5., 0., 0.),
             provider = 'codex' AND model = 'gpt-6-sol', tuple(2., 0.2, 10., 0., 0.),

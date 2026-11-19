@@ -11,13 +11,13 @@ data:
 
     delegation:
       provider: openai-api
-      model: gpt-6.1-sol
+      model: gpt-6.2-sol
       reasoning_effort: xhigh
       default_profile: operator
       profiles:
         operator:
           provider: openai-api
-          model: gpt-6.1-sol
+          model: gpt-6.2-sol
           reasoning_effort: medium
         researcher:
           provider: openai-api
@@ -96,7 +96,7 @@ data:
           "__MATTERMOST_SCRATCHPAD_CHANNEL_ID__":
             model: kimi-k3
           "__MATTERMOST_CODE_CHANNEL_ID__":
-            model: gpt-6.1-sol
+            model: gpt-6.2-sol
       webhook:
         enabled: true
         extra:
@@ -138,7 +138,7 @@ data:
         kimi-k3-256k: xhigh
         claude-opus-5-5: high
         gpt-6-luna: medium
-        gpt-6.1-sol: high
+        gpt-6.2-sol: high
 
     approvals:
       mode: off
