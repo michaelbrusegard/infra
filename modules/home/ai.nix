@@ -30,30 +30,109 @@
     # the upstream credential. GUI apps must not depend on shell exports.
     apiKey = "netbird";
   };
+  # Pi 1.5.2's catalog predates GPT-6.2. These mirror its built-in OpenAI
+  # GPT-6.1 Sol entry with OpenAI's published 6.2 prices; drop them once Pi
+  # ships the models itself.
+  piOpenAIGpt62 = {
+    id,
+    name,
+    cost,
+  }: {
+    inherit id name cost;
+    reasoning = true;
+    input = ["text" "image"];
+    contextWindow = 272000;
+    maxTokens = 128000;
+    thinkingLevelMap = {
+      off = null;
+      minimal = null;
+      low = "low";
+      medium = "medium";
+      high = "high";
+      xhigh = "xhigh";
+      max = "max";
+    };
+    compat = {
+      supportsStrictMode = true;
+      supportsOpenAIGrammarTools = true;
+      supportsAdditionalTools = true;
+      supportsToolSearch = true;
+      supportsMidConvoSystemMessages = true;
+      supportsExplicitPromptCacheMode = true;
+      supportsMidConvoEffort = true;
+    };
+  };
   # Route Pi's built-in providers through the gateway, keeping their catalogs.
   piModels.providers =
-    lib.mapAttrs (_: baseUrl: {
-      inherit baseUrl;
-      inherit (cliproxy) apiKey;
-    }) {
-      anthropic = cliproxy.baseUrl;
-      openai = "${cliproxy.baseUrl}/v1";
-      moonshotai = "${cliproxy.baseUrl}/v1";
+    lib.recursiveUpdate
+    (lib.mapAttrs (_: baseUrl: {
+        inherit baseUrl;
+        inherit (cliproxy) apiKey;
+      }) {
+        anthropic = cliproxy.baseUrl;
+        openai = "${cliproxy.baseUrl}/v1";
+        moonshotai = "${cliproxy.baseUrl}/v1";
+      })
+    {
+      openai.models = [
+        (piOpenAIGpt62 {
+          id = "gpt-6.2-sol";
+          name = "GPT-6.2 Sol";
+          cost = {
+            input = 2;
+            output = 10;
+            cacheRead = 0.1;
+            cacheWrite = 2.5;
+            tiers = [
+              {
+                inputTokensAbove = 272000;
+                input = 4;
+                output = 15;
+                cacheRead = 0.2;
+                cacheWrite = 5;
+              }
+            ];
+          };
+        })
+        (piOpenAIGpt62 {
+          id = "gpt-6.2-astra";
+          name = "GPT-6.2 Astra";
+          cost = {
+            input = 8;
+            output = 40;
+            cacheRead = 0.4;
+            cacheWrite = 10;
+            tiers = [
+              {
+                inputTokensAbove = 272000;
+                input = 16;
+                output = 60;
+                cacheRead = 0.8;
+                cacheWrite = 20;
+              }
+            ];
+          };
+        })
+      ];
     };
   # The gateway translates Anthropic Messages for its other models, but
   # Claude Code's discovery keeps only IDs containing "claude".
   claudeGatewayModels = [
     {
-      model = "gpt-6.1-sol";
-      label = "GPT-6.1 Sol";
+      model = "gpt-6.2-sol";
+      label = "GPT-6.2 Sol";
+    }
+    {
+      model = "gpt-6.1-terra";
+      label = "GPT-6.1 Terra";
     }
     {
       model = "gpt-6-luna";
       label = "GPT-6 Luna";
     }
     {
-      model = "gpt-6-astra";
-      label = "GPT-6 Astra";
+      model = "gpt-6.2-astra";
+      label = "GPT-6.2 Astra";
     }
     {
       model = "kimi-k3.1-pro";

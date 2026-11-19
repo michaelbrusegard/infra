@@ -45,7 +45,7 @@ missing or pre-failing checks in the brief.
 
 ## 2. Start Sol
 
-In T3, call `orchestrator_capabilities`. Use `gpt-6.1-sol` at high reasoning effort unless the user
+In T3, call `orchestrator_capabilities`. Use `gpt-6.2-sol` at high reasoning effort unless the user
 named another version or effort. Record provider, model, and effort
 only if exposed. Use `delegate_task` every round (`role: "review"`,
 `mode: "async"`). Save `taskId`. New `clientRequestId` per round.

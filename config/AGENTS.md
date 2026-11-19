@@ -34,8 +34,8 @@ ownership up front.
 Reviews come from a different model family than the author's.
 
 - Writing code: Claude Opus 5.5 (`claude-opus-5-5`) at high effort.
-- Reviews and `review-loop`: GPT-6.1 Sol (`gpt-6.1-sol`) at high effort.
-- `council`: Claude Opus 5.5, GPT-6.1 Sol, and Kimi K3.1 Pro
+- Reviews and `review-loop`: GPT-6.2 Sol (`gpt-6.2-sol`) at high effort.
+- `council`: Claude Opus 5.5, GPT-6.2 Sol, and Kimi K3.1 Pro
   (`kimi-k3.1-pro`), all at high effort.
 
 Do not use max effort unless Michael asks for it.

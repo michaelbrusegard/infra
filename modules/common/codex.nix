@@ -12,7 +12,7 @@ in {
   environment.systemPackages = [aiImages];
   environment.etc."codex/config.toml".source = (pkgs.formats.toml {}).generate "codex-config.toml" {
     # Codex is the reviewer harness; Claude Code writes the code.
-    model = "gpt-6.1-sol";
+    model = "gpt-6.2-sol";
     model_reasoning_effort = "high";
     model_provider = "cliproxy";
     model_providers.cliproxy = {
