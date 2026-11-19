@@ -21,77 +21,12 @@
     react-devtools = "fmkadmapgofadopljbjfkapdkoienihi";
   };
 
-  # Typed as "np foo" or "@np foo" in the address bar, like the Zen aliases.
-  siteSearch = [
-    {
-      name = "SearXNG";
-      shortcut = "sx";
-      url = "https://search.asgard.michaelbrusegard.com/search?q={searchTerms}";
-    }
-    {
-      name = "Nix Packages";
-      shortcut = "np";
-      url = "https://search.nixos.org/packages?type=packages&channel=unstable&query={searchTerms}";
-    }
-    {
-      name = "Nix Options";
-      shortcut = "no";
-      url = "https://search.nixos.org/options?channel=unstable&query={searchTerms}";
-    }
-    {
-      name = "Home Manager";
-      shortcut = "hm";
-      url = "https://home-manager-options.extranix.com/?query={searchTerms}&release=master";
-    }
-    {
-      name = "ChatGPT";
-      shortcut = "gpt";
-      url = "https://chatgpt.com/?q={searchTerms}";
-    }
-    {
-      name = "MakerWorld";
-      shortcut = "mw";
-      url = "https://makerworld.com/en/search/models?keyword={searchTerms}";
-    }
-    {
-      name = "Printables";
-      shortcut = "pt";
-      url = "https://www.printables.com/search/models?q={searchTerms}";
-    }
-  ];
-
-  # Settings mirrored from the Zen policies.
   settings = {
     DefaultSearchProviderEnabled = true;
     DefaultSearchProviderName = "DuckDuckGo";
     DefaultSearchProviderKeyword = "ddg";
     DefaultSearchProviderSearchURL = "https://duckduckgo.com/?q={searchTerms}";
-    SiteSearchSettings = siteSearch;
-    SearchSuggestEnabled = false;
-    PasswordManagerEnabled = false;
-    AutofillSettings = [
-      {
-        url_pattern = "*";
-        blocked_types = ["all"];
-      }
-    ];
-    NetworkPredictionOptions = 2;
-    HttpsOnlyMode = "force_enabled";
-    BlockThirdPartyCookies = true;
-    DefaultBrowserSettingEnabled = false;
-    PromptForDownloadLocation = false;
-    RestoreOnStartup = 1;
   };
-
-  # Unmanaged Macs only take recommended policies: SiteSearchSettings can't be
-  # recommended and RestoreOnStartup is filtered as sensitive, so set those by
-  # hand. The cask's Chromium also predates AutofillSettings.
-  darwinSettings =
-    removeAttrs settings ["AutofillSettings" "SiteSearchSettings" "RestoreOnStartup"]
-    // {
-      AutofillAddressEnabled = false;
-      AutofillCreditCardEnabled = false;
-    };
 
   helium = pkgs.helium-browser.override {
     policies =
@@ -119,7 +54,7 @@ in {
       # domain apply as recommended defaults the user can still change, and
       # extensions are offered through the External Extensions directory.
       (lib.mkIf isDarwin {
-        targets.darwin.defaults."net.imput.helium" = darwinSettings;
+        targets.darwin.defaults."net.imput.helium" = settings;
         home.file = lib.mapAttrs' (_: id:
           lib.nameValuePair "Library/Application Support/net.imput.helium/External Extensions/${id}.json" {
             # Helium only routes installs through its proxy (and its
