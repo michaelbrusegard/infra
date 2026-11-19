@@ -36,7 +36,7 @@
       }
     ];
     NetworkPredictionOptions = 2;
-    HttpsOnlyMode = "force_enabled";
+    HttpsOnlyMode = "force_balanced_enabled";
     BlockThirdPartyCookies = true;
     DefaultBrowserSettingEnabled = false;
     PromptForDownloadLocation = false;
