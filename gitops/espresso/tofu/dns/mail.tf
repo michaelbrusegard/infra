@@ -45,7 +45,7 @@ locals {
       dmarc = {
         name     = "_dmarc.michaelbrusegard.com"
         type     = "TXT"
-        content  = "v=DMARC1; p=quarantine; adkim=s; rua=mailto:postmaster@michaelbrusegard.com"
+        content  = "v=DMARC1; p=reject; adkim=s; rua=mailto:postmaster@michaelbrusegard.com"
         priority = null
         ttl      = 300
       }
@@ -89,7 +89,7 @@ locals {
       dmarc = {
         name     = "_dmarc.michbrus.com"
         type     = "TXT"
-        content  = "v=DMARC1; p=quarantine; adkim=s; rua=mailto:postmaster@michbrus.com"
+        content  = "v=DMARC1; p=reject; adkim=s; rua=mailto:postmaster@michbrus.com"
         priority = null
         ttl      = 300
       }
