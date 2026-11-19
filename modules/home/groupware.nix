@@ -9,11 +9,12 @@
 }: let
   enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
 
-  nextcloudUrl = "https://cloud.asgard.michaelbrusegard.com/remote.php/dav";
-  nextcloudUser = "michaelbrusegard";
-  nextcloudPasswordCommand = [
+  # vdirsyncer finds the CalDAV and CardDAV homes through .well-known.
+  davUrl = "https://mail.asgard.michaelbrusegard.com/";
+  davUser = "michaelbrusegard@michaelbrusegard.com";
+  davPasswordCommand = [
     "${pkgs.coreutils}/bin/cat"
-    config.secrets.nextcloud.davAppPasswordFile
+    config.secrets.mail.davAppPasswordFile
   ];
 in {
   config = lib.mkIf enable {
@@ -60,13 +61,13 @@ in {
 
     accounts.calendar = {
       basePath = ".local/share/calendars";
-      accounts.nextcloud = {
+      accounts.asgard = {
         primary = true;
         remote = {
           type = "caldav";
-          url = nextcloudUrl;
-          userName = nextcloudUser;
-          passwordCommand = nextcloudPasswordCommand;
+          url = davUrl;
+          userName = davUser;
+          passwordCommand = davPasswordCommand;
         };
         vdirsyncer = {
           enable = true;
@@ -86,12 +87,12 @@ in {
 
     accounts.contact = {
       basePath = ".local/share/contacts";
-      accounts.nextcloud = {
+      accounts.asgard = {
         remote = {
           type = "carddav";
-          url = nextcloudUrl;
-          userName = nextcloudUser;
-          passwordCommand = nextcloudPasswordCommand;
+          url = davUrl;
+          userName = davUser;
+          passwordCommand = davPasswordCommand;
         };
         vdirsyncer = {
           enable = true;
