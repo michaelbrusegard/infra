@@ -21,12 +21,31 @@
     react-devtools = "fmkadmapgofadopljbjfkapdkoienihi";
   };
 
+  # Search, privacy and behaviour settings mirrored from the Zen policies.
   settings = {
     DefaultSearchProviderEnabled = true;
     DefaultSearchProviderName = "DuckDuckGo";
     DefaultSearchProviderKeyword = "ddg";
     DefaultSearchProviderSearchURL = "https://duckduckgo.com/?q={searchTerms}";
+    SearchSuggestEnabled = false;
+    PasswordManagerEnabled = false;
+    AutofillSettings = [
+      {
+        url_pattern = "*";
+        blocked_types = ["all"];
+      }
+    ];
+    NetworkPredictionOptions = 2;
+    HttpsOnlyMode = "force_enabled";
+    BlockThirdPartyCookies = true;
+    DefaultBrowserSettingEnabled = false;
+    PromptForDownloadLocation = false;
+    RestoreOnStartup = 1;
   };
+
+  # Unmanaged Macs only take recommended policies, and RestoreOnStartup is
+  # filtered there as sensitive, so set it by hand on macOS.
+  darwinSettings = removeAttrs settings ["RestoreOnStartup"];
 
   helium = pkgs.helium-browser.override {
     policies =
@@ -54,7 +73,7 @@ in {
       # domain apply as recommended defaults the user can still change, and
       # extensions are offered through the External Extensions directory.
       (lib.mkIf isDarwin {
-        targets.darwin.defaults."net.imput.helium" = settings;
+        targets.darwin.defaults."net.imput.helium" = darwinSettings;
         home.file = lib.mapAttrs' (_: id:
           lib.nameValuePair "Library/Application Support/net.imput.helium/External Extensions/${id}.json" {
             # Helium only routes installs through its proxy (and its
