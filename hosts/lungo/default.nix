@@ -13,6 +13,7 @@
     inputs.self.darwinModules.openssh
     inputs.self.darwinModules.security
     inputs.self.darwinModules.system
+    inputs.self.darwinModules.tailscale
     inputs.self.darwinModules.virtualisation
     inputs.self.darwinModules.wallpaper
   ];

@@ -32,6 +32,7 @@
     inputs.self.nixosModules.rustdesk
     inputs.self.nixosModules.security
     inputs.self.nixosModules.ssh-agent
+    inputs.self.nixosModules.tailscale
     inputs.self.nixosModules.udisks2
     inputs.self.nixosModules.virtualisation
     inputs.self.nixosModules.wooting
