@@ -98,7 +98,7 @@
       workspace = 3;
     }
     {
-      class = "^(proton-mail)$";
+      class = "^(bulwark)$";
       workspace = 4;
     }
     {
