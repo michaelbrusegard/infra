@@ -28,28 +28,6 @@
     DefaultSearchProviderSearchURL = "https://duckduckgo.com/?q={searchTerms}";
   };
 
-  # brew-api pins an old cask (0.14.9.1); follow upstream releases instead.
-  heliumDarwin = let
-    version = "0.22.1.1";
-    artifact =
-      if pkgs.stdenv.hostPlatform.isAarch64
-      then {
-        arch = "arm64";
-        hash = "sha256-jCNEgMASI8nbyejcW8W+CLjkNBQ31i2unXWUK1lPvVE=";
-      }
-      else {
-        arch = "x86_64";
-        hash = "sha256-DZgrEdfUTWEvNndL49azxFH1g/8kzwCeKHv3NTFRUgI=";
-      };
-  in
-    pkgs.brewCasks.helium-browser.overrideAttrs {
-      inherit version;
-      src = pkgs.fetchurl {
-        url = "https://github.com/imputnet/helium-macos/releases/download/${version}/helium_${version}_${artifact.arch}-macos.dmg";
-        inherit (artifact) hash;
-      };
-    };
-
   helium = pkgs.helium-browser.override {
     policies =
       settings
@@ -66,7 +44,7 @@ in {
         home.packages = [
           (
             if isDarwin
-            then heliumDarwin
+            then pkgs.brewCasks.helium-browser
             else helium
           )
         ];
