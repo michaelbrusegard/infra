@@ -166,18 +166,36 @@ in
     # Wayland clipboard CLI: `cmd | wl-copy`, `wl-paste` to read back.
     home.packages = [pkgs.wl-clipboard];
 
-    systemd.user.services.netbird-ui = {
-      Unit = {
-        Description = "NetBird tray UI";
-        PartOf = ["graphical-session.target"];
-        After = ["graphical-session.target"];
+    systemd.user.services = {
+      netbird-ui = {
+        Unit = {
+          Description = "NetBird tray UI";
+          PartOf = ["graphical-session.target"];
+          After = ["graphical-session.target"];
+        };
+        Service = {
+          ExecStart = "/run/current-system/sw/bin/netbird-ui";
+          Restart = "on-failure";
+          RestartSec = 3;
+        };
+        Install.WantedBy = ["graphical-session.target"];
       };
-      Service = {
-        ExecStart = "/run/current-system/sw/bin/netbird-ui";
-        Restart = "on-failure";
-        RestartSec = 3;
+
+      # The tray ships with the tailscale CLI; the module makes this user its
+      # operator so the tray can log in and toggle the connection.
+      tailscale-systray = {
+        Unit = {
+          Description = "Tailscale tray UI";
+          PartOf = ["graphical-session.target"];
+          After = ["graphical-session.target"];
+        };
+        Service = {
+          ExecStart = "/run/current-system/sw/bin/tailscale systray";
+          Restart = "on-failure";
+          RestartSec = 3;
+        };
+        Install.WantedBy = ["graphical-session.target"];
       };
-      Install.WantedBy = ["graphical-session.target"];
     };
 
     wayland.windowManager.hyprland = {
