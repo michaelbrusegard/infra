@@ -192,33 +192,28 @@
   agentUiPorts = {
     t3code = 3773;
   };
+  netbirdCli =
+    if pkgs.stdenv.hostPlatform.isDarwin
+    then "/opt/homebrew/bin/netbird"
+    else "/run/current-system/sw/bin/netbird";
   netbirdForwarders = lib.mapAttrs (name: port:
     pkgs.writeShellApplication {
       name = "${name}-netbird-forward";
-      runtimeInputs =
-        [
-          pkgs.gawk
-          pkgs.nmap
-        ]
-        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-          pkgs.iproute2
-        ];
+      runtimeInputs = [
+        pkgs.jq
+        pkgs.nmap
+      ];
       text = ''
         # Give the background listener its own process group so its connection
         # workers cannot retain the listening socket after a restart.
         set -m
 
+        # Tailscale also hands out 100.64.0.0/10 addresses, so ask the daemon
+        # rather than guessing from interface addresses. Use the system CLI:
+        # NixOS's wrapper knows the client's socket path.
         get_netbird_ip() {
-          if command -v ip >/dev/null 2>&1; then
-            ip -o -4 addr show scope global | awk '
-              $4 ~ /^100\./ { split($4, parts, "/"); print parts[1]; exit }
-            '
-          else
-            /sbin/ifconfig | awk '
-              /^utun[0-9]+:/ { iface = $1; sub(":", "", iface) }
-              iface != "" && $1 == "inet" && $2 ~ /^100\./ { print $2; exit }
-            '
-          fi
+          ${netbirdCli} status --json 2>/dev/null \
+            | jq -r '.netbirdIp // empty | split("/")[0] // empty' || true
         }
 
         forward_pid=""
