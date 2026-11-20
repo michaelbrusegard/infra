@@ -480,7 +480,7 @@ in {
           ]
           ++ lib.optionals (!isWsl) [
             ".config/Codex"
-            ".config/t3code"
+            ".config/t3code-v2"
             ".t3"
             ".local/share/loc"
             ".local/state/loc"
