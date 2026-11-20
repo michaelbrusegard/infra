@@ -17,10 +17,8 @@ kind: Service
 metadata:
   name: transmission
   namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.45,fd7a:115c:a1e0:188::45
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -51,10 +49,8 @@ kind: Service
 metadata:
   name: jellyfin
   namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.40,fd7a:115c:a1e0:188::40
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -85,10 +81,8 @@ kind: Service
 metadata:
   name: seerr
   namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.41,fd7a:115c:a1e0:188::41
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -119,10 +113,8 @@ kind: Service
 metadata:
   name: prowlarr
   namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.44,fd7a:115c:a1e0:188::44
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -153,10 +145,8 @@ kind: Service
 metadata:
   name: radarr
   namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.43,fd7a:115c:a1e0:188::43
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -187,10 +177,8 @@ kind: Service
 metadata:
   name: sonarr
   namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.42,fd7a:115c:a1e0:188::42
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -221,10 +209,8 @@ kind: Service
 metadata:
   name: bazarr
   namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.46,fd7a:115c:a1e0:188::46
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -270,26 +256,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: musicgrabber
-  namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.49,fd7a:115c:a1e0:188::49
-spec:
-  type: LoadBalancer
-  ipFamilyPolicy: PreferDualStack
-  ipFamilies:
-    - IPv4
-    - IPv6
-  selector:
-    app: musicgrabber
-  ports:
-    - name: http
-      port: 80
-      targetPort: http
----
-apiVersion: v1
-kind: Service
-metadata:
   name: navidrome-internal
   namespace: media
 spec:
@@ -306,10 +272,8 @@ kind: Service
 metadata:
   name: navidrome
   namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.48,fd7a:115c:a1e0:188::48
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4
@@ -326,10 +290,8 @@ kind: Service
 metadata:
   name: feishin
   namespace: media
-  annotations:
-    lbipam.cilium.io/ips: 10.0.188.47,fd7a:115c:a1e0:188::47
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv4

@@ -26,7 +26,7 @@ spec:
               name: http
           env:
             - name: JELLYFIN_PublishedServerUrl
-              value: "http://10.0.188.40"
+              value: "https://jellyfin.asgard.michaelbrusegard.com"
             - name: TZ
               value: "Europe/Oslo"
             - name: NVIDIA_VISIBLE_DEVICES
