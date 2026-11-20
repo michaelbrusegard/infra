@@ -2,7 +2,7 @@ ansiwrap==0.8.4
 appdirs==1.4.4
 certifi==2026.10.23
 charset-normalizer==3.5.2
-click==8.5.0
+click==8.5.1
 colorlog==6.12.0
 console-menu==0.8.0
 docker==7.2.0
