@@ -444,6 +444,16 @@ data:
         "max_retries": 3,
         "retry_interval": 30,
         "active": true
+      },
+      {
+        "name": "Vaultwarden (Manafish)",
+        "type": "http",
+        "parent_name": "apps[0]",
+        "url": "https://vault.manafishrov.com/alive",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
       }
     ]
   minecraft.json: |

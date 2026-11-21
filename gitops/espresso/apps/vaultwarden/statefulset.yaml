@@ -13,8 +13,6 @@ spec:
     metadata:
       labels:
         app: vaultwarden
-      annotations:
-        secret.reloader.stakater.com/reload: vaultwarden-admin
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -34,21 +32,16 @@ spec:
             - name: ROCKET_PORT
               value: "8080"
             # No Pocket ID login: its passkey is stored in this vault. New
-            # accounts are invited from the admin page.
+            # accounts come from organization invites; without SMTP the
+            # invited email can then register.
             - name: SIGNUPS_ALLOWED
               value: "false"
             - name: INVITATIONS_ALLOWED
-              value: "false"
+              value: "true"
             - name: PASSWORD_HINTS_ALLOWED
               value: "false"
             - name: SHOW_PASSWORD_HINT
               value: "false"
-            # Argon2 hash; the plain token unlocks /admin.
-            - name: ADMIN_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: vaultwarden-admin
-                  key: ADMIN_TOKEN
             - name: TZ
               value: Europe/Oslo
           ports:
