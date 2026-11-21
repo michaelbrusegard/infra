@@ -43,6 +43,9 @@ data:
     AUDIO_SUFFIXES = {".aac", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav"}
     LOSSY_SUFFIXES = {".aac", ".m4a", ".mp3", ".ogg", ".opus"}
     QUEUE_RETRY_AFTER_SECONDS = 24 * 60 * 60
+    # MusicGrabber jobs created well before the bridge's latest request
+    # belong to an earlier attempt, whose file may since have been deleted.
+    STALE_JOB_MARGIN = timedelta(hours=1)
     # Weekly playlist rules from ListenBrainz's own generator (troi's
     # periodic-jams patch).
     WEEKLY_TRACKS = 50
@@ -71,6 +74,14 @@ data:
 
     def now():
         return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+    def parse_time(value):
+        try:
+            parsed = datetime.fromisoformat((value or "").replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
     def log(message):
@@ -543,12 +554,7 @@ data:
             )
             return True
         if status == "queued":
-            try:
-                queued_at = datetime.fromisoformat((row["queued_at"] or "").replace("Z", "+00:00"))
-            except ValueError:
-                queued_at = None
-            if queued_at is not None and queued_at.tzinfo is None:
-                queued_at = queued_at.replace(tzinfo=timezone.utc)
+            queued_at = parse_time(row["queued_at"])
             age = (
                 datetime.now(timezone.utc) - queued_at
                 if queued_at is not None
@@ -628,7 +634,7 @@ data:
             return
         tracked = conn.execute(
             """
-            select id, artist, title, status
+            select id, artist, title, status, queued_at
               from recommendation_seen
              where status in ('queued', 'downloaded', 'lossy_fallback')
             """
@@ -654,6 +660,10 @@ data:
             key = track_key(job.get("artist"), job.get("title"))
             row = by_key.get(key) or by_title.get(normalize(job.get("title")))
             if not row or row["id"] in handled:
+                continue
+            created_at = parse_time(job.get("created_at"))
+            queued_at = parse_time(row["queued_at"])
+            if created_at and queued_at and created_at < queued_at - STALE_JOB_MARGIN:
                 continue
             handled.add(row["id"])
             status = job.get("status")

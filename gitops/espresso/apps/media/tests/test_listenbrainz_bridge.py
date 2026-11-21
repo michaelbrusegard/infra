@@ -160,6 +160,45 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         self.assertEqual("lossy_fallback", row["status"])
         self.assertEqual(str(path), row["local_path"])
 
+    def test_job_from_earlier_request_is_ignored(self):
+        remix = self.root / "music" / "Albums" / "Tame Impala" / "Dracula (remix)" / "Dracula (JENNIE remix).flac"
+        remix.parent.mkdir(parents=True)
+        remix.touch()
+        conn = self.bridge["db"]()
+        self.addCleanup(conn.close)
+        conn.execute(
+            """
+            insert into recommendation_seen(
+              id, playlist_type, artist, title, status, first_seen, last_seen, queued_at
+            ) values ('recording', 'weekly_exploration', 'Tame Impala', 'Dracula', 'queued', ?, ?, ?)
+            """,
+            (
+                "2026-09-29T02:35:00+00:00",
+                "2026-11-21T00:17:25+00:00",
+                "2026-11-21T00:17:25+00:00",
+            ),
+        )
+        self.bridge["musicgrabber_json"] = lambda *_args, **_kwargs: {
+            "jobs": [
+                {
+                    "artist": "Tame Impala",
+                    "title": "Dracula",
+                    "status": "completed",
+                    "created_at": "2026-09-29T02:35:32Z",
+                    "completed_at": "2026-09-29T02:35:36Z",
+                    "final_path": str(remix),
+                },
+            ]
+        }
+
+        self.bridge["refresh_musicgrabber_status"](conn)
+        row = conn.execute(
+            "select status, local_path from recommendation_seen where id = 'recording'"
+        ).fetchone()
+
+        self.assertEqual("queued", row["status"])
+        self.assertIsNone(row["local_path"])
+
     def test_completed_duplicate_resolves_already_exists_path(self):
         path = (
             self.root
