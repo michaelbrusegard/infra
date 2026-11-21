@@ -97,6 +97,8 @@ spec:
                     configMapKeyRef:
                       name: listenbrainz-bridge-config
                       key: CONVERT_TO_FLAC
+                - name: NAVIDROME_DB
+                  value: /navidrome/navidrome.db
               resources:
                 requests:
                   cpu: 100m
@@ -110,6 +112,9 @@ spec:
                   subPath: media/music
                 - name: state
                   mountPath: /state
+                - name: navidrome-data
+                  mountPath: /navidrome
+                  readOnly: true
                 - name: scripts
                   mountPath: /scripts/bridge.py
                   subPath: bridge.py
@@ -120,6 +125,10 @@ spec:
             - name: state
               persistentVolumeClaim:
                 claimName: config-listenbrainz-bridge
+            - name: navidrome-data
+              persistentVolumeClaim:
+                claimName: data-navidrome-0
+                readOnly: true
             - name: scripts
               configMap:
                 name: listenbrainz-bridge-config

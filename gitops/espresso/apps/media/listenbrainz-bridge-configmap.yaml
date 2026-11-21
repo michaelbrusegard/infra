@@ -35,6 +35,7 @@ data:
     MUSICGRABBER_URL = os.environ.get("MUSICGRABBER_URL", "").rstrip("/")
     MUSIC_ROOT = Path(os.environ.get("MUSIC_ROOT", "/music"))
     STATE_DB = Path(os.environ.get("STATE_DB", "/state/listenbrainz-bridge.db"))
+    NAVIDROME_DB = Path(os.environ.get("NAVIDROME_DB", "/navidrome/navidrome.db"))
     METRICS_PATH = Path(os.environ.get("METRICS_PATH", "/state/metrics/listenbrainz.txt"))
     MAX_TRACKS_PER_RUN = int(os.environ.get("MAX_TRACKS_PER_RUN", "25"))
     PRIORITY_SOURCE = os.environ.get("PRIORITY_SOURCE", "monochrome")
@@ -390,8 +391,32 @@ data:
         return stem.strip()
 
 
+    def navidrome_tracks():
+        # Tags name the credited artists, so they match recommendations that
+        # the folder layout misses: duets filed under one artist, and
+        # compilations filed under Compilations.
+        if not NAVIDROME_DB.exists():
+            return []
+        try:
+            conn = sqlite3.connect(f"file:{NAVIDROME_DB}?mode=ro", uri=True)
+            try:
+                return conn.execute(
+                    "select path, artist, title from media_file where missing = 0"
+                ).fetchall()
+            finally:
+                conn.close()
+        except sqlite3.Error as exc:
+            log(f"navidrome library lookup failed: {exc}")
+            return []
+
+
     def local_index():
         index = {}
+        for rel, artist, title in navidrome_tracks():
+            path = MUSIC_ROOT / rel
+            if path.suffix.lower() in AUDIO_SUFFIXES:
+                index.setdefault(track_key(artist, title), path)
+        # Files Navidrome has not scanned yet.
         for root_name in ("Albums", "Singles"):
             root = MUSIC_ROOT / root_name
             if not root.exists():
@@ -628,7 +653,9 @@ data:
     def refresh_musicgrabber_status(conn):
         local = local_index()
         try:
-            jobs = musicgrabber_json("GET", "/api/jobs?limit=500").get("jobs", [])
+            # The whole history, so a downloaded track is matched with the job
+            # that produced it however old that job is.
+            jobs = musicgrabber_json("GET", "/api/jobs?limit=10000").get("jobs", [])
         except Exception as exc:
             log(f"musicgrabber status refresh failed: {exc}")
             return
@@ -685,14 +712,30 @@ data:
                     if local_path.suffix.lower() in LOSSY_SUFFIXES
                     else "downloaded"
                 )
+                # "Already exists" means the file was in the library before
+                # the bridge asked for it. Leaving downloaded_at empty keeps
+                # cleanup, which only deletes the bridge's own downloads,
+                # away from it.
+                already_existed = (job.get("error") or "").startswith("Already exists")
                 conn.execute(
                     """
                     update recommendation_seen
-                       set status = ?, downloaded_at = coalesce(downloaded_at, ?),
+                       set status = ?,
+                           downloaded_at = case
+                             when ? then null
+                             else coalesce(downloaded_at, ?)
+                           end,
                            local_path = ?, last_error = ?
                      where id = ?
                     """,
-                    (next_status, timestamp, str(local_path), quality, row["id"]),
+                    (
+                        next_status,
+                        already_existed,
+                        timestamp,
+                        str(local_path),
+                        quality,
+                        row["id"],
+                    ),
                 )
             elif status == "failed" and row["status"] == "queued":
                 conn.execute(
@@ -1097,6 +1140,8 @@ data:
         ).fetchone()[0]
         cutoff = now() - timedelta(days=CLEANUP_AFTER_DAYS)
         deleted = failed = skipped = 0
+        # The bridge sets downloaded_at only for files its own requests
+        # downloaded, never for files that were already in the library.
         rows = bridge.execute(
             """
             select *

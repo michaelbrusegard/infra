@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import tempfile
 import unittest
 import urllib.error
@@ -29,6 +30,7 @@ def load_bridge(root):
         "MUSIC_ROOT": str(root / "music"),
         "STATE_DB": str(root / "state.db"),
         "METRICS_PATH": str(root / "listenbrainz.txt"),
+        "NAVIDROME_DB": str(root / "navidrome.db"),
     }
     namespace = {"__name__": "listenbrainz_bridge"}
     with mock.patch.dict(os.environ, environment, clear=False):
@@ -198,6 +200,69 @@ class ListenBrainzBridgeTest(unittest.TestCase):
 
         self.assertEqual("queued", row["status"])
         self.assertIsNone(row["local_path"])
+
+    def test_file_that_already_existed_is_never_cleanup_eligible(self):
+        path = self.root / "music" / "Albums" / "Compilations" / "Greatest Hits" / "07 Don't Stop Me Now.flac"
+        path.parent.mkdir(parents=True)
+        path.touch()
+        conn = self.bridge["db"]()
+        self.addCleanup(conn.close)
+        # A row recorded before the fix, with a download date for a file the
+        # bridge never downloaded.
+        conn.execute(
+            """
+            insert into recommendation_seen(
+              id, playlist_type, artist, title, status, local_path,
+              first_seen, last_seen, queued_at, downloaded_at
+            ) values ('recording', 'daily_jams', 'Queen', 'Don’t Stop Me Now', 'downloaded', ?, ?, ?, ?, ?)
+            """,
+            (
+                str(path),
+                "2026-08-19T14:35:03+00:00",
+                "2026-08-19T14:35:03+00:00",
+                "2026-08-19T14:35:03+00:00",
+                "2026-08-19T14:40:00+00:00",
+            ),
+        )
+        self.bridge["musicgrabber_json"] = lambda *_args, **_kwargs: {
+            "jobs": [
+                {
+                    "artist": "Queen",
+                    "title": "Don’t Stop Me Now",
+                    "status": "completed",
+                    "created_at": "2026-08-19T14:35:30Z",
+                    "completed_at": "2026-08-19T14:36:00Z",
+                    "error": "Already exists: Greatest Hits/07 Don't Stop Me Now.flac",
+                    "final_path": None,
+                }
+            ]
+        }
+
+        self.bridge["refresh_musicgrabber_status"](conn)
+        row = conn.execute(
+            "select status, local_path, downloaded_at from recommendation_seen where id = 'recording'"
+        ).fetchone()
+
+        self.assertEqual("downloaded", row["status"])
+        self.assertEqual(str(path), row["local_path"])
+        self.assertIsNone(row["downloaded_at"])
+
+    def test_local_index_matches_tagged_artist_and_title(self):
+        path = self.root / "music" / "Albums" / "Compilations" / "Greatest Hits" / "14 Iris.flac"
+        path.parent.mkdir(parents=True)
+        path.touch()
+        navidrome = sqlite3.connect(self.root / "navidrome.db")
+        navidrome.execute("create table media_file(path text, artist text, title text, missing bool)")
+        navidrome.execute(
+            "insert into media_file values (?, 'Goo Goo Dolls', 'Iris', 0)",
+            ("Albums/Compilations/Greatest Hits/14 Iris.flac",),
+        )
+        navidrome.commit()
+        navidrome.close()
+
+        index = self.bridge["local_index"]()
+
+        self.assertEqual(path, self.bridge["find_local"](index, "Goo Goo Dolls", "Iris"))
 
     def test_completed_duplicate_resolves_already_exists_path(self):
         path = (
