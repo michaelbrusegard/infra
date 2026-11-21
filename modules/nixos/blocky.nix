@@ -42,6 +42,8 @@ _: {
 
         # Safeway's storefront does not initialize product search when its
         # Adobe Target or cookie-consent dependencies are DNS-sinkholed.
+        # The PostHog EU app serves its own JavaScript from app-static, so
+        # blocking it leaves eu.posthog.com as a blank page.
         allowlists = {
           ads_and_trackers = [
             ''
@@ -52,6 +54,7 @@ _: {
           security = [
             ''
               safewayinc.tt.omtrdc.net
+              app-static.eu.posthog.com
             ''
           ];
         };
