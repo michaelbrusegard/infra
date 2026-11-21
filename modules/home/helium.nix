@@ -53,6 +53,9 @@
       settings
       // {
         ExtensionInstallForcelist = lib.attrValues extensions;
+        # Bitwarden is the only password manager; this also removes a
+        # hand-installed Proton Pass.
+        ExtensionInstallBlocklist = ["ghmbeldphafepmbegfdlkpapadhbakde"];
       };
   };
 in {
