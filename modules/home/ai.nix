@@ -326,10 +326,13 @@ in {
           CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
           # Claude Code otherwise drops effort for model IDs it doesn't know.
           CLAUDE_CODE_ALWAYS_ENABLE_EFFORT = "1";
+          # Send Anthropic no metrics, error reports, surveys, or /feedback
+          # transcripts, which are kept for up to 5 years. Nix handles updates.
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1";
         };
         modelPicker.options = claudeGatewayModels;
-        # Keep transcripts; the default deletes them after 30 days.
-        cleanupPeriodDays = 36500;
+        # ClickHouse archives every session; local transcripts only serve resume.
+        cleanupPeriodDays = 14;
         autoMemoryEnabled = false;
         disableRemoteControl = true;
         enableAllProjectMcpServers = true;

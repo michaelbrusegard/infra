@@ -45,5 +45,10 @@ in {
       generate_memories = false;
       use_memories = false;
     };
+    # Send OpenAI no metrics or /feedback uploads, and keep no prompt history.
+    # Session rollouts stay: resume needs them and Codex has no switch for them.
+    analytics.enabled = false;
+    feedback.enabled = false;
+    history.persistence = "none";
   };
 }
