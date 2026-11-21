@@ -18,6 +18,7 @@ data:
     #!/usr/bin/env python3
     import json
     import os
+    import random
     import re
     import sqlite3
     import ssl
@@ -25,7 +26,7 @@ data:
     import urllib.error
     import urllib.parse
     import urllib.request
-    from datetime import datetime, timezone
+    from datetime import datetime, timedelta, timezone
     from pathlib import Path
 
     API_URL = os.environ.get("LISTENBRAINZ_API_URL", "https://api.listenbrainz.org").rstrip("/")
@@ -42,7 +43,15 @@ data:
     AUDIO_SUFFIXES = {".aac", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav"}
     LOSSY_SUFFIXES = {".aac", ".m4a", ".mp3", ".ogg", ".opus"}
     QUEUE_RETRY_AFTER_SECONDS = 24 * 60 * 60
+    # Weekly playlist rules from ListenBrainz's own generator (troi's
+    # periodic-jams patch).
+    WEEKLY_TRACKS = 50
+    MAX_TRACKS_PER_ARTIST = 2
+    RECENT_LISTEN_DAYS = 60
 
+    # Daily Jams comes from ListenBrainz. ListenBrainz's weekly playlist job
+    # stalls for weeks at a time, so the bridge builds the weekly playlists
+    # itself from the user's recommendations, which stay fresh.
     PLAYLISTS = {
         "daily_jams": {
             "title": "ListenBrainz Daily Jams",
@@ -51,12 +60,10 @@ data:
         },
         "weekly_jams": {
             "title": "ListenBrainz Weekly Jams",
-            "matches": ("weekly jams",),
             "path": MUSIC_ROOT / "Playlists" / "ListenBrainz Weekly Jams.m3u",
         },
         "weekly_exploration": {
             "title": "ListenBrainz Weekly Exploration",
-            "matches": ("weekly exploration",),
             "path": MUSIC_ROOT / "Playlists" / "ListenBrainz Weekly Exploration.m3u",
         },
     }
@@ -170,13 +177,16 @@ data:
         return http_json(method, f"{MUSICGRABBER_URL}{path}", payload=payload, timeout=60)
 
 
-    def recommendation_playlists():
+    def user_api(path):
         if not USERNAME:
             raise RuntimeError("LISTENBRAINZ_USERNAME is not configured")
-        encoded = urllib.parse.quote(USERNAME)
+        return API_URL + path.format(user=urllib.parse.quote(USERNAME))
+
+
+    def recommendation_playlists():
         payload = http_json(
             "GET",
-            f"{API_URL}/1/user/{encoded}/playlists/recommendations?count=100",
+            user_api("/1/user/{user}/playlists/recommendations?count=100"),
         )
         return payload.get("playlists") or payload.get("playlist") or []
 
@@ -211,7 +221,7 @@ data:
         for entry in recommendation_playlists():
             title = playlist_title(entry).lower()
             for playlist_type, spec in PLAYLISTS.items():
-                if any(match in title for match in spec["matches"]):
+                if any(match in title for match in spec.get("matches", ())):
                     identifier = playlist_identifier(entry)
                     if identifier:
                         candidates[playlist_type].append(entry)
@@ -284,6 +294,83 @@ data:
             if extracted:
                 result.append(extracted)
         return result
+
+
+    def build_weekly_tracks(playlist_type, seed):
+        payload = http_json(
+            "GET",
+            user_api("/1/cf/recommendation/user/{user}/recording?count=1000"),
+        )
+        recs = (payload.get("payload") or {}).get("mbids") or []
+        feedback = http_json(
+            "GET",
+            user_api("/1/feedback/user/{user}/get-feedback?score=-1&count=1000"),
+        )
+        hated = {item.get("recording_mbid") for item in feedback.get("feedback") or []}
+        cutoff = datetime.now(timezone.utc) - timedelta(days=RECENT_LISTEN_DAYS)
+        mbids = []
+        for rec in recs:
+            mbid = rec.get("recording_mbid")
+            listened = rec.get("latest_listened_at")
+            if not mbid or mbid in hated:
+                continue
+            if playlist_type == "weekly_exploration":
+                keep = listened is None
+            else:
+                keep = listened is not None and datetime.fromisoformat(listened) < cutoff
+            if keep:
+                mbids.append(mbid)
+
+        tracks = []
+        per_artist = {}
+        for start in range(0, len(mbids), 50):
+            if len(tracks) >= WEEKLY_TRACKS:
+                break
+            chunk = mbids[start:start + 50]
+            metadata = http_json(
+                "GET",
+                f"{API_URL}/1/metadata/recording/?recording_mbids={','.join(chunk)}&inc=artist",
+            )
+            for mbid in chunk:
+                entry = metadata.get(mbid) or {}
+                title = (entry.get("recording") or {}).get("name")
+                artist = (entry.get("artist") or {}).get("name")
+                if not title or not artist or per_artist.get(artist, 0) >= MAX_TRACKS_PER_ARTIST:
+                    continue
+                per_artist[artist] = per_artist.get(artist, 0) + 1
+                tracks.append({"artist": artist, "title": title, "recording_mbid": mbid})
+                if len(tracks) >= WEEKLY_TRACKS:
+                    break
+        random.Random(seed).shuffle(tracks)
+        return tracks
+
+
+    def weekly_playlist(conn, playlist_type):
+        # Build once per week, then reuse the stored track list so the
+        # playlist stays put while the recommendations change daily.
+        today = datetime.now(timezone.utc).date()
+        monday = (today - timedelta(days=today.weekday())).isoformat()
+        source = {
+            "identifier": f"local:{playlist_type}:{monday}",
+            "title": f"{PLAYLISTS[playlist_type]['title']}, week of {monday}",
+            "date": monday,
+        }
+        rows = conn.execute(
+            """
+            select r.artist, r.title, r.recording_mbid
+              from playlist_snapshot s
+              join playlist_membership m on m.playlist_type = s.playlist_type
+              join recommendation_seen r on r.id = m.recommendation_id
+             where s.playlist_type = ? and s.playlist_mbid = ?
+             order by m.position
+            """,
+            (playlist_type, source["identifier"]),
+        ).fetchall()
+        if rows:
+            log(f"reusing {playlist_type}: {source['title']}")
+            return source, [dict(row) for row in rows]
+        log(f"building {playlist_type}: {source['title']}")
+        return source, build_weekly_tracks(playlist_type, source["identifier"])
 
 
     def clean_title_from_file(path):
@@ -777,15 +864,18 @@ data:
             local = local_index()
             matched = find_recommendation_playlists()
             for playlist_type, spec in PLAYLISTS.items():
-                source = matched.get(playlist_type)
-                if not source:
-                    log(
-                        f"no ListenBrainz playlist found for {playlist_type}; "
-                        "preserving last snapshot"
-                    )
-                    continue
+                if "matches" in spec:
+                    source = matched.get(playlist_type)
+                    if not source:
+                        log(
+                            f"no ListenBrainz playlist found for {playlist_type}; "
+                            "preserving last snapshot"
+                        )
+                        continue
+                    tracks = fetch_playlist_tracks(source["identifier"])
+                else:
+                    source, tracks = weekly_playlist(conn, playlist_type)
                 stats[playlist_type]["source_available"] = 1
-                tracks = fetch_playlist_tracks(source["identifier"])
                 stats[playlist_type]["upstream"] = len(tracks)
                 if not tracks:
                     log(

@@ -194,6 +194,81 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         ).fetchone()["status"]
         self.assertEqual("seen", status)
 
+    def fake_listenbrainz(self, recs, hated=(), metadata=None):
+        calls = []
+        metadata = metadata or {
+            rec["recording_mbid"]: {
+                "recording": {"name": f"Title {rec['recording_mbid']}"},
+                "artist": {"name": f"Artist {rec['recording_mbid']}"},
+            }
+            for rec in recs
+        }
+
+        def http_json(method, url, payload=None, timeout=30):
+            calls.append(url)
+            if "/cf/recommendation/" in url:
+                return {"payload": {"mbids": recs}}
+            if "/get-feedback" in url:
+                return {"feedback": [{"recording_mbid": mbid} for mbid in hated]}
+            if "/metadata/recording/" in url:
+                return metadata
+            raise AssertionError(url)
+
+        self.bridge["USERNAME"] = "user"
+        self.bridge["http_json"] = http_json
+        return calls
+
+    def test_weekly_playlists_follow_listenbrainz_rules(self):
+        recent = self.bridge["now"]()
+        recs = [
+            {"recording_mbid": "never", "latest_listened_at": None},
+            {"recording_mbid": "hated", "latest_listened_at": None},
+            {"recording_mbid": "old", "latest_listened_at": "2020-01-01T00:00:00.000Z"},
+            {"recording_mbid": "recent", "latest_listened_at": recent},
+        ]
+        self.fake_listenbrainz(recs, hated=["hated"])
+
+        exploration = self.bridge["build_weekly_tracks"]("weekly_exploration", "seed")
+        jams = self.bridge["build_weekly_tracks"]("weekly_jams", "seed")
+
+        self.assertEqual(["never"], [track["recording_mbid"] for track in exploration])
+        self.assertEqual(["old"], [track["recording_mbid"] for track in jams])
+        self.assertEqual("Artist old", jams[0]["artist"])
+        self.assertEqual("Title old", jams[0]["title"])
+
+    def test_weekly_playlist_limits_tracks_per_artist(self):
+        recs = [{"recording_mbid": f"r{index}", "latest_listened_at": None} for index in range(4)]
+        metadata = {
+            rec["recording_mbid"]: {
+                "recording": {"name": rec["recording_mbid"]},
+                "artist": {"name": "Same Artist"},
+            }
+            for rec in recs
+        }
+        self.fake_listenbrainz(recs, metadata=metadata)
+
+        tracks = self.bridge["build_weekly_tracks"]("weekly_exploration", "seed")
+
+        self.assertEqual({"r0", "r1"}, {track["recording_mbid"] for track in tracks})
+
+    def test_weekly_playlist_is_reused_within_the_week(self):
+        recs = [{"recording_mbid": f"r{index}", "latest_listened_at": None} for index in range(5)]
+        calls = self.fake_listenbrainz(recs)
+        conn = self.bridge["db"]()
+        self.addCleanup(conn.close)
+
+        source, first = self.bridge["weekly_playlist"](conn, "weekly_exploration")
+        ids = [self.bridge["upsert_seen"](conn, "weekly_exploration", rec, "seen") for rec in first]
+        self.bridge["replace_playlist_snapshot"](conn, "weekly_exploration", source, ids)
+        calls.clear()
+        recs[:] = [{"recording_mbid": "new", "latest_listened_at": None}]
+
+        again_source, again = self.bridge["weekly_playlist"](conn, "weekly_exploration")
+
+        self.assertEqual(source, again_source)
+        self.assertEqual(first, again)
+        self.assertEqual([], calls)
+
 
 if __name__ == "__main__":
     unittest.main()
