@@ -454,6 +454,13 @@ data:
                 update recommendation_seen
                    set last_seen = ?,
                        local_path = coalesce(?, local_path),
+                       -- A different file than the one the bridge downloaded
+                       -- was already in the library, so cleanup must not
+                       -- treat it as the bridge's download.
+                       downloaded_at = case
+                         when ? is not null and ? is not local_path then null
+                         else downloaded_at
+                       end,
                        status = case
                          when ? in ('downloaded', 'lossy_fallback') then ?
                          when status in ('queued', 'downloaded', 'lossy_fallback') then status
@@ -463,6 +470,8 @@ data:
                 """,
                 (
                     timestamp,
+                    str(local_path) if local_path else None,
+                    str(local_path) if local_path else None,
                     str(local_path) if local_path else None,
                     status,
                     status,

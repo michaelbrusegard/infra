@@ -247,6 +247,37 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         self.assertEqual(str(path), row["local_path"])
         self.assertIsNone(row["downloaded_at"])
 
+    def test_library_copy_found_later_is_never_cleanup_eligible(self):
+        downloaded = self.root / "music" / "Singles" / "Lady Gaga" / "Die With a Smile.opus"
+        library = self.root / "music" / "Albums" / "Lady Gaga" / "Die With A Smile - Single" / "01 Die With A Smile.flac"
+        conn = self.bridge["db"]()
+        self.addCleanup(conn.close)
+        conn.execute(
+            """
+            insert into recommendation_seen(
+              id, playlist_type, artist, title, status, local_path,
+              first_seen, last_seen, queued_at, downloaded_at
+            ) values ('recording', 'daily_jams', 'Lady Gaga & Bruno Mars', 'Die With a Smile', 'downloaded', ?, ?, ?, ?, ?)
+            """,
+            (
+                str(downloaded),
+                "2026-08-02T14:35:01+00:00",
+                "2026-08-02T14:35:01+00:00",
+                "2026-08-02T14:35:01+00:00",
+                "2026-08-02T14:40:00+00:00",
+            ),
+        )
+        rec = {"artist": "Lady Gaga & Bruno Mars", "title": "Die With a Smile", "recording_mbid": "recording"}
+
+        self.bridge["upsert_seen"](conn, "daily_jams", rec, "downloaded", downloaded)
+        same = conn.execute("select downloaded_at from recommendation_seen").fetchone()
+        self.bridge["upsert_seen"](conn, "daily_jams", rec, "downloaded", library)
+        other = conn.execute("select local_path, downloaded_at from recommendation_seen").fetchone()
+
+        self.assertEqual("2026-08-02T14:40:00+00:00", same["downloaded_at"])
+        self.assertEqual(str(library), other["local_path"])
+        self.assertIsNone(other["downloaded_at"])
+
     def test_local_index_matches_tagged_artist_and_title(self):
         path = self.root / "music" / "Albums" / "Compilations" / "Greatest Hits" / "14 Iris.flac"
         path.parent.mkdir(parents=True)
