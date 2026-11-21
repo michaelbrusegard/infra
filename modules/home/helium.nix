@@ -18,7 +18,8 @@
     return-youtube-dislike = "gebbhagfogifgggkldgodflihgfeippi";
     youtube-shorts-block = "jiaopdjbehhjgokpphdfgmapkobbnmjp";
     refined-github = "hlepfoohegkhhmjieoechaddaejaokhf";
-    react-devtools = "fmkadmapgofadopljbjfkapdkoienihi";
+    fonts-ninja = "eljapbgkmlngdpckoiiibecpemleclhh";
+    wappalyzer = "gppongmhjkpfnbhagpmjfkannfbllamg";
   };
 
   # Search, privacy and behaviour settings mirrored from the Zen policies.
