@@ -66,6 +66,7 @@
     # The live smtp-edge queue still backs up under the old Stalwart group.
     stalwart = ["smtp-edge-pvc"];
     transmission = ["repo-config"];
+    vaultwarden = ["pvc"];
   };
 
   services.restic.server.maintenance.keepTags = ["legacy-minecraft"];

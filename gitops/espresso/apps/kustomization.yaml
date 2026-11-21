@@ -19,3 +19,4 @@ resources:
   - smtp-edge
   - stalwart
   - uptime-kuma
+  - vaultwarden

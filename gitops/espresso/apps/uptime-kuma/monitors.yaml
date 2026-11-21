@@ -344,6 +344,16 @@ data:
         "active": true
       },
       {
+        "name": "Vaultwarden",
+        "type": "http",
+        "parent_name": "apps[0]",
+        "url": "https://vault.asgard.michaelbrusegard.com/alive",
+        "interval": 60,
+        "max_retries": 3,
+        "retry_interval": 30,
+        "active": true
+      },
+      {
         "name": "Nextcloud",
         "type": "http",
         "parent_name": "apps[0]",

@@ -1,0 +1,54 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: vaultwarden
+  namespace: vaultwarden
+spec:
+  endpointSelector:
+    matchLabels:
+      app: vaultwarden
+  ingress:
+    - fromEntities:
+        - ingress
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # OIDC discovery and token exchange with Pocket ID. The issuer resolves
+    # to the internal Gateway from inside the cluster.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: pocket-id
+            k8s:app: pocket-id
+      toPorts:
+        - ports:
+            - port: "1411"
+              protocol: TCP
+    - toEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    # Website icons for vault entries.
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

@@ -37,3 +37,5 @@ patches:
             - mealie_pocketid_client_secret
             - healthlog_pocketid_client_id
             - healthlog_pocketid_client_secret
+            - vaultwarden_pocketid_client_id
+            - vaultwarden_pocketid_client_secret

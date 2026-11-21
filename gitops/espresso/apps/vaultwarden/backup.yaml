@@ -1,0 +1,23 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: vaultwarden-data-backup
+  namespace: vaultwarden
+spec:
+  sourcePVC: data-vaultwarden-0
+  trigger:
+    schedule: "50 */6 * * *"
+  restic:
+    repository: freddo-restic-vaultwarden-pvc
+    pruneIntervalDays: 36500
+    retain:
+      within: 100y
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+      fsGroupChangePolicy: OnRootMismatch
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: openebs-single-replica
+    cacheCapacity: 1Gi

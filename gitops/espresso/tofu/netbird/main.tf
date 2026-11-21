@@ -148,6 +148,11 @@ locals {
       address = "transmission.${local.domain}"
       group   = "media_admin"
     }
+    vault = {
+      name    = "Vaultwarden"
+      address = "vault.${local.domain}"
+      group   = "vault"
+    }
     unifi = {
       name    = "Unifi"
       address = "unifi.${local.domain}"
@@ -250,6 +255,10 @@ resource "netbird_group" "mealie" {
   name = "Mealie"
 }
 
+resource "netbird_group" "vault" {
+  name = "Vault"
+}
+
 resource "netbird_group" "media_admin" {
   name = "Media Admin"
 }
@@ -277,6 +286,7 @@ locals {
     media       = netbird_group.media.id
     media_admin = netbird_group.media_admin.id
     public      = netbird_group.public.id
+    vault       = netbird_group.vault.id
   }
 }
 
@@ -496,6 +506,21 @@ resource "netbird_policy" "mealie_access" {
     protocol      = "all"
     sources       = [netbird_group.users.id]
     destinations  = [netbird_group.mealie.id]
+  }
+}
+
+resource "netbird_policy" "vault_access" {
+  name    = "Vault Access"
+  enabled = true
+
+  rule {
+    name          = "Users to Vault"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.users.id]
+    destinations  = [netbird_group.vault.id]
   }
 }
 
