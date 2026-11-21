@@ -33,6 +33,7 @@ in {
           # Keep the desktop files while allowing slack-cli to own bin/slack.
           (lib.lowPrio slack)
           bulwark-desktop
+          bitwarden-cli
           inkscape-with-extensions
           audacity
         ]
@@ -49,6 +50,7 @@ in {
           feishin
 
           transmission_4-gtk
+          bitwarden-desktop
           proton-pass
           libreoffice-fresh
           pdfarranger
@@ -72,6 +74,7 @@ in {
           brewCasks.legcord
 
           brewCasks.transmission
+          brewCasks.bitwarden
           brewCasks.proton-pass
           brewCasks.protonvpn
           libreoffice-bin
@@ -117,6 +120,8 @@ in {
           ".config/Mattermost"
           ".config/Slack"
           ".config/Bulwark"
+          ".config/Bitwarden"
+          ".config/Bitwarden CLI"
           ".config/Proton Pass"
           ".config/Nextcloud"
           ".config/legcord"
