@@ -8,15 +8,15 @@
   policies ? {},
 }: let
   pname = "helium";
-  version = "0.21.1.1";
+  version = "0.22.1.1";
   artifacts = {
     x86_64-linux = {
       arch = "x86_64";
-      hash = "sha256-pivECBuZcJsxFxZc96vnER07VEZxqxcjL0KbmwVEs/o=";
+      hash = "sha256-r0aE4ONRpoU03DNEOzadArw6wmM3NMl4SMinQ5vLs2c=";
     };
     aarch64-linux = {
       arch = "arm64";
-      hash = "sha256-qgBXlGq8xmdFJnpzx+CNiBKlIteHSkLaAl86ChH7nDY=";
+      hash = "sha256-4+BJ/cFfHDsYU+azrOvuXIjbC7hnJ2q0DFj1ulR5TQs=";
     };
   };
   artifact = artifacts.${stdenvNoCC.hostPlatform.system};
