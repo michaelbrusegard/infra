@@ -419,7 +419,6 @@ data:
                    set last_seen = ?,
                        local_path = coalesce(?, local_path),
                        status = case
-                         when status = 'deleted' then status
                          when ? in ('downloaded', 'lossy_fallback') then ?
                          when status in ('queued', 'downloaded', 'lossy_fallback') then status
                          else ?
@@ -529,8 +528,6 @@ data:
 
     def recommendation_needs_download(conn, row):
         status = row["status"]
-        if status == "deleted":
-            return False
         if status in {"downloaded", "lossy_fallback"}:
             local_path = Path(row["local_path"]) if row["local_path"] else None
             if local_path and local_path.exists():
@@ -1038,9 +1035,9 @@ data:
         playlist_root = MUSIC_ROOT / "Playlists"
         if not playlist_root.exists():
             return False
+        # Includes the ListenBrainz playlists: the bridge downloads whatever
+        # they list, so deleting a listed file would only trigger a redownload.
         for playlist in playlist_root.glob("*.m3u"):
-            if playlist.name.startswith("ListenBrainz "):
-                continue
             try:
                 text = playlist.read_text(encoding="utf-8", errors="ignore")
             except OSError:

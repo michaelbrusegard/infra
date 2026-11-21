@@ -9,14 +9,19 @@ from unittest import mock
 CONFIGMAP = Path(__file__).parents[1] / "listenbrainz-bridge-configmap.yaml"
 
 
-def bridge_source():
+def script_source(name, next_key=None):
     text = CONFIGMAP.read_text(encoding="utf-8")
-    start = text.index("  bridge.py: |\n") + len("  bridge.py: |\n")
-    end = text.index("  cleanup.py: |\n", start)
+    marker = f"  {name}: |\n"
+    start = text.index(marker) + len(marker)
+    end = text.index(f"  {next_key}: |\n", start) if next_key else len(text)
     return "".join(
         line[4:] if line.startswith("    ") else line
         for line in text[start:end].splitlines(keepends=True)
     )
+
+
+def bridge_source():
+    return script_source("bridge.py", "cleanup.py")
 
 
 def load_bridge(root):
@@ -28,6 +33,13 @@ def load_bridge(root):
     namespace = {"__name__": "listenbrainz_bridge"}
     with mock.patch.dict(os.environ, environment, clear=False):
         exec(compile(bridge_source(), str(CONFIGMAP), "exec"), namespace)
+    return namespace
+
+
+def load_cleanup(root):
+    namespace = {"__name__": "listenbrainz_cleanup"}
+    with mock.patch.dict(os.environ, {"MUSIC_ROOT": str(root / "music")}, clear=False):
+        exec(compile(script_source("cleanup.py"), str(CONFIGMAP), "exec"), namespace)
     return namespace
 
 
@@ -193,6 +205,38 @@ class ListenBrainzBridgeTest(unittest.TestCase):
             "select status from recommendation_seen where id = 'recording'"
         ).fetchone()["status"]
         self.assertEqual("seen", status)
+
+    def test_deleted_recommendation_is_downloaded_again(self):
+        conn = self.bridge["db"]()
+        self.addCleanup(conn.close)
+        conn.execute(
+            """
+            insert into recommendation_seen(
+              id, playlist_type, artist, title, status, first_seen, last_seen
+            ) values ('recording', 'daily_jams', 'Artist', 'Title', 'deleted', ?, ?)
+            """,
+            ("2026-08-24T00:00:00+00:00", "2026-08-24T00:00:00+00:00"),
+        )
+        rec = {"artist": "Artist", "title": "Title", "recording_mbid": "recording"}
+
+        self.bridge["upsert_seen"](conn, "daily_jams", rec, "seen")
+        row = conn.execute(
+            "select id, status, local_path, queued_at from recommendation_seen where id = 'recording'"
+        ).fetchone()
+
+        self.assertEqual("seen", row["status"])
+        self.assertTrue(self.bridge["recommendation_needs_download"](conn, row))
+
+    def test_cleanup_keeps_files_in_listenbrainz_playlists(self):
+        cleanup = load_cleanup(self.root)
+        path = self.root / "music" / "Singles" / "Kaleo" / "Way Down We Go.opus"
+        path.parent.mkdir(parents=True)
+        path.touch()
+        playlist = self.root / "music" / "Playlists" / "ListenBrainz Weekly Exploration.m3u"
+        playlist.parent.mkdir(parents=True)
+        playlist.write_text("#EXTM3U\n../Singles/Kaleo/Way Down We Go.opus\n", encoding="utf-8")
+
+        self.assertTrue(cleanup["protected_by_playlist"](path))
 
     def fake_listenbrainz(self, recs, hated=(), metadata=None):
         calls = []
