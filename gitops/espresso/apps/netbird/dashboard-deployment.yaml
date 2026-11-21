@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: dashboard
-          image: netbirdio/dashboard:v2.95.0@sha256:131dd3dd8704139256f2d1358de7f7aa7c630bf0081cff6370b66443710ce9d0
+          image: netbirdio/dashboard:v2.98.0@sha256:05b19af89c8797105b9036fb53a737724aa1f4cceb97c1d90e4376cdb3a54228
           env:
             - name: NETBIRD_AGENT_NETWORK_ENABLED
               value: "true"
