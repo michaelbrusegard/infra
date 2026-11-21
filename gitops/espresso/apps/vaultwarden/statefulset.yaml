@@ -14,7 +14,7 @@ spec:
       labels:
         app: vaultwarden
       annotations:
-        secret.reloader.stakater.com/reload: pocket-id-outputs,vaultwarden-admin
+        secret.reloader.stakater.com/reload: vaultwarden-admin
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -33,28 +33,12 @@ spec:
               value: https://vault.asgard.michaelbrusegard.com
             - name: ROCKET_PORT
               value: "8080"
-            # Accounts come only from Pocket ID; its client admits the
-            # vaultwarden group.
+            # No Pocket ID login: its passkey is stored in this vault. New
+            # accounts are invited from the admin page.
             - name: SIGNUPS_ALLOWED
               value: "false"
             - name: INVITATIONS_ALLOWED
               value: "false"
-            - name: SSO_ENABLED
-              value: "true"
-            - name: SSO_ONLY
-              value: "true"
-            - name: SSO_AUTHORITY
-              value: https://id.asgard.michaelbrusegard.com
-            - name: SSO_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: pocket-id-outputs
-                  key: vaultwarden_pocketid_client_id
-            - name: SSO_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: pocket-id-outputs
-                  key: vaultwarden_pocketid_client_secret
             - name: PASSWORD_HINTS_ALLOWED
               value: "false"
             - name: SHOW_PASSWORD_HINT

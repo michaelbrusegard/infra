@@ -29,22 +29,6 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-    # OIDC discovery and token exchange with Pocket ID. The issuer resolves
-    # to the internal Gateway from inside the cluster.
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: pocket-id
-            k8s:app: pocket-id
-      toPorts:
-        - ports:
-            - port: "1411"
-              protocol: TCP
-    - toEntities:
-        - ingress
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
     # Website icons for vault entries.
     - toEntities:
         - world

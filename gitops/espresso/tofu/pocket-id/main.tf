@@ -112,23 +112,3 @@ resource "pocketid_client" "healthlog" {
     pocketid_group.admin.id,
   ]
 }
-
-resource "pocketid_group" "vaultwarden" {
-  name          = "vaultwarden"
-  friendly_name = "Vaultwarden Users"
-}
-
-resource "pocketid_client" "vaultwarden" {
-  name = "Vaultwarden"
-
-  callback_urls = [
-    "https://vault.${local.domain}/identity/connect/oidc-signin",
-  ]
-
-  launch_url   = "https://vault.${local.domain}"
-  pkce_enabled = true
-
-  allowed_user_groups = [
-    pocketid_group.vaultwarden.id,
-  ]
-}
