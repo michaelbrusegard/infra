@@ -22,9 +22,6 @@ patches:
         path: ./gitops/espresso/tofu/dns
         backendConfig:
           secretSuffix: dns-infra
-        varsFrom:
-          - kind: Secret
-            name: dns-records
         runnerPodTemplate:
           spec:
             env:
