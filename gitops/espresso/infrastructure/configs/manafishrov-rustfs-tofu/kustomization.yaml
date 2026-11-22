@@ -49,9 +49,3 @@ patches:
               - RUSTFS_ACCESS_KEY:rustfs_access_key
               - RUSTFS_SECRET_KEY:rustfs_secret_key
               - manafishrov_firmware_ci_secret_key
-              - manafishrov_twenty_app_secret_key
-        writeOutputsToSecret:
-          name: manafishrov-rustfs-outputs
-          outputs:
-            - manafishrov_twenty_rustfs_access_key_id
-            - manafishrov_twenty_rustfs_secret_access_key

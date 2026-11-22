@@ -52,11 +52,6 @@
       ];
       pocket-id = ["pvc"];
       roundcube = ["pvc"];
-      twenty = [
-        "postgres"
-        "pvc"
-        "s3"
-      ];
       vaultwarden = ["pvc"];
     };
 
