@@ -237,7 +237,7 @@ spec:
             allowPrivilegeEscalation: false
       containers:
         - name: gateway
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-6618314af9acd91f86fcd3769b667548ba3ff902@sha256:f1ba515ad6b5f6e55e7f3f27297e4e956c59c214ded3dac961a61bcf205f3ce2
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-d0d474d501ed7fb3c980b9b9ab2d18a09b60d6dd@sha256:6e454e0c7a5af411e8cfaee47979011379cceb24e3f0fcb13ec189aed0bd534d
           args:
             - gateway
             - run
@@ -606,7 +606,7 @@ spec:
             seccompProfile:
               type: RuntimeDefault
         - name: android-companion
-          image: ghcr.io/michaelbrusegard/hermes-agent:sha-6618314af9acd91f86fcd3769b667548ba3ff902@sha256:f1ba515ad6b5f6e55e7f3f27297e4e956c59c214ded3dac961a61bcf205f3ce2
+          image: ghcr.io/michaelbrusegard/hermes-agent:sha-d0d474d501ed7fb3c980b9b9ab2d18a09b60d6dd@sha256:6e454e0c7a5af411e8cfaee47979011379cceb24e3f0fcb13ec189aed0bd534d
           command:
             - /opt/data/scripts/android-companion
           env:
