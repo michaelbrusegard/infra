@@ -18,11 +18,12 @@
     return-youtube-dislike = "gebbhagfogifgggkldgodflihgfeippi";
     youtube-shorts-block = "jiaopdjbehhjgokpphdfgmapkobbnmjp";
     refined-github = "hlepfoohegkhhmjieoechaddaejaokhf";
+    proton-vpn = "jplgfhpmjnbigmhklmmbgecoobifkmpa";
     fonts-ninja = "eljapbgkmlngdpckoiiibecpemleclhh";
     wappalyzer = "gppongmhjkpfnbhagpmjfkannfbllamg";
   };
 
-  # Search, privacy and behaviour settings mirrored from the Zen policies.
+  # Search, privacy and behaviour settings.
   settings = {
     DefaultSearchProviderEnabled = true;
     DefaultSearchProviderName = "DuckDuckGo";
@@ -73,6 +74,22 @@ in {
       # macOS only forces policies from MDM profiles; preferences in Helium's
       # domain apply as recommended defaults the user can still change, and
       # extensions are offered through the External Extensions directory.
+      (lib.mkIf (!isDarwin) {
+        xdg.mimeApps.defaultApplications = lib.genAttrs [
+          "text/html"
+          "application/xhtml+xml"
+          "application/x-extension-htm"
+          "application/x-extension-html"
+          "application/x-extension-shtml"
+          "application/x-extension-xht"
+          "application/x-extension-xhtml"
+          "x-scheme-handler/http"
+          "x-scheme-handler/https"
+          "x-scheme-handler/about"
+          "x-scheme-handler/unknown"
+        ] (_: ["helium.desktop"]);
+      })
+
       (lib.mkIf isDarwin {
         targets.darwin.defaults."net.imput.helium" = darwinSettings;
         home.file = lib.mapAttrs' (_: id:

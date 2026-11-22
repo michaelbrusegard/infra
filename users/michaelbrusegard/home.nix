@@ -31,7 +31,6 @@
     inputs.self.homeManagerModules.ssh
     inputs.self.homeManagerModules.xdg
     inputs.self.homeManagerModules.zathura
-    inputs.self.homeManagerModules.zen-browser
   ];
 
   home.stateVersion = "25.11";

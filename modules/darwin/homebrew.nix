@@ -39,8 +39,8 @@
     };
     # homebrew/homebrew-core and homebrew/homebrew-cask have to be listed even
     # though nix-homebrew provides them: Brew Bundle 6 dropped homebrew/cask
-    # from its cleanup ignore list, so cleanup tries to untap it, fails because
-    # proton-drive is installed from it, and aborts activation.
+    # from its cleanup ignore list, so cleanup tries to untap it and aborts
+    # activation if any installed cask still comes from it.
     taps = [
       "homebrew/homebrew-core"
       "homebrew/homebrew-cask"
@@ -57,7 +57,6 @@
       # "Only a single 'depends_on macos' is allowed". The nixpkgs scribus
       # is also marked broken on darwin, so there's no Nix fallback.
       # "scribus"
-      "proton-drive"
     ];
     # Brew Bundle refuses to load third-party formulae and casks unless their
     # tap is trusted, and the trust option has no nix-darwin equivalent. The
@@ -71,7 +70,8 @@
       brew "steipete/tap/peekaboo"
     '';
     masApps = {
-      "Proton Pass for Safari" = 6502835663;
+      # The App Store build is the one that ships the Safari extension.
+      "Bitwarden" = 1352778147;
       "Wipr" = 1662217862;
       "Developer" = 640199958;
       "TestFlight" = 899247664;

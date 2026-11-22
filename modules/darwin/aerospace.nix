@@ -42,7 +42,7 @@ in {
             run = "layout floating";
           }
           {
-            "if".app-name-regex-substring = "^Zen$";
+            "if".app-name-regex-substring = "^Helium$";
             run = "move-node-to-workspace 2";
           }
           {
@@ -50,7 +50,7 @@ in {
             run = "move-node-to-workspace 1";
           }
           {
-            "if".app-name-regex-substring = "^(Mattermost|Proton Pass)$";
+            "if".app-name-regex-substring = "^(Mattermost|Bitwarden)$";
             run = "move-node-to-workspace 3";
           }
           {

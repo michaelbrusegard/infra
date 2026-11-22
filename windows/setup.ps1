@@ -199,7 +199,7 @@ Invoke-Section "Installing Applications with Winget" {
     "FocusriteAudioEngineeringLtd.FocusriteControl",
     "Microsoft.PowerToys",
     "Microsoft.WindowsTerminal",
-    "Zen-Team.Zen-Browser",
+    "ImputNet.Helium",
     "smartfrigde.Legcord",
     "Dweymouth.Supersonic",
     "OBSProject.OBSStudio",

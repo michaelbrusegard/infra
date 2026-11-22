@@ -119,13 +119,6 @@
     };
     # Daily-updated agent harnesses. Its own nixpkgs keeps the binary cache.
     llm-agents.url = "github:numtide/llm-agents.nix";
-    zen-browser = {
-      url = "github:0xc000022070/zen-browser-flake";
-      inputs = {
-        nixpkgs.follows = "nixpkgs-unstable";
-        home-manager.follows = "home-manager";
-      };
-    };
     asus-dialpad-driver = {
       url = "github:asus-linux-drivers/asus-dialpad-driver";
       inputs.nixpkgs.follows = "nixpkgs";

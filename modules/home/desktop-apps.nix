@@ -51,7 +51,6 @@ in {
 
           transmission_4-gtk
           bitwarden-desktop
-          proton-pass
           libreoffice-fresh
           pdfarranger
           scribus
@@ -74,8 +73,6 @@ in {
           brewCasks.legcord
 
           brewCasks.transmission
-          brewCasks.bitwarden
-          brewCasks.proton-pass
           brewCasks.protonvpn
           libreoffice-bin
           brewCasks.gimp
@@ -122,7 +119,6 @@ in {
           ".config/Bulwark"
           ".config/Bitwarden"
           ".config/Bitwarden CLI"
-          ".config/Proton Pass"
           ".config/Nextcloud"
           ".config/legcord"
           ".config/libreoffice"

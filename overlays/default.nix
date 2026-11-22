@@ -8,6 +8,5 @@ in
     inputs.asus-dialpad-driver.overlays.default
     (import ./dialpad)
     (import ./flake-packages.nix inputs)
-    (import ./firefox-darwin.nix)
     (import ./unstable-packages.nix inputs)
   ]

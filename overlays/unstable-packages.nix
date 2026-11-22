@@ -25,7 +25,6 @@ in {
     kubectl
     kubernetes-helm
     etcd
-    proton-pass
     nextcloud-client
     nextcloud-talk-desktop
     signal-desktop

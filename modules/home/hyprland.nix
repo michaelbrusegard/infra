@@ -82,11 +82,11 @@
 
   workspaceRules = [
     {
-      class = "^(zen-beta)$";
+      class = "^(helium)$";
       workspace = 2;
     }
     {
-      class = "^(proton-pass)$";
+      class = "^(bitwarden)$";
       workspace = 3;
     }
     {

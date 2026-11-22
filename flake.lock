@@ -1413,8 +1413,7 @@
         "sops-nix": "sops-nix",
         "t3code": "t3code",
         "treefmt-nix": "treefmt-nix_2",
-        "yazi": "yazi",
-        "zen-browser": "zen-browser"
+        "yazi": "yazi"
       }
     },
     "rust-analyzer-src": {
@@ -1697,29 +1696,6 @@
       "original": {
         "owner": "sxyazi",
         "repo": "yazi",
-        "type": "github"
-      }
-    },
-    "zen-browser": {
-      "inputs": {
-        "home-manager": [
-          "home-manager"
-        ],
-        "nixpkgs": [
-          "nixpkgs-unstable"
-        ]
-      },
-      "locked": {
-        "lastModified": 1780123543,
-        "narHash": "sha256-vRHmt1N3rPgLJFcSQfHb2c3F7edzVPcyAk6/2QYmO1s=",
-        "owner": "0xc000022070",
-        "repo": "zen-browser-flake",
-        "rev": "7e1dae7aa169ad02f18ca11da247008181b2dc7f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "0xc000022070",
-        "repo": "zen-browser-flake",
         "type": "github"
       }
     }
