@@ -18,6 +18,7 @@
     return-youtube-dislike = "gebbhagfogifgggkldgodflihgfeippi";
     youtube-shorts-block = "jiaopdjbehhjgokpphdfgmapkobbnmjp";
     refined-github = "hlepfoohegkhhmjieoechaddaejaokhf";
+    material-icons-for-github = "bggfcpfjbdkhfhfmkjpbhnkhnpjjeomc";
     proton-vpn = "jplgfhpmjnbigmhklmmbgecoobifkmpa";
     fonts-ninja = "eljapbgkmlngdpckoiiibecpemleclhh";
     wappalyzer = "gppongmhjkpfnbhagpmjfkannfbllamg";

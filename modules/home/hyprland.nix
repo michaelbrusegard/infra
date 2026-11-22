@@ -86,10 +86,6 @@
       workspace = 2;
     }
     {
-      class = "^(bitwarden)$";
-      workspace = 3;
-    }
-    {
       class = "^(t3code|com\\.t3tools\\.T3Code)$";
       workspace = 1;
     }

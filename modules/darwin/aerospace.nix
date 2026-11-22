@@ -50,7 +50,7 @@ in {
             run = "move-node-to-workspace 1";
           }
           {
-            "if".app-name-regex-substring = "^(Mattermost|Bitwarden)$";
+            "if".app-name-regex-substring = "^Mattermost$";
             run = "move-node-to-workspace 3";
           }
           {
