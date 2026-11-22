@@ -19,6 +19,7 @@
     youtube-shorts-block = "jiaopdjbehhjgokpphdfgmapkobbnmjp";
     refined-github = "hlepfoohegkhhmjieoechaddaejaokhf";
     material-icons-for-github = "bggfcpfjbdkhfhfmkjpbhnkhnpjjeomc";
+    enhanced-github = "anlikcnbgdeidpacdbdljnabclhahhmd";
     proton-vpn = "jplgfhpmjnbigmhklmmbgecoobifkmpa";
     fonts-ninja = "eljapbgkmlngdpckoiiibecpemleclhh";
     wappalyzer = "gppongmhjkpfnbhagpmjfkannfbllamg";
