@@ -50,11 +50,11 @@ in {
             run = "move-node-to-workspace 1";
           }
           {
-            "if".app-name-regex-substring = "^Mattermost$";
+            "if".app-name-regex-substring = "^Bulwark$";
             run = "move-node-to-workspace 3";
           }
           {
-            "if".app-name-regex-substring = "^(Bulwark|LibreOffice)$";
+            "if".app-name-regex-substring = "^LibreOffice$";
             run = "move-node-to-workspace 4";
           }
           {

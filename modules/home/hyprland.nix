@@ -90,12 +90,8 @@
       workspace = 1;
     }
     {
-      class = "^(Mattermost)$";
-      workspace = 3;
-    }
-    {
       class = "^(bulwark)$";
-      workspace = 4;
+      workspace = 3;
     }
     {
       class = "^(libreoffice-.*)$";
