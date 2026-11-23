@@ -9,10 +9,6 @@ spec:
       recordType: CNAME
       targets:
         - router.asgard.michaelbrusegard.com
-    - dnsName: cloud.asgard.michaelbrusegard.com
-      recordType: CNAME
-      targets:
-        - router.asgard.michaelbrusegard.com
     - dnsName: webmail.asgard.michaelbrusegard.com
       recordType: CNAME
       targets:

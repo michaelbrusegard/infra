@@ -1,0 +1,14 @@
+# Merged into OpenCloud's built-in CSP: the web app talks to Pocket ID for
+# login and silent token renewal.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opencloud-config
+  namespace: opencloud
+data:
+  csp.yaml: |
+    directives:
+      connect-src:
+        - 'https://id.asgard.michaelbrusegard.com'
+      frame-src:
+        - 'https://id.asgard.michaelbrusegard.com'

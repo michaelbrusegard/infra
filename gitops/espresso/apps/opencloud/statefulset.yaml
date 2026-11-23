@@ -1,0 +1,173 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: opencloud
+  namespace: opencloud
+  annotations:
+    configmap.reloader.stakater.com/reload: opencloud-config
+spec:
+  replicas: 1
+  serviceName: opencloud-internal
+  selector:
+    matchLabels:
+      app: opencloud
+  template:
+    metadata:
+      labels:
+        app: opencloud
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: opencloud
+          image: opencloudeu/opencloud:9.1.1@sha256:d7d5b547f9e41db24f030d6a6857c4184752b2c875c936952ee0601b6531cd51
+          # init writes opencloud.yaml with generated secrets on first start;
+          # it lives on the data volume so it is backed up with the files.
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              [ -f /etc/opencloud/opencloud.yaml ] || opencloud init
+              exec opencloud server
+          env:
+            - name: OC_URL
+              value: https://cloud.asgard.michaelbrusegard.com
+            - name: OC_INSECURE
+              value: "false"
+            - name: OC_LOG_LEVEL
+              value: info
+            - name: PROXY_TLS
+              value: "false"
+            - name: PROXY_DEBUG_ADDR
+              value: 0.0.0.0:9205
+            # Merged into the built-in policy; the override variant replaces it.
+            - name: PROXY_CSP_CONFIG_FILE_LOCATION
+              value: /etc/opencloud-extra/csp.yaml
+            - name: FRONTEND_CHECK_FOR_UPDATES
+              value: "false"
+            - name: IDM_CREATE_DEMO_USERS
+              value: "false"
+            # Pocket ID replaces the built-in IdP; accounts are created on
+            # first login and the opencloud_role group claim sets the role.
+            - name: OC_EXCLUDE_RUN_SERVICES
+              value: idp
+            - name: OC_OIDC_ISSUER
+              value: https://id.asgard.michaelbrusegard.com
+            - name: PROXY_OIDC_ISSUER
+              value: https://id.asgard.michaelbrusegard.com
+            - name: PROXY_OIDC_REWRITE_WELLKNOWN
+              value: "true"
+            # Only accept tokens Pocket ID issued to the OpenCloud clients;
+            # roles still come from UserInfo.
+            - name: PROXY_OIDC_ACCESS_TOKEN_VERIFY_METHOD
+              value: jwt
+            - name: PROXY_OIDC_AUDIENCES
+              value: OpenCloudWeb,OpenCloudDesktop,OpenCloudAndroid,OpenCloudIOS
+            - name: WEB_OIDC_CLIENT_ID
+              value: OpenCloudWeb
+            - name: WEBFINGER_WEB_OIDC_CLIENT_ID
+              value: OpenCloudWeb
+            - name: WEB_OIDC_METADATA_URL
+              value: https://id.asgard.michaelbrusegard.com/.well-known/openid-configuration
+            - name: WEB_OIDC_RESPONSE_TYPE
+              value: code
+            - name: WEB_OIDC_SCOPE
+              value: openid profile email groups
+            - name: PROXY_AUTOPROVISION_ACCOUNTS
+              value: "true"
+            - name: PROXY_AUTOPROVISION_CLAIM_USERNAME
+              value: preferred_username
+            - name: PROXY_AUTOPROVISION_CLAIM_EMAIL
+              value: email
+            - name: PROXY_AUTOPROVISION_CLAIM_DISPLAYNAME
+              value: name
+            - name: PROXY_USER_OIDC_CLAIM
+              value: preferred_username
+            - name: PROXY_USER_CS3_CLAIM
+              value: username
+            - name: PROXY_ROLE_ASSIGNMENT_DRIVER
+              value: oidc
+            - name: PROXY_ROLE_ASSIGNMENT_OIDC_CLAIM
+              value: opencloud_role
+            - name: GRAPH_ASSIGN_DEFAULT_USER_ROLE
+              value: "false"
+            - name: GRAPH_USERNAME_MATCH
+              value: none
+            # Temporary: an app token lets the Nextcloud copy log in.
+            - name: OC_ADD_RUN_SERVICES
+              value: auth-app
+            - name: PROXY_ENABLE_APP_AUTH
+              value: "true"
+            - name: TZ
+              value: Europe/Oslo
+          ports:
+            - name: http
+              containerPort: 9200
+            - name: debug
+              containerPort: 9205
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: debug
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: debug
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: debug
+            periodSeconds: 30
+            timeoutSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /etc/opencloud
+              subPath: config
+            - name: data
+              mountPath: /var/lib/opencloud
+              subPath: data
+            - name: extra
+              mountPath: /etc/opencloud-extra
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: extra
+          configMap:
+            name: opencloud-config
+        - name: tmp
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: ssd-ha
+        resources:
+          requests:
+            storage: 50Gi

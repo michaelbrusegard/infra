@@ -1,0 +1,23 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: opencloud-data-backup
+  namespace: opencloud
+spec:
+  sourcePVC: data-opencloud-0
+  trigger:
+    schedule: "40 */6 * * *"
+  restic:
+    repository: freddo-restic-opencloud-pvc
+    pruneIntervalDays: 36500
+    retain:
+      within: 100y
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+      fsGroupChangePolicy: OnRootMismatch
+    copyMethod: Snapshot
+    volumeSnapshotClassName: mayastor-snapshot
+    cacheStorageClassName: openebs-single-replica
+    cacheCapacity: 2Gi

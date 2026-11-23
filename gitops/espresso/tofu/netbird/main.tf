@@ -13,9 +13,9 @@ locals {
       group   = "dns"
     }
     cloud = {
-      name    = "Nextcloud"
+      name    = "OpenCloud"
       address = "cloud.${local.domain}"
-      group   = "public"
+      group   = "files"
     }
     cubeman = {
       name    = "Cubeman"
@@ -259,6 +259,10 @@ resource "netbird_group" "vault" {
   name = "Vault"
 }
 
+resource "netbird_group" "files" {
+  name = "Files"
+}
+
 resource "netbird_group" "media_admin" {
   name = "Media Admin"
 }
@@ -278,6 +282,7 @@ resource "netbird_group" "dns" {
 locals {
   resource_group_ids = {
     dns         = netbird_group.dns.id
+    files       = netbird_group.files.id
     health      = netbird_group.health.id
     home        = netbird_group.home.id
     infra       = netbird_group.infra.id
@@ -521,6 +526,21 @@ resource "netbird_policy" "vault_access" {
     protocol      = "all"
     sources       = [netbird_group.users.id]
     destinations  = [netbird_group.vault.id]
+  }
+}
+
+resource "netbird_policy" "files_access" {
+  name    = "Files Access"
+  enabled = true
+
+  rule {
+    name          = "Users to Files"
+    action        = "accept"
+    bidirectional = false
+    enabled       = true
+    protocol      = "all"
+    sources       = [netbird_group.users.id]
+    destinations  = [netbird_group.files.id]
   }
 }
 

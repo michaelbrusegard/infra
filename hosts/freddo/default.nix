@@ -58,6 +58,7 @@
       "postgres"
       "pvc"
     ];
+    opencloud = ["pvc"];
     pocket-id = ["pvc"];
     prowlarr = ["repo-config"];
     radarr = ["repo-config"];
@@ -78,6 +79,9 @@
     "minecraft-creative/world"
     "minecraft-revelation/world"
     "minecraft-vanilla/world"
+    # Nextcloud was replaced by OpenCloud; its last backups are kept as is.
+    "nextcloud/postgres"
+    "nextcloud/pvc"
   ];
 
   # Media configuration is backed up weekly; all other repositories use the

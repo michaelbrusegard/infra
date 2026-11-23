@@ -7,7 +7,8 @@ metadata:
     configmap.reloader.stakater.com/reload: nextcloud-config
     secret.reloader.stakater.com/reload: nextcloud-env,postgres-outputs,pocket-id-outputs
 spec:
-  replicas: 1
+  # Stopped while its files move to OpenCloud; removed afterwards.
+  replicas: 0
   selector:
     matchLabels:
       app: nextcloud

@@ -1,0 +1,17 @@
+# Internal only: files are reached over the LAN or NetBird.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: opencloud-internal
+  namespace: opencloud
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - cloud.asgard.michaelbrusegard.com
+  rules:
+    - backendRefs:
+        - name: opencloud
+          port: 80

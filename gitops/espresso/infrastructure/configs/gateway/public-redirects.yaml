@@ -10,7 +10,6 @@ spec:
       sectionName: http
   hostnames:
     - id.asgard.michaelbrusegard.com
-    - cloud.asgard.michaelbrusegard.com
     - status.asgard.michaelbrusegard.com
     - netbird.asgard.michaelbrusegard.com
     - michaelbrusegard.com

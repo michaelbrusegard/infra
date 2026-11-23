@@ -354,7 +354,7 @@ data:
         "active": true
       },
       {
-        "name": "Nextcloud",
+        "name": "OpenCloud",
         "type": "http",
         "parent_name": "apps[0]",
         "url": "https://cloud.asgard.michaelbrusegard.com/status.php",

@@ -12,6 +12,7 @@ resources:
   - netbird
   - nextcloud
   - ollama
+  - opencloud
   - pocket-id
   - mattermost
   - mealie
