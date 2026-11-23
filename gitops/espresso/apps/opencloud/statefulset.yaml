@@ -169,6 +169,48 @@ spec:
             - name: web-apps
               mountPath: /web-apps
               readOnly: true
+        # OpenCloud never empties trash or drops expired uploads by itself.
+        # purge-expired asks the running server to delete trash older than
+        # 30 days; the upload cleanup reads the data volume directly.
+        - name: maintenance
+          image: opencloudeu/opencloud:9.1.1@sha256:d7d5b547f9e41db24f030d6a6857c4184752b2c875c936952ee0601b6531cd51
+          command:
+            - /bin/sh
+            - -c
+            - |
+              trap 'exit 0' TERM
+              sleep 600 & wait $!
+              while :; do
+                opencloud storage-users trash-bin purge-expired || echo "trash purge failed"
+                opencloud storage-users uploads sessions --expired --clean || echo "upload cleanup failed"
+                sleep 86400 & wait $!
+              done
+          env:
+            - name: TZ
+              value: Europe/Oslo
+          resources:
+            requests:
+              cpu: 5m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /etc/opencloud
+              subPath: config
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/opencloud
+              subPath: data
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: extra
           configMap:
