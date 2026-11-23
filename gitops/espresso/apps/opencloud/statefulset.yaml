@@ -25,6 +25,20 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
+      # Web extensions ship as images; copy each into the apps directory.
+      initContainers:
+        - name: web-app-unzip
+          image: opencloudeu/web-extensions:unzip-2.2.3@sha256:6ad5fc4742f3a867276ff245710d220ccc78b998ce687e9cfb0de7f8e99eb61b
+          command: ["cp", "-R", "/web/apps/unzip", "/apps/"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: web-apps
+              mountPath: /apps
       containers:
         - name: opencloud
           image: opencloudeu/opencloud:9.1.1@sha256:d7d5b547f9e41db24f030d6a6857c4184752b2c875c936952ee0601b6531cd51
@@ -101,6 +115,8 @@ spec:
               value: "false"
             - name: GRAPH_USERNAME_MATCH
               value: none
+            - name: WEB_ASSET_APPS_PATH
+              value: /web-apps
             - name: TZ
               value: Europe/Oslo
           ports:
@@ -150,11 +166,16 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+            - name: web-apps
+              mountPath: /web-apps
+              readOnly: true
       volumes:
         - name: extra
           configMap:
             name: opencloud-config
         - name: tmp
+          emptyDir: {}
+        - name: web-apps
           emptyDir: {}
   volumeClaimTemplates:
     - metadata:
