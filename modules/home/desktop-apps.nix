@@ -100,7 +100,6 @@ in {
           ".config/Bitwarden"
           ".config/Bitwarden CLI"
           ".config/OpenCloud"
-          "OpenCloud"
           ".config/legcord"
           ".config/libreoffice"
           ".config/blender"
