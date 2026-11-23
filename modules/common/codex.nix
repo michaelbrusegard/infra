@@ -32,6 +32,11 @@ in {
     };
     approval_policy = "never";
     sandbox_mode = "danger-full-access";
+    # macOS ties a keychain "Always Allow" to the exact unsigned binary, and
+    # every Nix rebuild or app-server update makes a new one, so the keychain
+    # prompt would return each time. Keep MCP OAuth tokens in
+    # ~/.codex/.credentials.json instead.
+    mcp_oauth_credentials_store = "file";
     features.api_key_model_discovery = true;
     features.memories = false;
     # Codex's native image tool requires first-party provider/auth metadata.
