@@ -5,14 +5,14 @@
   homePersistenceRoot ? null,
   ...
 }: let
-  nextcloudClient = pkgs.symlinkJoin {
-    name = "${pkgs.nextcloud-client.pname}-portal-dialogs";
-    paths = [pkgs.nextcloud-client];
+  opencloudClient = pkgs.symlinkJoin {
+    name = "${pkgs.opencloud-desktop.pname}-portal-dialogs";
+    paths = [pkgs.opencloud-desktop];
     nativeBuildInputs = [pkgs.makeWrapper];
     postBuild = ''
-      target=$(readlink -f "$out/bin/nextcloud")
-      rm "$out/bin/nextcloud"
-      makeWrapper "$target" "$out/bin/nextcloud" \
+      target=$(readlink -f "$out/bin/opencloud")
+      rm "$out/bin/opencloud"
+      makeWrapper "$target" "$out/bin/opencloud" \
         --set QT_QPA_PLATFORMTHEME xdgdesktopportal
     '';
   };
@@ -59,8 +59,7 @@ in {
           davinci-resolve
           betaflight-configurator
           qgis
-          nextcloudClient
-          nextcloud-talk-desktop
+          opencloudClient
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           brewCasks.raycast
@@ -82,27 +81,8 @@ in {
           brewCasks.wootility
           utm
           brewCasks.crystalfetch
-          brewCasks.nextcloud
-          brewCasks.nextcloud-talk
+          brewCasks.opencloud
         ]);
-    }
-    // lib.optionalAttrs (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
-      activation.enableNextcloudExperimentalOptions = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        nextcloudCfg="$HOME/.config/Nextcloud/nextcloud.cfg"
-        $DRY_RUN_CMD mkdir -p "$HOME/.config/Nextcloud"
-
-        if [ -f "$nextcloudCfg" ]; then
-          if grep -q '^showExperimentalOptions=' "$nextcloudCfg"; then
-            $DRY_RUN_CMD sed -i 's/^showExperimentalOptions=.*/showExperimentalOptions=true/' "$nextcloudCfg"
-          elif grep -q '^\[General\]$' "$nextcloudCfg"; then
-            $DRY_RUN_CMD sed -i '/^\[General\]$/a showExperimentalOptions=true' "$nextcloudCfg"
-          else
-            $DRY_RUN_CMD printf '\n[General]\nshowExperimentalOptions=true\n' >> "$nextcloudCfg"
-          fi
-        else
-          $DRY_RUN_CMD printf '[General]\nshowExperimentalOptions=true\n' > "$nextcloudCfg"
-        fi
-      '';
     }
     // lib.optionalAttrs (homePersistenceRoot != null) {
       persistence = {
@@ -119,7 +99,8 @@ in {
           ".config/Bulwark"
           ".config/Bitwarden"
           ".config/Bitwarden CLI"
-          ".config/Nextcloud"
+          ".config/OpenCloud"
+          "OpenCloud"
           ".config/legcord"
           ".config/libreoffice"
           ".config/blender"

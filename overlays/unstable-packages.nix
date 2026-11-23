@@ -25,8 +25,7 @@ in {
     kubectl
     kubernetes-helm
     etcd
-    nextcloud-client
-    nextcloud-talk-desktop
+    opencloud-desktop
     signal-desktop
     gh-eco
     gh-poi
