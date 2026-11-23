@@ -70,7 +70,6 @@
       brew "steipete/tap/peekaboo"
     '';
     masApps = {
-      "Wipr" = 1662217862;
       "Developer" = 640199958;
       "TestFlight" = 899247664;
       "DaVinci Resolve" = 571213070;
