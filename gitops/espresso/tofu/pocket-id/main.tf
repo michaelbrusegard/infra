@@ -38,27 +38,6 @@ resource "pocketid_client" "netbird" {
   ])
 }
 
-resource "pocketid_group" "nextcloud" {
-  name          = "nextcloud"
-  friendly_name = "Nextcloud Users"
-}
-
-resource "pocketid_client" "nextcloud" {
-  name = "Nextcloud"
-
-  callback_urls = [
-    "https://cloud.${local.domain}/apps/user_oidc/code",
-  ]
-
-  launch_url   = "https://cloud.${local.domain}"
-  pkce_enabled = true
-
-  allowed_user_groups = sort([
-    pocketid_group.nextcloud.id,
-    pocketid_group.admin.id,
-  ])
-}
-
 resource "pocketid_group" "immich" {
   name          = "immich"
   friendly_name = "Immich Users"

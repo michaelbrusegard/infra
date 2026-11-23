@@ -101,11 +101,6 @@ spec:
               value: "false"
             - name: GRAPH_USERNAME_MATCH
               value: none
-            # Temporary: an app token lets the Nextcloud copy log in.
-            - name: OC_ADD_RUN_SERVICES
-              value: auth-app
-            - name: PROXY_ENABLE_APP_AUTH
-              value: "true"
             - name: TZ
               value: Europe/Oslo
           ports:

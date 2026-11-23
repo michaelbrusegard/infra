@@ -66,17 +66,6 @@ spec:
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: nextcloud
-            k8s:app: nextcloud
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: nextcloud
-            k8s:app: nextcloud-backup
-      toPorts:
-        - ports:
-            - port: "5432"
-              protocol: TCP
-    - fromEndpoints:
-        - matchLabels:
             k8s:io.kubernetes.pod.namespace: immich
             k8s:app: immich
         - matchLabels:

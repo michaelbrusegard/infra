@@ -1,12 +1,3 @@
-output "nextcloud_pocketid_client_id" {
-  value = pocketid_client.nextcloud.id
-}
-
-output "nextcloud_pocketid_client_secret" {
-  value     = pocketid_client.nextcloud.client_secret
-  sensitive = true
-}
-
 output "immich_pocketid_client_id" {
   value = pocketid_client.immich.id
 }

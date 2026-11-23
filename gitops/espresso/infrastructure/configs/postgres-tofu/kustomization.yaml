@@ -31,7 +31,6 @@ patches:
           - kind: Secret
             name: postgres-passwords
             varsKeys:
-              - nextcloud_db_password
               - immich_db_password
               - hindsight_db_password
               - mattermost_db_password
@@ -40,7 +39,6 @@ patches:
         writeOutputsToSecret:
           name: postgres-outputs
           outputs:
-            - nextcloud_db_password
             - immich_db_password
             - hindsight_db_password
             - hindsight_db_password_urlencoded

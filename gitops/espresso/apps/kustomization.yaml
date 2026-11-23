@@ -10,7 +10,6 @@ resources:
   - media
   - minecraft
   - netbird
-  - nextcloud
   - ollama
   - opencloud
   - pocket-id
