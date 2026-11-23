@@ -16,6 +16,15 @@
         --set QT_QPA_PLATFORMTHEME xdgdesktopportal
     '';
   };
+  # The client's own "Start on login" entry points at an unwrapped store
+  # path and lives in ~/.config/autostart, which impermanence wipes.
+  opencloudAutostart = pkgs.makeDesktopItem {
+    name = "opencloud-autostart";
+    desktopName = "OpenCloud";
+    exec = "${opencloudClient}/bin/opencloud";
+    icon = "opencloud";
+    noDisplay = true;
+  };
   blenderDarwin = pkgs.brewCasks.blender.overrideAttrs (old: {
     # download.blender.org challenges non-browser fetchers with Cloudflare.
     # Keep the cask-provided hash while fetching the same artifact from a mirror.
@@ -110,6 +119,11 @@ in {
         ];
       };
     };
+
+  xdg.autostart = lib.mkIf (!isWsl && pkgs.stdenv.hostPlatform.isLinux) {
+    enable = true;
+    entries = ["${opencloudAutostart}/share/applications/opencloud-autostart.desktop"];
+  };
 
   xdg.mimeApps.defaultApplications = lib.mkIf (!isWsl) {
     "image/png" = ["imv.desktop"];

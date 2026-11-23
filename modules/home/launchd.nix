@@ -53,6 +53,18 @@ lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
       };
     };
 
+    opencloud = {
+      enable = true;
+      config = {
+        ProgramArguments = [
+          "/usr/bin/open"
+          "${pkgs.brewCasks.opencloud}/Applications/OpenCloud.app"
+        ];
+        RunAtLoad = true;
+        LimitLoadToSessionType = "Aqua";
+      };
+    };
+
     netbird-ui = {
       enable = true;
       config = {
