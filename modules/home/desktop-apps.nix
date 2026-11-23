@@ -81,6 +81,7 @@ in {
           brewCasks.legcord
 
           brewCasks.transmission
+          brewCasks.bitwarden
           brewCasks.protonvpn
           libreoffice-bin
           brewCasks.gimp

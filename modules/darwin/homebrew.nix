@@ -70,8 +70,6 @@
       brew "steipete/tap/peekaboo"
     '';
     masApps = {
-      # The App Store build is the one that ships the Safari extension.
-      "Bitwarden" = 1352778147;
       "Wipr" = 1662217862;
       "Developer" = 640199958;
       "TestFlight" = 899247664;
