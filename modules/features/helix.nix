@@ -182,7 +182,7 @@
         language = [
           {
             name = "nix";
-            formatter = {command = "alejandra";};
+            formatter = {command = "nixfmt";};
             language-servers = ["nixd"];
             auto-format = true;
           }

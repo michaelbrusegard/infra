@@ -20,7 +20,7 @@
         statix.package = pkgs.statix;
         deadnix.package = pkgs.deadnix;
       };
-      formatting.filetypes.nix.alejandra.package = pkgs.alejandra;
+      formatting.filetypes.nix.nixfmt.package = pkgs.nixfmt;
     };
   };
 }
