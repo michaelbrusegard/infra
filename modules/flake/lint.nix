@@ -12,13 +12,13 @@
       checks = {
         ast-grep = pkgs.runCommand "ast-grep" { nativeBuildInputs = [ pkgs.ast-grep ]; } ''
           cd ${src}
-          ast-grep scan --no-ignore hidden --globs '!gitops/espresso/flux-system/**'
+          ast-grep scan --config lint/sgconfig.yml --no-ignore hidden --globs '!gitops/espresso/flux-system/**'
           touch $out
         '';
 
         gitleaks = pkgs.runCommand "gitleaks" { nativeBuildInputs = [ pkgs.gitleaks ]; } ''
           cd ${src}
-          gitleaks dir . --no-banner --redact --config .gitleaks.toml
+          gitleaks dir . --no-banner --redact --config lint/gitleaks.toml
           touch $out
         '';
       };
@@ -35,7 +35,7 @@
         text = ''
           cd "$(git rev-parse --show-toplevel)"
           treefmt
-          ast-grep scan --no-ignore hidden --globs '!gitops/espresso/flux-system/**'
+          ast-grep scan --config lint/sgconfig.yml --no-ignore hidden --globs '!gitops/espresso/flux-system/**'
           staging=$(mktemp -d)
           trap 'rm -rf "$staging"' EXIT
           present=()
@@ -43,8 +43,7 @@
             [[ -e $file || -L $file ]] && present+=("$file")
           done < <(git ls-files -z --cached --others --exclude-standard)
           cp --parents -P -t "$staging" -- "''${present[@]}"
-          cp .gitleaks.toml "$staging"/
-          (cd "$staging" && gitleaks dir . --no-banner --redact --config .gitleaks.toml)
+          (cd "$staging" && gitleaks dir . --no-banner --redact --config lint/gitleaks.toml)
           echo "lint passed"
         '';
       };

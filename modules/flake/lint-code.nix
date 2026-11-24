@@ -34,7 +34,7 @@
             buildPhase = ''
               runHook preBuild
               export GOLANGCI_LINT_CACHE="$TMPDIR/golangci-lint"
-              golangci-lint run --config ${../../.golangci.yml} ./...
+              golangci-lint run ./...
               runHook postBuild
             '';
             doCheck = false;

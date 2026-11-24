@@ -11,7 +11,7 @@ if ! output=$(nix fmt -- "$file" 2>&1); then
   exit 2
 fi
 
-if command -v ast-grep >/dev/null && ! output=$(ast-grep scan "$file" 2>&1); then
+if command -v ast-grep >/dev/null && ! output=$(ast-grep scan --config lint/sgconfig.yml "$file" 2>&1); then
   printf 'lint rules failed on %s:\n%s\n' "$file" "$output" >&2
   exit 2
 fi
