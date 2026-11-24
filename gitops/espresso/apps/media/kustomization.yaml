@@ -8,12 +8,10 @@ resources:
   - prowlarr-statefulset.yaml
   - radarr-statefulset.yaml
   - sonarr-statefulset.yaml
-  - arr-config-configmap.yaml
   - arr-config.yaml
   - bazarr-statefulset.yaml
   - musicgrabber-statefulset.yaml
   - navidrome-statefulset.yaml
-  - music-tagger-configmap.yaml
   - music-tagger.yaml
   - listenbrainz-bridge.yaml
   - listenbrainz-bridge-monitoring.yaml
@@ -29,6 +27,15 @@ resources:
   - network-policy.yaml
 
 configMapGenerator:
+  - name: arr-config
+    namespace: media
+    files:
+      - sync.py=scripts/arr-config-sync.py
+  - name: music-tagger-config
+    namespace: media
+    files:
+      - config.yaml=config/music-tagger.yaml
+      - tagger.py=scripts/music-tagger.py
   - name: hermes-media-api
     namespace: media
     files:

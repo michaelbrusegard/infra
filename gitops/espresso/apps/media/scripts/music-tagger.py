@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+MUSIC_ROOT = Path(os.environ.get("MUSIC_ROOT", "/music"))
+CONFIG_PATH = Path(os.environ.get("BEETS_CONFIG", "/config/config.yaml"))
+REPORT_DIR = Path(os.environ.get("REPORT_DIR", "/config/reports"))
+MODE = os.environ.get("TAGGER_MODE", "recent")
+RECENT_DAYS = int(os.environ.get("RECENT_DAYS", "14"))
+SAMPLE_LIMIT = int(os.environ.get("SAMPLE_LIMIT", "25"))
+
+MBID_MARKERS = (
+    "MUSICBRAINZ_TRACKID",
+    "MUSICBRAINZ_RELEASETRACKID",
+    "MUSICBRAINZ_ALBUMID",
+    "MUSICBRAINZ_ARTISTID",
+)
+
+
+def log(message):
+    print(message, flush=True)
+
+
+def run(cmd):
+    log("+ " + " ".join(str(part) for part in cmd))
+    return subprocess.run(cmd, check=False)
+
+
+def has_mbid(path):
+    result = subprocess.run(
+        ["metaflac", "--list", str(path)],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    if result.returncode != 0:
+        return False
+    upper = result.stdout.upper()
+    return any(marker in upper for marker in MBID_MARKERS)
+
+
+def flac_files():
+    for base in (MUSIC_ROOT / "Albums", MUSIC_ROOT / "Singles"):
+        if base.exists():
+            yield from base.rglob("*.flac")
+
+
+def needs_tagging(path):
+    return path.is_file() and path.suffix.lower() == ".flac" and not has_mbid(path)
+
+
+def recent_cutoff():
+    return max(0, __import__("time").time() - (RECENT_DAYS * 24 * 60 * 60))
+
+
+def candidate_files():
+    files = [path for path in flac_files() if needs_tagging(path)]
+    if MODE == "recent":
+        cutoff = recent_cutoff()
+        files = [path for path in files if path.stat().st_mtime >= cutoff]
+    return sorted(files)
+
+
+def candidate_targets():
+    targets = candidate_files()
+    if MODE == "sample-write":
+        targets = targets[:SAMPLE_LIMIT]
+    return targets
+
+
+def dry_config():
+    with CONFIG_PATH.open("r", encoding="utf-8") as handle:
+        config = handle.read()
+    config = config.replace("library: /config/library.db", "library: /tmp/beets-dry-run.db")
+    config = config.replace("write: yes", "write: no")
+    temp = Path(tempfile.mkdtemp(prefix="beets-dry-")) / "config.yaml"
+    temp.write_text(config, encoding="utf-8")
+    return temp
+
+
+def main():
+    if MODE not in {"dry-run", "sample-write", "backfill", "recent"}:
+        raise SystemExit(f"unsupported TAGGER_MODE={MODE}")
+
+    for binary in ("beet", "metaflac", "fpcalc"):
+        if shutil.which(binary) is None:
+            raise SystemExit(f"missing required binary: {binary}")
+
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    targets = candidate_targets()
+    log(f"mode={MODE} targets={len(targets)}")
+    if not targets:
+        return 0
+
+    config = CONFIG_PATH
+    extra_args = []
+    if MODE == "dry-run":
+        config = dry_config()
+        extra_args.append("-W")
+
+    failures = 0
+    for target in targets:
+        if not target.exists():
+            continue
+        cmd = ["beet", "-c", str(config), "import", "-q", "-s", *extra_args, str(target)]
+        result = run(cmd)
+        if result.returncode != 0:
+            failures += 1
+            log(f"tagging failed target={target} rc={result.returncode}")
+
+    if failures:
+        raise SystemExit(f"{failures} beets import target(s) failed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -9,3 +9,12 @@ resources:
   - reconciler.yaml
   - httproute.yaml
   - network-policy.yaml
+
+configMapGenerator:
+  - name: uptime-kuma-status-page-reconciler
+    namespace: uptime-kuma
+    files:
+      - reconcile.py=scripts/reconcile.py
+
+generatorOptions:
+  disableNameSuffixHash: true

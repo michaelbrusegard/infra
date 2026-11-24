@@ -1,0 +1,24 @@
+directory: /music
+library: /config/library.db
+
+plugins: chroma fromfilename fetchart
+
+import:
+  write: yes
+  copy: no
+  move: no
+  resume: no
+  quiet: yes
+  quiet_fallback: skip
+  incremental: no
+  incremental_skip_later: yes
+  from_scratch: no
+  duplicate_action: keep
+  log: /config/import.log
+
+chroma:
+  auto: yes
+
+match:
+  strong_rec_thresh: 0.12
+  medium_rec_thresh: 0.25
