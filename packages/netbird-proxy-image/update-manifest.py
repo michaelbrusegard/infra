@@ -4,9 +4,11 @@ import re
 import sys
 from pathlib import Path
 
-
 image = sys.argv[1]
-if not re.fullmatch(r"ghcr\.io/michaelbrusegard/netbird-proxy:sha-[0-9a-f]{40}@sha256:[0-9a-f]{64}", image):
+if not re.fullmatch(
+    r"ghcr\.io/michaelbrusegard/netbird-proxy:sha-[0-9a-f]{40}@sha256:[0-9a-f]{64}",
+    image,
+):
     raise SystemExit("Expected an immutable NetBird proxy image reference")
 path = Path("gitops/espresso/apps/netbird/agent-network.yaml")
 text, count = re.subn(

@@ -106,7 +106,7 @@ func restore(n *conversations.Normalizer, path string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return eachRow(f, func(s conversations.State) error { n.Restore(s); return nil })
 }
 
@@ -131,9 +131,11 @@ func run(dir string, n *conversations.Normalizer, normalize func(drain func() er
 	// normalizer's index of nodes.
 	return normalize(func() error {
 		b := &n.Batch
-		for _, err := range []error{writeRows(files["llm.request_items"], b.Items),
+		for _, err := range []error{
+			writeRows(files["llm.request_items"], b.Items),
 			writeRows(files["llm.sessions"], b.Sessions), writeRows(files["llm.messages"], b.Messages),
-			writeRows(files["llm.calls"], b.Calls)} {
+			writeRows(files["llm.calls"], b.Calls),
+		} {
 			if err != nil {
 				return err
 			}

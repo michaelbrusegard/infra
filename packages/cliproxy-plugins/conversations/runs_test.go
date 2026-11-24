@@ -12,7 +12,7 @@ import (
 func storedRequests(t *testing.T) map[string]Request {
 	t.Helper()
 	var fixtures []proxyFixture
-	load(t, "proxy.json", &fixtures)
+	loadProxyFixtures(t, &fixtures)
 	out := map[string]Request{}
 	for _, f := range fixtures {
 		out[f.Name] = f.stored()
@@ -71,7 +71,7 @@ func stateOf(b *Batch, requests []Request) []State {
 // one run, and the second run writes no node again.
 func TestRunsSplitAtEveryBoundary(t *testing.T) {
 	var fixtures []proxyFixture
-	load(t, "proxy.json", &fixtures)
+	loadProxyFixtures(t, &fixtures)
 	var requests []Request
 	for _, f := range fixtures {
 		requests = append(requests, f.stored())
@@ -245,8 +245,10 @@ func TestTransportFieldsOnlyAtProtocolLocations(t *testing.T) {
 func TestInterruptedAnthropicStreamKeepsArguments(t *testing.T) {
 	want := []any{
 		map[string]any{"type": "text", "text": "Listing pods."},
-		map[string]any{"type": "tool_use", "id": "toolu_X", "name": "Bash",
-			"input": map[string]any{"command": "kubectl get pods -A", "timeout": 30}},
+		map[string]any{
+			"type": "tool_use", "id": "toolu_X", "name": "Bash",
+			"input": map[string]any{"command": "kubectl get pods -A", "timeout": 30},
+		},
 	}
 	args, _ := json.Marshal(want[1].(map[string]any)["input"])
 	var stream []string
@@ -254,20 +256,26 @@ func TestInterruptedAnthropicStreamKeepsArguments(t *testing.T) {
 		b, _ := json.Marshal(v)
 		stream = append(stream, "event: "+v["type"].(string)+"\ndata: "+string(b))
 	}
-	event(map[string]any{"type": "message_start", "message": map[string]any{"id": "msg_X", "type": "message",
-		"role": "assistant", "model": "claude-opus-5-5", "content": []any{}, "usage": map[string]any{"input_tokens": 5}}})
+	event(map[string]any{"type": "message_start", "message": map[string]any{
+		"id": "msg_X", "type": "message",
+		"role": "assistant", "model": "claude-opus-5-5", "content": []any{}, "usage": map[string]any{"input_tokens": 5},
+	}})
 	event(map[string]any{"type": "content_block_start", "index": 0, "content_block": map[string]any{"type": "text", "text": ""}})
 	for _, s := range []string{"Listing ", "pods."} {
 		event(map[string]any{"type": "content_block_delta", "index": 0, "delta": map[string]any{"type": "text_delta", "text": s}})
 	}
 	event(map[string]any{"type": "content_block_stop", "index": 0})
-	event(map[string]any{"type": "content_block_start", "index": 1, "content_block": map[string]any{"type": "tool_use",
-		"id": "toolu_X", "name": "Bash", "input": map[string]any{}}})
+	event(map[string]any{"type": "content_block_start", "index": 1, "content_block": map[string]any{
+		"type": "tool_use",
+		"id":   "toolu_X", "name": "Bash", "input": map[string]any{},
+	}})
 	var chunks []string
 	for i := 0; i < len(args); i += 7 {
 		chunks = append(chunks, string(args[i:min(i+7, len(args))]))
-		event(map[string]any{"type": "content_block_delta", "index": 1,
-			"delta": map[string]any{"type": "input_json_delta", "partial_json": chunks[len(chunks)-1]}})
+		event(map[string]any{
+			"type": "content_block_delta", "index": 1,
+			"delta": map[string]any{"type": "input_json_delta", "partial_json": chunks[len(chunks)-1]},
+		})
 	}
 	// The connection drops here, before content_block_stop and message_stop.
 	content := func(stream []string) string {

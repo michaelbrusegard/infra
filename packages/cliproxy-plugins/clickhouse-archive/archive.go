@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -633,7 +634,7 @@ func (s *sentItems) add(h requestitems.Hash) {
 
 func (a *archive) insert(table string, body []byte) error {
 	query := url.Values{"query": {"INSERT INTO " + table + " FORMAT JSONEachRow"}}
-	req, err := http.NewRequest(http.MethodPost, a.endpoint+"/?"+query.Encode(), bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, a.endpoint+"/?"+query.Encode(), bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -642,10 +643,10 @@ func (a *archive) insert(table string, body []byte) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		var msg bytes.Buffer
-		msg.ReadFrom(resp.Body)
+		_, _ = msg.ReadFrom(resp.Body)
 		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, strings.TrimSpace(msg.String()))
 	}
 	return nil

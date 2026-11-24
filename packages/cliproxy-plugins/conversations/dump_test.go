@@ -20,7 +20,7 @@ func TestDumpSources(t *testing.T) {
 		t.Skip("no -dump directory")
 	}
 	var fixtures []proxyFixture
-	load(t, "proxy.json", &fixtures)
+	loadProxyFixtures(t, &fixtures)
 	rows := map[string][]any{}
 	seen := map[Hash]bool{}
 	for _, f := range fixtures {
@@ -72,7 +72,9 @@ func TestDumpSources(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		f.Close()
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 

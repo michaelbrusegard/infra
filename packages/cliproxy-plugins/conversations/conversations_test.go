@@ -22,9 +22,9 @@ type proxyFixture struct {
 	Body json.RawMessage `json:"body"`
 }
 
-func load(t *testing.T, name string, v any) {
+func loadProxyFixtures(t *testing.T, v any) {
 	t.Helper()
-	data, err := os.ReadFile("testdata/" + name)
+	data, err := os.ReadFile("testdata/proxy.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func (f proxyFixture) stored() Request {
 func proxyBatch(t *testing.T) (*Normalizer, []proxyFixture) {
 	t.Helper()
 	var fixtures []proxyFixture
-	load(t, "proxy.json", &fixtures)
+	loadProxyFixtures(t, &fixtures)
 	n := NewNormalizer()
 	for _, f := range fixtures {
 		r := f.stored()
@@ -233,8 +233,10 @@ func TestProxyConversationTree(t *testing.T) {
 	// An unarchived previous response starts at a marker, and an
 	// interrupted output keeps what streamed.
 	orphan := Path(n.Messages, callByID(t, &n.Batch, "codex-orphan").OutputIDs[0])
-	if got := texts(orphan); !reflect.DeepEqual(got, []string{"system other:resp_unarchived", "user text:continue",
-		`assistant* tool_call:{"plan":[]}`}) {
+	if got := texts(orphan); !reflect.DeepEqual(got, []string{
+		"system other:resp_unarchived", "user text:continue",
+		`assistant* tool_call:{"plan":[]}`,
+	}) {
 		t.Fatalf("orphan %q", got)
 	}
 	sub := callByID(t, &n.Batch, "codex-agent")
@@ -296,9 +298,11 @@ func TestProxyNormalizationIsIdempotent(t *testing.T) {
 }
 
 // Keys whose strings are conversation content in some dialect.
-var contentKeys = map[string]bool{"text": true, "thinking": true, "arguments": true, "input": true,
+var contentKeys = map[string]bool{
+	"text": true, "thinking": true, "arguments": true, "input": true,
 	"output": true, "content": true, "summary": true, "refusal": true,
-	"reasoning_content": true, "error": true}
+	"reasoning_content": true, "error": true,
+}
 
 // Every content string in a raw item must appear in an extracted block, and
 // every extracted string must come from the raw item: the columns neither
@@ -338,7 +342,7 @@ func TestBlocksMatchRawItems(t *testing.T) {
 					continue
 				}
 				extracted = append(extracted, s)
-				for _, piece := range strings.Split(s, "\n\n") {
+				for piece := range strings.SplitSeq(s, "\n\n") {
 					quoted, _ := json.Marshal(piece)
 					if !strings.Contains(all, piece) && !strings.Contains(all, strings.Trim(string(quoted), `"`)) &&
 						!jsonContains(raw, piece) {
@@ -440,7 +444,8 @@ func TestExportsKeepBlockOrder(t *testing.T) {
 			{Type: "thinking", Text: "Look up the worker."},
 			{Type: "tool_call", ToolName: "execute", ToolCallID: "tool_HD0", ToolInput: `{"code":"return 1"}`},
 			{Type: "tool_result", ToolCallID: "tool_HD0", Text: "1"},
-			{Type: "text", Text: "The worker returns 1."}}},
+			{Type: "text", Text: "The worker returns 1."},
+		}},
 	}
 	chat, _ := json.Marshal(must(OpenAIChat(Context{}, path, nil))["messages"])
 	want := `[{"content":"What does the worker return?","role":"user"},` +
@@ -591,9 +596,13 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 			{"type":"function","name":"js","parameters":{"type":"object","required":["code"]}}]},
 		{"type":"function","name":"exec","parameters":{"type":"object","required":["cmd"]}}]`))
 	call := func(namespace, name, input string) []Message {
-		return []Message{{Role: "user", Blocks: []Block{{Type: "text", Text: "Search for hello."}}},
-			{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-				ToolName: name, ToolNamespace: namespace, ToolCallID: "call_1", ToolInput: input}}}}
+		return []Message{
+			{Role: "user", Blocks: []Block{{Type: "text", Text: "Search for hello."}}},
+			{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{
+				Type: "tool_call", SourceType: "function_call",
+				ToolName: name, ToolNamespace: namespace, ToolCallID: "call_1", ToolInput: input,
+			}}},
+		}
 	}
 	schemas := func(tools []any, schema func(map[string]any) (string, any)) map[string]string {
 		out := map[string]string{}
@@ -676,13 +685,17 @@ func TestExportsLeaveOutHostedToolsTogether(t *testing.T) {
 			{Type: "tool_call", SourceType: "web_search_call", ToolName: "web_search", ToolCallID: "ws_1", ToolInput: `{"query":"clickhouse json"}`},
 			{Type: "tool_call", SourceType: "server_tool_use", ToolName: "web_search", ToolCallID: "srvtoolu_1", ToolInput: `{"query":"clickhouse json"}`},
 			{Type: "tool_result", SourceType: "web_search_tool_result", ToolCallID: "srvtoolu_1", Text: "results"},
-			{Type: "tool_call", SourceType: "tool_search_call", ToolName: "tool_search", ToolCallID: "ts_1", ToolInput: `{"query":"shell"}`}}},
+			{Type: "tool_call", SourceType: "tool_search_call", ToolName: "tool_search", ToolCallID: "ts_1", ToolInput: `{"query":"shell"}`},
+		}},
 		{Role: "tool", Blocks: []Block{{Type: "tool_result", SourceType: "tool_search_output", ToolCallID: "ts_1", Text: "exec"}}},
-		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "24.8."},
-			{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`}}},
+		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{
+			{Type: "text", Text: "24.8."},
+			{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`},
+		}},
 	}
 	for name, request := range map[string]map[string]any{
-		"openai": must(OpenAIChat(ctx, path, nil)), "anthropic": must(AnthropicMessages(ctx, path, nil))} {
+		"openai": must(OpenAIChat(ctx, path, nil)), "anthropic": must(AnthropicMessages(ctx, path, nil)),
+	} {
 		got, _ := json.Marshal(request)
 		for _, hosted := range []string{"web_search", "tool_search", "ws_1", "srvtoolu_1", "ts_1", "results"} {
 			if strings.Contains(string(got), hosted) {
@@ -708,13 +721,17 @@ func TestTrainingNeedsOutputAndItsTools(t *testing.T) {
 		{"type":"custom","name":"script"}]`))
 	user := Message{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "List the pods."}}}
 	interrupted := Message{ID: Hash{7}, Role: "assistant", Output: true, Blocks: []Block{
-		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_2", ToolInput: `{"path":`}}}
+		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_2", ToolInput: `{"path":`},
+	}}
 	script := Message{ID: Hash{8}, Role: "assistant", Output: true, Blocks: []Block{
-		{Type: "tool_call", SourceType: "custom_tool_call", ToolName: "script", ToolCallID: "call_3", ToolInput: `print(1)`}}}
+		{Type: "tool_call", SourceType: "custom_tool_call", ToolName: "script", ToolCallID: "call_3", ToolInput: `print(1)`},
+	}}
 	call := Message{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{
-		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`}}}
+		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`},
+	}}
 	search := Message{ID: Hash{3}, Role: "assistant", Output: true, Blocks: []Block{
-		{Type: "tool_call", SourceType: "web_search_call", ToolName: "web_search", ToolCallID: "ws_1"}}}
+		{Type: "tool_call", SourceType: "web_search_call", ToolName: "web_search", ToolCallID: "ws_1"},
+	}}
 	answer := Message{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "Two pods."}}}
 	result := Message{ID: Hash{5}, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1"}}}
 	for _, tc := range []struct {
@@ -727,8 +744,12 @@ func TestTrainingNeedsOutputAndItsTools(t *testing.T) {
 		{"complete", tools, []Message{user, call}, []Hash{call.ID}, true},
 		// A failed call that returned nothing ends at its input.
 		{"no output", tools, []Message{user}, nil, false},
-		{"empty output", tools, []Message{user, {ID: Hash{6}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text"}}}},
-			[]Hash{{6}}, false},
+		{
+			"empty output", tools,
+			[]Message{user, {ID: Hash{6}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text"}}}},
+			[]Hash{{6}},
+			false,
+		},
 		// Only a hosted call, which the export leaves out.
 		{"hosted only", tools, []Message{user, search}, []Hash{search.ID}, false},
 		// A failed delta call with output but no echo knows no tools.
@@ -759,9 +780,13 @@ func TestExportsKeepNumbersExact(t *testing.T) {
 	ctx.Add("tools", []byte(`[{"type":"function","name":"get","parameters":{"type":"object",`+
 		`"properties":{"id":{"type":"integer","maximum":9007199254740993}}}}]`))
 	args := `{"id":9007199254740993,"ratio":0.1000000000000000055511151231257827}`
-	path := []Message{{Role: "user", Blocks: []Block{{Type: "text", Text: "Get it."}}},
-		{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-			ToolName: "get", ToolCallID: "call_1", ToolInput: args}}}}
+	path := []Message{
+		{Role: "user", Blocks: []Block{{Type: "text", Text: "Get it."}}},
+		{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{
+			Type: "tool_call", SourceType: "function_call",
+			ToolName: "get", ToolCallID: "call_1", ToolInput: args,
+		}}},
+	}
 	for _, tc := range []struct {
 		export func(Context, []Message, []Hash) (map[string]any, error)
 		want   string
@@ -790,7 +815,8 @@ func TestExportsTrainOnlyTheCallsOutputs(t *testing.T) {
 	ctx.Add("tools", []byte(`[{"type":"function","name":"exec","parameters":{"type":"object"}}]`))
 	user := Message{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "List the pods."}}}
 	interrupted := Message{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{
-		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{"path":`}}}
+		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{"path":`},
+	}}
 	result := Message{ID: Hash{3}, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1", Text: "bad arguments"}}}
 	answer := Message{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "Two pods."}}}
 	for name, path := range map[string][]Message{
@@ -832,12 +858,18 @@ func TestExportsKeepHistoricalToolNames(t *testing.T) {
 	var ctx Context
 	ctx.Add("tools", []byte(`[{"type":"namespace","name":"new","tools":[{"type":"function","name":"run","parameters":{"type":"object"}}]},
 		{"type":"namespace","name":"other","tools":[{"type":"function","name":"run","parameters":{"type":"object"}}]}]`))
-	path := []Message{{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "Run it twice."}}},
-		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-			ToolName: "run", ToolNamespace: "old", ToolCallID: "call_1", ToolInput: `{}`}}},
+	path := []Message{
+		{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "Run it twice."}}},
+		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{{
+			Type: "tool_call", SourceType: "function_call",
+			ToolName: "run", ToolNamespace: "old", ToolCallID: "call_1", ToolInput: `{}`,
+		}}},
 		{ID: Hash{3}, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1", Text: "ok"}}},
-		{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-			ToolName: "run", ToolNamespace: "new", ToolCallID: "call_2", ToolInput: `{}`}}}}
+		{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{
+			Type: "tool_call", SourceType: "function_call",
+			ToolName: "run", ToolNamespace: "new", ToolCallID: "call_2", ToolInput: `{}`,
+		}}},
+	}
 	if err := ForTraining(ctx, path, []Hash{{4}}); err != nil {
 		t.Fatal(err)
 	}
@@ -866,16 +898,22 @@ func TestExportsKeepRemovedToolNamespaces(t *testing.T) {
 	var ctx Context
 	ctx.Add("tools", []byte(`[{"type":"function","name":"read","parameters":{"type":"object"}}]`))
 	call := func(id Hash, namespace, callID string) Message {
-		return Message{ID: id, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-			ToolName: "run", ToolNamespace: namespace, ToolCallID: callID, ToolInput: `{}`}}}
+		return Message{ID: id, Role: "assistant", Output: true, Blocks: []Block{{
+			Type: "tool_call", SourceType: "function_call",
+			ToolName: "run", ToolNamespace: namespace, ToolCallID: callID, ToolInput: `{}`,
+		}}}
 	}
 	result := func(id Hash, callID string) Message {
 		return Message{ID: id, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: callID, Text: "ok"}}}
 	}
-	path := []Message{{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "Run both, then read."}}},
+	path := []Message{
+		{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "Run both, then read."}}},
 		call(Hash{2}, "old_a", "call_1"), result(Hash{3}, "call_1"), call(Hash{4}, "old_b", "call_2"), result(Hash{5}, "call_2"),
-		{ID: Hash{6}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-			ToolName: "read", ToolCallID: "call_3", ToolInput: `{}`}}}}
+		{ID: Hash{6}, Role: "assistant", Output: true, Blocks: []Block{{
+			Type: "tool_call", SourceType: "function_call",
+			ToolName: "read", ToolCallID: "call_3", ToolInput: `{}`,
+		}}},
+	}
 	if err := ForTraining(ctx, path, []Hash{{6}}); err != nil {
 		t.Fatal(err)
 	}

@@ -23,11 +23,15 @@ func anthropicContent(content json.RawMessage) []Block {
 		case t == "redacted_thinking":
 			out = append(out, Block{Type: "thinking", SourceType: t})
 		case t == "tool_use" || t == "server_tool_use" || t == "mcp_tool_use":
-			out = append(out, Block{Type: "tool_call", SourceType: t, ToolName: b.str("name"),
-				ToolCallID: b.str("id"), ToolInput: compactJSON(b["input"])})
+			out = append(out, Block{
+				Type: "tool_call", SourceType: t, ToolName: b.str("name"),
+				ToolCallID: b.str("id"), ToolInput: compactJSON(b["input"]),
+			})
 		case strings.HasSuffix(t, "tool_result"):
-			result := Block{Type: "tool_result", SourceType: t, ToolCallID: b.str("tool_use_id"),
-				IsError: b.boolean("is_error")}
+			result := Block{
+				Type: "tool_result", SourceType: t, ToolCallID: b.str("tool_use_id"),
+				IsError: b.boolean("is_error"),
+			}
 			var media []Block
 			if isString(b["content"]) {
 				result.Text = str(b["content"])
@@ -94,8 +98,10 @@ func responsesItem(raw []byte) (string, []Block) {
 		if t == "custom_tool_call" {
 			input = it["input"]
 		}
-		return "assistant", []Block{{Type: "tool_call", SourceType: t, ToolName: it.str("name"),
-			ToolNamespace: it.str("namespace"), ToolCallID: it.str("call_id"), ToolInput: compactJSON(input)}}
+		return "assistant", []Block{{
+			Type: "tool_call", SourceType: t, ToolName: it.str("name"),
+			ToolNamespace: it.str("namespace"), ToolCallID: it.str("call_id"), ToolInput: compactJSON(input),
+		}}
 	case "function_call_output", "custom_tool_call_output", "tool_search_output":
 		result := Block{Type: "tool_result", SourceType: t, ToolCallID: it.str("call_id")}
 		output := it["output"]
@@ -132,8 +138,10 @@ func responsesItem(raw []byte) (string, []Block) {
 		if input == nil {
 			input = it["arguments"]
 		}
-		return "assistant", []Block{{Type: "tool_call", SourceType: t, ToolName: strings.TrimSuffix(t, "_call"),
-			ToolCallID: firstNonEmpty(it.str("call_id"), it.str("id")), ToolInput: compactJSON(input)}}
+		return "assistant", []Block{{
+			Type: "tool_call", SourceType: t, ToolName: strings.TrimSuffix(t, "_call"),
+			ToolCallID: firstNonEmpty(it.str("call_id"), it.str("id")), ToolInput: compactJSON(input),
+		}}
 	}
 	if role == "" {
 		role = "system"
@@ -157,8 +165,10 @@ func responsesContent(content json.RawMessage, callID string) []Block {
 		case "input_image":
 			out = append(out, Block{Type: "image", SourceType: t, ToolCallID: callID, Media: mediaOf(p.str("image_url"))})
 		case "input_file":
-			out = append(out, Block{Type: "file", SourceType: t, ToolCallID: callID,
-				Text: p.str("filename"), Media: mediaOf(p.str("file_data"))})
+			out = append(out, Block{
+				Type: "file", SourceType: t, ToolCallID: callID,
+				Text: p.str("filename"), Media: mediaOf(p.str("file_data")),
+			})
 		case "encrypted_content":
 			// Encrypted, like reasoning; not extracted.
 		default:
@@ -196,8 +206,10 @@ func chatMessage(raw []byte) (string, []Block) {
 	for _, raw := range m.arr("tool_calls") {
 		c := parse(raw)
 		f := c.obj("function")
-		out = append(out, Block{Type: "tool_call", SourceType: firstNonEmpty(c.str("type"), "function"),
-			ToolName: f.str("name"), ToolCallID: c.str("id"), ToolInput: compactJSON(f["arguments"])})
+		out = append(out, Block{
+			Type: "tool_call", SourceType: firstNonEmpty(c.str("type"), "function"),
+			ToolName: f.str("name"), ToolCallID: c.str("id"), ToolInput: compactJSON(f["arguments"]),
+		})
 	}
 	return role, out
 }

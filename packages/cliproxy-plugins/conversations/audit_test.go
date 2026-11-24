@@ -45,13 +45,17 @@ func TestClaudeCodeToolReferencesKeepTheirNames(t *testing.T) {
 // tools the request itself sent.
 func TestProxyAdditionalToolsAreContext(t *testing.T) {
 	tool := `{"type":"function","name":"exec","parameters":{"type":"object"}}`
-	f := proxyFixture{Request: Request{RequestID: "codex-tools", StartedAt: "2026-11-12 10:00:00.000",
-		CompletedAt: "2026-11-12 10:00:01.000", SourceFormat: "openai-response", UserAgent: "codex_cli_rs/0.200.0",
-		ResponseBody: `{"type":"response.completed","response":{"id":"resp_T","object":"response","model":"gpt-6.1-sol","output":[` +
-			`{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Done."}]}]}}`},
+	f := proxyFixture{
+		Request: Request{
+			RequestID: "codex-tools", StartedAt: "2026-11-12 10:00:00.000",
+			CompletedAt: "2026-11-12 10:00:01.000", SourceFormat: "openai-response", UserAgent: "codex_cli_rs/0.200.0",
+			ResponseBody: `{"type":"response.completed","response":{"id":"resp_T","object":"response","model":"gpt-6.1-sol","output":[` +
+				`{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Done."}]}]}}`,
+		},
 		Body: json.RawMessage(`{"model":"gpt-6.1-sol","tools":[{"type":"web_search"}],"input":[` +
 			`{"type":"additional_tools","id":"at_1","role":"developer","tools":[{"type":"namespace","name":"functions","tools":[` + tool + `]}]},` +
-			`{"type":"message","role":"user","content":[{"type":"input_text","text":"Run it."}]}]}`)}
+			`{"type":"message","role":"user","content":[{"type":"input_text","text":"Run it."}]}]}`),
+	}
 	n := NewNormalizer()
 	n.Request(f.stored())
 	for _, m := range n.Messages {

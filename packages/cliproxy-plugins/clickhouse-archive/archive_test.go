@@ -30,7 +30,7 @@ func TestQueueByteBudgetIncludesRowsWaitingForFlush(t *testing.T) {
 	// A slow ClickHouse insert leaves the consumer busy while completed
 	// requests accumulate in the channel, before reaching the batch buffer.
 	body := strings.Repeat("x", 1<<20)
-	for i := 0; i < maxQueueBytes/len(body)+1; i++ {
+	for range maxQueueBytes/len(body) + 1 {
 		a.enqueue("llm.requests", body)
 	}
 	var total int
@@ -47,7 +47,7 @@ func TestFlushRetainsByteBudgetUntilInsertSucceeds(t *testing.T) {
 	var attempts atomic.Int32
 	failed := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(io.Discard, r.Body)
+		_, _ = io.Copy(io.Discard, r.Body)
 		if attempts.Add(1) == 1 {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			close(failed)
@@ -252,7 +252,7 @@ func TestSentItemsKeepReusedHashes(t *testing.T) {
 		return requestitems.HashOf([]byte{byte(i), byte(i >> 8), byte(i >> 16)})
 	}
 	s.add(hash(-1))
-	for i := 0; i < 2*sentItemsPerGeneration; i++ {
+	for i := range 2 * sentItemsPerGeneration {
 		s.add(hash(i))
 		// A hash in use moves forward with each generation.
 		if !s.has(hash(-1)) {

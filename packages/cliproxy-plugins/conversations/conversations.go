@@ -241,7 +241,7 @@ func (o obj) num(key string) uint64 {
 
 func (o obj) boolean(key string) bool {
 	var v bool
-	json.Unmarshal(o[key], &v)
+	_ = json.Unmarshal(o[key], &v)
 	return v
 }
 
@@ -260,7 +260,7 @@ func isString(raw json.RawMessage) bool {
 
 func str(raw json.RawMessage) string {
 	var s string
-	json.Unmarshal(raw, &s)
+	_ = json.Unmarshal(raw, &s)
 	return s
 }
 
@@ -295,7 +295,7 @@ func roleOf(role string, blocks []Block) string {
 		return role
 	}
 	for _, b := range blocks {
-		if b.Type != "tool_result" && !(b.ToolCallID != "" && (b.Type == "image" || b.Type == "file")) {
+		if b.Type != "tool_result" && (b.ToolCallID == "" || (b.Type != "image" && b.Type != "file")) {
 			return role
 		}
 	}

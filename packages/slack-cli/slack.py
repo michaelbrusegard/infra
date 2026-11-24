@@ -8,6 +8,7 @@ The token is never printed, logged, or written anywhere.
 
 import argparse
 import concurrent.futures
+import contextlib
 import datetime as dt
 import difflib
 import html
@@ -26,6 +27,7 @@ import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
+from typing import ClassVar
 
 VERSION = "2.0.0"
 API_BASE = "https://slack.com/api/"
@@ -36,7 +38,9 @@ TOKEN_FILE = os.path.join(
     "keys",
     "slack-token",
 )
-CACHE_DIR = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"), "slack-cli")
+CACHE_DIR = os.path.join(
+    os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"), "slack-cli"
+)
 DRY_ENV = "SLACK_CLI_DRY_RUN"
 MANIFEST_HINT = "packages/slack-cli/manifest.json in Michael's infra repo"
 TTL = {
@@ -100,7 +104,9 @@ def warn(msg):
 
 def slack_host(host):
     host = (host or "").lower()
-    return host == "slack.com" or host.endswith((".slack.com", ".slack-edge.com", ".slackb.com"))
+    return host == "slack.com" or host.endswith(
+        (".slack.com", ".slack-edge.com", ".slackb.com")
+    )
 
 
 class _SafeRedirect(urllib.request.HTTPRedirectHandler):
@@ -134,10 +140,16 @@ def _fake_response(method, params):
             post_at=p.get("post_at"),
         )
     elif method == "files.getUploadURLExternal":
-        fake.update(upload_url="https://files.slack.com/upload/v1/DRYRUN", file_id="F0DRYRUN0")
+        fake.update(
+            upload_url="https://files.slack.com/upload/v1/DRYRUN", file_id="F0DRYRUN0"
+        )
     elif method == "files.completeUploadExternal":
         fake.update(files=[{"id": "F0DRYRUN0", "permalink": "(dry-run: no permalink)"}])
-    elif method in ("conversations.open", "conversations.create", "conversations.invite"):
+    elif method in (
+        "conversations.open",
+        "conversations.create",
+        "conversations.invite",
+    ):
         fake.update(
             channel={
                 "id": "C0DRYRUN0" if method != "conversations.open" else "D0DRYRUN0",
@@ -197,21 +209,20 @@ class Client:
                     time.sleep(2**attempt / 2)
                     continue
                 body = b""
-                try:
+                with contextlib.suppress(OSError):
                     body = e.read()
-                except OSError:
-                    pass
                 return e, body
             except (
                 urllib.error.URLError,
-                socket.timeout,
                 TimeoutError,
                 ConnectionError,
                 http.client.HTTPException,
                 ssl.SSLError,
             ) as e:
                 reason = getattr(e, "reason", e)
-                timed_out = isinstance(reason, (socket.timeout, TimeoutError)) or "timed out" in str(reason)
+                timed_out = isinstance(
+                    reason, (socket.timeout, TimeoutError)
+                ) or "timed out" in str(reason)
                 if attempt < 3 and (idempotent or not timed_out):
                     attempt += 1
                     time.sleep(2**attempt / 2)
@@ -229,25 +240,35 @@ class Client:
         write = not READ_METHOD_RE.search(method)
         if write and self.dry_env:
             print(
-                f"[{DRY_ENV}] would call {method} " + json.dumps(params, ensure_ascii=False, sort_keys=True),
+                f"[{DRY_ENV}] would call {method} "
+                + json.dumps(params, ensure_ascii=False, sort_keys=True),
                 file=sys.stderr,
             )
             return _fake_response(method, params)
-        headers = {"Authorization": "Bearer " + self.token(), "User-Agent": f"slack-cli/{VERSION}"}
+        headers = {
+            "Authorization": "Bearer " + self.token(),
+            "User-Agent": f"slack-cli/{VERSION}",
+        }
         if json_body:
             data = json.dumps(params).encode()
             headers["Content-Type"] = "application/json; charset=utf-8"
         else:
-            data = urllib.parse.urlencode({k: _encode_value(v) for k, v in params.items()}).encode()
+            data = urllib.parse.urlencode(
+                {k: _encode_value(v) for k, v in params.items()}
+            ).encode()
             headers["Content-Type"] = "application/x-www-form-urlencoded"
-        req = urllib.request.Request(API_BASE + method, data=data, headers=headers, method="POST")
+        req = urllib.request.Request(
+            API_BASE + method, data=data, headers=headers, method="POST"
+        )
         resp, body = self._send(req, method, timeout, idempotent=not write)
         self.last_headers = dict(resp.headers.items()) if resp.headers else {}
         try:
             payload = json.loads(body.decode("utf-8", "replace"))
         except ValueError:
             status = getattr(resp, "status", None) or getattr(resp, "code", "?")
-            raise SlackError(f"{method}: unexpected non-JSON response (HTTP {status})") from None
+            raise SlackError(
+                f"{method}: unexpected non-JSON response (HTTP {status})"
+            ) from None
         if not payload.get("ok") and not allow_error:
             raise SlackError(format_api_error(method, payload))
         return payload
@@ -274,9 +295,15 @@ class Client:
     def download(self, url, timeout=120):
         host = urllib.parse.urlsplit(url).hostname
         if not slack_host(host):
-            raise SlackError(f"refusing to send the Slack token to non-Slack host {host!r}")
+            raise SlackError(
+                f"refusing to send the Slack token to non-Slack host {host!r}"
+            )
         req = urllib.request.Request(
-            url, headers={"Authorization": "Bearer " + self.token(), "User-Agent": f"slack-cli/{VERSION}"}
+            url,
+            headers={
+                "Authorization": "Bearer " + self.token(),
+                "User-Agent": f"slack-cli/{VERSION}",
+            },
         )
         resp, body = self._send(req, "file download", timeout, idempotent=True)
         status = getattr(resp, "status", None) or getattr(resp, "code", 0)
@@ -286,7 +313,10 @@ class Client:
 
     def upload_bytes(self, url, data, label="file upload"):
         if self.dry_env:
-            print(f"[{DRY_ENV}] would POST {len(data)} bytes to the upload URL", file=sys.stderr)
+            print(
+                f"[{DRY_ENV}] would POST {len(data)} bytes to the upload URL",
+                file=sys.stderr,
+            )
             return
         if not slack_host(urllib.parse.urlsplit(url).hostname):
             raise SlackError("upload URL is not a Slack host")
@@ -294,9 +324,12 @@ class Client:
             url,
             data=data,
             method="POST",
-            headers={"Content-Type": "application/octet-stream", "User-Agent": f"slack-cli/{VERSION}"},
+            headers={
+                "Content-Type": "application/octet-stream",
+                "User-Agent": f"slack-cli/{VERSION}",
+            },
         )
-        resp, body = self._send(req, label, 300, idempotent=False)
+        resp, _body = self._send(req, label, 300, idempotent=False)
         status = getattr(resp, "status", None) or getattr(resp, "code", 0)
         if status and status >= 300:
             raise SlackError(f"{label} failed: HTTP {status}")
@@ -421,7 +454,9 @@ def fuzzy_rank(query, items, keys):
 
 def pick_unique(query, ranked, kind, label):
     if not ranked:
-        raise SlackError(f"unknown {kind}: {query} (try: slack {kind}s {query!r} --refresh)")
+        raise SlackError(
+            f"unknown {kind}: {query} (try: slack {kind}s {query!r} --refresh)"
+        )
     top = ranked[0][0]
     best = [it for s, it in ranked if s == top]
     if len(best) == 1:
@@ -448,7 +483,7 @@ def user_summary(u):
 
 
 def conv_summary(c):
-    out = {
+    return {
         "id": c.get("id"),
         "name": c.get("name") or "",
         "is_im": bool(c.get("is_im")),
@@ -463,7 +498,6 @@ def conv_summary(c):
         "topic": ((c.get("topic") or {}).get("value") or ""),
         "purpose": ((c.get("purpose") or {}).get("value") or ""),
     }
-    return out
 
 
 class Ctx:
@@ -489,7 +523,17 @@ class Ctx:
             data = self.cache.load("team")
             if not data:
                 r = self.client.call("auth.test")
-                data = {k: r.get(k) for k in ("url", "team", "team_id", "user", "user_id", "enterprise_id")}
+                data = {
+                    k: r.get(k)
+                    for k in (
+                        "url",
+                        "team",
+                        "team_id",
+                        "user",
+                        "user_id",
+                        "enterprise_id",
+                    )
+                }
                 self.cache.save("team", data)
             self._team = data
         return self._team
@@ -507,7 +551,9 @@ class Ctx:
                 data = None if force else self.cache.load("users")
                 if data is None:
                     data = {}
-                    for u in self.client.paginate("users.list", {}, "members", page_size=500):
+                    for u in self.client.paginate(
+                        "users.list", {}, "members", page_size=500
+                    ):
                         data[u["id"]] = user_summary(u)
                     # Keep previously cached external users (Slack Connect).
                     old = self._users or {}
@@ -548,7 +594,12 @@ class Ctx:
         if not missing:
             return
         with concurrent.futures.ThreadPoolExecutor(WORKERS) as ex:
-            list(ex.map(lambda i: self.bot_name(i) if i.startswith("B") else self.user(i), missing))
+            list(
+                ex.map(
+                    lambda i: self.bot_name(i) if i.startswith("B") else self.user(i),
+                    missing,
+                )
+            )
 
     def bot_name(self, bid):
         """Name of a bot ID (bots.info), cached alongside users."""
@@ -559,7 +610,11 @@ class Ctx:
             return (users[bid] or {}).get("name")
         r = self.client.call("bots.info", {"bot": bid}, allow_error=True)
         if r.get("ok"):
-            entry = {"id": bid, "name": (r.get("bot") or {}).get("name") or bid, "is_bot_id": True}
+            entry = {
+                "id": bid,
+                "name": (r.get("bot") or {}).get("name") or bid,
+                "is_bot_id": True,
+            }
         elif r.get("error") == "bot_not_found":
             entry = None
         else:
@@ -603,12 +658,21 @@ class Ctx:
         cands = [u for u in users.values() if u and not u.get("is_bot_id")]
 
         def keys(u):
-            return [u["name"], u["display_name"], u["real_name"], u["email"].split("@")[0]]
+            return [
+                u["name"],
+                u["display_name"],
+                u["real_name"],
+                u["email"].split("@")[0],
+            ]
 
         ranked = fuzzy_rank(q, cands, keys)
         if not ranked and not self._users_refreshed:
             self.users(force=True)
-            ranked = fuzzy_rank(q, [u for u in self._users.values() if u and not u.get("is_bot_id")], keys)
+            ranked = fuzzy_rank(
+                q,
+                [u for u in self._users.values() if u and not u.get("is_bot_id")],
+                keys,
+            )
         # Prefer active humans when the match quality ties.
         if ranked:
             top = ranked[0][0]
@@ -616,7 +680,9 @@ class Ctx:
             active = [(s, u) for s, u in tied if not u["deleted"] and not u["is_bot"]]
             if len(tied) > 1 and len(active) == 1:
                 ranked = active
-        return pick_unique(ref, ranked, "user", lambda u: f"@{u['name']} ({u['real_name']}, {u['id']})")["id"]
+        return pick_unique(
+            ref, ranked, "user", lambda u: f"@{u['name']} ({u['real_name']}, {u['id']})"
+        )["id"]
 
     # --- conversations --------------------------------------------------------
     def convs(self, force=False):
@@ -627,7 +693,10 @@ class Ctx:
                     data = {}
                     for c in self.client.paginate(
                         "conversations.list",
-                        {"types": "public_channel,private_channel,mpim,im", "exclude_archived": False},
+                        {
+                            "types": "public_channel,private_channel,mpim,im",
+                            "exclude_archived": False,
+                        },
                         "channels",
                         page_size=999,
                     ):
@@ -688,7 +757,7 @@ class Ctx:
         bare = ref.lstrip("#")
         if ID_CONV_RE.match(bare):
             return bare
-        if ref.startswith("@") or ID_USER_RE.match(ref) or ref.startswith("<@"):
+        if ref.startswith(("@", "<@")) or ID_USER_RE.match(ref):
             uid = self.resolve_user(ref)
             for c in convs.values():
                 if c and c["is_im"] and c.get("user") == uid:
@@ -699,27 +768,37 @@ class Ctx:
                         return c["id"]
             if for_write:
                 return uid
-            raise SlackError(f"no DM with {ref} found (see: slack conversations --types im)")
+            raise SlackError(
+                f"no DM with {ref} found (see: slack conversations --types im)"
+            )
         cands = [c for c in convs.values() if c and not c["is_im"]]
 
         def keys(c):
-            return [c["name"]] + list(c.get("previous_names") or [])
+            return [c["name"], *list(c.get("previous_names") or [])]
 
         ranked = fuzzy_rank(bare, cands, keys)
         if not ranked and not self._convs_refreshed:
             self.convs(force=True)
-            ranked = fuzzy_rank(bare, [c for c in self._convs.values() if c and not c["is_im"]], keys)
+            ranked = fuzzy_rank(
+                bare, [c for c in self._convs.values() if c and not c["is_im"]], keys
+            )
         if ranked and ranked[0][0] < 100:
             # Prefer channels the user is in when fuzzy matches tie.
             top = ranked[0][0]
             tied = [(s, c) for s, c in ranked if s == top]
-            member = [(s, c) for s, c in tied if c["is_member"] and not c["is_archived"]]
+            member = [
+                (s, c) for s, c in tied if c["is_member"] and not c["is_archived"]
+            ]
             if len(tied) > 1 and len(member) == 1:
                 ranked = member
-            pick = pick_unique(ref, ranked, "channel", lambda c: f"#{c['name']} ({c['id']})")
+            pick = pick_unique(
+                ref, ranked, "channel", lambda c: f"#{c['name']} ({c['id']})"
+            )
             warn(f"note: {ref!r} matched #{pick['name']} ({pick['id']})")
             return pick["id"]
-        return pick_unique(ref, ranked, "channel", lambda c: f"#{c['name']} ({c['id']})")["id"]
+        return pick_unique(
+            ref, ranked, "channel", lambda c: f"#{c['name']} ({c['id']})"
+        )["id"]
 
     # --- usergroups ---------------------------------------------------------
     def usergroups(self):
@@ -727,11 +806,16 @@ class Ctx:
             if self._groups is None:
                 data = self.cache.load("usergroups")
                 if data is None:
-                    r = self.client.call("usergroups.list", {"include_disabled": True}, allow_error=True)
+                    r = self.client.call(
+                        "usergroups.list", {"include_disabled": True}, allow_error=True
+                    )
                     data = {}
                     if r.get("ok"):
                         for g in r.get("usergroups") or []:
-                            data[g["id"]] = {"handle": g.get("handle"), "name": g.get("name")}
+                            data[g["id"]] = {
+                                "handle": g.get("handle"),
+                                "name": g.get("name"),
+                            }
                     self.cache.save("usergroups", data)
                 self._groups = data
             return self._groups
@@ -766,7 +850,9 @@ def parse_permalink(url):
     if m:
         thread_ts = (qs.get("thread_ts") or [None])[0]
         return m.group(1), f"{m.group(2)}.{m.group(3)}", thread_ts
-    m = re.search(r"/client/[A-Z0-9]+/([A-Z0-9]+)/thread/([A-Z0-9]+)-(\d{9,10}\.\d+)", parts.path)
+    m = re.search(
+        r"/client/[A-Z0-9]+/([A-Z0-9]+)/thread/([A-Z0-9]+)-(\d{9,10}\.\d+)", parts.path
+    )
     if m:
         return m.group(1), m.group(3), m.group(3)
     m = re.search(r"/archives/([A-Z0-9]+)/?$", parts.path)
@@ -782,7 +868,9 @@ def file_id_from(ref):
     m = re.search(r"/files-(?:pri|tmb)/T[A-Z0-9]+-(F[A-Z0-9]+)/", ref)
     if m:
         return m.group(1)
-    m = re.search(r"/(?:files/[A-Z0-9]+|docs/[A-Z0-9]+|lists/[A-Z0-9]+)/(F[A-Z0-9]+)", ref)
+    m = re.search(
+        r"/(?:files/[A-Z0-9]+|docs/[A-Z0-9]+|lists/[A-Z0-9]+)/(F[A-Z0-9]+)", ref
+    )
     if m:
         return m.group(1)
     m = re.search(r"\b(F[A-Z0-9]{8,})\b", ref)
@@ -829,7 +917,11 @@ def parse_time(spec, future=False):
     if m:
         delta = int(m.group(2)) * UNITS[m.group(3)]
         return now + delta if (future or m.group(1)) else now - delta
-    today = dt.datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
+    today = (
+        dt.datetime.now()
+        .astimezone()
+        .replace(hour=0, minute=0, second=0, microsecond=0)
+    )
     if s == "now":
         return now
     if s == "today":
@@ -852,7 +944,7 @@ def parse_time(spec, future=False):
 
 def iso(ts):
     try:
-        return dt.datetime.fromtimestamp(float(ts), dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+        return dt.datetime.fromtimestamp(float(ts), dt.UTC).strftime("%Y-%m-%dT%H:%MZ")
     except (TypeError, ValueError, OverflowError):
         return ""
 
@@ -869,7 +961,9 @@ def read_text(words, file_opt, what="message"):
             except OSError as e:
                 raise SlackError(f"cannot read {file_opt}: {e.strerror}") from None
         if words:
-            raise UsageError(f"give the {what} either as arguments or with --file, not both")
+            raise UsageError(
+                f"give the {what} either as arguments or with --file, not both"
+            )
     elif words == ["-"]:
         text = sys.stdin.read()
     else:
@@ -922,7 +1016,9 @@ class Renderer:
         label = html.unescape(label)
         if target.startswith("@"):
             uid = target[1:]
-            return "@" + (self.ctx.user_name(uid) if ID_USER_RE.match(uid) else (label or uid))
+            return "@" + (
+                self.ctx.user_name(uid) if ID_USER_RE.match(uid) else (label or uid)
+            )
         if target.startswith("#"):
             cid = target[1:]
             if label:
@@ -933,7 +1029,11 @@ class Renderer:
             cmd = target[1:]
             if cmd.startswith("subteam^"):
                 gid = cmd.split("^", 1)[1]
-                return label if label.startswith("@") else "@" + (label or self.ctx.group_handle(gid))
+                return (
+                    label
+                    if label.startswith("@")
+                    else "@" + (label or self.ctx.group_handle(gid))
+                )
             if cmd in ("here", "channel", "everyone"):
                 return "@" + cmd
             if cmd.startswith("date^"):
@@ -997,9 +1097,13 @@ class Renderer:
                 start = int(el.get("offset") or 0)
                 for i, item in enumerate(el.get("elements") or [], start + 1):
                     bullet = f"{i}. " if ordered else "- "
-                    lines.append(indent + bullet + self._rt_inline(item.get("elements")))
+                    lines.append(
+                        indent + bullet + self._rt_inline(item.get("elements"))
+                    )
             elif t == "rich_text_preformatted":
-                lines.append("```\n" + self._rt_inline(el.get("elements")).strip("\n") + "\n```")
+                lines.append(
+                    "```\n" + self._rt_inline(el.get("elements")).strip("\n") + "\n```"
+                )
             elif t == "rich_text_quote":
                 q = self._rt_inline(el.get("elements"))
                 lines.append("\n".join("> " + ln for ln in q.split("\n")))
@@ -1055,7 +1159,7 @@ class Renderer:
                 if o.get("type") in ("mrkdwn", "plain_text") and "text" in o:
                     found.append(self._text_obj(o))
                     return
-                if isinstance(o.get("text"), str) and o.get("type") not in ("button",):
+                if isinstance(o.get("text"), str) and o.get("type") != "button":
                     found.append(self.mrkdwn(o["text"]))
                 for k, v in o.items():
                     if k != "text":
@@ -1072,7 +1176,7 @@ class Renderer:
         for b in blocks or []:
             try:
                 lines.append(self._block(b))
-            except Exception:  # noqa: BLE001 - never crash on odd shapes
+            except Exception:
                 lines.append(self._collect(b))
         return "\n".join(ln for ln in lines if ln)
 
@@ -1084,10 +1188,9 @@ class Renderer:
             parts = []
             if b.get("text"):
                 parts.append(self._text_obj(b["text"]))
-            for f in b.get("fields") or []:
-                parts.append(self._text_obj(f))
+            parts.extend(self._text_obj(f) for f in b.get("fields") or [])
             acc = b.get("accessory")
-            if acc and acc.get("type") in ("button",):
+            if acc and acc.get("type") == "button":
                 parts.append(self._element(acc))
             return "\n".join(p for p in parts if p)
         if t == "header":
@@ -1110,7 +1213,9 @@ class Renderer:
         if t == "file":
             return f"[file: {b.get('external_id') or b.get('file_id') or ''}]"
         if t == "video":
-            return f"[video: {self._text_obj(b.get('title'))} {b.get('video_url') or ''}]"
+            return (
+                f"[video: {self._text_obj(b.get('title'))} {b.get('video_url') or ''}]"
+            )
         if t == "input":
             return self._text_obj(b.get("label"))
         if t == "table":
@@ -1134,11 +1239,19 @@ class Renderer:
         if a.get("blocks"):
             lines.append(self.blocks(a["blocks"]))
         else:
-            unfurl = a.get("from_url") and not a.get("is_msg_unfurl") and not a.get("is_share")
+            unfurl = (
+                a.get("from_url")
+                and not a.get("is_msg_unfurl")
+                and not a.get("is_share")
+            )
             if unfurl:
                 title = a.get("title") or a.get("fallback") or ""
                 svc = a.get("service_name") or ""
-                return f"[link preview: {svc + ': ' if svc else ''}{title}]" if title else ""
+                return (
+                    f"[link preview: {svc + ': ' if svc else ''}{title}]"
+                    if title
+                    else ""
+                )
             if a.get("is_msg_unfurl") or a.get("is_share"):
                 who = a.get("author_name") or a.get("author_subname") or ""
                 lines.append(
@@ -1165,10 +1278,14 @@ class Renderer:
             for act in a.get("actions") or []:
                 label = act.get("text") or act.get("name") or ""
                 if label:
-                    lines.append(f"[button: {label}{' ' + act['url'] if act.get('url') else ''}]")
+                    lines.append(
+                        f"[button: {label}{' ' + act['url'] if act.get('url') else ''}]"
+                    )
             if a.get("message_blocks"):
-                for mb in a["message_blocks"]:
-                    lines.append(self.blocks((mb.get("message") or {}).get("blocks")))
+                lines.extend(
+                    self.blocks((mb.get("message") or {}).get("blocks"))
+                    for mb in a["message_blocks"]
+                )
             if a.get("footer"):
                 foot = self.mrkdwn(a["footer"])
                 if a.get("ts"):
@@ -1176,14 +1293,13 @@ class Renderer:
                 lines.append(foot)
             if not any(ln.strip() for ln in lines) and a.get("fallback"):
                 lines.append(self.mrkdwn(a["fallback"]))
-        for f in a.get("files") or []:
-            lines.append(self.file_line(f))
+        lines.extend(self.file_line(f) for f in a.get("files") or [])
         return "\n".join(ln for ln in lines if ln)
 
     def _safe(self, fn, obj):
         try:
             return fn(obj)
-        except Exception:  # noqa: BLE001 - never crash on odd shapes
+        except Exception:
             return self._collect(obj)
 
     # --- files --------------------------------------------------------------
@@ -1198,7 +1314,8 @@ class Renderer:
             "size": f.get("size"),
             "url_private": f.get("url_private") or "",
             "permalink": f.get("permalink") or "",
-            "is_canvas": f.get("filetype") == "quip" or f.get("pretty_type") == "Canvas",
+            "is_canvas": f.get("filetype") == "quip"
+            or f.get("pretty_type") == "Canvas",
             "is_list": f.get("filetype") == "list",
         }
 
@@ -1213,7 +1330,9 @@ class Renderer:
     # --- messages -----------------------------------------------------------
     def author(self, m):
         bp = m.get("bot_profile") or {}
-        username = m.get("username") or (m.get("user_profile") or {}).get("display_name")
+        username = m.get("username") or (m.get("user_profile") or {}).get(
+            "display_name"
+        )
         if m.get("bot_id") or m.get("subtype") == "bot_message":
             name = m.get("username") or bp.get("name")
             if not name and m.get("user"):
@@ -1231,20 +1350,27 @@ class Renderer:
         """Normalize one Slack message dict. Never raises."""
         try:
             return self._message(m, channel, target_ts)
-        except Exception as e:  # noqa: BLE001 - last-resort guard
+        except Exception as e:
             ts = str(m.get("ts") or "")
             return {
                 "ts": ts,
                 "time": iso(ts),
                 "channel": channel,
                 "author": "?",
-                "text": f"[unrenderable message: {type(e).__name__}] " + str(m.get("text") or ""),
+                "text": f"[unrenderable message: {type(e).__name__}] "
+                + str(m.get("text") or ""),
                 "permalink": self.ctx.permalink(channel, ts) if channel and ts else "",
             }
 
     def _message(self, m, channel, target_ts):
         if not isinstance(m, dict):
-            return {"ts": "", "time": "", "author": "?", "text": str(m), "permalink": ""}
+            return {
+                "ts": "",
+                "time": "",
+                "author": "?",
+                "text": str(m),
+                "permalink": "",
+            }
         if channel:
             ch = channel
         elif isinstance(m.get("channel"), dict):
@@ -1262,10 +1388,14 @@ class Renderer:
         else:
             body = text
         att_lines = [
-            self._safe(self.attachment, a) for a in m.get("attachments") or [] if isinstance(a, dict)
+            self._safe(self.attachment, a)
+            for a in m.get("attachments") or []
+            if isinstance(a, dict)
         ]
-        file_lines = [self.file_line(f) for f in m.get("files") or [] if isinstance(f, dict)]
-        parts = [p for p in [body] + att_lines + file_lines if p and p.strip()]
+        file_lines = [
+            self.file_line(f) for f in m.get("files") or [] if isinstance(f, dict)
+        ]
+        parts = [p for p in [body, *att_lines, *file_lines] if p and p.strip()]
         full = "\n".join(parts)
         thread_ts = m.get("thread_ts")
         reactions = [
@@ -1276,7 +1406,9 @@ class Renderer:
             }
             for r in m.get("reactions") or []
         ]
-        permalink = m.get("permalink") or (self.ctx.permalink(ch, ts, thread_ts) if ch and ts else "")
+        permalink = m.get("permalink") or (
+            self.ctx.permalink(ch, ts, thread_ts) if ch and ts else ""
+        )
         out = {
             "ts": ts,
             "time": iso(ts),
@@ -1292,7 +1424,9 @@ class Renderer:
             "reply_count": m.get("reply_count") or 0,
             "latest_reply": m.get("latest_reply"),
             "reactions": reactions,
-            "files": [self.file_info(f) for f in m.get("files") or [] if isinstance(f, dict)],
+            "files": [
+                self.file_info(f) for f in m.get("files") or [] if isinstance(f, dict)
+            ],
             "edited": bool(m.get("edited")),
             "permalink": permalink,
         }
@@ -1315,12 +1449,18 @@ class Renderer:
         elif n.get("is_reply") and indent == "":
             markers.append(f"[in thread {n['thread_ts']}]")
         if n.get("reactions"):
-            markers.append("[" + " ".join(f":{r['name']}:x{r['count']}" for r in n["reactions"]) + "]")
+            markers.append(
+                "["
+                + " ".join(f":{r['name']}:x{r['count']}" for r in n["reactions"])
+                + "]"
+            )
         mark = (" " + " ".join(markers)) if markers else ""
         prefix = "» " if n.get("linked") else ""
         head = f"{indent}{prefix}[{n['ts']} {n['time']}] {n['author']}:"
         if self.ctx.long:
-            body = "\n".join(indent + "    " + ln for ln in (n["text"] or "").split("\n"))
+            body = "\n".join(
+                indent + "    " + ln for ln in (n["text"] or "").split("\n")
+            )
             return f"{head}{mark}  <{n['permalink']}>\n{body}\n"
         body = (n["text"] or "").replace("\r", "").replace("\n", " ⏎ ")
         return f"{head} {body}{mark}  <{n['permalink']}>"
@@ -1331,7 +1471,11 @@ class Renderer:
             if not isinstance(m, dict):
                 continue
             uids.add(m.get("user"))
-            if m.get("bot_id") and not m.get("username") and not (m.get("bot_profile") or {}).get("name"):
+            if (
+                m.get("bot_id")
+                and not m.get("username")
+                and not (m.get("bot_profile") or {}).get("name")
+            ):
                 uids.add(m["bot_id"])
             uids.update(m.get("reply_users") or [])
             for r in m.get("reactions") or []:
@@ -1384,7 +1528,10 @@ def cmd_whoami(ctx, a):
     )
     wanted = manifest_scopes()
     missing = sorted(set(wanted) - set(scopes)) if wanted is not None and scopes else []
-    info = {k: r.get(k) for k in ("user", "user_id", "team", "team_id", "url", "enterprise_id")}
+    info = {
+        k: r.get(k)
+        for k in ("user", "user_id", "team", "team_id", "url", "enterprise_id")
+    }
     info["scopes"] = scopes
     info["missing_manifest_scopes"] = missing
     if ctx.json:
@@ -1432,14 +1579,30 @@ def cmd_users(ctx, a):
         ranked = fuzzy_rank(
             " ".join(a.query),
             users,
-            lambda u: [u["name"], u["display_name"], u["real_name"], u["email"], u["title"]],
+            lambda u: [
+                u["name"],
+                u["display_name"],
+                u["real_name"],
+                u["email"],
+                u["title"],
+            ],
         )
         if not ranked and not ctx._users_refreshed:
-            users = [u for u in ctx.users(force=True).values() if u and not u.get("is_bot_id")]
+            users = [
+                u
+                for u in ctx.users(force=True).values()
+                if u and not u.get("is_bot_id")
+            ]
             ranked = fuzzy_rank(
                 " ".join(a.query),
                 users,
-                lambda u: [u["name"], u["display_name"], u["real_name"], u["email"], u["title"]],
+                lambda u: [
+                    u["name"],
+                    u["display_name"],
+                    u["real_name"],
+                    u["email"],
+                    u["title"],
+                ],
             )
         users = [u for _, u in ranked]
     else:
@@ -1463,7 +1626,9 @@ def cmd_user(ctx, a):
     info = user_summary(u)
     info.update(
         {
-            "status": " ".join(x for x in (p.get("status_emoji"), p.get("status_text")) if x),
+            "status": " ".join(
+                x for x in (p.get("status_emoji"), p.get("status_text")) if x
+            ),
             "phone": p.get("phone") or "",
             "pronouns": p.get("pronouns") or "",
             "is_admin": bool(u.get("is_admin")),
@@ -1490,11 +1655,15 @@ def cmd_user(ctx, a):
             out(f"{key + ':':<10} {info[key]}")
     if info["tz"]:
         out(f"tz:        {info['tz']} ({info['tz_label']})")
-    flags = user_flags(info, team_id) + [f for f in ("admin", "owner") if info["is_" + f]]
+    flags = user_flags(info, team_id) + [
+        f for f in ("admin", "owner") if info["is_" + f]
+    ]
     if flags:
         out(f"flags:     {', '.join(flags)}")
     if not info["email"]:
-        out("email:     (hidden; needs the users:read.email scope or the user hides it)")
+        out(
+            "email:     (hidden; needs the users:read.email scope or the user hides it)"
+        )
 
 
 def conv_flags(c):
@@ -1511,14 +1680,18 @@ def conv_flags(c):
 
 
 def cmd_channels(ctx, a):
-    convs = [c for c in ctx.convs().values() if c and not c["is_im"] and not c["is_mpim"]]
+    convs = [
+        c for c in ctx.convs().values() if c and not c["is_im"] and not c["is_mpim"]
+    ]
     if not a.archived:
         convs = [c for c in convs if not c["is_archived"]]
     if a.member:
         convs = [c for c in convs if c["is_member"]]
     if a.query:
         ranked = fuzzy_rank(
-            " ".join(a.query), convs, lambda c: [c["name"]] + c["previous_names"] + [c["topic"], c["purpose"]]
+            " ".join(a.query),
+            convs,
+            lambda c: [c["name"]] + c["previous_names"] + [c["topic"], c["purpose"]],
         )
         convs = [c for _, c in ranked]
     else:
@@ -1527,7 +1700,9 @@ def cmd_channels(ctx, a):
         return emit_json({"channels": convs})
     for c in convs:
         flags = conv_flags(c)
-        members = f"{c['num_members']} members" if c.get("num_members") is not None else ""
+        members = (
+            f"{c['num_members']} members" if c.get("num_members") is not None else ""
+        )
         desc = (c["purpose"] or c["topic"]).replace("\n", " ")
         desc = desc[:80] + "…" if len(desc) > 80 else desc
         out(
@@ -1550,9 +1725,12 @@ def cmd_channels(ctx, a):
 def cmd_conversations(ctx, a):
     types = a.types or "public_channel,private_channel,mpim,im"
     types = ",".join(
-        {"public": "public_channel", "private": "private_channel", "dm": "im", "group": "mpim"}.get(
-            t.strip(), t.strip()
-        )
+        {
+            "public": "public_channel",
+            "private": "private_channel",
+            "dm": "im",
+            "group": "mpim",
+        }.get(t.strip(), t.strip())
         for t in types.split(",")
     )
     items = list(
@@ -1579,7 +1757,13 @@ def cmd_conversations(ctx, a):
         return emit_json({"conversations": rows})
     for r in rows:
         kind = (
-            "dm" if r["is_im"] else "group-dm" if r["is_mpim"] else "private" if r["is_private"] else "public"
+            "dm"
+            if r["is_im"]
+            else "group-dm"
+            if r["is_mpim"]
+            else "private"
+            if r["is_private"]
+            else "public"
         )
         extra = ", slack-connect" if r["is_ext_shared"] else ""
         out(f"{r['id']}  {r['label']}  ({kind}{extra})")
@@ -1587,25 +1771,41 @@ def cmd_conversations(ctx, a):
 
 def cmd_members(ctx, a):
     cid = ctx.resolve_conv(a.channel)
-    ids = list(ctx.client.paginate("conversations.members", {"channel": cid}, "members", page_size=500))
+    ids = list(
+        ctx.client.paginate(
+            "conversations.members", {"channel": cid}, "members", page_size=500
+        )
+    )
     ctx.prefetch_users(ids)
     team_id = ctx.team().get("team_id")
-    rows = [ctx.user(u) or {"id": u, "name": u, "real_name": "", "display_name": ""} for u in ids]
+    rows = [
+        ctx.user(u) or {"id": u, "name": u, "real_name": "", "display_name": ""}
+        for u in ids
+    ]
     if ctx.json:
         return emit_json({"channel": cid, "members": rows})
     out(f"== {ctx.conv_label(cid)}: {len(rows)} members ==")
     for u in rows:
-        out(user_row({**{"title": "", "email": "", "is_bot": False, "deleted": False}, **u}, team_id))
+        out(
+            user_row(
+                {"title": "", "email": "", "is_bot": False, "deleted": False, **u},
+                team_id,
+            )
+        )
 
 
 def cmd_usergroups(ctx, a):
-    r = ctx.client.call("usergroups.list", {"include_users": True, "include_disabled": a.all})
+    r = ctx.client.call(
+        "usergroups.list", {"include_users": True, "include_disabled": a.all}
+    )
     groups = r.get("usergroups") or []
     if ctx.json:
         return emit_json({"usergroups": groups})
     for g in groups:
         users = ", ".join("@" + ctx.user_name(u) for u in g.get("users") or [])
-        out(f"{g['id']}  @{g.get('handle')}  {g.get('name')}  <!subteam^{g['id']}>  [{users}]")
+        out(
+            f"{g['id']}  @{g.get('handle')}  {g.get('name')}  <!subteam^{g['id']}>  [{users}]"
+        )
 
 
 def cmd_emoji(ctx, a):
@@ -1658,18 +1858,24 @@ def search_rewrite(ctx, query, ids=False):
             return m.group(0)
 
     query = re.sub(r"\bin:([#@]?[\w.\-]+)", fix_in, query)
-    query = re.sub(r"\bfrom:(@?[\w.\-]+(?:@[\w.\-]+)?)", fix_from, query)
-    return query
+    return re.sub(r"\bfrom:(@?[\w.\-]+(?:@[\w.\-]+)?)", fix_from, query)
 
 
-RTS_FALLBACK_ERRORS = {"missing_scope", "not_allowed_token_type", "feature_not_enabled", "unknown_method"}
+RTS_FALLBACK_ERRORS = {
+    "missing_scope",
+    "not_allowed_token_type",
+    "feature_not_enabled",
+    "unknown_method",
+}
 
 
 def cmd_search(ctx, a):
     if not a.legacy and a.page == 1 and search_rts(ctx, a) is not None:
         return
     if a.cursor:
-        raise UsageError("--cursor needs Real-time Search; drop --legacy/--page", "search")
+        raise UsageError(
+            "--cursor needs Real-time Search; drop --legacy/--page", "search"
+        )
     search_legacy(ctx, a)
 
 
@@ -1696,7 +1902,9 @@ def search_rts(ctx, a):
     cursor = None
     while len(hits) < want:
         params["limit"] = min(20, want - len(hits))
-        r = ctx.client.call("assistant.search.context", params, json_body=True, allow_error=True)
+        r = ctx.client.call(
+            "assistant.search.context", params, json_body=True, allow_error=True
+        )
         if not r.get("ok"):
             err = r.get("error")
             if not hits and not a.cursor and err in RTS_FALLBACK_ERRORS:
@@ -1713,7 +1921,7 @@ def search_rts(ctx, a):
     rend = Renderer(ctx)
     rend.prefetch(msgs)
     rows = []
-    for h, m in zip(hits, msgs):
+    for h, m in zip(hits, msgs, strict=False):
         n = rend.message(m, h.get("channel_id"))
         thread = None
         if h.get("permalink"):
@@ -1721,17 +1929,27 @@ def search_rts(ctx, a):
             thread = (q.get("thread_ts") or [None])[0]
         n["thread_ts"] = thread
         n["is_reply"] = bool(thread and thread != n["ts"])
-        n["channel_name"] = ctx.conv_label(h["channel_id"]) if h.get("channel_id") else "?"
+        n["channel_name"] = (
+            ctx.conv_label(h["channel_id"]) if h.get("channel_id") else "?"
+        )
         if a.context:
             around = h.get("context_messages") or {}
             n["context"] = {
-                side: [rend.message(rts_message(c), h.get("channel_id")) for c in around.get(side) or []]
+                side: [
+                    rend.message(rts_message(c), h.get("channel_id"))
+                    for c in around.get(side) or []
+                ]
                 for side in ("before", "after")
             }
         rows.append(n)
     if ctx.json:
         emit_json(
-            {"query": query, "backend": "assistant.search.context", "next_cursor": cursor, "matches": rows}
+            {
+                "query": query,
+                "backend": "assistant.search.context",
+                "next_cursor": cursor,
+                "matches": rows,
+            }
         )
         return rows
     if query != " ".join(a.query):
@@ -1746,7 +1964,9 @@ def search_rts(ctx, a):
         for c in (n.get("context") or {}).get("after") or []:
             out(rend.line(c, "    "))
     if cursor:
-        out(f"-- more: slack search {json.dumps(' '.join(a.query))} --cursor {cursor} --")
+        out(
+            f"-- more: slack search {json.dumps(' '.join(a.query))} --cursor {cursor} --"
+        )
     return rows
 
 
@@ -1783,7 +2003,8 @@ def search_legacy(ctx, a):
             m
             for m in matches
             if not any(
-                (m.get("channel") or {}).get(k) for k in ("is_private", "is_im", "is_mpim", "is_group")
+                (m.get("channel") or {}).get(k)
+                for k in ("is_private", "is_im", "is_mpim", "is_group")
             )
         ]
     rend = Renderer(ctx)
@@ -1799,7 +2020,9 @@ def search_legacy(ctx, a):
         n["thread_ts"] = thread or n.get("thread_ts")
         n["is_reply"] = bool(thread and thread != n["ts"])
         if chan.get("is_im"):
-            n["channel_name"] = "@" + ctx.user_name(chan.get("user")) if chan.get("user") else "dm"
+            n["channel_name"] = (
+                "@" + ctx.user_name(chan.get("user")) if chan.get("user") else "dm"
+            )
         elif chan.get("is_mpim"):
             n["channel_name"] = "group dm"
         else:
@@ -1809,17 +2032,31 @@ def search_legacy(ctx, a):
     total = msgs.get("total", 0)
     pages = paging.get("pages") or paging.get("page_count") or 1
     if ctx.json:
-        return emit_json({"query": query, "total": total, "page": a.page, "pages": pages, "matches": rows})
+        return emit_json(
+            {
+                "query": query,
+                "total": total,
+                "page": a.page,
+                "pages": pages,
+                "matches": rows,
+            }
+        )
     if query != " ".join(a.query):
         out(f"-- query: {query} --")
-    out(f"-- {total} total matches, page {a.page}/{pages}" + (" (public only)" if a.public else "") + " --")
+    out(
+        f"-- {total} total matches, page {a.page}/{pages}"
+        + (" (public only)" if a.public else "")
+        + " --"
+    )
     for n in rows:
         line = rend.line(n)
         # Insert the channel name after the timestamp bracket.
         head, sep, rest = line.partition("] ")
         out(f"{head}] {n['channel_name']} {rest}" if sep else line)
     if a.page < pages:
-        out(f"-- more: slack search {json.dumps(' '.join(a.query))} --legacy --page {a.page + 1} --")
+        out(
+            f"-- more: slack search {json.dumps(' '.join(a.query))} --legacy --page {a.page + 1} --"
+        )
 
 
 def cmd_search_files(ctx, a):
@@ -1852,17 +2089,31 @@ def cmd_search_files(ctx, a):
     pages = paging.get("pages") or 1
     if ctx.json:
         return emit_json(
-            {"query": query, "total": files.get("total", 0), "page": a.page, "pages": pages, "files": rows}
+            {
+                "query": query,
+                "total": files.get("total", 0),
+                "page": a.page,
+                "pages": pages,
+                "files": rows,
+            }
         )
     out(f"-- {files.get('total', 0)} files, page {a.page}/{pages} --")
     for i in rows:
-        kind = "canvas" if i["is_canvas"] else "list" if i["is_list"] else i["mimetype"] or i["filetype"]
+        kind = (
+            "canvas"
+            if i["is_canvas"]
+            else "list"
+            if i["is_list"]
+            else i["mimetype"] or i["filetype"]
+        )
         out(
             f'[{i["time"]}] {i["id"]}  "{i["title"] or i["name"]}"  {kind}  by {i["author"]}  <{i["permalink"]}>'
         )
 
 
-def fetch_history(ctx, cid, oldest=None, latest=None, limit=50, cursor=None, inclusive=False):
+def fetch_history(
+    ctx, cid, oldest=None, latest=None, limit=50, cursor=None, inclusive=False
+):
     params = {"channel": cid, "oldest": oldest, "latest": latest}
     if inclusive:
         params["inclusive"] = True
@@ -1890,7 +2141,11 @@ def fetch_history(ctx, cid, oldest=None, latest=None, limit=50, cursor=None, inc
 def fetch_replies(ctx, cid, ts, limit=None):
     msgs = list(
         ctx.client.paginate(
-            "conversations.replies", {"channel": cid, "ts": ts}, "messages", limit=limit, page_size=200
+            "conversations.replies",
+            {"channel": cid, "ts": ts},
+            "messages",
+            limit=limit,
+            page_size=200,
         )
     )
     # Paginated replies repeat the parent on every page.
@@ -1918,7 +2173,9 @@ def cmd_history(ctx, a):
     if a.replies:
         parents = [m for m in msgs if m.get("reply_count")]
         with concurrent.futures.ThreadPoolExecutor(WORKERS) as ex:
-            futs = {m["ts"]: ex.submit(fetch_replies, ctx, cid, m["ts"]) for m in parents}
+            futs = {
+                m["ts"]: ex.submit(fetch_replies, ctx, cid, m["ts"]) for m in parents
+            }
             for ts, fut in futs.items():
                 try:
                     replies[ts] = [r for r in fut.result() if r.get("ts") != ts]
@@ -1949,8 +2206,12 @@ def cmd_history(ctx, a):
         for r in n.get("replies") or []:
             out(rend.line(r, indent="    ↳ "))
     if cursor:
-        window = "".join(f" --{k} {v}" for k, v in (("since", a.since), ("until", a.until)) if v)
-        out(f"-- more: older messages available; slack history {cid}{window} --cursor {cursor} (or --all) --")
+        window = "".join(
+            f" --{k} {v}" for k, v in (("since", a.since), ("until", a.until)) if v
+        )
+        out(
+            f"-- more: older messages available; slack history {cid}{window} --cursor {cursor} (or --all) --"
+        )
 
 
 def cmd_thread(ctx, a):
@@ -1985,7 +2246,9 @@ def cmd_thread(ctx, a):
     for n in rows:
         out(rend.line(n, indent="" if n["ts"] == parent else "  "))
     if a.limit and len(rows) >= a.limit:
-        out(f"-- output capped at {a.limit} messages; drop --limit for the whole thread --")
+        out(
+            f"-- output capped at {a.limit} messages; drop --limit for the whole thread --"
+        )
 
 
 def cmd_unreads(ctx, a):
@@ -1993,9 +2256,12 @@ def cmd_unreads(ctx, a):
     types = "public_channel,private_channel,mpim,im"
     if a.types:
         types = ",".join(
-            {"public": "public_channel", "private": "private_channel", "dm": "im", "group": "mpim"}.get(
-                t.strip(), t.strip()
-            )
+            {
+                "public": "public_channel",
+                "private": "private_channel",
+                "dm": "im",
+                "group": "mpim",
+            }.get(t.strip(), t.strip())
             for t in a.types.split(",")
         )
     if a.channel:
@@ -2004,7 +2270,10 @@ def cmd_unreads(ctx, a):
     else:
         convs = list(
             ctx.client.paginate(
-                "users.conversations", {"types": types, "exclude_archived": True}, "channels", page_size=999
+                "users.conversations",
+                {"types": types, "exclude_archived": True},
+                "channels",
+                page_size=999,
             )
         )
     me = ctx.self_id()
@@ -2035,7 +2304,8 @@ def cmd_unreads(ctx, a):
         msgs = [
             m
             for m in msgs
-            if m.get("user") != me and m.get("subtype") not in ("channel_join", "channel_leave")
+            if m.get("user") != me
+            and m.get("subtype") not in ("channel_join", "channel_leave")
         ]
         if not msgs:
             return None
@@ -2073,11 +2343,20 @@ def cmd_unreads(ctx, a):
             if a.dry_run:
                 marked.append({"channel": r["id"], "ts": newest, "dry_run": True})
                 continue
-            resp = ctx.client.call("conversations.mark", {"channel": r["id"], "ts": newest}, allow_error=True)
+            resp = ctx.client.call(
+                "conversations.mark",
+                {"channel": r["id"], "ts": newest},
+                allow_error=True,
+            )
             if resp.get("ok"):
                 marked.append({"channel": r["id"], "ts": newest})
             else:
-                errors.append({"id": r["id"], "error": format_api_error("conversations.mark", resp)})
+                errors.append(
+                    {
+                        "id": r["id"],
+                        "error": format_api_error("conversations.mark", resp),
+                    }
+                )
     for e in errors:
         warn(f"{ctx.conv_label(e['id'])}: {e['error']}")
     if ctx.json:
@@ -2093,7 +2372,9 @@ def cmd_unreads(ctx, a):
                         "unread_count": r["unread_count"]
                         if r["unread_count"] is not None
                         else len(r["messages"]),
-                        "messages": [rend.message(m, r["id"]) for m in reversed(r["messages"])],
+                        "messages": [
+                            rend.message(m, r["id"]) for m in reversed(r["messages"])
+                        ],
                     }
                     for r in results
                 ],
@@ -2104,7 +2385,9 @@ def cmd_unreads(ctx, a):
             }
         )
     if not results:
-        out(f"No unread messages ({len(convs)} conversations checked in {time.time() - t0:.1f}s).")
+        out(
+            f"No unread messages ({len(convs)} conversations checked in {time.time() - t0:.1f}s)."
+        )
     for r in results:
         n = r["unread_count"] if r["unread_count"] is not None else len(r["messages"])
         more = "+" if r["truncated"] else ""
@@ -2113,7 +2396,9 @@ def cmd_unreads(ctx, a):
         for m in reversed(r["messages"]):
             out(rend.line(rend.message(m, r["id"])))
         if r["truncated"]:
-            out(f"-- more unread: slack history {r['id']} --since {r['last_read']} --all --")
+            out(
+                f"-- more unread: slack history {r['id']} --since {r['last_read']} --all --"
+            )
     if results:
         out(
             f"-- {len(results)} conversations with unreads ({len(convs)} checked, "
@@ -2154,20 +2439,26 @@ def cmd_pins(ctx, a):
 
 def cmd_bookmarks(ctx, a):
     cid = ctx.resolve_conv(a.channel)
-    items = ctx.client.call("bookmarks.list", {"channel_id": cid}).get("bookmarks") or []
+    items = (
+        ctx.client.call("bookmarks.list", {"channel_id": cid}).get("bookmarks") or []
+    )
     if ctx.json:
         return emit_json({"channel": cid, "bookmarks": items})
     out(f"== {ctx.conv_label(cid)}: {len(items)} bookmarks ==")
     for b in items:
         emoji = f"{b['emoji']} " if b.get("emoji") else ""
-        out(f"{b.get('id')}  {emoji}{b.get('title')}  {b.get('link') or ''}  ({b.get('type')})")
+        out(
+            f"{b.get('id')}  {emoji}{b.get('title')}  {b.get('link') or ''}  ({b.get('type')})"
+        )
 
 
 def cmd_reactions(ctx, a):
     cid, ts, _thread, rest = message_ref(ctx, a.ref)
     if rest:
         raise UsageError(f"unexpected arguments: {' '.join(rest)}")
-    r = ctx.client.call("reactions.get", {"channel": cid, "timestamp": ts, "full": True})
+    r = ctx.client.call(
+        "reactions.get", {"channel": cid, "timestamp": ts, "full": True}
+    )
     msg = r.get("message") or {}
     reactions = msg.get("reactions") or []
     ctx.prefetch_users(u for x in reactions for u in x.get("users") or [])
@@ -2175,16 +2466,28 @@ def cmd_reactions(ctx, a):
         {
             "name": x.get("name"),
             "count": x.get("count"),
-            "users": [{"id": u, "name": ctx.user_name(u)} for u in x.get("users") or []],
+            "users": [
+                {"id": u, "name": ctx.user_name(u)} for u in x.get("users") or []
+            ],
         }
         for x in reactions
     ]
     if ctx.json:
-        return emit_json({"channel": cid, "ts": ts, "permalink": ctx.permalink(cid, ts), "reactions": rows})
+        return emit_json(
+            {
+                "channel": cid,
+                "ts": ts,
+                "permalink": ctx.permalink(cid, ts),
+                "reactions": rows,
+            }
+        )
     if not rows:
         out("no reactions")
     for x in rows:
-        out(f":{x['name']}: x{x['count']}  " + ", ".join("@" + u["name"] for u in x["users"]))
+        out(
+            f":{x['name']}: x{x['count']}  "
+            + ", ".join("@" + u["name"] for u in x["users"])
+        )
 
 
 # --------------------------------------------------------------------------
@@ -2195,7 +2498,21 @@ def cmd_reactions(ctx, a):
 class CanvasText(html.parser.HTMLParser):
     """Convert Slack canvas HTML into readable Markdown-ish text."""
 
-    BLOCK = {"p", "div", "h1", "h2", "h3", "h4", "li", "tr", "blockquote", "pre", "ul", "ol", "table"}
+    BLOCK: ClassVar[set[str]] = {
+        "p",
+        "div",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "li",
+        "tr",
+        "blockquote",
+        "pre",
+        "ul",
+        "ol",
+        "table",
+    }
 
     def __init__(self, show_ids=False):
         super().__init__(convert_charrefs=True)
@@ -2324,7 +2641,7 @@ def canvas_to_text(raw, show_ids=False):
         p.feed(raw)
         p.close()
         return p.text()
-    except Exception:  # noqa: BLE001 - fall back to tag stripping
+    except Exception:
         return html.unescape(re.sub(r"<[^>]+>", " ", raw))
 
 
@@ -2335,7 +2652,11 @@ def files_info(ctx, fid):
 def is_text_file(f):
     mime = (f.get("mimetype") or "").lower()
     ftype = (f.get("filetype") or "").lower()
-    return bool(TEXT_MIME_RE.match(mime)) or ftype in TEXT_FILETYPES or f.get("mode") == "snippet"
+    return (
+        bool(TEXT_MIME_RE.match(mime))
+        or ftype in TEXT_FILETYPES
+        or f.get("mode") == "snippet"
+    )
 
 
 def safe_name(name):
@@ -2363,28 +2684,47 @@ def cmd_file(ctx, a):
     fid = file_id_from(ref)
     f = files_info(ctx, fid)
     info = Renderer.file_info(f)
-    info.update(user=f.get("user"), created=f.get("created"), time=iso(f.get("created")))
+    info.update(
+        user=f.get("user"), created=f.get("created"), time=iso(f.get("created"))
+    )
     if a.info:
         if ctx.json:
             return emit_json(info)
-        for k in ("id", "name", "title", "mimetype", "filetype", "size", "time", "url_private", "permalink"):
+        for k in (
+            "id",
+            "name",
+            "title",
+            "mimetype",
+            "filetype",
+            "size",
+            "time",
+            "url_private",
+            "permalink",
+        ):
             out(f"{k + ':':<12} {info[k]}")
-        return
+        return None
     if info["is_canvas"]:
         return show_canvas(ctx, f, a, out_path)
     url = f.get("url_private_download") or f.get("url_private")
     if not url:
-        raise SlackError(f"{fid} has no downloadable content (external or deleted file)")
+        raise SlackError(
+            f"{fid} has no downloadable content (external or deleted file)"
+        )
     ctype, body = ctx.client.download(url)
-    if "text/html" in ctype.lower() and "html" not in (info["mimetype"] + info["filetype"]).lower():
-        raise SlackError("Slack returned an HTML page instead of the file (no access, or a login page)")
+    if (
+        "text/html" in ctype.lower()
+        and "html" not in (info["mimetype"] + info["filetype"]).lower()
+    ):
+        raise SlackError(
+            "Slack returned an HTML page instead of the file (no access, or a login page)"
+        )
     if not out_path and is_text_file(f) and not a.save:
         text = body.decode("utf-8", "replace")
         if ctx.json:
             return emit_json({**info, "content": text})
         warn(f'{info["id"]} "{info["name"]}" {info["mimetype"]} {len(body)} bytes')
         sys.stdout.write(text if text.endswith("\n") else text + "\n")
-        return
+        return None
     if not out_path:
         d = os.path.join(tempfile.gettempdir(), "slack-cli-files", fid)
         os.makedirs(d, exist_ok=True)
@@ -2399,7 +2739,7 @@ def cmd_file(ctx, a):
 
 
 def show_canvas(ctx, f, a, out_path=None):
-    ctype, body = ctx.client.download(f["url_private"])
+    _ctype, body = ctx.client.download(f["url_private"])
     raw = body.decode("utf-8", "replace")
     if getattr(a, "html", False):
         text = raw
@@ -2410,7 +2750,7 @@ def show_canvas(ctx, f, a, out_path=None):
         with open(out_path, "w", encoding="utf-8") as fh:
             fh.write(text + "\n")
         out(f"saved {out_path}")
-        return
+        return None
     if ctx.json:
         return emit_json({**Renderer.file_info(f), "title": title, "content": text})
     out(f'== canvas {f["id"]} "{title}" <{f.get("permalink")}> ==')
@@ -2429,13 +2769,16 @@ def cmd_canvas(ctx, a):
     if a.action == "sections":
         criteria = {}
         if a.type:
-            criteria["section_types"] = [t.strip() for t in a.type.split(",") if t.strip()]
+            criteria["section_types"] = [
+                t.strip() for t in a.type.split(",") if t.strip()
+            ]
         if a.contains:
             criteria["contains_text"] = a.contains
         if not criteria:
             criteria["section_types"] = ["any_header"]
         r = ctx.client.call(
-            "canvases.sections.lookup", {"canvas_id": file_id_from(a.canvas), "criteria": criteria}
+            "canvases.sections.lookup",
+            {"canvas_id": file_id_from(a.canvas), "criteria": criteria},
         )
         secs = r.get("sections") or []
         if ctx.json:
@@ -2444,7 +2787,7 @@ def cmd_canvas(ctx, a):
             out(s.get("id"))
         if not secs:
             out("no matching sections")
-        return
+        return None
     if a.action == "create":
         params = {"title": a.title}
         if a.text or a.file:
@@ -2461,7 +2804,11 @@ def cmd_canvas(ctx, a):
             params,
             json_body=True,
             describe=f"create canvas {a.title!r}"
-            + (f" as a tab in {ctx.conv_label(params['channel_id'])}" if a.channel else ""),
+            + (
+                f" as a tab in {ctx.conv_label(params['channel_id'])}"
+                if a.channel
+                else ""
+            ),
             done=lambda r: (
                 f"created canvas {r.get('canvas_id')} "
                 f"<{ctx.base_url()}/docs/{ctx.team().get('team_id')}/{r.get('canvas_id')}>"
@@ -2472,11 +2819,17 @@ def cmd_canvas(ctx, a):
         op = a.op
         change = {"operation": op}
         if op in ("insert_after", "insert_before", "delete") and not a.section:
-            raise UsageError(f"--op {op} needs --section ID; find IDs with: slack canvas sections", "canvas")
+            raise UsageError(
+                f"--op {op} needs --section ID; find IDs with: slack canvas sections",
+                "canvas",
+            )
         if a.section:
             change["section_id"] = a.section
         if op == "rename":
-            change["title_content"] = {"type": "markdown", "markdown": read_text(a.text, a.file, "title")}
+            change["title_content"] = {
+                "type": "markdown",
+                "markdown": read_text(a.text, a.file, "title"),
+            }
         elif op != "delete":
             change["document_content"] = {
                 "type": "markdown",
@@ -2497,7 +2850,9 @@ def cmd_canvas(ctx, a):
 
 
 def list_schema(ctx, list_id):
-    r = ctx.client.call("slackLists.items.list", {"list_id": list_id, "limit": 1, "include_list": True})
+    r = ctx.client.call(
+        "slackLists.items.list", {"list_id": list_id, "limit": 1, "include_list": True}
+    )
     lst = r.get("list") or {}
     meta = lst.get("list_metadata") or lst.get("metadata") or {}
     return lst, meta.get("schema") or lst.get("schema") or []
@@ -2507,7 +2862,8 @@ def list_cell_text(ctx, field, col):
     if field.get("text"):
         return field["text"]
     choices = {
-        c.get("value"): c.get("label") for c in ((col or {}).get("options") or {}).get("choices") or []
+        c.get("value"): c.get("label")
+        for c in ((col or {}).get("options") or {}).get("choices") or []
     }
     for key in (
         "select",
@@ -2536,7 +2892,9 @@ def list_cell_text(ctx, field, col):
             return ", ".join(ctx.conv_label(v) for v in vals)
         if key == "timestamp":
             return ", ".join(iso(v) for v in vals)
-        return ", ".join(json.dumps(v) if isinstance(v, (dict, list)) else str(v) for v in vals)
+        return ", ".join(
+            json.dumps(v) if isinstance(v, (dict, list)) else str(v) for v in vals
+        )
     if "checkbox" in field:
         return "[x]" if field["checkbox"] else "[ ]"
     if field.get("rich_text"):
@@ -2560,7 +2918,9 @@ def list_fields(ctx, list_id, specs, schema):
         col = cols.get(name) or cols.get(norm(name))
         if not col:
             known = ", ".join(c.get("name") or c.get("key") for c in schema)
-            raise SlackError(f"unknown column {name!r} in list {list_id} (columns: {known})")
+            raise SlackError(
+                f"unknown column {name!r} in list {list_id} (columns: {known})"
+            )
         t = col.get("type")
         cell = {"column_id": col["id"]}
         items = [v.strip() for v in value.split(",") if v.strip()]
@@ -2569,7 +2929,10 @@ def list_fields(ctx, list_id, specs, schema):
                 {
                     "type": "rich_text",
                     "elements": [
-                        {"type": "rich_text_section", "elements": [{"type": "text", "text": value}]}
+                        {
+                            "type": "rich_text_section",
+                            "elements": [{"type": "text", "text": value}],
+                        }
                     ],
                 }
             ]
@@ -2586,7 +2949,8 @@ def list_fields(ctx, list_id, specs, schema):
                     (
                         c["value"]
                         for c in choices
-                        if norm(c.get("value")) == norm(v) or norm(c.get("label")) == norm(v)
+                        if norm(c.get("value")) == norm(v)
+                        or norm(c.get("label")) == norm(v)
                     ),
                     None,
                 )
@@ -2607,11 +2971,21 @@ def list_fields(ctx, list_id, specs, schema):
                 for v in items
             ]
         elif t == "checkbox":
-            cell["checkbox"] = value.strip().lower() in ("1", "true", "yes", "y", "x", "done", "on")
+            cell["checkbox"] = value.strip().lower() in (
+                "1",
+                "true",
+                "yes",
+                "y",
+                "x",
+                "done",
+                "on",
+            )
         elif t in ("email", "phone"):
             cell[t] = items
         else:
-            raise SlackError(f"{name}: column type {t!r} is not supported by --field; use --cells JSON")
+            raise SlackError(
+                f"{name}: column type {t!r} is not supported by --field; use --cells JSON"
+            )
         cells.append(cell)
     return cells
 
@@ -2655,7 +3029,9 @@ def cmd_list(ctx, a):
             cells = {}
             for fld in it.get("fields") or []:
                 col = cols.get(fld.get("column_id")) or cols.get(fld.get("key"))
-                cname = (col or {}).get("name") or fld.get("key") or fld.get("column_id")
+                cname = (
+                    (col or {}).get("name") or fld.get("key") or fld.get("column_id")
+                )
                 cells[cname] = list_cell_text(ctx, fld, col)
             rows.append(
                 {
@@ -2671,22 +3047,39 @@ def cmd_list(ctx, a):
                     "list_id": lid,
                     "title": lst.get("title") or lst.get("name"),
                     "columns": [
-                        {"id": c.get("id"), "key": c.get("key"), "name": c.get("name"), "type": c.get("type")}
+                        {
+                            "id": c.get("id"),
+                            "key": c.get("key"),
+                            "name": c.get("name"),
+                            "type": c.get("type"),
+                        }
                         for c in schema
                     ],
                     "items": rows,
                 }
             )
-        out(f'== list {lid} "{lst.get("title") or lst.get("name") or ""}": {len(rows)} items ==')
+        out(
+            f'== list {lid} "{lst.get("title") or lst.get("name") or ""}": {len(rows)} items =='
+        )
         if schema:
-            out("columns: " + ", ".join(f"{c.get('name')} [{c.get('type')}, {c.get('id')}]" for c in schema))
+            out(
+                "columns: "
+                + ", ".join(
+                    f"{c.get('name')} [{c.get('type')}, {c.get('id')}]" for c in schema
+                )
+            )
         for row in rows:
             sub = f" (subtask of {row['parent']})" if row["parent"] else ""
-            out(f"{row['id']}{sub}: " + " | ".join(f"{k}: {v}" for k, v in row["cells"].items() if v))
-        return
+            out(
+                f"{row['id']}{sub}: "
+                + " | ".join(f"{k}: {v}" for k, v in row["cells"].items() if v)
+            )
+        return None
     if not a.list:
         raise UsageError(
-            f"list {a.action} needs a " + ("name" if a.action == "create" else "list ID"), "list"
+            f"list {a.action} needs a "
+            + ("name" if a.action == "create" else "list ID"),
+            "list",
         )
     if a.action == "create":
         params = {"name": a.list, "todo_mode": a.todo or None}
@@ -2711,7 +3104,11 @@ def cmd_list(ctx, a):
         else:
             cells = []
         if a.action == "add":
-            params = {"list_id": lid, "initial_fields": cells or None, "parent_item_id": a.parent}
+            params = {
+                "list_id": lid,
+                "initial_fields": cells or None,
+                "parent_item_id": a.parent,
+            }
             return write_call(
                 ctx,
                 a,
@@ -2719,12 +3116,16 @@ def cmd_list(ctx, a):
                 params,
                 json_body=True,
                 describe=f"add item to list {lid}",
-                done=lambda r: f"added item {(r.get('item') or {}).get('id')} to list {lid}",
+                done=lambda r: (
+                    f"added item {(r.get('item') or {}).get('id')} to list {lid}"
+                ),
             )
         if not a.row:
             raise UsageError("list update needs --row RECORD_ID", "list")
         if not cells:
-            raise UsageError("list update needs --field COL=VALUE or --cells JSON", "list")
+            raise UsageError(
+                "list update needs --field COL=VALUE or --cells JSON", "list"
+            )
         for c in cells:
             c.setdefault("row_id", a.row)
         return write_call(
@@ -2748,7 +3149,12 @@ def write_call(ctx, a, method, params, describe, done, json_body=False, extra=No
     """Run or dry-run one write call with a uniform report."""
     params = {k: v for k, v in params.items() if v is not None}
     if getattr(a, "dry_run", False):
-        report = {"dry_run": True, "action": describe, "method": method, "payload": params}
+        report = {
+            "dry_run": True,
+            "action": describe,
+            "method": method,
+            "payload": params,
+        }
         if extra:
             report.update(extra)
         if ctx.json:
@@ -2762,7 +3168,9 @@ def write_call(ctx, a, method, params, describe, done, json_body=False, extra=No
                 for item in v:
                     out(f"  - {item}")
             else:
-                out(f"{k + ':':<8} {v if isinstance(v, str) else json.dumps(v, ensure_ascii=False)}")
+                out(
+                    f"{k + ':':<8} {v if isinstance(v, str) else json.dumps(v, ensure_ascii=False)}"
+                )
         out("payload:")
         out(json.dumps(params, ensure_ascii=False, indent=2))
         return None
@@ -2786,14 +3194,21 @@ def text_checks(ctx, text, allow_broadcast):
     for uid in dict.fromkeys(re.findall(r"<@([UW][A-Z0-9]+)(?:\|[^>]*)?>", text)):
         u = ctx.user(uid)
         mentions.append(
-            f"<@{uid}> = @{ctx.user_name(uid)}" + (f" ({u['real_name']})" if u and u.get("real_name") else "")
+            f"<@{uid}> = @{ctx.user_name(uid)}"
+            + (f" ({u['real_name']})" if u and u.get("real_name") else "")
             if u
             else f"<@{uid}> = UNKNOWN USER"
         )
-    for cid in dict.fromkeys(re.findall(r"<#([CG][A-Z0-9]+)(?:\|[^>]*)?>", text)):
-        mentions.append(f"<#{cid}> = {ctx.conv_label(cid)}")
-    for gid in dict.fromkeys(re.findall(r"<!subteam\^([A-Z0-9]+)(?:\|[^>]*)?>", text)):
-        mentions.append(f"<!subteam^{gid}> = @{ctx.group_handle(gid)} (notifies the whole group)")
+    mentions.extend(
+        f"<#{cid}> = {ctx.conv_label(cid)}"
+        for cid in dict.fromkeys(re.findall(r"<#([CG][A-Z0-9]+)(?:\|[^>]*)?>", text))
+    )
+    mentions.extend(
+        f"<!subteam^{gid}> = @{ctx.group_handle(gid)} (notifies the whole group)"
+        for gid in dict.fromkeys(
+            re.findall(r"<!subteam\^([A-Z0-9]+)(?:\|[^>]*)?>", text)
+        )
+    )
     if m:
         mentions.append(f"{m.group(0)} = BROADCAST (allowed by --allow-broadcast)")
     warnings = []
@@ -2808,11 +3223,15 @@ def text_checks(ctx, text, allow_broadcast):
         for uid, u in ctx.users().items()
         if u and u.get("name") and not u.get("is_bot_id")
     }
-    for word in dict.fromkeys(re.findall(r"(?<![\w<`/])@([a-zA-Z][\w.\-]+)", text)):
-        if norm(word) in names and word.lower() not in ("here", "channel", "everyone"):
-            warnings.append(f"plain @{word} does not notify; use <@{names[norm(word)]}>")
+    warnings.extend(
+        f"plain @{word} does not notify; use <@{names[norm(word)]}>"
+        for word in dict.fromkeys(re.findall(r"(?<![\w<`/])@([a-zA-Z][\w.\-]+)", text))
+        if norm(word) in names and word.lower() not in ("here", "channel", "everyone")
+    )
     if "cliproxy/" in text:
-        warnings.append("footer contains a gateway prefix (cliproxy/...); use the bare model slug")
+        warnings.append(
+            "footer contains a gateway prefix (cliproxy/...); use the bare model slug"
+        )
     if not FOOTER_RE.search(text):
         warnings.append(
             "no provenance footer ('---' then '<model-slug> · responding on behalf of Michael'); "
@@ -2828,17 +3247,27 @@ def resolve_thread(ctx, thread_arg, cid):
     if "/archives/" in thread_arg or "app.slack.com/client/" in thread_arg:
         tcid, ts, thread_ts = parse_permalink(thread_arg)
         if cid and cid != tcid and not ID_USER_RE.match(cid):
-            raise SlackError(f"--thread permalink is in {tcid}, but the destination is {cid}")
+            raise SlackError(
+                f"--thread permalink is in {tcid}, but the destination is {cid}"
+            )
         cid = tcid
         parent = thread_ts or ts
     else:
         if not cid:
-            raise UsageError("--thread TS needs a destination channel (or pass a permalink)")
+            raise UsageError(
+                "--thread TS needs a destination channel (or pass a permalink)"
+            )
         parent = normalize_ts(thread_arg)
     # Confirm the message exists and climb to the thread parent.
-    r = ctx.client.call("conversations.replies", {"channel": cid, "ts": parent, "limit": 1}, allow_error=True)
+    r = ctx.client.call(
+        "conversations.replies",
+        {"channel": cid, "ts": parent, "limit": 1},
+        allow_error=True,
+    )
     if not r.get("ok"):
-        raise SlackError(format_api_error("conversations.replies", r) + f" (thread {parent})")
+        raise SlackError(
+            format_api_error("conversations.replies", r) + f" (thread {parent})"
+        )
     msgs = r.get("messages") or []
     if msgs and msgs[0].get("thread_ts") and msgs[0]["thread_ts"] != parent:
         parent = msgs[0]["thread_ts"]
@@ -2855,14 +3284,19 @@ def split_dest(ctx, a):
     if not (a.dest and is_permalink(a.thread)) or a.file or a.text == ["-"]:
         return
     d = a.dest
-    explicit = d.startswith(("#", "@", "<")) or ID_CONV_RE.match(d) or ID_USER_RE.match(d) or is_permalink(d)
+    explicit = (
+        d.startswith(("#", "@", "<"))
+        or ID_CONV_RE.match(d)
+        or ID_USER_RE.match(d)
+        or is_permalink(d)
+    )
     if explicit:
         return
     tcid = parse_permalink(a.thread)[0]
     c = ctx.conv(tcid)
     if c and d in (c["name"], *c.get("previous_names", [])):
         return
-    a.text = [d] + list(a.text)
+    a.text = [d, *list(a.text)]
     a.dest = None
 
 
@@ -2877,7 +3311,9 @@ def message_plan(ctx, a, text, method_extra=None):
     cid = ctx.resolve_conv(dest, for_write=True) if dest else None
     cid, parent = resolve_thread(ctx, a.thread, cid)
     if not cid:
-        raise UsageError("missing destination: give a channel/@user or --thread PERMALINK")
+        raise UsageError(
+            "missing destination: give a channel/@user or --thread PERMALINK"
+        )
     if a.broadcast and not parent:
         raise UsageError("--broadcast only applies to thread replies (--thread)")
     mentions, warnings = text_checks(ctx, text, a.allow_broadcast)
@@ -2921,16 +3357,24 @@ def cmd_send(ctx, a):
     text = read_text(a.text, a.file)
     cid, parent, params, extra = message_plan(ctx, a, text)
     if a.dry_run:
-        write_call(ctx, a, "chat.postMessage", params, "send message", None, extra=extra)
+        write_call(
+            ctx, a, "chat.postMessage", params, "send message", None, extra=extra
+        )
         if not ctx.json:
             print_text_block(text)
-        return
+        return None
     r = ctx.client.call("chat.postMessage", params)
     ch = r.get("channel") or cid
     link = ctx.permalink(ch, r.get("ts", ""), parent)
     if ctx.json:
         return emit_json(
-            {"ok": True, "channel": ch, "ts": r.get("ts"), "thread_ts": parent, "permalink": link}
+            {
+                "ok": True,
+                "channel": ch,
+                "ts": r.get("ts"),
+                "thread_ts": parent,
+                "permalink": link,
+            }
         )
     out(f"sent <{link}>")
 
@@ -2944,27 +3388,41 @@ def cmd_schedule(ctx, a):
         raise UsageError(f"--at {a.at!r} is not in the future")
     if post_at > now + 120 * 86400:
         raise UsageError("Slack only schedules up to 120 days ahead")
-    cid, parent, params, extra = message_plan(ctx, a, text, {"post_at": post_at})
+    cid, _parent, params, extra = message_plan(ctx, a, text, {"post_at": post_at})
     if ID_USER_RE.match(cid):
-        raise SlackError("schedule needs an existing conversation; open the DM first with: slack open @user")
+        raise SlackError(
+            "schedule needs an existing conversation; open the DM first with: slack open @user"
+        )
     extra["post_at"] = (
         f"{post_at} ({dt.datetime.fromtimestamp(post_at).astimezone().isoformat(timespec='minutes')})"
     )
     if a.dry_run:
-        write_call(ctx, a, "chat.scheduleMessage", params, "schedule message", None, extra=extra)
+        write_call(
+            ctx,
+            a,
+            "chat.scheduleMessage",
+            params,
+            "schedule message",
+            None,
+            extra=extra,
+        )
         if not ctx.json:
             print_text_block(text)
-        return
+        return None
     r = ctx.client.call("chat.scheduleMessage", params)
     if ctx.json:
         return emit_json(r)
-    out(f"scheduled {r.get('scheduled_message_id')} in {ctx.conv_label(cid)} for {extra['post_at']}")
+    out(
+        f"scheduled {r.get('scheduled_message_id')} in {ctx.conv_label(cid)} for {extra['post_at']}"
+    )
 
 
 def cmd_scheduled(ctx, a):
     params = {"channel": ctx.resolve_conv(a.channel) if a.channel else None}
     items = list(
-        ctx.client.paginate("chat.scheduledMessages.list", params, "scheduled_messages", page_size=100)
+        ctx.client.paginate(
+            "chat.scheduledMessages.list", params, "scheduled_messages", page_size=100
+        )
     )
     if ctx.json:
         return emit_json({"scheduled_messages": items})
@@ -2972,7 +3430,11 @@ def cmd_scheduled(ctx, a):
         out("no scheduled messages")
     rend = Renderer(ctx)
     for s in items:
-        when = dt.datetime.fromtimestamp(s.get("post_at", 0)).astimezone().isoformat(timespec="minutes")
+        when = (
+            dt.datetime.fromtimestamp(s.get("post_at", 0))
+            .astimezone()
+            .isoformat(timespec="minutes")
+        )
         text = rend.mrkdwn(s.get("text") or "").replace("\n", " ⏎ ")
         out(
             f"{s.get('id')}  {ctx.conv_label(s.get('channel_id'))} ({s.get('channel_id')})  at {when}: {text}"
@@ -2992,12 +3454,17 @@ def cmd_unschedule(ctx, a):
 
 
 def fetch_message(ctx, cid, ts):
-    r = ctx.client.call("conversations.replies", {"channel": cid, "ts": ts, "limit": 1}, allow_error=True)
+    r = ctx.client.call(
+        "conversations.replies",
+        {"channel": cid, "ts": ts, "limit": 1},
+        allow_error=True,
+    )
     for m in (r.get("messages") or []) if r.get("ok") else []:
         if m.get("ts") == ts:
             return m
     r = ctx.client.call(
-        "conversations.history", {"channel": cid, "latest": ts, "oldest": ts, "inclusive": True, "limit": 1}
+        "conversations.history",
+        {"channel": cid, "latest": ts, "oldest": ts, "inclusive": True, "limit": 1},
     )
     for m in r.get("messages") or []:
         if m.get("ts") == ts:
@@ -3008,7 +3475,9 @@ def fetch_message(ctx, cid, ts):
 def own_message(ctx, cid, ts):
     m = fetch_message(ctx, cid, ts)
     if m.get("user") != ctx.self_id():
-        raise SlackError(f"message {ts} was posted by {Renderer(ctx).author(m)}, not you; refusing")
+        raise SlackError(
+            f"message {ts} was posted by {Renderer(ctx).author(m)}, not you; refusing"
+        )
     return m
 
 
@@ -3031,7 +3500,9 @@ def cmd_edit(ctx, a):
         {"channel": cid, "ts": ts, "text": text},
         describe="edit your message",
         extra=extra,
-        done=lambda r: f"edited <{ctx.permalink(cid, ts, thread or old.get('thread_ts'))}>",
+        done=lambda r: (
+            f"edited <{ctx.permalink(cid, ts, thread or old.get('thread_ts'))}>"
+        ),
     )
     if a.dry_run and not ctx.json:
         print_text_block(text)
@@ -3059,7 +3530,7 @@ def cmd_delete(ctx, a):
 
 
 def cmd_permalink(ctx, a):
-    cid, ts, thread, rest = message_ref(ctx, a.ref)
+    cid, ts, _thread, rest = message_ref(ctx, a.ref)
     if rest:
         raise UsageError(f"unexpected arguments: {' '.join(rest)}")
     r = ctx.client.call("chat.getPermalink", {"channel": cid, "message_ts": ts})
@@ -3070,7 +3541,10 @@ def cmd_permalink(ctx, a):
 
 def cmd_react(ctx, a, remove=False):
     if len(a.args) < 2:
-        raise UsageError("expected: <permalink | channel ts> <emoji>", "unreact" if remove else "react")
+        raise UsageError(
+            "expected: <permalink | channel ts> <emoji>",
+            "unreact" if remove else "react",
+        )
     emoji = a.args[-1].strip(":")
     cid, ts, _thread, rest = message_ref(ctx, a.args[:-1])
     if rest:
@@ -3083,14 +3557,18 @@ def cmd_react(ctx, a, remove=False):
         method,
         {"channel": cid, "timestamp": ts, "name": emoji},
         describe=f"{'remove' if remove else 'add'} :{emoji}: on {ctx.permalink(cid, ts)}",
-        done=lambda r: f"{'removed' if remove else 'reacted'} :{emoji}: <{ctx.permalink(cid, ts)}>",
+        done=lambda r: (
+            f"{'removed' if remove else 'reacted'} :{emoji}: <{ctx.permalink(cid, ts)}>"
+        ),
     )
 
 
 def cmd_create_channel(ctx, a):
     name = a.name.lstrip("#")
     if not re.match(r"^[a-z0-9][a-z0-9_\-]{0,79}$", name):
-        raise UsageError("channel names are lowercase letters, digits, - and _ (max 80)")
+        raise UsageError(
+            "channel names are lowercase letters, digits, - and _ (max 80)"
+        )
     write_call(
         ctx,
         a,
@@ -3148,16 +3626,22 @@ def cmd_upload(ctx, a):
     cid = ctx.resolve_conv(a.channel, for_write=True) if a.channel else None
     cid, parent = resolve_thread(ctx, a.thread, cid)
     if cid and ID_USER_RE.match(cid):
-        raise SlackError("upload needs an existing conversation; open the DM first with: slack open @user")
+        raise SlackError(
+            "upload needs an existing conversation; open the DM first with: slack open @user"
+        )
     comment = None
     if a.comment or a.comment_file:
         comment = read_text([a.comment] if a.comment else [], a.comment_file, "comment")
-    mentions, warnings = text_checks(ctx, comment, a.allow_broadcast) if comment else ([], [])
+    mentions, warnings = (
+        text_checks(ctx, comment, a.allow_broadcast) if comment else ([], [])
+    )
     for w in warnings:
         if not w.startswith("no provenance footer"):
             warn("warning: " + w)
     step1 = {
-        k: v for k, v in {"filename": name, "length": len(data), "alt_txt": a.alt}.items() if v is not None
+        k: v
+        for k, v in {"filename": name, "length": len(data), "alt_txt": a.alt}.items()
+        if v is not None
     }
     complete = {
         k: v
@@ -3174,7 +3658,9 @@ def cmd_upload(ctx, a):
             "dry_run": True,
             "action": "upload file",
             "file": {"path": a.path, "name": name, "bytes": len(data)},
-            "destination": f"{ctx.conv_label(cid)} ({cid})" if cid else "none (private file, not shared)",
+            "destination": f"{ctx.conv_label(cid)} ({cid})"
+            if cid
+            else "none (private file, not shared)",
             "thread": f"{parent} <{ctx.permalink(cid, parent)}>" if parent else None,
             "mentions": mentions,
             "steps": [
@@ -3192,7 +3678,7 @@ def cmd_upload(ctx, a):
         out(f"{'file:':<12} {a.path} as {name!r} ({len(data)} bytes)")
         out("steps:")
         out(json.dumps(report["steps"], ensure_ascii=False, indent=2))
-        return
+        return None
     r1 = ctx.client.call("files.getUploadURLExternal", step1)
     ctx.client.upload_bytes(r1["upload_url"], data)
     complete["files"][0]["id"] = r1["file_id"]
@@ -3266,9 +3752,19 @@ COMMANDS = {}
 
 def command(name, summary, usage, aliases=()):
     def deco(fn):
-        COMMANDS[name] = {"fn": fn, "summary": summary, "usage": usage, "aliases": aliases}
+        COMMANDS[name] = {
+            "fn": fn,
+            "summary": summary,
+            "usage": usage,
+            "aliases": aliases,
+        }
         for al in aliases:
-            COMMANDS[al] = {"fn": fn, "summary": summary, "usage": usage, "alias_of": name}
+            COMMANDS[al] = {
+                "fn": fn,
+                "summary": summary,
+                "usage": usage,
+                "alias_of": name,
+            }
         return fn
 
     return deco
@@ -3295,7 +3791,16 @@ GROUPS = [
     ),
     (
         "People and conversations",
-        ["whoami", "users", "user", "channels", "conversations", "members", "usergroups", "emoji"],
+        [
+            "whoami",
+            "users",
+            "user",
+            "channels",
+            "conversations",
+            "members",
+            "usergroups",
+            "emoji",
+        ],
     ),
     (
         "Write (only on an explicit request; all support --dry-run)",
@@ -3378,7 +3883,9 @@ def command_help(name):
 
 class Parser(argparse.ArgumentParser):
     def __init__(self, command_name, **kw):
-        super().__init__(prog=f"slack {command_name}", add_help=False, allow_abbrev=False, **kw)
+        super().__init__(
+            prog=f"slack {command_name}", add_help=False, allow_abbrev=False, **kw
+        )
         self.command_name = command_name
 
     def error(self, message):
@@ -3977,7 +4484,11 @@ def run(argv):
     real = COMMANDS[name].get("alias_of", name)
     parser = build_parser(real)
     try:
-        a = parser.parse_args(args[1:]) if real == "api" else parser.parse_intermixed_args(args[1:])
+        a = (
+            parser.parse_args(args[1:])
+            if real == "api"
+            else parser.parse_intermixed_args(args[1:])
+        )
     except UsageError as e:
         e.command = e.command or real
         raise
@@ -4010,10 +4521,8 @@ def main():
         print(f"slack: error: {e}", file=sys.stderr)
         return 1
     except BrokenPipeError:
-        try:
-            sys.stdout = open(os.devnull, "w")
-        except OSError:
-            pass
+        with contextlib.suppress(OSError):
+            sys.stdout = open(os.devnull, "w")  # noqa: SIM115
         return 0
     except KeyboardInterrupt:
         print("slack: interrupted", file=sys.stderr)

@@ -14,14 +14,17 @@ umask 077
 : "${INBOUND_TLS_KEY_FILE:=/run/secrets/smtp-edge/tls.key}"
 : "${RESEND_PASSWORD_FILE:=/run/secrets/smtp-edge/resend-api-key}"
 
-fail() { printf 'smtp-edge: %s\n' "$1" >&2; exit 1; }
+fail() {
+  printf 'smtp-edge: %s\n' "$1" >&2
+  exit 1
+}
 [[ $EUID == 0 ]] || fail 'Postfix master must run as root'
 dns_name='^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$'
 [[ $POSTFIX_HOSTNAME =~ $dns_name ]] || fail 'invalid POSTFIX_HOSTNAME'
 [[ -z $BACKEND_TLS_SERVERNAME || $BACKEND_TLS_SERVERNAME =~ $dns_name ]] || fail 'invalid BACKEND_TLS_SERVERNAME'
 # Required space-separated domain=host routes; each domain has one backend.
 declare -A backend_for=()
-read -ra routes <<< "${BACKENDS:-}"
+read -ra routes <<<"${BACKENDS:-}"
 for route in "${routes[@]}"; do
   domain=${route%%=*}
   host=${route#*=}
@@ -30,10 +33,10 @@ for route in "${routes[@]}"; do
   [[ -z ${backend_for[$domain]:-} ]] || fail "duplicate BACKENDS domain: $domain"
   backend_for[$domain]=$host
 done
-(( ${#backend_for[@]} > 0 )) || fail 'BACKENDS has no routes'
+((${#backend_for[@]} > 0)) || fail 'BACKENDS has no routes'
 for name in BACKEND_LMTP_PORT BACKEND_SMTP_PORT BACKEND_LOCAL_SMTP_PORT; do
   [[ ${!name} =~ ^[0-9]{1,5}$ ]] || fail "invalid $name"
-  (( 10#${!name} >= 1 && 10#${!name} <= 65535 )) || fail "invalid $name"
+  ((10#${!name} >= 1 && 10#${!name} <= 65535)) || fail "invalid $name"
 done
 for name in BACKEND_CA_FILE INBOUND_TLS_CERT_FILE INBOUND_TLS_KEY_FILE RESEND_PASSWORD_FILE; do
   [[ ${!name} =~ ^/[A-Za-z0-9_./-]+$ && -r ${!name} ]] || fail "invalid or unreadable $name"
@@ -50,7 +53,7 @@ master=$(</opt/smtp-edge/master.cf)
 master=${master//@BACKEND_SMTP_PORT@/$BACKEND_SMTP_PORT}
 master=${master//@BACKEND_LOCAL_SMTP_PORT@/$BACKEND_LOCAL_SMTP_PORT}
 master=${master//@BACKEND_CA_FILE@/$BACKEND_CA_FILE}
-printf '%s\n' "$master" > /run/postfix/master.cf
+printf '%s\n' "$master" >/run/postfix/master.cf
 unset master
 chmod 0644 /run/postfix/{main,master}.cf
 
@@ -59,9 +62,9 @@ chmod 0644 /run/postfix/{main,master}.cf
 if [[ -n ${BACKUP_CLIENT_FINGERPRINT_FILE:-} && -f $BACKUP_CLIENT_FINGERPRINT_FILE ]]; then
   fingerprint=$(<"$BACKUP_CLIENT_FINGERPRINT_FILE")
   [[ $fingerprint =~ ^([[:xdigit:]]{2}:){31}[[:xdigit:]]{2}$ ]] || fail 'invalid backup client SHA-256 fingerprint'
-  printf '%s OK\n' "$fingerprint" > /run/postfix/backup-client
+  printf '%s OK\n' "$fingerprint" >/run/postfix/backup-client
   chmod 0644 /run/postfix/backup-client
-  cat /opt/smtp-edge/backup-master.cf >> /run/postfix/master.cf
+  cat /opt/smtp-edge/backup-master.cf >>/run/postfix/master.cf
 fi
 
 # Regexp maps are case-insensitive by default. DUNNO does not bypass verification.
@@ -76,7 +79,7 @@ for domain in "${!backend_for[@]}"; do
   verify+="$domain lmtp:inet:[$host]:$BACKEND_LMTP_PORT"$'\n'
   tls+="[$host]:$BACKEND_LMTP_PORT secure match=$name servername=$name"$'\n'
 done
-printf '%s%s\n' "$served" '/.*/ REJECT recipient domain not served' > /run/postfix/served-domains
+printf '%s%s\n' "$served" '/.*/ REJECT recipient domain not served' >/run/postfix/served-domains
 chmod 0644 /run/postfix/served-domains
 printf '%s' "$transport" | postmap -ir lmdb:/run/postfix/transport
 printf '%s' "$verify" | postmap -ir lmdb:/run/postfix/verify-transport
@@ -103,7 +106,7 @@ postconf -e \
 # Do not run set-permissions against the immutable Nix installation.
 postfix check
 case ${1:-start} in
-  check) exit 0 ;;
-  start) exec postfix start-fg ;;
-  *) fail 'expected start or check' ;;
+check) exit 0 ;;
+start) exec postfix start-fg ;;
+*) fail 'expected start or check' ;;
 esac

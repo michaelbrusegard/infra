@@ -8,14 +8,16 @@ import re
 import sys
 from pathlib import Path
 
-
 MANIFESTS = {
     Path("gitops/espresso/apps/cliproxy/statefulset.yaml"): "install-plugins",
     Path("gitops/espresso/apps/clickhouse/llm-normalizer.yaml"): "install-normalizer",
 }
 
 image = sys.argv[1]
-if not re.fullmatch(r"ghcr\.io/michaelbrusegard/cliproxy-plugins:sha-[0-9a-f]{40}@sha256:[0-9a-f]{64}", image):
+if not re.fullmatch(
+    r"ghcr\.io/michaelbrusegard/cliproxy-plugins:sha-[0-9a-f]{40}@sha256:[0-9a-f]{64}",
+    image,
+):
     raise SystemExit("Expected an immutable plugin image reference")
 for path, container in MANIFESTS.items():
     text, count = re.subn(

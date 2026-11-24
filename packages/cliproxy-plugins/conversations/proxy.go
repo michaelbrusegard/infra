@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 
@@ -67,8 +68,10 @@ type node struct {
 }
 
 func NewNormalizer() *Normalizer {
-	return &Normalizer{nodes: map[Hash]node{}, after: map[string]Hash{}, sessions: map[string]struct{}{},
-		read: map[Hash]string{}}
+	return &Normalizer{
+		nodes: map[Hash]node{}, after: map[string]Hash{}, sessions: map[string]struct{}{},
+		read: map[Hash]string{},
+	}
 }
 
 // State is a row of state.sql, which earlier runs left: a node of a
@@ -133,13 +136,13 @@ func (n *Normalizer) split(r Request, env obj) (conversation []part, metadata ob
 			conversation = append(conversation, part{n.received(p, sent), p.Hash})
 		case p.Field == "input":
 			// A whole input string is one user message.
-			conversation = append(conversation, part{[]byte(fmt.Sprintf(`{"role":"user","content":%s}`, n.received(p, sent))), p.Hash})
+			conversation = append(conversation, part{fmt.Appendf(nil, `{"role":"user","content":%s}`, n.received(p, sent)), p.Hash})
 		case p.Field == "client_metadata":
 			metadata = parse(n.received(p, sent))
 		}
 	}
 	if input := env["input"]; isString(input) {
-		conversation = append(conversation, part{raw: []byte(fmt.Sprintf(`{"role":"user","content":%s}`, input))})
+		conversation = append(conversation, part{raw: fmt.Appendf(nil, `{"role":"user","content":%s}`, input)})
 	}
 	if metadata == nil {
 		metadata = env.obj("client_metadata")
@@ -433,18 +436,22 @@ func openaiUsage(u obj) usage {
 	details := firstObj(u.obj("input_tokens_details"), u.obj("prompt_tokens_details"))
 	out := firstObj(u.obj("output_tokens_details"), u.obj("completion_tokens_details"))
 	read := details.num("cached_tokens")
-	return usage{uncached: input - min(read, input), read: read,
-		output: u.num("output_tokens") + u.num("completion_tokens"), reasoning: out.num("reasoning_tokens")}
+	return usage{
+		uncached: input - min(read, input), read: read,
+		output: u.num("output_tokens") + u.num("completion_tokens"), reasoning: out.num("reasoning_tokens"),
+	}
 }
 
 // anthropicUsage reads Anthropic usage, whose cache writes split by
 // lifetime, and the thinking tokens Claude Code's providers report.
 func anthropicUsage(u obj) usage {
 	cache := u.obj("cache_creation")
-	return usage{uncached: u.num("input_tokens"), read: u.num("cache_read_input_tokens"),
+	return usage{
+		uncached: u.num("input_tokens"), read: u.num("cache_read_input_tokens"),
 		write: u.num("cache_creation_input_tokens"), write5m: cache.num("ephemeral_5m_input_tokens"),
 		write1h: cache.num("ephemeral_1h_input_tokens"), output: u.num("output_tokens"),
-		reasoning: u.obj("output_tokens_details").num("thinking_tokens")}
+		reasoning: u.obj("output_tokens_details").num("thinking_tokens"),
+	}
 }
 
 func firstObj(objs ...obj) obj {
@@ -511,7 +518,7 @@ func value(raw json.RawMessage) any {
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.UseNumber()
 	var v any
-	dec.Decode(&v)
+	_ = dec.Decode(&v)
 	return v
 }
 
@@ -519,7 +526,7 @@ func encode(v any) []byte {
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
 	enc.SetEscapeHTML(false)
-	enc.Encode(v)
+	_ = enc.Encode(v)
 	return bytes.TrimSuffix(b.Bytes(), []byte("\n"))
 }
 
@@ -587,18 +594,14 @@ func anthropicResponse(evs []json.RawMessage) response {
 		case "message_delta":
 			if msg != nil {
 				if d, ok := value(e["delta"]).(map[string]any); ok {
-					for k, v := range d {
-						msg[k] = v
-					}
+					maps.Copy(msg, d)
 				}
 				if du, ok := value(e["usage"]).(map[string]any); ok {
 					mu, _ := msg["usage"].(map[string]any)
 					if mu == nil {
 						mu = map[string]any{}
 					}
-					for k, v := range du {
-						mu[k] = v
-					}
+					maps.Copy(mu, du)
 					msg["usage"] = mu
 					u = parse(encode(mu))
 				}
