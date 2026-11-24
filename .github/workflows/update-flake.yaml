@@ -1,0 +1,74 @@
+name: Update Flake Inputs
+'on':
+  schedule:
+    - cron: '23 3 * * 1'
+  workflow_dispatch:
+concurrency:
+  group: update-flake
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-26.04
+    # The digest-bump deploy key bypasses the main ruleset, so it lives in
+    # the image-bump environment (main only).
+    environment: image-bump
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ssh-key: ${{ secrets.IMAGE_BUMP_DEPLOY_KEY }}
+      - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
+      - name: Update every input
+        id: update
+        shell: bash
+        run: |
+          set -euo pipefail
+          nix flake update
+          if git diff --quiet -- flake.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      # The push below goes straight to main, so this job is the only gate:
+      # every flake check, including the router VM tests, and every host must
+      # pass on the updated inputs. Evaluations run a few at a time because the
+      # desktops need close to 3 GB each.
+      - name: Verify the updated inputs
+        if: steps.update.outputs.changed == 'true'
+        env:
+          VERIFY_JOBS: 3
+        run: nix run .#verify
+      # Host closures can hold values from the private secrets flake, so only
+      # the names of what changed are published.
+      - name: Summarise what changes on the hosts
+        if: steps.update.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo '```'
+            nix run .#diff-hosts -- --names-only HEAD
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit the update
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add flake.lock
+          git commit -m "chore(flake): update inputs"
+          # The agent offers the read-only infra-secrets key before the
+          # checkout's image-bump key, and GitHub rejects the push with it.
+          unset SSH_AUTH_SOCK
+          git pull --rebase origin main
+          git push

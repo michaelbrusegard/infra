@@ -11,6 +11,7 @@
   "schedule": [
     "before 09:00 on monday"
   ],
+  "internalChecksFilter": "strict",
   "prConcurrentLimit": 10,
   "prHourlyLimit": 10,
   "labels": [
@@ -25,7 +26,7 @@
     ]
   },
   "nix": {
-    "enabled": true
+    "enabled": false
   },
   "kubernetes": {
     "managerFilePatterns": [
@@ -146,12 +147,6 @@
     },
     {
       "matchManagers": [
-        "nix"
-      ],
-      "groupName": "nix flake updates"
-    },
-    {
-      "matchManagers": [
         "helmv3",
         "flux"
       ],
@@ -189,7 +184,7 @@
     {
       "enabled": false,
       "matchPackageNames": [
-      "/infra-secrets/"
+        "/infra-secrets/"
       ]
     },
     {
@@ -212,6 +207,16 @@
       "groupName": "k8s-gateway chart",
       "groupSlug": "k8s-gateway-chart",
       "automerge": false
+    },
+    {
+      "description": "The Stalwart provider is built in this repository and is not on a registry Renovate can query.",
+      "enabled": false,
+      "matchDatasources": [
+        "terraform-provider"
+      ],
+      "matchPackageNames": [
+        "michaelbrusegard/stalwart"
+      ]
     }
   ]
 }
