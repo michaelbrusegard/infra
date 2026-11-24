@@ -7,9 +7,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
-SCRIPT_PATH = Path(__file__).resolve().parents[5] / "packages" / "hermes-agent-image" / "browser_session_router.py"
-SPEC = importlib.util.spec_from_file_location("hermes_browser_session_router", SCRIPT_PATH)
+SCRIPT_PATH = (
+    Path(__file__).resolve().parents[5]
+    / "packages"
+    / "hermes-agent-image"
+    / "browser_session_router.py"
+)
+SPEC = importlib.util.spec_from_file_location(
+    "hermes_browser_session_router", SCRIPT_PATH
+)
 assert SPEC and SPEC.loader
 browser_session_router = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(browser_session_router)
@@ -69,7 +75,10 @@ class BrowserSessionRouterTests(unittest.TestCase):
 
         payload = browser_session_router.list_persisted_events("task", limit=10)
 
-        self.assertEqual([item["event"] for item in payload], ["command.started", "command.completed"])
+        self.assertEqual(
+            [item["event"] for item in payload],
+            ["command.started", "command.completed"],
+        )
 
     def test_remove_persisted_session_deletes_metadata_and_keeps_events(self) -> None:
         metadata = self.browser_files / "browser-sessions" / "task.json"

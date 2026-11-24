@@ -6,11 +6,9 @@ import ssl
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-TOKEN = pathlib.Path(
-    "/var/run/secrets/kubernetes.io/serviceaccount/token"
-).read_text()
+TOKEN = pathlib.Path("/var/run/secrets/kubernetes.io/serviceaccount/token").read_text()
 CA_CERT = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 API = "https://{}:{}".format(
     os.environ["KUBERNETES_SERVICE_HOST"],
@@ -20,9 +18,7 @@ SSL_CONTEXT = ssl.create_default_context(cafile=CA_CERT)
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
-        "+00:00", "Z"
-    )
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def request(method: str, path: str, body: dict | None = None) -> dict:
@@ -71,7 +67,9 @@ def trigger_source(namespace: str, source: str, token: str) -> None:
 
 
 def wait_source(namespace: str, source: str, token: str) -> None:
-    deadline = time.monotonic() + int(os.environ.get("VOLSYNC_TIMEOUT_SECONDS", "43200"))
+    deadline = time.monotonic() + int(
+        os.environ.get("VOLSYNC_TIMEOUT_SECONDS", "43200")
+    )
     while time.monotonic() < deadline:
         obj = request("GET", source_path(namespace, source))
         current = obj.get("spec", {}).get("trigger", {}).get("manual")

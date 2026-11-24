@@ -7,7 +7,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 NAMESPACE = os.environ.get("POD_NAMESPACE", "minecraft")
 STATE_CONFIGMAP = "minecraft-backup-state"
@@ -32,9 +32,7 @@ SERVERS = (
         "repository": "freddo-restic-minecraft-revelation-world",
     },
 )
-TOKEN = pathlib.Path(
-    "/var/run/secrets/kubernetes.io/serviceaccount/token"
-).read_text()
+TOKEN = pathlib.Path("/var/run/secrets/kubernetes.io/serviceaccount/token").read_text()
 CA_CERT = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 API = "https://{}:{}".format(
     os.environ["KUBERNETES_SERVICE_HOST"],
@@ -43,14 +41,12 @@ API = "https://{}:{}".format(
 SSL_CONTEXT = ssl.create_default_context(cafile=CA_CERT)
 
 
-class NotFound(Exception):
+class NotFoundError(Exception):
     pass
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
-        "+00:00", "Z"
-    )
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def parse_timestamp(value: str) -> datetime:
@@ -66,9 +62,7 @@ def request(method: str, path: str, body: dict | None = None) -> dict | str:
     if body is not None:
         data = json.dumps(body).encode()
         headers["Content-Type"] = (
-            "application/merge-patch+json"
-            if method == "PATCH"
-            else "application/json"
+            "application/merge-patch+json" if method == "PATCH" else "application/json"
         )
     req = urllib.request.Request(
         API + path,
@@ -88,7 +82,7 @@ def request(method: str, path: str, body: dict | None = None) -> dict | str:
     except urllib.error.HTTPError as exc:
         payload = exc.read().decode()
         if exc.code == 404:
-            raise NotFound(payload) from exc
+            raise NotFoundError(payload) from exc
         raise RuntimeError(f"{method} {path} failed: {exc.code} {payload}") from exc
 
 
@@ -108,7 +102,7 @@ def get_state() -> dict[str, str]:
     try:
         cm = request("GET", namespaced(f"configmaps/{STATE_CONFIGMAP}"))
         return cm.get("data") or {}
-    except NotFound:
+    except NotFoundError:
         return {}
 
 
@@ -118,7 +112,7 @@ def patch_state(updates: dict[str, str]) -> None:
     body = {"metadata": {"name": STATE_CONFIGMAP}, "data": data}
     try:
         request("PATCH", namespaced(f"configmaps/{STATE_CONFIGMAP}"), body)
-    except NotFound:
+    except NotFoundError:
         request(
             "POST",
             namespaced("configmaps"),
@@ -153,12 +147,12 @@ def should_backup(server: dict[str, str], state: dict[str, str]) -> bool:
         if pod_started_after(server["name"], marker):
             print(f"{server['name']}: pod restarted since last backup")
             return True
-    except NotFound:
+    except NotFoundError:
         print(f"{server['name']}: pod unavailable, backing up conservatively")
         return True
     try:
         logs = pod_logs_since(server["name"], marker)
-    except NotFound:
+    except NotFoundError:
         print(f"{server['name']}: pod logs unavailable, backing up conservatively")
         return True
     active = any(marker in logs for marker in ACTIVITY_MARKERS)
@@ -247,7 +241,7 @@ def create_source(server: dict[str, str], token: str) -> None:
 def delete_source(source: str) -> None:
     try:
         request("DELETE", volsync(f"replicationsources/{source}"))
-    except NotFound:
+    except NotFoundError:
         return
 
 
@@ -256,7 +250,7 @@ def wait_source_deleted(source: str) -> None:
     while time.monotonic() < deadline:
         try:
             request("GET", volsync(f"replicationsources/{source}"))
-        except NotFound:
+        except NotFoundError:
             return
         delete_source(source)
         time.sleep(5)

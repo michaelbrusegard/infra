@@ -9,10 +9,12 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-API_URL = os.environ.get("LISTENBRAINZ_API_URL", "https://api.listenbrainz.org").rstrip("/")
+API_URL = os.environ.get("LISTENBRAINZ_API_URL", "https://api.listenbrainz.org").rstrip(
+    "/"
+)
 USERNAME = os.environ.get("LISTENBRAINZ_USERNAME", "").strip()
 TOKEN = os.environ.get("LISTENBRAINZ_TOKEN", "").strip()
 MUSICGRABBER_URL = os.environ.get("MUSICGRABBER_URL", "").rstrip("/")
@@ -57,7 +59,7 @@ PLAYLISTS = {
 
 
 def now():
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
 def parse_time(value):
@@ -65,7 +67,7 @@ def parse_time(value):
         parsed = datetime.fromisoformat((value or "").replace("Z", "+00:00"))
     except ValueError:
         return None
-    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 def log(message):
@@ -75,7 +77,9 @@ def log(message):
 def normalize(value):
     value = value or ""
     value = value.lower()
-    value = re.sub(r"\[[^\]]+\]|\([^\)]*(remaster|remix|live|edit|version)[^\)]*\)", " ", value)
+    value = re.sub(
+        r"\[[^\]]+\]|\([^\)]*(remaster|remix|live|edit|version)[^\)]*\)", " ", value
+    )
     value = re.sub(r"^[0-9]+[ ._-]+", "", value)
     value = re.sub(r"[^a-z0-9]+", " ", value)
     return re.sub(r"\s+", " ", value).strip()
@@ -160,7 +164,7 @@ def http_json(method, url, payload=None, timeout=30):
             if attempt == attempts:
                 raise
             error = exc
-        delay = 2 ** attempt
+        delay = 2**attempt
         log(f"GET retry attempt={attempt + 1}/{attempts} delay={delay}s error={error}")
         time.sleep(delay)
     raise RuntimeError("HTTP retry loop exhausted")
@@ -197,7 +201,11 @@ def playlist_title(entry):
 
 def playlist_identifier(entry):
     playlist = unwrap_playlist(entry)
-    identifier = playlist.get("identifier") or playlist.get("id") or playlist.get("playlist_mbid")
+    identifier = (
+        playlist.get("identifier")
+        or playlist.get("id")
+        or playlist.get("playlist_mbid")
+    )
     if isinstance(identifier, list):
         identifier = identifier[0] if identifier else None
     if not identifier:
@@ -239,13 +247,15 @@ def extract_recording_mbid(track):
     identifiers = track.get("identifier") or []
     if isinstance(identifiers, str):
         identifiers = [identifiers]
-    for identifier in identifiers:
-        identifier = str(identifier)
+    for raw_identifier in identifiers:
+        identifier = str(raw_identifier)
         if "musicbrainz.org/recording/" in identifier:
             return identifier.rstrip("/").split("/")[-1]
     extension = track.get("extension") or {}
     candidates = [
-        extension.get("https://musicbrainz.org/doc/jspf#track", {}).get("additional_metadata", {}),
+        extension.get("https://musicbrainz.org/doc/jspf#track", {}).get(
+            "additional_metadata", {}
+        ),
         extension.get("additional_metadata", {}),
         extension,
     ]
@@ -262,7 +272,9 @@ def extract_track(track):
     artist = track.get("creator") or track.get("artist") or track.get("artist_name")
     extension = track.get("extension") or {}
     for candidate in (
-        extension.get("https://musicbrainz.org/doc/jspf#track", {}).get("additional_metadata", {}),
+        extension.get("https://musicbrainz.org/doc/jspf#track", {}).get(
+            "additional_metadata", {}
+        ),
         extension.get("additional_metadata", {}),
         extension,
     ):
@@ -280,7 +292,9 @@ def extract_track(track):
 
 
 def fetch_playlist_tracks(playlist_mbid):
-    payload = http_json("GET", f"{API_URL}/1/playlist/{playlist_mbid}?fetch_metadata=true")
+    payload = http_json(
+        "GET", f"{API_URL}/1/playlist/{playlist_mbid}?fetch_metadata=true"
+    )
     playlist = payload.get("playlist", payload)
     tracks = playlist.get("track") or playlist.get("tracks") or []
     result = []
@@ -302,7 +316,7 @@ def build_weekly_tracks(playlist_type, seed):
         user_api("/1/feedback/user/{user}/get-feedback?score=-1&count=1000"),
     )
     hated = {item.get("recording_mbid") for item in feedback.get("feedback") or []}
-    cutoff = datetime.now(timezone.utc) - timedelta(days=RECENT_LISTEN_DAYS)
+    cutoff = datetime.now(UTC) - timedelta(days=RECENT_LISTEN_DAYS)
     mbids = []
     for rec in recs:
         mbid = rec.get("recording_mbid")
@@ -321,7 +335,7 @@ def build_weekly_tracks(playlist_type, seed):
     for start in range(0, len(mbids), 50):
         if len(tracks) >= WEEKLY_TRACKS:
             break
-        chunk = mbids[start:start + 50]
+        chunk = mbids[start : start + 50]
         metadata = http_json(
             "GET",
             f"{API_URL}/1/metadata/recording/?recording_mbids={','.join(chunk)}&inc=artist",
@@ -330,7 +344,11 @@ def build_weekly_tracks(playlist_type, seed):
             entry = metadata.get(mbid) or {}
             title = (entry.get("recording") or {}).get("name")
             artist = (entry.get("artist") or {}).get("name")
-            if not title or not artist or per_artist.get(artist, 0) >= MAX_TRACKS_PER_ARTIST:
+            if (
+                not title
+                or not artist
+                or per_artist.get(artist, 0) >= MAX_TRACKS_PER_ARTIST
+            ):
                 continue
             per_artist[artist] = per_artist.get(artist, 0) + 1
             tracks.append({"artist": artist, "title": title, "recording_mbid": mbid})
@@ -343,7 +361,7 @@ def build_weekly_tracks(playlist_type, seed):
 def weekly_playlist(conn, playlist_type):
     # Build once per week, then reuse the stored track list so the
     # playlist stays put while the recommendations change daily.
-    today = datetime.now(timezone.utc).date()
+    today = datetime.now(UTC).date()
     monday = (today - timedelta(days=today.weekday())).isoformat()
     source = {
         "identifier": f"local:{playlist_type}:{monday}",
@@ -412,10 +430,9 @@ def local_index():
             except ValueError:
                 continue
             parts = rel.parts
-            if root_name == "Albums" and len(parts) >= 3:
-                artist = parts[0]
-                title = clean_title_from_file(path)
-            elif root_name == "Singles" and len(parts) >= 2:
+            if (root_name == "Albums" and len(parts) >= 3) or (
+                root_name == "Singles" and len(parts) >= 2
+            ):
                 artist = parts[0]
                 title = clean_title_from_file(path)
             else:
@@ -426,7 +443,10 @@ def local_index():
 
 def upsert_seen(conn, playlist_type, rec, status, local_path=None):
     timestamp = now()
-    rec_id = rec["recording_mbid"] or f"{playlist_type}:{track_key(rec['artist'], rec['title'])}"
+    rec_id = (
+        rec["recording_mbid"]
+        or f"{playlist_type}:{track_key(rec['artist'], rec['title'])}"
+    )
     existing = conn.execute(
         "select * from recommendation_seen where id = ?",
         (rec_id,),
@@ -523,10 +543,13 @@ def replace_playlist_snapshot(conn, playlist_type, source, recommendation_ids):
 
 
 def has_playlist_snapshot(conn, playlist_type):
-    return conn.execute(
-        "select 1 from playlist_snapshot where playlist_type = ?",
-        (playlist_type,),
-    ).fetchone() is not None
+    return (
+        conn.execute(
+            "select 1 from playlist_snapshot where playlist_type = ?",
+            (playlist_type,),
+        ).fetchone()
+        is not None
+    )
 
 
 def mark_queued(conn, ids, import_id):
@@ -572,11 +595,7 @@ def recommendation_needs_download(conn, row):
         return True
     if status == "queued":
         queued_at = parse_time(row["queued_at"])
-        age = (
-            datetime.now(timezone.utc) - queued_at
-            if queued_at is not None
-            else None
-        )
+        age = datetime.now(UTC) - queued_at if queued_at is not None else None
         if age is not None and age.total_seconds() < QUEUE_RETRY_AFTER_SECONDS:
             return False
         conn.execute(
@@ -637,7 +656,7 @@ def completed_job_path(job):
                 path.relative_to(root)
             except ValueError:
                 continue
-            if path.is_file() and path.parts[-len(relative.parts):] == relative.parts:
+            if path.is_file() and path.parts[-len(relative.parts) :] == relative.parts:
                 candidates.append(path)
     return candidates[0] if len(candidates) == 1 else None
 
@@ -763,7 +782,7 @@ def queue_missing(conn, queue):
 def fair_queue(candidates, limit):
     selected = []
     selected_ids = set()
-    offsets = {playlist_type: 0 for playlist_type in PLAYLISTS}
+    offsets = dict.fromkeys(PLAYLISTS, 0)
     while len(selected) < limit:
         added = False
         for playlist_type in PLAYLISTS:
@@ -821,10 +840,9 @@ def refresh_playlist_status_counts(conn, stats):
             (playlist_type,),
         ).fetchall()
         by_status = {row["status"]: row["count"] for row in counts}
-        stats[playlist_type]["downloaded"] = (
-            by_status.get("downloaded", 0)
-            + by_status.get("lossy_fallback", 0)
-        )
+        stats[playlist_type]["downloaded"] = by_status.get(
+            "downloaded", 0
+        ) + by_status.get("lossy_fallback", 0)
         stats[playlist_type]["failed"] = by_status.get("failed", 0)
 
 
@@ -868,11 +886,10 @@ def write_metrics(stats, success):
     for key, help_text in metric_help.items():
         name = f"listenbrainz_bridge_playlist_{key}"
         lines.extend([f"# HELP {name} {help_text}", f"# TYPE {name} gauge"])
-        for playlist_type in PLAYLISTS:
-            lines.append(
-                f'{name}{{playlist_type="{playlist_type}"}} '
-                f'{stats[playlist_type][key]}'
-            )
+        lines.extend(
+            f'{name}{{playlist_type="{playlist_type}"}} {stats[playlist_type][key]}'
+            for playlist_type in PLAYLISTS
+        )
     METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
     temporary = METRICS_PATH.with_suffix(".tmp")
     temporary.write_text("\n".join(lines) + "\n", encoding="utf-8")

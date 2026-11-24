@@ -58,7 +58,7 @@ seed_ini=$(find /android-home -maxdepth 1 -type f -name '*.ini' -print -quit)
 persisted_ini=$(find "$AVD_HOME" -maxdepth 1 -type f -name '*.ini' -print -quit 2>/dev/null || true)
 reset_reason=
 if [ -n "$persisted_ini" ] && [ -s "$SYSTEM_IMAGE_MARKER" ]; then
-  persisted_system_image_id=$(tr -d '\r\n' < "$SYSTEM_IMAGE_MARKER")
+  persisted_system_image_id=$(tr -d '\r\n' <"$SYSTEM_IMAGE_MARKER")
   if [ "$persisted_system_image_id" != "$SYSTEM_IMAGE_ID" ]; then
     reset_reason="system image changed from ${persisted_system_image_id:0:12} to ${SYSTEM_IMAGE_ID:0:12}"
   fi
@@ -92,7 +92,7 @@ chmod 0644 "$GRPC_ALLOWLIST_FILE"
 if ! find "$AVD_HOME" -maxdepth 1 -type f -name '*.ini' -print -quit | grep -q .; then
   cp -a /android-home/. "$AVD_HOME/"
 fi
-printf '%s\n' "$SYSTEM_IMAGE_ID" > "$SYSTEM_IMAGE_MARKER"
+printf '%s\n' "$SYSTEM_IMAGE_ID" >"$SYSTEM_IMAGE_MARKER"
 
 AVD_INI=$(find "$AVD_HOME" -maxdepth 1 -type f -name '*.ini' -print -quit)
 if [ -z "$AVD_INI" ]; then
@@ -129,9 +129,9 @@ if [ -n "${AVD_CONFIG:-}" ]; then
     if grep -q "^${key}=" "$AVD_CONFIG_FILE"; then
       sed -i "s|^${key}=.*|${key}=${value}|" "$AVD_CONFIG_FILE"
     else
-      printf '%s\n' "$line" >> "$AVD_CONFIG_FILE"
+      printf '%s\n' "$line" >>"$AVD_CONFIG_FILE"
     fi
-  done <<< "${AVD_CONFIG}"
+  done <<<"${AVD_CONFIG}"
 fi
 
 export PULSE_SERVER=unix:/tmp/pulse-socket
@@ -244,7 +244,7 @@ enable_accessibility_companion() {
   companion_version=$(basename "$companion_apk")
   companion_version=${companion_version#HermesAccessibility-}
   companion_version=${companion_version%.apk}
-  installed_version=$(adb_device shell dumpsys package "$ACCESSIBILITY_PACKAGE" 2>/dev/null | \
+  installed_version=$(adb_device shell dumpsys package "$ACCESSIBILITY_PACKAGE" 2>/dev/null |
     sed -n 's/^ *versionName=//p' | head -1 | tr -d '\r')
   if [ "$installed_version" != "$companion_version" ]; then
     if ! adb_device install -r -g "$companion_apk" >/dev/null; then
@@ -255,9 +255,9 @@ enable_accessibility_companion() {
 
   enabled=$(adb_device shell settings get secure enabled_accessibility_services 2>/dev/null | tr -d '\r')
   case ":$enabled:" in
-    *":$ACCESSIBILITY_SERVICE:"*) ;;
-    ":null:"|"::") enabled=$ACCESSIBILITY_SERVICE ;;
-    *) enabled="$enabled:$ACCESSIBILITY_SERVICE" ;;
+  *":$ACCESSIBILITY_SERVICE:"*) ;;
+  ":null:" | "::") enabled=$ACCESSIBILITY_SERVICE ;;
+  *) enabled="$enabled:$ACCESSIBILITY_SERVICE" ;;
   esac
   adb_device shell settings put secure enabled_accessibility_services "$enabled"
   adb_device shell settings put secure accessibility_enabled 1

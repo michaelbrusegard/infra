@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 MUSIC_ROOT = Path(os.environ.get("MUSIC_ROOT", "/music"))
@@ -11,7 +11,7 @@ CLEANUP_AFTER_DAYS = int(os.environ.get("CLEANUP_AFTER_DAYS", "30"))
 
 
 def now():
-    return datetime.now(timezone.utc).replace(microsecond=0)
+    return datetime.now(UTC).replace(microsecond=0)
 
 
 def parse_time(value):
@@ -75,7 +75,7 @@ def protected_by_playlist(path):
 
 def play_state(nav_conn, path):
     rel = relative_music_path(path)
-    row = nav_conn.execute(
+    return nav_conn.execute(
         """
         select coalesce(a.play_count, 0) as play_count,
                coalesce(a.starred, 0) as starred
@@ -87,7 +87,6 @@ def play_state(nav_conn, path):
         """,
         (rel,),
     ).fetchone()
-    return row
 
 
 def prune_empty_dirs(path):

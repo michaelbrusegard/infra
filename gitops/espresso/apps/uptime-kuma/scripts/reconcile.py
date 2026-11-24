@@ -41,7 +41,7 @@ def connect() -> UptimeKumaApi:
             api = UptimeKumaApi(URL, timeout=30)
             api.login(USERNAME, PASSWORD)
             return api
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             last = exc
             print("Waiting for uptime-kuma API...", flush=True)
             time.sleep(2)

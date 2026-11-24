@@ -7,6 +7,7 @@ delay profiles (wait before grabbing torrents so pre-air fakes and
 bad rips get nuked or superseded before we ever download them), and
 sonarr subtitle preferences for anime.
 """
+
 import json
 import os
 import urllib.request
@@ -66,9 +67,7 @@ def request(method: str, url: str, key: str, body: dict | None = None):
 
 def sync_release_profile(base: str, key: str) -> None:
     profiles = request("GET", f"{base}/api/v3/releaseprofile", key)
-    current = next(
-        (p for p in profiles if p["name"] == RELEASE_PROFILE["name"]), None
-    )
+    current = next((p for p in profiles if p["name"] == RELEASE_PROFILE["name"]), None)
     if current is None:
         request("POST", f"{base}/api/v3/releaseprofile", key, RELEASE_PROFILE)
         print("sonarr: release profile created")
@@ -77,9 +76,7 @@ def sync_release_profile(base: str, key: str) -> None:
     if desired == current:
         print("sonarr: release profile in sync")
         return
-    request(
-        "PUT", f"{base}/api/v3/releaseprofile/{current['id']}", key, desired
-    )
+    request("PUT", f"{base}/api/v3/releaseprofile/{current['id']}", key, desired)
     print("sonarr: release profile updated")
 
 
@@ -116,15 +113,11 @@ def sync_subs_format(base: str, key: str) -> None:
         print("sonarr: subs custom format in sync")
 
     for profile in request("GET", f"{base}/api/v3/qualityprofile", key):
-        item = next(
-            i for i in profile["formatItems"] if i["format"] == current["id"]
-        )
+        item = next(i for i in profile["formatItems"] if i["format"] == current["id"])
         if item["score"] == SUBS_FORMAT_SCORE:
             continue
         item["score"] = SUBS_FORMAT_SCORE
-        request(
-            "PUT", f"{base}/api/v3/qualityprofile/{profile['id']}", key, profile
-        )
+        request("PUT", f"{base}/api/v3/qualityprofile/{profile['id']}", key, profile)
         print(f"sonarr: {profile['name']} subs score updated")
 
 
@@ -136,9 +129,7 @@ def main() -> int:
         if desired == default:
             print(f"{app}: delay profile in sync")
             continue
-        request(
-            "PUT", f"{base}/api/v3/delayprofile/{default['id']}", key, desired
-        )
+        request("PUT", f"{base}/api/v3/delayprofile/{default['id']}", key, desired)
         print(f"{app}: delay profile updated")
     sonarr = APPS["sonarr"]
     sync_release_profile(*sonarr)

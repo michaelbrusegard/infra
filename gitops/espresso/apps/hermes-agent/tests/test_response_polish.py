@@ -5,12 +5,8 @@ import types
 import unittest
 from pathlib import Path
 
-
 PLUGIN_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "plugins"
-    / "response-polish"
-    / "__init__.py"
+    Path(__file__).resolve().parents[1] / "plugins" / "response-polish" / "__init__.py"
 )
 
 
@@ -51,7 +47,7 @@ class ResponsePolishTests(unittest.TestCase):
         }
         registry = types.ModuleType("tools.registry")
         registry.tool_error = lambda message: json.dumps({"error": message})
-        registry.tool_result = lambda payload: json.dumps(payload)
+        registry.tool_result = json.dumps
         tools = types.ModuleType("tools")
         tools.registry = registry
         sys.modules["tools"] = tools

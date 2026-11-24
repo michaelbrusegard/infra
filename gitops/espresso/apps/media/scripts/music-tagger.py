@@ -2,7 +2,6 @@
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
@@ -76,7 +75,9 @@ def candidate_targets():
 def dry_config():
     with CONFIG_PATH.open("r", encoding="utf-8") as handle:
         config = handle.read()
-    config = config.replace("library: /config/library.db", "library: /tmp/beets-dry-run.db")
+    config = config.replace(
+        "library: /config/library.db", "library: /tmp/beets-dry-run.db"
+    )
     config = config.replace("write: yes", "write: no")
     temp = Path(tempfile.mkdtemp(prefix="beets-dry-")) / "config.yaml"
     temp.write_text(config, encoding="utf-8")
@@ -107,7 +108,16 @@ def main():
     for target in targets:
         if not target.exists():
             continue
-        cmd = ["beet", "-c", str(config), "import", "-q", "-s", *extra_args, str(target)]
+        cmd = [
+            "beet",
+            "-c",
+            str(config),
+            "import",
+            "-q",
+            "-s",
+            *extra_args,
+            str(target),
+        ]
         result = run(cmd)
         if result.returncode != 0:
             failures += 1
