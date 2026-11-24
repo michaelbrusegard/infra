@@ -20,6 +20,7 @@ from pathlib import Path
 
 TOKEN_SEPARATOR = re.compile(r"[\s\"',;:\[\]{}()=\\]+")
 STORE_PATH = re.compile(r"/nix/store/([0-9a-z]{32})-([^\s\"',;:\[\]{}()=\\$/]*)")
+REFERENCE = re.compile(r"<[0-9a-f]{24}!")
 STORE_PREFIX = "/nix/store/"
 HASH_END = len(STORE_PREFIX) + 32
 SHOWN_TOKENS = 8
@@ -134,11 +135,20 @@ class Closure:
         self.identity[path] = digest(self.token_digest[path], input_identities)[:24]
 
 
+def without_reference_identities(tokens):
+    return collections.Counter(REFERENCE.sub("<input!", token) for token in tokens)
+
+
 def one_sided_tokens(before, after):
+    """Return the tokens on one side only, ignoring which input a reference points at.
+
+    A derivation whose inputs changed has different references but is not itself
+    the cause, so only derivations with a difference of their own are reported.
+    """
     difference = {}
     for key in sorted(set(before) | set(after)):
-        removed = collections.Counter(before.get(key, []))
-        added = collections.Counter(after.get(key, []))
+        removed = without_reference_identities(before.get(key, []))
+        added = without_reference_identities(after.get(key, []))
         if removed != added:
             difference[key] = (
                 list((removed - added).elements())[:SHOWN_TOKENS],
@@ -169,12 +179,11 @@ def compare(base_drv, head_drv):
             continue
         visited.add((base_path, head_path))
         if base.token_digest[base_path] != head.token_digest[head_path]:
-            changed.append(
-                (
-                    base.name(base_path),
-                    one_sided_tokens(base.tokens[base_path], head.tokens[head_path]),
-                )
+            difference = one_sided_tokens(
+                base.tokens[base_path], head.tokens[head_path]
             )
+            if difference:
+                changed.append((base.name(base_path), difference))
         elif base.exact[base_path] != head.exact[head_path]:
             reordered.add(base.name(base_path))
         base_inputs = inputs_by_name(base, base_path)
