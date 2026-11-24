@@ -1,11 +1,14 @@
-{
-  perSystem = {
-    config,
-    pkgs,
-    ...
-  }: let
-    treefmt = lib.getExe config.treefmt.build.wrapper;
+{inputs, ...}: {
+  perSystem = {pkgs, ...}: let
     inherit (pkgs) lib;
+    treefmt = lib.getExe (inputs.treefmt-nix.lib.mkWrapper pkgs {
+      projectRootFile = "flake.nix";
+      programs = {
+        alejandra.enable = true;
+        statix.enable = true;
+        deadnix.enable = true;
+      };
+    });
   in {
     packages = {
       fmt-infra-secrets = pkgs.writeShellApplication {

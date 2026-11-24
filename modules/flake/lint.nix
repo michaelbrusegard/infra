@@ -21,10 +21,12 @@
       runtimeInputs = [pkgs.git];
       text = ''
         range=''${1:-origin/main..HEAD}
+        commits=$(git log --no-merges --format='%H %s' "$range")
         types='feat|fix|refactor|perf|docs|chore|ci|build|revert'
         failures=0
 
         while IFS=' ' read -r sha subject; do
+          [[ -n $sha ]] || continue
           problems=()
           stripped=$subject
           stripped=''${stripped% \[skip ci\]}
@@ -46,7 +48,7 @@
             printf '%s %s\n' "''${sha:0:8}" "$subject" >&2
             printf '  - %s\n' "''${problems[@]}" >&2
           fi
-        done < <(git log --no-merges --format='%H %s' "$range")
+        done <<<"$commits"
 
         if ((failures)); then
           printf '%d commit(s) in %s break the Conventional Commits rules in AGENTS.md. Reword them with git rebase.\n' "$failures" "$range" >&2

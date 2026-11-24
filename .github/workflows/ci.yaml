@@ -32,11 +32,14 @@ jobs:
               - '.github/workflows/ci.yaml'
             gitops:
               - 'gitops/**'
+              - 'packages/ai-images/**'
+              - 'packages/cliproxy-plugins/**'
               - 'modules/flake/check-app.nix'
               - '.github/workflows/ci.yaml'
             tofu:
               - '**/*.tf'
               - '**/.terraform.lock.hcl'
+              - 'gitops/espresso/infrastructure/configs/stalwart-tofu/kustomization.yaml'
               - '.github/workflows/ci.yaml'
       - id: list-tofu
         run: |

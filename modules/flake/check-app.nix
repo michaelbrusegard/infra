@@ -35,8 +35,8 @@
           fi
         }
 
-        kubeconform_espresso() {
-          kustomize build gitops/espresso |
+        kubeconform_root() {
+          kustomize build "$1" |
             kubeconform -strict -ignore-missing-schemas \
               -schema-location default \
               -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
@@ -59,7 +59,9 @@
           step "$test" bash "$test"
         done
 
-        step "kustomize build gitops/espresso | kubeconform" kubeconform_espresso
+        for root in gitops/espresso gitops/espresso/infrastructure/controllers gitops/espresso/infrastructure/configs gitops/espresso/apps gitops/espresso/projects; do
+          step "kustomize build $root | kubeconform" kubeconform_root "$root"
+        done
 
         for dir in gitops/espresso/tofu/*/; do
           dir=''${dir%/}

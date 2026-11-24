@@ -21,7 +21,10 @@ so the work is done when the checks pass locally, not when it is pushed.
    exemption with the reason to `gitops/espresso/tests/app-shape.sh` when the
    data can be rebuilt.
 5. **Secrets** go in `../infra-secrets/gitops/espresso/apps/<app>/secrets.yaml`
-   through `sops`, never in this repo. Reference them by name here.
+   through `sops`, never in this repo. Reference them by name here. Done when
+   that folder has a `kustomization.yaml` listing `secrets.yaml` and the app is
+   registered in `../infra-secrets/gitops/espresso/apps/kustomization.yaml`;
+   otherwise Flux never creates the Secret.
 6. **External resources** (database role, OIDC client, bucket, DNS other than
    a CNAME) belong to the matching OpenTofu stack in `gitops/espresso/tofu/`.
 7. **Check:** `nix run .#check` passes. It renders the manifests, validates

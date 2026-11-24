@@ -60,4 +60,4 @@ rule:
     has:
       stopBy: end
       kind: block_mapping_pair
-      regex: ^kind:\s*DNSEndpoint\s*$
+      regex: ^kind:\s*["']?DNSEndpoint["']?\s*$
