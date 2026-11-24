@@ -854,11 +854,15 @@ class AndroidScriptTests(unittest.TestCase):
             / "generate.go"
         ).read_text(encoding="utf-8")
         seccomp_install = (
-            APP_ROOT.parents[3] / "hosts" / "espresso" / "seccomp-profiles.nix"
+            APP_ROOT.parents[3]
+            / "modules"
+            / "hosts"
+            / "espresso"
+            / "seccomp-profiles.nix"
         ).read_text(encoding="utf-8")
-        k3s_module = (APP_ROOT.parents[3] / "modules" / "nixos" / "k3s.nix").read_text(
-            encoding="utf-8"
-        )
+        k3s_module = (
+            APP_ROOT.parents[3] / "modules" / "features" / "k3s.nix"
+        ).read_text(encoding="utf-8")
         image_workflow = (
             APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-agent-image.yaml"
         ).read_text(encoding="utf-8")
