@@ -29,6 +29,11 @@ let
       "smtp-backup opens SMTP on enp7s0"
     ]
     [
+      "tcp"
+      sshPort
+      "firewall.interfaces.enp7s0 allows SSH"
+    ]
+    [
       "udp"
       51820
       "services.netbird.clients.default.port"

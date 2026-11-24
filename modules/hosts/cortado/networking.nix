@@ -159,14 +159,16 @@
             # The NetBird relay has to be reachable from the internet to be of any
             # use. Caddy shares the port, so its other vhosts refuse non-local
             # clients themselves.
+            # SSH from the internet is the way in when NetBird is unreachable.
             "${wanInterface}" = {
-              allowedTCPPorts = [ 443 ];
+              allowedTCPPorts = [ 443 ] ++ config.services.openssh.ports;
             };
           };
         };
       };
 
-      # Reachable from the trusted LAN and NetBird, never from the ISP.
+      # Opened on the WAN interface above instead of on every interface, which
+      # would include IoT.
       services.openssh.openFirewall = lib.mkForce false;
 
       security.acme = {
