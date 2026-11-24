@@ -273,7 +273,7 @@
         ]
       );
 
-      # Defaults live in /etc/codex/config.toml (modules/common/codex.nix), so
+      # Defaults live in /etc/codex/config.toml (modules/features/codex.nix), so
       # Codex keeps ~/.codex/config.toml for project trust and TUI state.
       codex = {
         enable = true;
