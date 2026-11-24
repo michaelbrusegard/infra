@@ -1,51 +1,122 @@
 # infra
 
 This is primarily a guide for myself on how to setup my own systems, feel free
-to copy anything, but do not expect a direct copy of everything to
-work for you.
+to copy anything, but do not expect a direct copy of everything to work for you.
 
-Note to self: Make sure to follow the guide for each system step by step.
+Note to self: follow the guide for each system step by step.
 
 > [!NOTE]
 > I also maintain a private repository with a Nix flake containing soft
-> and hard secrets. Directly copying the configuration will therefore fail
-> since it will fail to fetch the private repository. The private flake uses
-> Age keys to further encrypt the most critical secrets. To include them in
-> the build, add the age keys to `~/.config/sops/age/keys.txt`
+> and hard secrets, so building this as is will fail when it tries to fetch
+> it. The private flake uses Age keys to encrypt the most critical secrets. To
+> include them in the build, add the age keys to `~/.config/sops/age/keys.txt`.
+
+## Day to day
+
+Rebuild the machine I am sitting at:
+
+```sh
+nh os switch       # ristretto, forte, ristretto-wsl
+nh darwin switch   # lungo
+```
+
+Deploy a server from my laptop:
+
+```sh
+colmena apply --on macchiato
+colmena apply --on espresso-0
+```
+
+Before I commit:
+
+```sh
+nix fmt
+nix flake check
+nix run .#check   # the checks that need network: kubeconform, tofu validate
+```
+
+Pushing to `main` deploys `gitops/espresso` to the cluster through Flux, so I
+only push when I mean it.
+
+After changing something in `../infra-secrets` and pushing it there:
+
+```sh
+nix flake update secrets
+```
+
+A new machine needs three things: a folder under `modules/hosts/`, a folder
+with the same name in `../infra-secrets/hosts/`, and its host key in
+`../infra-secrets/.sops.yaml`.
+
+## Installing a NixOS machine
+
+Ristretto, Forte, Macchiato, Cortado and the Espresso nodes all install the
+same way. The per-machine sections below only list what is different.
+
+Create an installer by downloading the minimal ISO image from the
+[NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
+an USB drive:
+
+```sh
+sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
+```
+
+Plug in the USB and boot to it, make sure secure boot keys are cleared or set
+to setup mode. Set a temporary password using the `passwd` command for SSH
+access. Run `ip a` to find the IP address. Alternatively connect the machine
+directly to a Mac with "Internet Sharing" enabled.
+
+Prepare these files in the repo folder (they are gitignored):
+
+- The LUKS passphrase in `./secret.key`.
+- The host SSH key in `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and
+  `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`.
+
+Then install. If prompted for a password, it is the temporary one from above:
+
+```sh
+nixos-anywhere --extra-files ./keys --flake .#HOST --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
+```
+
+After the first boot, add the Age key to `~/.config/sops/age/keys.txt` (my user
+key on the desktops, the admin key on the servers).
+
+On the desktops, clone and rebuild with the GitHub SSH private key:
+
+```sh
+GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' \
+  git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra
+GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' \
+  nh os switch
+```
+
+On the servers, deploy with `colmena apply --on HOST` instead.
+
+Last, enroll every LUKS volume for TPM auto unlock. The disks for each machine
+are listed in its section. Until that is done the machine asks for the
+passphrase on boot.
 
 ## Lungo (Nix-darwin Laptop)
 
-First install macOS normally by following the default installation on
-the mac. To access the installer hold the power button during boot to access
-recovery options. Then go through all the sections below for the initial setup.
+First install macOS normally by following the default installation on the mac.
+To access the installer hold the power button during boot to access recovery
+options.
 
-### Screenshot (Lungo)
-
-![Screenshot 2025-05-02 at 15 03 38](https://github.com/user-attachments/assets/381c8dce-f0d0-4a91-b38f-544c30a3209a)
-
-### Command line tools
-
-Install Xcode command line tools:
+Install Xcode command line tools and Rosetta:
 
 ```sh
 xcode-select --install
-```
-
-### Install Rosetta
-
-```sh
 softwareupdate --install-rosetta --agree-to-license
 ```
 
-### Install Nix
-
-Run the following command to install Nix:
+Install Nix:
 
 ```sh
 curl -sSf -L https://install.lix.systems/lix | sh -s -- install
 ```
 
-Then run these commmands to move away conflicting nix configuration left by the installer, and clean up the standalone lix launch daemon to prevent boot conflicts:
+Then move away the conflicting nix configuration left by the installer, and
+clean up the standalone lix launch daemon to prevent boot conflicts:
 
 ```sh
 sudo mv /etc/nix/nix.custom.conf{,.before-nix-darwin}
@@ -54,30 +125,19 @@ sudo launchctl bootout system /Library/LaunchDaemons/systems.lix.nix-installer.n
 sudo rm -f /Library/LaunchDaemons/systems.lix.nix-installer.nix-hook.plist
 ```
 
-### Clone infrastructure configuration (Lungo)
-
-Add the GitHub SSH private key:
+Add the GitHub SSH private key and clone:
 
 ```sh
 ssh-add ./private-key
-```
-
-Then clone the infrastructure configuration:
-
-```sh
 git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra
 ```
 
-### Initial Build (Lungo)
-
-Put the user secrets Age key to `~/.config/sops/age/keys.txt`.
-Build the system the first time using the following command:
+Put the user secrets Age key in `~/.config/sops/age/keys.txt` and build the
+system the first time:
 
 ```sh
 sudo nix --extra-experimental-features "nix-command flakes" run nix-darwin -- switch --flake $HOME/Projects/infra#lungo
 ```
-
-Later rebuilds can use the `nrs` alias.
 
 ### Keyboard daemon for kanata
 
@@ -86,7 +146,7 @@ Download the
 manually and install it. Kanata's macOS driver integration is built against
 that version's IPC; newer Karabiner DriverKit releases are not guaranteed to
 work. Afterwards make sure it is enabled in System Settings, General -> Login
-Items & Extensions -> Driver Extensions (At the bottom).
+Items & Extensions -> Driver Extensions (at the bottom).
 
 The Darwin module copies Kanata into `/Applications/Kanata.app` so macOS Privacy
 grants are attached to a stable app bundle instead of a changing Nix Store path.
@@ -107,121 +167,63 @@ virtual device is created when a root client such as Kanata requests it.
 
 ## Ristretto (NixOS/Windows Desktop)
 
-Create an installer by downloading the minimal ISO image from
-[NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
-an USB drive using the following command:
-
-```sh
-sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
-```
-
-Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
-with the path to your USB drive.
-
-Plug in the installer USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
-Set a temporary password using the `passwd` command for SSH access.
-You can run `ip a` to find the IP address.
-
-1. **Prepare Local Files**:
-   - Create LUKS passphrase file: `./secret.key`.
-   - Get host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
-
-2. **Run Install**:
-
-   ```sh
-   nixos-anywhere --extra-files ./keys --flake .#ristretto --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
-   ```
-
-3. **Post-Install**:
-   - Add user Age key to `~/.config/sops/age/keys.txt`).
-   - Clone the infrastructure configuration using the GitHub SSH private key: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
-   - Rebuild the configuration: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' nh os switch`.
-   - TPM auto unlock is enrolled later, after Windows is installed (see [Setup TPM auto unlock](#setup-tpm-auto-unlock)). Until then, NixOS will prompt for the LUKS passphrase on boot.
-
-### Screenshot (Ristretto)
-
-![Screenshot 2025-04-26 at 15 07 56](https://github.com/user-attachments/assets/cd56268b-93b1-4bfd-9c1f-2a999428dd6e)
+Install NixOS first with `--flake .#ristretto`, then Windows next to it. TPM
+auto unlock comes last, see [Setup TPM auto unlock](#setup-tpm-auto-unlock).
 
 ### Create Windows installer
 
-To create the installation ISO for Windows, we use Chris Titus Tech's Windows
+To create the installation ISO for Windows, I use Chris Titus Tech's Windows
 Utility to create a clean telemetry-free ISO that does not require a Microsoft
-account (This has to be run on a Windows machine or in a VM). The commands require
-administrator privileges, so make sure to run PowerShell as administrator.
+account (this has to be run on a Windows machine or in a VM). The commands
+require administrator privileges, so run PowerShell as administrator.
 
-First, enable execution of scripts in PowerShell:
+First, enable execution of scripts in PowerShell, then load the tool:
 
 ```sh
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-Then load the tool:
-
-```sh
 irm "https://christitus.com/win" | iex
 ```
 
-In the tool we can download the newest Windows ISO image from Microsoft.
-It then applies the modifications and flashes a USB drive.
+In the tool download the newest Windows ISO image from Microsoft. It then
+applies the modifications and flashes a USB drive.
 
 Go through the regular windows installation. When the installer asks for a
-name, enter `michaelbrusegard` (lowercase, no space) — Windows derives the
+name, enter `michaelbrusegard` (lowercase, no space), since Windows derives the
 `C:\Users\<name>` folder from this field.
 
 After installation has finished go to Windows Update and run it to make sure the
-system is updated.
-
-Also make sure to install updated drivers for the system, the download
-pages for the current system can be found below:
+system is updated. Also install updated drivers:
 
 - [Chipset and Motherboard](https://rog.asus.com/motherboards/rog-crosshair/rog-crosshair-viii-impact-model/helpdesk_download/)
 - [Processor and Graphics](https://www.amd.com/en/support/download/drivers.html)
 
 Lastly enable bitlocker for additional security.
 
-### Screenshot (Windows)
-
-![Screenshot 2025-06-14 at 19 55 23](https://github.com/user-attachments/assets/c56e99a1-d473-4817-b2ee-eaad579ac415)
-
 ### NixOS WSL
 
-First we need to build the NixOS WSL tarball. This can be done by running
-the following command on a nix machine:
+Build the NixOS WSL tarball on a nix machine:
 
 ```sh
 sudo nix run .#nixosConfigurations.ristretto-wsl.config.system.build.tarballBuilder
 ```
 
-This produces `nixos.wsl` in the current directory. Put it on a flash
-drive and copy it to the Windows machine.
+This produces `nixos.wsl` in the current directory. Put it on a flash drive and
+copy it to the Windows machine.
 
-Then start by installing Windows Subsystem for Linux (WSL) on Windows:
+Then install Windows Subsystem for Linux (WSL) on Windows:
 
 ```sh
 wsl --install --no-distribution
 ```
 
-Reboot the computer, connect the USB drive and move the `nixos.wsl` file over, install the NixOS WSL distro:
+Reboot the computer, move the `nixos.wsl` file over and install the distro:
 
 ```sh
 wsl --install --from-file nixos.wsl
 ```
 
-To enter the WSL environment, run:
-
-```sh
-wsl
-```
-
-Add the user Age key to `~/.config/sops/age/keys.txt`, then clone the
-infra repository using the GitHub SSH private key and rebuild:
-
-```sh
-GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' \
-  git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra
-GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' \
-  nh os switch
-```
+Enter it with `wsl`, add the user Age key to `~/.config/sops/age/keys.txt`,
+then clone and rebuild the same way as on the desktops.
 
 ### Applying system preferences and installing packages
 
@@ -237,7 +239,7 @@ In the Updates tab select "Security Settings" to prevent Windows Updates
 from automatically installing updates at the worst times.
 
 Then run the `setup.ps1` script from an **elevated PowerShell** (the script
-self-checks for admin and exits otherwise). It requires the NixOS WSL
+checks for admin itself and exits otherwise). It requires the NixOS WSL
 distro to be running so it can reach files via `\\wsl.localhost\NixOS\...`:
 
 ```sh
@@ -256,19 +258,19 @@ The script:
 - Applies registry tweaks (dark mode, taskbar, NumLock off,
   fast key repeat, no mouse acceleration, etc.).
 
-After running, load Voicemeeter Banana's saved layout manually — the
+After running, load Voicemeeter Banana's saved layout manually. The
 `desktop.xml` lives at
 `\\wsl.localhost\NixOS\home\michaelbrusegard\Projects\infra\windows\programs\voicemeeter\desktop.xml`.
 In Voicemeeter use **Menu → Load Settings** and point at that file.
 
 ### Setup TPM auto unlock
 
-Do this **after** Windows is installed and fully updated — Windows mutates
+Do this **after** Windows is installed and fully updated. Windows mutates
 Secure Boot state, shifting PCR 7 and breaking earlier enrollments. Run
-`lsblk` to map containers. `disk1` (24072T) holds three partitions —
-`part1` ESP, `part2` LUKS `crypted-swap`, `part3` LUKS `crypted1` (root);
+`lsblk` to map containers. `disk1` (24072T) holds three partitions:
+`part1` ESP, `part2` LUKS `crypted-swap`, `part3` LUKS `crypted1` (root).
 `disk2` (24057W) holds `part1` LUKS `crypted2`. All three LUKS volumes must
-be enrolled — missing `crypted1` (root) is what leaves you typing the
+be enrolled. Missing `crypted1` (root) is what leaves me typing the
 passphrase even after enrolling the others.
 
 ```sh
@@ -283,98 +285,27 @@ sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 \
 ## Forte (NixOS Laptop)
 
 ASUS ProArt P16 (H7606WW): AMD Ryzen AI iGPU + NVIDIA RTX 5080 mobile
-dGPU. Single LUKS NVMe, same install flow as Ristretto.
-
-Create an installer by downloading the minimal ISO image from
-[NixOS download page](https://nixos.org/download/#nixos-iso) and flashing it to
-an USB drive using the following command:
+dGPU. Single LUKS NVMe. Install with `--flake .#forte`, then enroll TPM auto
+unlock:
 
 ```sh
-sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
+sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-id/nvme-MTFDKBA2T0QGN-1BN1AABGA_25194FF55405-part2
+sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-id/nvme-MTFDKBA2T0QGN-1BN1AABGA_25194FF55405-part3
 ```
-
-Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
-with the path to your USB drive.
-
-Plug in the installer USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
-Set a temporary password using the `passwd` command for SSH access.
-You can run `ip a` to find the IP address.
-
-1. **Prepare Local Files**:
-   - Create LUKS passphrase file: `./secret.key`.
-   - Get host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
-
-2. **Run Install**:
-
-   ```sh
-   nixos-anywhere --extra-files ./keys --flake .#forte --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
-   ```
-
-3. **Post-Install**:
-   - Add user Age key to `~/.config/sops/age/keys.txt`.
-   - Clone the infrastructure configuration using the GitHub SSH private key: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' git clone git@github.com:michaelbrusegard/infra.git ~/Projects/infra`.
-   - Rebuild: `GIT_SSH_COMMAND='ssh -i /path/to/private-key -o IdentitiesOnly=yes -F /dev/null' nh os switch`.
-   - Enroll TPM auto unlock:
-
-     ```sh
-      sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-id/nvme-MTFDKBA2T0QGN-1BN1AABGA_25194FF55405-part2
-      sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-id/nvme-MTFDKBA2T0QGN-1BN1AABGA_25194FF55405-part3
-     ```
 
 ## Macchiato (NixOS Router)
 
-Create a minimal installer USB by downloading from [here](https://nixos.org/download/#nixos-iso)
-and flashing it to the drive using the following command:
-
-```sh
-sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
-```
-
-Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
-with the path to your USB drive.
-
-### Prepare the machine
-
-Plug in the USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
-Set a temporary password using the `passwd` command for SSH access.
-Run `ip a` to find the IP address on the machine.
-Alternatively connect it directy to a Mac with "Internet Sharing" enabled.
-
-### Install with NixOS Anywhere
-
-Copy the LUKS passphrase into this relative file: `./secret.key`.
-Do the same with the host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
-Run the following installation command, if prompted for a password, it is the temporary password created when preparing the machine.
-
-```sh
-nixos-anywhere --extra-files ./keys --flake .#macchiato --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
-```
-
-### Post install
-
-Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt user secrets.
-**Important:** Setup TPM auto unlock:
+Install with `--flake .#macchiato`. **Important:** setup TPM auto unlock before
+leaving it headless:
 
 ```sh
 sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
   /dev/disk/by-id/ata-INTEL_SSDSCKKW120H6_CVLY630102UX120H-part2
 ```
 
-Then deploy with colmena:
-
-```sh
-colmena apply --on macchiato
-```
-
 ## Cortado (NixOS Router)
 
-Follow the Macchiato installation steps, using the Cortado flake target:
-
-```sh
-nixos-anywhere --extra-files ./keys --flake .#cortado --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
-```
-
-After installation, enroll the encrypted disk for TPM auto unlock:
+Install with `--flake .#cortado`, then:
 
 ```sh
 sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
@@ -382,55 +313,16 @@ sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 \
 ```
 
 Port 6 is WAN. Ports 1–5 are the `10.0.15.0/24` LAN, with Cortado at
-`10.0.15.1`. Deploy updates with:
-
-```sh
-colmena apply --on cortado
-```
+`10.0.15.1`.
 
 ## Espresso (NixOS K3S Cluster)
 
 The Espresso setup consists of the nodes espresso-0, espresso-1 and espresso-2
-in a k3s cluster. So the following bootstrap has to be done for each of the nodes.
-It is important to do espresso-0 first so the cluster is bootstrapped.
+in a k3s cluster, so the install has to be done for each of the nodes with
+`--flake .#espresso-NODE`. It is important to do espresso-0 first so the
+cluster is bootstrapped.
 
-First create a minimal installer USB by downloading from [here](https://nixos.org/download/#nixos-iso)
-and flashing it to the drive using the following command:
-
-```sh
-sudo dd if=~/Downloads/YYY.iso of=/dev/XXX bs=4M status=progress oflag=sync
-```
-
-Replace `YYY.iso` with the name of the downloaded ISO file and `/dev/XXX`
-with the path to your USB drive.
-
-### Prepare the node
-
-Plug in the USB and boot to it, make sure secure boot keys are cleared or set to setup mode.
-Set a temporary password using the `passwd` command for SSH access.
-Run `ip a` to find the IP address on the machine.
-Alternatively connect it directy to a Mac with "Internet Sharing" enabled.
-
-### Install with NixOS Anywhere
-
-Copy the LUKS passphrase into this relative file: `./secret.key`.
-Do the same with the host SSH key: `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`
-Run the following installation command, if prompted for a password, it is the temporary password created when preparing the machine.
-
-```sh
-nixos-anywhere --extra-files ./keys --flake .#espresso-NODE --disk-encryption-keys /tmp/secret.key ./secret.key --build-on remote nixos@IP_ADDRESS
-```
-
-### Post install
-
-Add the admin Age key to `~/.config/sops/age/keys.txt`) to be able to decrypt
-user secrets, then deploy the node with colmena (substitute the node name):
-
-```sh
-colmena apply --on espresso-0
-```
-
-Setup TPM auto unlock for all the applicable disks.
+Then TPM auto unlock for all the disks.
 
 espresso-0:
 
@@ -474,13 +366,14 @@ hosts running a restic `rest-server` as LAN backup targets. Both pool their
 drives with mergerfs under `/srv/backup`, with numbered LUKS labels (`dN`), so
 adding a drive later is mechanical. They are flashed from a prebuilt SD image,
 not `nixos-anywhere`. The Pi has no TPM, so the external drives unlock from a
-LUKS keyfile stored as a sops secret — headless, but offers no protection if
-the whole Pi is stolen. Do each step per host, substituting the name.
+LUKS keyfile stored as a sops secret. That works headless, but offers no
+protection if the whole Pi is stolen. Do each step per host, substituting the
+name.
 
 ### Format the external drives
 
-Extract the LUKS key from `secrets.yaml` into `./secret.key` **byte-identically**
-— it must match what the host mounts with at `/run/secrets/luks/key`. Use
+Extract the LUKS key from `secrets.yaml` into `./secret.key` **byte-identically**.
+It must match what the host mounts with at `/run/secrets/luks/key`. Use
 `sops --extract` without adding a trailing newline (a stray `\n` makes the key
 48 bytes here but 47 at runtime, so the drive won't unlock):
 
@@ -533,7 +426,7 @@ Build on `ristretto`/`forte` (aarch64 binfmt), not `lungo`. The image is
 keyless; the host key is injected afterwards via a loopback mount so it never
 touches the nix store.
 
-1. **Prepare the host key**: place it at the same path nixos-anywhere uses —
+1. **Prepare the host key**: place it at the same path nixos-anywhere uses,
    `./keys/persistent/etc/ssh/ssh_host_ed25519_key` and
    `./keys/persistent/etc/ssh/ssh_host_ed25519_key.pub`. Ensure the private key
    is `0600`, or `ssh-keygen`/sshd reject it:
@@ -561,7 +454,7 @@ touches the nix store.
 
 4. **Inject the host key.** The NIXOS_SD partition (`p2`) mounts directly as
    `/persistent` at runtime, so a file at `$mnt/etc/ssh/...` becomes
-   `/persistent/etc/ssh/...` on the booted system — do **not** add a
+   `/persistent/etc/ssh/...` on the booted system. Do **not** add a
    `persistent/` level (that would land at `/persistent/persistent/...` and the
    key would never be found). The private key **must** be `0600 root:root`, or
    sshd rejects it and generates a different key, breaking sops decryption. Use

@@ -1,173 +1,65 @@
 # AGENTS.md
 
-## Purpose
+Personal multi-host Nix flake (NixOS, nix-darwin, Home Manager) plus the
+FluxCD-managed k3s cluster `espresso` under `gitops/`. Secrets live in the
+private sibling flake `../infra-secrets`, input `secrets`.
 
-Personal multi-host Nix flake. Manages NixOS, nix-darwin, and Home Manager,
-plus a FluxCD-managed Kubernetes cluster (`espresso`) under `gitops/`. Pairs
-with the private sibling flake `../infra-secrets` exposed as input `secrets`.
+## How the Nix code is wired
 
-## Hosts
+Every `.nix` file under `modules/` is a flake-parts module and is imported
+automatically. A new file needs no registration; a file or folder whose name
+starts with `_` is skipped.
 
-| Host               | Type          | Apply                           |
-| ------------------ | ------------- | ------------------------------- |
-| `lungo`            | nix-darwin    | `nh darwin switch`              |
-| `ristretto`        | NixOS desktop | `nh os switch`                  |
-| `forte`            | NixOS laptop  | `nh os switch`                  |
-| `ristretto-wsl`    | NixOS WSL     | `nh os switch`                  |
-| `macchiato`        | NixOS router  | `colmena apply --on macchiato`  |
-| `cortado`          | NixOS router  | `colmena apply --on cortado`    |
-| `leggero`          | NixOS RPi     | `colmena apply --on leggero`    |
-| `espresso-{0,1,2}` | NixOS k3s     | `colmena apply --on espresso-*` |
+- `modules/features/` — one file per feature. It sets
+  `flake.modules.<class>.<name>` for each class it supports (`nixos`, `darwin`,
+  `homeManager`), so the system and home halves of a feature sit together.
+- `modules/bundles/` — named sets of features (`base`, `server`, `desktop`…).
+- `modules/hosts/<name>/` — the host's `hosts.<name>` registry entry and its
+  module. System outputs, colmena nodes and the CI matrix all derive from the
+  registry in `modules/flake/hosts.nix`.
+- `modules/users/` — one file per account: system user and Home Manager profile.
+- `modules/flake/` — flake-level outputs: formatter, checks, dev shell.
+- `packages/`, `overlays/` — plain Nix, not modules.
+- `config/` — app state linked out of the store into this checkout. Moving it
+  breaks the running desktop until the next switch.
 
-`programs.nh` is wired to this flake on every system, so `nh` works without
-flags. First-time bare-metal installs use `nixos-anywhere` — see `README.md`.
+Reference a static file with a relative path literal next to the feature that
+uses it.
 
-`gitops/espresso/` is reconciled by FluxCD on push to `main`. Pushing is
-deploying — only push when the change is meant to roll out.
+## Checks
 
-## Structure
-
-- `flake.nix` — inputs, outputs, host wiring
-- `lib/` — flake helpers (`mkSystem`, `mkCluster`, `mkNode`)
-- `hosts/<name>/` — per-machine config
-- `modules/{common,nixos,darwin,home}/` — reusable modules, split by platform
-- `users/{michaelbrusegard,admin,deploy}/` — accounts + Home Manager profiles
-- `packages/`, `overlays/` — custom packages and overlay composition
-- `gitops/espresso/` — FluxCD + Kustomize + OpenTofu state for the k3s cluster
-- `config/` — static app configs consumed by Home Manager
-- `windows/` — Windows-side dotfiles
-
-### Cloudflare DNS
-
-Two declarative systems, split by record type — keep new records on the right
-side:
-
-- **OpenTofu** (`gitops/espresso/tofu/dns`, cloudflare provider) — static
-  infrastructure records: MX, TXT, DKIM, MTA-STS, and anything external-dns
-  can't express. Reconciled by tofu-controller.
-- **external-dns** (`DNSEndpoint` CRDs, `managedRecordTypes: [CNAME]`) — dynamic
-  per-service CNAMEs that point at `router.asgard.michaelbrusegard.com` (the
-  macchiato WAN dyndns A record). Zones it manages are listed in
-  `infrastructure/controllers/external-dns` `domainFilters`; add the zone there
-  before adding records for a new domain.
-
-## Commands
-
-### Tooling
-
-`.envrc` runs `use flake`, so direnv auto-loads the dev shell on `cd` into
-the repo. Without direnv, run `nix develop`. Either way you get `age`, `sops`,
-`go`, `kubectl`, `kustomize`, `fluxcd`, `opentofu`, `jq`, `yq-go`.
-
-`gh` comes from Home Manager, not the dev shell. It authenticates through
-`~/.config/gh/hosts.yml`, which sops-nix renders from the GitHub token.
-
-### Quality
+Run all three before calling a change done. Each failure message says what to
+fix.
 
 ```sh
-nix fmt                     # treefmt: alejandra + statix + deadnix
-nix flake check --show-trace
+nix fmt            # format and autofix every language
+nix flake check    # lint rules, tests, secret scan, host evaluation
+nix run .#check    # needs network: manifest schemas, tofu validate
 ```
 
-### Validate without applying
+When you are corrected on something a machine could have caught, add the rule
+under `lint/rules/` or a script under `gitops/espresso/tests/` in the same
+change, and keep prose here for judgment calls.
 
-```sh
-nix build .#nixosConfigurations.<host>.config.system.build.toplevel --dry-run
-nix build .#darwinConfigurations.lungo.system --dry-run
-colmena build --on <node>
-```
+Comments are banned in Go and Python. In Nix and YAML a comment states a
+reason the code cannot show; a `TODO` carries a link.
 
-When touching `gitops/`:
+## Boundaries
 
-```sh
-bash gitops/espresso/tests/tofu-approval.sh
-kustomize build gitops/espresso | kubeconform -strict -ignore-missing-schemas \
-  -schema-location default \
-  -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
-```
-
-When touching `*.tf` under `gitops/espresso/tofu/<stack>`:
-
-```sh
-tofu -chdir=gitops/espresso/tofu/<stack> fmt -check
-tofu -chdir=gitops/espresso/tofu/<stack> init -backend=false
-tofu -chdir=gitops/espresso/tofu/<stack> validate
-```
-
-### Sibling secrets repo
-
-```sh
-nix run .#fmt-infra-secrets    # treefmt on ../infra-secrets
-nix run .#lint-infra-secrets   # treefmt + statix + deadnix on ../infra-secrets
-```
-
-Pull in new commits from the secrets flake (after they land on its `main`):
-
-```sh
-nix flake update secrets   # bumps just the secrets input in flake.lock
-```
-
-Commit the resulting `flake.lock` change as `chore(flake): bump secrets`
-(or describe the _why_ if it's tied to a specific feature).
-
-## Rules
-
-- Run `nix fmt` and `nix flake check --show-trace` before considering a change
-  done.
-- Match existing module style; modules are split by platform under `modules/`.
-- Don't add dependencies without a clear reason.
-- Anything sensitive belongs in `../infra-secrets`. Never write plaintext
-  secrets here.
-- Commit freely; **never push without being asked**. Pushes to `main` trigger
-  CI for the whole flake and roll out `gitops/espresso/` to the cluster via
-  FluxCD.
-- Merging a PR into `main` deploys the same way, so treat it as a production
-  change. Under `full-send`, stop before merging and ask, as `full-stop` would.
-- **Never create public GitHub artifacts without being asked.** This covers
-  issues, pull requests, comments, releases, gists, and discussions on any
-  repo — mine or third-party. Read operations (`gh api …`, `gh issue list`,
-  `gh pr view`, fetching docs) are fine.
+- Pushing or merging to `main` deploys `gitops/espresso` through Flux and is a
+  production change. Commit freely on the task branch; push, merge and apply
+  (`nh`, `colmena`) only when asked.
+- Create public GitHub artifacts (issues, PRs, comments, releases) only when
+  asked. Reading is fine.
+- Anything sensitive goes in `../infra-secrets` through `sops`.
+- Adding a host or a cluster app: use the `add-host` and `add-espresso-app`
+  skills.
 
 ## Commits
 
-Follow Conventional Commits strictly. Improve on past history where it was
-loose.
-
-Format:
-
-```
-<type>(<scope>): <subject>
-
-[optional body explaining *why*, wrapped ~72 chars]
-```
-
-- **Subject**: imperative, lowercase, ≤72 chars, no trailing period.
-- **Body**: include one whenever the _why_ isn't obvious from the subject. The
-  diff already shows the _what_.
-- **Types**: `feat`, `fix`, `refactor`, `perf`, `docs`, `chore`, `ci`, `build`,
-  `revert`. `chore(deps)` is reserved for Renovate.
-- **Scope**: prefer one whenever the change is local to a slice. Common scopes:
-  - Platform: `darwin`, `nixos`, `home`, `common`
-  - Host/cluster: `lungo`, `ristretto`, `forte`, `macchiato`, `leggero`, `espresso`
-  - Area: `flake`, `lib`, `gitops`, `tofu`, `cli`, `neovim`, `hyprland`
-
-Good:
-
-- `feat(darwin): switch to aerospace for tiling`
-- `fix(nh): correct double-gc configuration on darwin`
-- `refactor(home): split cli modules by user scope`
-- `feat(espresso): add tofu-controller credentials`
-- `chore(flake): bump secrets`
-
-Bad:
-
-- `update flake.nix`
-- `fix bug`
-- `feat: stuff` (missing scope and why)
-
-Commit freely. Don't push unless explicitly asked.
-
-## Keep this file useful
-
-If you add a host, change directory layout, change apply commands, or alter
-formatting/lint tooling — update this file in the same commit.
+Conventional Commits, checked by `nix run .#check-commits -- <range>`. Use a
+scope when the change is local to one slice: a platform (`nixos`, `darwin`,
+`home`), a host or cluster name, or an area (`flake`, `gitops`, `tofu`,
+`neovim`). Write a body whenever the reason is not obvious from the subject.
+`chore(deps)` is reserved for Renovate; a secrets lock bump is
+`chore(flake): bump secrets`.

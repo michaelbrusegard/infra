@@ -67,6 +67,18 @@
   nixosHosts = lib.filterAttrs (_: host: !isDarwin host) config.hosts;
   darwinHosts = lib.filterAttrs (_: isDarwin) config.hosts;
   deployHosts = lib.filterAttrs (_: host: host.deploy != null) config.hosts;
+
+  ciHost = name: host: {
+    inherit name;
+    runner =
+      if isDarwin host
+      then "macos-latest"
+      else "ubuntu-24.04";
+    attribute =
+      if isDarwin host
+      then "darwinConfigurations.${name}.system"
+      else "nixosConfigurations.${name}.config.system.build.toplevel";
+  };
 in {
   options.hosts = mkOption {
     default = {};
@@ -104,6 +116,9 @@ in {
   };
 
   config.flake = {
+    ci.hosts = lib.mapAttrsToList (_: names: ciHost (lib.head names) config.hosts.${lib.head names}) (
+      lib.groupBy (name: config.hosts.${name}.configuration) (lib.attrNames config.hosts)
+    );
     nixosConfigurations = lib.mapAttrs mkNixos nixosHosts;
     darwinConfigurations = lib.mapAttrs mkDarwin darwinHosts;
     colmena =
