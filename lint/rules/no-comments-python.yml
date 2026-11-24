@@ -4,7 +4,8 @@ severity: error
 message: Comments are banned in Python because they go stale. Delete this comment; express its intent in a name, a type or a test, or in a docstring if it documents a public contract.
 note: |
   Allowed: a shebang on the first line, and tool directives such as
-  `# noqa`, `# type:`, `# pragma`, `# fmt:` and `# ruff:`.
+  `# noqa`, `# type:`, `# pragma`, `# fmt:` and `# ruff:`, and SPDX
+  licence headers.
 rule:
   kind: comment
   not:
@@ -15,3 +16,4 @@ rule:
           - inside:
               kind: module
       - regex: '\A#\s*(noqa\b|type:|pragma\b|fmt:|ruff:|shellcheck\b)'
+      - regex: '\A# SPDX-License-Identifier: '
