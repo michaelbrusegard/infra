@@ -267,8 +267,11 @@
           # Allow client devices to reach IoT devices.
           iifname "br_clients" oifname "iot" accept
 
-          # IoT network: internet only, no access to internal subnets.
+          # IoT network: internet only, resolving through this router. Outside
+          # DNS is dropped so a device cannot bypass blocky with its own resolver.
+          iifname "iot" oifname "${wanInterface}" meta l4proto { tcp, udp } th dport { 53, 853 } drop
           iifname "iot" oifname "${wanInterface}" accept
+          # Internal subnets are blocked by the default-drop policy.
 
           # Guest network: internet only, no access to internal subnets.
           # Internal traffic is blocked by the default-drop policy.

@@ -17,12 +17,10 @@
     ["udp" 51820 "services.netbird.clients.default.port"]
   ];
 
-  # Destinations the IoT VLAN may reach on the internet.
   iotEgress = [
-    ["tcp" 80]
     ["tcp" 443]
+    ["tcp" 7000]
     ["udp" 123]
-    ["udp" 443]
   ];
 in
   pkgs.testers.runNixOSTest {
@@ -150,10 +148,8 @@ in
           ])
 
       with subtest("iot"):
-          egress = {
-              "tcp": 'iifname "iot" oifname "enp7s0" tcp dport { 80, 443 } accept',
-              "udp": 'iifname "iot" oifname "enp7s0" udp dport { 123, 443 } accept',
-          }
+          egress = dict.fromkeys(("tcp", "udp"), 'iifname "iot" oifname "enp7s0" accept')
+          outside_dns = 'iifname "iot" oifname "enp7s0" th dport { 53, 853 } drop'
           isolated = "default-drop forward policy keeps iot out of br_lan"
           check(iot, [
               allow(f"{egress[proto]}; {masquerade}", proto, internet4, port, peers=[wan4])
@@ -162,6 +158,11 @@ in
               allow(f"{egress['tcp']}; {native}", "tcp", internet6, 443, peers=addresses(iot, "tagged", 6)),
               deny(isolated, "tcp", lan4, 7000),
               deny(isolated, "tcp", lan6, 7000),
+              deny(outside_dns, "tcp", internet4, 53),
+              deny(outside_dns, "udp", internet4, 53),
+              deny(outside_dns, "tcp", internet4, 853),
+              deny(outside_dns, "tcp", internet6, 53),
+              deny(outside_dns, "udp", internet6, 53),
               allow("firewall.interfaces.iot allows DNS", "tcp", "10.0.17.1", 53),
               deny("openssh.openFirewall = false keeps SSH off iot", "tcp", "10.0.17.1", ${toString sshPort}),
               deny("openssh.openFirewall = false keeps SSH off iot", "tcp", "10.0.15.1", ${toString sshPort}),

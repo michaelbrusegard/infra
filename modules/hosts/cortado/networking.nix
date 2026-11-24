@@ -132,11 +132,11 @@
           iifname "${lanBridge}" oifname "${iotInterface}" accept
           iifname "${netbirdInterface}" oifname { "${lanBridge}", "${iotInterface}", "${wanInterface}" } accept
 
-          # IoT network: internet only, and no external resolvers. Reaching the
-          # trusted network is blocked by the default-drop policy.
-          iifname "${iotInterface}" oifname "${wanInterface}" tcp dport { 80, 443 } accept
-          iifname "${iotInterface}" oifname "${wanInterface}" udp dport { 123, 443 } accept
-          iifname "${iotInterface}" oifname "${wanInterface}" meta l4proto ipv6-icmp accept
+          # IoT network: internet only, resolving through this router. Outside
+          # DNS is dropped so a device cannot bypass blocky with its own resolver.
+          iifname "${iotInterface}" oifname "${wanInterface}" meta l4proto { tcp, udp } th dport { 53, 853 } drop
+          iifname "${iotInterface}" oifname "${wanInterface}" accept
+          # Reaching the trusted network is blocked by the default-drop policy.
         '';
 
         interfaces = {

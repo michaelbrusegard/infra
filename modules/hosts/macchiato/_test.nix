@@ -281,6 +281,16 @@ in
                   deny(f"firewall.interfaces.{zone} allows only DNS and DHCP", "tcp", "10.0.186.1", 4000),
               ])
 
+      with subtest("iot resolves only through the router"):
+          outside_dns = 'iifname "iot" oifname "enp2s0" th dport { 53, 853 } drop'
+          check(iot, [
+              deny(outside_dns, "tcp", "198.51.100.1", 53),
+              deny(outside_dns, "udp", "198.51.100.1", 53),
+              deny(outside_dns, "tcp", "198.51.100.1", 853),
+              deny(outside_dns, "tcp", internet6, 53),
+              deny(outside_dns, "udp", internet6, 53),
+          ])
+
       with subtest("WAN"):
           forwarded = []
           for rule, proto, port, target4, target6 in forwards:
