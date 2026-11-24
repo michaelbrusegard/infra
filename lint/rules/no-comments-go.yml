@@ -1,0 +1,19 @@
+id: no-comments-go
+language: go
+severity: error
+message: Comments are banned in Go because they go stale. Delete this comment; express its intent in a name, a type or a test.
+note: |
+  Allowed: compiler and tool directives (`//go:`, `//export`, `//line`,
+  `// +build`, `//nolint`), generated-file markers
+  (`// Code generated ... DO NOT EDIT.`) and the cgo preamble above
+  `import "C"`.
+rule:
+  kind: comment
+  not:
+    any:
+      - regex: '\A//(go:|export |line |extern |nolint\b)'
+      - regex: '\A// \+build '
+      - regex: '\A// Code generated .* DO NOT EDIT\.\z'
+      - precedes:
+          kind: import_declaration
+          regex: '\Aimport "C"\z'
