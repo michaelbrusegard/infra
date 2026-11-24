@@ -130,6 +130,8 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Test AI usage dashboard and ClickHouse permissions
         run: python3 gitops/espresso/tests/ai-usage.py
+      - name: Test conversation normalisation against ClickHouse
+        run: nix develop --command python3 gitops/espresso/tests/llm-conversations.py
       - name: Test Hermes tunnel routing and fail-closed behavior
         # Root avoids Ubuntu's unprivileged user-namespace restrictions. The
         # test changes routes only inside disposable network namespaces.

@@ -1117,6 +1117,8 @@ class ClusterJob:
             if ready == 2:
                 break
             time.sleep(1)
+        else:
+            raise RuntimeError(run("docker", "logs", self.container).stdout)
 
     def normalize(self, mode, *env):
         return run(
