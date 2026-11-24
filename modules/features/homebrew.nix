@@ -48,12 +48,12 @@
         "xcodes"
       ];
       casks = [
-        # TODO: re-enable once the upstream homebrew-cask scribus definition
+        # TODO: re-add "scribus" once the upstream homebrew-cask definition
+        # (https://github.com/Homebrew/homebrew-cask/blob/main/Casks/s/scribus.rb)
         # stops declaring conflicting `depends_on macos` (on_arm/on_intel
         # versions plus a bare `depends_on :macos`), which brew rejects with
         # "Only a single 'depends_on macos' is allowed". The nixpkgs scribus
         # is also marked broken on darwin, so there's no Nix fallback.
-        # "scribus"
       ];
       # Brew Bundle refuses to load third-party formulae and casks unless their
       # tap is trusted, and the trust option has no nix-darwin equivalent. The

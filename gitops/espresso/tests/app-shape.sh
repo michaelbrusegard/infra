@@ -5,7 +5,7 @@ set -euo pipefail
 # a backup. Exemptions are "app|piece|reason", where piece is one of
 # namespace, network-policy or backup.
 exemptions=(
-  "netbird|namespace|the netbird-operator controller creates the namespace before the app is applied; apps/netbird/namespace.yaml is not in the kustomization"
+  "netbird|namespace|infrastructure/controllers/netbird-operator owns the netbird namespace, which the operator and the app share"
   "ollama|backup|the PVC only caches nomic-embed-text, which the model-pull init container re-downloads"
   "searxng|network-policy|runs with hostNetwork for IPv6 source rotation, so pod policies do not apply; the Cilium host firewall covers it"
   "searxng|backup|stateless Deployment with only emptyDir volumes"
