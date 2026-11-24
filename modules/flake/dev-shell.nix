@@ -5,6 +5,7 @@
     devShells.default = pkgs.mkShell {
       packages = with pkgs; [
         age
+        ast-grep
         bind
         fluxcd
         git
