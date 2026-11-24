@@ -371,6 +371,12 @@ in {
           ]
         );
 
+      # Opening the macOS app bundle skips the t3code wrapper, but T3 also reads
+      # this telemetry opt-out from the login shell.
+      sessionVariables = lib.mkIf (!isWsl) {
+        T3CODE_TELEMETRY_ENABLED = "false";
+      };
+
       file =
         {
           # Claude writes this file itself, so replace its mutable copy when

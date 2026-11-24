@@ -54,6 +54,8 @@ in {
     # Session rollouts stay: resume needs them and Codex has no switch for them.
     analytics.enabled = false;
     feedback.enabled = false;
+    # Statsig is the exporter behind those metrics, sent to ab.chatgpt.com.
+    otel.metrics_exporter = "none";
     history.persistence = "none";
   };
 }

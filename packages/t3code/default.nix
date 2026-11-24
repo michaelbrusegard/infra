@@ -18,10 +18,13 @@ symlinkJoin {
   nativeBuildInputs = [makeWrapper];
   # Keep providers available to both the GUI and headless server. The upstream
   # binary release includes its own resource monitor and disables auto-updates.
+  # The telemetry switch stops PostHog analytics and the relay traces sent to
+  # Axiom.
   postBuild =
     ''
       for program in "$out/bin/"*; do
         wrapProgram "$program" \
+          --set T3CODE_TELEMETRY_ENABLED false \
           --prefix PATH : ${lib.makeBinPath [claude-code codex opencode pi-coding-agent gh git]}
       done
     ''
