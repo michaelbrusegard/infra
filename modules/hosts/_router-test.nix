@@ -319,7 +319,7 @@ in {
             for host in router_addresses
         ]
         hidden = [
-            deny(f"{proto}/{port} listens on {router.name} but is not opened on WAN", proto, host, port)
+            deny(f"{proto}/{port} listens on {router.name} and must stay closed from WAN", proto, host, port)
             for proto, port in sorted(listening(router) - set(opened) - set(forwarded))
             for host in router_addresses + internal_addresses
         ]
