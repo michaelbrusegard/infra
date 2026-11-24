@@ -2,7 +2,6 @@
   flake.modules.nixos.netbird = {
     config,
     lib,
-    isWsl,
     users,
     ...
   }: {
@@ -33,10 +32,8 @@
       ];
     };
 
-    environment.persistence = lib.optionalAttrs (!isWsl) {
-      "/persistent".directories = [
-        config.services.netbird.clients.default.dir.state
-      ];
-    };
+    environment.persistence."/persistent".directories = [
+      config.services.netbird.clients.default.dir.state
+    ];
   };
 }

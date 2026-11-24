@@ -13,14 +13,13 @@
     inherit name;
     inherit (host) users;
     inherit (inputs) nixos-raspberrypi;
-    hostConfig = host.secrets;
     isWsl = host.platform == "wsl";
   };
 
   modulesFor = class: host:
     [
       config.flake.modules.${class}.${host.configuration}
-      inputs.secrets."${class}Modules".secrets
+      inputs.secrets."${class}Modules".${host.secrets}
     ]
     ++ map (user: config.flake.modules.${class}.${user}) host.users;
 

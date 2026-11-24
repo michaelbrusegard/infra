@@ -4,8 +4,8 @@
     lib,
     pkgs,
     isWsl,
+    osConfig,
     homePersistenceRoot ? null,
-    localTimeZone ? "UTC",
     ...
   }: let
     enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
@@ -44,8 +44,8 @@
       programs.khal = {
         enable = true;
         locale = {
-          default_timezone = localTimeZone;
-          local_timezone = localTimeZone;
+          default_timezone = osConfig.time.timeZone;
+          local_timezone = osConfig.time.timeZone;
           firstweekday = 0;
           weeknumbers = "left";
         };

@@ -3,7 +3,7 @@
     services.kanata = {
       enable = true;
       keyboards.default = {
-        configFile = ../../config/kanata/linux.kbd;
+        configFile = ./linux.kbd;
         # TCP server (localhost) so the game-mode watcher can switch to the
         # nomods layer while gaming. Harmless when unused.
         port = 5829;
@@ -23,7 +23,7 @@
     stableKanata = "${kanataApp}/Contents/MacOS/kanata";
     stableKeyboardWatcherDir = "/Library/Application Support/Kanata";
     stableKeyboardWatcher = "${stableKeyboardWatcherDir}/keyboard-watcher";
-    kanataConfig = ../../config/kanata/darwin.kbd;
+    kanataConfig = ./darwin.kbd;
     openssl = lib.getExe pkgs.openssl;
     # An ad-hoc signature pins the Input Monitoring grant to the binary's
     # cdhash, so every kanata rebuild silently revoked it. Sign with a

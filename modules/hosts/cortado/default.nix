@@ -6,27 +6,11 @@
   };
 
   flake.modules.nixos.cortado = {
-    imports = [
-      inputs.self.modules.nixos.blocky
-      inputs.self.modules.nixos.boot
-      inputs.self.modules.nixos.console
-      inputs.self.modules.nixos.cloudflare-dyndns
-      inputs.self.modules.nixos.disable-documentation
-      inputs.self.modules.nixos.disko
-      inputs.self.modules.nixos.home-assistant
-      inputs.self.modules.nixos.impermanence
-      inputs.self.modules.nixos.lanzaboote
-      inputs.self.modules.nixos.locale
-      inputs.self.modules.nixos.netbird
-      inputs.self.modules.nixos.netbird-relay
-      inputs.self.modules.nixos.networking
-      inputs.self.modules.nixos.nh
-      inputs.self.modules.nixos.nix
-      inputs.self.modules.nixos.openssh
-      inputs.self.modules.nixos.security
-      inputs.self.modules.nixos.unifi
-      inputs.self.modules.nixos.watchdog
-      inputs.self.modules.nixos.smtp-backup
+    imports = with inputs.self.modules.nixos; [
+      router
+      home-assistant
+      netbird-relay
+      smtp-backup
     ];
 
     time.timeZone = "America/Los_Angeles";

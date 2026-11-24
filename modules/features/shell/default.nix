@@ -42,7 +42,7 @@
           fi
         '')
         (lib.mkOrder 1000 ''
-          source ${../../config/shell/p10k.zsh}
+          source ${./p10k.zsh}
           bindkey -v
           export KEYTIMEOUT=1
           bindkey '^Y' autosuggest-accept

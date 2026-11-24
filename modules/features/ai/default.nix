@@ -10,7 +10,7 @@
     # Skill scripts such as babysit-pr's pr-wait use `#!/usr/bin/env python3`,
     # which NixOS cannot resolve outside a dev shell.
     skillsDir = pkgs.runCommand "agent-skills" {buildInputs = [pkgs.python3];} ''
-      cp -r ${../../config/skills} "$out"
+      cp -r ${./skills} "$out"
       chmod -R u+w "$out"
       patchShebangs "$out"
     '';
@@ -23,8 +23,8 @@
           source = "${skillsDir}/${name}";
           inherit recursive;
         })
-      (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ../../config/skills));
-    agentInstructions = ../../config/AGENTS.md;
+      (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./skills));
+    agentInstructions = ./instructions.md;
     cliproxy = {
       baseUrl = "https://ai.asgard.michaelbrusegard.com";
       # A non-secret placeholder: NetBird authenticates the device and injects

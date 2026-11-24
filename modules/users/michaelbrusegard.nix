@@ -39,38 +39,38 @@
   };
 
   flake.modules.homeManager.michaelbrusegard = {
-    imports = [
-      inputs.self.modules.homeManager.catppuccin
-      inputs.self.modules.homeManager.ai
-      inputs.self.modules.homeManager.cli-core
-      inputs.self.modules.homeManager.cli-extras
-      inputs.self.modules.homeManager.cli-desktop
-      inputs.self.modules.homeManager.cloud-credentials
-      inputs.self.modules.homeManager.desktop-apps
-      inputs.self.modules.homeManager.dev
-      inputs.self.modules.homeManager.dms
-      inputs.self.modules.homeManager.dux-files
-      inputs.self.modules.homeManager.freecad
-      inputs.self.modules.homeManager.gaming
-      inputs.self.modules.homeManager.git
-      inputs.self.modules.homeManager.gnome-keyring
-      inputs.self.modules.homeManager.groupware
-      inputs.self.modules.homeManager.helium
-      inputs.self.modules.homeManager.helix
-      inputs.self.modules.homeManager.hyprland
-      inputs.self.modules.homeManager.launchd
-      inputs.self.modules.homeManager.k8s
-      inputs.self.modules.homeManager.kitty
-      inputs.self.modules.homeManager.mpv
-      inputs.self.modules.homeManager.neovim
-      inputs.self.modules.homeManager.nix-tools
-      inputs.self.modules.homeManager.pentest
-      inputs.self.modules.homeManager.scripts
-      inputs.self.modules.homeManager.shell
-      inputs.self.modules.homeManager.slicer
-      inputs.self.modules.homeManager.ssh
-      inputs.self.modules.homeManager.xdg
-      inputs.self.modules.homeManager.zathura
+    imports = with inputs.self.modules.homeManager; [
+      catppuccin
+      ai
+      cli-core
+      cli-extras
+      cli-desktop
+      cloud-credentials
+      desktop-apps
+      dev
+      dms
+      dux-files
+      freecad
+      gaming
+      git
+      gnome-keyring
+      groupware
+      helium
+      helix
+      hyprland
+      launchd
+      k8s
+      kitty
+      mpv
+      neovim
+      nix-tools
+      pentest
+      scripts
+      shell
+      slicer
+      ssh
+      xdg
+      zathura
     ];
 
     home.stateVersion = "25.11";

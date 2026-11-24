@@ -1,7 +1,6 @@
 {inputs, ...}: {
   flake.modules.nixos.home-manager = {
     options,
-    config,
     users,
     isWsl,
     ...
@@ -26,11 +25,6 @@
         if options.environment ? persistence
         then "/persistent"
         else null;
-      # Wrap user-level game launchers to render on the NVIDIA dGPU (forte).
-      nvidiaOffload = config.local.gaming.nvidiaOffload or false;
-      # Run launchers under gamemoderun so games trigger GameMode automatically.
-      gamemodeRun = config.programs.gamemode.enable or false;
-      localTimeZone = config.time.timeZone;
     };
 
     home-manager.users = builtins.listToAttrs (
@@ -48,7 +42,6 @@
   };
 
   flake.modules.darwin.home-manager = {
-    config,
     users,
     isWsl,
     ...
@@ -68,7 +61,6 @@
     home-manager.extraSpecialArgs = {
       inherit isWsl;
       homePersistenceRoot = null;
-      localTimeZone = config.time.timeZone;
     };
 
     home-manager.users = builtins.listToAttrs (

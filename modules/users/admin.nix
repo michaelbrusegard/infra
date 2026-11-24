@@ -15,14 +15,14 @@
   };
 
   flake.modules.homeManager.admin = {
-    imports = [
-      inputs.self.modules.homeManager.catppuccin
-      inputs.self.modules.homeManager.cli-core
-      inputs.self.modules.homeManager.git
-      inputs.self.modules.homeManager.k8s
-      inputs.self.modules.homeManager.neovim
-      inputs.self.modules.homeManager.shell
-      inputs.self.modules.homeManager.yazi
+    imports = with inputs.self.modules.homeManager; [
+      catppuccin
+      cli-core
+      git
+      k8s
+      neovim
+      shell
+      yazi
     ];
 
     home.stateVersion = "25.11";

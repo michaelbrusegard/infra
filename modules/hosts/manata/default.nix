@@ -7,22 +7,8 @@
   };
 
   flake.modules.nixos.manata = {lib, ...}: {
-    imports = [
-      inputs.self.modules.nixos.boot
-      inputs.self.modules.nixos.console
-      inputs.self.modules.nixos.disable-documentation
-      inputs.self.modules.nixos.impermanence
-      inputs.self.modules.nixos.locale
-      inputs.self.modules.nixos.networking
-      inputs.self.modules.nixos.nh
-      inputs.self.modules.nixos.nix
-      inputs.self.modules.nixos.openssh
-      inputs.self.modules.nixos.prometheus
-      inputs.self.modules.nixos.restic-server
-      inputs.self.modules.nixos.sd-grow
-      inputs.self.modules.nixos.security
-      inputs.self.modules.nixos.watchdog
-      inputs.self.modules.nixos.zsh-admin-rc
+    imports = with inputs.self.modules.nixos; [
+      backup-server
     ];
 
     time.timeZone = "Europe/Oslo";

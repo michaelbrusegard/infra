@@ -53,11 +53,12 @@
     lib,
     config,
     isWsl,
+    osConfig,
     homePersistenceRoot ? null,
-    nvidiaOffload ? false,
-    gamemodeRun ? false,
     ...
   }: let
+    nvidiaOffload = osConfig.local.gaming.nvidiaOffload or false;
+    gamemodeRun = osConfig.programs.gamemode.enable or false;
     enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
 
     gamemoderun = lib.getExe' pkgs.gamemode "gamemoderun";

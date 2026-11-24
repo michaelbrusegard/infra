@@ -18,29 +18,13 @@
       };
     };
   in {
-    imports = [
-      inputs.self.modules.nixos.alloy
-      inputs.self.modules.nixos.boot
-      inputs.self.modules.nixos.blocky
-      inputs.self.modules.nixos.catppuccin
-      inputs.self.modules.nixos.console
-      inputs.self.modules.nixos.cloudflare-dyndns
-      inputs.self.modules.nixos.disable-documentation
-      inputs.self.modules.nixos.disko
-      inputs.self.modules.nixos.homebridge
-      inputs.self.modules.nixos.home-manager
-      inputs.self.modules.nixos.impermanence
-      inputs.self.modules.nixos.lanzaboote
-      inputs.self.modules.nixos.locale
-      inputs.self.modules.nixos.netbird
-      inputs.self.modules.nixos.networking
-      inputs.self.modules.nixos.nh
-      inputs.self.modules.nixos.nix
-      inputs.self.modules.nixos.openssh
-      inputs.self.modules.nixos.security
-      inputs.self.modules.nixos.unifi
-      inputs.self.modules.nixos.wake-on-lan
-      inputs.self.modules.nixos.watchdog
+    imports = with inputs.self.modules.nixos; [
+      router
+      alloy
+      catppuccin
+      homebridge
+      home-manager
+      wake-on-lan
     ];
 
     time.timeZone = "Europe/Oslo";

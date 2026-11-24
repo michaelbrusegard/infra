@@ -116,7 +116,7 @@
             bitdepth = 10;
             # The factory panel ICC drives color and overrides any `cm` preset, so
             # there is no `cm` here on purpose.
-            icc = "${../../../config/color-profiles/H7606WW_1002_834C420E_CMDEF.icm}";
+            icc = "${./H7606WW_1002_834C420E_CMDEF.icm}";
           }
           {
             output = "";
