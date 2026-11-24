@@ -32,9 +32,13 @@ Each failure message says what to fix.
 
 ```sh
 nix run .#lint     # seconds: format, lint rules, secret scan. Run it often.
-nix flake check    # minutes: the above plus tests and every host. Before done.
+nix run .#verify   # about a minute: every flake check and every host, in parallel.
 nix run .#check    # needs network: manifest schemas, tofu validate. For gitops/.
 ```
+
+Run `verify` before calling a change done, and `check` as well when `gitops/`
+changed. `nix flake check` covers the same ground as `verify` but evaluates the
+hosts one at a time, which takes more than twice as long.
 
 To see what a change does instead of reading its source:
 
