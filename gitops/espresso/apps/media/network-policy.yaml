@@ -58,7 +58,6 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-    # Intra-namespace
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: media

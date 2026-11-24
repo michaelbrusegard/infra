@@ -44,7 +44,6 @@ spec:
             - port: "3001"
               protocol: TCP
   egress:
-    # DNS
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
