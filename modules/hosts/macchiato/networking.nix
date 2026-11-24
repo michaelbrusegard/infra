@@ -277,6 +277,10 @@
             # have their internet traffic forwarded out via WAN (NAT masquerade).
             iifname "vpn_clients" oifname "${wanInterface}" accept
 
+            # Stated here so client internet access does not hinge on the accept
+            # rule the NAT module adds for its internal interfaces.
+            iifname "br_clients" oifname "${wanInterface}" accept
+
             # Allow servers to initiate connections to client devices when needed.
             iifname "br_servers" oifname "br_clients" accept
 
@@ -300,8 +304,10 @@
             iifname "guest" oifname "${wanInterface}" accept
           '';
 
-          # SSH is opened separately by openssh module's openFirewall = true
+          # SSH stays reachable from the WAN. The trusted interfaces reach it
+          # anyway, and guest and IoT get DHCP and DNS only.
           interfaces = {
+            ${wanInterface}.allowedTCPPorts = config.services.openssh.ports;
             # IoT devices need DHCP and DNS from the router, nothing else
             "iot" = {
               allowedTCPPorts = [ 53 ];
@@ -397,6 +403,9 @@
 
         # Bind Homebridge to the client VLAN so HomeKit devices can discover it
         avahi.allowInterfaces = [ "br_clients" ];
+        # br_clients is trusted, so mDNS needs no port opened on the others.
+        avahi.openFirewall = false;
+        openssh.openFirewall = lib.mkForce false;
         homebridge.settings.bridge.bind = [ "10.0.186.1" ];
 
         # DHCP-only server (port = 0 disables DNS; blocky handles DNS instead)

@@ -119,12 +119,7 @@ let
     [
       "tcp"
       sshPort
-      "services.openssh.openFirewall"
-    ]
-    [
-      "udp"
-      5353
-      "services.avahi.openFirewall"
+      "firewall.interfaces.enp2s0 allows SSH"
     ]
     [
       "udp"
@@ -375,6 +370,7 @@ pkgs.testers.runNixOSTest {
                 deny(isolated, "tcp", other4, 7000),
                 allow(f"firewall.interfaces.{zone} allows DNS", "tcp", gateway, 53),
                 deny(f"firewall.interfaces.{zone} allows only DNS and DHCP", "tcp", gateway, 4000),
+                deny(f"firewall.interfaces.{zone} allows only DNS and DHCP", "tcp", gateway, ${toString sshPort}),
                 deny(f"firewall.interfaces.{zone} allows only DNS and DHCP", "tcp", gateway, 8444),
                 deny(f"firewall.interfaces.{zone} allows only DNS and DHCP", "tcp", "10.0.186.1", 4000),
             ])
