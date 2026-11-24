@@ -30,9 +30,16 @@ colmena apply --on espresso-0
 Before I commit:
 
 ```sh
-nix fmt
-nix flake check
+nix run .#lint    # quick: formatting, lint rules, secret scan
+nix flake check   # everything, including tests and all hosts
 nix run .#check   # the checks that need network: kubeconform, tofu validate
+```
+
+To see what a change actually does to the machines and the cluster:
+
+```sh
+nix run .#diff-hosts -- main
+nix run .#diff-manifests -- main
 ```
 
 Pushing to `main` deploys `gitops/espresso` to the cluster through Flux, so I

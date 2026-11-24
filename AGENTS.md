@@ -28,14 +28,23 @@ uses it.
 
 ## Checks
 
-Run all three before calling a change done. Each failure message says what to
-fix.
+Each failure message says what to fix.
 
 ```sh
-nix fmt            # format and autofix every language
-nix flake check    # lint rules, tests, secret scan, host evaluation
-nix run .#check    # needs network: manifest schemas, tofu validate
+nix run .#lint     # seconds: format, lint rules, secret scan. Run it often.
+nix flake check    # minutes: the above plus tests and every host. Before done.
+nix run .#check    # needs network: manifest schemas, tofu validate. For gitops/.
 ```
+
+To see what a change does instead of reading its source:
+
+```sh
+nix run .#diff-hosts -- main [host...]   # host derivations, ignoring list order
+nix run .#diff-manifests -- main         # rendered cluster resources
+```
+
+While iterating on one host, evaluate just that one:
+`nix build .#nixosConfigurations.<host>.config.system.build.toplevel --dry-run`.
 
 When you are corrected on something a machine could have caught, add the rule
 under `lint/rules/` or a script under `gitops/espresso/tests/` in the same

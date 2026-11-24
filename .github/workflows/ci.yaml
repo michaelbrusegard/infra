@@ -55,7 +55,9 @@ jobs:
         if: steps.filter.outputs.nix == 'true'
         run: echo "hosts=$(nix eval --json .#ci.hosts)" >> "$GITHUB_OUTPUT"
   # Formatting, lint rules, the secret scan and every sandboxed test live in
-  # the flake's checks, so any file in the repository can fail this job.
+  # the flake's checks, so any file in the repository can fail this job. It
+  # builds the checks directly because nix flake check would also evaluate
+  # every host, which validate-nix-hosts already does in parallel.
   code-quality:
     runs-on: ubuntu-26.04
     steps:
@@ -67,8 +69,11 @@ jobs:
           ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
-      - name: Check the flake
-        run: nix flake check --show-trace
+      - name: Run the flake checks
+        run: |
+          nix eval --json .#checks.x86_64-linux --apply builtins.attrNames |
+            jq -r '.[] | ".#checks.x86_64-linux.\(.)"' |
+            xargs nix build --no-link --print-build-logs --show-trace
       - name: Check commit messages
         if: github.event_name == 'pull_request'
         run: nix run .#check-commits -- "origin/${{ github.base_ref }}..HEAD"
@@ -83,6 +88,8 @@ jobs:
     name: validate-nix-hosts (${{ matrix.name }})
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
@@ -90,12 +97,22 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
       - name: Evaluate host
         run: nix build .#${{ matrix.attribute }} --dry-run
+      - name: Summarise what changes on the host
+        if: github.event_name == 'pull_request'
+        run: |
+          {
+            echo '```'
+            nix run .#diff-hosts -- "origin/${{ github.base_ref }}" "${{ matrix.name }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
   validate-kubernetes:
     needs: filter
     if: needs.filter.outputs.gitops == 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
@@ -103,6 +120,14 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
       - name: Run the checks that need network access
         run: nix run .#check
+      - name: Summarise what changes on the cluster
+        if: github.event_name == 'pull_request'
+        run: |
+          {
+            echo '```'
+            nix run .#diff-manifests -- "origin/${{ github.base_ref }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Test AI usage dashboard and ClickHouse permissions
         run: python3 gitops/espresso/tests/ai-usage.py
       - name: Test Hermes tunnel routing and fail-closed behavior
