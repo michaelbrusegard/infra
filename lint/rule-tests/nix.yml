@@ -1,0 +1,52 @@
+id: nix-no-flake-source-paths
+valid:
+  - '{ x = ./file.kbd; }'
+  - '{ x = inputs.self.modules.nixos.boot; }'
+  - '{ x = inputs.self.overlays.default; }'
+  - '{ x = inputs.nix-darwin-nh + "/modules/programs/nh.nix"; }'
+invalid:
+  - '{ x = inputs.self + "/config/kanata/linux.kbd"; }'
+  - '{ x = self + "/wallpapers/golden-gate.png"; }'
+  - '{ x = "source ${inputs.self}/config/shell/p10k.zsh"; }'
+---
+id: nix-no-commented-out-code
+valid:
+  - |
+    # Keep the client port stable; the firewall rule depends on it.
+    { x = 1; }
+  - |
+    # See https://example.org/issue/1; fixed upstream.
+    { x = 1; }
+invalid:
+  - |
+    # services.foo.enable = true;
+    { x = 1; }
+  - |
+    {
+      x = [
+        # "scribus"
+      ];
+    }
+  - |
+    # inherit (pkgs) hello;
+    { x = 1; }
+---
+id: todo-needs-link-nix
+valid:
+  - |
+    # TODO: remove once https://github.com/NixOS/nixpkgs/issues/1 is fixed
+    { x = 1; }
+  - |
+    # TODO: remove once the module lands upstream
+    # https://github.com/nix-darwin/nix-darwin/pull/1744
+    { x = 1; }
+  - |
+    # The todo list app needs this port.
+    { x = 1; }
+invalid:
+  - |
+    # TODO: clean this up
+    { x = 1; }
+  - |
+    # FIXME broken on darwin
+    { x = 1; }

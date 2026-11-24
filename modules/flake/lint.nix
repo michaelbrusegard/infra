@@ -12,6 +12,7 @@
       checks = {
         ast-grep = pkgs.runCommand "ast-grep" { nativeBuildInputs = [ pkgs.ast-grep ]; } ''
           cd ${src}
+          ast-grep test --config lint/sgconfig.yml --skip-snapshot-tests
           ast-grep scan --config lint/sgconfig.yml --no-ignore hidden --globs '!gitops/espresso/flux-system/**'
           touch $out
         '';
@@ -35,6 +36,7 @@
         text = ''
           cd "$(git rev-parse --show-toplevel)"
           treefmt
+          ast-grep test --config lint/sgconfig.yml --skip-snapshot-tests
           ast-grep scan --config lint/sgconfig.yml --no-ignore hidden --globs '!gitops/espresso/flux-system/**'
           staging=$(mktemp -d)
           trap 'rm -rf "$staging"' EXIT

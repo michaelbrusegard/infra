@@ -56,7 +56,8 @@ While iterating on one host, evaluate just that one:
 
 When you are corrected on something a machine could have caught, add the rule
 under `lint/rules/` or a script under `gitops/espresso/tests/` in the same
-change, and keep prose here for judgment calls.
+change, and keep prose here for judgment calls. A rule comes with matching and
+non-matching snippets under `lint/rule-tests/`, which `lint` runs first.
 
 Comments are banned in Go and Python. In Nix and YAML a comment states a
 reason the code cannot show; a `TODO` carries a link.
