@@ -29,7 +29,6 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
             with tempfile.TemporaryDirectory() as directory:
                 target = Path(directory) / "existing.png"
                 target.write_bytes(b"original")
-                # Validation must reject this before sending a live request.
                 result = await session.call_tool(
                     "generate_image",
                     {

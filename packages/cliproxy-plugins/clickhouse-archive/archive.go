@@ -19,26 +19,15 @@ import (
 )
 
 const (
-	// Request bodies resend the whole conversation, so they can be large.
-	// Anything past this is cut off and the row is marked truncated.
-	maxBodyBytes = 32 << 20
-	// Rows wait here while ClickHouse is slow or down. Past these limits new
-	// rows are dropped: losing archive rows is better than stalling inference.
-	queueRows     = 4096
-	maxBatchBytes = 16 << 20
-	maxQueueBytes = 256 << 20
-	flushInterval = 2 * time.Second
-	// Recently inserted item hashes, so context a session resends every turn
-	// is not sent again. Repeats are mostly seconds apart. A forgotten hash
-	// only costs a duplicate that ReplacingMergeTree merges away.
+	maxBodyBytes           = 32 << 20
+	queueRows              = 4096
+	maxBatchBytes          = 16 << 20
+	maxQueueBytes          = 256 << 20
+	flushInterval          = 2 * time.Second
 	sentItemsPerGeneration = 1 << 15
-	// request.complete is exactly-once, so this only guards against leaks if
-	// the host ever skips it.
-	staleAfter = time.Hour
+	staleAfter             = time.Hour
 )
 
-// Headers clients use for a conversation ID. Rows from one session are
-// stored together, so a conversation reads from one place.
 var sessionHeaders = []string{"X-Claude-Code-Session-Id", "Session_id", "Conversation_id", "X-Session-Id"}
 
 type archive struct {
@@ -49,15 +38,13 @@ type archive struct {
 	mu      sync.Mutex
 	pending map[string]*pendingRequest
 
-	rows chan row
-	// Includes rows in the channel and the batches awaiting insertion.
+	rows        chan row
 	queuedBytes atomic.Int64
 	stop        chan struct{}
 	done        chan struct{}
 	started     atomic.Bool
 	stopOnce    sync.Once
 
-	// Owned by the flush goroutine.
 	sent sentItems
 }
 
@@ -68,9 +55,6 @@ type pendingRequest struct {
 	updatedAt time.Time
 }
 
-// A row is either encoded JSON or a request whose body is split and encoded
-// in the flush goroutine, off the request path. size is its reservation in
-// queuedBytes.
 type row struct {
 	table   string
 	json    []byte
@@ -79,8 +63,6 @@ type row struct {
 	size    int64
 }
 
-// Field names match CLIProxyAPI's pluginapi structs, which it encodes
-// without JSON tags.
 type interceptRequest struct {
 	RequestID      string
 	TraceID        string
@@ -146,22 +128,20 @@ type usageRecord struct {
 }
 
 type requestRow struct {
-	RequestID      string `json:"request_id"`
-	TraceID        string `json:"trace_id"`
-	SessionID      string `json:"session_id"`
-	StartedAt      string `json:"started_at"`
-	CompletedAt    string `json:"completed_at"`
-	SourceFormat   string `json:"source_format"`
-	Model          string `json:"model"`
-	RequestedModel string `json:"requested_model"`
-	Stream         bool   `json:"stream"`
-	Outcome        string `json:"outcome"`
-	StatusCode     int    `json:"status_code"`
-	Error          string `json:"error"`
-	UserAgent      string `json:"user_agent"`
-	Truncated      bool   `json:"truncated"`
-	// The body is stored as an envelope plus parts referencing
-	// llm.request_items.
+	RequestID       string              `json:"request_id"`
+	TraceID         string              `json:"trace_id"`
+	SessionID       string              `json:"session_id"`
+	StartedAt       string              `json:"started_at"`
+	CompletedAt     string              `json:"completed_at"`
+	SourceFormat    string              `json:"source_format"`
+	Model           string              `json:"model"`
+	RequestedModel  string              `json:"requested_model"`
+	Stream          bool                `json:"stream"`
+	Outcome         string              `json:"outcome"`
+	StatusCode      int                 `json:"status_code"`
+	Error           string              `json:"error"`
+	UserAgent       string              `json:"user_agent"`
+	Truncated       bool                `json:"truncated"`
 	RequestEnvelope string              `json:"request_envelope"`
 	RequestParts    []requestitems.Part `json:"request_parts"`
 	ResponseBody    string              `json:"response_body"`
@@ -315,7 +295,6 @@ func (a *archive) captureResponse(r interceptRequest) {
 }
 
 func (a *archive) captureChunk(r interceptRequest) {
-	// Negative indexes are header-only initialization calls.
 	if r.ChunkIndex < 0 {
 		return
 	}
@@ -343,8 +322,6 @@ func (a *archive) complete(r requestCompletion) {
 	p := a.pending[r.RequestID]
 	delete(a.pending, r.RequestID)
 	a.mu.Unlock()
-	// Model listings and other non-model requests complete without passing
-	// the request interceptor.
 	if p == nil {
 		return
 	}
@@ -360,7 +337,6 @@ func (a *archive) complete(r requestCompletion) {
 	rec.StartedAt = clickhouseTime(r.StartedAt)
 	rec.CompletedAt = clickhouseTime(r.CompletedAt)
 	rec.ResponseBody = p.response.String()
-	// The body is split later, so reserve its raw size plus the rest.
 	size := int64(len(p.body) + len(rec.ResponseBody) + len(rec.Error) + 1024)
 	if a.reserve("llm.requests", size) {
 		a.send(row{table: "llm.requests", request: &rec, body: p.body, size: size})
@@ -428,7 +404,6 @@ func newUsageRow(r usageRecord) usageRow {
 	}
 }
 
-// enqueue never blocks: hooks run on the request path.
 func (a *archive) enqueue(table string, v any) {
 	data, err := json.Marshal(v)
 	if err != nil {
@@ -463,7 +438,6 @@ func (a *archive) send(r row) {
 	}
 }
 
-// Items go first: a request row only lands after every item it references.
 var flushOrder = []string{"llm.request_items", "llm.requests", "llm.usage"}
 
 func (a *archive) flushLoop() {
@@ -471,7 +445,6 @@ func (a *archive) flushLoop() {
 	ticker := time.NewTicker(flushInterval)
 	defer ticker.Stop()
 	batches := map[string]*bytes.Buffer{}
-	// Hashes in the items batch, marked sent once it is inserted.
 	unsent := map[requestitems.Hash]struct{}{}
 	failing := false
 	write := func(table string, data []byte) int {
@@ -494,8 +467,6 @@ func (a *archive) flushLoop() {
 		for _, item := range items {
 			size += int64(len(item.json) + 1)
 		}
-		// Swap the reservation for the bytes this row really batches, and
-		// drop it rather than exceed the budget when splitting grew it.
 		if !ok || (size > r.size && !a.reserve("llm.requests", size-r.size)) {
 			a.queuedBytes.Add(-r.size)
 			return
@@ -525,7 +496,6 @@ func (a *archive) flushLoop() {
 				continue
 			}
 			if table == "llm.requests" && batches["llm.request_items"] != nil {
-				// Their items failed to insert; retry both together.
 				continue
 			}
 			if err := a.insert(table, buf.Bytes()); err != nil {
@@ -534,7 +504,6 @@ func (a *archive) flushLoop() {
 				continue
 			}
 			a.queuedBytes.Add(-int64(buf.Len()))
-			// Release the backing allocation as well as its byte budget.
 			delete(batches, table)
 			if table == "llm.request_items" {
 				for h := range unsent {
@@ -548,7 +517,6 @@ func (a *archive) flushLoop() {
 		select {
 		case r := <-a.rows:
 			add(r)
-			// After a failed insert, only the ticker retries.
 			if !failing && full() {
 				flush()
 			}
@@ -574,9 +542,6 @@ type encodedItem struct {
 	json []byte
 }
 
-// encodeRequest splits a request body and encodes the request row together
-// with any of its items not already stored or batched. Nothing is batched
-// yet, so the caller can still drop the row.
 func (a *archive) encodeRequest(r row, unsent map[requestitems.Hash]struct{}) ([]encodedItem, []byte, bool) {
 	body := requestitems.Split(r.body)
 	rec := *r.request
@@ -588,7 +553,6 @@ func (a *archive) encodeRequest(r row, unsent map[requestitems.Hash]struct{}) ([
 		return nil, nil, false
 	}
 	var items []encodedItem
-	// A body can repeat an item, such as two identical messages.
 	seen := map[requestitems.Hash]struct{}{}
 	for i, part := range body.Parts {
 		if _, ok := seen[part.Hash]; ok {
@@ -608,8 +572,6 @@ func (a *archive) encodeRequest(r row, unsent map[requestitems.Hash]struct{}) ([
 	return items, data, true
 }
 
-// sentItems is a set with two generations: when the current one fills up,
-// it replaces the previous one, so hashes still in use survive the turnover.
 type sentItems struct {
 	current, previous map[requestitems.Hash]struct{}
 }

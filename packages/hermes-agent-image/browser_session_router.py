@@ -145,9 +145,6 @@ def _claim_popup_descendants(
             if target_id not in owned and str(info.get("openerId") or "") in owned:
                 owned.add(target_id)
                 changed = True
-    # A target with an opener owned by another task is not ours, even if it
-    # happened to appear while this serialized command was running.  Only the
-    # opener-less delta is the fallback for rel=noopener/window.open(...).
     claimed_orphans = sorted(
         target_id
         for target_id in new_ids
@@ -200,7 +197,6 @@ def _select_target(
         listed = raw_run(task_id, "tab", [], timeout=timeout)
         for tab in _tabs(listed):
             if str(tab.get("targetId") or "") == target_id:
-                # Even reselecting the same tab clears agent-browser's snapshot refs.
                 if tab.get("active") is True:
                     return None
                 tab_reference = _tab_reference(tab)

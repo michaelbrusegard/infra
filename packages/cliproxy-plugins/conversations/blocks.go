@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-// anthropicContent reads Anthropic Messages content: a string, or an array
-// of blocks. Claude Code transcripts use the same blocks.
 func anthropicContent(content json.RawMessage) []Block {
 	if isString(content) {
 		return []Block{{Type: "text", SourceType: "text", Text: str(content)}}
@@ -49,14 +47,10 @@ func anthropicContent(content json.RawMessage) []Block {
 			}
 			out = append(append(out, result), media...)
 		case t == "tool_reference":
-			// A tool that a tool search loaded, in its result.
 			out = append(out, Block{Type: "text", SourceType: t, Text: b.str("tool_name")})
 		case t == "web_search_result":
-			// A page a web search found, in its result; the page content is
-			// encrypted.
 			out = append(out, Block{Type: "text", SourceType: t, Text: b.str("title") + "\n" + b.str("url")})
 		case t == "fallback":
-			// The model refused and another answered the rest of the reply.
 			out = append(out, Block{Type: "fallback", SourceType: t, Text: compactJSON(raw)})
 		case t == "image" || t == "document":
 			kind := map[string]string{"image": "image", "document": "file"}[t]
@@ -68,8 +62,6 @@ func anthropicContent(content json.RawMessage) []Block {
 	return out
 }
 
-// responsesItem reads one OpenAI Responses API item, as sent in input, as
-// returned in output, or as recorded by Codex.
 func responsesItem(raw []byte) (string, []Block) {
 	it := parse(raw)
 	t := it.str("type")
@@ -81,9 +73,6 @@ func responsesItem(raw []byte) (string, []Block) {
 	case "message":
 		return role, responsesContent(it["content"], "")
 	case "agent_message":
-		// A message between Codex agents, which its recipient is sent as
-		// input. The header names the sender and the task; the payload is
-		// encrypted.
 		return "user", responsesContent(it["content"], "")
 	case "reasoning":
 		var texts []string
@@ -106,8 +95,6 @@ func responsesItem(raw []byte) (string, []Block) {
 		result := Block{Type: "tool_result", SourceType: t, ToolCallID: it.str("call_id")}
 		output := it["output"]
 		if t == "tool_search_output" {
-			// The tools found, which are definitions (functions, or
-			// namespaces of them) rather than content parts.
 			result.Text = compactJSON(it["tools"])
 			return "tool", []Block{result}
 		}
@@ -132,7 +119,6 @@ func responsesItem(raw []byte) (string, []Block) {
 	case "compaction":
 		return "system", []Block{{Type: "compaction", SourceType: t}}
 	}
-	// Hosted tools: web_search_call, tool_search_call, local_shell_call, ...
 	if strings.HasSuffix(t, "_call") {
 		input := it["action"]
 		if input == nil {
@@ -170,7 +156,6 @@ func responsesContent(content json.RawMessage, callID string) []Block {
 				Text: p.str("filename"), Media: mediaOf(p.str("file_data")),
 			})
 		case "encrypted_content":
-			// Encrypted, like reasoning; not extracted.
 		default:
 			out = append(out, Block{Type: "other", SourceType: t, ToolCallID: callID})
 		}
@@ -178,7 +163,6 @@ func responsesContent(content json.RawMessage, callID string) []Block {
 	return out
 }
 
-// chatMessage reads one OpenAI Chat Completions message.
 func chatMessage(raw []byte) (string, []Block) {
 	m := parse(raw)
 	role := m.str("role")

@@ -51,9 +51,6 @@ TTL = {
 }
 WORKERS = 8
 
-# Methods that never change state. Anything else is treated as a write: it
-# is not retried after an ambiguous timeout and SLACK_CLI_DRY_RUN=1
-# intercepts it.
 READ_METHOD_RE = re.compile(
     r"(^auth\.test$|^search\.|^assistant\.search\.|^users\.conversations$|^users\.profile\.get$"
     r"|^users\.lookupByEmail$|\.list$|\.info$|\.history$|\.replies$|\.members$"
@@ -95,11 +92,6 @@ class UsageError(Exception):
 
 def warn(msg):
     print(f"slack: {msg}", file=sys.stderr)
-
-
-# --------------------------------------------------------------------------
-# HTTP client
-# --------------------------------------------------------------------------
 
 
 def slack_host(host):
@@ -380,11 +372,6 @@ def format_api_error(method, payload):
     return " - ".join(parts)
 
 
-# --------------------------------------------------------------------------
-# Cache and context
-# --------------------------------------------------------------------------
-
-
 class Cache:
     def __init__(self, refresh=False):
         self.refresh = refresh
@@ -517,7 +504,6 @@ class Ctx:
         self._convs_refreshed = False
         self._groups = None
 
-    # --- team ---------------------------------------------------------------
     def team(self):
         if self._team is None:
             data = self.cache.load("team")
@@ -544,7 +530,6 @@ class Ctx:
     def self_id(self):
         return self.team().get("user_id")
 
-    # --- users --------------------------------------------------------------
     def users(self, force=False):
         with self._lock:
             if self._users is None or force:
@@ -555,7 +540,6 @@ class Ctx:
                         "users.list", {}, "members", page_size=500
                     ):
                         data[u["id"]] = user_summary(u)
-                    # Keep previously cached external users (Slack Connect).
                     old = self._users or {}
                     for uid, u in old.items():
                         data.setdefault(uid, u)
@@ -582,7 +566,7 @@ class Ctx:
         elif r.get("error") in ("user_not_found", "users_not_found"):
             summary = None
         else:
-            return None  # transient or scope problem: do not cache
+            return None
         with self._lock:
             users[uid] = summary
             self._users_dirty = True
@@ -673,7 +657,6 @@ class Ctx:
                 [u for u in self._users.values() if u and not u.get("is_bot_id")],
                 keys,
             )
-        # Prefer active humans when the match quality ties.
         if ranked:
             top = ranked[0][0]
             tied = [(s, u) for s, u in ranked if s == top]
@@ -684,7 +667,6 @@ class Ctx:
             ref, ranked, "user", lambda u: f"@{u['name']} ({u['real_name']}, {u['id']})"
         )["id"]
 
-    # --- conversations --------------------------------------------------------
     def convs(self, force=False):
         with self._lock:
             if self._convs is None or force:
@@ -783,7 +765,6 @@ class Ctx:
                 bare, [c for c in self._convs.values() if c and not c["is_im"]], keys
             )
         if ranked and ranked[0][0] < 100:
-            # Prefer channels the user is in when fuzzy matches tie.
             top = ranked[0][0]
             tied = [(s, c) for s, c in ranked if s == top]
             member = [
@@ -800,7 +781,6 @@ class Ctx:
             ref, ranked, "channel", lambda c: f"#{c['name']} ({c['id']})"
         )["id"]
 
-    # --- usergroups ---------------------------------------------------------
     def usergroups(self):
         with self._lock:
             if self._groups is None:
@@ -824,7 +804,6 @@ class Ctx:
         g = self.usergroups().get(gid)
         return g["handle"] if g and g.get("handle") else gid
 
-    # --- links --------------------------------------------------------------
     def permalink(self, channel, ts, thread_ts=None):
         url = f"{self.base_url()}/archives/{channel}/p{ts.replace('.', '')}"
         if thread_ts and thread_ts != ts:
@@ -834,11 +813,6 @@ class Ctx:
     def close(self):
         self._save_users()
         self._save_convs()
-
-
-# --------------------------------------------------------------------------
-# Parsing helpers
-# --------------------------------------------------------------------------
 
 
 def parse_permalink(url):
@@ -974,10 +948,6 @@ def read_text(words, file_opt, what="message"):
     return text
 
 
-# --------------------------------------------------------------------------
-# Rendering
-# --------------------------------------------------------------------------
-
 TOKEN_RE = re.compile(r"<([^<>\n]+)>")
 
 
@@ -998,7 +968,6 @@ class Renderer:
     def __init__(self, ctx):
         self.ctx = ctx
 
-    # --- mrkdwn -------------------------------------------------------------
     def mrkdwn(self, text):
         if not text:
             return ""
@@ -1044,7 +1013,6 @@ class Renderer:
             return label or "@" + cmd
         return link_text(label, html.unescape(target))
 
-    # --- rich text ----------------------------------------------------------
     def _rt_inline(self, els):
         out = []
         for el in els or []:
@@ -1111,7 +1079,6 @@ class Renderer:
                 lines.append(self._rt_inline(el.get("elements")))
         return "\n".join(ln.rstrip("\n") for ln in lines if ln is not None)
 
-    # --- blocks -------------------------------------------------------------
     def _text_obj(self, obj):
         if not obj:
             return ""
@@ -1233,7 +1200,6 @@ class Renderer:
             return "[call]"
         return self._collect(b)
 
-    # --- attachments --------------------------------------------------------
     def attachment(self, a):
         lines = []
         if a.get("blocks"):
@@ -1302,7 +1268,6 @@ class Renderer:
         except Exception:
             return self._collect(obj)
 
-    # --- files --------------------------------------------------------------
     @staticmethod
     def file_info(f):
         return {
@@ -1327,7 +1292,6 @@ class Renderer:
         url = i["permalink"] if kind != "file" else i["url_private"] or i["permalink"]
         return f'[{kind} {i["id"]} "{i["name"] or i["title"]}" {i["mimetype"] or i["filetype"]} {url}]'
 
-    # --- messages -----------------------------------------------------------
     def author(self, m):
         bp = m.get("bot_profile") or {}
         username = m.get("username") or (m.get("user_profile") or {}).get(
@@ -1486,22 +1450,12 @@ class Renderer:
         self.ctx.prefetch_users(uids)
 
 
-# --------------------------------------------------------------------------
-# Output
-# --------------------------------------------------------------------------
-
-
 def emit_json(obj):
     sys.stdout.write(json.dumps(obj, ensure_ascii=False, indent=2) + "\n")
 
 
 def out(line=""):
     sys.stdout.write(line + "\n")
-
-
-# --------------------------------------------------------------------------
-# Commands: identity and lookup
-# --------------------------------------------------------------------------
 
 
 def manifest_scopes():
@@ -1821,11 +1775,6 @@ def cmd_emoji(ctx, a):
         out(f":{n}:  " + (f"alias of :{v[6:]}:" if v.startswith("alias:") else v))
 
 
-# --------------------------------------------------------------------------
-# Commands: reading messages
-# --------------------------------------------------------------------------
-
-
 def search_rewrite(ctx, query, ids=False):
     """Resolve in:#name, in:@user and from:@user operators to real names/IDs.
 
@@ -2050,7 +1999,6 @@ def search_legacy(ctx, a):
     )
     for n in rows:
         line = rend.line(n)
-        # Insert the channel name after the timestamp bracket.
         head, sep, rest = line.partition("] ")
         out(f"{head}] {n['channel_name']} {rest}" if sep else line)
     if a.page < pages:
@@ -2148,7 +2096,6 @@ def fetch_replies(ctx, cid, ts, limit=None):
             page_size=200,
         )
     )
-    # Paginated replies repeat the parent on every page.
     seen = set()
     uniq = []
     for m in msgs:
@@ -2158,14 +2105,21 @@ def fetch_replies(ctx, cid, ts, limit=None):
     return uniq
 
 
+def latest_bound_keeping_newest_page():
+    """Return a `latest` for history requests that only set `oldest`.
+
+    With only `oldest`, Slack returns the oldest page of the window; pinning
+    `latest` makes --limit keep the newest messages.
+    """
+    return f"{time.time() + 60:.6f}"
+
+
 def cmd_history(ctx, a):
     cid = ctx.resolve_conv(a.channel)
     oldest = f"{parse_time(a.since):.6f}" if a.since else None
     latest = f"{parse_time(a.until):.6f}" if a.until else None
     if oldest and not latest:
-        # With only `oldest`, Slack returns the OLDEST page of the window;
-        # pinning `latest` makes --limit keep the newest messages.
-        latest = f"{time.time() + 60:.6f}"
+        latest = latest_bound_keeping_newest_page()
     limit = None if a.all else a.limit
     msgs, cursor = fetch_history(ctx, cid, oldest, latest, limit, a.cursor)
     msgs.reverse()
@@ -2221,7 +2175,6 @@ def cmd_thread(ctx, a):
     parent = thread_ts or ts
     msgs = fetch_replies(ctx, cid, parent, a.limit)
     if msgs and msgs[0].get("thread_ts") and msgs[0]["thread_ts"] != parent:
-        # A reply ts was given without thread_ts: open its parent thread.
         parent = msgs[0]["thread_ts"]
         msgs = fetch_replies(ctx, cid, parent, a.limit)
     rend = Renderer(ctx)
@@ -2490,11 +2443,6 @@ def cmd_reactions(ctx, a):
         )
 
 
-# --------------------------------------------------------------------------
-# Files, canvases, lists
-# --------------------------------------------------------------------------
-
-
 class CanvasText(html.parser.HTMLParser):
     """Convert Slack canvas HTML into readable Markdown-ish text."""
 
@@ -2668,7 +2616,6 @@ def cmd_file(ctx, a):
     ref = a.ref
     out_path = a.out or a.outfile
     if "/archives/" in ref:
-        # A message permalink: list its files.
         cid, ts, thread, _ = message_ref(ctx, [ref])
         msgs = fetch_replies(ctx, cid, thread or ts)
         msg = next((m for m in msgs if m.get("ts") == ts), None)
@@ -3140,11 +3087,6 @@ def cmd_list(ctx, a):
     raise UsageError(f"unknown list action {a.action}", "list")
 
 
-# --------------------------------------------------------------------------
-# Writes
-# --------------------------------------------------------------------------
-
-
 def write_call(ctx, a, method, params, describe, done, json_body=False, extra=None):
     """Run or dry-run one write call with a uniform report."""
     params = {k: v for k, v in params.items() if v is not None}
@@ -3258,7 +3200,6 @@ def resolve_thread(ctx, thread_arg, cid):
                 "--thread TS needs a destination channel (or pass a permalink)"
             )
         parent = normalize_ts(thread_arg)
-    # Confirm the message exists and climb to the thread parent.
     r = ctx.client.call(
         "conversations.replies",
         {"channel": cid, "ts": parent, "limit": 1},
@@ -3736,10 +3677,6 @@ def cmd_api(ctx, a):
         raise SlackError(format_api_error(a.method, r))
 
 
-# --------------------------------------------------------------------------
-# Help and argument parsing
-# --------------------------------------------------------------------------
-
 GLOBAL_HELP = """\
 Global flags (any position):
   --json      normalized JSON on stdout (every read command; writes print the API response)
@@ -4060,8 +3997,6 @@ def build_parser(name):
         add_dry(p)
     return p
 
-
-# --- command registrations ---------------------------------------------------
 
 command(
     "whoami",

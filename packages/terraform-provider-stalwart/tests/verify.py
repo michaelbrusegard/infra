@@ -89,8 +89,6 @@ class Metadata(BaseHTTPRequestHandler):
         pass
 
 
-# Colima resolves this name to the macOS host. The fixture only serves metadata;
-# this verifies settings reload, not token authentication.
 metadata = ThreadingHTTPServer(("0.0.0.0", 0), Metadata)
 issuer = f"http://host.docker.internal:{metadata.server_port}"
 threading.Thread(target=metadata.serve_forever, daemon=True).start()
@@ -226,8 +224,6 @@ try:
         jmap("x:Action/set", create={"reload": {"@type": "ReloadSettings"}})
     print("Imported relay secret preserved across both applies", flush=True)
 
-    # An update must send only changed fields: Stalwart rejects the unchanged
-    # null directoryId that every domain update used to include.
     folder = args.work_dir / "smoke"
     for address in ("first@manafishrov.test", "second@manafishrov.test"):
         env["TF_VAR_catch_all_address"] = address

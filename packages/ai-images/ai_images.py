@@ -14,9 +14,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 GATEWAY = "https://ai.asgard.michaelbrusegard.com/v1"
 DEFAULT_MODEL = "gpt-image-2.6-sunburst"
 MODELS = (DEFAULT_MODEL, "gpt-image-2.6-flare", "gpt-image-2")
-# NetBird recovers routing metadata from requests up to 32 MiB. Leave room
-# for the prompt and base64 expansion instead of failing after a long upload.
-MAX_REQUEST_BYTES = 30 * 1024 * 1024
+NETBIRD_ROUTING_METADATA_LIMIT_BYTES = 32 * 1024 * 1024
+MAX_REQUEST_BYTES = NETBIRD_ROUTING_METADATA_LIMIT_BYTES - 2 * 1024 * 1024
 MAX_RESPONSE_BYTES = 64 * 1024 * 1024
 Quality = Literal["low", "medium", "high", "xhigh", "max", "auto"]
 Model = Literal["gpt-image-2.6-sunburst", "gpt-image-2.6-flare", "gpt-image-2"]
@@ -89,7 +88,6 @@ def request_image(
     references = reference_images or []
     if len(references) > 8:
         raise ValueError("Use at most eight reference images")
-    # Put model first so the gateway can recover routing fields before images.
     payload = {
         "model": model,
         "prompt": prompt,
@@ -110,7 +108,6 @@ def request_image(
         data=body,
         headers={
             "Content-Type": "application/json",
-            # NetBird authenticates the device; this is not an OpenAI API key.
             "Authorization": "Bearer netbird",
         },
     )

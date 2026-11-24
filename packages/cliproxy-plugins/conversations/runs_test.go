@@ -20,7 +20,6 @@ func storedRequests(t *testing.T) map[string]Request {
 	return out
 }
 
-// byStart orders requests the way requests.sql does.
 func byStart(requests []Request) []Request {
 	out := append([]Request{}, requests...)
 	sort.SliceStable(out, func(i, j int) bool {
@@ -29,8 +28,6 @@ func byStart(requests []Request) []Request {
 	return out
 }
 
-// collapse keeps the rows ReplacingMergeTree keeps: the highest version,
-// and the last written among equals.
 func collapse(messages []Message) map[Hash]Message {
 	out := map[Hash]Message{}
 	for _, m := range messages {
@@ -41,8 +38,6 @@ func collapse(messages []Message) map[Hash]Message {
 	return out
 }
 
-// stateOf returns what state.sql would for the sessions of requests, from
-// the rows earlier runs wrote.
 func stateOf(b *Batch, requests []Request) []State {
 	sessions := map[string]bool{}
 	for _, r := range requests {
@@ -66,9 +61,6 @@ func stateOf(b *Batch, requests []Request) []State {
 	return out
 }
 
-// A run restores the nodes and response leaves of the sessions it touches,
-// so splitting the requests into two runs anywhere gives the same rows as
-// one run, and the second run writes no node again.
 func TestRunsSplitAtEveryBoundary(t *testing.T) {
 	var fixtures []proxyFixture
 	loadProxyFixtures(t, &fixtures)
@@ -85,8 +77,6 @@ func TestRunsSplitAtEveryBoundary(t *testing.T) {
 	for _, c := range whole.Calls {
 		wantCalls[c.CallID] = c
 	}
-	// Fixture order is not start order, so some splits also deliver an
-	// earlier request in the later run, as a late completion does.
 	for k := 1; k < len(requests); k++ {
 		first := NewNormalizer()
 		for _, r := range byStart(requests[:k]) {
@@ -126,8 +116,6 @@ func TestRunsSplitAtEveryBoundary(t *testing.T) {
 	}
 }
 
-// Even without restored state, a full-resend client sending a reply back
-// cannot replace the reply's row: the output outranks every resent copy.
 func TestResendKeepsOutputProvenance(t *testing.T) {
 	requests := storedRequests(t)
 	first, second := NewNormalizer(), NewNormalizer()
@@ -146,9 +134,6 @@ func TestResendKeepsOutputProvenance(t *testing.T) {
 	}
 }
 
-// A delta request whose previous response is not normalized yet is held
-// back while it is recent, and placed once the response arrives. Only an
-// old one starts at a missing_context marker.
 func TestRecentDeltaRequestsWaitForTheirPreviousResponse(t *testing.T) {
 	requests := storedRequests(t)
 	early := NewNormalizer()
@@ -179,10 +164,6 @@ func TestRecentDeltaRequestsWaitForTheirPreviousResponse(t *testing.T) {
 	}
 }
 
-// The plugin writes a request before CLIProxy writes its usage, whose
-// session tells a Claude sub-agent from its parent. A recent request read
-// in between is held back, and placed in the sub-agent's session once its
-// usage arrives. Only an old one without usage falls back to the header.
 func TestRecentRequestsWaitForTheirUsage(t *testing.T) {
 	agent := storedRequests(t)["claude-agent"]
 	early := agent
@@ -198,8 +179,6 @@ func TestRecentRequestsWaitForTheirUsage(t *testing.T) {
 	if !n.Request(agent) || n.Calls[0].SessionID != agent.UsageSessionID {
 		t.Fatalf("request with usage placed in %+v", n.Calls)
 	}
-	// A call that ran longer than the hold is recent by its completion,
-	// which is when it and its usage land.
 	long := NewNormalizer()
 	long.HoldAfter = "2026-11-10 09:00:07.000"
 	if early.StartedAt >= long.HoldAfter || long.Request(early) {
@@ -212,9 +191,6 @@ func TestRecentRequestsWaitForTheirUsage(t *testing.T) {
 	}
 }
 
-// Transport fields are dropped only where the dialects put them. The same
-// names inside a tool's input are content, so tool calls that differ there
-// stay different nodes.
 func TestTransportFieldsOnlyAtProtocolLocations(t *testing.T) {
 	same := func(format, a, b string) bool { return contentKey(format, []byte(a)) == contentKey(format, []byte(b)) }
 	if same("anthropic",
@@ -239,9 +215,6 @@ func TestTransportFieldsOnlyAtProtocolLocations(t *testing.T) {
 	}
 }
 
-// An Anthropic stream cut off before a block's stop event keeps the tool
-// arguments that streamed. The expected message is written here, and the
-// stream generated from it, so the test does not trust the assembler.
 func TestInterruptedAnthropicStreamKeepsArguments(t *testing.T) {
 	want := []any{
 		map[string]any{"type": "text", "text": "Listing pods."},
@@ -277,7 +250,6 @@ func TestInterruptedAnthropicStreamKeepsArguments(t *testing.T) {
 			"delta": map[string]any{"type": "input_json_delta", "partial_json": chunks[len(chunks)-1]},
 		})
 	}
-	// The connection drops here, before content_block_stop and message_stop.
 	content := func(stream []string) string {
 		r := anthropicResponse(events(strings.Join(stream, "\n\n")))
 		if len(r.outputs) != 1 {
@@ -288,17 +260,12 @@ func TestInterruptedAnthropicStreamKeepsArguments(t *testing.T) {
 	if got, expected := content(stream), fmt.Sprint(decode(t, encode(want))); got != expected {
 		t.Fatalf("content\n%s\nwant\n%s", got, expected)
 	}
-	// Cut inside the arguments, what streamed is kept as text.
 	want[1].(map[string]any)["input"] = strings.Join(chunks[:len(chunks)-1], "")
 	if got, expected := content(stream[:len(stream)-1]), fmt.Sprint(decode(t, encode(want))); got != expected {
 		t.Fatalf("content cut in the arguments\n%s\nwant\n%s", got, expected)
 	}
 }
 
-// requests.sql sends an item only with the first request of a run that
-// uses it, and only items the normalizer reads. The rows are the same as
-// with every item sent, and an item a request needs that was never sent
-// fails the run rather than lose a message.
 func TestItemsAreSentOncePerRun(t *testing.T) {
 	requests := byStart(func() []Request {
 		var out []Request

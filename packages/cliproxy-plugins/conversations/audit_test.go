@@ -7,9 +7,6 @@ import (
 	"testing"
 )
 
-// Codex writes agent_message items, the messages sub-agents and their
-// parent send each other, among a request's input. A message keeps its
-// text, as the recipient's input.
 func TestCodexAgentMessages(t *testing.T) {
 	role, blocks := responsesItem([]byte(`{"type":"agent_message","author":"/root/review","recipient":"/root","content":[` +
 		`{"type":"input_text","text":"Message Type: FINAL_ANSWER\nSender: /root/review"},` +
@@ -20,8 +17,6 @@ func TestCodexAgentMessages(t *testing.T) {
 	}
 }
 
-// Codex's tool search returns the definitions it found, which may be
-// namespaces of tools, as the tool result's text.
 func TestCodexToolSearchResults(t *testing.T) {
 	found := `[{"type":"namespace","name":"mcp__voice","tools":[{"type":"function","name":"speak","parameters":{"type":"object"}}]}]`
 	role, blocks := responsesItem([]byte(`{"type":"tool_search_output","call_id":"ts_1","status":"completed","tools":` + found + `}`))
@@ -30,8 +25,6 @@ func TestCodexToolSearchResults(t *testing.T) {
 	}
 }
 
-// Claude Code's tool search returns tool references, which name the tools
-// it loaded.
 func TestClaudeCodeToolReferencesKeepTheirNames(t *testing.T) {
 	blocks := anthropicContent([]byte(`[{"type":"tool_result","tool_use_id":"toolu_1","content":[` +
 		`{"type":"tool_reference","tool_name":"mcp__t3-code__delegate_task"},{"type":"tool_reference","tool_name":"WebFetch"}]}]`))
@@ -40,9 +33,6 @@ func TestClaudeCodeToolReferencesKeepTheirNames(t *testing.T) {
 	}
 }
 
-// Codex sends its additional_tools items in a proxied request's input. They
-// are the call's tools context rather than messages, and come after the
-// tools the request itself sent.
 func TestProxyAdditionalToolsAreContext(t *testing.T) {
 	tool := `{"type":"function","name":"exec","parameters":{"type":"object"}}`
 	f := proxyFixture{
@@ -75,8 +65,6 @@ func TestProxyAdditionalToolsAreContext(t *testing.T) {
 	}
 }
 
-// Anthropic's web search results keep each page's title and URL, and a
-// fallback block records which model took over the reply and why.
 func TestAnthropicSearchResultsAndFallbacks(t *testing.T) {
 	blocks := anthropicContent([]byte(`[{"type":"fallback","from":{"model":"claude-opus-5-5"},"to":{"model":"claude-opus-4-8"},` +
 		`"trigger":{"type":"refusal","category":"cyber"}},{"type":"web_search_tool_result","tool_use_id":"srvtoolu_1","content":[` +

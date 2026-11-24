@@ -11,8 +11,6 @@ import (
 	"cliproxy-plugins/requestitems"
 )
 
-// gitops/espresso/tests/llm-conversations.py inserts these source rows into
-// the real ClickHouse schema and normalizes them from there.
 var dump = flag.String("dump", "", "write the fixtures as source table rows to this directory")
 
 func TestDumpSources(t *testing.T) {
@@ -39,8 +37,6 @@ func TestDumpSources(t *testing.T) {
 			"request_envelope": r.RequestEnvelope, "request_parts": nonNil(r.RequestParts),
 			"response_body": r.ResponseBody,
 		})
-		// CLIProxy's usage row for the attempt, which starts just after the
-		// request, with the response's tokens counted the way it counts them.
 		started, err := time.Parse(time.DateTime, r.StartedAt)
 		if err != nil {
 			t.Fatal(err)

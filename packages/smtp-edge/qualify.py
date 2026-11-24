@@ -49,11 +49,12 @@ from smtp_fixture import change, email_ids, objects  # noqa: E402
 
 DELIVER = HERE / "deliver.sh"
 DOMAIN = "manafishrov.com"
-RELAY = "127.0.0.1"  # curl peer address; the only peer trusted to send PROXY
-BACKEND_HOST = "localhost"  # deliver.sh backend name, matching the fixture certificate
+RELAY = "127.0.0.1"
+BACKEND_HOST = "localhost"
 CLIENT_IP = "192.0.2.10"
 CLIENT_IP6 = "2001:db8::10"
 HELO = "client.example.com"
+NATIVE_CONNECTION_THROTTLE_SECONDS = 0.3
 SENDER = "sender@client.example.com"
 SENDER_AUTH = (
     "spfEhloVerify",
@@ -81,16 +82,12 @@ def listener(client, name, number, *, proxy):
 def configure_edge_listeners(fixture, ports):
     """The two backend listeners deliver.sh uses: PROXY on edge, plain on local."""
     client = fixture["client"]
-    # Exact recipient verification: an unknown plus address must not resolve
-    # to its base mailbox. Explicit plus aliases remain supported.
     change(
         client, "Domain", fixture["domain_id"], {"subAddressing": {"@type": "Disabled"}}
     )
     listener(client, "smtp-edge", ports["edge"], proxy=True)
     listener(client, "smtp-edge-local", ports["local"], proxy=False)
-    # The local path greets as "smtp-edge", which is not a FQDN.
     update(client, "MtaStageEhlo", {"rejectNonFqdn": {"else": "false", "match": {}}})
-    # The fixture is offline; sender authentication would only time out on DNS.
     update(
         client,
         "SenderAuth",
@@ -109,7 +106,6 @@ def configure_edge_listeners(fixture, ports):
 def postfix_connection(fixture, number, client_ip=CLIENT_IP):
     class LoopbackSMTP(smtplib.SMTP):
         def _get_socket(self, host, port, timeout):
-            # Keep the certificate name while selecting the source family.
             address = "::1" if ":" in client_ip else "127.0.0.1"
             return socket.create_connection(
                 (address, port), timeout, self.source_address
@@ -156,7 +152,7 @@ def parse(raw):
 
 def direct(fixture, ports, *, client_ip, sender, recipient, raw, ca=None):
     """Invoke deliver.sh as pipe(8) would, without Postfix."""
-    time.sleep(0.3)  # Respect the native 5/second connection throttle.
+    time.sleep(NATIVE_CONNECTION_THROTTLE_SECONDS)
     command = [
         "bash",
         str(DELIVER),
@@ -250,7 +246,6 @@ def run(root, report, binary, postfix_port):
             },
         )
         reload(client)
-        # Listeners are bound at startup.
         start_mail(server)
         wrong_ca = certificate(root)[0]
         alice = fixture["users"]["alice"]["email"]
@@ -295,7 +290,7 @@ def run(root, report, binary, postfix_port):
 
         def send(tag, *, client_ip=CLIENT_IP, sender=SENDER, recipient=alice, raw=None):
             raw = raw or message(tag, recipient)
-            time.sleep(0.3)  # Respect the native 5/second connection throttle.
+            time.sleep(NATIVE_CONNECTION_THROTTLE_SECONDS)
             with postfix_connection(fixture, postfix_port, client_ip) as smtp:
                 refused = smtp.sendmail(
                     sender, [recipient], raw, mail_options=["SMTPUTF8", "BODY=8BITMIME"]
@@ -316,7 +311,6 @@ def run(root, report, binary, postfix_port):
                 return smtp.rcpt(address)[0]
 
         def require_original_client(result, client_ip):
-            # The backend prepends its own Received header above Postfix's.
             backend, edge = result["received"][:2]
             require(
                 "mail.fixture.test" in backend
@@ -347,7 +341,6 @@ def run(root, report, binary, postfix_port):
         stage("proxyPreservesClientIpv6AndEhlo", proxy_ipv6)
 
         def null_sender():
-            # An Internet bounce has an empty sender but must keep the PROXY path.
             send("proxy-null-sender", sender="")
             result = record(
                 "proxy-null-sender", fetch_message(fixture, "proxy-null-sender")
@@ -420,7 +413,6 @@ def run(root, report, binary, postfix_port):
                 recipient=recipient,
                 raw=body.as_bytes(policy=SMTPUTF8),
             )
-            # fetch_message expects the ASCII known body, so look this one up here.
             delivered = None
             deadline = time.monotonic() + 30
             while delivered is None and time.monotonic() < deadline:
@@ -491,7 +483,6 @@ def run(root, report, binary, postfix_port):
             require(
                 result["exit"] == 75 and result["stdout"].startswith("4.3.0 "), result
             )
-            # deliver.sh runs curl --silent; show the failure is the certificate.
             probe = subprocess.run(
                 [
                     "curl",
@@ -561,8 +552,6 @@ def run(root, report, binary, postfix_port):
                     smtp.data(message(tag, f"{alias}@{DOMAIN}"))[0] == 250,
                     "Postfix did not accept DATA",
                 )
-            # A Postfix-generated DSN has no client address, so deliver.sh can
-            # only reach the backend through the local listener.
             delivered = None
             deadline = time.monotonic() + 45
             while delivered is None and time.monotonic() < deadline:
@@ -587,8 +576,6 @@ def run(root, report, binary, postfix_port):
                 delivered is not None, "Postfix-generated DSN did not reach the backend"
             )
             record("postfix-generated-dsn", delivered, path="postfix-generated")
-            # Accelerate refresh only, not positive expiration: an observed
-            # authoritative negative must not revoke the unexpired positive.
             control("refresh-cache")
             require(
                 recipient_probe(f"{alias}@{DOMAIN}") == 250,
@@ -641,7 +628,6 @@ def run(root, report, binary, postfix_port):
             bob = fixture["users"]["bob"]["email"]
             require(recipient_probe(bob) == 250, "Cannot create a short-lived positive")
             server.stop()
-            # Start a failed refresh while the old positive is still unexpired.
             control("refresh-cache")
             time.sleep(2)
             require(
@@ -649,8 +635,6 @@ def run(root, report, binary, postfix_port):
                 "Cannot initiate refresh of an unexpired positive",
             )
             control("short-cache")
-            # The failed refresh keeps its probe timestamp, so Postfix's
-            # 1000-second pending-probe grace covers the shortened expiry.
             require(
                 recipient_probe(alice) == 250, "Pending-probe grace behaviour changed"
             )
@@ -681,7 +665,6 @@ def run(root, report, binary, postfix_port):
                 "Backend queue is not empty",
             )
             log = (server.root / "server.log").read_text()
-            # dsn-success is logged for ordinary successful deliveries too.
             require(
                 not any(
                     "delivery.dsn-" in line and "dsn-success" not in line

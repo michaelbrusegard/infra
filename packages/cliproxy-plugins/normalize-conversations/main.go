@@ -1,19 +1,3 @@
-// Command normalize-conversations is the normalizer the llm-normalizer
-// CronJob runs. It reads source rows as JSONEachRow and writes
-// the canonical rows for each table into a directory, one JSONEachRow file
-// per table. The rows reference the raw capture and copy none of it.
-//
-// With -requests, input rows on stdin are llm.requests rows with their
-// items, in start order, from requests.sql. A run first prints the sessions
-// they touch with -sessions, then passes those sessions' state from
-// state.sql with -state.
-//
-// With -export openai or -export anthropic, it instead reads one call or
-// conversation, as queries/call.sql and queries/conversation.sql return
-// them, and prints it for training. A call that is no training
-// example, because it produced nothing, or its output calls tools its
-// context does not define or with arguments cut short, fails with the
-// reason.
 package main
 
 import (
@@ -78,8 +62,6 @@ func eachRow[T any](r io.Reader, f func(T) error) error {
 	}
 }
 
-// printSessions prints the sessions of the requests as a ClickHouse array,
-// for the sessions parameter of state.sql.
 func printSessions(r io.Reader, w io.Writer) error {
 	seen := map[string]bool{}
 	var quoted []string
@@ -112,8 +94,6 @@ func restore(n *conversations.Normalizer, path string) error {
 
 var tables = []string{"llm.request_items", "llm.sessions", "llm.messages", "llm.calls"}
 
-// run creates an output file per table and calls normalize, whose drain
-// writes the rows normalized so far.
 func run(dir string, n *conversations.Normalizer, normalize func(drain func() error) error) (err error) {
 	files := map[string]*bufio.Writer{}
 	for _, table := range tables {
@@ -122,13 +102,9 @@ func run(dir string, n *conversations.Normalizer, normalize func(drain func() er
 			return createErr
 		}
 		w := bufio.NewWriterSize(f, 1<<20)
-		// A full disk may only show when the last rows are flushed, or when
-		// the file is closed, and any lost row must fail the run.
 		defer func() { err = errors.Join(err, w.Flush(), f.Close()) }()
 		files[table] = w
 	}
-	// Rows are written as each unit is normalized, so memory holds only the
-	// normalizer's index of nodes.
 	return normalize(func() error {
 		b := &n.Batch
 		for _, err := range []error{
@@ -170,11 +146,6 @@ func writeRows[T any](w *bufio.Writer, rows []T) error {
 	return nil
 }
 
-// exportConversation reads message rows in conversation order, and for a
-// call, a row with the field call, which marks the rows as a call's, and
-// rows with a field and value: the system prompt, instructions, or tools
-// the call sent, and its response, which may echo them. A call is checked
-// as a training example, even with no context or outputs.
 func exportConversation(r io.Reader, w io.Writer, format string) error {
 	var ctx conversations.Context
 	var path []conversations.Message
@@ -182,10 +153,9 @@ func exportConversation(r io.Reader, w io.Writer, format string) error {
 	call := false
 	type row struct {
 		conversations.Message
-		Field string `json:"field"`
-		Value string `json:"value"`
-		// The message is one of the call's outputs.
-		CallOutput bool `json:"call_output"`
+		Field      string `json:"field"`
+		Value      string `json:"value"`
+		CallOutput bool   `json:"call_output"`
 	}
 	err := eachRow(r, func(row row) error {
 		switch row.Field {

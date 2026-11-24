@@ -1,5 +1,3 @@
-// Command clickhouse-archive is a CLIProxyAPI plugin that archives every
-// proxied request, response, and usage record into ClickHouse.
 package main
 
 import "cliproxy-plugins/plugin"

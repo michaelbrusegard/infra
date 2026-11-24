@@ -114,7 +114,6 @@ def main():
 
     try:
         binary = args.binary.resolve(strict=True)
-        # Fixture tools run inside the containers from the mounted /nix/store.
         tools = {
             name: str(Path(shutil.which(name) or name).resolve())
             for name in ("python3", "ip", "openssl", "unshare")
@@ -123,7 +122,6 @@ def main():
             all(path.startswith("/nix/store/") for path in tools.values()),
             f"Fixture tools must come from the Nix store: {tools}",
         )
-        # Image bash/curl come first; only fixture tools come from the host closure.
         fixture_path = "/bin:" + ":".join(
             dict.fromkeys(str(Path(p).parent) for p in tools.values())
         )
@@ -131,8 +129,6 @@ def main():
         setup = "; ".join(
             f"{tools['ip']} address add {address} dev lo" for address in ADDRESSES
         )
-        # The network owner has no external interface; NET_ADMIN only adds
-        # the TEST-NET client addresses to loopback.
         run(
             "docker",
             "run",
@@ -155,7 +151,6 @@ def main():
         )
         started.append(network)
         cap_args = [part for cap in CAPS for part in ("--cap-add", cap)]
-        # Unconfined seccomp lets the backend create its single-UID user namespace.
         run(
             "docker",
             "run",
@@ -225,7 +220,6 @@ def main():
             require(time.monotonic() < end, "Timed out waiting for the native fixture")
             time.sleep(0.5)
         ready = json.loads(ready.stdout)
-        # Copy only the fixture TLS material into Postfix's secrets mount.
         secrets = evidence / "postfix-secrets"
         secrets.mkdir(mode=0o755)
         for key, name in (
@@ -313,7 +307,6 @@ def main():
         postfix = start_postfix("postfix.log")
         native_execute("/bin/touch", root + "/continue")
 
-        # Serve the fixture's Postfix control requests until it finishes.
         last_request = 0
         while native.poll() is None:
             require(time.monotonic() < stop_at, "Qualification deadline exceeded")
