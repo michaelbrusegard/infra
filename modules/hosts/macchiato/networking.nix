@@ -38,18 +38,15 @@
     # families. Keep port ranges separate because nftables cannot represent a
     # range-to-range translation in the anonymous map used for single ports.
     publicPortForwards = [
-      # Gateway API
       (forward publicGateway "tcp" 80)
       (forward publicGateway "tcp" 443)
       # Shared server-to-server SMTP edge. Clients use JMAP through HTTPS.
       (forward stalwartEdge "tcp" 25)
       # Backup MX handoff requires the pinned cortado client certificate.
       (forward stalwartEdge "tcp" 2525)
-      # NetBird coturn
       (forward netbirdCoturn "udp" 3478)
       # mc-router fans out by handshake hostname (*.eldians.com).
       (forward minecraftRouter "tcp" 25565)
-      # Nextcloud Talk eturnal
       (forward nextcloudEturnal "udp" 5349)
       (forward nextcloudEturnal "tcp" 5349)
     ];
@@ -67,7 +64,6 @@
     mkIPv6Forward = forward: "${forward.proto} . ${toString forward.port} : ${forward.ipv6} . ${toString forward.port}";
   in {
     boot.kernel.sysctl = {
-      # Required for routing traffic between bridges and to the internet
       "net.ipv6.conf.all.forwarding" = 1;
       # Accept router advertisements on WAN even with forwarding enabled
       # (normally forwarding disables RA acceptance; value 2 overrides that)
@@ -99,7 +95,6 @@
       };
 
       interfaces = {
-        # WAN gets its address from the ISP via DHCP
         "${wanInterface}".useDHCP = true;
 
         # Client VLAN: personal devices, APs, TVs (10.0.186.0/24)
@@ -235,7 +230,6 @@
 
       firewall = {
         enable = true;
-        # All traffic from LAN bridges is trusted (no per-port filtering)
         trustedInterfaces = ["br_clients" "br_servers" "vpn_clients"];
         # Create a forward chain with default-drop policy so extraForwardRules
         # are actually enforced. Established/related and NAT-forwarded traffic
@@ -281,7 +275,6 @@
           iifname "guest" oifname "${wanInterface}" accept
         '';
 
-        # Ports open to the internet on the WAN interface
         # SSH is opened separately by openssh module's openFirewall = true
         interfaces = {
           # IoT devices need DHCP and DNS from the router, nothing else
