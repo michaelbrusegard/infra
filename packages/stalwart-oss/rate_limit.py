@@ -6,11 +6,11 @@ an independent documentation-address bucket. No production IdP or mail is used.
 """
 
 import json
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import time
+from pathlib import Path
 
 from integration import (
     Acceptance,
@@ -23,7 +23,6 @@ from integration import (
     require,
 )
 from mail import create, port, reload, start_mail, update
-
 
 RATE_PERIOD_MS = 3_600_000
 
@@ -60,9 +59,8 @@ def run(server, client):
     management = helper.create_native_user(
         "operator",
         domain,
-        permissions={
-            key: True
-            for key in (
+        permissions=dict.fromkeys(
+            (
                 "authenticate",
                 "sysHttpGet",
                 "sysHttpUpdate",
@@ -73,8 +71,9 @@ def run(server, client):
                 "sysAuthenticationGet",
                 "sysAuthenticationUpdate",
                 "sysOidcProviderUpdate",
-            )
-        },
+            ),
+            True,
+        ),
     )
     key = helper.api_key(management)
     alice = helper.create_native_user(

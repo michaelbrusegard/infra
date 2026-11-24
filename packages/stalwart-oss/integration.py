@@ -52,7 +52,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -570,23 +570,17 @@ class Server:
     def stop(self):
         process, self.process = self.process, None
         if process is not None:
-            try:
+            with suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
             try:
                 process.wait(timeout=20)
             except subprocess.TimeoutExpired:
-                try:
+                with suppress(ProcessLookupError):
                     os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
                 process.wait(timeout=10)
             # Terminate any child that outlived the main server process.
-            try:
+            with suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
         if self.log:
             self.log.close()
             self.log = None
@@ -615,9 +609,7 @@ class Acceptance:
     def stage(self, name, operation):
         try:
             operation()
-        except (
-            Exception
-        ) as error:  # noqa: BLE001 - collect test failures, never skip them
+        except Exception as error:
             self.failures.append(name)
             print(
                 self.c.redactor(f"FAIL {name}: {type(error).__name__}: {error}"),
@@ -2389,7 +2381,11 @@ class Acceptance:
         }
         require(
             names.isdisjoint(
-                {"Ignored Pocket ID Group", "Ignored Bulk Group", "Retired Fixture Group"}
+                {
+                    "Ignored Pocket ID Group",
+                    "Ignored Bulk Group",
+                    "Retired Fixture Group",
+                }
             ),
             f"Ignore mode stored a group: {names}",
         )
@@ -2868,17 +2864,13 @@ def launch(args):
     try:
         return process.wait()
     except BaseException:
-        try:
+        with suppress(ProcessLookupError):
             os.killpg(process.pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
         try:
             process.wait(timeout=40)
         except subprocess.TimeoutExpired:
-            try:
+            with suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
             process.wait()
         raise
     finally:
@@ -3136,7 +3128,7 @@ class HelperTests(unittest.TestCase):
             if method == "x:Domain/set":
                 for key, value in arguments["update"].items():
                     domains[key].update(value)
-                return {"updated": {key: None for key in arguments["update"]}}
+                return {"updated": dict.fromkeys(arguments["update"])}
             if method == "x:Action/set":
                 self.assertEqual(
                     arguments["create"]["reload"]["@type"], "ReloadSettings"

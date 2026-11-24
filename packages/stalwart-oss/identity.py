@@ -8,7 +8,6 @@ import hashlib
 import http.cookiejar
 import json
 import os
-from pathlib import Path
 import secrets
 import shutil
 import socket
@@ -16,22 +15,23 @@ import subprocess
 import sys
 import tempfile
 import time
-import urllib.request
 import urllib.parse
+import urllib.request
+from pathlib import Path
 
 from integration import (
+    ROOT,
     Acceptance,
     Client,
-    Server,
-    Redactor,
     NoRedirect,
-    ROOT,
+    Redactor,
+    Server,
     check_namespace,
-    namespace_id,
     isolated_environment,
-    seeded_user_defaults,
+    namespace_id,
     patch,
     require,
+    seeded_user_defaults,
 )
 
 POCKET_SHA256 = "0f27f55f6597986f9998ba0594c9eb4ef73fab01521d2795edf2ebce06c8448e"
@@ -420,9 +420,7 @@ def stalwart_oidc_login(
             == "x:NetworkListener/query",
             "Pocket ID admin group did not grant session administration",
         )
-        native_user = client.jmap(
-            "x:Account/get", {"ids": [user_id]}
-        )["list"][0]
+        native_user = client.jmap("x:Account/get", {"ids": [user_id]})["list"][0]
         require(
             native_user.get("roles", {}).get("@type") == "User",
             "Pocket ID administration persisted a native Admin role",

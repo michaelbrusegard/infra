@@ -9,10 +9,10 @@ an unquiesced volume snapshot. No storage fault injection is performed.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
 import os
-from pathlib import Path
 import secrets
 import shutil
 import signal
@@ -20,20 +20,21 @@ import socket
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 from types import SimpleNamespace
 
 from integration import (
+    CORE,
+    ROOT,
     Acceptance,
     Client,
-    Server,
     Redactor,
-    ROOT,
-    CORE,
+    Server,
     check_namespace,
-    namespace_id,
     isolated_environment,
-    seeded_user_defaults,
+    namespace_id,
     require,
+    seeded_user_defaults,
     user_body,
 )
 
@@ -86,6 +87,7 @@ def restic_restore(server, restic, start):
             cwd=server.root,
             capture_output=True,
             timeout=180,
+            check=False,
         )
         require(
             process.returncode == 0,
@@ -326,10 +328,8 @@ def main():
         try:
             return process.wait()
         finally:
-            try:
+            with contextlib.suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
     check_namespace(args.parent_netns, args.parent_userns)
     os.environ["STALWART_TEST_RESTIC"] = args.restic
     with tempfile.TemporaryDirectory(

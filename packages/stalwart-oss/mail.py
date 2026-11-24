@@ -16,7 +16,7 @@ import socket
 import ssl
 import subprocess
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from email import policy
 from email.message import EmailMessage
 from email.parser import BytesParser
@@ -346,21 +346,21 @@ def configure_backend(
     reload(client)
     client.recovery = auth
     start_mail(server)
-    return dict(
-        admin_id=admin_id,
-        admin_email=admin_email,
-        admin_password=server.password,
-        server=server,
-        client=client,
-        domain=domain,
-        domain_id=domain_id,
-        ports=ports,
-        context=context,
-        certificate=cert,
-        private_key=key,
-        users=users,
-        shared={"id": shared_id, "address": f"shared@{domain}"},
-    )
+    return {
+        "admin_id": admin_id,
+        "admin_email": admin_email,
+        "admin_password": server.password,
+        "server": server,
+        "client": client,
+        "domain": domain,
+        "domain_id": domain_id,
+        "ports": ports,
+        "context": context,
+        "certificate": cert,
+        "private_key": key,
+        "users": users,
+        "shared": {"id": shared_id, "address": f"shared@{domain}"},
+    }
 
 
 class TLSLMTP(smtplib.LMTP):
@@ -435,10 +435,8 @@ def mailbox(fixture, user="alice"):
         connection.login(account["email"], account["password"])
         yield connection
     finally:
-        try:
+        with suppress(OSError, imaplib.IMAP4.error):
             connection.logout()
-        except (OSError, imaplib.IMAP4.error):
-            pass
 
 
 def fetch_message(fixture, tag, user="alice", folder="INBOX", timeout=25):

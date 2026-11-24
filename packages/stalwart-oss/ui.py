@@ -17,9 +17,9 @@ from __future__ import annotations
 
 import ipaddress
 import json
-from pathlib import Path
 import re
 import time
+from pathlib import Path
 from urllib.parse import quote, urlsplit
 
 

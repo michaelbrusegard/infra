@@ -14,11 +14,11 @@ import hashlib
 import importlib.util
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 
 SPEC = importlib.util.spec_from_file_location(
     "native_hook", Path(__file__).with_name("apply-native.py")
