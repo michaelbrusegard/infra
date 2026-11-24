@@ -46,7 +46,6 @@ def port():
 class Pocket(Client):
     def __init__(self, number, redactor):
         super().__init__(number, redactor)
-        # WebAuthn requires a domain RP ID, not a numeric IP address.
         self.origin = f"http://localhost:{number}"
         self.cookies = http.cookiejar.CookieJar()
         self.http = urllib.request.build_opener(
@@ -160,7 +159,6 @@ def run(server, client, *, pocket_binary, chromium):
                     }
                 },
             )
-            # Adopt existing mailbox identities before allowing Pocket ID to sync.
             adopted_user = acceptance.create_native_user("admin", acceptance.domain_id)
             group = pocket.api(
                 "POST",
@@ -187,8 +185,6 @@ def run(server, client, *, pocket_binary, chromium):
                 "/api/user-groups/" + admin_group["id"] + "/users",
                 {"userIds": [admin["id"]]},
             )
-            # Keep SCIM limited to mailbox groups while the OIDC token can
-            # still assert all of the user's groups for session authorization.
             pocket.api(
                 "PUT",
                 "/api/oidc/clients/" + oidc["id"] + "/allowed-user-groups",
@@ -359,8 +355,6 @@ def stalwart_oidc_login(
                     "claimUsername": "email",
                     "claimName": "name",
                     "claimGroups": "groups",
-                    # This fixture models the old full-account OIDC policy;
-                    # Pocket ID tokens do not carry Stalwart-specific scopes.
                     "unscopedTokens": "full",
                     "acceptedAudiences": {"wrong-fixture-audience": True},
                 }
@@ -380,8 +374,6 @@ def stalwart_oidc_login(
             "x:Authentication/set",
             {"update": {"singleton": {"directoryId": directory}}},
         )
-        # Application oauthClientId is part of an in-memory route bundle and is
-        # not refreshed by ReloadSettings.
         server.restart()
         for _ in range(60):
             discovery = client.expect(

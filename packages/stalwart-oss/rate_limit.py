@@ -28,8 +28,6 @@ RATE_PERIOD_MS = 3_600_000
 
 
 def run(server, client):
-    # The store uses wall-clock-aligned buckets. Do not straddle a boundary
-    # during the short burst assertions, even when CI starts near the hour.
     remaining = RATE_PERIOD_MS / 1000 - time.time() % (RATE_PERIOD_MS / 1000)
     if remaining < 30:
         time.sleep(remaining + 0.1)
@@ -101,7 +99,6 @@ def run(server, client):
                 "claimUsername": "email",
                 "claimName": "name",
                 "claimGroups": "groups",
-                # The fixture IdP issues opaque tokens that carry no scopes.
                 "opaqueTokenValidation": "userInfo",
                 "unscopedTokens": "full",
             },
@@ -144,7 +141,6 @@ def run(server, client):
         )
         print("PASS repeated valid OIDC requests exceed anonymous budget", flush=True)
 
-        # Authorization changes must remain visible on the SAME opaque token.
         def admin_query(allowed):
             result = client.expect(
                 "POST",
@@ -176,12 +172,9 @@ def run(server, client):
             "PASS current group grants and removals survive rate admission", flush=True
         )
 
-        # Fresh credentials still consume the pre-authentication budget.
         for index in range(3):
             fresh = provider.issue("alice@limit.test", "Alice", [])
             request(fresh, "192.0.2.11", 200 if index < 2 else 429)
-        # Exhausting a shared gateway's anonymous bucket must not block a
-        # previously verified token (but still revalidate it).
         request(token, "192.0.2.11")
         print("PASS unknown-token budget enforced; known token unaffected", flush=True)
 
@@ -251,10 +244,6 @@ def run(server, client):
         )
         client.expect("GET", "/api/account", 200, auth="recovery")
         print("PASS authenticated account budget and native machine key", flush=True)
-
-        # Rate admission expiry (the is_live check) is not exercised here: v1
-        # enforces a 10-minute minimum for OidcProvider.accessTokenExpiry,
-        # which bounds the admission cache TTL for opaque tokens.
 
 
 def main():

@@ -64,8 +64,6 @@ def inventory(fixture, username=None, password=None):
     with authenticated_mailbox(fixture, username, password) as imap:
         status, rows = imap.list()
         require(status == "OK", "IMAP LIST failed")
-        # Fixture folder names are printable ASCII. Production relies on
-        # imapsync itself for modified UTF-7 handling.
         folders = [row.rsplit(b' "/" ', 1)[-1].strip(b'"').decode() for row in rows]
         for folder in folders:
             require(

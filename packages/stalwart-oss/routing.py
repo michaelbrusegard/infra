@@ -45,8 +45,6 @@ def message_ids(fixture, user="alice"):
 
 def run(destination_binary, source_binary):
     isolated()
-    # Legacy SMTP refuses loopback next hops. This address exists only on lo
-    # inside the verified network namespace; no external interface is added.
     relay_address = "10.200.0.2"
     subprocess.run(
         [shutil.which("ip"), "address", "add", f"{relay_address}/32", "dev", "lo"],
@@ -63,8 +61,6 @@ def run(destination_binary, source_binary):
             source_binary,
             root / "source",
             source_client,
-            # An explicitly supplied legacy binary keeps its own metadata and
-            # licensing behavior. The destination must always identify as OSS.
             expected_edition="oss" if source_binary == destination_binary else None,
         )
         destination_server = Server(
@@ -150,7 +146,6 @@ def run(destination_binary, source_binary):
                     "port": destination["ports"]["lmtp"],
                     "protocol": "lmtp",
                     "implicitTls": True,
-                    # Only in this loopback-only, self-signed test fixture.
                     "allowInvalidCerts": True,
                     "authSecret": {"@type": "None"},
                 },
@@ -215,8 +210,6 @@ def run(destination_binary, source_binary):
                     require(smtp.rcpt(address)[0] == 550, "Invalid recipient accepted")
                     smtp.rset()
 
-            # Route rollback is not data rollback. Keep newly delivered mail
-            # on the destination and require reverse reconciliation separately.
             update(source_client, "MtaOutboundStrategy", {"route": original})
             reload(source_client)
             smtp_send(source, "alice@mail.test", known_message("route-rollback"))

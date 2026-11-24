@@ -28,8 +28,6 @@ class UiCheckError(RuntimeError):
 
 
 def _label_pattern(label: str):
-    # FieldWidget appends marker spans without a text-space; CSS margins only
-    # make them look separated. Thus textContent can be "Label(optional)".
     return re.compile(r"^" + re.escape(label) + r"\s*(?:\*|\(optional\))?\s*$")
 
 
@@ -114,8 +112,6 @@ def run_ui_checks(
             parts.port or (443 if parts.scheme == "https" else 80),
         ) == allowed_origin
 
-    # Persist only the same fields as stock authStore.ts. No fabricated session,
-    # permission list, schema, edition or JMAP account data is supplied.
     auth = {
         "state": {
             "accessToken": admin_api_key,
@@ -134,8 +130,6 @@ def run_ui_checks(
             launch = {"headless": True}
             if chromium_executable is not None:
                 launch["executable_path"] = str(chromium_executable)
-            # launch() creates a temporary browser profile; never connect_over_cdp
-            # or launch_persistent_context against a human's profile.
             browser = playwright.chromium.launch(**launch)
             try:
                 context = browser.new_context(
@@ -145,8 +139,6 @@ def run_ui_checks(
                 )
                 context.set_default_timeout(timeout_ms)
                 context.set_default_navigation_timeout(timeout_ms)
-                # Fail with the actual credential status rather than a later
-                # timeout waiting for a form that authentication never loaded.
                 authenticated = context.request.get(
                     origin + "/api/account",
                     headers={"Authorization": "Bearer " + admin_api_key},
@@ -163,7 +155,6 @@ def run_ui_checks(
                     if same_origin(route.request.url):
                         route.continue_()
                     else:
-                        # Do not collect URLs, headers or bodies containing secrets.
                         blocked_requests.append("off-origin request")
                         route.abort("blockedbyclient")
 
@@ -186,8 +177,6 @@ def run_ui_checks(
                     )
 
                 def field(label):
-                    # Stock labels have no htmlFor. The enclosing field div owns
-                    # the label container, help text and control (FieldWidget.tsx).
                     label_node = page.locator("label").filter(
                         has_text=_label_pattern(label)
                     )
@@ -209,7 +198,6 @@ def run_ui_checks(
                             "This feature requires an Enterprise license.", exact=True
                         )
                     ).not_to_be_visible()
-                    # Neither SCIM controls nor the account menu should upsell.
                     expect(page.get_by_role("dialog")).not_to_be_visible()
 
                 def save_native(object_type, object_id, property_name, expected_value):
@@ -254,8 +242,6 @@ def run_ui_checks(
                         and object_id in result[1].get("updated", {}),
                         f"{method} did not confirm the fixture object was updated",
                     )
-                    # Wait for stock UI's successful-save navigation before opening
-                    # another form (otherwise its dirty-form guard may intercept).
                     expect(page).to_have_url(
                         re.compile(
                             r"/"
@@ -298,10 +284,7 @@ def run_ui_checks(
                     "Fixture admin must use an English locale",
                 )
 
-                # Read the real form before changing it. The switch may begin in
-                # either state; always exercise a write, ultimately leaving true.
                 expect(field("Domain Name").locator("input")).to_have_value(domain_name)
-                # TopBar.tsx exposes its compiled package version in the logo tooltip.
                 page.locator("header a").first.hover()
                 expect(page.get_by_role("tooltip")).to_have_text(
                     "Stalwart WebUI v1.0.10"
@@ -331,7 +314,7 @@ def run_ui_checks(
                     "external_id must differ from the fixture's current value",
                 )
                 identifier.fill(external_id)
-                identifier.press("Tab")  # StringField's buffered input commits on blur.
+                identifier.press("Tab")
                 no_scim_gate()
                 save_native("x:Account", account_id, "externalId", external_id)
                 open_view(user_view)
@@ -339,8 +322,6 @@ def run_ui_checks(
                     external_id
                 )
 
-                # The cosmetic patch removes the marketing entry without changing
-                # edition reporting, permissions or unrelated feature gates.
                 page.locator("header").get_by_role("button").last.click()
                 expect(page.get_by_role("menu")).to_be_visible()
                 expect(
@@ -348,8 +329,6 @@ def run_ui_checks(
                 ).to_have_count(0)
                 page.keyboard.press("Escape")
 
-                # Exercise the real credential editor, but do not create another
-                # secret. The fixture admin's own key is never displayed here.
                 open_view("Account/x:ApiKey/new")
                 mode = page.get_by_role("combobox").filter(
                     has_text="Same permissions as account"
@@ -369,8 +348,6 @@ def run_ui_checks(
                 expect(option).to_be_enabled()
                 option.check()
                 expect(option).to_be_checked()
-                # This popup is Radix Popover (role=dialog), not EnterpriseUpsell;
-                # verify the Enterprise text directly while the picker is open.
                 expect(
                     page.get_by_text(
                         "This feature requires an Enterprise license.", exact=True
@@ -386,7 +363,6 @@ def run_ui_checks(
             finally:
                 browser.close()
     except Exception as exc:
-        # Never echo the API key if a browser/transport exception includes it.
         raise UiCheckError(
             str(exc).replace(admin_api_key, "[fixture credential redacted]")
         ) from None

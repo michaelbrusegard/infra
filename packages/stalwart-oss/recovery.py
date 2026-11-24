@@ -190,8 +190,6 @@ def run(server, client):
         )
 
         fixture = configure_backend(server, client, domain="recovery-mail.test")
-        # Embed only disposable TLS/DKIM material in the backed-up registry so
-        # restored listeners do not depend on files in the original instance.
         private_key = client.redactor.add(fixture["private_key"].read_text())
         certificates = client.jmap("x:Certificate/get", {})["list"]
         require(len(certificates) == 1, "Expected one disposable TLS certificate")
@@ -256,7 +254,6 @@ def run(server, client):
             )
             for path, expected in snapshots.items():
                 actual = recovered.expect("GET", path, 200).document()
-                # Location is the new instance origin, not persisted identity.
                 actual.get("meta", {}).pop("location", None)
                 expected.get("meta", {}).pop("location", None)
                 require(actual == expected, "SCIM restored snapshot differs")

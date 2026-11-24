@@ -53,6 +53,9 @@ MAIL_PERMISSIONS = [
 ]
 
 
+NATIVE_SMTP_RATE_LIMIT_GAP_SECONDS = 0.25
+
+
 def port():
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -60,8 +63,6 @@ def port():
 
 
 def isolated():
-    # The launcher checks namespace ancestry; helpers additionally reject a host
-    # network even when accidentally called outside that launcher.
     require(
         os.geteuid() == 0 and [n for _, n in socket.if_nameindex()] == ["lo"],
         "Mail fixture requires integration's verified unshare -Urn namespace",
@@ -273,7 +274,6 @@ def configure_backend(
             "waitOnFail": {"else": "1ms"},
         },
     )
-    # Zero durations evaluate as unset and fall back to the 30-second tarpit.
     update(client, "MtaStageRcpt", {"waitOnFail": {"else": "1ms"}})
     update(client, "MtaStageData", {"enableSpamFilter": {"else": "false"}})
     users = {}
@@ -312,8 +312,6 @@ def configure_backend(
             "@type": "Group",
             "name": "shared",
             "domainId": domain_id,
-            # A migration-only fixture entitlement. The migration acceptance
-            # restores Inherit after copying and verifies master login closes.
             "permissions": {
                 "@type": "Merge",
                 "enabledPermissions": dict.fromkeys(MAIL_PERMISSIONS, True),
@@ -376,8 +374,7 @@ class TLSLMTP(smtplib.LMTP):
 
 def smtp_connection(fixture, protocol="smtp"):
     isolated()
-    # Stay below the native default of five SMTP connections per second.
-    time.sleep(0.25)
+    time.sleep(NATIVE_SMTP_RATE_LIMIT_GAP_SECONDS)
     if protocol == "lmtp":
         return TLSLMTP("127.0.0.1", fixture["ports"][protocol], fixture["context"])
     return smtplib.SMTP_SSL(
@@ -444,7 +441,6 @@ def fetch_message(fixture, tag, user="alice", folder="INBOX", timeout=25):
     while time.monotonic() < deadline:
         with mailbox(fixture, user) as imap:
             require(imap.select(f'"{folder}"')[0] == "OK", "Cannot select mailbox")
-            # Delivery smoke checks should not depend on asynchronous FTS indexing.
             status, rows = imap.search(None, "ALL")
             require(status == "OK", "IMAP search failed")
             matches = []
