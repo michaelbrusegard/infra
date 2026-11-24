@@ -8,6 +8,12 @@
         ast-grep scan --no-ignore hidden --globs '!gitops/espresso/flux-system/**'
         touch $out
       '';
+
+      gitleaks = pkgs.runCommand "gitleaks" {nativeBuildInputs = [pkgs.gitleaks];} ''
+        cd ${src}
+        gitleaks dir . --no-banner --redact --config .gitleaks.toml
+        touch $out
+      '';
     };
   };
 }
