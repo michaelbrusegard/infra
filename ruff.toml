@@ -1,0 +1,37 @@
+target-version = "py313"
+
+[lint]
+select = [
+  "F",
+  "E",
+  "W",
+  "B",
+  "SIM",
+  "UP",
+  "I",
+  "C4",
+  "RUF",
+  "PIE",
+  "PGH",
+  "PLE",
+  "PLW",
+  "RET",
+  "RSE",
+  "FURB",
+  "PERF",
+  "N",
+  "EXE",
+  "LOG",
+  "G",
+  "FLY",
+  "ASYNC",
+  "TID",
+  "ICN",
+  "ISC",
+  "T10",
+  "YTT",
+]
+ignore = ["E501", "ISC001", "RET503", "FURB162"]
+
+[lint.per-file-ignores]
+"gitops/espresso/apps/hermes-agent/plugins/response-polish/__init__.py" = ["N999"]
