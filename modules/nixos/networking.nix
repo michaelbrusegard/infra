@@ -1,3 +1,0 @@
-{name, ...}: {
-  networking.hostName = name;
-}

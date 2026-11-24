@@ -1,0 +1,70 @@
+{
+  flake.modules.nixos.homebridge = {config, ...}: {
+    services = {
+      avahi = {
+        enable = true;
+        nssmdns4 = true;
+        publish = {
+          enable = true;
+          userServices = true;
+          addresses = true;
+        };
+      };
+
+      homebridge = {
+        enable = true;
+        settings = {
+          bridge = {
+            inherit (config.secrets.homebridge.settings.bridge) username;
+            inherit (config.secrets.homebridge.settings.bridge) pin;
+            port = 51826;
+            advertiser = "avahi";
+          };
+          platforms = [
+            {
+              name = "zigbee2mqtt";
+              platform = "zigbee2mqtt";
+              mqtt = {
+                server = "mqtt://127.0.0.1:1883";
+                base_topic = "zigbee2mqtt";
+                version = 5;
+              };
+            }
+          ];
+        };
+      };
+
+      zigbee2mqtt = {
+        enable = true;
+        settings = {
+          mqtt.server = "mqtt://127.0.0.1:1883";
+          frontend = {
+            enabled = true;
+            port = 8082;
+          };
+          availability.enabled = true;
+        };
+      };
+
+      mosquitto = {
+        enable = true;
+        listeners = [
+          {
+            address = "127.0.0.1";
+            acl = ["pattern readwrite #"];
+            omitPasswordAuth = true;
+            settings.allow_anonymous = true;
+          }
+        ];
+      };
+    };
+
+    users.users.zigbee2mqtt.extraGroups = ["dialout"];
+
+    environment.persistence."/persistent".directories = [
+      config.services.mosquitto.dataDir
+      config.services.homebridge.userStoragePath
+      config.services.zigbee2mqtt.dataDir
+    ];
+  };
+}

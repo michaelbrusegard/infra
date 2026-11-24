@@ -1,0 +1,153 @@
+{
+  flake.modules.nixos.espresso = {
+    lib,
+    config,
+    ...
+  }: let
+    diskIds = {
+      "espresso-0" = {
+        main = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB59074B";
+      };
+      "espresso-1" = {
+        main = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB58943B";
+        data1 = "/dev/disk/by-id/ata-MZ7LM3T8HMLP0D3_S37MNX0J600459";
+        data2 = "/dev/disk/by-id/ata-MZ7LM3T8HMLP0D3_S37MNX0J900816";
+      };
+      "espresso-2" = {
+        main = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_500GB_S64BNF0RB59076B";
+        data1 = "/dev/disk/by-id/ata-MZ7LM3T8HMLP0D3_S37MNX0J600452";
+        data2 = "/dev/disk/by-id/ata-MZ7LM3T8HMLP0D3_S37MNX0J600844";
+      };
+    };
+
+    currentDisks = diskIds.${config.networking.hostName};
+  in {
+    disko.devices = {
+      disk =
+        {
+          main = {
+            type = "disk";
+            device = currentDisks.main;
+            content = {
+              type = "gpt";
+              partitions = {
+                ESP = {
+                  priority = 1;
+                  name = "ESP";
+                  start = "1M";
+                  end = "512M";
+                  type = "EF00";
+                  content = {
+                    type = "filesystem";
+                    format = "vfat";
+                    mountpoint = "/boot";
+                    mountOptions = ["umask=0077"];
+                  };
+                };
+                root = {
+                  size = "120G";
+                  content = {
+                    type = "luks";
+                    name = "crypted";
+                    settings = {
+                      allowDiscards = true;
+                      bypassWorkqueues = true;
+                    };
+                    passwordFile = "/tmp/secret.key";
+                    content = {
+                      type = "filesystem";
+                      format = "ext4";
+                      mountpoint = "/persistent";
+                      mountOptions = ["noatime"];
+                      postMountHook = ''
+                        persistent="$(findmnt -n -o TARGET --source "$device")"
+                        mkdir -p "$persistent/nix"
+                        rootMnt="$(dirname "$persistent")"
+                        mkdir -p "$rootMnt/nix"
+                        mount --bind "$persistent/nix" "$rootMnt/nix"
+                      '';
+                    };
+                  };
+                };
+                data = {
+                  size = "100%";
+                  content = {
+                    type = "luks";
+                    name = "crypted-main-data";
+                    settings = {
+                      allowDiscards = true;
+                      bypassWorkqueues = true;
+                    };
+                    passwordFile = "/tmp/secret.key";
+                  };
+                };
+              };
+            };
+          };
+        }
+        // lib.optionalAttrs (builtins.hasAttr "data1" currentDisks) {
+          data1 = {
+            type = "disk";
+            device = currentDisks.data1;
+            content = {
+              type = "gpt";
+              partitions = {
+                root = {
+                  size = "100%";
+                  content = {
+                    type = "luks";
+                    name = "crypted-data1";
+                    settings = {
+                      allowDiscards = true;
+                      bypassWorkqueues = true;
+                    };
+                    passwordFile = "/tmp/secret.key";
+                  };
+                };
+              };
+            };
+          };
+          data2 = {
+            type = "disk";
+            device = currentDisks.data2;
+            content = {
+              type = "gpt";
+              partitions = {
+                root = {
+                  size = "100%";
+                  content = {
+                    type = "luks";
+                    name = "crypted-data2";
+                    settings = {
+                      allowDiscards = true;
+                      bypassWorkqueues = true;
+                    };
+                    passwordFile = "/tmp/secret.key";
+                  };
+                };
+              };
+            };
+          };
+        };
+
+      nodev = {
+        "/" = {
+          fsType = "tmpfs";
+          mountOptions = ["defaults" "mode=755"];
+        };
+      };
+    };
+
+    fileSystems = {
+      "/persistent".neededForBoot = true;
+
+      "/nix" = {
+        neededForBoot = true;
+        depends = ["/persistent"];
+        device = "/persistent/nix";
+        fsType = "none";
+        options = ["bind"];
+      };
+    };
+  };
+}

@@ -1,4 +1,8 @@
-{pkgs, ...}: let
+{
+  pkgs,
+  smtpBackupModule,
+  ...
+}: let
   primaryName = "router.asgard.michaelbrusegard.com";
   certificate = "/var/lib/acme/midgard.michaelbrusegard.com";
 in
@@ -7,7 +11,7 @@ in
     nodes = {
       # Cortado's real secondary-MX configuration, with fixture TLS material.
       backup = {lib, ...}: {
-        imports = [../../hosts/cortado/smtp-backup.nix];
+        imports = [smtpBackupModule];
         options.secrets = lib.mkOption {type = lib.types.attrs;};
         config = {
           secrets.smtp-backup = {
