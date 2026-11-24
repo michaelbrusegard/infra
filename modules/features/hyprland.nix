@@ -202,7 +202,6 @@
     ];
   in
     lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
-      # Wayland clipboard CLI: `cmd | wl-copy`, `wl-paste` to read back.
       home.packages = [pkgs.wl-clipboard];
 
       systemd.user.services = {
@@ -319,13 +318,11 @@
 
           bind =
             [
-              # Focus window
               (bind "MOD5 + H" (movefocus "left"))
               (bind "MOD5 + J" (movefocus "down"))
               (bind "MOD5 + K" (movefocus "up"))
               (bind "MOD5 + L" (movefocus "right"))
 
-              # Move window
               (bind "MOD5 + SHIFT + H" (movewindow "left"))
               (bind "MOD5 + SHIFT + J" (movewindow "down"))
               (bind "MOD5 + SHIFT + K" (movewindow "up"))
@@ -336,7 +333,6 @@
             ++ [
               (bind "MOD5 + 0" togglefloating)
 
-              # System
               (bind "MOD5 + RETURN" (exec kitty))
               (bind "MOD5 + SHIFT + RETURN" (exec "dfiles open"))
               (bind "CTRL + SPACE" (exec "dms ipc call spotlight toggle"))
@@ -356,13 +352,11 @@
               (bind "CTRL + Control_L" (global "com.t3tools.T3Code:capture-window"))
               (bind "CTRL + Control_R" (global "com.t3tools.T3Code:capture-window"))
 
-              # Resize
               (bindRepeat "MOD5 + left" (resizeactive (-20) 0))
               (bindRepeat "MOD5 + down" (resizeactive 0 20))
               (bindRepeat "MOD5 + up" (resizeactive 0 (-20)))
               (bindRepeat "MOD5 + right" (resizeactive 20 0))
 
-              # Audio/brightness
               (bindLockedRepeat "XF86AudioRaiseVolume" (exec "dms ipc call audio increment 3"))
               (bindLockedRepeat "XF86AudioLowerVolume" (exec "dms ipc call audio decrement 3"))
               (bindLockedRepeat "XF86MonBrightnessUp" (execRaw ''dms ipc call brightness increment 5 ""''))
@@ -376,7 +370,6 @@
               (bindLocked "XF86AudioNext" (exec "dms ipc call mpris next"))
               (bindLocked "XF86AudioPrev" (exec "dms ipc call mpris previous"))
 
-              # Mouse
               (bindMouse "MOD5 + mouse:272" drag)
               (bindMouse "MOD5 + mouse:273" resizeMouse)
             ]

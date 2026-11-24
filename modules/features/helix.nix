@@ -5,7 +5,7 @@
 
       settings = {
         editor = {
-          # Core behavior (matching neovim options)
+          # Matching neovim options
           mouse = true;
           scrolloff = 4;
           cursorline = true;
@@ -17,18 +17,16 @@
           idle-timeout = 200;
           completion-timeout = 200;
 
-          # Line numbers (matching relativenumber + number)
+          # Matching relativenumber + number
           line-number = "relative";
           gutters = ["diagnostics" "spacer" "line-numbers" "spacer" "diff"];
 
-          # Cursor shape
           cursor-shape = {
             insert = "bar";
             normal = "block";
             select = "underline";
           };
 
-          # Status line
           statusline = {
             left = ["mode" "spinner" "file-name" "read-only-indicator" "file-modification-indicator"];
             center = [];
@@ -41,7 +39,7 @@
             };
           };
 
-          # Whitespace rendering (matching list = true)
+          # Matching list = true
           whitespace.render = {
             space = "none";
             tab = "all";
@@ -50,45 +48,39 @@
             newline = "none";
           };
 
-          # Indentation guides
           indent-guides = {
             render = true;
             character = "│";
             skip-levels = 1;
           };
 
-          # Soft wrap (matching linebreak = true, wrap = false by default)
+          # Matching linebreak = true, wrap = false by default
           soft-wrap.enable = false;
 
-          # File picker
           file-picker = {
             hidden = false;
             git-ignore = true;
             git-global = true;
           };
 
-          # LSP
           lsp = {
             display-messages = true;
             display-inlay-hints = true;
           };
 
-          # Inline diagnostics
           inline-diagnostics = {
             cursor-line = "hint";
             other-lines = "disable";
           };
 
-          # Smart tab
           smart-tab.enable = true;
         };
 
-        # Keys - matching neovim keybinds where possible
+        # Matching neovim keybinds where possible
         keys = {
           normal = {
             # Space as leader is default in helix
 
-            # Window management (matching <C-h/j/k/l> for window movement)
             C-h = "jump_view_left";
             C-j = "jump_view_down";
             C-k = "jump_view_up";
@@ -97,26 +89,20 @@
             # Escape clears search highlight (matching <esc> = noh)
             esc = ["collapse_selection" "keep_primary_selection"];
 
-            # Buffer navigation (matching [b / ]b)
             "[" = {b = "goto_previous_buffer";};
             "]" = {b = "goto_next_buffer";};
 
-            # Diagnostics navigation (matching [d / ]d)
             # [d and ]d are default in helix
 
-            # Space mappings (leader key)
             space = {
-              # Window management (matching <leader>- and <leader>|)
               "-" = "hsplit";
               "|" = "vsplit";
 
-              # Buffer operations (matching <leader>bb, <leader>bD)
               b = {
                 b = "buffer_picker";
                 D = ":buffer-close";
               };
 
-              # File operations (matching <leader>fn)
               f = {
                 f = "file_picker";
                 n = ":new";
@@ -124,7 +110,6 @@
                 g = "file_picker_in_current_directory";
               };
 
-              # Code actions (matching <leader>c*)
               c = {
                 a = "code_action";
                 f = ":format";
@@ -134,14 +119,12 @@
                 S = "workspace_symbol_picker";
               };
 
-              # Search (matching <leader>s*)
               s = {
                 g = "global_search";
                 s = "symbol_picker";
                 b = "buffer_picker";
               };
 
-              # Window operations (matching <leader>w*)
               w = {
                 d = ":quit";
                 h = "jump_view_left";
@@ -150,14 +133,12 @@
                 l = "jump_view_right";
               };
 
-              # Quit (matching <leader>q*)
               q = {
                 q = ":quit";
                 a = ":quit-all";
               };
             };
 
-            # Go-to mappings
             g = {
               d = "goto_definition";
               D = "goto_declaration";
@@ -167,24 +148,20 @@
             };
           };
 
-          # Select mode
           select = {
-            # Window movement in select mode too
             C-h = "jump_view_left";
             C-j = "jump_view_down";
             C-k = "jump_view_up";
             C-l = "jump_view_right";
           };
 
-          # Insert mode
           insert = {
-            # Escape behavior
             esc = "normal_mode";
           };
         };
       };
 
-      # Languages - matching neovim lang configs for formatting/LSP
+      # Matching neovim lang configs for formatting/LSP
       languages = {
         language-server = {
           nixd = {

@@ -64,38 +64,31 @@
     home =
       {
         packages = with pkgs; [
-          # Network/transfer
           curl
           wget
           rsync
           rclone
 
-          # Network diagnostics
           nmap
           netcat
           bind
           whois
           mtr
 
-          # Secrets
           age
           sops
           ssh-to-age
 
-          # Crypto
           openssl
 
-          # Compression/archive
           zstd
           gnutar
           unzip
 
-          # GNU/POSIX baseline
           uutils-coreutils
           findutils
           file
 
-          # Sysadmin essentials
           yq
           lsof
         ];

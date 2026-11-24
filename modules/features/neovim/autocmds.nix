@@ -16,7 +16,6 @@
       ];
 
       autocmds = [
-        # Check if we need to reload the file when it changed
         {
           event = ["FocusGained" "TermClose" "TermLeave"];
           group = "Checktime";
@@ -29,7 +28,6 @@
           '';
         }
 
-        # Highlight on yank
         {
           event = ["TextYankPost"];
           group = "HighlightYank";
@@ -40,7 +38,6 @@
           '';
         }
 
-        # Resize splits if window got resized
         {
           event = ["VimResized"];
           group = "ResizeSplits";
@@ -53,7 +50,6 @@
           '';
         }
 
-        # Go to last loc when opening a buffer
         {
           event = ["BufReadPost"];
           group = "LastLoc";
@@ -74,7 +70,6 @@
           '';
         }
 
-        # Close some filetypes with <q>
         {
           event = ["FileType"];
           group = "CloseWithQ";
@@ -121,7 +116,6 @@
           '';
         }
 
-        # Wrap and check for spell in text filetypes
         {
           event = ["FileType"];
           group = "WrapSpell";
@@ -134,7 +128,6 @@
           '';
         }
 
-        # Fix conceallevel for json files
         {
           event = ["FileType"];
           group = "JsonConceal";
@@ -146,7 +139,6 @@
           '';
         }
 
-        # Auto create dir when saving a file
         {
           event = ["BufWritePre"];
           group = "AutoCreateDir";
@@ -161,7 +153,6 @@
           '';
         }
 
-        # Auto save when leaving buffer or losing focus
         {
           event = ["BufLeave" "FocusLost"];
           group = "AutoSave";
@@ -174,7 +165,6 @@
           '';
         }
 
-        # Open random temp file on startup if no file is specified
         {
           event = ["VimEnter"];
           group = "RandomTempFile";

@@ -26,7 +26,6 @@
       wappalyzer = "gppongmhjkpfnbhagpmjfkannfbllamg";
     };
 
-    # Search, privacy and behaviour settings.
     settings = {
       DefaultSearchProviderEnabled = true;
       DefaultSearchProviderName = "DuckDuckGo";

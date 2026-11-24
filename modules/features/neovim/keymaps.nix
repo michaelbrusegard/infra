@@ -1,7 +1,6 @@
 {
   flake.modules.homeManager.neovim = {
     programs.neovim.spec.keymaps = [
-      # Better up/down
       {
         key = "j";
         mode = ["n" "x"];
@@ -31,7 +30,6 @@
         expr = true;
       }
 
-      # Move to window using the <ctrl> hjkl keys
       {
         key = "<C-h>";
         mode = "n";
@@ -57,7 +55,6 @@
         action = "<C-w>l";
       }
 
-      # Resize window using <ctrl> arrow keys
       {
         key = "<C-Up>";
         mode = "n";
@@ -83,7 +80,6 @@
         action = "<C-w>>";
       }
 
-      # Buffers
       {
         key = "[b";
         mode = "n";
@@ -115,7 +111,6 @@
         action = "<cmd>:bd<cr>";
       }
 
-      # Search and Navigation (Misc)
       {
         key = "<esc>";
         mode = ["i" "n" "s"];
@@ -171,7 +166,6 @@
         expr = true;
       }
 
-      # Better indenting
       {
         key = "<";
         mode = "x";
@@ -183,7 +177,6 @@
         action = ">gv";
       }
 
-      # Commenting
       {
         key = "gco";
         mode = "n";
@@ -197,7 +190,6 @@
         action = "O<esc>Vcx<esc><cmd>normal gcc<cr>fxa<bs>";
       }
 
-      # New file
       {
         key = "<leader>fn";
         mode = "n";
@@ -205,7 +197,6 @@
         action = "<cmd>enew<cr>";
       }
 
-      # Split window
       {
         key = "<leader>-";
         mode = "n";
@@ -225,7 +216,6 @@
         action = "<C-w>c";
       }
 
-      # Diagnostics
       {
         key = "<leader>cd";
         mode = "n";

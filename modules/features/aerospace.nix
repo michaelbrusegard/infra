@@ -73,25 +73,21 @@
           ];
 
           mode.main.binding = {
-            # Focus window
             alt-h = "focus left";
             alt-j = "focus down";
             alt-k = "focus up";
             alt-l = "focus right";
 
-            # Move window
             alt-shift-h = "move left";
             alt-shift-j = "move down";
             alt-shift-k = "move up";
             alt-shift-l = "move right";
 
-            # Resize window
             alt-left = "resize width -20";
             alt-right = "resize width +20";
             alt-up = "resize height -20";
             alt-down = "resize height +20";
 
-            # Switch to workspace
             alt-1 = "workspace --auto-back-and-forth 1";
             alt-2 = "workspace --auto-back-and-forth 2";
             alt-3 = "workspace --auto-back-and-forth 3";
@@ -102,7 +98,6 @@
             alt-8 = "workspace --auto-back-and-forth 8";
             alt-9 = "workspace --auto-back-and-forth 9";
 
-            # Move window to workspace
             alt-shift-1 = "move-node-to-workspace --focus-follows-window 1";
             alt-shift-2 = "move-node-to-workspace --focus-follows-window 2";
             alt-shift-3 = "move-node-to-workspace --focus-follows-window 3";
@@ -113,10 +108,8 @@
             alt-shift-8 = "move-node-to-workspace --focus-follows-window 8";
             alt-shift-9 = "move-node-to-workspace --focus-follows-window 9";
 
-            # Toggle floating window
             alt-0 = "layout floating tiling";
 
-            # Open Kitty and Finder
             alt-enter = "exec-and-forget ${kitty} --working-directory ${home}";
             alt-shift-enter = "exec-and-forget /usr/bin/open ${home}";
           };
