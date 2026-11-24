@@ -1,5 +1,9 @@
 {
-  perSystem = {pkgs, ...}: let
+  perSystem = {
+    config,
+    pkgs,
+    ...
+  }: let
     src = ../..;
   in {
     checks = {
@@ -13,6 +17,23 @@
         cd ${src}
         gitleaks dir . --no-banner --redact --config .gitleaks.toml
         touch $out
+      '';
+    };
+
+    packages.lint = pkgs.writeShellApplication {
+      name = "lint";
+      runtimeInputs = [config.treefmt.build.wrapper pkgs.ast-grep pkgs.gitleaks pkgs.git];
+      text = ''
+        cd "$(git rev-parse --show-toplevel)"
+        treefmt
+        ast-grep scan --no-ignore hidden --globs '!gitops/espresso/flux-system/**'
+        staging=$(mktemp -d)
+        trap 'rm -rf "$staging"' EXIT
+        git ls-files -z --cached --others --exclude-standard |
+          xargs -0 cp --parents -P -t "$staging"
+        cp .gitleaks.toml "$staging"/
+        (cd "$staging" && gitleaks dir . --no-banner --redact --config .gitleaks.toml)
+        echo "lint passed"
       '';
     };
 
