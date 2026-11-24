@@ -34,10 +34,6 @@ DELAY_PROFILE = {
     "minimumCustomFormatScore": 0,
 }
 
-# Anime web rips often ship French-only subtitles (Tsundere-Raws tags
-# them SUBFRENCH/VOSTFR) and, with nothing to rank them, sonarr grabbed
-# those for Black Clover. Reject them outright, and score releases that
-# carry English or multi-language subs above raws, hardsubs and dubs.
 RELEASE_PROFILE = {
     "name": "No French-only subs",
     "enabled": True,

@@ -56,13 +56,16 @@ def safe_music_path(path):
 
 
 def protected_by_playlist(path):
+    """Report whether any playlist lists the file.
+
+    This includes the ListenBrainz playlists: the bridge downloads whatever
+    they list, so deleting a listed file would only trigger a redownload.
+    """
     rel = relative_music_path(path)
     absolute = str(path)
     playlist_root = MUSIC_ROOT / "Playlists"
     if not playlist_root.exists():
         return False
-    # Includes the ListenBrainz playlists: the bridge downloads whatever
-    # they list, so deleting a listed file would only trigger a redownload.
     for playlist in playlist_root.glob("*.m3u"):
         try:
             text = playlist.read_text(encoding="utf-8", errors="ignore")
@@ -112,8 +115,6 @@ def main():
     ).fetchone()[0]
     cutoff = now() - timedelta(days=CLEANUP_AFTER_DAYS)
     deleted = failed = skipped = 0
-    # The bridge sets downloaded_at only for files its own requests
-    # downloaded, never for files that were already in the library.
     rows = bridge.execute(
         """
         select *

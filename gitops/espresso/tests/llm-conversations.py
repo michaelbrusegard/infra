@@ -24,17 +24,10 @@ ROOT = Path(__file__).resolve().parents[3]
 BASE = ROOT / "gitops/espresso"
 PLUGINS = ROOT / "packages/cliproxy-plugins"
 NORMALIZER = PLUGINS / "normalize-conversations"
-# The fixtures are from November 2026; pin "now" so the examples stay stable.
 NOW = "toDateTime64('2026-11-14 00:00:00', 3, 'UTC')"
-# llm_normalizer's password, which the cluster reads from a secret.
 PASSWORD = secrets.token_hex(16)
 
 
-# Rows the one-off transcript import left in the canonical tables, which
-# hold their own content: no raw source names them any more. A Claude Code
-# call with the system prompt and tools of its request log as items, a Codex
-# call whose transcript recorded no tools, a Pi compaction, which has no
-# outputs, and a prompt the proxy later sent again in the same session.
 SYSTEM = json.dumps([{"type": "text", "text": "You are Claude Code."}])
 TOOLS = json.dumps(
     [
@@ -382,7 +375,6 @@ def main():
             else:
                 raise RuntimeError(run("docker", "logs", container).stdout)
 
-            # Source rows, the plugin's, with its grants.
             sources = temp / "sources"
             sources.mkdir()
             run(
@@ -411,10 +403,6 @@ def main():
             def jsonl(path):
                 return [json.loads(line) for line in path.read_text().splitlines()]
 
-            # The proxy's rows arrive in two batches, the way the plugin writes
-            # requests as they complete. The second holds a delta request and a
-            # full resend continuing calls from the first, and claude-agent,
-            # which started before requests of the first batch.
             later = {"claude-2", "claude-agent", "codex-2"}
             requests_rows, usage_rows = (
                 jsonl(sources / "llm.requests.jsonl"),
@@ -448,8 +436,6 @@ def main():
                 for table in canonical:
                     insert(table, out / f"{table}.jsonl")
 
-            # The normalizer never changes the proxy's raw capture. It adds
-            # items only for call context a request did not store as items.
             def checksums():
                 return [
                     scalar(f"SELECT count(), sum(cityHash64(*)) FROM {table}")
@@ -460,8 +446,6 @@ def main():
                     )
                 ]
 
-            # One run of the job: the requests not normalized yet, the state of
-            # the sessions they touch, then the normalizer.
             def job(name, hold="10m"):
                 out = temp / name
                 out.mkdir()
@@ -472,7 +456,6 @@ def main():
                         ("before", "2100-01-01 00:00:00"),
                     ),
                 ).stdout
-                # Each item the normalizer reads is sent once a run.
                 sent = [
                     item
                     for row in rows.splitlines()
@@ -508,9 +491,6 @@ def main():
 
             arrive(1)
             first, first_messages = job("proxy-1")
-            # The plugin writes requests before CLIProxy writes their usage. A
-            # run in between, while they are recent, holds them back rather
-            # than put claude-agent in its parent's session for good.
             arrive(2, ["llm.requests"])
             recent = f"{int(time.time() - datetime(2026, 11, 10, 8, tzinfo=UTC).timestamp())}s"
             assert sorted(job("proxy-2-early", recent)[0]) == sorted(later)
@@ -531,8 +511,6 @@ def main():
                 == "claude:11111111-1111-4111-8111-111111111111:agent:a1b2c3d4e5f6a7b8c"
             )
             assert job("proxy-3")[0] == []
-            # The second run extended the first run's trees without writing
-            # their nodes again, and found the response codex-2 continues.
             written = {m["id"] for m in first_messages}
             assert not [m for m in second_messages if m["id"] in written], (
                 second_messages
@@ -540,8 +518,6 @@ def main():
 
             assert checksums() == before, "normalizing changed the raw capture"
 
-            # The dashboard's history before the proxy is the transcript
-            # calls', through llm.call_history.
             history = (
                 "SELECT trace_id, origin, input_tokens, output_tokens, estimated_cost_usd FROM llm.usage_metrics "
                 "WHERE origin LIKE 'history:%' ORDER BY trace_id FORMAT JSONEachRow"
@@ -549,8 +525,6 @@ def main():
             assert query(history, "grafana").stdout == ""
             insert_transcript_rows(query)
 
-            # Every request is exactly one proxy call, which names it, and no
-            # call names a missing request.
             calls = "SELECT request_id FROM llm.calls FINAL WHERE origin = 'proxy'"
             assert (
                 scalar(f"SELECT count() FROM ({calls})")
@@ -569,13 +543,10 @@ def main():
                 )
                 == "0"
             )
-            # Only the unarchived previous response starts at a marker.
             assert (
                 scalar("SELECT count() FROM llm.messages FINAL WHERE format = 'proxy'")
                 == "1"
             )
-            # Every proxy message's raw source resolves: an input's item, which
-            # its call's request sent, and an output's call.
             assert (
                 scalar("""
                 SELECT count() FROM llm.messages FINAL
@@ -607,7 +578,6 @@ def main():
                 )
                 == "0"
             )
-            # Grafana keeps seeing only the metrics view.
             for table in (
                 "llm.messages",
                 "llm.calls",
@@ -620,9 +590,6 @@ def main():
                     != 0
                 ), table
 
-            # Each transcript call with usage before the proxy is one row,
-            # priced as the proxy's are: the Claude Code call wrote 2,000
-            # tokens to the one-hour cache.
             def history_rows():
                 return {
                     r["trace_id"]: r
@@ -660,13 +627,12 @@ def main():
 
             sql = examples()
             prompts = query(sql["prompts"]).stdout
-            # Both sources hold the first prompt; it counts once.
             assert prompts.count("The nightly backup job fails; find out why.") == 1, (
                 prompts
             )
             assert prompts.count("List the flake inputs.") == 1, prompts
             assert "Why does the dashboard show no cost for luna?" in prompts, prompts
-            assert "Add a Renovate rule" not in prompts, prompts  # July, not last week
+            assert "Add a Renovate rule" not in prompts, prompts
             assert "permissions instructions" not in prompts, prompts
 
             failures = [
@@ -681,12 +647,8 @@ def main():
             assert failures[("gpt-6.1-sol", "exec")] == (1, 0), failures
 
             tokens = query(sql["tokens"]).stdout
-            # claude-1, claude-2, and the truncated request.
             assert "2026-11-10\tclaude-code\tclaude-opus-5-5\t3\t" in tokens, tokens
 
-            # Three calls share the websocket trace ws-1. Each usage row is
-            # priced once, where joining on the trace alone would count it
-            # once per call.
             cost = sum(
                 float(line.split("\t")[3])
                 for line in query(sql["cost"]).stdout.splitlines()
@@ -715,7 +677,6 @@ def main():
             roles = [
                 (m["role"], m["output"]) for m in map(json.loads, path.splitlines())
             ]
-            # The tool result arrives with the user's own text, so it stays a user turn.
             assert roles == [
                 ("user", False),
                 ("assistant", True),
@@ -736,9 +697,6 @@ def main():
                 exported["messages"][1]["tool_calls"][0]["function"]["name"] == "Bash"
             ), exported
 
-            # A call exports with what it ran with beside its messages. The
-            # delta request codex-2 sent no instructions or tools; its
-            # response echoes the tools in effect.
             for call, system, tools in (
                 ("claude-2", "You are Claude Code", ["Bash", "Read"]),
                 ("codex-1", "You are Codex", ["exec", "update_plan"]),
@@ -761,8 +719,6 @@ def main():
                         call,
                         exported,
                     )
-                # Only the call's own output is a target; earlier turns are
-                # context.
                 weights = [
                     m.get("weight")
                     for m in openai["messages"]
@@ -773,7 +729,6 @@ def main():
                     weights,
                 )
                 if call == "codex-1":
-                    # The freeform exec tool and its call agree in each dialect.
                     assert openai["tools"][0]["type"] == "custom", openai["tools"]
                     assert (
                         openai["messages"][-1]["tool_calls"][0]["type"] == "custom"
@@ -789,10 +744,6 @@ def main():
                     system or "<permissions instructions>"
                 ), (call, anthropic)
 
-            # A transcript call whose transcript records no tools is refused
-            # rather than exported with its tool calls undefined, and so is a
-            # call without outputs, such as a Pi compaction: the call query
-            # marks its rows as a call's even without context or outputs.
             for call, reason in (("codex-t1", "does not define"), ("c1", "no output")):
                 rows = query(sql["call"], params=(("call", call),)).stdout
                 failed = run(
@@ -803,18 +754,13 @@ def main():
                     failed,
                 )
 
-            # The truncated request produced nothing, so it is no training
-            # example, and the export says why instead of writing one.
             rows = query(sql["call"], params=(("call", "truncated"),)).stdout
             failed = run(str(normalizer), "-export", "openai", input=rows, check=False)
             assert failed.returncode != 0 and "no output" in failed.stderr, failed
 
             raw = query(sql["raw"], params=(session,)).stdout
-            # The request items and a response body.
             assert '"cache_control"' in raw and "signature_delta" in raw, raw
 
-            # The Claude Code transcript call exports as a training example
-            # with the system prompt and tools of its context.
             rows = query(sql["call"], params=(("call", "req_011"),)).stdout
             anthropic = json.loads(
                 run(str(normalizer), "-export", "anthropic", input=rows).stdout
@@ -829,10 +775,6 @@ def main():
                 in agents
             ), agents
 
-            # In trace ws-tight, call A spans 0-30 ms and B starts at 40 ms, so
-            # A's attempt at 0 ms is also within B's 50 ms of slack, and B's
-            # attempt at 35 ms only within the slack. Each attempt still
-            # belongs to exactly one call, for its session and its cost.
             base = "2026-11-10 13:00:00"
             for call, started, completed, attempt in (
                 ("tight-a", ".000", ".030", ".000"),
@@ -910,9 +852,6 @@ def main():
                 live,
             )
 
-            # A failed delta request that sent nothing new and got nothing back
-            # ends where codex-2, which it continues, ended. That output is
-            # codex-2's, so this call is no training example.
             query(
                 "INSERT INTO llm.requests FORMAT JSONEachRow\n"
                 + json.dumps(
@@ -955,8 +894,6 @@ def main():
             failed = run(str(normalizer), "-export", "openai", input=rows, check=False)
             assert failed.returncode != 0 and "no output" in failed.stderr, failed
 
-            # ClickHouse runs schema.sql on every restart, which keeps the
-            # history and the checks.
             kept = history_rows()
             run(
                 "docker",
@@ -983,7 +920,6 @@ def job_in_cluster(image, temp, sources):
     container = f"infra-llm-normalizer-test-{os.getpid()}"
     tools = temp / "normalizer"
     tools.mkdir()
-    # For the container's platform, which differs from the host's on macOS.
     arch = run("docker", "version", "--format", "{{.Server.Arch}}").stdout.strip()
     run(
         "go",
@@ -1037,8 +973,6 @@ def job_in_cluster(image, temp, sources):
                 input=sql,
             ).stdout.strip()
 
-        # The entrypoint runs schema.sql on a temporary server, then starts
-        # the real one, so the schema is ready once it answers twice.
         ready = 0
         for _ in range(240):
             ready = (
@@ -1092,7 +1026,6 @@ def job_in_cluster(image, temp, sources):
         assert (
             query("SELECT count() FROM llm.calls FINAL WHERE origin = 'proxy'") == "10"
         )
-        # The checks pass over the proxy's rows and the transcript import's.
         result = normalize("verify")
         assert result.returncode == 0, result.stdout + result.stderr
         checks = [
@@ -1101,15 +1034,11 @@ def job_in_cluster(image, temp, sources):
             if line.startswith("check\t")
         ]
         assert len(checks) >= 10 and all(c[2] == "0" for c in checks), checks
-        # The job finds nothing left.
         rows = query("SELECT count() FROM llm.messages")
         result = normalize("cron")
         assert (
             result.returncode == 0 and query("SELECT count() FROM llm.messages") == rows
         ), result.stderr
-        # After a stop of any length, the job catches up an hour at a time
-        # from the oldest request it misses. Once its budget is spent it
-        # stops after the window it ran, and the next run goes on.
         late = (("late-6d", 150), ("late-3d", 75), ("late-2h", 2))
         for call, hours in late:
             started = (datetime.now(UTC) - timedelta(hours=hours)).strftime(
@@ -1183,8 +1112,6 @@ def job_in_cluster(image, temp, sources):
             == "1"
         )
 
-        # The normalizer's user reads the sources and appends to the
-        # canonical tables, and nothing else.
         def as_normalizer(sql, *password):
             return run(
                 "docker",
@@ -1218,9 +1145,6 @@ def job_in_cluster(image, temp, sources):
                 denied.stderr,
             )
 
-        # CLIProxy's and Grafana's pods reach the HTTP port, and cannot read
-        # the raw history as the normalizer without its password, there or
-        # on the native port; with it, the same request reads it.
         def over_http(password):
             url = (
                 "http://localhost:8123/?user=llm_normalizer"

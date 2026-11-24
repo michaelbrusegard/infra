@@ -216,8 +216,6 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         path.touch()
         conn = self.bridge["db"]()
         self.addCleanup(conn.close)
-        # A row recorded before the fix, with a download date for a file the
-        # bridge never downloaded.
         conn.execute(
             """
             insert into recommendation_seen(

@@ -23,7 +23,6 @@ def main() -> None:
         return "@" + refs[0]
 
     try:
-        # Initialize the task's daemon and CDP supervisor before loading fixtures.
         run("snapshot")
         for _ in range(3):
             run(

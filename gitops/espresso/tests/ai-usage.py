@@ -83,14 +83,12 @@ def check_request_items(query, temp):
     items = (dump / "llm.request_items.jsonl").read_text()
     requests = (dump / "llm.requests.jsonl").read_text()
 
-    # The plugin's rows, inserted with its own grants.
     query("INSERT INTO llm.request_items FORMAT JSONEachRow\n" + items, "cliproxy")
     query("INSERT INTO llm.requests FORMAT JSONEachRow\n" + requests, "cliproxy")
     for table in ("llm.request_items", "llm.requests", "llm.request_bodies"):
         result = query(f"SELECT * FROM {table}", "cliproxy", check=False)
         assert result.returncode != 0, f"Writer unexpectedly read {table}"
 
-    # Go's hashes are ClickHouse's SHA256 prefix of the stored bytes.
     assert (
         query(
             "SELECT count() FROM llm.request_items "
@@ -122,7 +120,6 @@ def check_request_items(query, temp):
             body,
         )
 
-    # A plugin writing a column the table lacks must fail, not lose the value.
     unknown = json.dumps({"request_id": "unknown-column", "request_body": "{}"})
     rejected = query(
         "INSERT INTO llm.requests FORMAT JSONEachRow\n" + unknown,
@@ -270,8 +267,6 @@ def main():
                 datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=90)
             ).strftime("%Y-%m-%d %H:%M:%S.000")
 
-            # History before the proxy is the transcript calls with usage, as
-            # llm.call_history reads them; proxy calls and empty ones are not.
             def call(
                 id, client, model, started_at=old_stamp, origin="transcript", **tokens
             ):
@@ -328,7 +323,6 @@ def main():
                     output_tokens=1,
                 ),
             ]
-            # Reruns may add physical rows, but must never increase dashboard totals.
             for _ in range(2):
                 query(
                     "INSERT INTO llm.calls FORMAT JSONEachRow\n"
@@ -352,14 +346,18 @@ def main():
                 assert math.isclose(
                     data[id]["estimated_cost_usd"], expected, rel_tol=1e-9
                 ), data[id]
-            assert data["cached"]["total_tokens"] == 1100  # reasoning is a subset
-            assert (
-                data["cached"]["uncached_input_tokens"] == 500
-            )  # cache fields are aliases
-            assert data["claude"]["input_tokens"] == 2100  # Claude cache is independent
-            assert (
-                data["cache-write"]["cache_read_tokens"] == 0
-            )  # cached_tokens may mean writes
+            assert data["cached"]["total_tokens"] == 1100, (
+                "reasoning tokens are a subset of the total"
+            )
+            assert data["cached"]["uncached_input_tokens"] == 500, (
+                "cache fields are aliases"
+            )
+            assert data["claude"]["input_tokens"] == 2100, (
+                "Claude's cache counts apart from input"
+            )
+            assert data["cache-write"]["cache_read_tokens"] == 0, (
+                "cached_tokens may mean cache writes"
+            )
             assert data["cache-write"]["estimated_cost_usd"] is None
             assert data["unknown"]["estimated_cost_usd"] is None
             assert math.isclose(
@@ -393,7 +391,6 @@ def main():
                 "SELECT count() FROM llm.usage_metrics SETTINGS max_execution_time=10",
                 "grafana",
             )
-            # The HTTP driver's connection health check uses a 60-second timeout.
             query("SELECT 1 SETTINGS max_execution_time=60", "grafana")
             denied = [
                 "SELECT * FROM llm.usage",
@@ -434,7 +431,6 @@ def main():
             )
 
             if args.live:
-                # Inline the uninstalled view so production queries remain strictly read-only.
                 view = re.search(
                     r"CREATE OR REPLACE VIEW llm\.usage_metrics\s+"
                     r"DEFINER = default SQL SECURITY DEFINER AS\s+(.*?);",

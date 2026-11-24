@@ -29,18 +29,11 @@ CONVERT_TO_FLAC = os.environ.get("CONVERT_TO_FLAC", "true").lower() == "true"
 AUDIO_SUFFIXES = {".aac", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav"}
 LOSSY_SUFFIXES = {".aac", ".m4a", ".mp3", ".ogg", ".opus"}
 QUEUE_RETRY_AFTER_SECONDS = 24 * 60 * 60
-# MusicGrabber jobs created well before the bridge's latest request
-# belong to an earlier attempt, whose file may since have been deleted.
 STALE_JOB_MARGIN = timedelta(hours=1)
-# Weekly playlist rules from ListenBrainz's own generator (troi's
-# periodic-jams patch).
 WEEKLY_TRACKS = 50
 MAX_TRACKS_PER_ARTIST = 2
 RECENT_LISTEN_DAYS = 60
 
-# Daily Jams comes from ListenBrainz. ListenBrainz's weekly playlist job
-# stalls for weeks at a time, so the bridge builds the weekly playlists
-# itself from the user's recommendations, which stay fresh.
 PLAYLISTS = {
     "daily_jams": {
         "title": "ListenBrainz Daily Jams",
@@ -359,8 +352,12 @@ def build_weekly_tracks(playlist_type, seed):
 
 
 def weekly_playlist(conn, playlist_type):
-    # Build once per week, then reuse the stored track list so the
-    # playlist stays put while the recommendations change daily.
+    """Return this week's playlist, built from the recommendations once a week.
+
+    ListenBrainz's own weekly job stalls for weeks at a time, so the bridge
+    builds weekly playlists itself, then reuses the stored track list so the
+    playlist stays put while the recommendations change daily.
+    """
     today = datetime.now(UTC).date()
     monday = (today - timedelta(days=today.weekday())).isoformat()
     source = {
@@ -393,9 +390,12 @@ def clean_title_from_file(path):
 
 
 def navidrome_tracks():
-    # Tags name the credited artists, so they match recommendations that
-    # the folder layout misses: duets filed under one artist, and
-    # compilations filed under Compilations.
+    """Index Navidrome's tracks by their tags.
+
+    Tags name the credited artists, so they match recommendations that the
+    folder layout misses: duets filed under one artist, and compilations
+    filed under Compilations.
+    """
     if not NAVIDROME_DB.exists():
         return []
     try:
@@ -417,7 +417,6 @@ def local_index():
         path = MUSIC_ROOT / rel
         if path.suffix.lower() in AUDIO_SUFFIXES:
             index.setdefault(track_key(artist, title), path)
-    # Files Navidrome has not scanned yet.
     for root_name in ("Albums", "Singles"):
         root = MUSIC_ROOT / root_name
         if not root.exists():
@@ -664,8 +663,6 @@ def completed_job_path(job):
 def refresh_musicgrabber_status(conn):
     local = local_index()
     try:
-        # The whole history, so a downloaded track is matched with the job
-        # that produced it however old that job is.
         jobs = musicgrabber_json("GET", "/api/jobs?limit=10000").get("jobs", [])
     except Exception as exc:
         log(f"musicgrabber status refresh failed: {exc}")
@@ -723,10 +720,6 @@ def refresh_musicgrabber_status(conn):
                 if local_path.suffix.lower() in LOSSY_SUFFIXES
                 else "downloaded"
             )
-            # "Already exists" means the file was in the library before
-            # the bridge asked for it. Leaving downloaded_at empty keeps
-            # cleanup, which only deletes the bridge's own downloads,
-            # away from it.
             already_existed = (job.get("error") or "").startswith("Already exists")
             conn.execute(
                 """

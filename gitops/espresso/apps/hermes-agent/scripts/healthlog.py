@@ -266,6 +266,11 @@ def tool_payload(result: Any) -> Any:
 
 
 async def run(kind: str, name: str, arguments: dict[str, Any]) -> Any:
+    """Call one HealthLog MCP tool or resource over a fresh session.
+
+    HealthLog's endpoint is stateless, so the session is not terminated on
+    close: a DELETE would only add a failing round-trip after a good read.
+    """
     url = os.environ.get(
         "HEALTHLOG_MCP_URL",
         "http://healthlog.healthlog.svc.cluster.local:3000/mcp",
@@ -287,9 +292,6 @@ async def run(kind: str, name: str, arguments: dict[str, Any]) -> Any:
             streamable_http_client(
                 url,
                 http_client=client,
-                # HealthLog's endpoint is explicitly stateless. A DELETE on
-                # close has no session to terminate and only adds a failing
-                # cleanup round-trip after a successful read.
                 terminate_on_close=False,
             )
         )

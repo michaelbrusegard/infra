@@ -30,7 +30,6 @@ class NetBird:
             with urlopen(request, timeout=30) as response:
                 return json.load(response)
         except HTTPError as error:
-            # Provider requests contain credentials; never print bodies or headers.
             raise RuntimeError(f"NetBird {method} {path}: HTTP {error.code}") from None
 
 
@@ -53,8 +52,6 @@ def configure_provider(api, desired, upstream_key, state_path):
     if provider is None:
         provider = api("POST", path, {**desired, "api_key": upstream_key})
     else:
-        # Never send the CLIProxy credential to a different upstream. Moving
-        # between this cluster's Services, as when renaming CLIProxy's, is fine.
         moved = provider["upstream_url"] != desired["upstream_url"]
         if provider["provider_id"] != desired["provider_id"] or (
             moved
@@ -68,8 +65,6 @@ def configure_provider(api, desired, upstream_key, state_path):
             )
         if last_digest == key_digest and not moved:
             return provider
-        # A rotated key must preserve model restrictions and every other setting
-        # managed in the dashboard. These are the 0.77 provider request fields.
         fields = (
             "name",
             "provider_id",
@@ -145,8 +140,6 @@ def reconcile(api, config, upstream_key, token_path):
         upstream_key,
         token_path.with_name("provider-key.sha256"),
     )
-    # Seed each policy once. Dashboard edits, including disabling access, survive
-    # proxy restarts and certificate/key rotation.
     policies = api("GET", "/agent-network/policies")
     for desired in config["policies"]:
         if named(policies, desired["name"]) is None:
@@ -164,8 +157,6 @@ def reconcile(api, config, upstream_key, token_path):
                 },
             )
 
-    # Proxy tokens are returned only once. Keep one on the PVC, reuse it on
-    # restarts, and recreate it if it has been revoked or expired server-side.
     tokens = api("GET", "/reverse-proxies/proxy-tokens")
     if registration_is_valid(token_path, tokens):
         print("Agent Network reconciled; reusing proxy registration")
@@ -180,7 +171,6 @@ def reconcile(api, config, upstream_key, token_path):
     )
     token_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = token_path.with_suffix(".tmp")
-    # chmod before writing, including when recovering a previous partial write.
     with open(temporary, "w", opener=lambda p, flags: os.open(p, flags, 0o600)) as out:
         os.chmod(temporary, 0o600)
         out.write(created["plain_token"] + "\n" + created["id"] + "\n")

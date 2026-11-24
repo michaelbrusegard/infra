@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-# AutoKuma does not resolve monitor names in status_page entities and
-# never updates them after creation (sync.rs update_entity match falls
-# through to `_ => {}`). This script reconciles status pages
-# declaratively: resolve monitor names to numeric IDs against the live
-# Kuma API, then upsert via add_status_page / save_status_page.
+"""Reconcile Uptime Kuma status pages declaratively.
+
+AutoKuma does not resolve monitor names in status_page entities and never
+updates them after creation (sync.rs update_entity match falls through to
+`_ => {}`). This resolves monitor names to numeric IDs against the live Kuma
+API, then upserts via add_status_page / save_status_page.
+"""
+
 import json
 import os
 import pathlib

@@ -14,8 +14,6 @@ from pathlib import Path
 
 STATEFULSET = Path(__file__).resolve().parents[1] / "statefulset.yaml"
 
-# Match the pod's Cilium gateways and NetBird v0.77.1 policy routing. Separate
-# veth pairs let tests remove the tunnel without also removing the underlay.
 SETUP = """\
 set -eu
 ip link set lo up
@@ -160,8 +158,6 @@ ip link del wt0
         )
 
     def test_application_containers_cannot_mark_transport_packets(self):
-        # Linux permits SO_MARK with either CAP_NET_ADMIN or CAP_NET_RAW.
-        # NET_RAW is in the container runtime's default capability set.
         containers = self.manifest.split("      containers:\n", 1)[1]
         containers = containers.split("      volumes:\n", 1)[0]
         for container in re.split(r"^        - name: ", containers, flags=re.MULTILINE)[

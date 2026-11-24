@@ -491,9 +491,6 @@ class CDPClient:
         payload = {"id": message_id, "method": method, "params": params or {}}
         connection = self._connections.get(websocket_url)
         if connection is None:
-            # Chromium rejects websocket-client's synthesized HTTP Origin unless
-            # the browser is launched with a broad remote-allow-origins policy.
-            # CDP is pod-local here, so omit Origin on this direct debugger link.
             connection = create_connection(
                 websocket_url, timeout=15, suppress_origin=True
             )
