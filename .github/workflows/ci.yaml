@@ -70,13 +70,16 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
       - name: Run the flake checks
+        shell: bash
         run: |
-          nix eval --json .#checks.x86_64-linux --apply builtins.attrNames |
-            jq -r '.[] | ".#checks.x86_64-linux.\(.)"' |
-            xargs nix build --no-link --print-build-logs --show-trace
+          set -euo pipefail
+          checks=$(nix eval --json .#checks.x86_64-linux --apply builtins.attrNames |
+            jq -r '.[] | ".#checks.x86_64-linux.\(.)"')
+          [[ -n $checks ]] || { echo "::error::No flake checks found"; exit 1; }
+          xargs nix build --no-link --print-build-logs --show-trace <<<"$checks"
       - name: Check commit messages
         if: github.event_name == 'pull_request'
-        run: nix run .#check-commits -- "origin/${{ github.base_ref }}..HEAD"
+        run: nix run .#check-commits -- "HEAD^1..HEAD^2"
   validate-nix-hosts:
     needs: filter
     if: needs.filter.outputs.nix == 'true'
@@ -96,13 +99,22 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
       - name: Evaluate host
-        run: nix build .#${{ matrix.attribute }} --dry-run
+        env:
+          ATTRIBUTE: ${{ matrix.attribute }}
+        run: nix build ".#$ATTRIBUTE" --dry-run
+      # Values in a host's closure can come from the private secrets flake, so
+      # the summary names what changed without printing it. HEAD^1 is the base
+      # the merge commit was built on, which origin/main may have moved past.
       - name: Summarise what changes on the host
         if: github.event_name == 'pull_request'
+        env:
+          HOST: ${{ matrix.name }}
+        shell: bash
         run: |
+          set -euo pipefail
           {
             echo '```'
-            nix run .#diff-hosts -- "origin/${{ github.base_ref }}" "${{ matrix.name }}"
+            nix run .#diff-hosts -- --names-only HEAD^1 "$HOST"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
   validate-kubernetes:
@@ -122,10 +134,12 @@ jobs:
         run: nix run .#check
       - name: Summarise what changes on the cluster
         if: github.event_name == 'pull_request'
+        shell: bash
         run: |
+          set -euo pipefail
           {
             echo '```'
-            nix run .#diff-manifests -- "origin/${{ github.base_ref }}"
+            nix run .#diff-manifests -- HEAD^1
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Test AI usage dashboard and ClickHouse permissions

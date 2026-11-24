@@ -32,13 +32,17 @@ Each failure message says what to fix.
 
 ```sh
 nix run .#lint     # seconds: format, lint rules, secret scan. Run it often.
-nix run .#verify   # about a minute: every flake check and every host, in parallel.
+nix run .#verify   # about a minute when cached: this system's flake checks and every host.
 nix run .#check    # needs network: manifest schemas, tofu validate. For gitops/.
 ```
 
 Run `verify` before calling a change done, and `check` as well when `gitops/`
-changed. `nix flake check` covers the same ground as `verify` but evaluates the
-hosts one at a time, which takes more than twice as long.
+changed. `verify` builds the checks for the system it runs on, so the router VM
+tests only run on Linux. `nix flake check` covers the same ground one host at a
+time and takes more than twice as long.
+
+`diff-hosts` prints values from host closures, which can include secrets. Pass
+`--names-only` anywhere the output is published.
 
 To see what a change does instead of reading its source:
 

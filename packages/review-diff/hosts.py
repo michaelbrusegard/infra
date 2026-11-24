@@ -6,6 +6,10 @@ is therefore compared as a multiset of tokens: a host is EQUAL when the
 derivation path matches, ORDER-ONLY when only the order of tokens moved, and
 DIFFERENT otherwise, in which case the derivations that really changed are
 listed with the tokens found on one side only.
+
+ORDER-ONLY is not a verdict that nothing changed. Order matters in a firewall
+ruleset or a script, so the reordered derivations are listed for the reader to
+judge.
 """
 
 import argparse
@@ -19,8 +23,9 @@ import tempfile
 from pathlib import Path
 
 TOKEN_SEPARATOR = re.compile(r"[\s\"',;:\[\]{}()=\\]+")
-STORE_PATH = re.compile(r"/nix/store/([0-9a-z]{32})-([^\s\"',;:\[\]{}()=\\$/]*)")
+STORE_PATH = re.compile(r"/nix/store/([0-9a-z]{32})-([^\s\x00\"',;:\[\]{}()=\\$/]*)")
 REFERENCE = re.compile(r"<[0-9a-f]{24}!")
+MISSING_ATTRIBUTE = re.compile(r"does not provide attribute|attribute '[^']*' missing")
 STORE_PREFIX = "/nix/store/"
 HASH_END = len(STORE_PREFIX) + 32
 SHOWN_TOKENS = 8
@@ -48,7 +53,7 @@ class Closure:
         self.owner_of_output = {}
         for path, drv in self.derivations.items():
             for output_name, output in drv.get("outputs", {}).items():
-                if output.get("path"):
+                if output.get("path") and "hash" not in output:
                     output_hash = store_path(output["path"])[
                         len(STORE_PREFIX) : HASH_END
                     ]
@@ -61,12 +66,26 @@ class Closure:
     def name(self, path):
         return self.derivations[path].get("name")
 
-    def inputs(self, path):
+    def input_edges(self, path):
         drv = self.derivations[path]
         inputs = drv.get("inputDrvs")
         if inputs is None:
             inputs = drv.get("inputs", {}).get("drvs", {})
-        return [store_path(input_path) for input_path in inputs]
+        return {
+            store_path(input_path): sorted(
+                edge.get("outputs", []) if isinstance(edge, dict) else edge
+            )
+            for input_path, edge in inputs.items()
+        }
+
+    def inputs(self, path):
+        return list(self.input_edges(path))
+
+    def output_specification(self, path):
+        return {
+            name: output if "hash" in output else {}
+            for name, output in self.derivations[path].get("outputs", {}).items()
+        }
 
     def sources(self, path):
         drv = self.derivations[path]
@@ -114,14 +133,19 @@ class Closure:
                 drv["structuredAttrs"], sort_keys=True
             )
         environment["__builder"] = str(drv.get("builder"))
-        environment["__args"] = "\x00".join(drv.get("args", []))
+        environment["__args"] = "\n".join(drv.get("args", []))
         text = {
             key: self.with_stable_references(
                 path, value if isinstance(value, str) else json.dumps(value)
             )
             for key, value in environment.items()
         }
-        fixed = [drv.get("name"), drv.get("system"), self.sources(path)]
+        fixed = [
+            drv.get("name"),
+            drv.get("system"),
+            self.sources(path),
+            self.output_specification(path),
+        ]
         tokens = {
             key: sorted(token for token in TOKEN_SEPARATOR.split(value) if token)
             for key, value in text.items()
@@ -130,7 +154,8 @@ class Closure:
         self.tokens[path] = tokens
         self.token_digest[path] = digest(fixed, tokens)
         input_identities = sorted(
-            self.identity[input_path] for input_path in self.inputs(path)
+            (self.identity[input_path], outputs)
+            for input_path, outputs in self.input_edges(path).items()
         )
         self.identity[path] = digest(self.token_digest[path], input_identities)[:24]
 
@@ -157,6 +182,19 @@ def one_sided_tokens(before, after):
     return difference
 
 
+def one_sided_references(before, after):
+    difference = {}
+    for key in sorted(set(before) | set(after)):
+        removed = collections.Counter(before.get(key, []))
+        added = collections.Counter(after.get(key, []))
+        if removed != added:
+            difference[key] = (
+                list((removed - added).elements())[:SHOWN_TOKENS],
+                list((added - removed).elements())[:SHOWN_TOKENS],
+            )
+    return difference
+
+
 def inputs_by_name(closure, path):
     grouped = collections.defaultdict(dict)
     for input_path in closure.inputs(path):
@@ -171,6 +209,7 @@ def compare(base_drv, head_drv):
     same_content = base.resolve(base_drv) == head.resolve(head_drv)
     reordered = set()
     changed = []
+    rewired = []
     visited = set()
     pending = [(base_drv, head_drv)]
     while pending:
@@ -184,6 +223,15 @@ def compare(base_drv, head_drv):
             )
             if difference:
                 changed.append((base.name(base_path), difference))
+            else:
+                rewired.append(
+                    (
+                        base.name(base_path),
+                        one_sided_references(
+                            base.tokens[base_path], head.tokens[head_path]
+                        ),
+                    )
+                )
         elif base.exact[base_path] != head.exact[head_path]:
             reordered.add(base.name(base_path))
         base_inputs = inputs_by_name(base, base_path)
@@ -215,25 +263,38 @@ def compare(base_drv, head_drv):
                         },
                     )
                 )
+    if not same_content and not changed:
+        changed = rewired
     return ("ORDER-ONLY" if same_content else "DIFFERENT"), sorted(reordered), changed
 
 
 def evaluate(tree, attribute, nix_arguments):
-    try:
-        return run(
-            "nix", "eval", *nix_arguments, "--raw", f".#{attribute}.drvPath", cwd=tree
-        ).strip()
-    except subprocess.CalledProcessError as error:
-        sys.stderr.write(error.stderr[-2000:])
-        return None
+    """Return the derivation path, or None and why the evaluation failed."""
+    result = subprocess.run(
+        ["nix", "eval", *nix_arguments, "--raw", f".#{attribute}.drvPath"],
+        cwd=tree,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        return result.stdout.strip(), ""
+    return None, result.stderr
 
 
-def report(host, base_drv, head_drv):
+def report(host, base, head, show_values):
+    head_drv, head_error = head
+    base_drv, base_error = base
     if head_drv is None:
+        sys.stderr.write(head_error[-2000:])
         print(f"{host}: EVALUATION FAILED on the working tree")
         return False
     if base_drv is None:
-        print(f"{host}: NEW (does not evaluate on the base revision)")
+        if MISSING_ATTRIBUTE.search(base_error):
+            print(f"{host}: NEW (not defined on the base revision)")
+        else:
+            sys.stderr.write(base_error[-2000:])
+            print(f"{host}: NOT COMPARED (the base revision failed to evaluate)")
         return True
     status, reordered, changed = compare(base_drv, head_drv)
     print(f"{host}: {status}")
@@ -242,7 +303,7 @@ def report(host, base_drv, head_drv):
     for name, difference in changed:
         print(f"  changed: {name}")
         for key, (removed, added) in difference.items():
-            print(f"    {key}: -{removed} +{added}")
+            print(f"    {key}: -{removed} +{added}" if show_values else f"    {key}")
     return True
 
 
@@ -257,6 +318,11 @@ def main():
         action="append",
         default=[],
         help="extra argument for nix eval",
+    )
+    parser.add_argument(
+        "--names-only",
+        action="store_true",
+        help="name what changed without printing values, which may be secret",
     )
     arguments = parser.parse_args()
 
@@ -291,9 +357,11 @@ def main():
         )
         try:
             for host in hosts:
-                base_drv = evaluate(base_tree, attributes[host], arguments.nix_argument)
-                head_drv = evaluate(head_tree, attributes[host], arguments.nix_argument)
-                succeeded = report(host, base_drv, head_drv) and succeeded
+                base = evaluate(base_tree, attributes[host], arguments.nix_argument)
+                head = evaluate(head_tree, attributes[host], arguments.nix_argument)
+                succeeded = (
+                    report(host, base, head, not arguments.names_only) and succeeded
+                )
         finally:
             run("git", "worktree", "remove", "--force", base_tree, cwd=head_tree)
     sys.exit(0 if succeeded else 1)

@@ -28,9 +28,14 @@
         export -f evaluate_host
 
         build_checks() {
-          nix eval "''${nix_arguments[@]}" --json ".#checks.${system}" --apply builtins.attrNames |
-            jq -r '.[] | ".#checks.${system}.\(.)"' |
-            xargs nix build "''${nix_arguments[@]}" --no-link --print-build-logs >"$logs/checks" 2>&1
+          local checks
+          checks=$(nix eval "''${nix_arguments[@]}" --json ".#checks.${system}" --apply builtins.attrNames |
+            jq -r '.[] | ".#checks.${system}.\(.)"')
+          if [[ -z $checks ]]; then
+            echo "No flake checks are defined for ${system}." >"$logs/checks"
+            return 1
+          fi
+          xargs nix build "''${nix_arguments[@]}" --no-link --print-build-logs <<<"$checks" >"$logs/checks" 2>&1
         }
 
         build_checks &

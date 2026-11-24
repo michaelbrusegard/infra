@@ -22,15 +22,18 @@
 
     packages.lint = pkgs.writeShellApplication {
       name = "lint";
-      runtimeInputs = [config.treefmt.build.wrapper pkgs.ast-grep pkgs.gitleaks pkgs.git];
+      runtimeInputs = [config.treefmt.build.wrapper pkgs.ast-grep pkgs.gitleaks pkgs.git pkgs.coreutils];
       text = ''
         cd "$(git rev-parse --show-toplevel)"
         treefmt
         ast-grep scan --no-ignore hidden --globs '!gitops/espresso/flux-system/**'
         staging=$(mktemp -d)
         trap 'rm -rf "$staging"' EXIT
-        git ls-files -z --cached --others --exclude-standard |
-          xargs -0 cp --parents -P -t "$staging"
+        present=()
+        while IFS= read -r -d "" file; do
+          [[ -e $file || -L $file ]] && present+=("$file")
+        done < <(git ls-files -z --cached --others --exclude-standard)
+        cp --parents -P -t "$staging" -- "''${present[@]}"
         cp .gitleaks.toml "$staging"/
         (cd "$staging" && gitleaks dir . --no-banner --redact --config .gitleaks.toml)
         echo "lint passed"

@@ -201,6 +201,7 @@ in {
   };
 
   testHelpers = ''
+    import contextlib
     import ipaddress
     import re
     import shlex
@@ -240,9 +241,9 @@ in {
 
 
     def wait_for_address(node, interface, prefix):
-        node.wait_until_succeeds(f"ip -o addr show dev {interface} scope global | grep -q ' {prefix}'", timeout=120)
+        node.wait_until_succeeds(f"ip -o addr show dev {interface} scope global -tentative | grep -q ' {prefix}'", timeout=120)
         version = 6 if ":" in prefix else 4
-        output = node.succeed(f"ip -{version} -o addr show dev {interface} scope global")
+        output = node.succeed(f"ip -{version} -o addr show dev {interface} scope global -tentative")
         stable = [line for line in output.splitlines() if "temporary" not in line]
         return next(
             line.split()[3].split("/")[0]
@@ -331,10 +332,19 @@ in {
         reachable = {int(port) for port in re.findall(r"(\d+)/(?:open|closed)/tcp", output)}
         unexpected = sorted(reachable - set(expected))
         assert not unexpected, f"{rule}: TCP ports {unexpected} on {host} answer from WAN"
+        summarised = re.findall(r"Ignored State: (open|closed) \((\d+)\)", output)
+        assert not summarised, f"{rule}: {summarised} more TCP ports on {host} answer from WAN"
+
+
+    def settle(node, command):
+        with contextlib.suppress(Exception):
+            node.wait_until_succeeds(command, timeout=60)
 
 
     def check_lease(node, interface, prefix, gateway, name, answer, zone):
         address = wait_for_address(node, interface, prefix)
+        settle(node, f"ip -4 route show default | grep -q 'via {gateway}'")
+        settle(node, f"grep -q 'nameserver {gateway}' /etc/resolv.conf")
         routes = node.succeed("ip -4 route show default")
         assert f"via {gateway}" in routes, f"dnsmasq dhcp-option router for {zone}: default route is {routes!r}, expected via {gateway}"
         resolvers = node.succeed("cat /etc/resolv.conf")

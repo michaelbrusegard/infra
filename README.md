@@ -31,7 +31,7 @@ Before I commit:
 
 ```sh
 nix run .#lint    # quick: formatting, lint rules, secret scan
-nix run .#verify  # everything, including tests and all hosts, about a minute
+nix run .#verify  # tests and all hosts, about a minute once things are cached
 nix run .#check   # the checks that need network: kubeconform, tofu validate
 ```
 
