@@ -1,0 +1,113 @@
+id: todo-needs-link-nix
+language: nix
+severity: error
+message: Add the URL of the upstream issue or PR that unblocks this TODO/FIXME/HACK to the comment.
+note: The link is how the next reader checks whether the blocker is gone and the workaround can be removed.
+utils:
+  existing-violations:
+    any:
+      - regex: setuid bwrap wrapper removal
+      - regex: upstream homebrew-cask scribus definition
+rule:
+  kind: comment
+  regex: \b(TODO|FIXME|HACK)\b
+  not:
+    any:
+      - regex: https?://
+      - matches: existing-violations
+      - precedes:
+          kind: comment
+          regex: https?://
+          stopBy:
+            not:
+              kind: comment
+---
+id: todo-needs-link-yaml
+language: yaml
+severity: error
+message: Add the URL of the upstream issue or PR that unblocks this TODO/FIXME/HACK to the comment.
+note: The link is how the next reader checks whether the blocker is gone and the workaround can be removed.
+rule:
+  kind: comment
+  regex: \b(TODO|FIXME|HACK)\b
+  not:
+    any:
+      - regex: https?://
+      - precedes:
+          kind: comment
+          regex: https?://
+          stopBy:
+            not:
+              kind: comment
+---
+id: todo-needs-link-hcl
+language: hcl
+severity: error
+message: Add the URL of the upstream issue or PR that unblocks this TODO/FIXME/HACK to the comment.
+note: The link is how the next reader checks whether the blocker is gone and the workaround can be removed.
+rule:
+  kind: comment
+  regex: \b(TODO|FIXME|HACK)\b
+  not:
+    any:
+      - regex: https?://
+      - precedes:
+          kind: comment
+          regex: https?://
+          stopBy:
+            not:
+              kind: comment
+---
+id: todo-needs-link-bash
+language: bash
+severity: error
+message: Add the URL of the upstream issue or PR that unblocks this TODO/FIXME/HACK to the comment.
+note: The link is how the next reader checks whether the blocker is gone and the workaround can be removed.
+rule:
+  kind: comment
+  regex: \b(TODO|FIXME|HACK)\b
+  not:
+    any:
+      - regex: https?://
+      - precedes:
+          kind: comment
+          regex: https?://
+          stopBy:
+            not:
+              kind: comment
+---
+id: todo-needs-link-python
+language: python
+severity: error
+message: Add the URL of the upstream issue or PR that unblocks this TODO/FIXME/HACK to the comment.
+note: The link is how the next reader checks whether the blocker is gone and the workaround can be removed.
+rule:
+  kind: comment
+  regex: \b(TODO|FIXME|HACK)\b
+  not:
+    any:
+      - regex: https?://
+      - precedes:
+          kind: comment
+          regex: https?://
+          stopBy:
+            not:
+              kind: comment
+---
+id: todo-needs-link-go
+language: go
+severity: error
+message: Add the URL of the upstream issue or PR that unblocks this TODO/FIXME/HACK to the comment.
+note: The link is how the next reader checks whether the blocker is gone and the workaround can be removed.
+rule:
+  kind: comment
+  regex: \b(TODO|FIXME|HACK)\b
+  not:
+    any:
+      - regex: https?://
+      - precedes:
+          kind: comment
+          regex: https?://
+          stopBy:
+            not:
+              kind: comment
