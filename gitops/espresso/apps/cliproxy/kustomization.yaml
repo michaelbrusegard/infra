@@ -4,7 +4,7 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - statefulset.yaml
-  - service.yaml
+  - services.yaml
   - network-policy.yaml
   - httproute.yaml
   - backup.yaml

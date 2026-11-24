@@ -23,7 +23,7 @@ resources:
   - hermes-media-api.yaml
   - hermes-media-api-network-policy.yaml
   - services.yaml
-  - httproutes.yaml
+  - httproute.yaml
   - network-policy.yaml
 
 configMapGenerator:
