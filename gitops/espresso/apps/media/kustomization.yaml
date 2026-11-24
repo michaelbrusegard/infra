@@ -15,7 +15,6 @@ resources:
   - navidrome-statefulset.yaml
   - music-tagger-configmap.yaml
   - music-tagger.yaml
-  - listenbrainz-bridge-configmap.yaml
   - listenbrainz-bridge.yaml
   - listenbrainz-bridge-monitoring.yaml
   - recommendation-cleanup.yaml
@@ -34,6 +33,22 @@ configMapGenerator:
     namespace: media
     files:
       - hermes-media-api.py=scripts/hermes-media-api.py
+  - name: listenbrainz-bridge-config
+    namespace: media
+    literals:
+      - LISTENBRAINZ_API_URL=https://api.listenbrainz.org
+      - MUSICGRABBER_URL=http://musicgrabber-internal.media.svc.cluster.local:8080
+      - MUSIC_ROOT=/music
+      - STATE_DB=/state/listenbrainz-bridge.db
+      - METRICS_PATH=/state/metrics/listenbrainz.txt
+      - MAX_TRACKS_PER_RUN=25
+      - PRIORITY_SOURCE=monochrome
+      - PREFERRED_SOURCES=all
+      - CONVERT_TO_FLAC=true
+      - CLEANUP_AFTER_DAYS=30
+    files:
+      - bridge.py=scripts/listenbrainz-bridge.py
+      - cleanup.py=scripts/listenbrainz-cleanup.py
 
 generatorOptions:
   disableNameSuffixHash: true

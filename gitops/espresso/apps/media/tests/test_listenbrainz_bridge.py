@@ -7,22 +7,15 @@ from pathlib import Path
 from unittest import mock
 
 
-CONFIGMAP = Path(__file__).parents[1] / "listenbrainz-bridge-configmap.yaml"
+SCRIPTS = Path(__file__).parents[1] / "scripts"
+BRIDGE = SCRIPTS / "listenbrainz-bridge.py"
+CLEANUP = SCRIPTS / "listenbrainz-cleanup.py"
 
 
-def script_source(name, next_key=None):
-    text = CONFIGMAP.read_text(encoding="utf-8")
-    marker = f"  {name}: |\n"
-    start = text.index(marker) + len(marker)
-    end = text.index(f"  {next_key}: |\n", start) if next_key else len(text)
-    return "".join(
-        line[4:] if line.startswith("    ") else line
-        for line in text[start:end].splitlines(keepends=True)
-    )
-
-
-def bridge_source():
-    return script_source("bridge.py", "cleanup.py")
+def run_script(path, name):
+    namespace = {"__name__": name}
+    exec(compile(path.read_text(encoding="utf-8"), str(path), "exec"), namespace)
+    return namespace
 
 
 def load_bridge(root):
@@ -32,17 +25,13 @@ def load_bridge(root):
         "METRICS_PATH": str(root / "listenbrainz.txt"),
         "NAVIDROME_DB": str(root / "navidrome.db"),
     }
-    namespace = {"__name__": "listenbrainz_bridge"}
     with mock.patch.dict(os.environ, environment, clear=False):
-        exec(compile(bridge_source(), str(CONFIGMAP), "exec"), namespace)
-    return namespace
+        return run_script(BRIDGE, "listenbrainz_bridge")
 
 
 def load_cleanup(root):
-    namespace = {"__name__": "listenbrainz_cleanup"}
     with mock.patch.dict(os.environ, {"MUSIC_ROOT": str(root / "music")}, clear=False):
-        exec(compile(script_source("cleanup.py"), str(CONFIGMAP), "exec"), namespace)
-    return namespace
+        return run_script(CLEANUP, "listenbrainz_cleanup")
 
 
 class FakeResponse:
