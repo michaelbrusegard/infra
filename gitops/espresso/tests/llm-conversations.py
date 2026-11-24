@@ -318,6 +318,13 @@ def check_password_guard(image, command):
         )
 
 
+def final_server_is_running(container):
+    """The entrypoint initialises the schema on a temporary server and then
+    replaces itself with the real one, so the real one is PID 1."""
+    comm = run("docker", "exec", container, "cat", "/proc/1/comm", check=False)
+    return comm.stdout.startswith("clickhouse")
+
+
 class Archive:
     def __init__(self, container, temp):
         self.container = container
@@ -379,7 +386,11 @@ class Archive:
     def wait_for_schema(self):
         for _ in range(120):
             ready = self.query("EXISTS TABLE llm.usage_metrics", check=False)
-            if ready.returncode == 0 and ready.stdout.strip() == "1":
+            if (
+                final_server_is_running(self.container)
+                and ready.returncode == 0
+                and ready.stdout.strip() == "1"
+            ):
                 break
             time.sleep(0.5)
         else:
@@ -1112,6 +1123,7 @@ class ClusterJob:
                     check=False,
                 ).stdout.strip()
                 == "1"
+                and final_server_is_running(self.container)
                 else 0
             )
             if ready == 2:

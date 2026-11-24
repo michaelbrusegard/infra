@@ -22,6 +22,8 @@ PLUGINS = ROOT / "packages/cliproxy-plugins"
 
 
 def run(*args, input=None, check=True, **kwargs):
+    if input is None:
+        kwargs.setdefault("stdin", subprocess.DEVNULL)
     return subprocess.run(
         args, input=input, text=True, capture_output=True, check=check, **kwargs
     )
@@ -205,10 +207,21 @@ def clickhouse_client(container):
     return query
 
 
+def final_server_is_running(container):
+    """The entrypoint initialises the schema on a temporary server and then
+    replaces itself with the real one, so the real one is PID 1."""
+    comm = run("docker", "exec", container, "cat", "/proc/1/comm", check=False)
+    return comm.stdout.startswith("clickhouse")
+
+
 def wait_for_schema(query, container):
     for _ in range(120):
         ready = query("EXISTS TABLE llm.usage_metrics", check=False)
-        if ready.returncode == 0 and ready.stdout.strip() == "1":
+        if (
+            final_server_is_running(container)
+            and ready.returncode == 0
+            and ready.stdout.strip() == "1"
+        ):
             break
         time.sleep(0.5)
     else:
