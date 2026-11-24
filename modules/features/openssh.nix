@@ -1,10 +1,11 @@
 {
-  flake.modules.nixos.openssh = {
-    config,
-    lib,
-    isWsl,
-    ...
-  }:
+  flake.modules.nixos.openssh =
+    {
+      config,
+      lib,
+      isWsl,
+      ...
+    }:
     {
       services.openssh = {
         enable = true;

@@ -1,5 +1,5 @@
-{inputs, ...}: {
-  flake.modules.darwin.homebrew = {config, ...}: {
+{ inputs, ... }: {
+  flake.modules.darwin.homebrew = { config, ... }: {
     imports = [
       inputs.nix-homebrew.darwinModules.nix-homebrew
     ];

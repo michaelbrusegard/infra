@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.k3s = {config, ...}: {
+  flake.modules.nixos.k3s = { config, ... }: {
     services.k3s = {
       enable = true;
       gracefulNodeShutdown.enable = true;

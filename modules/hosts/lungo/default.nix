@@ -1,7 +1,7 @@
-{inputs, ...}: {
+{ inputs, ... }: {
   hosts.lungo = {
     system = "aarch64-darwin";
-    users = ["michaelbrusegard"];
+    users = [ "michaelbrusegard" ];
   };
 
   flake.modules.darwin.lungo = {

@@ -1,10 +1,14 @@
 {
   pkgs,
   lib,
-}: let
+}:
+let
   probe = pkgs.writeShellApplication {
     name = "probe";
-    runtimeInputs = [pkgs.socat pkgs.coreutils];
+    runtimeInputs = [
+      pkgs.socat
+      pkgs.coreutils
+    ];
     text = ''
       proto=$1
       host=$2
@@ -33,7 +37,10 @@
 
   probeBatch = pkgs.writeShellApplication {
     name = "probe-batch";
-    runtimeInputs = [probe pkgs.findutils];
+    runtimeInputs = [
+      probe
+      pkgs.findutils
+    ];
     text = ''
       xargs -P 64 -L 1 probe
     '';
@@ -43,48 +50,49 @@
     echo "''${WHOAMI_ADDRESS:-''${SOCAT_SOCKADDR:--}} $SOCAT_PEERADDR"
   '';
 
-  whoamiService = {
-    proto,
-    port,
-    address ? null,
-  }: let
-    family =
-      if address == null || lib.hasInfix ":" address
-      then "6"
-      else "4";
-    socket =
-      if proto == "tcp"
-      then "LISTEN"
-      else "RECVFROM";
-    bind =
-      if address == null
-      then "ipv6only=0"
-      else if family == "6"
-      then "bind=[${address}]"
-      else "bind=${address}";
-  in
-    lib.nameValuePair "whoami-${proto}-${toString port}-${lib.replaceStrings [":" "."] ["-" "-"] (
-      if address == null
-      then "any"
-      else address
-    )}" {
-      wantedBy = ["multi-user.target"];
-      after = ["network.target"];
-      # Binding fails until the address has passed duplicate address detection.
-      startLimitIntervalSec = 0;
-      # A datagram socket cannot tell which address it was reached at, so a
-      # bound listener names its own.
-      environment.WHOAMI_ADDRESS = toString address;
-      serviceConfig = {
-        ExecStart = "${lib.getExe pkgs.socat} ${lib.toUpper proto}${family}-${socket}:${toString port},${bind},fork,reuseaddr EXEC:${reply}";
-        Restart = "always";
-        RestartSec = 1;
+  whoamiService =
+    {
+      proto,
+      port,
+      address ? null,
+    }:
+    let
+      family = if address == null || lib.hasInfix ":" address then "6" else "4";
+      socket = if proto == "tcp" then "LISTEN" else "RECVFROM";
+      bind =
+        if address == null then
+          "ipv6only=0"
+        else if family == "6" then
+          "bind=[${address}]"
+        else
+          "bind=${address}";
+    in
+    lib.nameValuePair
+      "whoami-${proto}-${toString port}-${
+        lib.replaceStrings [ ":" "." ] [ "-" "-" ] (if address == null then "any" else address)
+      }"
+      {
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
+        # Binding fails until the address has passed duplicate address detection.
+        startLimitIntervalSec = 0;
+        # A datagram socket cannot tell which address it was reached at, so a
+        # bound listener names its own.
+        environment.WHOAMI_ADDRESS = toString address;
+        serviceConfig = {
+          ExecStart = "${lib.getExe pkgs.socat} ${lib.toUpper proto}${family}-${socket}:${toString port},${bind},fork,reuseaddr EXEC:${reply}";
+          Restart = "always";
+          RestartSec = 1;
+        };
       };
-    };
   # Every VM gets the probe tools; a router keeps its own firewall, endpoints
   # turn theirs off so every verdict belongs to the router under test.
   probeModule = {
-    environment.systemPackages = [probe probeBatch pkgs.socat];
+    environment.systemPackages = [
+      probe
+      probeBatch
+      pkgs.socat
+    ];
     documentation.enable = false;
   };
 
@@ -93,50 +101,56 @@
   whoami = listeners: {
     systemd.services = lib.listToAttrs (map whoamiService listeners);
   };
-in {
+in
+{
   # Nix lists are untyped, so hand the test script tuples it can type-check.
-  pythonTuples = rows: "[${lib.concatMapStringsSep ", " (row: "(${lib.concatMapStringsSep ", " builtins.toJSON row})") rows}]";
+  pythonTuples =
+    rows:
+    "[${
+      lib.concatMapStringsSep ", " (row: "(${lib.concatMapStringsSep ", " builtins.toJSON row})") rows
+    }]";
 
   inherit probeModule whoami;
 
   # A host on one of the router's networks, leased by the router and
   # answering on tcp/7000.
-  endpoint = {
-    vlan,
-    tag ? null,
-  }: {lib, ...}: let
-    interface =
-      if tag == null
-      then "uplink"
-      else "tagged";
-  in {
-    imports = [
-      probeModule
-      (whoami [
-        {
-          proto = "tcp";
-          port = 7000;
-        }
-      ])
-    ];
-    virtualisation.interfaces.uplink.vlan = vlan;
-    networking = {
-      useDHCP = false;
-      firewall.enable = false;
-      vlans = lib.optionalAttrs (tag != null) {
-        tagged = {
-          id = tag;
-          interface = "uplink";
+  endpoint =
+    {
+      vlan,
+      tag ? null,
+    }:
+    { lib, ... }:
+    let
+      interface = if tag == null then "uplink" else "tagged";
+    in
+    {
+      imports = [
+        probeModule
+        (whoami [
+          {
+            proto = "tcp";
+            port = 7000;
+          }
+        ])
+      ];
+      virtualisation.interfaces.uplink.vlan = vlan;
+      networking = {
+        useDHCP = false;
+        firewall.enable = false;
+        vlans = lib.optionalAttrs (tag != null) {
+          tagged = {
+            id = tag;
+            interface = "uplink";
+          };
         };
+        interfaces.${interface}.useDHCP = true;
       };
-      interfaces.${interface}.useDHCP = true;
+      # The untagged side of the trunk is the router's trusted bridge; an address
+      # there would let this VM reach it without crossing the router.
+      boot.kernel.sysctl = lib.optionalAttrs (tag != null) {
+        "net.ipv6.conf.uplink.disable_ipv6" = 1;
+      };
     };
-    # The untagged side of the trunk is the router's trusted bridge; an address
-    # there would let this VM reach it without crossing the router.
-    boot.kernel.sysctl = lib.optionalAttrs (tag != null) {
-      "net.ipv6.conf.uplink.disable_ipv6" = 1;
-    };
-  };
 
   # The ISP and the rest of the internet on the router's WAN port: hands out
   # the WAN lease and a router advertisement, and answers on tcp/7000 plus the
@@ -144,16 +158,18 @@ in {
   internet = listeners: {
     imports = [
       probeModule
-      (whoami ([
+      (whoami (
+        [
           {
             proto = "tcp";
             port = 7000;
           }
         ]
-        ++ listeners))
+        ++ listeners
+      ))
     ];
     virtualisation.interfaces.wan.vlan = 1;
-    environment.systemPackages = [pkgs.nmap];
+    environment.systemPackages = [ pkgs.nmap ];
     # Everything beyond this host is unreachable and says so at once, so the
     # router's resolvers and blocklist downloads fail fast instead of timing out.
     boot.kernel.sysctl = {

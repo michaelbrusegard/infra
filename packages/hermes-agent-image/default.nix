@@ -3,8 +3,9 @@
   hermes-agent,
   pkgs,
   runCommand,
-}: let
-  agentBrowser = pkgs.callPackage ./agent-browser.nix {};
+}:
+let
+  agentBrowser = pkgs.callPackage ./agent-browser.nix { };
 
   markitdownPptxDependencies = with pkgs.python3Packages; [
     beautifulsoup4
@@ -22,7 +23,7 @@
   markitdownPptx = pkgs.python3Packages.markitdown.overridePythonAttrs {
     dependencies = markitdownPptxDependencies;
     doCheck = false;
-    nativeCheckInputs = [];
+    nativeCheckInputs = [ ];
   };
 
   pythonTools = pkgs.python3.withPackages (pythonPackages: [
@@ -52,10 +53,8 @@
         hash = "sha256-0vc0FXu8KS53Zoz7s60lvE46YkaySUnetdWqiut7Z4A=";
       };
     }
-    .${
-      pkgs.stdenv.hostPlatform.system
-    }
-    or (throw "blogwatcher-cli is unsupported on ${pkgs.stdenv.hostPlatform.system}");
+    .${pkgs.stdenv.hostPlatform.system}
+      or (throw "blogwatcher-cli is unsupported on ${pkgs.stdenv.hostPlatform.system}");
 
   blogwatcherCli = pkgs.stdenvNoCC.mkDerivation {
     pname = "blogwatcher-cli";
@@ -79,7 +78,7 @@
 
   jupyterLiveKernel = pkgs.writeShellApplication {
     name = "jupyter-live-kernel";
-    runtimeInputs = [pythonTools];
+    runtimeInputs = [ pythonTools ];
     text = ''
       exec python3 ${jupyterLiveKernelScript} "$@"
     '';
@@ -91,7 +90,7 @@
     src = ./node-tools;
     # Renovate maintains the lockfile, so derive the deps from it instead of
     # pinning an npmDepsHash that each lockfile update would break.
-    npmDeps = pkgs.importNpmLock {npmRoot = ./node-tools;};
+    npmDeps = pkgs.importNpmLock { npmRoot = ./node-tools; };
     inherit (pkgs.importNpmLock) npmConfigHook;
     dontNpmBuild = true;
     installPhase = ''
@@ -151,7 +150,7 @@
     ];
   };
 
-  root = runCommand "hermes-agent-root" {} ''
+  root = runCommand "hermes-agent-root" { } ''
     mkdir -p "$out/etc" "$out/opt/data/workspace" "$out/tmp"
     cat > "$out/etc/passwd" <<'EOF'
     root:x:0:0:root:/root:/bin/bash
@@ -164,37 +163,37 @@
     chmod 1777 "$out/tmp"
   '';
 in
-  dockerTools.buildLayeredImage {
-    name = "ghcr.io/michaelbrusegard/hermes-agent";
-    tag = "nix";
-    # Keep the overlay chain shallow enough for k3s containerd. The default
-    # 100-layer image consistently fails while applying layer 94.
-    maxLayers = 40;
-    contents = [
-      hermes-agent
-      nodeTools
-      tools
-      root
+dockerTools.buildLayeredImage {
+  name = "ghcr.io/michaelbrusegard/hermes-agent";
+  tag = "nix";
+  # Keep the overlay chain shallow enough for k3s containerd. The default
+  # 100-layer image consistently fails while applying layer 94.
+  maxLayers = 40;
+  contents = [
+    hermes-agent
+    nodeTools
+    tools
+    root
+  ];
+  config = {
+    Entrypoint = [ "${hermes-agent}/bin/hermes" ];
+    Env = [
+      "HOME=/opt/data"
+      "HERMES_HOME=/opt/data"
+      "PATH=/opt/data/scripts:${tools}/bin:${hermes-agent}/bin"
+      "NODE_PATH=${nodeTools}/lib/node_modules"
+      "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+      "TZ=America/Los_Angeles"
+      "TZDIR=${pkgs.tzdata}/share/zoneinfo"
+      "LANG=en_US.UTF-8"
+      "PYTHONDONTWRITEBYTECODE=1"
+      "PIP_DISABLE_PIP_VERSION_CHECK=1"
     ];
-    config = {
-      Entrypoint = ["${hermes-agent}/bin/hermes"];
-      Env = [
-        "HOME=/opt/data"
-        "HERMES_HOME=/opt/data"
-        "PATH=/opt/data/scripts:${tools}/bin:${hermes-agent}/bin"
-        "NODE_PATH=${nodeTools}/lib/node_modules"
-        "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
-        "TZ=America/Los_Angeles"
-        "TZDIR=${pkgs.tzdata}/share/zoneinfo"
-        "LANG=en_US.UTF-8"
-        "PYTHONDONTWRITEBYTECODE=1"
-        "PIP_DISABLE_PIP_VERSION_CHECK=1"
-      ];
-      User = "10000:10000";
-      WorkingDir = "/opt/data/workspace";
-      Labels = {
-        "org.opencontainers.image.description" = "Hermes Agent with a fully declarative Nix toolchain";
-        "org.opencontainers.image.source" = "https://github.com/michaelbrusegard/infra";
-      };
+    User = "10000:10000";
+    WorkingDir = "/opt/data/workspace";
+    Labels = {
+      "org.opencontainers.image.description" = "Hermes Agent with a fully declarative Nix toolchain";
+      "org.opencontainers.image.source" = "https://github.com/michaelbrusegard/infra";
     };
-  }
+  };
+}

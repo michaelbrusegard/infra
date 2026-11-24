@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.libvirt = {pkgs, ...}: {
+  flake.modules.nixos.libvirt = { pkgs, ... }: {
     virtualisation.libvirtd = {
       enable = true;
       qemu.swtpm.enable = true;

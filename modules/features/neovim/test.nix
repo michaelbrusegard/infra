@@ -4,77 +4,77 @@
       keymaps = [
         {
           key = "<leader>ta";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Attach to Test (Neotest)";
           action = "function() require('neotest').run.attach() end";
           lua = true;
         }
         {
           key = "<leader>tt";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Run File (Neotest)";
           action = "function() require('neotest').run.run(vim.fn.expand('%')) end";
           lua = true;
         }
         {
           key = "<leader>tT";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Run All Test Files (Neotest)";
           action = "function() require('neotest').run.run(vim.uv.cwd()) end";
           lua = true;
         }
         {
           key = "<leader>tr";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Run Nearest (Neotest)";
           action = "function() require('neotest').run.run() end";
           lua = true;
         }
         {
           key = "<leader>tl";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Run Last (Neotest)";
           action = "function() require('neotest').run.run_last() end";
           lua = true;
         }
         {
           key = "<leader>ts";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Toggle Summary (Neotest)";
           action = "function() require('neotest').summary.toggle() end";
           lua = true;
         }
         {
           key = "<leader>to";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Show Output (Neotest)";
           action = "function() require('neotest').output.open({ enter = true, auto_close = true }) end";
           lua = true;
         }
         {
           key = "<leader>tO";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Toggle Output Panel (Neotest)";
           action = "function() require('neotest').output_panel.toggle() end";
           lua = true;
         }
         {
           key = "<leader>tS";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Stop (Neotest)";
           action = "function() require('neotest').run.stop() end";
           lua = true;
         }
         {
           key = "<leader>tw";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Toggle Watch (Neotest)";
           action = "function() require('neotest').watch.toggle(vim.fn.expand('%')) end";
           lua = true;
         }
         {
           key = "<leader>td";
-          mode = ["n"];
+          mode = [ "n" ];
           desc = "Debug Nearest (Neotest)";
           action = "function() require('neotest').run.run({strategy = 'dap'}) end";
           lua = true;

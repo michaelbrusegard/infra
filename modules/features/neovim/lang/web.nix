@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.neovim = {pkgs, ...}: {
+  flake.modules.homeManager.neovim = { pkgs, ... }: {
     programs.neovim.spec = {
       treesitter.grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
         html
@@ -16,11 +16,17 @@
       formatting.filetypes = {
         html.oxfmt = {
           package = pkgs.oxfmt;
-          args = ["--stdin-filepath" "$FILENAME"];
+          args = [
+            "--stdin-filepath"
+            "$FILENAME"
+          ];
         };
         css.oxfmt = {
           package = pkgs.oxfmt;
-          args = ["--stdin-filepath" "$FILENAME"];
+          args = [
+            "--stdin-filepath"
+            "$FILENAME"
+          ];
         };
       };
     };

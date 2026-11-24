@@ -3,8 +3,8 @@
     # Blocky downloads its blocklists at startup and keeps serving with empty
     # lists if that fails, so it must not race the network coming up.
     systemd.services.blocky = {
-      after = ["network-online.target"];
-      wants = ["network-online.target"];
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
     };
 
     services.blocky = {
@@ -22,7 +22,10 @@
         bootstrapDns = [
           {
             upstream = "https://1.1.1.1/dns-query";
-            ips = ["1.1.1.1" "1.0.0.1"];
+            ips = [
+              "1.1.1.1"
+              "1.0.0.1"
+            ];
           }
         ];
 

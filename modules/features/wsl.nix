@@ -1,6 +1,6 @@
-{inputs, ...}: {
-  flake.modules.nixos.wsl = {users, ...}: {
-    imports = [inputs.nixos-wsl.nixosModules.default];
+{ inputs, ... }: {
+  flake.modules.nixos.wsl = { users, ... }: {
+    imports = [ inputs.nixos-wsl.nixosModules.default ];
 
     wsl = {
       enable = true;

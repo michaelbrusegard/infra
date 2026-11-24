@@ -1,7 +1,7 @@
-{inputs, ...}: {
+{ inputs, ... }: {
   hosts.ristretto-wsl = {
     system = "x86_64-linux";
-    users = ["michaelbrusegard"];
+    users = [ "michaelbrusegard" ];
     platform = "wsl";
   };
 

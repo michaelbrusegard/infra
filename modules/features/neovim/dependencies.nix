@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.neovim = {pkgs, ...}: {
+  flake.modules.homeManager.neovim = { pkgs, ... }: {
     programs.neovim = {
       extraPackages = with pkgs; [
         git

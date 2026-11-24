@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.neovim = {pkgs, ...}: {
+  flake.modules.homeManager.neovim = { pkgs, ... }: {
     programs.neovim = {
       spec = {
         treesitter.grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
@@ -10,14 +10,12 @@
         plugins = {
           "rustaceanvim" = {
             package = pkgs.vimPlugins.rustaceanvim;
-            filetype = ["rust"];
+            filetype = [ "rust" ];
             extraLuaBefore = ''
               local extension_path = '${pkgs.vscode-extensions.vadimcn.vscode-lldb}/share/vscode/extensions/vadimcn.vscode-lldb/'
               local codelldb_path = extension_path .. 'adapter/codelldb'
               local liblldb_path = extension_path .. 'lldb/lib/liblldb${
-                if pkgs.stdenv.hostPlatform.isDarwin
-                then ".dylib"
-                else ".so"
+                if pkgs.stdenv.hostPlatform.isDarwin then ".dylib" else ".so"
               }'
 
               vim.g.rustaceanvim = {
@@ -69,7 +67,7 @@
 
           "crates" = {
             package = pkgs.vimPlugins.crates-nvim;
-            event = ["BufRead"];
+            event = [ "BufRead" ];
             condition = "vim.fn.expand('%:t') == 'Cargo.toml'";
             setupModule = "crates";
             setupOpts = {

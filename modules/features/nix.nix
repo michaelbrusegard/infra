@@ -1,5 +1,6 @@
-{inputs, ...}: let
-  common = {lib, ...}: {
+{ inputs, ... }:
+let
+  common = { lib, ... }: {
     nix = {
       optimise.automatic = true;
 
@@ -17,7 +18,10 @@
       settings = {
         accept-flake-config = true;
         builders-use-substitutes = true;
-        extra-experimental-features = ["nix-command" "flakes"];
+        extra-experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
 
         substituters = [
           "https://cache.nixos.org?priority=10"
@@ -40,24 +44,25 @@
     };
 
     nixpkgs.config.allowUnfree = true;
-    nixpkgs.overlays = [inputs.self.overlays.default];
+    nixpkgs.overlays = [ inputs.self.overlays.default ];
   };
-in {
+in
+{
   flake.modules.nixos.nix = {
-    imports = [common];
+    imports = [ common ];
     nix = {
       daemonCPUSchedPolicy = "idle";
       daemonIOSchedClass = "idle";
       settings = {
-        allowed-users = ["@wheel"];
-        trusted-users = ["@wheel"];
+        allowed-users = [ "@wheel" ];
+        trusted-users = [ "@wheel" ];
       };
     };
     users.mutableUsers = false;
   };
 
-  flake.modules.darwin.nix = {pkgs, ...}: {
-    imports = [common];
+  flake.modules.darwin.nix = { pkgs, ... }: {
+    imports = [ common ];
     nix = {
       gc.interval = {
         Weekday = 0;
@@ -65,8 +70,8 @@ in {
         Minute = 0;
       };
       settings = {
-        allowed-users = ["@admin"];
-        trusted-users = ["@admin"];
+        allowed-users = [ "@admin" ];
+        trusted-users = [ "@admin" ];
       };
       linux-builder = {
         enable = true;
@@ -78,7 +83,7 @@ in {
             memorySize = 16384;
           };
         };
-        systems = ["x86_64-linux"];
+        systems = [ "x86_64-linux" ];
         speedFactor = 2;
       };
     };

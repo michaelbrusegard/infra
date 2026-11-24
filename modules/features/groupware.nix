@@ -1,112 +1,115 @@
 {
-  flake.modules.homeManager.groupware = {
-    config,
-    lib,
-    pkgs,
-    isWsl,
-    osConfig,
-    homePersistenceRoot ? null,
-    ...
-  }: let
-    enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
+  flake.modules.homeManager.groupware =
+    {
+      config,
+      lib,
+      pkgs,
+      isWsl,
+      osConfig,
+      homePersistenceRoot ? null,
+      ...
+    }:
+    let
+      enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
 
-    # vdirsyncer finds the CalDAV and CardDAV homes through .well-known.
-    davUrl = "https://mail.asgard.michaelbrusegard.com/";
-    davUser = "michaelbrusegard@michaelbrusegard.com";
-    davPasswordCommand = [
-      "${pkgs.coreutils}/bin/cat"
-      config.secrets.mail.davAppPasswordFile
-    ];
-  in {
-    config = lib.mkIf enable {
-      home = lib.optionalAttrs (homePersistenceRoot != null) {
-        persistence.${homePersistenceRoot}.directories = [
-          ".local/share/calendars"
-          ".local/share/contacts"
-          ".local/share/khal"
-          ".local/share/vdirsyncer"
-        ];
-      };
-
-      programs.vdirsyncer = {
-        enable = true;
-        package = pkgs.vdirsyncer;
-      };
-
-      services.vdirsyncer = {
-        enable = true;
-        package = pkgs.vdirsyncer;
-        frequency = "*:0/10";
-      };
-
-      systemd.user.services.vdirsyncer.Service.ExecStartPre = "${lib.getExe pkgs.vdirsyncer} discover";
-
-      programs.khal = {
-        enable = true;
-        locale = {
-          default_timezone = osConfig.time.timeZone;
-          local_timezone = osConfig.time.timeZone;
-          firstweekday = 0;
-          weeknumbers = "left";
+      # vdirsyncer finds the CalDAV and CardDAV homes through .well-known.
+      davUrl = "https://mail.asgard.michaelbrusegard.com/";
+      davUser = "michaelbrusegard@michaelbrusegard.com";
+      davPasswordCommand = [
+        "${pkgs.coreutils}/bin/cat"
+        config.secrets.mail.davAppPasswordFile
+      ];
+    in
+    {
+      config = lib.mkIf enable {
+        home = lib.optionalAttrs (homePersistenceRoot != null) {
+          persistence.${homePersistenceRoot}.directories = [
+            ".local/share/calendars"
+            ".local/share/contacts"
+            ".local/share/khal"
+            ".local/share/vdirsyncer"
+          ];
         };
-      };
 
-      programs.khard = {
-        enable = true;
-        settings = {
-          general = {
-            default_action = "list";
+        programs.vdirsyncer = {
+          enable = true;
+          package = pkgs.vdirsyncer;
+        };
+
+        services.vdirsyncer = {
+          enable = true;
+          package = pkgs.vdirsyncer;
+          frequency = "*:0/10";
+        };
+
+        systemd.user.services.vdirsyncer.Service.ExecStartPre = "${lib.getExe pkgs.vdirsyncer} discover";
+
+        programs.khal = {
+          enable = true;
+          locale = {
+            default_timezone = osConfig.time.timeZone;
+            local_timezone = osConfig.time.timeZone;
+            firstweekday = 0;
+            weeknumbers = "left";
           };
         };
-      };
 
-      accounts.calendar = {
-        basePath = ".local/share/calendars";
-        accounts.asgard = {
-          primary = true;
-          remote = {
-            type = "caldav";
-            url = davUrl;
-            userName = davUser;
-            passwordCommand = davPasswordCommand;
-          };
-          vdirsyncer = {
-            enable = true;
-            collections = ["from a"];
-            conflictResolution = "remote wins";
-            metadata = [
-              "color"
-              "displayname"
-            ];
-          };
-          khal = {
-            enable = true;
-            type = "discover";
+        programs.khard = {
+          enable = true;
+          settings = {
+            general = {
+              default_action = "list";
+            };
           };
         };
-      };
 
-      accounts.contact = {
-        basePath = ".local/share/contacts";
-        accounts.asgard = {
-          remote = {
-            type = "carddav";
-            url = davUrl;
-            userName = davUser;
-            passwordCommand = davPasswordCommand;
+        accounts.calendar = {
+          basePath = ".local/share/calendars";
+          accounts.asgard = {
+            primary = true;
+            remote = {
+              type = "caldav";
+              url = davUrl;
+              userName = davUser;
+              passwordCommand = davPasswordCommand;
+            };
+            vdirsyncer = {
+              enable = true;
+              collections = [ "from a" ];
+              conflictResolution = "remote wins";
+              metadata = [
+                "color"
+                "displayname"
+              ];
+            };
+            khal = {
+              enable = true;
+              type = "discover";
+            };
           };
-          vdirsyncer = {
-            enable = true;
-            collections = ["from a"];
-            conflictResolution = "remote wins";
-            metadata = ["displayname"];
-          };
-          khard = {
-            enable = true;
-            type = "discover";
+        };
+
+        accounts.contact = {
+          basePath = ".local/share/contacts";
+          accounts.asgard = {
+            remote = {
+              type = "carddav";
+              url = davUrl;
+              userName = davUser;
+              passwordCommand = davPasswordCommand;
+            };
+            vdirsyncer = {
+              enable = true;
+              collections = [ "from a" ];
+              conflictResolution = "remote wins";
+              metadata = [ "displayname" ];
+            };
+            khard = {
+              enable = true;
+              type = "discover";
+            };
           };
         };
       };
     };
-  };
 }

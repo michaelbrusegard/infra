@@ -2,22 +2,26 @@
   flake.modules.homeManager.neovim = {
     programs.neovim.spec = {
       augroups = [
-        {name = "Checktime";}
-        {name = "HighlightYank";}
-        {name = "ResizeSplits";}
-        {name = "LastLoc";}
-        {name = "CloseWithQ";}
-        {name = "ManUnlisted";}
-        {name = "WrapSpell";}
-        {name = "JsonConceal";}
-        {name = "AutoCreateDir";}
-        {name = "RandomTempFile";}
-        {name = "AutoSave";}
+        { name = "Checktime"; }
+        { name = "HighlightYank"; }
+        { name = "ResizeSplits"; }
+        { name = "LastLoc"; }
+        { name = "CloseWithQ"; }
+        { name = "ManUnlisted"; }
+        { name = "WrapSpell"; }
+        { name = "JsonConceal"; }
+        { name = "AutoCreateDir"; }
+        { name = "RandomTempFile"; }
+        { name = "AutoSave"; }
       ];
 
       autocmds = [
         {
-          event = ["FocusGained" "TermClose" "TermLeave"];
+          event = [
+            "FocusGained"
+            "TermClose"
+            "TermLeave"
+          ];
           group = "Checktime";
           callback = ''
             function()
@@ -29,7 +33,7 @@
         }
 
         {
-          event = ["TextYankPost"];
+          event = [ "TextYankPost" ];
           group = "HighlightYank";
           callback = ''
             function()
@@ -39,7 +43,7 @@
         }
 
         {
-          event = ["VimResized"];
+          event = [ "VimResized" ];
           group = "ResizeSplits";
           callback = ''
             function()
@@ -51,7 +55,7 @@
         }
 
         {
-          event = ["BufReadPost"];
+          event = [ "BufReadPost" ];
           group = "LastLoc";
           callback = ''
             function(event)
@@ -71,7 +75,7 @@
         }
 
         {
-          event = ["FileType"];
+          event = [ "FileType" ];
           group = "CloseWithQ";
           pattern = [
             "PlenaryTestPopup"
@@ -106,9 +110,9 @@
 
         # Make it easier to close man-files when opened inline
         {
-          event = ["FileType"];
+          event = [ "FileType" ];
           group = "ManUnlisted";
-          pattern = ["man"];
+          pattern = [ "man" ];
           callback = ''
             function(event)
               vim.bo[event.buf].buflisted = false
@@ -117,9 +121,15 @@
         }
 
         {
-          event = ["FileType"];
+          event = [ "FileType" ];
           group = "WrapSpell";
-          pattern = ["text" "plaintex" "typst" "gitcommit" "markdown"];
+          pattern = [
+            "text"
+            "plaintex"
+            "typst"
+            "gitcommit"
+            "markdown"
+          ];
           callback = ''
             function()
               vim.opt_local.wrap = true
@@ -129,9 +139,13 @@
         }
 
         {
-          event = ["FileType"];
+          event = [ "FileType" ];
           group = "JsonConceal";
-          pattern = ["json" "jsonc" "json5"];
+          pattern = [
+            "json"
+            "jsonc"
+            "json5"
+          ];
           callback = ''
             function()
               vim.opt_local.conceallevel = 0
@@ -140,7 +154,7 @@
         }
 
         {
-          event = ["BufWritePre"];
+          event = [ "BufWritePre" ];
           group = "AutoCreateDir";
           callback = ''
             function(event)
@@ -154,7 +168,10 @@
         }
 
         {
-          event = ["BufLeave" "FocusLost"];
+          event = [
+            "BufLeave"
+            "FocusLost"
+          ];
           group = "AutoSave";
           callback = ''
             function()
@@ -166,7 +183,7 @@
         }
 
         {
-          event = ["VimEnter"];
+          event = [ "VimEnter" ];
           group = "RandomTempFile";
           callback = ''
             function()

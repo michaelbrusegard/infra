@@ -6,7 +6,7 @@
     };
   };
 
-  flake.modules.darwin.localsend = {pkgs, ...}: {
-    environment.systemPackages = [pkgs.localsend];
+  flake.modules.darwin.localsend = { pkgs, ... }: {
+    environment.systemPackages = [ pkgs.localsend ];
   };
 }

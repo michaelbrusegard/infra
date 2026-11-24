@@ -12,14 +12,20 @@
           auto-save = true;
           true-color = true;
           undercurl = true;
-          rulers = [];
+          rulers = [ ];
           color-modes = true;
           idle-timeout = 200;
           completion-timeout = 200;
 
           # Matching relativenumber + number
           line-number = "relative";
-          gutters = ["diagnostics" "spacer" "line-numbers" "spacer" "diff"];
+          gutters = [
+            "diagnostics"
+            "spacer"
+            "line-numbers"
+            "spacer"
+            "diff"
+          ];
 
           cursor-shape = {
             insert = "bar";
@@ -28,9 +34,24 @@
           };
 
           statusline = {
-            left = ["mode" "spinner" "file-name" "read-only-indicator" "file-modification-indicator"];
-            center = [];
-            right = ["diagnostics" "selections" "register" "position" "file-encoding" "file-line-ending" "file-type" "version-control"];
+            left = [
+              "mode"
+              "spinner"
+              "file-name"
+              "read-only-indicator"
+              "file-modification-indicator"
+            ];
+            center = [ ];
+            right = [
+              "diagnostics"
+              "selections"
+              "register"
+              "position"
+              "file-encoding"
+              "file-line-ending"
+              "file-type"
+              "version-control"
+            ];
             separator = "|";
             mode = {
               normal = "NORMAL";
@@ -87,10 +108,17 @@
             C-l = "jump_view_right";
 
             # Escape clears search highlight (matching <esc> = noh)
-            esc = ["collapse_selection" "keep_primary_selection"];
+            esc = [
+              "collapse_selection"
+              "keep_primary_selection"
+            ];
 
-            "[" = {b = "goto_previous_buffer";};
-            "]" = {b = "goto_next_buffer";};
+            "[" = {
+              b = "goto_previous_buffer";
+            };
+            "]" = {
+              b = "goto_next_buffer";
+            };
 
             # [d and ]d are default in helix
 
@@ -169,7 +197,7 @@
           };
           typescript-language-server = {
             command = "typescript-language-server";
-            args = ["--stdio"];
+            args = [ "--stdio" ];
           };
           rust-analyzer = {
             command = "rust-analyzer";
@@ -182,39 +210,41 @@
         language = [
           {
             name = "nix";
-            formatter = {command = "nixfmt";};
-            language-servers = ["nixd"];
+            formatter = {
+              command = "nixfmt";
+            };
+            language-servers = [ "nixd" ];
             auto-format = true;
           }
           {
             name = "typescript";
             auto-format = true;
-            language-servers = ["typescript-language-server"];
+            language-servers = [ "typescript-language-server" ];
           }
           {
             name = "tsx";
             auto-format = true;
-            language-servers = ["typescript-language-server"];
+            language-servers = [ "typescript-language-server" ];
           }
           {
             name = "javascript";
             auto-format = true;
-            language-servers = ["typescript-language-server"];
+            language-servers = [ "typescript-language-server" ];
           }
           {
             name = "jsx";
             auto-format = true;
-            language-servers = ["typescript-language-server"];
+            language-servers = [ "typescript-language-server" ];
           }
           {
             name = "rust";
             auto-format = true;
-            language-servers = ["rust-analyzer"];
+            language-servers = [ "rust-analyzer" ];
           }
           {
             name = "python";
             auto-format = true;
-            language-servers = ["pylsp"];
+            language-servers = [ "pylsp" ];
           }
           {
             name = "json";

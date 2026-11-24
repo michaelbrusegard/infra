@@ -4,19 +4,32 @@
   python3,
   patch,
   server,
-}: let
+}:
+let
   source = lib.cleanSourceWith {
     src = ./.;
-    filter = path: type:
-      if type == "directory"
-      then baseNameOf path != "__pycache__"
-      else lib.any (suffix: lib.hasSuffix suffix path) [".py" ".rs" ".patch" ".sieve"];
+    filter =
+      path: type:
+      if type == "directory" then
+        baseNameOf path != "__pycache__"
+      else
+        lib.any (suffix: lib.hasSuffix suffix path) [
+          ".py"
+          ".rs"
+          ".patch"
+          ".sieve"
+        ];
   };
 in
-  runCommand "stalwart-native-scim-source-check" {
-    nativeBuildInputs = [python3 patch];
+runCommand "stalwart-native-scim-source-check"
+  {
+    nativeBuildInputs = [
+      python3
+      patch
+    ];
     STALWART_SOURCE_DIR = server.src;
-  } ''
+  }
+  ''
     python3 ${source}/test_packaging.py -v
     python3 ${source}/integration.py --self-test
     export PYTHONPYCACHEPREFIX="$TMPDIR/pycache"

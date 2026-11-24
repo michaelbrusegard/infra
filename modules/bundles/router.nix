@@ -1,4 +1,4 @@
-{inputs, ...}: {
+{ inputs, ... }: {
   flake.modules.nixos.router.imports = with inputs.self.modules.nixos; [
     server
     blocky

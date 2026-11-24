@@ -1,24 +1,25 @@
 {
-  flake.modules.homeManager.ssh = {
-    config,
-    lib,
-    homePersistenceRoot ? null,
-    ...
-  }: {
-    home = lib.optionalAttrs (homePersistenceRoot != null) {
-      # OpenSSH replaces known_hosts using a hard-linked .old backup. Persist the
-      # directory so both files live on the same filesystem.
-      persistence.${homePersistenceRoot}.directories = [
-        ".ssh"
-      ];
-    };
+  flake.modules.homeManager.ssh =
+    {
+      config,
+      lib,
+      homePersistenceRoot ? null,
+      ...
+    }:
+    {
+      home = lib.optionalAttrs (homePersistenceRoot != null) {
+        # OpenSSH replaces known_hosts using a hard-linked .old backup. Persist the
+        # directory so both files live on the same filesystem.
+        persistence.${homePersistenceRoot}.directories = [
+          ".ssh"
+        ];
+      };
 
-    programs.ssh = {
-      enable = true;
-      enableDefaultConfig = false;
+      programs.ssh = {
+        enable = true;
+        enableDefaultConfig = false;
 
-      settings =
-        {
+        settings = {
           "*" = {
             IdentitiesOnly = true;
             HashKnownHosts = true;
@@ -35,6 +36,6 @@
         // config.secrets.ssh.hostSettings
         // config.secrets.ssh.deploySettings
         // config.secrets.ssh.questSettings;
+      };
     };
-  };
 }

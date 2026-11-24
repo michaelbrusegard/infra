@@ -1,17 +1,17 @@
 _: {
-  flake.modules.nixos.deploy = {config, ...}: {
+  flake.modules.nixos.deploy = { config, ... }: {
     users.users.deploy = {
       isNormalUser = true;
-      extraGroups = ["wheel"];
+      extraGroups = [ "wheel" ];
       openssh.authorizedKeys.keys = config.secrets.users.deploy.openssh.authorizedKeys.keys;
     };
     security.sudo-rs.extraRules = [
       {
-        users = ["deploy"];
+        users = [ "deploy" ];
         commands = [
           {
             command = "ALL";
-            options = ["NOPASSWD"];
+            options = [ "NOPASSWD" ];
           }
         ];
       }

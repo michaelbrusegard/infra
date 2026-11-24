@@ -1,6 +1,7 @@
 {
-  flake.modules.homeManager.cli-desktop = {pkgs, ...}: {
-    home.packages = with pkgs;
+  flake.modules.homeManager.cli-desktop = { pkgs, ... }: {
+    home.packages =
+      with pkgs;
       [
         ffmpeg
         imagemagick

@@ -3,28 +3,40 @@
     programs.neovim.spec.keymaps = [
       {
         key = "j";
-        mode = ["n" "x"];
+        mode = [
+          "n"
+          "x"
+        ];
         desc = "Down";
         action = "v:count == 0 ? 'gj' : 'j'";
         expr = true;
       }
       {
         key = "<Down>";
-        mode = ["n" "x"];
+        mode = [
+          "n"
+          "x"
+        ];
         desc = "Down";
         action = "v:count == 0 ? 'gj' : 'j'";
         expr = true;
       }
       {
         key = "k";
-        mode = ["n" "x"];
+        mode = [
+          "n"
+          "x"
+        ];
         desc = "Up";
         action = "v:count == 0 ? 'gk' : 'k'";
         expr = true;
       }
       {
         key = "<Up>";
-        mode = ["n" "x"];
+        mode = [
+          "n"
+          "x"
+        ];
         desc = "Up";
         action = "v:count == 0 ? 'gk' : 'k'";
         expr = true;
@@ -113,7 +125,11 @@
 
       {
         key = "<esc>";
-        mode = ["i" "n" "s"];
+        mode = [
+          "i"
+          "n"
+          "s"
+        ];
         desc = "Escape and Clear hlsearch";
         action = "<cmd>noh<cr><esc>";
       }

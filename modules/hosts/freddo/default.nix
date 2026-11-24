@@ -1,9 +1,12 @@
-{inputs, ...}: {
+{ inputs, ... }: {
   hosts.freddo = {
     system = "aarch64-linux";
-    users = ["admin" "deploy"];
+    users = [
+      "admin"
+      "deploy"
+    ];
     platform = "raspberrypi";
-    deploy = {};
+    deploy = { };
   };
 
   flake.modules.nixos.freddo = {
@@ -14,27 +17,27 @@
     time.timeZone = "Europe/Oslo";
 
     services.restic.server.initializeRepositories = {
-      bazarr = ["repo-config"];
+      bazarr = [ "repo-config" ];
       # The LLM archive: proxy capture and its derived conversation tables.
-      clickhouse = ["pvc"];
-      cliproxy = ["pvc"];
-      hermes-agent = ["pvc"];
-      healthlog = ["postgres"];
-      hindsight = ["postgres"];
+      clickhouse = [ "pvc" ];
+      cliproxy = [ "pvc" ];
+      hermes-agent = [ "pvc" ];
+      healthlog = [ "postgres" ];
+      hindsight = [ "postgres" ];
       immich = [
         "postgres"
         "uploads"
       ];
-      jellyfin = ["repo-config"];
+      jellyfin = [ "repo-config" ];
       # Personal Stalwart mailbox store and Bulwark webmail settings.
       mail = [
         "bulwark-settings"
         "stalwart"
       ];
-      minecraft-creative = ["world"];
-      minecraft-revelation = ["world"];
-      minecraft-vanilla = ["world"];
-      media-music = ["repo-library"];
+      minecraft-creative = [ "world" ];
+      minecraft-revelation = [ "world" ];
+      minecraft-vanilla = [ "world" ];
+      media-music = [ "repo-library" ];
       mattermost = [
         "postgres"
         "pvc"
@@ -43,27 +46,27 @@
         "postgres"
         "pvc"
       ];
-      musicgrabber = ["repo-config"];
-      navidrome = ["repo-data"];
-      netbird = ["pvc"];
+      musicgrabber = [ "repo-config" ];
+      navidrome = [ "repo-data" ];
+      netbird = [ "pvc" ];
       nextcloud = [
         "postgres"
         "pvc"
       ];
-      opencloud = ["pvc"];
-      pocket-id = ["pvc"];
-      prowlarr = ["repo-config"];
-      radarr = ["repo-config"];
-      seerr = ["repo-config"];
-      sonarr = ["repo-config"];
+      opencloud = [ "pvc" ];
+      pocket-id = [ "pvc" ];
+      prowlarr = [ "repo-config" ];
+      radarr = [ "repo-config" ];
+      seerr = [ "repo-config" ];
+      sonarr = [ "repo-config" ];
       # The live smtp-edge queue still backs up under the old Stalwart group.
-      stalwart = ["smtp-edge-pvc"];
-      transmission = ["repo-config"];
-      vaultwarden = ["pvc"];
+      stalwart = [ "smtp-edge-pvc" ];
+      transmission = [ "repo-config" ];
+      vaultwarden = [ "pvc" ];
     };
 
-    services.restic.server.maintenance.keepTags = ["legacy-minecraft"];
-    services.restic.server.maintenance.pruneExcludeGroups = ["nextcloud"];
+    services.restic.server.maintenance.keepTags = [ "legacy-minecraft" ];
+    services.restic.server.maintenance.pruneExcludeGroups = [ "nextcloud" ];
 
     # Minecraft worlds are backed up only after player activity, so snapshot age
     # does not indicate backup health for these repositories.

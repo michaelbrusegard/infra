@@ -1,17 +1,17 @@
 {
-  flake.modules.homeManager.neovim = {pkgs, ...}: {
+  flake.modules.homeManager.neovim = { pkgs, ... }: {
     programs.neovim.spec.plugins = {
       "catppuccin.nvim" = {
         package = pkgs.vimPlugins.catppuccin-nvim;
-        event = ["UIEnter"];
+        event = [ "UIEnter" ];
         setupModule = "catppuccin";
         setupOpts = {
           lsp_styles = {
             underlines = {
-              errors = ["undercurl"];
-              hints = ["undercurl"];
-              warnings = ["undercurl"];
-              information = ["undercurl"];
+              errors = [ "undercurl" ];
+              hints = [ "undercurl" ];
+              warnings = [ "undercurl" ];
+              information = [ "undercurl" ];
             };
           };
           integrations = {
@@ -23,14 +23,20 @@
             dashboard = false;
             flash = false;
             fzf = false;
-            indent_blankline = {enabled = false;};
+            indent_blankline = {
+              enabled = false;
+            };
             neotree = false;
             neogit = false;
             nvimtree = false;
             rainbow_delimiters = false;
             render_markdown = false;
-            telescope = {enabled = false;};
-            illuminate = {enabled = false;};
+            telescope = {
+              enabled = false;
+            };
+            illuminate = {
+              enabled = false;
+            };
             dap = true;
             grug_far = true;
             gitsigns = true;

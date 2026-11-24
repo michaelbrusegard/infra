@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.prometheus = {config, ...}: {
+  flake.modules.nixos.prometheus = { config, ... }: {
     services.prometheus = {
       enable = true;
 

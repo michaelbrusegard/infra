@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.home-assistant = {config, ...}: {
+  flake.modules.nixos.home-assistant = { config, ... }: {
     services.home-assistant = {
       enable = true;
       # The yaml skeleton onboarding would generate, owned declaratively. The
@@ -7,7 +7,7 @@
       # editors, and integrations, devices, and dashboards stay in .storage.
       # Hosts merge in their own deltas such as proxy trust and external urls.
       config = {
-        default_config = {};
+        default_config = { };
         frontend.themes = "!include_dir_merge_named themes";
         automation = "!include automations.yaml";
         script = "!include scripts.yaml";

@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.fonts = {pkgs, ...}: {
+  flake.modules.nixos.fonts = { pkgs, ... }: {
     fonts = {
       packages = with pkgs; [
         noto-fonts-color-emoji
@@ -9,15 +9,15 @@
         nerd-fonts.geist-mono
       ];
       fontconfig.defaultFonts = {
-        sansSerif = ["Inter"];
-        serif = ["Source Serif 4"];
-        monospace = ["GeistMono Nerd Font"];
-        emoji = ["Noto Color Emoji"];
+        sansSerif = [ "Inter" ];
+        serif = [ "Source Serif 4" ];
+        monospace = [ "GeistMono Nerd Font" ];
+        emoji = [ "Noto Color Emoji" ];
       };
     };
   };
 
-  flake.modules.darwin.fonts = {pkgs, ...}: {
+  flake.modules.darwin.fonts = { pkgs, ... }: {
     fonts.packages = with pkgs; [
       inter
       source-serif

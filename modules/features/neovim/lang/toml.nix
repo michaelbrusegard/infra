@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.neovim = {pkgs, ...}: {
+  flake.modules.homeManager.neovim = { pkgs, ... }: {
     programs.neovim.spec = {
       treesitter.grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
         toml
@@ -12,7 +12,10 @@
       formatting.filetypes = {
         toml.taplo = {
           package = pkgs.taplo;
-          args = ["fmt" "-"];
+          args = [
+            "fmt"
+            "-"
+          ];
         };
       };
     };

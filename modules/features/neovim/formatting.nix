@@ -4,14 +4,20 @@
       {
         key = "<leader>cF";
         action = ''function() require("conform").format({ formatters = { "injected" }, timeout_ms = 3000 }) end'';
-        mode = ["n" "x"];
+        mode = [
+          "n"
+          "x"
+        ];
         desc = "Format Injected Langs";
         lua = true;
       }
       {
         key = "<leader>cf";
         action = ''function() require("conform").format({ lsp_fallback = true }) end'';
-        mode = ["n" "x"];
+        mode = [
+          "n"
+          "x"
+        ];
         desc = "Format Buffer";
         lua = true;
       }

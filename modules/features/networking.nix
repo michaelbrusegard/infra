@@ -1,9 +1,9 @@
 {
-  flake.modules.nixos.networking = {name, ...}: {
+  flake.modules.nixos.networking = { name, ... }: {
     networking.hostName = name;
   };
 
-  flake.modules.darwin.networking = {name, ...}: {
+  flake.modules.darwin.networking = { name, ... }: {
     networking = {
       applicationFirewall = {
         enable = true;

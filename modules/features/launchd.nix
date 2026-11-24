@@ -1,9 +1,10 @@
 {
-  flake.modules.homeManager.launchd = {
-    pkgs,
-    lib,
-    ...
-  }:
+  flake.modules.homeManager.launchd =
+    {
+      pkgs,
+      lib,
+      ...
+    }:
     lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
       launchd.agents = {
         raycast = {

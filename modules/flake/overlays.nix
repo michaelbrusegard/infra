@@ -1,3 +1,3 @@
-{inputs, ...}: {
-  flake.overlays.default = import ../../overlays {inherit inputs;};
+{ inputs, ... }: {
+  flake.overlays.default = import ../../overlays { inherit inputs; };
 }

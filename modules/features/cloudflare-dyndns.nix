@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.cloudflare-dyndns = {config, ...}: {
+  flake.modules.nixos.cloudflare-dyndns = { config, ... }: {
     services.cloudflare-dyndns = {
       enable = true;
       inherit (config.secrets.cloudflare-dyndns) apiTokenFile;

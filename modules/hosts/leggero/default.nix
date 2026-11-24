@@ -1,9 +1,12 @@
-{inputs, ...}: {
+{ inputs, ... }: {
   hosts.leggero = {
     system = "aarch64-linux";
-    users = ["admin" "deploy"];
+    users = [
+      "admin"
+      "deploy"
+    ];
     platform = "raspberrypi";
-    deploy = {};
+    deploy = { };
   };
 
   flake.modules.nixos.leggero = {

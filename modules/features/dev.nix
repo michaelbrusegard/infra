@@ -1,38 +1,39 @@
 {
-  flake.modules.homeManager.dev = {
-    pkgs,
-    config,
-    lib,
-    homePersistenceRoot ? null,
-    ...
-  }: {
-    programs = {
-      direnv = {
-        enable = true;
-        enableZshIntegration = true;
-        silent = true;
-        nix-direnv.enable = true;
-      };
+  flake.modules.homeManager.dev =
+    {
+      pkgs,
+      config,
+      lib,
+      homePersistenceRoot ? null,
+      ...
+    }:
+    {
+      programs = {
+        direnv = {
+          enable = true;
+          enableZshIntegration = true;
+          silent = true;
+          nix-direnv.enable = true;
+        };
 
-      bun = {
-        enable = true;
-        enableGitIntegration = true;
-      };
+        bun = {
+          enable = true;
+          enableGitIntegration = true;
+        };
 
-      lazysql = {
-        enable = true;
-        settings = {
-          inherit (config.secrets.lazysql.settings) database;
-          application = {
-            DefaultPageSize = 300;
-            DisableSidebar = false;
-            SidebarOverlay = false;
+        lazysql = {
+          enable = true;
+          settings = {
+            inherit (config.secrets.lazysql.settings) database;
+            application = {
+              DefaultPageSize = 300;
+              DisableSidebar = false;
+              SidebarOverlay = false;
+            };
           };
         };
       };
-    };
-    home =
-      {
+      home = {
         packages = with pkgs; [
           postgresql
           vite-plus
@@ -46,5 +47,5 @@
           ".local/share/direnv"
         ];
       };
-  };
+    };
 }

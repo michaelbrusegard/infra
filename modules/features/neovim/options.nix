@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.neovim = {lib, ...}: {
+  flake.modules.homeManager.neovim = { lib, ... }: {
     programs.neovim = {
       spec = {
         globals = {

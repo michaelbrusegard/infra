@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.neovim = {pkgs, ...}: {
+  flake.modules.homeManager.neovim = { pkgs, ... }: {
     programs.neovim.spec = {
       treesitter.grammars = [
         pkgs.vimPlugins.nvim-treesitter.builtGrammars.nix

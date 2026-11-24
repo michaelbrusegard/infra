@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.neovim = {pkgs, ...}: {
+  flake.modules.homeManager.neovim = { pkgs, ... }: {
     programs.neovim.spec = {
       treesitter.grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
         lua
@@ -21,7 +21,7 @@
               callSnippet = "Replace";
             };
             doc = {
-              privateName = ["^_"];
+              privateName = [ "^_" ];
             };
             hint = {
               enable = true;
@@ -43,7 +43,7 @@
           type = "nlua";
           request = "attach";
           extraConfig = {
-            start_neovim = {};
+            start_neovim = { };
           };
         }
         {
@@ -59,13 +59,13 @@
       plugins = {
         "lazydev.nvim" = {
           package = pkgs.vimPlugins.lazydev-nvim;
-          filetype = ["lua"];
+          filetype = [ "lua" ];
           setupModule = "lazydev";
           setupOpts = {
             library = [
               {
                 path = "\${3rd}/luv/library";
-                words = ["vim%.uv"];
+                words = [ "vim%.uv" ];
               }
               "snacks.nvim"
             ];
@@ -98,7 +98,13 @@
         };
 
         "blink-cmp".setupOpts.sources = {
-          per_filetype.lua = ["lsp" "path" "snippets" "buffer" "lazydev"];
+          per_filetype.lua = [
+            "lsp"
+            "path"
+            "snippets"
+            "buffer"
+            "lazydev"
+          ];
           providers.lazydev = {
             name = "LazyDev";
             module = "lazydev.integrations.blink";

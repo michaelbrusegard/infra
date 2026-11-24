@@ -1,5 +1,5 @@
 {
-  perSystem = {pkgs, ...}: {
-    packages = import ../../packages {inherit pkgs;};
+  perSystem = { pkgs, ... }: {
+    packages = import ../../packages { inherit pkgs; };
   };
 }

@@ -1,7 +1,10 @@
-{inputs, ...}: {
+{ inputs, ... }: {
   hosts.cortado = {
     system = "x86_64-linux";
-    users = ["admin" "deploy"];
+    users = [
+      "admin"
+      "deploy"
+    ];
     deploy.buildOnTarget = true;
   };
 
@@ -19,7 +22,7 @@
 
     services.prometheus.exporters.node = {
       enable = true;
-      enabledCollectors = ["systemd"];
+      enabledCollectors = [ "systemd" ];
     };
 
     # Host deltas on the module's skeleton: caddy terminates TLS on this box, so

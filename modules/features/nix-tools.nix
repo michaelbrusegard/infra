@@ -1,5 +1,5 @@
-{inputs, ...}: {
-  flake.modules.homeManager.nix-tools = {pkgs, ...}: {
+{ inputs, ... }: {
+  flake.modules.homeManager.nix-tools = { pkgs, ... }: {
     imports = [
       inputs.nix-index-database.homeModules.default
     ];

@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.homebridge = {config, ...}: {
+  flake.modules.nixos.homebridge = { config, ... }: {
     services = {
       avahi = {
         enable = true;
@@ -51,7 +51,7 @@
         listeners = [
           {
             address = "127.0.0.1";
-            acl = ["pattern readwrite #"];
+            acl = [ "pattern readwrite #" ];
             omitPasswordAuth = true;
             settings.allow_anonymous = true;
           }
@@ -59,7 +59,7 @@
       };
     };
 
-    users.users.zigbee2mqtt.extraGroups = ["dialout"];
+    users.users.zigbee2mqtt.extraGroups = [ "dialout" ];
 
     environment.persistence."/persistent".directories = [
       config.services.mosquitto.dataDir

@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.neovim = {pkgs, ...}: {
+  flake.modules.homeManager.neovim = { pkgs, ... }: {
     programs.neovim.spec = {
       treesitter.grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
         markdown
@@ -8,7 +8,10 @@
 
       plugins."render-markdown.nvim" = {
         package = pkgs.vimPlugins.render-markdown-nvim;
-        filetype = ["markdown" "rmd"];
+        filetype = [
+          "markdown"
+          "rmd"
+        ];
         setupModule = "render-markdown";
         setupOpts = {
           code = {
@@ -18,7 +21,7 @@
           };
           heading = {
             sign = false;
-            icons = [];
+            icons = [ ];
           };
           checkbox = {
             enabled = false;
@@ -28,7 +31,7 @@
 
       plugins."markdown-preview.nvim" = {
         package = pkgs.vimPlugins.markdown-preview-nvim;
-        filetype = ["markdown"];
+        filetype = [ "markdown" ];
         keymaps = [
           {
             key = "<leader>cp";
@@ -55,11 +58,14 @@
         markdown = {
           oxfmt = {
             package = pkgs.oxfmt;
-            args = ["--stdin-filepath" "$FILENAME"];
+            args = [
+              "--stdin-filepath"
+              "$FILENAME"
+            ];
           };
           markdown-toc = {
             package = pkgs.markdown-toc;
-            args = ["--no-firsth1"];
+            args = [ "--no-firsth1" ];
             condition = ''
               function(_, ctx)
                 for _, line in ipairs(vim.api.nvim_buf_get_lines(ctx.buf, 0, -1, false)) do
@@ -74,11 +80,14 @@
         "markdown.mdx" = {
           oxfmt = {
             package = pkgs.oxfmt;
-            args = ["--stdin-filepath" "$FILENAME"];
+            args = [
+              "--stdin-filepath"
+              "$FILENAME"
+            ];
           };
           markdown-toc = {
             package = pkgs.markdown-toc;
-            args = ["--no-firsth1"];
+            args = [ "--no-firsth1" ];
             condition = ''
               function(_, ctx)
                 for _, line in ipairs(vim.api.nvim_buf_get_lines(ctx.buf, 0, -1, false)) do

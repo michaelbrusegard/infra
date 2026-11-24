@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.security = {isWsl, ...}: {
+  flake.modules.nixos.security = { isWsl, ... }: {
     security = {
       sudo-rs = {
         enable = true;

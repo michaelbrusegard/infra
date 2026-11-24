@@ -1,5 +1,5 @@
-{inputs, ...}: {
-  flake.modules.nixos.catppuccin = {config, ...}: {
+{ inputs, ... }: {
+  flake.modules.nixos.catppuccin = { config, ... }: {
     imports = [
       inputs.catppuccin.nixosModules.catppuccin
     ];
@@ -17,7 +17,7 @@
     };
   };
 
-  flake.modules.homeManager.catppuccin = {config, ...}: {
+  flake.modules.homeManager.catppuccin = { config, ... }: {
     imports = [
       inputs.catppuccin.homeModules.catppuccin
     ];

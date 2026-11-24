@@ -2,10 +2,14 @@
   inputs,
   lib,
   ...
-}: {
-  hosts = lib.genAttrs ["espresso-0" "espresso-1" "espresso-2"] (_: {
+}:
+{
+  hosts = lib.genAttrs [ "espresso-0" "espresso-1" "espresso-2" ] (_: {
     system = "x86_64-linux";
-    users = ["admin" "deploy"];
+    users = [
+      "admin"
+      "deploy"
+    ];
     configuration = "espresso";
     deploy.buildOnTarget = true;
   });

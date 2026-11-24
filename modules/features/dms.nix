@@ -1,36 +1,43 @@
-{inputs, ...}: {
-  flake.modules.homeManager.dms = {
-    pkgs,
-    lib,
-    config,
-    isWsl,
-    homePersistenceRoot ? null,
-    ...
-  }: let
-    dmsConfig = "${config.home.homeDirectory}/Projects/infra/config/dms";
-    wallpaper = ../../wallpapers/golden-gate.png;
-    # Only seed the default wallpaper; a wallpaper picked in DMS should survive
-    # restarts, so leave it alone unless it is unset or no longer exists.
-    setDefaultWallpaper = lib.getExe (pkgs.writeShellApplication {
-      name = "dms-set-default-wallpaper";
-      runtimeInputs = [pkgs.dms-shell pkgs.jq];
-      text = ''
-        session="''${XDG_STATE_HOME:-$HOME/.local/state}/dms/session.json"
-        current=$(jq -r '.wallpaperPath // ""' "$session" 2>/dev/null || true)
-        if [ -z "$current" ] || [ ! -e "$current" ]; then
-          dms ipc wallpaper set ${wallpaper}
-        fi
-      '';
-    });
-  in {
-    imports = [
-      inputs.dsearch.homeModules.default
-    ];
+{ inputs, ... }: {
+  flake.modules.homeManager.dms =
+    {
+      pkgs,
+      lib,
+      config,
+      isWsl,
+      homePersistenceRoot ? null,
+      ...
+    }:
+    let
+      dmsConfig = "${config.home.homeDirectory}/Projects/infra/config/dms";
+      wallpaper = ../../wallpapers/golden-gate.png;
+      # Only seed the default wallpaper; a wallpaper picked in DMS should survive
+      # restarts, so leave it alone unless it is unset or no longer exists.
+      setDefaultWallpaper = lib.getExe (
+        pkgs.writeShellApplication {
+          name = "dms-set-default-wallpaper";
+          runtimeInputs = [
+            pkgs.dms-shell
+            pkgs.jq
+          ];
+          text = ''
+            session="''${XDG_STATE_HOME:-$HOME/.local/state}/dms/session.json"
+            current=$(jq -r '.wallpaperPath // ""' "$session" 2>/dev/null || true)
+            if [ -z "$current" ] || [ ! -e "$current" ]; then
+              dms ipc wallpaper set ${wallpaper}
+            fi
+          '';
+        }
+      );
+    in
+    {
+      imports = [
+        inputs.dsearch.homeModules.default
+      ];
 
-    programs.dsearch.enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
+      programs.dsearch.enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
 
-    home =
-      {
+      home = {
         sessionVariables = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
           ELECTRON_OZONE_PLATFORM_HINT = "auto";
           GTK_THEME = "Catppuccin-GTK-Dark";
@@ -55,67 +62,71 @@
         ];
       };
 
-    qt = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) ({
+      qt = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) (
+        {
+          enable = true;
+          style.name = "kvantum";
+        }
+        // (lib.genAttrs [ "qt5ctSettings" "qt6ctSettings" ] (_: {
+          Appearance = {
+            style = "kvantum";
+            icon_theme = "Papirus-Dark";
+            standard_dialogs = "xdgdesktopportal";
+          };
+
+          Fonts = {
+            general = "Inter,11";
+            fixed = "GeistMono Nerd Font,11";
+          };
+        }))
+      );
+
+      gtk = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
         enable = true;
-        style.name = "kvantum";
-      }
-      // (lib.genAttrs ["qt5ctSettings" "qt6ctSettings"] (_: {
-        Appearance = {
-          style = "kvantum";
-          icon_theme = "Papirus-Dark";
-          standard_dialogs = "xdgdesktopportal";
+        colorScheme = "dark";
+
+        theme = {
+          name = "Catppuccin-GTK-Dark";
+          package = pkgs.magnetic-catppuccin-gtk;
         };
 
-        Fonts = {
-          general = "Inter,11";
-          fixed = "GeistMono Nerd Font,11";
+        # Keep applying the GTK3 theme to GTK4 apps (26.05 default flips to null).
+        gtk4.theme = {
+          name = "Catppuccin-GTK-Dark";
+          package = pkgs.magnetic-catppuccin-gtk;
         };
-      })));
 
-    gtk = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
-      enable = true;
-      colorScheme = "dark";
+        iconTheme = {
+          name = "Papirus-Dark";
+          package = lib.mkForce (
+            pkgs.catppuccin-papirus-folders.override {
+              inherit (config.catppuccin) accent flavor;
+            }
+          );
+        };
 
-      theme = {
-        name = "Catppuccin-GTK-Dark";
-        package = pkgs.magnetic-catppuccin-gtk;
+        font = {
+          name = "Inter";
+          size = 11;
+          package = pkgs.inter;
+        };
       };
 
-      # Keep applying the GTK3 theme to GTK4 apps (26.05 default flips to null).
-      gtk4.theme = {
-        name = "Catppuccin-GTK-Dark";
-        package = pkgs.magnetic-catppuccin-gtk;
+      xdg.configFile = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
+        "dms".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
       };
 
-      iconTheme = {
-        name = "Papirus-Dark";
-        package = lib.mkForce (pkgs.catppuccin-papirus-folders.override {
-          inherit (config.catppuccin) accent flavor;
-        });
-      };
-
-      font = {
-        name = "Inter";
-        size = 11;
-        package = pkgs.inter;
+      systemd.user.services.dms-wallpaper = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
+        Unit = {
+          PartOf = [ "dms.service" ];
+          After = [ "dms.service" ];
+          Requisite = [ "dms.service" ];
+        };
+        Service = {
+          Type = "oneshot";
+          ExecStart = setDefaultWallpaper;
+        };
+        Install.WantedBy = [ "dms.service" ];
       };
     };
-
-    xdg.configFile = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
-      "dms".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
-    };
-
-    systemd.user.services.dms-wallpaper = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
-      Unit = {
-        PartOf = ["dms.service"];
-        After = ["dms.service"];
-        Requisite = ["dms.service"];
-      };
-      Service = {
-        Type = "oneshot";
-        ExecStart = setDefaultWallpaper;
-      };
-      Install.WantedBy = ["dms.service"];
-    };
-  };
 }

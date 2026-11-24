@@ -1,12 +1,15 @@
-{inputs, ...}: {
+{ inputs, ... }: {
   hosts.manata = {
     system = "aarch64-linux";
-    users = ["admin" "deploy"];
+    users = [
+      "admin"
+      "deploy"
+    ];
     platform = "raspberrypi";
-    deploy = {};
+    deploy = { };
   };
 
-  flake.modules.nixos.manata = {lib, ...}: {
+  flake.modules.nixos.manata = { lib, ... }: {
     imports = with inputs.self.modules.nixos; [
       backup-server
     ];
@@ -32,20 +35,20 @@
 
     services.restic.server = {
       initializeRepositories = {
-        manafishrov-stalwart = ["pvc"];
-        n8n = ["pvc"];
+        manafishrov-stalwart = [ "pvc" ];
+        n8n = [ "pvc" ];
         nextcloud = [
           "postgres"
           "pvc"
         ];
-        pocket-id = ["pvc"];
-        roundcube = ["pvc"];
-        vaultwarden = ["pvc"];
+        pocket-id = [ "pvc" ];
+        roundcube = [ "pvc" ];
+        vaultwarden = [ "pvc" ];
       };
 
       # The client remains disabled until manata is reachable and a restore has
       # been proven. Avoid alerting on the intentionally empty repository.
-      maintenance.freshness.excludedRepositories = ["manafishrov-stalwart/pvc"];
+      maintenance.freshness.excludedRepositories = [ "manafishrov-stalwart/pvc" ];
     };
 
     system.stateVersion = "26.05";

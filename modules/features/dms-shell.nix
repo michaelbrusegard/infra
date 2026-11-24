@@ -1,5 +1,5 @@
-{inputs, ...}: {
-  flake.modules.nixos.dms-shell = {pkgs, ...}: {
+{ inputs, ... }: {
+  flake.modules.nixos.dms-shell = { pkgs, ... }: {
     imports = [
       inputs.dms.nixosModules.default
     ];

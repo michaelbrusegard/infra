@@ -1,4 +1,4 @@
-{pkgs}:
+{ pkgs }:
 pkgs.stdenvNoCC.mkDerivation {
   pname = "slack-cli";
   version = "2.0.0";
@@ -11,7 +11,7 @@ pkgs.stdenvNoCC.mkDerivation {
     ];
   };
 
-  nativeBuildInputs = [pkgs.makeWrapper];
+  nativeBuildInputs = [ pkgs.makeWrapper ];
 
   dontConfigure = true;
   dontBuild = true;

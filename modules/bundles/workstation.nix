@@ -1,4 +1,4 @@
-{inputs, ...}: {
+{ inputs, ... }: {
   flake.modules.nixos.workstation.imports = with inputs.self.modules.nixos; [
     base
     catppuccin

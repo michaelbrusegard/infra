@@ -1,7 +1,7 @@
-{inputs, ...}: {
+{ inputs, ... }: {
   hosts.forte = {
     system = "x86_64-linux";
-    users = ["michaelbrusegard"];
+    users = [ "michaelbrusegard" ];
   };
 
   flake.modules.nixos.forte = {

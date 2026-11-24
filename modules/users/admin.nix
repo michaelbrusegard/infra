@@ -1,18 +1,20 @@
-{inputs, ...}: {
-  flake.modules.nixos.admin = {
-    pkgs,
-    config,
-    ...
-  }: {
-    users.users.admin = {
-      isNormalUser = true;
-      extraGroups = ["wheel"];
-      shell = pkgs.zsh;
-      inherit (config.secrets.users.admin) hashedPasswordFile;
-      openssh.authorizedKeys.keys = config.secrets.users.admin.openssh.authorizedKeys.keys;
+{ inputs, ... }: {
+  flake.modules.nixos.admin =
+    {
+      pkgs,
+      config,
+      ...
+    }:
+    {
+      users.users.admin = {
+        isNormalUser = true;
+        extraGroups = [ "wheel" ];
+        shell = pkgs.zsh;
+        inherit (config.secrets.users.admin) hashedPasswordFile;
+        openssh.authorizedKeys.keys = config.secrets.users.admin.openssh.authorizedKeys.keys;
+      };
+      programs.zsh.enable = true;
     };
-    programs.zsh.enable = true;
-  };
 
   flake.modules.homeManager.admin = {
     imports = with inputs.self.modules.homeManager; [

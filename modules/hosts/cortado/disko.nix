@@ -17,7 +17,7 @@
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = ["umask=0077"];
+                mountOptions = [ "umask=0077" ];
               };
             };
             root = {
@@ -34,7 +34,7 @@
                   type = "filesystem";
                   format = "ext4";
                   mountpoint = "/persistent";
-                  mountOptions = ["noatime"];
+                  mountOptions = [ "noatime" ];
                   postMountHook = ''
                     persistent="$(findmnt -n -o TARGET --source "$device")"
                     mkdir -p "$persistent/nix"
@@ -51,7 +51,10 @@
 
       nodev."/" = {
         fsType = "tmpfs";
-        mountOptions = ["defaults" "mode=755"];
+        mountOptions = [
+          "defaults"
+          "mode=755"
+        ];
       };
     };
 
@@ -60,10 +63,10 @@
 
       "/nix" = {
         neededForBoot = true;
-        depends = ["/persistent"];
+        depends = [ "/persistent" ];
         device = "/persistent/nix";
         fsType = "none";
-        options = ["bind"];
+        options = [ "bind" ];
       };
     };
   };
