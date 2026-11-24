@@ -2,7 +2,6 @@
   pkgs,
   lib,
   config,
-  inputs,
   isWsl,
   homePersistenceRoot ? null,
   ...
@@ -42,7 +41,7 @@
         fi
       '')
       (lib.mkOrder 1000 ''
-        source ${inputs.self}/config/shell/p10k.zsh
+        source ${../../config/shell/p10k.zsh}
         bindkey -v
         export KEYTIMEOUT=1
         bindkey '^Y' autosuggest-accept

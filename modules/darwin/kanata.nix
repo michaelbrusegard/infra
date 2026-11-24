@@ -2,7 +2,6 @@
   config,
   pkgs,
   lib,
-  inputs,
   ...
 }: let
   inherit (config.system) primaryUser;
@@ -11,7 +10,7 @@
   stableKanata = "${kanataApp}/Contents/MacOS/kanata";
   stableKeyboardWatcherDir = "/Library/Application Support/Kanata";
   stableKeyboardWatcher = "${stableKeyboardWatcherDir}/keyboard-watcher";
-  kanataConfig = inputs.self + "/config/kanata/darwin.kbd";
+  kanataConfig = ../../config/kanata/darwin.kbd;
   openssl = lib.getExe pkgs.openssl;
   # An ad-hoc signature pins the Input Monitoring grant to the binary's
   # cdhash, so every kanata rebuild silently revoked it. Sign with a
