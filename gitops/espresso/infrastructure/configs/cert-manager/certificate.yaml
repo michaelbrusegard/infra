@@ -12,6 +12,8 @@ spec:
     - "*.asgard.michaelbrusegard.com"
     - "michaelbrusegard.com"
     - "*.michaelbrusegard.com"
+    # The apex only redirects, to the website and to the mail server.
+    - "manafishrov.com"
     - "*.manafishrov.com"
     - "*.eldians.com"
     # michbrus.com's MTA-STS policy host.
