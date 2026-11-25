@@ -56,14 +56,17 @@ proxy() {
 # seconds, no window starts once it is spent, and the next run goes on from
 # the first window left; every run normalizes one at least.
 proxy_windows() {
-  local seconds=$(($1 * 3600)) now start windows
-  now=$(date -u -d "@$(($(date -u +%s) / seconds * seconds))" '+%F %T')
+  local seconds=$(($1 * 3600)) now start end epoch windows
+  epoch=$(date -u +%s)
+  now=$(date -u -d "@$((epoch / seconds * seconds))" '+%F %T')
   windows=$(ch --param_hours="$1" --queries-file "$here/missing.sql" </dev/null)
   while IFS= read -r start; do
     if [[ -z $start || ! $start < $now ]]; then
       break
     fi
-    proxy "$start" "$(date -u -d "@$(($(date -u -d "$start" +%s) + seconds))" '+%F %T')"
+    epoch=$(date -u -d "$start" +%s)
+    end=$(date -u -d "@$((epoch + seconds))" '+%F %T')
+    proxy "$start" "$end"
     spent "${2:-}" && return
   done <<<"$windows"
   proxy "$now" "2100-01-01 00:00:00"
