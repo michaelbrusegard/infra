@@ -1521,7 +1521,7 @@
       "locked": {
         "lastModified": 1795593091,
         "narHash": "sha256-6EMIYGYAmcn/TmPumy4CE4OyEXBkbh//hoeS8qgV/gw=",
-        "ref": "refs/heads/refactor/per-host-modules",
+        "ref": "refs/heads/main",
         "rev": "1e4a80f2abd76de689ddff5f63eda5689d8d8906",
         "revCount": 454,
         "type": "git",
