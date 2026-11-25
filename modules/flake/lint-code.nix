@@ -96,6 +96,8 @@
           python-test-netbird-proxy-image =
             pythonTests "netbird-proxy-image" pkgs.python3
               "packages/netbird-proxy-image";
+          python-test-review-diff = pythonTests "review-diff" pkgs.python3 "packages/review-diff";
+          python-test-update-inputs = pythonTests "update-inputs" pkgs.python3 "packages/update-inputs";
           python-test-media = pythonTests "media" pkgs.python3 "gitops/espresso/apps/media/tests";
           python-test-hermes-agent =
             pythonTests "hermes-agent" hermesPython
