@@ -17,6 +17,27 @@
           touch $out
         '';
 
+        workflows = pkgs.runCommand "zizmor" { nativeBuildInputs = [ pkgs.zizmor ]; } ''
+          cd ${src}
+          zizmor --offline --no-progress --config lint/zizmor.yml .github/workflows
+          touch $out
+        '';
+
+        dockerfiles = pkgs.runCommand "hadolint" { nativeBuildInputs = [ pkgs.hadolint ]; } ''
+          cd ${src}
+          find . -name Dockerfile -not -path './.git/*' -print0 |
+            xargs -0 hadolint --config lint/hadolint.yaml
+          touch $out
+        '';
+
+        tofu-lint = pkgs.runCommand "tflint" { nativeBuildInputs = [ pkgs.tflint ]; } ''
+          cd ${src}
+          for stack in gitops/espresso/tofu/*/; do
+            tflint --config "$PWD/lint/tflint.hcl" --chdir "$stack"
+          done
+          touch $out
+        '';
+
         gitleaks = pkgs.runCommand "gitleaks" { nativeBuildInputs = [ pkgs.gitleaks ]; } ''
           cd ${src}
           gitleaks dir . --no-banner --redact --config lint/gitleaks.toml
@@ -30,6 +51,10 @@
           config.treefmt.build.wrapper
           pkgs.ast-grep
           pkgs.gitleaks
+          pkgs.zizmor
+          pkgs.hadolint
+          pkgs.tflint
+          pkgs.findutils
           pkgs.git
           pkgs.coreutils
         ];
@@ -38,6 +63,11 @@
           treefmt
           ast-grep test --config lint/sgconfig.yml --skip-snapshot-tests
           ast-grep scan --config lint/sgconfig.yml --no-ignore hidden --globs '!gitops/espresso/flux-system/**'
+          zizmor --offline --no-progress --config lint/zizmor.yml .github/workflows
+          git ls-files -z '*Dockerfile' | xargs -0 hadolint --config lint/hadolint.yaml
+          for stack in gitops/espresso/tofu/*/; do
+            tflint --config "$PWD/lint/tflint.hcl" --chdir "$stack"
+          done
           staging=$(mktemp -d)
           trap 'rm -rf "$staging"' EXIT
           present=()

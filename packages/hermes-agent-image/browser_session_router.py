@@ -10,10 +10,12 @@ import shutil
 import threading
 import time
 import uuid
-from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
 
 _ROUTER_LOCK = threading.RLock()
 _SESSION_LOCKS: dict[str, threading.RLock] = {}

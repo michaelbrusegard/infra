@@ -1,0 +1,4 @@
+# Alpine drops old package versions from its index, so a pinned apk version
+# stops building within weeks.
+ignored:
+  - DL3018

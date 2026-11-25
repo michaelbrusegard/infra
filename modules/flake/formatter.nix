@@ -28,7 +28,6 @@
               "-config-file"
               "${actionlintConfig}"
             ];
-            yamlfmt.excludes = [ "gitops/espresso/apps/smtp-edge/network-policy.yaml" ];
           };
         };
         programs = {
@@ -37,6 +36,7 @@
           deadnix.enable = true;
           terraform.enable = true;
           actionlint.enable = true;
+          taplo.enable = true;
           yamlfmt = {
             enable = true;
             settings.formatter = {

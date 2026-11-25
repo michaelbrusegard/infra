@@ -7,6 +7,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+# Read-only, plus the pull request file list that the paths filter queries.
+permissions:
+  contents: read
+  pull-requests: read
 jobs:
   filter:
     runs-on: ubuntu-26.04
@@ -18,6 +22,8 @@ jobs:
       hosts: ${{ steps.list-hosts.outputs.hosts }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         id: filter
         with:
@@ -63,6 +69,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           fetch-depth: 0
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
@@ -92,6 +99,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           fetch-depth: 0
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
@@ -124,6 +132,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           fetch-depth: 0
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
@@ -162,6 +171,8 @@ jobs:
       OPENTOFU_VERSION: 1.11.5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
         with:
           tofu_version: ${{ env.OPENTOFU_VERSION }}
@@ -214,11 +225,17 @@ jobs:
           EOF
           echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/tofurc" >> "$GITHUB_ENV"
       - name: Check OpenTofu formatting
-        run: tofu -chdir=${{ matrix.tofu-dir }} fmt -check
+        env:
+          STACK: ${{ matrix.tofu-dir }}
+        run: tofu -chdir="$STACK" fmt -check
       - name: Initialize OpenTofu
-        run: tofu -chdir=${{ matrix.tofu-dir }} init -backend=false
+        env:
+          STACK: ${{ matrix.tofu-dir }}
+        run: tofu -chdir="$STACK" init -backend=false
       - name: Validate OpenTofu
-        run: tofu -chdir=${{ matrix.tofu-dir }} validate
+        env:
+          STACK: ${{ matrix.tofu-dir }}
+        run: tofu -chdir="$STACK" validate
   # Branch protection requires these stable names, not matrix-expanded names.
   validate-nix:
     needs: [filter, validate-nix-hosts]

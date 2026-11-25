@@ -2912,7 +2912,9 @@ def list_fields(ctx, list_id, specs, schema):
             cell["channel"] = [ctx.resolve_conv(v) for v in items]
         elif t == "date":
             cell["date"] = [
-                dt.datetime.fromtimestamp(parse_time(v)).strftime("%Y-%m-%d")
+                dt.datetime.fromtimestamp(parse_time(v), dt.UTC)
+                .astimezone()
+                .strftime("%Y-%m-%d")
                 if not re.match(r"^\d{4}-\d{2}-\d{2}$", v)
                 else v
                 for v in items
@@ -3335,7 +3337,7 @@ def cmd_schedule(ctx, a):
             "schedule needs an existing conversation; open the DM first with: slack open @user"
         )
     extra["post_at"] = (
-        f"{post_at} ({dt.datetime.fromtimestamp(post_at).astimezone().isoformat(timespec='minutes')})"
+        f"{post_at} ({dt.datetime.fromtimestamp(post_at, dt.UTC).astimezone().isoformat(timespec='minutes')})"
     )
     if a.dry_run:
         write_call(
@@ -3372,7 +3374,7 @@ def cmd_scheduled(ctx, a):
     rend = Renderer(ctx)
     for s in items:
         when = (
-            dt.datetime.fromtimestamp(s.get("post_at", 0))
+            dt.datetime.fromtimestamp(s.get("post_at", 0), dt.UTC)
             .astimezone()
             .isoformat(timespec="minutes")
         )

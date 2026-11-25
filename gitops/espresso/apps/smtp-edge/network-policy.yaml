@@ -27,6 +27,7 @@ spec:
         - ports:
             - port: "25"
               protocol: TCP
+  # No management API, JMAP, HTTPS, arbitrary SMTP or DNSBL egress.
   egress:
     - toEndpoints:
         - matchLabels:
@@ -65,4 +66,3 @@ spec:
         - ports:
             - port: "465"
               protocol: TCP
-    # No management API, JMAP, HTTPS, arbitrary SMTP or DNSBL egress.
