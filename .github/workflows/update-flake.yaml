@@ -23,44 +23,32 @@ jobs:
           ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
-      # Tries every input at once and falls back to one at a time, holding back
-      # any that stop a host from evaluating. The run fails only when one of
-      # the inputs that carry security fixes cannot move.
+      # update-inputs tries every input at once and falls back to one at a
+      # time, holding back any that stop a host from evaluating. update-gate is
+      # the bar for the result: formatting, every flake check including the
+      # router VM tests, every host, and a full build of the x86 servers, since
+      # evaluating a host does not prove its packages build. An input that
+      # fails the gate is found and held back as well. Nothing but this job
+      # stands between the update and main, because the push below skips CI.
       - name: Update inputs
         id: update
         shell: bash
+        env:
+          VERIFY_JOBS: 3
+          UPDATE_JOBS: 3
         run: |
-          set -euo pipefail
-          nix run .#update-inputs -- \
-            --required nixpkgs --required nixpkgs-unstable \
-            --required home-manager --required nix-darwin
-          nix fmt
+          set -uo pipefail
+          status=0
+          nix run .#update-inputs -- --required nixpkgs --gate 'nix run .#update-gate' || status=$?
+          if ((status != 0 && status != 2)); then
+            exit "$status"
+          fi
+          echo "held-back=$((status == 2))" >> "$GITHUB_OUTPUT"
           if git diff --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-      # The push below goes straight to main, so this job is the only gate:
-      # every flake check, including the router VM tests, and every host must
-      # pass on the updated inputs. Evaluations run a few at a time because the
-      # desktops need close to 3 GB each.
-      - name: Verify the updated inputs
-        if: steps.update.outputs.changed == 'true'
-        env:
-          VERIFY_JOBS: 3
-        run: nix run .#verify
-      # Evaluating proves a host's configuration is valid, not that its
-      # packages build. The x86 servers are small enough to build here, so a
-      # colmena deploy from main cannot fail on a package that does not build.
-      - name: Build the x86 servers
-        if: steps.update.outputs.changed == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          servers=$(nix eval --json .#ci.hosts |
-            jq -r '.[] | select(.deployed and .system == "x86_64-linux") | ".#\(.attribute)"')
-          [[ -n $servers ]] || { echo "::error::No x86 servers found in ci.hosts"; exit 1; }
-          xargs nix build --no-link --print-build-logs <<<"$servers"
       # Host closures can hold values from the private secrets flake, so only
       # the names of what changed are published.
       - name: Summarise what changes on the hosts
@@ -89,3 +77,8 @@ jobs:
           unset SSH_AUTH_SOCK
           git pull --rebase origin main
           git push
+      - name: Fail when an input was held back
+        if: steps.update.outputs.held-back == '1'
+        run: |
+          echo "::error::Some inputs could not be updated. The summary lists them and why."
+          exit 1

@@ -65,7 +65,14 @@
           ruff-format.enable = true;
           ruff-check.enable = true;
           gofumpt.enable = true;
-          shfmt.enable = true;
+          # Stated instead of left to treefmt-nix, whose defaults changed
+          # between releases and would reformat every script on an update.
+          shfmt = {
+            enable = true;
+            indent_size = 2;
+            simplify = true;
+            useEditorConfig = false;
+          };
           shellcheck.enable = true;
         };
         settings.formatter = {

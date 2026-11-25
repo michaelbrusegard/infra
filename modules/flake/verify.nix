@@ -56,7 +56,11 @@
             echo "PASS  flake checks"
           else
             echo "FAIL  flake checks"
-            tail -n 60 "$logs/checks" | sed 's/^/      /'
+            {
+              grep -m 20 -E 'ERROR|error: (Cannot build|builder)' "$logs/checks" || true
+              echo "..."
+              tail -n 40 "$logs/checks"
+            } | sed 's/^/      /'
             failed=1
           fi
 
