@@ -49,7 +49,7 @@
         sessionVariables = {
           PAGER = "moor";
         }
-        // lib.optionalAttrs (config.secrets ? keys && config.secrets.keys ? tauriSigningPrivateKeyFile) {
+        // lib.optionalAttrs (config.secrets.keys.tauriSigningPrivateKeyFile != null) {
           TAURI_SIGNING_PRIVATE_KEY = "$( [ -f ${config.secrets.keys.tauriSigningPrivateKeyFile} ] && ${lib.getExe' pkgs.uutils-coreutils "uutils-cat"} ${config.secrets.keys.tauriSigningPrivateKeyFile} )";
         };
       };

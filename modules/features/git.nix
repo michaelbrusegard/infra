@@ -7,7 +7,7 @@
       ...
     }:
     let
-      hasGithubToken = config.secrets ? keys && config.secrets.keys ? githubTokenFile;
+      hasGithubToken = config.secrets.keys.githubTokenFile != null;
       githubToken = config.sops.placeholder."keys/github-token";
     in
     {

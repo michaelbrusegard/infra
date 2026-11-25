@@ -71,7 +71,6 @@ pkgs.testers.runNixOSTest {
     # interface names, so its networking module is imported unchanged.
     cortado = { lib, ... }: {
       imports = routerModules ++ [ probeModule ];
-      options.secrets = lib.mkOption { type = lib.types.attrs; };
       config = {
         secrets = {
           openssh.ports = [ sshPort ];
