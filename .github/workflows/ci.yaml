@@ -90,7 +90,7 @@ jobs:
   validate-nix-hosts:
     needs: filter
     if: needs.filter.outputs.nix == 'true'
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:

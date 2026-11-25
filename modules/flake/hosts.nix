@@ -74,7 +74,6 @@ let
     inherit name;
     inherit (host) system;
     deployed = host.deploy != null;
-    runner = if isDarwin host then "macos-latest" else "ubuntu-24.04";
     attribute =
       if isDarwin host then
         "darwinConfigurations.${name}.system"
