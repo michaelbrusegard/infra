@@ -1,0 +1,25 @@
+{
+  flake.modules.nixos.macchiato = {
+    boot = {
+      initrd.availableKernelModules = [
+        "nvme"
+        "xhci_pci"
+        "ahci"
+        "usbhid"
+        "usb_storage"
+        "sd_mod"
+      ];
+      kernelModules = [ "kvm-intel" ];
+    };
+
+    hardware = {
+      enableRedistributableFirmware = true;
+      cpu.intel.updateMicrocode = true;
+    };
+
+    services.zigbee2mqtt.settings.serial = {
+      port = "/dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2690606-if00";
+      adapter = "deconz";
+    };
+  };
+}

@@ -8,7 +8,6 @@ import hashlib
 import http.cookiejar
 import json
 import os
-from pathlib import Path
 import secrets
 import shutil
 import socket
@@ -16,22 +15,23 @@ import subprocess
 import sys
 import tempfile
 import time
-import urllib.request
 import urllib.parse
+import urllib.request
+from pathlib import Path
 
 from integration import (
+    ROOT,
     Acceptance,
     Client,
-    Server,
-    Redactor,
     NoRedirect,
-    ROOT,
+    Redactor,
+    Server,
     check_namespace,
-    namespace_id,
     isolated_environment,
-    seeded_user_defaults,
+    namespace_id,
     patch,
     require,
+    seeded_user_defaults,
 )
 
 POCKET_SHA256 = "0f27f55f6597986f9998ba0594c9eb4ef73fab01521d2795edf2ebce06c8448e"
@@ -46,7 +46,6 @@ def port():
 class Pocket(Client):
     def __init__(self, number, redactor):
         super().__init__(number, redactor)
-        # WebAuthn requires a domain RP ID, not a numeric IP address.
         self.origin = f"http://localhost:{number}"
         self.cookies = http.cookiejar.CookieJar()
         self.http = urllib.request.build_opener(
@@ -160,7 +159,6 @@ def run(server, client, *, pocket_binary, chromium):
                     }
                 },
             )
-            # Adopt existing mailbox identities before allowing Pocket ID to sync.
             adopted_user = acceptance.create_native_user("admin", acceptance.domain_id)
             group = pocket.api(
                 "POST",
@@ -187,8 +185,6 @@ def run(server, client, *, pocket_binary, chromium):
                 "/api/user-groups/" + admin_group["id"] + "/users",
                 {"userIds": [admin["id"]]},
             )
-            # Keep SCIM limited to mailbox groups while the OIDC token can
-            # still assert all of the user's groups for session authorization.
             pocket.api(
                 "PUT",
                 "/api/oidc/clients/" + oidc["id"] + "/allowed-user-groups",
@@ -359,8 +355,6 @@ def stalwart_oidc_login(
                     "claimUsername": "email",
                     "claimName": "name",
                     "claimGroups": "groups",
-                    # This fixture models the old full-account OIDC policy;
-                    # Pocket ID tokens do not carry Stalwart-specific scopes.
                     "unscopedTokens": "full",
                     "acceptedAudiences": {"wrong-fixture-audience": True},
                 }
@@ -380,8 +374,6 @@ def stalwart_oidc_login(
             "x:Authentication/set",
             {"update": {"singleton": {"directoryId": directory}}},
         )
-        # Application oauthClientId is part of an in-memory route bundle and is
-        # not refreshed by ReloadSettings.
         server.restart()
         for _ in range(60):
             discovery = client.expect(
@@ -420,9 +412,7 @@ def stalwart_oidc_login(
             == "x:NetworkListener/query",
             "Pocket ID admin group did not grant session administration",
         )
-        native_user = client.jmap(
-            "x:Account/get", {"ids": [user_id]}
-        )["list"][0]
+        native_user = client.jmap("x:Account/get", {"ids": [user_id]})["list"][0]
         require(
             native_user.get("roles", {}).get("@type") == "User",
             "Pocket ID administration persisted a native Admin role",

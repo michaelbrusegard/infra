@@ -4,7 +4,7 @@ import hashlib
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.parse import quote, urlsplit
@@ -30,7 +30,6 @@ class NetBird:
             with urlopen(request, timeout=30) as response:
                 return json.load(response)
         except HTTPError as error:
-            # Provider requests contain credentials; never print bodies or headers.
             raise RuntimeError(f"NetBird {method} {path}: HTTP {error.code}") from None
 
 
@@ -53,26 +52,41 @@ def configure_provider(api, desired, upstream_key, state_path):
     if provider is None:
         provider = api("POST", path, {**desired, "api_key": upstream_key})
     else:
-        # Never send the CLIProxy credential to a different upstream. Moving
-        # between this cluster's Services, as when renaming CLIProxy's, is fine.
         moved = provider["upstream_url"] != desired["upstream_url"]
-        if provider["provider_id"] != desired["provider_id"] or moved and not (
-            in_cluster(provider["upstream_url"]) and in_cluster(desired["upstream_url"])
+        if provider["provider_id"] != desired["provider_id"] or (
+            moved
+            and not (
+                in_cluster(provider["upstream_url"])
+                and in_cluster(desired["upstream_url"])
+            )
         ):
-            raise RuntimeError("Existing provider points elsewhere; refusing to send credentials")
+            raise RuntimeError(
+                "Existing provider points elsewhere; refusing to send credentials"
+            )
         if last_digest == key_digest and not moved:
             return provider
-        # A rotated key must preserve model restrictions and every other setting
-        # managed in the dashboard. These are the 0.77 provider request fields.
         fields = (
-            "name", "provider_id", "upstream_url", "enabled", "models",
-            "metadata_disabled", "skip_tls_verification", "extra_values",
-            "identity_header_user_id", "identity_header_groups",
+            "name",
+            "provider_id",
+            "upstream_url",
+            "enabled",
+            "models",
+            "metadata_disabled",
+            "skip_tls_verification",
+            "extra_values",
+            "identity_header_user_id",
+            "identity_header_groups",
         )
         body = {key: provider[key] for key in fields if key in provider}
-        provider = api("PUT", f"{path}/{quote(provider['id'], safe='')}", {
-            **body, "upstream_url": desired["upstream_url"], "api_key": upstream_key,
-        })
+        provider = api(
+            "PUT",
+            f"{path}/{quote(provider['id'], safe='')}",
+            {
+                **body,
+                "upstream_url": desired["upstream_url"],
+                "api_key": upstream_key,
+            },
+        )
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(key_digest + "\n")
     return provider
@@ -88,14 +102,15 @@ def registration_is_valid(token_path, tokens):
         return False
     expires = existing.get("expires_at")
     return not expires or (
-        datetime.fromisoformat(expires.replace("Z", "+00:00"))
-        > datetime.now(timezone.utc)
+        datetime.fromisoformat(expires.replace("Z", "+00:00")) > datetime.now(UTC)
     )
 
 
 def reconcile(api, config, upstream_key, token_path):
     groups = {group["name"]: group["id"] for group in api("GET", "/groups")}
-    required = {group for policy in config["policies"] for group in policy["source_groups"]}
+    required = {
+        group for policy in config["policies"] for group in policy["source_groups"]
+    }
     missing = required - groups.keys()
     if missing:
         raise RuntimeError("Waiting for OpenTofu groups: " + ", ".join(sorted(missing)))
@@ -103,44 +118,59 @@ def reconcile(api, config, upstream_key, token_path):
     settings = api("GET", "/agent-network/settings")
     endpoint = config["endpoint"]
     if not settings["endpoint"]:
-        api("POST", "/agent-network/settings", {
-            "endpoint": endpoint,
-            "enable_log_collection": True,
-            "enable_prompt_collection": False,
-            "access_log_retention_days": 30,
-            "redact_pii": True,
-        })
+        api(
+            "POST",
+            "/agent-network/settings",
+            {
+                "endpoint": endpoint,
+                "enable_log_collection": True,
+                "enable_prompt_collection": False,
+                "access_log_retention_days": 30,
+                "redact_pii": True,
+            },
+        )
     elif settings["endpoint"] != endpoint or settings["proxy_address"] != endpoint:
-        raise RuntimeError("An existing Agent Network endpoint differs; refusing to replace it")
+        raise RuntimeError(
+            "An existing Agent Network endpoint differs; refusing to replace it"
+        )
 
     provider = configure_provider(
-        api, config["provider"], upstream_key, token_path.with_name("provider-key.sha256"),
+        api,
+        config["provider"],
+        upstream_key,
+        token_path.with_name("provider-key.sha256"),
     )
-    # Seed each policy once. Dashboard edits, including disabling access, survive
-    # proxy restarts and certificate/key rotation.
     policies = api("GET", "/agent-network/policies")
     for desired in config["policies"]:
         if named(policies, desired["name"]) is None:
-            api("POST", "/agent-network/policies", {
-                **desired,
-                "enabled": True,
-                "source_groups": [groups[name] for name in desired["source_groups"]],
-                "destination_provider_ids": [provider["id"]],
-                "guardrail_ids": [],
-            })
+            api(
+                "POST",
+                "/agent-network/policies",
+                {
+                    **desired,
+                    "enabled": True,
+                    "source_groups": [
+                        groups[name] for name in desired["source_groups"]
+                    ],
+                    "destination_provider_ids": [provider["id"]],
+                    "guardrail_ids": [],
+                },
+            )
 
-    # Proxy tokens are returned only once. Keep one on the PVC, reuse it on
-    # restarts, and recreate it if it has been revoked or expired server-side.
     tokens = api("GET", "/reverse-proxies/proxy-tokens")
     if registration_is_valid(token_path, tokens):
         print("Agent Network reconciled; reusing proxy registration")
         return
-    created = api("POST", "/reverse-proxies/proxy-tokens", {
-        "name": "espresso-agent-network", "expires_in": 0,
-    })
+    created = api(
+        "POST",
+        "/reverse-proxies/proxy-tokens",
+        {
+            "name": "espresso-agent-network",
+            "expires_in": 0,
+        },
+    )
     token_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = token_path.with_suffix(".tmp")
-    # chmod before writing, including when recovering a previous partial write.
     with open(temporary, "w", opener=lambda p, flags: os.open(p, flags, 0o600)) as out:
         os.chmod(temporary, 0o600)
         out.write(created["plain_token"] + "\n" + created["id"] + "\n")

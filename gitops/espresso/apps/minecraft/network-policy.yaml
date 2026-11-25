@@ -34,7 +34,6 @@ spec:
             - port: "25565"
               protocol: TCP
   egress:
-    # DNS
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
@@ -104,7 +103,6 @@ spec:
             - port: "8080"
               protocol: TCP
   egress:
-    # DNS
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system

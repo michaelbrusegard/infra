@@ -7,7 +7,6 @@ import argparse
 import re
 from pathlib import Path
 
-
 PENDING_ANNOTATION = 'hermes.michaelbrusegard.com/android-image-rollout: "pending"'
 READY_ANNOTATION = 'hermes.michaelbrusegard.com/android-image-rollout: "ready"'
 PENDING_STRATEGY = """  updateStrategy:

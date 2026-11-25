@@ -14,17 +14,15 @@ import (
 	"cliproxy-plugins/requestitems"
 )
 
-// The fixtures are hand-written in the shapes profiled from the live
-// archive in November 2026, with content and identifiers redacted.
 type proxyFixture struct {
 	Request
 	Name string          `json:"name"`
 	Body json.RawMessage `json:"body"`
 }
 
-func load(t *testing.T, name string, v any) {
+func loadProxyFixtures(t *testing.T, v any) {
 	t.Helper()
-	data, err := os.ReadFile("testdata/" + name)
+	data, err := os.ReadFile("testdata/proxy.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,8 +31,6 @@ func load(t *testing.T, name string, v any) {
 	}
 }
 
-// body returns the request body as the client sent it. Truncated bodies are
-// fixtures written as JSON strings.
 func (f proxyFixture) body() []byte {
 	if isString(f.Body) {
 		return []byte(str(f.Body))
@@ -42,7 +38,6 @@ func (f proxyFixture) body() []byte {
 	return f.Body
 }
 
-// stored splits the body the way the archive plugin stores it.
 func (f proxyFixture) stored() Request {
 	r := f.Request
 	split := requestitems.Split(f.body())
@@ -56,7 +51,7 @@ func (f proxyFixture) stored() Request {
 func proxyBatch(t *testing.T) (*Normalizer, []proxyFixture) {
 	t.Helper()
 	var fixtures []proxyFixture
-	load(t, "proxy.json", &fixtures)
+	loadProxyFixtures(t, &fixtures)
 	n := NewNormalizer()
 	for _, f := range fixtures {
 		r := f.stored()
@@ -68,14 +63,8 @@ func proxyBatch(t *testing.T) (*Normalizer, []proxyFixture) {
 	return n, fixtures
 }
 
-// archived stands in for llm.request_items: the items requests were read
-// with, which the normalizer does not write again.
 var archived = map[Hash]string{}
 
-// rawOf follows a message's references to the raw JSON it was read from: a
-// request item, or for an output, the response body its call names,
-// assembled again. The inputs a request's envelope held have none of their
-// own.
 func rawOf(t *testing.T, b *Batch, m Message) ([]byte, bool) {
 	t.Helper()
 	switch {
@@ -140,9 +129,6 @@ func texts(path []Message) []string {
 	return out
 }
 
-// Every request is exactly one call, which names it, and every message's
-// reference resolves: an input to an item of the request that first sent
-// it, an output to its call's response.
 func TestProxyReferencesResolve(t *testing.T) {
 	n, fixtures := proxyBatch(t)
 	requests := storedRequests(t)
@@ -177,8 +163,6 @@ func TestProxyConversationTree(t *testing.T) {
 	n, _ := proxyBatch(t)
 	path := func(leaf Hash) []string { return texts(Path(n.Messages, leaf)) }
 
-	// The second Claude turn resends the first user message, without the
-	// cache marker, and the first reply: both are the same nodes.
 	first, second := callByID(t, &n.Batch, "claude-1"), callByID(t, &n.Batch, "claude-2")
 	want := []string{"user text:The nightly backup job fails; find out why."}
 	if got := path(first.InputID); !reflect.DeepEqual(got, want) {
@@ -203,14 +187,11 @@ func TestProxyConversationTree(t *testing.T) {
 	if first.UncachedInputTokens != 12 || first.CacheWriteTokens != 3000 || first.OutputTokens != 87 || first.ResponseID != "msg_01A" {
 		t.Fatalf("first usage %+v", first)
 	}
-	// Sub-agents are their own sessions, linked to the parent.
 	agent := callByID(t, &n.Batch, "claude-agent")
 	if agent.SessionID != "claude:11111111-1111-4111-8111-111111111111:agent:a1b2c3d4e5f6a7b8c" {
 		t.Fatalf("agent session %s", agent.SessionID)
 	}
 
-	// A Codex request that continues a response sends only new items; its
-	// context is the previous call's input and output.
 	codex := callByID(t, &n.Batch, "codex-2")
 	want = []string{
 		"developer text:<permissions instructions>Sandbox: workspace-write.</permissions instructions>",
@@ -230,11 +211,11 @@ func TestProxyConversationTree(t *testing.T) {
 	if c1.UncachedInputTokens != 1000 || c1.CacheReadTokens != 4000 || c1.ReasoningTokens != 120 {
 		t.Fatalf("codex usage %+v", c1)
 	}
-	// An unarchived previous response starts at a marker, and an
-	// interrupted output keeps what streamed.
 	orphan := Path(n.Messages, callByID(t, &n.Batch, "codex-orphan").OutputIDs[0])
-	if got := texts(orphan); !reflect.DeepEqual(got, []string{"system other:resp_unarchived", "user text:continue",
-		`assistant* tool_call:{"plan":[]}`}) {
+	if got := texts(orphan); !reflect.DeepEqual(got, []string{
+		"system other:resp_unarchived", "user text:continue",
+		`assistant* tool_call:{"plan":[]}`,
+	}) {
 		t.Fatalf("orphan %q", got)
 	}
 	sub := callByID(t, &n.Batch, "codex-agent")
@@ -242,7 +223,6 @@ func TestProxyConversationTree(t *testing.T) {
 		t.Fatalf("codex agent session %s", sub.SessionID)
 	}
 
-	// Sessionless chat calls group by their first message.
 	chat1, chat2 := callByID(t, &n.Batch, "chat-1"), callByID(t, &n.Batch, "chat-2")
 	if chat1.SessionID != chat2.SessionID || !strings.HasPrefix(chat1.SessionID, "proxy:") || chat1.Client != "pi" {
 		t.Fatalf("chat sessions %s %s", chat1.SessionID, chat2.SessionID)
@@ -253,7 +233,6 @@ func TestProxyConversationTree(t *testing.T) {
 	if chat1.UncachedInputTokens != 100 || chat1.CacheReadTokens != 800 || chat1.ReasoningTokens != 10 {
 		t.Fatalf("chat usage %+v", chat1)
 	}
-	// The reply is sent back without its reasoning and still matches.
 	if got := texts(Path(n.Messages, chat2.OutputIDs[0])); len(got) != 5 || !strings.HasPrefix(got[2], "assistant* thinking:") ||
 		got[3] != "tool tool_result:inputs = { nixpkgs.url = ...; };" {
 		t.Fatalf("chat conversation %q", got)
@@ -279,7 +258,6 @@ func TestProxyNormalizationIsIdempotent(t *testing.T) {
 	for _, f := range fixtures {
 		b.Request(f.stored())
 	}
-	// Feeding the same requests again adds no messages.
 	for _, f := range fixtures {
 		b.Request(f.stored())
 	}
@@ -295,14 +273,12 @@ func TestProxyNormalizationIsIdempotent(t *testing.T) {
 	}
 }
 
-// Keys whose strings are conversation content in some dialect.
-var contentKeys = map[string]bool{"text": true, "thinking": true, "arguments": true, "input": true,
+var contentKeys = map[string]bool{
+	"text": true, "thinking": true, "arguments": true, "input": true,
 	"output": true, "content": true, "summary": true, "refusal": true,
-	"reasoning_content": true, "error": true}
+	"reasoning_content": true, "error": true,
+}
 
-// Every content string in a raw item must appear in an extracted block, and
-// every extracted string must come from the raw item: the columns neither
-// drop nor invent content.
 func TestBlocksMatchRawItems(t *testing.T) {
 	p, _ := proxyBatch(t)
 	checked := 0
@@ -338,7 +314,7 @@ func TestBlocksMatchRawItems(t *testing.T) {
 					continue
 				}
 				extracted = append(extracted, s)
-				for _, piece := range strings.Split(s, "\n\n") {
+				for piece := range strings.SplitSeq(s, "\n\n") {
 					quoted, _ := json.Marshal(piece)
 					if !strings.Contains(all, piece) && !strings.Contains(all, strings.Trim(string(quoted), `"`)) &&
 						!jsonContains(raw, piece) {
@@ -360,8 +336,6 @@ func TestBlocksMatchRawItems(t *testing.T) {
 	}
 }
 
-// jsonContains reports whether s is the compact form of a value inside raw,
-// as extracted tool inputs are.
 func jsonContains(raw []byte, s string) bool {
 	found := false
 	var walk func(v any)
@@ -388,7 +362,6 @@ func jsonContains(raw []byte, s string) bool {
 	return found
 }
 
-// must returns an export that cannot fail.
 func must(request map[string]any, err error) map[string]any {
 	if err != nil {
 		panic(err)
@@ -420,7 +393,6 @@ func TestExports(t *testing.T) {
 	for _, m := range messages {
 		roles = append(roles, m["role"].(string))
 	}
-	// Reasoning and the tool call merge into one assistant turn.
 	if !reflect.DeepEqual(roles, []string{"user", "assistant", "user", "assistant"}) {
 		t.Fatalf("anthropic roles %v", roles)
 	}
@@ -430,9 +402,6 @@ func TestExports(t *testing.T) {
 	}
 }
 
-// An assistant message can hold reasoning, a tool call, its result, and the
-// answer, as OpenCode's transcript rows do; the export keeps them in that
-// order.
 func TestExportsKeepBlockOrder(t *testing.T) {
 	path := []Message{
 		{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "What does the worker return?"}}},
@@ -440,7 +409,8 @@ func TestExportsKeepBlockOrder(t *testing.T) {
 			{Type: "thinking", Text: "Look up the worker."},
 			{Type: "tool_call", ToolName: "execute", ToolCallID: "tool_HD0", ToolInput: `{"code":"return 1"}`},
 			{Type: "tool_result", ToolCallID: "tool_HD0", Text: "1"},
-			{Type: "text", Text: "The worker returns 1."}}},
+			{Type: "text", Text: "The worker returns 1."},
+		}},
 	}
 	chat, _ := json.Marshal(must(OpenAIChat(Context{}, path, nil))["messages"])
 	want := `[{"content":"What does the worker return?","role":"user"},` +
@@ -460,9 +430,6 @@ func TestExportsKeepBlockOrder(t *testing.T) {
 	}
 }
 
-// A call's export carries what the call ran with beside its messages: the
-// system prompt or instructions, and the tools, from its request parts or
-// what its response echoed.
 func TestExportsCarryCallContext(t *testing.T) {
 	n, _ := proxyBatch(t)
 	requests := storedRequests(t)
@@ -472,8 +439,6 @@ func TestExportsCarryCallContext(t *testing.T) {
 	}{
 		{"claude-2", "You are Claude Code, Anthropic's official CLI for Claude.", []string{"Bash", "Read"}},
 		{"codex-1", "You are Codex", []string{"exec", "update_plan"}},
-		// The delta request sent neither; its response echoes the tools in
-		// effect, in a namespace, and no instructions.
 		{"codex-2", "", []string{"exec", "update_plan"}},
 	} {
 		c := callByID(t, &n.Batch, tc.call)
@@ -528,9 +493,6 @@ func TestExportsCarryCallContext(t *testing.T) {
 	}
 }
 
-// A freeform custom tool takes raw text. Each export writes its definition
-// and its calls the same way: custom in Chat Completions, and in Anthropic
-// Messages, which has no freeform tools, a tool taking the text as input.
 func TestExportsConvertCustomToolsConsistently(t *testing.T) {
 	n, _ := proxyBatch(t)
 	c := callByID(t, &n.Batch, "codex-1")
@@ -579,10 +541,6 @@ func TestRowsEncodeForClickHouse(t *testing.T) {
 	}
 }
 
-// Namespaces flatten into their tools, and a bare name two namespaces define
-// is qualified in both the definitions and the calls, so a call keeps the
-// schema of the tool it called. A call whose namespace defines no such tool
-// fails the export instead of picking one.
 func TestExportsQualifyCollidingToolNames(t *testing.T) {
 	var ctx Context
 	ctx.Add("tools", []byte(`[
@@ -591,9 +549,13 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 			{"type":"function","name":"js","parameters":{"type":"object","required":["code"]}}]},
 		{"type":"function","name":"exec","parameters":{"type":"object","required":["cmd"]}}]`))
 	call := func(namespace, name, input string) []Message {
-		return []Message{{Role: "user", Blocks: []Block{{Type: "text", Text: "Search for hello."}}},
-			{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-				ToolName: name, ToolNamespace: namespace, ToolCallID: "call_1", ToolInput: input}}}}
+		return []Message{
+			{Role: "user", Blocks: []Block{{Type: "text", Text: "Search for hello."}}},
+			{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{
+				Type: "tool_call", SourceType: "function_call",
+				ToolName: name, ToolNamespace: namespace, ToolCallID: "call_1", ToolInput: input,
+			}}},
+		}
 	}
 	schemas := func(tools []any, schema func(map[string]any) (string, any)) map[string]string {
 		out := map[string]string{}
@@ -637,8 +599,6 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 			t.Fatal("exported a call to run without the namespace that says which")
 		}
 	}
-	// A namespace that defines no such tool matches none, even when the
-	// name is unique.
 	var one Context
 	one.Add("tools", []byte(`[{"type":"namespace","name":"a","tools":[{"type":"function","name":"run","parameters":{"type":"object"}}]}]`))
 	for _, export := range []func(Context, []Message, []Hash) (map[string]any, error){OpenAIChat, AnthropicMessages} {
@@ -662,10 +622,6 @@ func TestExportsQualifyCollidingToolNames(t *testing.T) {
 	}
 }
 
-// Neither export dialect can write a hosted tool's call back: Chat
-// Completions has none, and Anthropic's results are only in the raw items.
-// So a hosted call, its result, and its definition are left out together,
-// and the text the model wrote stays.
 func TestExportsLeaveOutHostedToolsTogether(t *testing.T) {
 	var ctx Context
 	ctx.Add("tools", []byte(`[{"type":"function","name":"exec","parameters":{"type":"object"}},
@@ -676,13 +632,17 @@ func TestExportsLeaveOutHostedToolsTogether(t *testing.T) {
 			{Type: "tool_call", SourceType: "web_search_call", ToolName: "web_search", ToolCallID: "ws_1", ToolInput: `{"query":"clickhouse json"}`},
 			{Type: "tool_call", SourceType: "server_tool_use", ToolName: "web_search", ToolCallID: "srvtoolu_1", ToolInput: `{"query":"clickhouse json"}`},
 			{Type: "tool_result", SourceType: "web_search_tool_result", ToolCallID: "srvtoolu_1", Text: "results"},
-			{Type: "tool_call", SourceType: "tool_search_call", ToolName: "tool_search", ToolCallID: "ts_1", ToolInput: `{"query":"shell"}`}}},
+			{Type: "tool_call", SourceType: "tool_search_call", ToolName: "tool_search", ToolCallID: "ts_1", ToolInput: `{"query":"shell"}`},
+		}},
 		{Role: "tool", Blocks: []Block{{Type: "tool_result", SourceType: "tool_search_output", ToolCallID: "ts_1", Text: "exec"}}},
-		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "24.8."},
-			{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`}}},
+		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{
+			{Type: "text", Text: "24.8."},
+			{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`},
+		}},
 	}
 	for name, request := range map[string]map[string]any{
-		"openai": must(OpenAIChat(ctx, path, nil)), "anthropic": must(AnthropicMessages(ctx, path, nil))} {
+		"openai": must(OpenAIChat(ctx, path, nil)), "anthropic": must(AnthropicMessages(ctx, path, nil)),
+	} {
 		got, _ := json.Marshal(request)
 		for _, hosted := range []string{"web_search", "tool_search", "ws_1", "srvtoolu_1", "ts_1", "results"} {
 			if strings.Contains(string(got), hosted) {
@@ -699,22 +659,23 @@ func TestExportsLeaveOutHostedToolsTogether(t *testing.T) {
 	}
 }
 
-// A call makes a training example only with output an export keeps, and
-// with every tool that output calls defined in its context. Only the
-// call's own outputs count: others on its path are context.
 func TestTrainingNeedsOutputAndItsTools(t *testing.T) {
 	var tools Context
 	tools.Add("tools", []byte(`[{"type":"function","name":"exec","parameters":{"type":"object"}},{"type":"web_search"},
 		{"type":"custom","name":"script"}]`))
 	user := Message{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "List the pods."}}}
 	interrupted := Message{ID: Hash{7}, Role: "assistant", Output: true, Blocks: []Block{
-		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_2", ToolInput: `{"path":`}}}
+		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_2", ToolInput: `{"path":`},
+	}}
 	script := Message{ID: Hash{8}, Role: "assistant", Output: true, Blocks: []Block{
-		{Type: "tool_call", SourceType: "custom_tool_call", ToolName: "script", ToolCallID: "call_3", ToolInput: `print(1)`}}}
+		{Type: "tool_call", SourceType: "custom_tool_call", ToolName: "script", ToolCallID: "call_3", ToolInput: `print(1)`},
+	}}
 	call := Message{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{
-		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`}}}
+		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{}`},
+	}}
 	search := Message{ID: Hash{3}, Role: "assistant", Output: true, Blocks: []Block{
-		{Type: "tool_call", SourceType: "web_search_call", ToolName: "web_search", ToolCallID: "ws_1"}}}
+		{Type: "tool_call", SourceType: "web_search_call", ToolName: "web_search", ToolCallID: "ws_1"},
+	}}
 	answer := Message{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "Two pods."}}}
 	result := Message{ID: Hash{5}, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1"}}}
 	for _, tc := range []struct {
@@ -725,24 +686,18 @@ func TestTrainingNeedsOutputAndItsTools(t *testing.T) {
 		ok      bool
 	}{
 		{"complete", tools, []Message{user, call}, []Hash{call.ID}, true},
-		// A failed call that returned nothing ends at its input.
 		{"no output", tools, []Message{user}, nil, false},
-		{"empty output", tools, []Message{user, {ID: Hash{6}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text"}}}},
-			[]Hash{{6}}, false},
-		// Only a hosted call, which the export leaves out.
+		{
+			"empty output", tools,
+			[]Message{user, {ID: Hash{6}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text"}}}},
+			[]Hash{{6}},
+			false,
+		},
 		{"hosted only", tools, []Message{user, search}, []Hash{search.ID}, false},
-		// A failed delta call with output but no echo knows no tools.
 		{"unknown tools", Context{}, []Message{user, call}, []Hash{call.ID}, false},
-		// Earlier outputs are context, not what the example teaches.
 		{"earlier call", Context{}, []Message{user, call, result, answer}, []Hash{answer.ID}, true},
-		// A failed delta call that sent nothing new and returned nothing
-		// ends at the output of the call it continues.
 		{"previous output", tools, []Message{user, call}, nil, false},
-		// The call it continues ended in a tool call this call's context
-		// lacks, and this call answered without input in between.
 		{"adjacent earlier output", Context{}, []Message{user, call, answer}, []Hash{answer.ID}, true},
-		// An interrupted stream cut the arguments short. A freeform custom
-		// tool takes raw text, which is no JSON.
 		{"interrupted arguments", tools, []Message{user, interrupted}, []Hash{interrupted.ID}, false},
 		{"custom tool", tools, []Message{user, script}, []Hash{script.ID}, true},
 	} {
@@ -752,16 +707,18 @@ func TestTrainingNeedsOutputAndItsTools(t *testing.T) {
 	}
 }
 
-// Both exports keep JSON numbers exactly as written, in tool arguments and
-// in tool definitions, beyond what a float64 holds.
 func TestExportsKeepNumbersExact(t *testing.T) {
 	var ctx Context
 	ctx.Add("tools", []byte(`[{"type":"function","name":"get","parameters":{"type":"object",`+
 		`"properties":{"id":{"type":"integer","maximum":9007199254740993}}}}]`))
 	args := `{"id":9007199254740993,"ratio":0.1000000000000000055511151231257827}`
-	path := []Message{{Role: "user", Blocks: []Block{{Type: "text", Text: "Get it."}}},
-		{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-			ToolName: "get", ToolCallID: "call_1", ToolInput: args}}}}
+	path := []Message{
+		{Role: "user", Blocks: []Block{{Type: "text", Text: "Get it."}}},
+		{ID: Hash{1}, Role: "assistant", Output: true, Blocks: []Block{{
+			Type: "tool_call", SourceType: "function_call",
+			ToolName: "get", ToolCallID: "call_1", ToolInput: args,
+		}}},
+	}
 	for _, tc := range []struct {
 		export func(Context, []Message, []Hash) (map[string]any, error)
 		want   string
@@ -781,22 +738,18 @@ func TestExportsKeepNumbersExact(t *testing.T) {
 	}
 }
 
-// A call's export teaches only the call's outputs. Earlier assistant turns
-// are context: weight 0 in Chat Completions, and never merged into the
-// last Anthropic message, which is the call's output alone. An earlier
-// interrupted tool call then never becomes a target.
 func TestExportsTrainOnlyTheCallsOutputs(t *testing.T) {
 	var ctx Context
 	ctx.Add("tools", []byte(`[{"type":"function","name":"exec","parameters":{"type":"object"}}]`))
 	user := Message{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "List the pods."}}}
 	interrupted := Message{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{
-		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{"path":`}}}
+		{Type: "tool_call", SourceType: "function_call", ToolName: "exec", ToolCallID: "call_1", ToolInput: `{"path":`},
+	}}
 	result := Message{ID: Hash{3}, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1", Text: "bad arguments"}}}
 	answer := Message{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{Type: "text", Text: "Two pods."}}}
 	for name, path := range map[string][]Message{
 		"after a result": {user, interrupted, result, answer},
-		// The call continues the interrupted one without input between.
-		"adjacent": {user, interrupted, answer},
+		"adjacent":       {user, interrupted, answer},
 	} {
 		if err := ForTraining(ctx, path, []Hash{answer.ID}); err != nil {
 			t.Fatalf("%s: %v", name, err)
@@ -817,27 +770,28 @@ func TestExportsTrainOnlyTheCallsOutputs(t *testing.T) {
 			t.Fatalf("%s: anthropic last message %s", name, last)
 		}
 	}
-	// Without targets, as for a whole conversation, nothing is weighted.
 	chat, _ := json.Marshal(must(OpenAIChat(ctx, []Message{user, interrupted, result, answer}, nil)))
 	if strings.Contains(string(chat), "weight") {
 		t.Fatalf("conversation export weighted: %s", chat)
 	}
 }
 
-// Only the exported call's own tool calls must match its definitions.
-// Earlier calls were made under definitions that may have changed since,
-// such as an MCP server renamed between turns: they keep their own name,
-// qualified by their namespace, and never fail the export.
 func TestExportsKeepHistoricalToolNames(t *testing.T) {
 	var ctx Context
 	ctx.Add("tools", []byte(`[{"type":"namespace","name":"new","tools":[{"type":"function","name":"run","parameters":{"type":"object"}}]},
 		{"type":"namespace","name":"other","tools":[{"type":"function","name":"run","parameters":{"type":"object"}}]}]`))
-	path := []Message{{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "Run it twice."}}},
-		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-			ToolName: "run", ToolNamespace: "old", ToolCallID: "call_1", ToolInput: `{}`}}},
+	path := []Message{
+		{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "Run it twice."}}},
+		{ID: Hash{2}, Role: "assistant", Output: true, Blocks: []Block{{
+			Type: "tool_call", SourceType: "function_call",
+			ToolName: "run", ToolNamespace: "old", ToolCallID: "call_1", ToolInput: `{}`,
+		}}},
 		{ID: Hash{3}, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: "call_1", Text: "ok"}}},
-		{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-			ToolName: "run", ToolNamespace: "new", ToolCallID: "call_2", ToolInput: `{}`}}}}
+		{ID: Hash{4}, Role: "assistant", Output: true, Blocks: []Block{{
+			Type: "tool_call", SourceType: "function_call",
+			ToolName: "run", ToolNamespace: "new", ToolCallID: "call_2", ToolInput: `{}`,
+		}}},
+	}
 	if err := ForTraining(ctx, path, []Hash{{4}}); err != nil {
 		t.Fatal(err)
 	}
@@ -848,7 +802,6 @@ func TestExportsKeepHistoricalToolNames(t *testing.T) {
 			t.Fatalf("%s export names %s", name, got)
 		}
 	}
-	// The same call as the target still has to match.
 	for _, export := range []func(Context, []Message, []Hash) (map[string]any, error){OpenAIChat, AnthropicMessages} {
 		if _, err := export(ctx, path[:2], []Hash{{2}}); err == nil {
 			t.Fatal("exported a target calling old.run, which its context does not define")
@@ -859,23 +812,26 @@ func TestExportsKeepHistoricalToolNames(t *testing.T) {
 	}
 }
 
-// Historical calls to tools that no current definition has, in any
-// namespace, keep their namespaces too, so two removed tools of the same
-// name stay apart.
 func TestExportsKeepRemovedToolNamespaces(t *testing.T) {
 	var ctx Context
 	ctx.Add("tools", []byte(`[{"type":"function","name":"read","parameters":{"type":"object"}}]`))
 	call := func(id Hash, namespace, callID string) Message {
-		return Message{ID: id, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-			ToolName: "run", ToolNamespace: namespace, ToolCallID: callID, ToolInput: `{}`}}}
+		return Message{ID: id, Role: "assistant", Output: true, Blocks: []Block{{
+			Type: "tool_call", SourceType: "function_call",
+			ToolName: "run", ToolNamespace: namespace, ToolCallID: callID, ToolInput: `{}`,
+		}}}
 	}
 	result := func(id Hash, callID string) Message {
 		return Message{ID: id, Role: "tool", Blocks: []Block{{Type: "tool_result", ToolCallID: callID, Text: "ok"}}}
 	}
-	path := []Message{{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "Run both, then read."}}},
+	path := []Message{
+		{ID: Hash{1}, Role: "user", Blocks: []Block{{Type: "text", Text: "Run both, then read."}}},
 		call(Hash{2}, "old_a", "call_1"), result(Hash{3}, "call_1"), call(Hash{4}, "old_b", "call_2"), result(Hash{5}, "call_2"),
-		{ID: Hash{6}, Role: "assistant", Output: true, Blocks: []Block{{Type: "tool_call", SourceType: "function_call",
-			ToolName: "read", ToolCallID: "call_3", ToolInput: `{}`}}}}
+		{ID: Hash{6}, Role: "assistant", Output: true, Blocks: []Block{{
+			Type: "tool_call", SourceType: "function_call",
+			ToolName: "read", ToolCallID: "call_3", ToolInput: `{}`,
+		}}},
+	}
 	if err := ForTraining(ctx, path, []Hash{{6}}); err != nil {
 		t.Fatal(err)
 	}

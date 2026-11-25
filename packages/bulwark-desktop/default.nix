@@ -4,7 +4,8 @@
   fetchurl,
   appimageTools,
   unzip,
-}: let
+}:
+let
   pname = "bulwark";
   version = "0.1.0-beta.61";
   releaseUrl = "https://github.com/bulwarkmail/desktop/releases/download/v${version}";
@@ -14,33 +15,43 @@
     homepage = "https://github.com/bulwarkmail/desktop";
     changelog = "https://github.com/bulwarkmail/desktop/releases/tag/v${version}";
     license = lib.licenses.agpl3Only;
-    sourceProvenance = [lib.sourceTypes.binaryNativeCode];
-    platforms = ["x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin"];
+    sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
+    platforms = [
+      "x86_64-linux"
+      "aarch64-linux"
+      "x86_64-darwin"
+      "aarch64-darwin"
+    ];
     mainProgram = "bulwark";
   };
 
-  linux = let
-    artifact =
-      {
-        x86_64-linux = {
-          arch = "x86_64";
-          hash = "sha256-BxtMvg3o007NioVPq41CqLYPGzKlbLdW/GlK38OA1zM=";
-        };
-        aarch64-linux = {
-          arch = "arm64";
-          hash = "sha256-BFih4ZuQSvbrgps8pwdujJZOgQmaSmrjToPBcXyIVH4=";
-        };
-      }.${
-        stdenvNoCC.hostPlatform.system
+  linux =
+    let
+      artifact =
+        {
+          x86_64-linux = {
+            arch = "x86_64";
+            hash = "sha256-BxtMvg3o007NioVPq41CqLYPGzKlbLdW/GlK38OA1zM=";
+          };
+          aarch64-linux = {
+            arch = "arm64";
+            hash = "sha256-BFih4ZuQSvbrgps8pwdujJZOgQmaSmrjToPBcXyIVH4=";
+          };
+        }
+        .${stdenvNoCC.hostPlatform.system};
+      src = fetchurl {
+        url = "${releaseUrl}/Bulwark-${version}-${artifact.arch}.AppImage";
+        inherit (artifact) hash;
       };
-    src = fetchurl {
-      url = "${releaseUrl}/Bulwark-${version}-${artifact.arch}.AppImage";
-      inherit (artifact) hash;
-    };
-    contents = appimageTools.extract {inherit pname version src;};
-  in
+      contents = appimageTools.extract { inherit pname version src; };
+    in
     appimageTools.wrapType2 {
-      inherit pname version src meta;
+      inherit
+        pname
+        version
+        src
+        meta
+        ;
 
       # The upstream entry also claims plain text, pictures, PDFs and office
       # files so it shows up under "Open With". Types with no default app would
@@ -64,7 +75,7 @@
       hash = "sha256-okC5MK9J8qfz0Vxh7x54diYsrB43+qtc+g8nIq6o0uo=";
     };
 
-    nativeBuildInputs = [unzip];
+    nativeBuildInputs = [ unzip ];
     sourceRoot = ".";
     # The app is signed with a Developer ID and notarized; any change to the
     # bundle would break the signature.
@@ -78,6 +89,4 @@
     '';
   };
 in
-  if stdenvNoCC.hostPlatform.isDarwin
-  then darwin
-  else linux
+if stdenvNoCC.hostPlatform.isDarwin then darwin else linux

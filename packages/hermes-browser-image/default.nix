@@ -2,7 +2,8 @@
   dockerTools,
   pkgs,
   runCommand,
-}: let
+}:
+let
   androidEmulatorContainerScripts = pkgs.fetchFromGitHub {
     owner = "google";
     repo = "android-emulator-container-scripts";
@@ -56,7 +57,7 @@
       runHook postInstall
     '';
   };
-  androidWebrtcGateway = runCommand "hermes-android-webrtc-gateway-source" {} ''
+  androidWebrtcGateway = runCommand "hermes-android-webrtc-gateway-source" { } ''
     mkdir -p "$out/videobridge_gateway"
     cp \
       ${androidEmulatorContainerScripts}/gateway/src/videobridge_gateway/gateway_server.py \
@@ -68,14 +69,15 @@
       --replace-fail 'Gateway Webserver listening on http://0.0.0.0:' 'Gateway Webserver listening on http://127.0.0.1:'
     touch "$out/videobridge_gateway/__init__.py"
   '';
-  androidWebrtcPython = pkgs.python3.withPackages (pythonPackages:
-    with pythonPackages; [
+  androidWebrtcPython = pkgs.python3.withPackages (
+    pythonPackages: with pythonPackages; [
       aiohttp
       grpcio
       grpcio-tools
       protobuf
       websockets
-    ]);
+    ]
+  );
   ublockOriginLiteId = "ddkjiahejlhfcafbddmgiahcphecmpfh";
   ublockOriginLiteVersion = "2026.820.1159";
   ublockOriginLiteCrx = pkgs.fetchurl {
@@ -102,7 +104,7 @@
       view_only = false;
     }
   );
-  novncWeb = runCommand "hermes-novnc-web" {} ''
+  novncWeb = runCommand "hermes-novnc-web" { } ''
     cp -r ${pkgs.novnc}/share/webapps/novnc "$out"
     chmod -R u+w "$out"
     cp ${novncDefaults} "$out/defaults.json"
@@ -602,7 +604,7 @@
     ];
   };
 
-  root = runCommand "hermes-browser-root" {} ''
+  root = runCommand "hermes-browser-root" { } ''
     mkdir -p \
       "$out/etc/chromium/policies/managed" \
       "$out/opt/browser" \
@@ -625,40 +627,40 @@
     EOF
   '';
 in
-  dockerTools.buildLayeredImage {
-    name = "ghcr.io/michaelbrusegard/hermes-browser";
-    tag = "nix";
-    contents = [
-      tools
-      root
+dockerTools.buildLayeredImage {
+  name = "ghcr.io/michaelbrusegard/hermes-browser";
+  tag = "nix";
+  contents = [
+    tools
+    root
+  ];
+  fakeRootCommands = ''
+    chown 10000:10000 \
+      ./etc/chromium/policies/managed \
+      ./opt/browser \
+      ./opt/browser-files
+    chmod 0755 \
+      ./etc/chromium/policies/managed \
+      ./opt/browser \
+      ./opt/browser-files
+    chmod 1777 ./tmp
+  '';
+  config = {
+    Entrypoint = [ "${browserLauncher}/bin/chromium" ];
+    Env = [
+      "HOME=/opt/browser"
+      "PATH=${tools}/bin"
+      "FONTCONFIG_FILE=/etc/fonts.conf"
+      "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+      "TZ=America/Los_Angeles"
+      "TZDIR=${pkgs.tzdata}/share/zoneinfo"
+      "LANG=en_US.UTF-8"
     ];
-    fakeRootCommands = ''
-      chown 10000:10000 \
-        ./etc/chromium/policies/managed \
-        ./opt/browser \
-        ./opt/browser-files
-      chmod 0755 \
-        ./etc/chromium/policies/managed \
-        ./opt/browser \
-        ./opt/browser-files
-      chmod 1777 ./tmp
-    '';
-    config = {
-      Entrypoint = ["${browserLauncher}/bin/chromium"];
-      Env = [
-        "HOME=/opt/browser"
-        "PATH=${tools}/bin"
-        "FONTCONFIG_FILE=/etc/fonts.conf"
-        "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
-        "TZ=America/Los_Angeles"
-        "TZDIR=${pkgs.tzdata}/share/zoneinfo"
-        "LANG=en_US.UTF-8"
-      ];
-      User = "10000:10000";
-      WorkingDir = "/opt/browser";
-      Labels = {
-        "org.opencontainers.image.description" = "Chromium and Android display sidecars for Hermes Agent";
-        "org.opencontainers.image.source" = "https://github.com/michaelbrusegard/infra";
-      };
+    User = "10000:10000";
+    WorkingDir = "/opt/browser";
+    Labels = {
+      "org.opencontainers.image.description" = "Chromium and Android display sidecars for Hermes Agent";
+      "org.opencontainers.image.source" = "https://github.com/michaelbrusegard/infra";
     };
-  }
+  };
+}

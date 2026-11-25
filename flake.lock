@@ -478,6 +478,26 @@
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793576659,
+        "narHash": "sha256-V1h85lUaJBQoHFrB2vpXZOE0Ju1MYSnIpsehoVZYlDo=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "ea2630b7470978622c7689a1ff75d2b389175399",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_2": {
+      "inputs": {
+        "nixpkgs-lib": [
           "llm-agents",
           "nixpkgs"
         ]
@@ -1038,6 +1058,21 @@
         "type": "github"
       }
     },
+    "import-tree": {
+      "locked": {
+        "lastModified": 1788467110,
+        "narHash": "sha256-ljEMTXP/rH0tOvDzc9gzwww6KcHRPRnEHzd9lK48V7s=",
+        "owner": "vic",
+        "repo": "import-tree",
+        "rev": "eb1b52eaecc57f7c136d07ae8a93e724dfecac46",
+        "type": "github"
+      },
+      "original": {
+        "owner": "vic",
+        "repo": "import-tree",
+        "type": "github"
+      }
+    },
     "lanzaboote": {
       "inputs": {
         "crane": "crane",
@@ -1064,7 +1099,7 @@
     "llm-agents": {
       "inputs": {
         "bun2nix": "bun2nix",
-        "flake-parts": "flake-parts",
+        "flake-parts": "flake-parts_2",
         "nixpkgs": "nixpkgs_2",
         "systems": "systems_3",
         "treefmt-nix": "treefmt-nix"
@@ -1390,6 +1425,7 @@
         "dms-greeter": "dms-greeter",
         "dsearch": "dsearch",
         "dux-files": "dux-files",
+        "flake-parts": "flake-parts",
         "home-manager": "home-manager",
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",
@@ -1398,6 +1434,7 @@
         "homebrew-steipete": "homebrew-steipete",
         "hyprland": "hyprland",
         "impermanence": "impermanence",
+        "import-tree": "import-tree",
         "lanzaboote": "lanzaboote",
         "llm-agents": "llm-agents",
         "nix-darwin": "nix-darwin",
@@ -1482,11 +1519,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795410519,
-        "narHash": "sha256-X1NARntCOCmqa9EwpEXl6BSXCeB93mC5nkqlITtkc1g=",
+        "lastModified": 1795593091,
+        "narHash": "sha256-6EMIYGYAmcn/TmPumy4CE4OyEXBkbh//hoeS8qgV/gw=",
         "ref": "refs/heads/main",
-        "rev": "353158c55f07422ef01601a6168df57376782759",
-        "revCount": 448,
+        "rev": "1e4a80f2abd76de689ddff5f63eda5689d8d8906",
+        "revCount": 454,
         "type": "git",
         "url": "ssh://git@github.com/michaelbrusegard/infra-secrets.git"
       },

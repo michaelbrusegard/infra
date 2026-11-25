@@ -12,13 +12,10 @@ import (
 	"cliproxy-plugins/plugin"
 )
 
-// CLIProxyAPI skips its own session affinity when a scheduler plugin picks,
-// so sessions are kept on one account here. This matches its default TTL.
 const sessionTTL = time.Hour
 
 type scheduler struct {
-	mu sync.Mutex
-	// When each account's longest quota window resets, learned from responses.
+	mu       sync.Mutex
 	resets   map[string]time.Time
 	sessions map[string]binding
 	swept    time.Time
@@ -29,14 +26,11 @@ type binding struct {
 	seen   time.Time
 }
 
-// Field names match CLIProxyAPI's pluginapi structs, which it encodes
-// without JSON tags.
 type pickRequest struct {
 	Provider string
 	Options  struct {
 		Metadata map[string]any
 	}
-	// Accounts in cooldown or out of quota are already filtered out.
 	Candidates []candidate
 }
 
@@ -106,16 +100,12 @@ func (s *scheduler) pick(r pickRequest, now time.Time) map[string]any {
 		s.swept = now
 	}
 
-	// Moving a session to another account throws away its prompt cache.
 	if b, ok := s.sessions[key]; ok && session != "" && now.Sub(b.seen) <= sessionTTL &&
 		slices.ContainsFunc(r.Candidates, func(c candidate) bool { return c.ID == b.authID }) {
 		s.sessions[key] = binding{b.authID, now}
 		return map[string]any{"handled": true, "auth_id": b.authID}
 	}
 
-	// An account with no known upcoming reset goes first: it has not been
-	// used yet, or its window already reset, and one response teaches us when
-	// it resets next.
 	best, bestReset := "", time.Time{}
 	for _, c := range r.Candidates {
 		reset := s.resets[c.ID]
@@ -132,18 +122,14 @@ func (s *scheduler) pick(r pickRequest, now time.Time) map[string]any {
 	return map[string]any{"handled": true, "auth_id": best}
 }
 
-// longestWindowReset returns when the account's longest quota window resets.
-// Quota left in that window is what is lost at a reset.
 func longestWindowReset(headers http.Header) (time.Time, bool) {
 	h := http.Header{}
 	for k, v := range headers {
 		h[http.CanonicalHeaderKey(k)] = v
 	}
-	// Claude reports its weekly window directly.
 	if reset, ok := unixTime(h.Get("Anthropic-Ratelimit-Unified-7d-Reset")); ok {
 		return reset, true
 	}
-	// Codex reports two windows whose lengths depend on the plan.
 	var best time.Time
 	longest := 0
 	for _, window := range []string{"Primary", "Secondary"} {

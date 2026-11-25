@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from email import policy
 from email.parser import BytesParser
 from pathlib import Path
@@ -52,10 +52,8 @@ def authenticated_mailbox(fixture, username, password):
         connection.login(username, password)
         yield connection
     finally:
-        try:
+        with suppress(OSError, imaplib.IMAP4.error):
             connection.logout()
-        except (OSError, imaplib.IMAP4.error):
-            pass
 
 
 def inventory(fixture, username=None, password=None):
@@ -66,11 +64,7 @@ def inventory(fixture, username=None, password=None):
     with authenticated_mailbox(fixture, username, password) as imap:
         status, rows = imap.list()
         require(status == "OK", "IMAP LIST failed")
-        folders = []
-        for row in rows:
-            # Fixture folder names are printable ASCII. Production relies on
-            # imapsync itself for modified UTF-7 handling.
-            folders.append(row.rsplit(b' "/" ', 1)[-1].strip(b'"').decode())
+        folders = [row.rsplit(b' "/" ', 1)[-1].strip(b'"').decode() for row in rows]
         for folder in folders:
             require(
                 imap.select(f'"{folder}"', readonly=True)[0] == "OK",
@@ -166,6 +160,7 @@ def run_imapsync(
         stderr=subprocess.STDOUT,
         text=True,
         timeout=90,
+        check=False,
     )
     require(completed.returncode == 0, "imapsync failed:\n" + completed.stdout[-4000:])
 

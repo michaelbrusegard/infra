@@ -1,4 +1,5 @@
-{pkgs}: let
+{ pkgs }:
+let
   inherit (pkgs) lib stdenv;
 
   version = "1.8.0";
@@ -20,40 +21,40 @@
 
   source =
     sources.${stdenv.hostPlatform.system}
-    or (throw "vite-plus: unsupported system ${stdenv.hostPlatform.system}");
+      or (throw "vite-plus: unsupported system ${stdenv.hostPlatform.system}");
 
   cliTarball = pkgs.fetchurl {
     url = "https://registry.npmjs.org/@voidzero-dev/vite-plus-cli-${source.platform}/-/vite-plus-cli-${source.platform}-${version}.tgz";
     inherit (source) hash;
   };
 in
-  stdenv.mkDerivation {
-    pname = "vite-plus";
-    inherit version;
+stdenv.mkDerivation {
+  pname = "vite-plus";
+  inherit version;
 
-    src = cliTarball;
+  src = cliTarball;
 
-    sourceRoot = ".";
+  sourceRoot = ".";
 
-    nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [
-      pkgs.autoPatchelfHook
-    ];
+  nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [
+    pkgs.autoPatchelfHook
+  ];
 
-    buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
-      pkgs.stdenv.cc.cc.lib
-    ];
+  buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
+    pkgs.stdenv.cc.cc.lib
+  ];
 
-    installPhase = ''
-      runHook preInstall
+  installPhase = ''
+    runHook preInstall
 
-      install -Dm755 package/vp "$out/bin/vp"
+    install -Dm755 package/vp "$out/bin/vp"
 
-      runHook postInstall
-    '';
+    runHook postInstall
+  '';
 
-    meta = {
-      license = lib.licenses.mit;
-      mainProgram = "vp";
-      platforms = lib.attrNames sources;
-    };
-  }
+  meta = {
+    license = lib.licenses.mit;
+    mainProgram = "vp";
+    platforms = lib.attrNames sources;
+  };
+}

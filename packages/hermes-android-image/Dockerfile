@@ -22,6 +22,8 @@ COPY platform-tools/ /opt/hermes/platform-tools/
 COPY AuroraStore.apk /opt/hermes/apks/AuroraStore.apk
 COPY HermesAccessibility-${HERMES_ACCESSIBILITY_VERSION}.apk /opt/hermes/apks/HermesAccessibility.apk
 
+# The only pipe feeds sha256sum from echo, and sha256sum's own status decides.
+# hadolint ignore=DL4006
 RUN set -eux; \
     rm -rf /android/sdk/platform-tools; \
     mv /opt/hermes/platform-tools /android/sdk/platform-tools; \

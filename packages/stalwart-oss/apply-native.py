@@ -12,10 +12,10 @@ import copy
 import gzip
 import hashlib
 import json
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 PATCH_DIRECTORY = Path(__file__).with_name("patches") / "server"
 SCIM_FIELDS = (
@@ -130,6 +130,7 @@ def apply_patches(root):
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            check=False,
         )
         if result.returncode:
             raise RuntimeError(f"Pinned-source integration mismatch:\n{result.stdout}")

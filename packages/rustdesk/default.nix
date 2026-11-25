@@ -29,7 +29,8 @@
   curl,
   xdg-user-dirs,
   xdotool,
-}: let
+}:
+let
   artifacts = {
     x86_64-linux = {
       arch = "x86_64";
@@ -42,76 +43,97 @@
   };
   artifact = artifacts.${stdenvNoCC.hostPlatform.system};
 in
-  stdenvNoCC.mkDerivation (finalAttrs: {
-    pname = "rustdesk";
-    version = "1.5.0";
+stdenvNoCC.mkDerivation (finalAttrs: {
+  pname = "rustdesk";
+  version = "1.5.0";
 
-    src = fetchurl {
-      url = "https://github.com/rustdesk/rustdesk/releases/download/${finalAttrs.version}/rustdesk-${finalAttrs.version}-${artifact.arch}.deb";
-      inherit (artifact) hash;
-    };
+  src = fetchurl {
+    url = "https://github.com/rustdesk/rustdesk/releases/download/${finalAttrs.version}/rustdesk-${finalAttrs.version}-${artifact.arch}.deb";
+    inherit (artifact) hash;
+  };
 
-    nativeBuildInputs = [dpkg autoPatchelfHook wrapGAppsHook3];
-    buildInputs = [
-      stdenv.cc.cc.lib
-      gtk3
-      libxcb
-      libx11
-      libxfixes
-      libxtst
-      libxkbcommon
-      libepoxy
-      libpulseaudio
-      libayatana-appindicator
-      libva
-      libvdpau
-      alsa-lib
-      dbus
-      gst_all_1.gstreamer
-      gst_all_1.gst-plugins-base
-      pipewire
-      pam
-      systemd
-      zlib
-    ];
+  nativeBuildInputs = [
+    dpkg
+    autoPatchelfHook
+    wrapGAppsHook3
+  ];
+  buildInputs = [
+    stdenv.cc.cc.lib
+    gtk3
+    libxcb
+    libx11
+    libxfixes
+    libxtst
+    libxkbcommon
+    libepoxy
+    libpulseaudio
+    libayatana-appindicator
+    libva
+    libvdpau
+    alsa-lib
+    dbus
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
+    pipewire
+    pam
+    systemd
+    zlib
+  ];
 
-    unpackPhase = ''
-      runHook preUnpack
-      dpkg-deb -x "$src" .
-      runHook postUnpack
-    '';
-    dontConfigure = true;
-    dontBuild = true;
-    dontStrip = true;
+  unpackPhase = ''
+    runHook preUnpack
+    dpkg-deb -x "$src" .
+    runHook postUnpack
+  '';
+  dontConfigure = true;
+  dontBuild = true;
+  dontStrip = true;
 
-    installPhase = ''
-      runHook preInstall
-      mkdir -p "$out/bin" "$out/share"
-      cp -r usr/share/rustdesk usr/share/applications usr/share/icons "$out/share/"
-      ln -s "$out/share/rustdesk/rustdesk" "$out/bin/rustdesk"
-      substituteInPlace "$out/share/applications/"*.desktop \
-        --replace-fail 'Exec=rustdesk' "Exec=$out/bin/rustdesk"
-      runHook postInstall
-    '';
+  installPhase = ''
+    runHook preInstall
+    mkdir -p "$out/bin" "$out/share"
+    cp -r usr/share/rustdesk usr/share/applications usr/share/icons "$out/share/"
+    ln -s "$out/share/rustdesk/rustdesk" "$out/bin/rustdesk"
+    substituteInPlace "$out/share/applications/"*.desktop \
+      --replace-fail 'Exec=rustdesk' "Exec=$out/bin/rustdesk"
+    runHook postInstall
+  '';
 
-    preFixup = ''
-      gappsWrapperArgs+=(
-        --prefix PATH : "${lib.makeBinPath [curl xdg-user-dirs xdotool]}"
-        --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [libayatana-appindicator libpulseaudio libva libvdpau pam pipewire systemd xdotool]}:${addDriverRunpath.driverLink}/lib"
-      )
-    '';
+  preFixup = ''
+    gappsWrapperArgs+=(
+      --prefix PATH : "${
+        lib.makeBinPath [
+          curl
+          xdg-user-dirs
+          xdotool
+        ]
+      }"
+      --prefix LD_LIBRARY_PATH : "${
+        lib.makeLibraryPath [
+          libayatana-appindicator
+          libpulseaudio
+          libva
+          libvdpau
+          pam
+          pipewire
+          systemd
+          xdotool
+        ]
+      }:${addDriverRunpath.driverLink}/lib"
+    )
+  '';
 
-    nativeInstallCheckInputs = [versionCheckHook];
-    doInstallCheck = true;
-    versionCheckProgramArg = "--version";
+  nativeInstallCheckInputs = [ versionCheckHook ];
+  doInstallCheck = true;
+  versionCheckProgramArg = "--version";
 
-    meta = {
-      description = "Remote desktop client with Wayland keyboard shortcut capture";
-      homepage = "https://rustdesk.com";
-      changelog = "https://github.com/rustdesk/rustdesk/releases/tag/${finalAttrs.version}";
-      license = lib.licenses.agpl3Only;
-      sourceProvenance = [lib.sourceTypes.binaryNativeCode];
-      platforms = builtins.attrNames artifacts;
-      mainProgram = "rustdesk";
-    };
-  })
+  meta = {
+    description = "Remote desktop client with Wayland keyboard shortcut capture";
+    homepage = "https://rustdesk.com";
+    changelog = "https://github.com/rustdesk/rustdesk/releases/tag/${finalAttrs.version}";
+    license = lib.licenses.agpl3Only;
+    sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
+    platforms = builtins.attrNames artifacts;
+    mainProgram = "rustdesk";
+  };
+})

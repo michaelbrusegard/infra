@@ -1,0 +1,7 @@
+id: nix-no-commented-out-code
+language: nix
+severity: error
+message: Delete the commented-out code; Git history keeps it. If it stays disabled until something upstream changes, say so in a TODO comment with the issue or PR URL.
+rule:
+  kind: comment
+  regex: ^#\s*((([A-Za-z_][\w'-]*|"[^"]*")(\.([A-Za-z_][\w'-]*|"[^"]*"))*\s*=\s*\S.*;)|"[^"\s]*"|inherit\s.*;|[\[\]{}];?)\s*$

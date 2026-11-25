@@ -1,0 +1,347 @@
+#!/usr/bin/env python3
+import json
+import os
+import pathlib
+import ssl
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import UTC, datetime
+
+NAMESPACE = os.environ.get("POD_NAMESPACE", "minecraft")
+STATE_CONFIGMAP = "minecraft-backup-state"
+ACTIVITY_MARKERS = ("joined the game", "logged in with entity id")
+SERVERS = (
+    {
+        "name": "vanilla",
+        "source": "vanilla-world-backup",
+        "pvc": "data-vanilla-0",
+        "repository": "freddo-restic-minecraft-vanilla-world",
+    },
+    {
+        "name": "creative",
+        "source": "creative-world-backup",
+        "pvc": "data-creative-0",
+        "repository": "freddo-restic-minecraft-creative-world",
+    },
+    {
+        "name": "revelation",
+        "source": "revelation-world-backup",
+        "pvc": "data-revelation-0",
+        "repository": "freddo-restic-minecraft-revelation-world",
+    },
+)
+TOKEN = pathlib.Path("/var/run/secrets/kubernetes.io/serviceaccount/token").read_text()
+CA_CERT = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+API = "https://{}:{}".format(
+    os.environ["KUBERNETES_SERVICE_HOST"],
+    os.environ.get("KUBERNETES_SERVICE_PORT_HTTPS", "443"),
+)
+SSL_CONTEXT = ssl.create_default_context(cafile=CA_CERT)
+
+
+class NotFoundError(Exception):
+    pass
+
+
+def now() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_timestamp(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def request(method: str, path: str, body: dict | None = None) -> dict | str:
+    data = None
+    headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Accept": "application/json",
+    }
+    if body is not None:
+        data = json.dumps(body).encode()
+        headers["Content-Type"] = (
+            "application/merge-patch+json" if method == "PATCH" else "application/json"
+        )
+    req = urllib.request.Request(
+        API + path,
+        data=data,
+        headers=headers,
+        method=method,
+    )
+    try:
+        with urllib.request.urlopen(req, context=SSL_CONTEXT, timeout=30) as res:
+            payload = res.read().decode()
+            if not payload:
+                return {}
+            content_type = res.headers.get("Content-Type", "")
+            if "application/json" in content_type:
+                return json.loads(payload)
+            return payload
+    except urllib.error.HTTPError as exc:
+        payload = exc.read().decode()
+        if exc.code == 404:
+            raise NotFoundError(payload) from exc
+        raise RuntimeError(f"{method} {path} failed: {exc.code} {payload}") from exc
+
+
+def namespaced(path: str) -> str:
+    return f"/api/v1/namespaces/{NAMESPACE}/{path}"
+
+
+def apps(path: str) -> str:
+    return f"/apis/apps/v1/namespaces/{NAMESPACE}/{path}"
+
+
+def volsync(path: str) -> str:
+    return f"/apis/volsync.backube/v1alpha1/namespaces/{NAMESPACE}/{path}"
+
+
+def get_state() -> dict[str, str]:
+    try:
+        cm = request("GET", namespaced(f"configmaps/{STATE_CONFIGMAP}"))
+        return cm.get("data") or {}
+    except NotFoundError:
+        return {}
+
+
+def patch_state(updates: dict[str, str]) -> None:
+    data = get_state()
+    data.update(updates)
+    body = {"metadata": {"name": STATE_CONFIGMAP}, "data": data}
+    try:
+        request("PATCH", namespaced(f"configmaps/{STATE_CONFIGMAP}"), body)
+    except NotFoundError:
+        request(
+            "POST",
+            namespaced("configmaps"),
+            {"metadata": {"name": STATE_CONFIGMAP}, "data": data},
+        )
+
+
+def pod_logs_since(server: str, since: str) -> str:
+    query = urllib.parse.urlencode(
+        {"container": "minecraft", "sinceTime": since, "timestamps": "true"}
+    )
+    return request("GET", namespaced(f"pods/{server}-0/log?{query}"))
+
+
+def pod_started_after(server: str, marker: str) -> bool:
+    pod = request("GET", namespaced(f"pods/{server}-0"))
+    started_at = pod.get("status", {}).get("startTime") or pod.get("metadata", {}).get(
+        "creationTimestamp"
+    )
+    if started_at is None:
+        print(f"{server}: pod start time unavailable, backing up conservatively")
+        return True
+    return parse_timestamp(started_at) > parse_timestamp(marker)
+
+
+def should_backup(server: dict[str, str], state: dict[str, str]) -> bool:
+    marker = state.get(f"{server['name']}.lastSuccess")
+    if marker is None:
+        print(f"{server['name']}: no previous successful backup, taking baseline")
+        return True
+    try:
+        if pod_started_after(server["name"], marker):
+            print(f"{server['name']}: pod restarted since last backup")
+            return True
+    except NotFoundError:
+        print(f"{server['name']}: pod unavailable, backing up conservatively")
+        return True
+    try:
+        logs = pod_logs_since(server["name"], marker)
+    except NotFoundError:
+        print(f"{server['name']}: pod logs unavailable, backing up conservatively")
+        return True
+    active = any(marker in logs for marker in ACTIVITY_MARKERS)
+    print(f"{server['name']}: {'activity found' if active else 'no activity'}")
+    return active
+
+
+def scale(server: str, replicas: int) -> None:
+    request(
+        "PATCH",
+        apps(f"statefulsets/{server}/scale"),
+        {"spec": {"replicas": replicas}},
+    )
+
+
+def scale_replicas(server: str) -> int:
+    obj = request("GET", apps(f"statefulsets/{server}/scale"))
+    return obj.get("spec", {}).get("replicas", 1)
+
+
+def statefulset_ready(server: str) -> int:
+    obj = request("GET", apps(f"statefulsets/{server}"))
+    return obj.get("status", {}).get("readyReplicas", 0)
+
+
+def pod_count(server: str) -> int:
+    query = urllib.parse.urlencode({"labelSelector": f"app={server}"})
+    obj = request("GET", namespaced(f"pods?{query}"))
+    return len(obj.get("items", []))
+
+
+def wait_stopped(server: str) -> None:
+    deadline = time.monotonic() + 900
+    while time.monotonic() < deadline:
+        scale(server, 0)
+        if pod_count(server) == 0:
+            print(f"{server}: stopped")
+            return
+        time.sleep(10)
+    raise TimeoutError(f"timed out waiting for {server} to stop")
+
+
+def wait_ready(server: str, replicas: int) -> None:
+    if replicas == 0:
+        return
+    deadline = time.monotonic() + 1800
+    while time.monotonic() < deadline:
+        if statefulset_ready(server) >= replicas:
+            print(f"{server}: ready")
+            return
+        time.sleep(15)
+    raise TimeoutError(f"timed out waiting for {server} to become ready")
+
+
+def source_body(server: dict[str, str], token: str) -> dict:
+    return {
+        "apiVersion": "volsync.backube/v1alpha1",
+        "kind": "ReplicationSource",
+        "metadata": {"name": server["source"], "namespace": NAMESPACE},
+        "spec": {
+            "sourcePVC": server["pvc"],
+            "trigger": {"manual": token},
+            "restic": {
+                "repository": server["repository"],
+                "pruneIntervalDays": 36500,
+                "retain": {"within": "100y"},
+                "moverSecurityContext": {
+                    "runAsUser": 1000,
+                    "runAsGroup": 1000,
+                    "fsGroup": 1000,
+                    "fsGroupChangePolicy": "OnRootMismatch",
+                },
+                "copyMethod": "Snapshot",
+                "volumeSnapshotClassName": "mayastor-snapshot",
+                "cacheStorageClassName": "openebs-single-replica",
+                "cacheCapacity": "1Gi",
+            },
+        },
+    }
+
+
+def create_source(server: dict[str, str], token: str) -> None:
+    request("POST", volsync("replicationsources"), source_body(server, token))
+
+
+def delete_source(source: str) -> None:
+    try:
+        request("DELETE", volsync(f"replicationsources/{source}"))
+    except NotFoundError:
+        return
+
+
+def wait_source_deleted(source: str) -> None:
+    deadline = time.monotonic() + 300
+    while time.monotonic() < deadline:
+        try:
+            request("GET", volsync(f"replicationsources/{source}"))
+        except NotFoundError:
+            return
+        delete_source(source)
+        time.sleep(5)
+    raise TimeoutError(f"timed out waiting for {source} to be deleted")
+
+
+def trigger_source(source: str, token: str) -> None:
+    request(
+        "PATCH",
+        volsync(f"replicationsources/{source}"),
+        {"spec": {"trigger": {"manual": token}}},
+    )
+
+
+def source_finished(obj: dict, token: str) -> bool:
+    status = obj.get("status", {})
+    result = status.get("latestMoverStatus", {}).get("result")
+    started = status.get("lastSyncStartTime") or status.get("lastSyncTime")
+    if result == "Failed":
+        raise RuntimeError(f"{obj['metadata']['name']}: mover failed")
+    return (
+        result == "Successful"
+        and started is not None
+        and parse_timestamp(started) >= parse_timestamp(token)
+    )
+
+
+def wait_sources(targets: list[dict[str, str]], token: str) -> None:
+    pending = {target["source"]: target for target in targets}
+    deadline = time.monotonic() + 7200
+    while time.monotonic() < deadline:
+        for target in targets:
+            scale(target["name"], 0)
+
+        for source in list(pending):
+            obj = request("GET", volsync(f"replicationsources/{source}"))
+            current = obj.get("spec", {}).get("trigger", {}).get("manual")
+            if current != token:
+                trigger_source(source, token)
+            if source_finished(obj, token):
+                print(f"{source}: manual sync complete")
+                delete_source(source)
+                del pending[source]
+
+        if not pending:
+            return
+        time.sleep(15)
+    raise TimeoutError(
+        "timed out waiting for manual sync: " + ", ".join(sorted(pending))
+    )
+
+
+def main() -> int:
+    state = get_state()
+    targets = [server for server in SERVERS if should_backup(server, state)]
+    if not targets:
+        print("No Minecraft worlds changed since the last successful backup")
+        return 0
+
+    originals = {server["name"]: scale_replicas(server["name"]) for server in targets}
+    sync_token = now()
+    try:
+        for server in targets:
+            print(f"{server['name']}: scaling down before backup")
+            scale(server["name"], 0)
+        for server in targets:
+            wait_stopped(server["name"])
+
+        for server in targets:
+            delete_source(server["source"])
+        for server in targets:
+            wait_source_deleted(server["source"])
+        for server in targets:
+            print(f"{server['source']}: triggering manual backup {sync_token}")
+            create_source(server, sync_token)
+        wait_sources(targets, sync_token)
+
+        completed = now()
+        patch_state({f"{server['name']}.lastSuccess": completed for server in targets})
+        print("Minecraft backup completed successfully")
+    finally:
+        for server in targets:
+            delete_source(server["source"])
+        for server in targets:
+            replicas = originals[server["name"]]
+            print(f"{server['name']}: restoring replicas to {replicas}")
+            scale(server["name"], replicas)
+        for server in targets:
+            wait_ready(server["name"], originals[server["name"]])
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

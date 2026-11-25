@@ -11,3 +11,12 @@ resources:
   - dns.yaml
   - httproute.yaml
   - network-policy.yaml
+
+configMapGenerator:
+  - name: minecraft-backup-orchestrator
+    namespace: minecraft
+    files:
+      - backup.py=scripts/backup.py
+
+generatorOptions:
+  disableNameSuffixHash: true

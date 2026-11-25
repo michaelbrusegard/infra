@@ -1,0 +1,23 @@
+id: nix-no-flake-source-paths
+language: nix
+severity: error
+message: Use a relative path literal such as ./file instead, so only that file enters the closure.
+note: Reading a file through the flake source copies the whole repository into the store, so every host's derivation changes on every commit.
+utils:
+  flake-source:
+    any:
+      - kind: variable_expression
+        regex: ^self$
+      - pattern: inputs.self
+      - pattern: self.outPath
+      - pattern: inputs.self.outPath
+rule:
+  any:
+    - pattern: $SOURCE + $PATH
+    - kind: interpolation
+      has:
+        field: expression
+        matches: flake-source
+constraints:
+  SOURCE:
+    matches: flake-source

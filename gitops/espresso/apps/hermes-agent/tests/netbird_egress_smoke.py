@@ -6,17 +6,14 @@ or with sudo in CI. Every probe gets a fresh namespace with two veth pairs;
 no host routes, cluster resources, or external services are changed.
 """
 
-from pathlib import Path
 import re
 import subprocess
 import textwrap
 import unittest
-
+from pathlib import Path
 
 STATEFULSET = Path(__file__).resolve().parents[1] / "statefulset.yaml"
 
-# Match the pod's Cilium gateways and NetBird v0.77.1 policy routing. Separate
-# veth pairs let tests remove the tunnel without also removing the underlay.
 SETUP = """\
 set -eu
 ip link set lo up
@@ -88,7 +85,9 @@ class NetBirdEgressTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.manifest = STATEFULSET.read_text()
-        container = cls.manifest.split("        - name: preserve-cluster-routes\n", 1)[1]
+        container = cls.manifest.split("        - name: preserve-cluster-routes\n", 1)[
+            1
+        ]
         container = container.split("          securityContext:\n", 1)[0]
         match = re.search(r"            - \|\n((?:              .*\n|\n)+)", container)
         if not match:
@@ -97,11 +96,19 @@ class NetBirdEgressTests(unittest.TestCase):
 
     def probe(self, script):
         result = subprocess.run(
-            ["unshare", "--user", "--map-root-user", "--net", "sh", "-ec",
-             SETUP + "\n" + self.init_script + "\n" + script],
+            [
+                "unshare",
+                "--user",
+                "--map-root-user",
+                "--net",
+                "sh",
+                "-ec",
+                SETUP + "\n" + self.init_script + "\n" + script,
+            ],
             capture_output=True,
             text=True,
             timeout=15,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
@@ -122,35 +129,49 @@ test -z "$(ip -6 route show table main default)"
         self.probe(CLUSTER)
 
     def test_exit_route_withdrawal_fails_closed(self):
-        self.probe("""\
+        self.probe(
+            """\
 ip -4 route flush table 7120
 ip -6 route flush table 7120
-""" + FAIL_CLOSED + TRANSPORT + CLUSTER)
+"""
+            + FAIL_CLOSED
+            + TRANSPORT
+            + CLUSTER
+        )
 
     def test_tunnel_removal_fails_closed(self):
         self.probe("ip link del wt0\n" + FAIL_CLOSED + TRANSPORT + CLUSTER)
 
     def test_sidecar_routing_cleanup_fails_closed(self):
-        self.probe("""\
+        self.probe(
+            """\
 for family in -4 -6; do
     ip "$family" route flush table 7120
     ip "$family" rule del pref 105
     ip "$family" rule del pref 110
 done
 ip link del wt0
-""" + FAIL_CLOSED + TRANSPORT + CLUSTER)
+"""
+            + FAIL_CLOSED
+            + TRANSPORT
+            + CLUSTER
+        )
 
     def test_application_containers_cannot_mark_transport_packets(self):
-        # Linux permits SO_MARK with either CAP_NET_ADMIN or CAP_NET_RAW.
-        # NET_RAW is in the container runtime's default capability set.
         containers = self.manifest.split("      containers:\n", 1)[1]
         containers = containers.split("      volumes:\n", 1)[0]
-        for container in re.split(r"^        - name: ", containers, flags=re.MULTILINE)[1:]:
+        for container in re.split(r"^        - name: ", containers, flags=re.MULTILINE)[
+            1:
+        ]:
             name = container.splitlines()[0]
             with self.subTest(container=name):
                 context = container.split("          securityContext:\n", 1)[1]
-                self.assertRegex(context, r"drop:\n(?: +-[^\n]*\n)* +-(?: ALL| NET_RAW)\n")
-                self.assertNotRegex(context, r"add:\n(?: +-[^\n]*\n)* +- NET_(?:ADMIN|RAW)\n")
+                self.assertRegex(
+                    context, r"drop:\n(?: +-[^\n]*\n)* +-(?: ALL| NET_RAW)\n"
+                )
+                self.assertNotRegex(
+                    context, r"add:\n(?: +-[^\n]*\n)* +- NET_(?:ADMIN|RAW)\n"
+                )
 
 
 if __name__ == "__main__":

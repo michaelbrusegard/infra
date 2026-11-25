@@ -14,7 +14,6 @@ import urllib.request
 from pathlib import Path
 from unittest import mock
 
-
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "android.py"
 APP_ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("hermes_android", SCRIPT_PATH)
@@ -23,7 +22,9 @@ android = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(android)
 
 COMPANION_PATH = APP_ROOT / "scripts" / "android-companion.py"
-COMPANION_SPEC = importlib.util.spec_from_file_location("hermes_android_companion", COMPANION_PATH)
+COMPANION_SPEC = importlib.util.spec_from_file_location(
+    "hermes_android_companion", COMPANION_PATH
+)
 assert COMPANION_SPEC and COMPANION_SPEC.loader
 companion = importlib.util.module_from_spec(COMPANION_SPEC)
 COMPANION_SPEC.loader.exec_module(companion)
@@ -38,6 +39,17 @@ MANIFEST_UPDATER_SPEC = importlib.util.spec_from_file_location(
 assert MANIFEST_UPDATER_SPEC and MANIFEST_UPDATER_SPEC.loader
 manifest_updater = importlib.util.module_from_spec(MANIFEST_UPDATER_SPEC)
 MANIFEST_UPDATER_SPEC.loader.exec_module(manifest_updater)
+
+
+def image_pipeline(name):
+    """Return an image's workflow together with the smoke test it runs."""
+    root = APP_ROOT.parents[3]
+    workflow = (root / ".github" / "workflows" / f"{name}.yaml").read_text(
+        encoding="utf-8"
+    )
+    smoke_test = root / "packages" / name / "smoke-test.sh"
+    assert f"run: packages/{name}/smoke-test.sh" in workflow
+    return workflow + smoke_test.read_text(encoding="utf-8")
 
 
 class AndroidScriptTests(unittest.TestCase):
@@ -60,7 +72,9 @@ class AndroidScriptTests(unittest.TestCase):
             "ANDROID_EMULATOR_GRPC_TOKEN_FILE": os.environ.get(
                 "ANDROID_EMULATOR_GRPC_TOKEN_FILE"
             ),
-            "ANDROID_COMPANION_TOKEN_FILE": os.environ.get("ANDROID_COMPANION_TOKEN_FILE"),
+            "ANDROID_COMPANION_TOKEN_FILE": os.environ.get(
+                "ANDROID_COMPANION_TOKEN_FILE"
+            ),
             "ANDROID_SERIAL": os.environ.get("ANDROID_SERIAL"),
             "AURORA_STORE_APK": os.environ.get("AURORA_STORE_APK"),
         }
@@ -101,13 +115,15 @@ class AndroidScriptTests(unittest.TestCase):
                 endpoint,
                 headers={"Authorization": "Bearer http-companion-secret"},
             )
-            with mock.patch.object(
-                companion.android,
-                "current_ui_tree",
-                return_value={"backend": "accessibility-service", "nodes": []},
+            with (
+                mock.patch.object(
+                    companion.android,
+                    "current_ui_tree",
+                    return_value={"backend": "accessibility-service", "nodes": []},
+                ),
+                urllib.request.urlopen(request, timeout=2) as response,
             ):
-                with urllib.request.urlopen(request, timeout=2) as response:
-                    payload = json.load(response)
+                payload = json.load(response)
             self.assertTrue(payload["ok"])
             self.assertEqual(payload["backend"], "accessibility-service")
         finally:
@@ -122,7 +138,9 @@ class AndroidScriptTests(unittest.TestCase):
         endpoint = f"http://127.0.0.1:{server.server_port}/metrics"
         try:
             with (
-                mock.patch.object(companion, "launcher_status", return_value={"state": "disabled"}),
+                mock.patch.object(
+                    companion, "launcher_status", return_value={"state": "disabled"}
+                ),
                 mock.patch.object(
                     companion,
                     "accessibility_status",
@@ -167,7 +185,10 @@ class AndroidScriptTests(unittest.TestCase):
         )
 
     def test_encode_input_text_normalizes_whitespace(self) -> None:
-        self.assertEqual(android.encode_input_text("  hello  android world "), "hello%sandroid%sworld")
+        self.assertEqual(
+            android.encode_input_text("  hello  android world "),
+            "hello%sandroid%sworld",
+        )
         with self.assertRaises(ValueError):
             android.encode_input_text("   ")
 
@@ -181,7 +202,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertEqual(android.resolve_local_source(str(outside)), outside.resolve())
 
     def test_resolve_output_path_defaults_under_browser_files(self) -> None:
-        destination = android.resolve_output_path(None, "192.168.1.4:5555", "screenshots", ".png")
+        destination = android.resolve_output_path(
+            None, "192.168.1.4:5555", "screenshots", ".png"
+        )
 
         self.assertTrue(destination.is_relative_to(self.browser_files))
         self.assertEqual(destination.suffix, ".png")
@@ -190,7 +213,9 @@ class AndroidScriptTests(unittest.TestCase):
     def test_resolve_output_path_creates_any_visible_parent(self) -> None:
         destination = Path(self.tempdir.name) / "outside" / "captures" / "screen.png"
 
-        resolved = android.resolve_output_path(str(destination), "serial", "screenshots", ".png")
+        resolved = android.resolve_output_path(
+            str(destination), "serial", "screenshots", ".png"
+        )
 
         self.assertEqual(resolved, destination.resolve())
         self.assertTrue(destination.parent.is_dir())
@@ -218,11 +243,15 @@ class AndroidScriptTests(unittest.TestCase):
         )
 
     @mock.patch.object(android.subprocess, "run")
-    def test_run_grpc_requires_and_injects_persisted_token(self, run: mock.Mock) -> None:
+    def test_run_grpc_requires_and_injects_persisted_token(
+        self, run: mock.Mock
+    ) -> None:
         token_file = Path(self.tempdir.name) / "grpc-token"
         token_file.write_text("secret-token\n", encoding="utf-8")
         os.environ["ANDROID_EMULATOR_GRPC_TOKEN_FILE"] = str(token_file)
-        run.return_value = subprocess.CompletedProcess([], 0, stdout='{"state":"RUNNING"}\n', stderr="")
+        run.return_value = subprocess.CompletedProcess(
+            [], 0, stdout='{"state":"RUNNING"}\n', stderr=""
+        )
 
         response = android.run_grpc(
             "http://127.0.0.1:8554",
@@ -236,7 +265,9 @@ class AndroidScriptTests(unittest.TestCase):
 
     @mock.patch.object(android, "run_adb")
     @mock.patch.object(android, "grpc_json")
-    @mock.patch.object(android, "require_connected_serial", return_value="127.0.0.1:5555")
+    @mock.patch.object(
+        android, "require_connected_serial", return_value="127.0.0.1:5555"
+    )
     def test_screenshot_prefers_emulator_framebuffer(
         self,
         _require_serial: mock.Mock,
@@ -261,8 +292,12 @@ class AndroidScriptTests(unittest.TestCase):
         run_adb.assert_not_called()
 
     @mock.patch.object(android, "run_adb", return_value=b"adb-png")
-    @mock.patch.object(android, "grpc_json", side_effect=RuntimeError("gRPC unavailable"))
-    @mock.patch.object(android, "require_connected_serial", return_value="127.0.0.1:5555")
+    @mock.patch.object(
+        android, "grpc_json", side_effect=RuntimeError("gRPC unavailable")
+    )
+    @mock.patch.object(
+        android, "require_connected_serial", return_value="127.0.0.1:5555"
+    )
     def test_screenshot_falls_back_to_adb(
         self,
         _require_serial: mock.Mock,
@@ -304,7 +339,9 @@ class AndroidScriptTests(unittest.TestCase):
         accessibility_snapshot.assert_called_once_with("serial")
 
     @mock.patch.object(android, "run_adb")
-    def test_accessibility_request_authenticates_over_adb_shell(self, run_adb: mock.Mock) -> None:
+    def test_accessibility_request_authenticates_over_adb_shell(
+        self, run_adb: mock.Mock
+    ) -> None:
         token_file = Path(self.tempdir.name) / "companion-token"
         token_file.write_text("companion-secret\n", encoding="utf-8")
         os.environ["ANDROID_COMPANION_TOKEN_FILE"] = str(token_file)
@@ -570,8 +607,14 @@ class AndroidScriptTests(unittest.TestCase):
         )
         self.assertEqual(result["mode"], "accessibility-set-text")
 
-    @mock.patch.object(android, "set_clipboard_text", side_effect=RuntimeError("gRPC unavailable"))
-    @mock.patch.object(android, "accessibility_snapshot", side_effect=RuntimeError("service unavailable"))
+    @mock.patch.object(
+        android, "set_clipboard_text", side_effect=RuntimeError("gRPC unavailable")
+    )
+    @mock.patch.object(
+        android,
+        "accessibility_snapshot",
+        side_effect=RuntimeError("service unavailable"),
+    )
     @mock.patch.object(android, "run_adb")
     @mock.patch.object(android, "require_connected_serial", return_value="serial")
     def test_text_keeps_adb_as_final_ascii_fallback(
@@ -594,7 +637,9 @@ class AndroidScriptTests(unittest.TestCase):
             )
         )
 
-        run_adb.assert_called_once_with("serial", "shell", "input", "text", "hello%sworld")
+        run_adb.assert_called_once_with(
+            "serial", "shell", "input", "text", "hello%sworld"
+        )
         self.assertEqual(result["mode"], "adb-input-fallback")
 
     @mock.patch.object(android, "run_adb", return_value="Success\n")
@@ -627,7 +672,9 @@ class AndroidScriptTests(unittest.TestCase):
         )
         self.assertEqual(result["response"], "Success")
 
-    @mock.patch.object(android, "shell_text", return_value="package:/data/app/aurora/base.apk")
+    @mock.patch.object(
+        android, "shell_text", return_value="package:/data/app/aurora/base.apk"
+    )
     @mock.patch.object(android, "run_adb", return_value="Success\n")
     @mock.patch.object(android, "require_connected_serial", return_value="serial")
     def test_install_aurora_verifies_bundled_apk_and_package(
@@ -658,7 +705,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertEqual(result["sha256"], digest)
 
     @mock.patch.object(android, "run_adb")
-    def test_ensure_device_connection_connects_missing_tcp_endpoints(self, run_adb: mock.Mock) -> None:
+    def test_ensure_device_connection_connects_missing_tcp_endpoints(
+        self, run_adb: mock.Mock
+    ) -> None:
         run_adb.side_effect = [
             "List of devices attached\n",
             "connected to 127.0.0.1:5555\n",
@@ -706,7 +755,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertEqual(health["live_view"]["grpc_url"], "http://127.0.0.1:8554")
 
     @mock.patch.object(android, "grpc_json")
-    def test_get_emulator_status_collects_status_and_vm_state(self, grpc_json: mock.Mock) -> None:
+    def test_get_emulator_status_collects_status_and_vm_state(
+        self, grpc_json: mock.Mock
+    ) -> None:
         grpc_json.side_effect = [
             {"uptime": "1s"},
             {"state": "RUNNING"},
@@ -736,8 +787,20 @@ class AndroidScriptTests(unittest.TestCase):
     ) -> None:
         serial = "127.0.0.1:5555"
         require_connected_serial.return_value = serial
-        screenshot = self.browser_files / "android" / "127.0.0.1_5555" / "snapshots" / "checkout.png"
-        ui_dump = self.browser_files / "android" / "127.0.0.1_5555" / "snapshots" / "checkout.xml"
+        screenshot = (
+            self.browser_files
+            / "android"
+            / "127.0.0.1_5555"
+            / "snapshots"
+            / "checkout.png"
+        )
+        ui_dump = (
+            self.browser_files
+            / "android"
+            / "127.0.0.1_5555"
+            / "snapshots"
+            / "checkout.xml"
+        )
         screenshot.parent.mkdir(parents=True, exist_ok=True)
         screenshot.write_bytes(b"png")
         ui_dump.write_text("<hierarchy/>", encoding="utf-8")
@@ -745,7 +808,9 @@ class AndroidScriptTests(unittest.TestCase):
         handle_ui_dump.return_value = {"path": str(ui_dump)}
         health_report.return_value = {"boot_completed": True}
 
-        result = android.handle_snapshot(argparse.Namespace(serial=serial, name="checkout"))
+        result = android.handle_snapshot(
+            argparse.Namespace(serial=serial, name="checkout")
+        )
 
         metadata = Path(result["metadata_path"])
         self.assertTrue(metadata.is_file())
@@ -778,7 +843,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("enable_accessibility_companion", launcher)
         self.assertIn("nc -w 2 127.0.0.1 8765", launcher)
         self.assertIn("/root/.android/avd/running/pid_*.ini", launcher)
-        self.assertIn('write_accessibility_status "starting" "waiting-for-boot"', launcher)
+        self.assertIn(
+            'write_accessibility_status "starting" "waiting-for-boot"', launcher
+        )
         self.assertIn('rm -f "$GRPC_TOKEN_FILE"', launcher)
         self.assertIn('mv "$AVD_HOME" "$migration_dir"', launcher)
         self.assertLess(
@@ -798,14 +865,16 @@ class AndroidScriptTests(unittest.TestCase):
             / "generate.go"
         ).read_text(encoding="utf-8")
         seccomp_install = (
-            APP_ROOT.parents[3] / "hosts" / "espresso" / "seccomp-profiles.nix"
+            APP_ROOT.parents[3]
+            / "modules"
+            / "hosts"
+            / "espresso"
+            / "seccomp-profiles.nix"
         ).read_text(encoding="utf-8")
         k3s_module = (
-            APP_ROOT.parents[3] / "modules" / "nixos" / "k3s.nix"
+            APP_ROOT.parents[3] / "modules" / "features" / "k3s.nix"
         ).read_text(encoding="utf-8")
-        image_workflow = (
-            APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-agent-image.yaml"
-        ).read_text(encoding="utf-8")
+        image_workflow = image_pipeline("hermes-agent-image")
         agent_browser_package = (
             APP_ROOT.parents[3]
             / "packages"
@@ -821,9 +890,9 @@ class AndroidScriptTests(unittest.TestCase):
         browser = statefulset.split("        - name: browser\n", 1)[1].split(
             "        - name: android-emulator\n", 1
         )[0]
-        android_viewer = statefulset.split("        - name: android-viewer\n", 1)[1].split(
-            "        - name: android-viewer-auth\n", 1
-        )[0]
+        android_viewer = statefulset.split("        - name: android-viewer\n", 1)[
+            1
+        ].split("        - name: android-viewer-auth\n", 1)[0]
 
         self.assertNotIn("--no-sandbox", browser_image)
         self.assertEqual(browser_image.count("--disable-setuid-sandbox"), 2)
@@ -835,15 +904,11 @@ class AndroidScriptTests(unittest.TestCase):
         )
         self.assertIn("chromium-seccomp-profile", seccomp_install)
         self.assertNotIn("chromium", k3s_module)
-        self.assertIn(
-            "nix build --out-link result-chromium-seccomp ", image_workflow
-        )
+        self.assertIn("nix build --out-link result-chromium-seccomp ", image_workflow)
         self.assertIn(
             '--security-opt "seccomp=$chromium_seccomp_profile"', image_workflow
         )
-        self.assertIn(
-            "kernel.apparmor_restrict_unprivileged_userns=0", image_workflow
-        )
+        self.assertIn("kernel.apparmor_restrict_unprivileged_userns=0", image_workflow)
         self.assertNotIn("seccomp=unconfined", image_workflow)
         self.assertIn('version = "0.35.0";', agent_browser_package)
         self.assertNotIn("agent-browser-target-id.patch", image_workflow)
@@ -877,7 +942,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn(manifest_updater.READY_STRATEGY, updated)
         self.assertNotIn(manifest_updater.PENDING_STRATEGY, updated)
 
-    def test_android_manifest_updater_rejects_mutable_or_inconsistent_rollouts(self) -> None:
+    def test_android_manifest_updater_rejects_mutable_or_inconsistent_rollouts(
+        self,
+    ) -> None:
         manifest = (APP_ROOT / "statefulset.yaml").read_text(encoding="utf-8")
         manifest = manifest.replace(
             manifest_updater.READY_ANNOTATION,
@@ -889,7 +956,9 @@ class AndroidScriptTests(unittest.TestCase):
             1,
         )
         with self.assertRaisesRegex(ValueError, "immutable GHCR digest"):
-            manifest_updater.update_content(manifest, "ghcr.io/example/hermes-android:latest")
+            manifest_updater.update_content(
+                manifest, "ghcr.io/example/hermes-android:latest"
+            )
 
         inconsistent = manifest.replace(
             manifest_updater.PENDING_STRATEGY,
@@ -923,24 +992,15 @@ class AndroidScriptTests(unittest.TestCase):
             / "main.tf"
         ).read_text(encoding="utf-8")
         netbird_tofu = (
-            APP_ROOT.parents[3]
-            / "gitops"
-            / "espresso"
-            / "tofu"
-            / "netbird"
-            / "main.tf"
+            APP_ROOT.parents[3] / "gitops" / "espresso" / "tofu" / "netbird" / "main.tf"
         ).read_text(encoding="utf-8")
         companion_wrapper = (APP_ROOT / "scripts" / "android-companion").read_text(
             encoding="utf-8"
         )
         self.assertIn('mkdir -p "$HOME"', companion_wrapper)
-        workflow = (APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-android-image.yaml").read_text(
-            encoding="utf-8"
-        )
+        workflow = image_pipeline("hermes-android-image")
         manifest_updater_source = MANIFEST_UPDATER_PATH.read_text(encoding="utf-8")
-        agent_workflow = (
-            APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-agent-image.yaml"
-        ).read_text(encoding="utf-8")
+        agent_workflow = image_pipeline("hermes-agent-image")
         kvm_device_plugin = (
             APP_ROOT.parents[3]
             / "gitops"
@@ -950,9 +1010,9 @@ class AndroidScriptTests(unittest.TestCase):
             / "generic-device-plugin"
             / "daemonset.yaml"
         ).read_text(encoding="utf-8")
-        versions = (APP_ROOT.parents[3] / "packages" / "hermes-android-image" / "versions.env").read_text(
-            encoding="utf-8"
-        )
+        versions = (
+            APP_ROOT.parents[3] / "packages" / "hermes-android-image" / "versions.env"
+        ).read_text(encoding="utf-8")
         accessibility_source = (
             APP_ROOT.parents[3]
             / "packages"
@@ -965,7 +1025,10 @@ class AndroidScriptTests(unittest.TestCase):
             / "HermesAccessibilityService.java"
         ).read_text(encoding="utf-8")
         accessibility_manifest = (
-            APP_ROOT.parents[3] / "packages" / "hermes-android-companion" / "AndroidManifest.xml"
+            APP_ROOT.parents[3]
+            / "packages"
+            / "hermes-android-companion"
+            / "AndroidManifest.xml"
         ).read_text(encoding="utf-8")
         config_receiver_source = (
             APP_ROOT.parents[3]
@@ -986,8 +1049,12 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIsNotNone(emulator_image)
         assert emulator_image
         self.assertIn("@sha256:", emulator_image.group(1))
-        self.assertIn('- name: ANDROID_REQUIRED_SDK\n              value: "37"', statefulset)
-        self.assertIn('- name: ANDROID_REQUIRED_RELEASE\n              value: "17"', statefulset)
+        self.assertIn(
+            '- name: ANDROID_REQUIRED_SDK\n              value: "37"', statefulset
+        )
+        self.assertIn(
+            '- name: ANDROID_REQUIRED_RELEASE\n              value: "17"', statefulset
+        )
         self.assertIn("- name: android-companion\n", statefulset)
         self.assertIn("- /opt/data/scripts/android-companion", statefulset)
         self.assertIn(
@@ -1024,12 +1091,22 @@ class AndroidScriptTests(unittest.TestCase):
             statefulset,
         )
         self.assertIn("value: America/Los_Angeles", statefulset)
-        self.assertIn("settings put system time_12_24 24", (APP_ROOT / "scripts" / "android-emulator-launch.sh").read_text(encoding="utf-8"))
-        self.assertIn("hermes.michaelbrusegard.com/kvm: \"1\"", statefulset)
+        self.assertIn(
+            "settings put system time_12_24 24",
+            (APP_ROOT / "scripts" / "android-emulator-launch.sh").read_text(
+                encoding="utf-8"
+            ),
+        )
+        self.assertIn('hermes.michaelbrusegard.com/kvm: "1"', statefulset)
         self.assertNotIn("kubernetes.io/hostname", statefulset)
         self.assertNotIn("mountPath: /dev/kvm", statefulset)
-        rollout_pending = 'hermes.michaelbrusegard.com/android-image-rollout: "pending"' in statefulset
-        rollout_ready = 'hermes.michaelbrusegard.com/android-image-rollout: "ready"' in statefulset
+        rollout_pending = (
+            'hermes.michaelbrusegard.com/android-image-rollout: "pending"'
+            in statefulset
+        )
+        rollout_ready = (
+            'hermes.michaelbrusegard.com/android-image-rollout: "ready"' in statefulset
+        )
         self.assertNotEqual(rollout_pending, rollout_ready)
         if rollout_pending:
             self.assertIn(manifest_updater.PENDING_STRATEGY, statefulset)
@@ -1038,9 +1115,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("/android/sdk/platform-tools/adb connect", statefulset)
         self.assertNotIn("pgrep -x scrcpy", statefulset)
         self.assertIn("emulator-webrtc", statefulset)
-        self.assertIn("kill -0 \"$viewer_pid\"", statefulset)
-        self.assertIn("kill -0 \"$gateway_pid\"", statefulset)
-        self.assertIn("kill -0 \"$scrcpy_pid\"", statefulset)
+        self.assertIn('kill -0 "$viewer_pid"', statefulset)
+        self.assertIn('kill -0 "$gateway_pid"', statefulset)
+        self.assertIn('kill -0 "$scrcpy_pid"', statefulset)
         self.assertIn("http://127.0.0.1:8080/api/v1/emulator/status", statefulset)
         self.assertIn("port: 8777\n      targetPort: android-api", services)
         self.assertNotIn("targetPort: android-grpc", services)
@@ -1066,7 +1143,9 @@ class AndroidScriptTests(unittest.TestCase):
         )
         self.assertIn("- name: android-viewer-auth", statefulset)
         self.assertIn("- name: browser-viewer-auth", statefulset)
-        self.assertRegex(statefulset, r"oauth2-proxy:v\d+\.\d+\.\d+@sha256:[0-9a-f]{64}")
+        self.assertRegex(
+            statefulset, r"oauth2-proxy:v\d+\.\d+\.\d+@sha256:[0-9a-f]{64}"
+        )
         self.assertIn("--upstream=http://127.0.0.1:6081", statefulset)
         self.assertIn("--upstream=http://127.0.0.1:6080", statefulset)
         self.assertIn("--http-address=0.0.0.0:4181", statefulset)
@@ -1078,7 +1157,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn('type: "keyboard"', viewer_app)
         self.assertIn('data "pocketid_group" "admin"', viewer_auth_tofu)
         self.assertIn("data.pocketid_group.admin.id", viewer_auth_tofu)
-        self.assertIn('"https://browser.${local.domain}/oauth2/callback"', viewer_auth_tofu)
+        self.assertIn(
+            '"https://browser.${local.domain}/oauth2/callback"', viewer_auth_tofu
+        )
         self.assertIn("hermes_browser = {", netbird_tofu)
         self.assertIn('address = "browser.${local.domain}"', netbird_tofu)
         self.assertIn('port: "8777"', network_policy)
@@ -1086,7 +1167,7 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("ip route del default", statefulset)
         self.assertIn("ip -6 route del default", statefulset)
         self.assertIn("NB_FORCE_RELAY", netbird_egress)
-        self.assertIn('- fromEntities:\n        - ingress', network_policy)
+        self.assertIn("- fromEntities:\n        - ingress", network_policy)
         self.assertIn('port: "4180"', network_policy)
         self.assertIn('port: "4181"', network_policy)
         self.assertNotIn('port: "6080"', network_policy)
@@ -1097,7 +1178,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("alert: HermesAndroidUnavailable", monitoring)
         self.assertIn("alert: HermesAndroidMetricsMissing", monitoring)
         self.assertIn("android-companion=scripts/android-companion", kustomization)
-        self.assertIn("android-companion.py=scripts/android-companion.py", kustomization)
+        self.assertIn(
+            "android-companion.py=scripts/android-companion.py", kustomization
+        )
         self.assertIn("HERMES_PYTHON", companion_wrapper)
         self.assertNotIn("/opt/hermes/.venv", companion_wrapper)
         self.assertIn("Android 17 Play Store image", workflow)
@@ -1120,7 +1203,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("HERMES_ACCESSIBILITY_SIGNING_CERT_SHA256", workflow)
         self.assertIn("update-manifest.py", workflow)
         self.assertIn("workflow_dispatch", workflow)
-        self.assertIn("fcbd1076a93841fa88855acce810e342a5b78101 # v2026.8.19", agent_workflow)
+        self.assertIn(
+            "fcbd1076a93841fa88855acce810e342a5b78101 # v2026.8.19", agent_workflow
+        )
         self.assertIn("agent-browser 0.35.0", agent_workflow)
         self.assertIn("hermes-v2026.8.19.patch", agent_workflow)
         self.assertIn("--domain=hermes.michaelbrusegard.com", kvm_device_plugin)
@@ -1134,7 +1219,9 @@ class AndroidScriptTests(unittest.TestCase):
         self.assertIn("ACTION_SET_TEXT", accessibility_source)
         self.assertIn("dispatchGesture", accessibility_source)
         self.assertIn("requireAuthentication", accessibility_source)
-        self.assertIn('android:permission="android.permission.DUMP"', accessibility_manifest)
+        self.assertIn(
+            'android:permission="android.permission.DUMP"', accessibility_manifest
+        )
         self.assertIn("class ConfigReceiver", config_receiver_source)
         self.assertIn(
             "HOME=/tmp /android/sdk/platform-tools/adb keygen /opt/android/adb/adbkey",

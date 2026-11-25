@@ -4,10 +4,7 @@ FROM golang:1.26-bookworm@sha256:dc40a13b61304647ed7e5d581d246b86413dfc29d63c6d0
 WORKDIR /src
 COPY . .
 # Each directory with a main package is one plugin, named after it.
-RUN test -z "$(gofmt -l .)" \
-  && go vet ./... \
-  && go test ./... \
-  && for plugin in clickhouse-archive soonest-reset; do \
+RUN for plugin in clickhouse-archive soonest-reset; do \
     CGO_ENABLED=1 go build -trimpath -buildvcs=false -buildmode=c-shared \
       -o "/out/$plugin.so" "./$plugin" || exit 1; \
   done \

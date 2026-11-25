@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import json
 import os
 import re
@@ -22,16 +23,30 @@ from urllib.parse import urlparse
 import requests
 from websocket import create_connection
 
-
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9_.-]+")
 _CHALLENGE_PATTERNS = [
-    ("captcha", re.compile(r"\bcaptcha\b", re.I)),
-    ("verification", re.compile(r"\b(?:verify|verification|verified)\b", re.I)),
-    ("checking_browser", re.compile(r"checking your browser|just a moment", re.I)),
-    ("cloudflare", re.compile(r"\bcloudflare\b", re.I)),
-    ("unusual_traffic", re.compile(r"unusual traffic|too many requests|rate limit", re.I)),
-    ("robot_check", re.compile(r"are you human|are you a robot|press and hold", re.I)),
-    ("challenge_frame", re.compile(r"challenge|turnstile|recaptcha|hcaptcha", re.I)),
+    ("captcha", re.compile(r"\bcaptcha\b", re.IGNORECASE)),
+    (
+        "verification",
+        re.compile(r"\b(?:verify|verification|verified)\b", re.IGNORECASE),
+    ),
+    (
+        "checking_browser",
+        re.compile(r"checking your browser|just a moment", re.IGNORECASE),
+    ),
+    ("cloudflare", re.compile(r"\bcloudflare\b", re.IGNORECASE)),
+    (
+        "unusual_traffic",
+        re.compile(r"unusual traffic|too many requests|rate limit", re.IGNORECASE),
+    ),
+    (
+        "robot_check",
+        re.compile(r"are you human|are you a robot|press and hold", re.IGNORECASE),
+    ),
+    (
+        "challenge_frame",
+        re.compile(r"challenge|turnstile|recaptcha|hcaptcha", re.IGNORECASE),
+    ),
 ]
 _MAX_TEXT_SNIPPET = 4000
 _MOUSE_BUTTON_MASKS = {"left": 1, "right": 2, "middle": 4}
@@ -134,7 +149,7 @@ def load_session_events(task_id: str, limit: int = 50) -> list[dict[str, Any]]:
     candidate = event_path(task_id)
     if not candidate.exists():
         return payload
-    for line in candidate.read_text(encoding="utf-8").splitlines()[-max(1, limit):]:
+    for line in candidate.read_text(encoding="utf-8").splitlines()[-max(1, limit) :]:
         try:
             record = json.loads(line)
         except json.JSONDecodeError:
@@ -147,14 +162,16 @@ def load_session_events(task_id: str, limit: int = 50) -> list[dict[str, Any]]:
 def list_session_events(limit: int = 50) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
     for candidate in sorted(event_bucket().glob("*.jsonl")):
-        for line in candidate.read_text(encoding="utf-8").splitlines()[-max(1, limit):]:
+        for line in candidate.read_text(encoding="utf-8").splitlines()[
+            -max(1, limit) :
+        ]:
             try:
                 record = json.loads(line)
             except json.JSONDecodeError:
                 continue
             if isinstance(record, dict):
                 events.append(record)
-    return events[-max(1, limit):]
+    return events[-max(1, limit) :]
 
 
 def resolve_target_id(target_id: str | None, task_id: str | None) -> str:
@@ -165,7 +182,9 @@ def resolve_target_id(target_id: str | None, task_id: str | None) -> str:
     session = load_session_state(task_id)
     resolved = str(session.get("active_target_id") or "")
     if not resolved:
-        raise ValueError(f"task {task_id} has no active_target_id in browser session metadata")
+        raise ValueError(
+            f"task {task_id} has no active_target_id in browser session metadata"
+        )
     return resolved
 
 
@@ -199,8 +218,7 @@ def normalize_http_cdp_base(raw_url: str) -> str:
         scheme = "https" if parsed.scheme == "wss" else "http"
         host = parsed.netloc
         path = parsed.path.rsplit("/", 2)[0]
-        if path.endswith("/devtools"):
-            path = path[: -len("/devtools")]
+        path = path.removesuffix("/devtools")
         return f"{scheme}://{host}{path}".rstrip("/")
     if parsed.scheme in {"http", "https"}:
         return raw_url.rstrip("/")
@@ -258,11 +276,17 @@ def installed_profile_extensions(profile_root: Path) -> list[dict[str, Any]]:
             continue
         profile_name = manifest_path.parents[3].name
         extension_id = manifest_path.parents[1].name
-        preferences = load_json_file(profile_directory / profile_name / "Preferences") or {}
+        preferences = (
+            load_json_file(profile_directory / profile_name / "Preferences") or {}
+        )
         settings = preferences.get("extensions", {}).get("settings", {})
-        preference = settings.get(extension_id, {}) if isinstance(settings, dict) else {}
+        preference = (
+            settings.get(extension_id, {}) if isinstance(settings, dict) else {}
+        )
         disable_reasons = (
-            preference.get("disable_reasons", []) if isinstance(preference, dict) else []
+            preference.get("disable_reasons", [])
+            if isinstance(preference, dict)
+            else []
         )
         state = preference.get("state") if isinstance(preference, dict) else None
         extensions.append(
@@ -280,7 +304,7 @@ def installed_profile_extensions(profile_root: Path) -> list[dict[str, Any]]:
 
 
 def probe_extension(
-    client: "CDPClient", browser_websocket_url: str, extension: dict[str, Any]
+    client: CDPClient, browser_websocket_url: str, extension: dict[str, Any]
 ) -> dict[str, Any]:
     extension_id = str(extension["id"])
     name = str(extension["name"])
@@ -337,7 +361,9 @@ def probe_extension(
                 last_error = exc
             time.sleep(0.1)
         if not isinstance(probe_state, dict):
-            raise RuntimeError(last_error or "extension probe did not return page state")
+            raise RuntimeError(
+                last_error or "extension probe did not return page state"
+            )
 
         enabled_rulesets = probe_state.get("enabledRulesets")
         if not isinstance(enabled_rulesets, list):
@@ -373,7 +399,7 @@ def probe_extension(
 
 
 def probe_expected_extensions(
-    client: "CDPClient", browser_websocket_url: str
+    client: CDPClient, browser_websocket_url: str
 ) -> list[dict[str, Any]]:
     if not browser_websocket_url:
         return [
@@ -450,25 +476,24 @@ class CDPClient:
 
     def close(self) -> None:
         for connection in self._connections.values():
-            try:
+            with contextlib.suppress(Exception):
                 connection.close()
-            except Exception:
-                pass
         self._connections.clear()
 
     def __del__(self) -> None:
         self.close()
 
-    def call(self, websocket_url: str, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    def call(
+        self, websocket_url: str, method: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         message_id = self._next_message_id
         self._next_message_id += 1
         payload = {"id": message_id, "method": method, "params": params or {}}
         connection = self._connections.get(websocket_url)
         if connection is None:
-            # Chromium rejects websocket-client's synthesized HTTP Origin unless
-            # the browser is launched with a broad remote-allow-origins policy.
-            # CDP is pod-local here, so omit Origin on this direct debugger link.
-            connection = create_connection(websocket_url, timeout=15, suppress_origin=True)
+            connection = create_connection(
+                websocket_url, timeout=15, suppress_origin=True
+            )
             self._connections[websocket_url] = connection
         try:
             connection.send(json.dumps(payload))
@@ -486,10 +511,8 @@ class CDPClient:
                 return result if isinstance(result, dict) else {}
         except Exception:
             self._connections.pop(websocket_url, None)
-            try:
+            with contextlib.suppress(Exception):
                 connection.close()
-            except Exception:
-                pass
             raise
 
 
@@ -524,7 +547,9 @@ def evaluate_expression(
 
 
 def resolve_target(client: CDPClient, args: argparse.Namespace) -> tuple[str, Target]:
-    target_id = resolve_target_id(getattr(args, "target_id", None), getattr(args, "task_id", None))
+    target_id = resolve_target_id(
+        getattr(args, "target_id", None), getattr(args, "task_id", None)
+    )
     return target_id, client.target(target_id)
 
 
@@ -586,7 +611,10 @@ def load_previous_page(token: str) -> dict[str, Any]:
         payload = json.loads(resolve_local_path(candidate).read_text(encoding="utf-8"))
     else:
         payload = json.loads(
-            (browser_bucket("browser-checkpoints") / f"{safe_slug(token, 'checkpoint')}.json").read_text(encoding="utf-8")
+            (
+                browser_bucket("browser-checkpoints")
+                / f"{safe_slug(token, 'checkpoint')}.json"
+            ).read_text(encoding="utf-8")
         )
     if not isinstance(payload, dict):
         raise ValueError(f"invalid previous challenge payload: {token}")
@@ -617,7 +645,9 @@ def page_signature(page: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def challenge_progress(previous_page: dict[str, Any], current_page: dict[str, Any]) -> dict[str, Any]:
+def challenge_progress(
+    previous_page: dict[str, Any], current_page: dict[str, Any]
+) -> dict[str, Any]:
     previous = build_challenge_summary(previous_page)
     current = build_challenge_summary(current_page)
     previous_signals = set(previous["signals"])
@@ -625,18 +655,24 @@ def challenge_progress(previous_page: dict[str, Any], current_page: dict[str, An
     signature_changed = page_signature(previous_page) != page_signature(current_page)
     signals_cleared = sorted(previous_signals - current_signals)
     signals_added = sorted(current_signals - previous_signals)
-    possible_progress = signature_changed or bool(signals_cleared) or (
-        previous["challenge_detected"] and not current["challenge_detected"]
+    possible_progress = (
+        signature_changed
+        or bool(signals_cleared)
+        or (previous["challenge_detected"] and not current["challenge_detected"])
     )
     notes: list[str] = []
     if previous["challenge_detected"] and not current["challenge_detected"]:
-        notes.append("Challenge markers dropped, but verify with a fresh snapshot before assuming recovery.")
+        notes.append(
+            "Challenge markers dropped, but verify with a fresh snapshot before assuming recovery."
+        )
     if signals_cleared:
         notes.append(f"Signals cleared: {', '.join(signals_cleared)}.")
     if signals_added:
         notes.append(f"Signals added: {', '.join(signals_added)}.")
     if signature_changed and not notes:
-        notes.append("The page state changed since the prior check; treat that as possible progress, not proof.")
+        notes.append(
+            "The page state changed since the prior check; treat that as possible progress, not proof."
+        )
     if not notes:
         notes.append("No concrete progress markers detected since the prior check.")
     return {
@@ -660,7 +696,11 @@ def build_challenge_summary(page: dict[str, Any]) -> dict[str, Any]:
             url,
             body_text,
             *(str(item.get("src") or "") for item in frames if isinstance(item, dict)),
-            *(str(item.get("title") or "") for item in frames if isinstance(item, dict)),
+            *(
+                str(item.get("title") or "")
+                for item in frames
+                if isinstance(item, dict)
+            ),
         ]
     )
     signals: list[str] = []
@@ -668,7 +708,8 @@ def build_challenge_summary(page: dict[str, Any]) -> dict[str, Any]:
         if pattern.search(combined):
             signals.append(label)
     frame_signals = [
-        item for item in frames
+        item
+        for item in frames
         if isinstance(item, dict)
         and any(
             token in str(item.get("src") or "").lower()
@@ -678,7 +719,9 @@ def build_challenge_summary(page: dict[str, Any]) -> dict[str, Any]:
     ]
     challenge_detected = bool(signals or frame_signals)
     confidence = "high" if len(signals) >= 2 or frame_signals else "low"
-    if challenge_detected and any(signal in signals for signal in ["captcha", "robot_check"]):
+    if challenge_detected and any(
+        signal in signals for signal in ["captcha", "robot_check"]
+    ):
         confidence = "medium" if confidence == "low" else confidence
     actions = []
     if not challenge_detected:
@@ -686,12 +729,22 @@ def build_challenge_summary(page: dict[str, Any]) -> dict[str, Any]:
     else:
         actions.append("Refresh the Hermes browser snapshot before every interaction.")
         if "checking_browser" in signals:
-            actions.append("Wait 5-10 seconds for the interstitial to complete before clicking.")
-        if any(signal in signals for signal in ["captcha", "robot_check", "verification"]):
-            actions.append("Use semantic refs first; fall back to browser_vision plus coordinate input only when needed.")
+            actions.append(
+                "Wait 5-10 seconds for the interstitial to complete before clicking."
+            )
+        if any(
+            signal in signals for signal in ["captcha", "robot_check", "verification"]
+        ):
+            actions.append(
+                "Use semantic refs first; fall back to browser_vision plus coordinate input only when needed."
+            )
         if frame_signals:
-            actions.append("Treat cross-origin challenge frames as stateful; keep the latest frame_id or target_id current.")
-        actions.append("Do not claim the challenge is solved until the original page resumes and a fresh snapshot confirms it.")
+            actions.append(
+                "Treat cross-origin challenge frames as stateful; keep the latest frame_id or target_id current."
+            )
+        actions.append(
+            "Do not claim the challenge is solved until the original page resumes and a fresh snapshot confirms it."
+        )
     return {
         "challenge_detected": challenge_detected,
         "confidence": confidence if challenge_detected else "none",
@@ -765,7 +818,9 @@ def verify_page_state(
                 f"url path {'matches' if path_matched else 'differs from'} checkpoint ({expected_path})",
             )
         if expected_fragments:
-            fragment_hits = [fragment for fragment in expected_fragments if fragment in current_body]
+            fragment_hits = [
+                fragment for fragment in expected_fragments if fragment in current_body
+            ]
             matched = bool(fragment_hits)
             record(
                 "checkpoint_body_fragments",
@@ -822,13 +877,23 @@ def verify_page_state(
     matched = bool(checks) and not explicit_failures
     if expected_page is not None and not checks:
         matched = False
-        warnings.append("No verification evidence was derived from the checkpoint payload.")
+        warnings.append(
+            "No verification evidence was derived from the checkpoint payload."
+        )
     elif expected_page is not None and checks and not explicit_successes:
         warnings.append("The checkpoint comparison found no positive recovery markers.")
     elif expected_page is not None and explicit_successes and explicit_failures:
-        warnings.append("Some checkpoint markers still match, but the page has drifted; verify before resuming.")
+        warnings.append(
+            "Some checkpoint markers still match, but the page has drifted; verify before resuming."
+        )
 
-    confidence = "high" if matched and not warnings else "medium" if explicit_successes else "low"
+    confidence = (
+        "high"
+        if matched and not warnings
+        else "medium"
+        if explicit_successes
+        else "low"
+    )
     if current_challenge["challenge_detected"]:
         confidence = "low"
 
@@ -879,7 +944,10 @@ def handle_session_state(args: argparse.Namespace) -> dict[str, Any]:
 
 def handle_session_events(args: argparse.Namespace) -> dict[str, Any]:
     if args.task_id:
-        return {"task_id": args.task_id, "events": load_session_events(args.task_id, args.limit)}
+        return {
+            "task_id": args.task_id,
+            "events": load_session_events(args.task_id, args.limit),
+        }
     return {"events": list_session_events(args.limit)}
 
 
@@ -944,7 +1012,11 @@ def handle_click(args: argparse.Namespace) -> dict[str, Any]:
     x = int(args.x)
     y = int(args.y)
     button_mask = _MOUSE_BUTTON_MASKS[args.button]
-    client.call(target.websocket_url, "Input.dispatchMouseEvent", {"type": "mouseMoved", "x": x, "y": y})
+    client.call(
+        target.websocket_url,
+        "Input.dispatchMouseEvent",
+        {"type": "mouseMoved", "x": x, "y": y},
+    )
     client.call(
         target.websocket_url,
         "Input.dispatchMouseEvent",
@@ -985,12 +1057,27 @@ def handle_click(args: argparse.Namespace) -> dict[str, Any]:
 def handle_touch_tap(args: argparse.Namespace) -> dict[str, Any]:
     client = CDPClient(args.cdp_url)
     target_id, target = resolve_target(client, args)
-    point = {"x": int(args.x), "y": int(args.y), "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
-    client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [point]})
+    point = {
+        "x": int(args.x),
+        "y": int(args.y),
+        "radiusX": 1,
+        "radiusY": 1,
+        "force": 1,
+        "id": 1,
+    }
+    client.call(
+        target.websocket_url,
+        "Input.dispatchTouchEvent",
+        {"type": "touchStart", "touchPoints": [point]},
+    )
     try:
         return {"target_id": target_id, "tap": {"x": int(args.x), "y": int(args.y)}}
     finally:
-        client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        client.call(
+            target.websocket_url,
+            "Input.dispatchTouchEvent",
+            {"type": "touchEnd", "touchPoints": []},
+        )
 
 
 def handle_touch_swipe(args: argparse.Namespace) -> dict[str, Any]:
@@ -999,18 +1086,37 @@ def handle_touch_swipe(args: argparse.Namespace) -> dict[str, Any]:
     steps = max(1, int(args.steps))
     duration_ms = max(0, int(args.duration_ms))
     step_delay = duration_ms / steps / 1000
-    start = {"x": int(args.x1), "y": int(args.y1), "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
-    client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [start]})
+    start = {
+        "x": int(args.x1),
+        "y": int(args.y1),
+        "radiusX": 1,
+        "radiusY": 1,
+        "force": 1,
+        "id": 1,
+    }
+    client.call(
+        target.websocket_url,
+        "Input.dispatchTouchEvent",
+        {"type": "touchStart", "touchPoints": [start]},
+    )
     try:
         for step in range(1, steps + 1):
             x = int(args.x1 + ((args.x2 - args.x1) * step / steps))
             y = int(args.y1 + ((args.y2 - args.y1) * step / steps))
             point = {"x": x, "y": y, "radiusX": 1, "radiusY": 1, "force": 1, "id": 1}
-            client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [point]})
+            client.call(
+                target.websocket_url,
+                "Input.dispatchTouchEvent",
+                {"type": "touchMove", "touchPoints": [point]},
+            )
             if step_delay:
                 time.sleep(step_delay)
     finally:
-        client.call(target.websocket_url, "Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        client.call(
+            target.websocket_url,
+            "Input.dispatchTouchEvent",
+            {"type": "touchEnd", "touchPoints": []},
+        )
     return {
         "target_id": target_id,
         "swipe": {
@@ -1028,11 +1134,22 @@ def handle_drag(args: argparse.Namespace) -> dict[str, Any]:
     steps = max(1, int(args.steps))
     duration_ms = max(0, int(args.duration_ms))
     step_delay = duration_ms / steps / 1000
-    client.call(target.websocket_url, "Input.dispatchMouseEvent", {"type": "mouseMoved", "x": int(args.x1), "y": int(args.y1)})
     client.call(
         target.websocket_url,
         "Input.dispatchMouseEvent",
-        {"type": "mousePressed", "x": int(args.x1), "y": int(args.y1), "button": "left", "buttons": 1, "clickCount": 1},
+        {"type": "mouseMoved", "x": int(args.x1), "y": int(args.y1)},
+    )
+    client.call(
+        target.websocket_url,
+        "Input.dispatchMouseEvent",
+        {
+            "type": "mousePressed",
+            "x": int(args.x1),
+            "y": int(args.y1),
+            "button": "left",
+            "buttons": 1,
+            "clickCount": 1,
+        },
     )
     current_x = int(args.x1)
     current_y = int(args.y1)
@@ -1043,7 +1160,13 @@ def handle_drag(args: argparse.Namespace) -> dict[str, Any]:
             client.call(
                 target.websocket_url,
                 "Input.dispatchMouseEvent",
-                {"type": "mouseMoved", "x": current_x, "y": current_y, "button": "left", "buttons": 1},
+                {
+                    "type": "mouseMoved",
+                    "x": current_x,
+                    "y": current_y,
+                    "button": "left",
+                    "buttons": 1,
+                },
             )
             if step_delay:
                 time.sleep(step_delay)
@@ -1051,7 +1174,14 @@ def handle_drag(args: argparse.Namespace) -> dict[str, Any]:
         client.call(
             target.websocket_url,
             "Input.dispatchMouseEvent",
-            {"type": "mouseReleased", "x": current_x, "y": current_y, "button": "left", "buttons": 0, "clickCount": 1},
+            {
+                "type": "mouseReleased",
+                "x": current_x,
+                "y": current_y,
+                "button": "left",
+                "buttons": 0,
+                "clickCount": 1,
+            },
         )
     return {
         "target_id": target_id,
@@ -1076,16 +1206,24 @@ def handle_record_page(args: argparse.Namespace) -> dict[str, Any]:
     destination = resolve_output_path(args.path, "browser-recordings", ".webm")
     fps = max(1, int(args.fps))
     interval = 1.0 / fps
-    frame_total = max(1, int(round(float(args.seconds) * fps)))
-    with tempfile.TemporaryDirectory(prefix="browser-record-", dir=browser_bucket("browser-recordings")) as tempdir:
+    frame_total = max(1, round(float(args.seconds) * fps))
+    with tempfile.TemporaryDirectory(
+        prefix="browser-record-", dir=browser_bucket("browser-recordings")
+    ) as tempdir:
         frames_dir = Path(tempdir)
         start = time.monotonic()
         for index in range(frame_total):
-            screenshot = client.call(target.websocket_url, "Page.captureScreenshot", {"format": "png"})
+            screenshot = client.call(
+                target.websocket_url, "Page.captureScreenshot", {"format": "png"}
+            )
             screenshot_data = str(screenshot.get("data") or "")
             if not screenshot_data:
-                raise RuntimeError("Page.captureScreenshot returned no image data during recording")
-            (frames_dir / f"frame-{index:05d}.png").write_bytes(base64.b64decode(screenshot_data))
+                raise RuntimeError(
+                    "Page.captureScreenshot returned no image data during recording"
+                )
+            (frames_dir / f"frame-{index:05d}.png").write_bytes(
+                base64.b64decode(screenshot_data)
+            )
             if index + 1 < frame_total:
                 target_time = start + ((index + 1) * interval)
                 delay = target_time - time.monotonic()
@@ -1128,7 +1266,12 @@ def handle_challenge_state(args: argparse.Namespace) -> dict[str, Any]:
     progress = None
     if args.previous:
         progress = challenge_progress(load_previous_page(args.previous), page)
-    return {"target_id": target_id, "page": page, "challenge": summary, "progress": progress}
+    return {
+        "target_id": target_id,
+        "page": page,
+        "challenge": summary,
+        "progress": progress,
+    }
 
 
 def handle_verify_page(args: argparse.Namespace) -> dict[str, Any]:
@@ -1160,7 +1303,9 @@ def handle_checkpoint_save(args: argparse.Namespace) -> dict[str, Any]:
     base = checkpoint_dir / name
     screenshot_path = base.with_suffix(".png")
     metadata_path = base.with_suffix(".json")
-    screenshot = client.call(target.websocket_url, "Page.captureScreenshot", {"format": "png"})
+    screenshot = client.call(
+        target.websocket_url, "Page.captureScreenshot", {"format": "png"}
+    )
     screenshot_data = str(screenshot.get("data") or "")
     if not screenshot_data:
         raise RuntimeError("Page.captureScreenshot returned no image data")
@@ -1177,7 +1322,9 @@ def handle_checkpoint_save(args: argparse.Namespace) -> dict[str, Any]:
         "media": collect_media_state(client, target_id),
         "screenshot": str(screenshot_path),
     }
-    metadata_path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    metadata_path.write_text(
+        json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     return {"checkpoint": record, "metadata_path": str(metadata_path)}
 
 
@@ -1320,13 +1467,19 @@ def handle_diagnostics(args: argparse.Namespace) -> dict[str, Any]:
             "installed_extensions": installed_extensions,
             "unpacked_extensions": [
                 str(path) for path in sorted(unpacked_extensions.iterdir())
-            ] if unpacked_extensions.is_dir() else [],
+            ]
+            if unpacked_extensions.is_dir()
+            else [],
         },
         "browser_files": {
             "root": str(browser_files),
             "size_bytes": directory_size(browser_files),
-            "checkpoints": len(list(browser_bucket("browser-checkpoints").glob("*.json"))),
-            "profile_backups": len(list(browser_bucket("browser-profile-backups").glob("*.tar.gz"))),
+            "checkpoints": len(
+                list(browser_bucket("browser-checkpoints").glob("*.json"))
+            ),
+            "profile_backups": len(
+                list(browser_bucket("browser-profile-backups").glob("*.tar.gz"))
+            ),
             "task_directories": [
                 str(path)
                 for path in sorted(browser_files.iterdir())
@@ -1371,12 +1524,24 @@ HANDLERS = {
 }
 
 
-def add_target_locator_arguments(command: argparse.ArgumentParser, *, positional: bool = True) -> None:
+def add_target_locator_arguments(
+    command: argparse.ArgumentParser, *, positional: bool = True
+) -> None:
     if positional:
-        command.add_argument("target_id", nargs="?", help="explicit page target ID; defaults to the active target for --task-id")
+        command.add_argument(
+            "target_id",
+            nargs="?",
+            help="explicit page target ID; defaults to the active target for --task-id",
+        )
     else:
-        command.add_argument("--target-id", help="explicit page target ID; defaults to the active target for --task-id")
-    command.add_argument("--task-id", help="resolve the active target from persisted task-owned browser session metadata")
+        command.add_argument(
+            "--target-id",
+            help="explicit page target ID; defaults to the active target for --task-id",
+        )
+    command.add_argument(
+        "--task-id",
+        help="resolve the active target from persisted task-owned browser session metadata",
+    )
 
 
 def parser() -> argparse.ArgumentParser:
@@ -1384,26 +1549,52 @@ def parser() -> argparse.ArgumentParser:
         prog="browser-support",
         description="Operate the self-hosted Hermes Chromium sidecar through CDP helpers.",
     )
-    root.add_argument("--cdp-url", default=default_cdp_url(), help="CDP discovery URL, defaults to BROWSER_CDP_URL")
+    root.add_argument(
+        "--cdp-url",
+        default=default_cdp_url(),
+        help="CDP discovery URL, defaults to BROWSER_CDP_URL",
+    )
     sub = root.add_subparsers(dest="command", required=True)
 
-    targets = sub.add_parser("targets", help="list current page targets and their target IDs")
-    targets.add_argument("--task-id", help="filter targets to one persisted task session owner")
+    targets = sub.add_parser(
+        "targets", help="list current page targets and their target IDs"
+    )
+    targets.add_argument(
+        "--task-id", help="filter targets to one persisted task session owner"
+    )
 
-    session_state = sub.add_parser("session-state", help="show persisted task-owned browser session metadata")
-    session_state.add_argument("task_id", nargs="?", help="optional task identifier; omit to list all persisted sessions")
+    session_state = sub.add_parser(
+        "session-state", help="show persisted task-owned browser session metadata"
+    )
+    session_state.add_argument(
+        "task_id",
+        nargs="?",
+        help="optional task identifier; omit to list all persisted sessions",
+    )
 
-    session_events = sub.add_parser("session-events", help="show persisted task event routing history")
-    session_events.add_argument("task_id", nargs="?", help="optional task identifier; omit to merge recent events across tasks")
+    session_events = sub.add_parser(
+        "session-events", help="show persisted task event routing history"
+    )
+    session_events.add_argument(
+        "task_id",
+        nargs="?",
+        help="optional task identifier; omit to merge recent events across tasks",
+    )
     session_events.add_argument("--limit", type=int, default=50)
 
-    frame_tree = sub.add_parser("frame-tree", help="return the Page.getFrameTree payload for one target")
+    frame_tree = sub.add_parser(
+        "frame-tree", help="return the Page.getFrameTree payload for one target"
+    )
     add_target_locator_arguments(frame_tree)
 
-    clipboard_get = sub.add_parser("clipboard-get", help="read navigator.clipboard text from one page target")
+    clipboard_get = sub.add_parser(
+        "clipboard-get", help="read navigator.clipboard text from one page target"
+    )
     add_target_locator_arguments(clipboard_get)
 
-    clipboard_set = sub.add_parser("clipboard-set", help="write navigator.clipboard text into one page target")
+    clipboard_set = sub.add_parser(
+        "clipboard-set", help="write navigator.clipboard text into one page target"
+    )
     add_target_locator_arguments(clipboard_set)
     clipboard_set.add_argument("text")
 
@@ -1419,7 +1610,9 @@ def parser() -> argparse.ArgumentParser:
     touch_tap.add_argument("x", type=int)
     touch_tap.add_argument("y", type=int)
 
-    touch_swipe = sub.add_parser("touch-swipe", help="dispatch one touch swipe with interpolated moves")
+    touch_swipe = sub.add_parser(
+        "touch-swipe", help="dispatch one touch swipe with interpolated moves"
+    )
     add_target_locator_arguments(touch_swipe, positional=False)
     touch_swipe.add_argument("x1", type=int)
     touch_swipe.add_argument("y1", type=int)
@@ -1437,27 +1630,44 @@ def parser() -> argparse.ArgumentParser:
     drag.add_argument("--steps", type=int, default=12)
     drag.add_argument("--duration-ms", type=int, default=800)
 
-    media_state = sub.add_parser("media-state", help="inspect current audio/video elements in one page target")
+    media_state = sub.add_parser(
+        "media-state", help="inspect current audio/video elements in one page target"
+    )
     add_target_locator_arguments(media_state)
 
-    record_page = sub.add_parser("record-page", help="capture a viewport recording for one page target")
+    record_page = sub.add_parser(
+        "record-page", help="capture a viewport recording for one page target"
+    )
     add_target_locator_arguments(record_page)
     record_page.add_argument("--seconds", type=float, default=5.0)
     record_page.add_argument("--fps", type=int, default=2)
-    record_page.add_argument("path", nargs="?", help="optional process-visible output path")
+    record_page.add_argument(
+        "path", nargs="?", help="optional process-visible output path"
+    )
 
-    challenge = sub.add_parser("challenge-state", help="inspect one page for challenge or verification markers")
+    challenge = sub.add_parser(
+        "challenge-state", help="inspect one page for challenge or verification markers"
+    )
     add_target_locator_arguments(challenge)
-    challenge.add_argument("--previous", help="previous checkpoint name or JSON path for progress-aware comparison")
+    challenge.add_argument(
+        "--previous",
+        help="previous checkpoint name or JSON path for progress-aware comparison",
+    )
 
     verify_page = sub.add_parser(
         "verify-page",
         help="compare the current page against a checkpoint or explicit recovery markers",
     )
     add_target_locator_arguments(verify_page)
-    verify_page.add_argument("--expected", help="checkpoint name or JSON path to compare against")
-    verify_page.add_argument("--url-substring", help="require the current URL to contain this substring")
-    verify_page.add_argument("--title-substring", help="require the current title to contain this substring")
+    verify_page.add_argument(
+        "--expected", help="checkpoint name or JSON path to compare against"
+    )
+    verify_page.add_argument(
+        "--url-substring", help="require the current URL to contain this substring"
+    )
+    verify_page.add_argument(
+        "--title-substring", help="require the current title to contain this substring"
+    )
     verify_page.add_argument(
         "--body-substring",
         action="append",
@@ -1470,19 +1680,29 @@ def parser() -> argparse.ArgumentParser:
         help="require one challenge signal to be absent; may be repeated",
     )
 
-    checkpoint_save = sub.add_parser("checkpoint-save", help="save a screenshot-backed checkpoint for one browser page")
+    checkpoint_save = sub.add_parser(
+        "checkpoint-save",
+        help="save a screenshot-backed checkpoint for one browser page",
+    )
     add_target_locator_arguments(checkpoint_save)
     checkpoint_save.add_argument("name")
     checkpoint_save.add_argument("--note")
 
     sub.add_parser("checkpoint-list", help="list saved browser checkpoints")
-    checkpoint_delete = sub.add_parser("checkpoint-delete", help="delete one saved browser checkpoint")
+    checkpoint_delete = sub.add_parser(
+        "checkpoint-delete", help="delete one saved browser checkpoint"
+    )
     checkpoint_delete.add_argument("name")
 
-    profile_backup = sub.add_parser("profile-backup", help="archive the persistent Chromium profile to browser files")
+    profile_backup = sub.add_parser(
+        "profile-backup",
+        help="archive the persistent Chromium profile to browser files",
+    )
     profile_backup.add_argument("name", nargs="?")
 
-    cleanup = sub.add_parser("cleanup", help="remove older browser artifacts from shared storage")
+    cleanup = sub.add_parser(
+        "cleanup", help="remove older browser artifacts from shared storage"
+    )
     cleanup.add_argument(
         "bucket",
         choices=[
@@ -1496,8 +1716,13 @@ def parser() -> argparse.ArgumentParser:
     )
     cleanup.add_argument("--older-than-hours", type=float, default=168.0)
 
-    sub.add_parser("live-view", help="show the authenticated interactive Chromium console URL")
-    sub.add_parser("diagnostics", help="report CDP, profile, policy, extension, and storage details")
+    sub.add_parser(
+        "live-view", help="show the authenticated interactive Chromium console URL"
+    )
+    sub.add_parser(
+        "diagnostics",
+        help="report CDP, profile, policy, extension, and storage details",
+    )
     return root
 
 
@@ -1505,7 +1730,15 @@ def main() -> int:
     args = parser().parse_args()
     try:
         result = HANDLERS[args.command](args)
-    except (ValueError, RuntimeError, requests.RequestException, OSError, tarfile.TarError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+    except (
+        ValueError,
+        RuntimeError,
+        requests.RequestException,
+        OSError,
+        tarfile.TarError,
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+    ) as exc:
         print(f"browser-support: {safe_text(exc)}", file=sys.stderr)
         return 1
     except Exception as exc:

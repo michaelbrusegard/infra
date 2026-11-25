@@ -1,0 +1,13 @@
+rules:
+  artipacked:
+    # These workflows check out with a deploy key because they push a digest or
+    # lock bump back to main, so the credential has to stay in the checkout.
+    ignore:
+      - cliproxy-plugins-image.yaml
+      - hermes-agent-image.yaml
+      - hermes-android-image.yaml
+      - netbird-proxy-image.yaml
+      - postgres-image.yaml
+      - smtp-edge-image.yaml
+      - update-agents.yaml
+      - update-flake.yaml

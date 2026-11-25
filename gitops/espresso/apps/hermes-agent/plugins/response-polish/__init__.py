@@ -6,7 +6,6 @@ from typing import Any
 
 from tools.registry import tool_error, tool_result
 
-
 POLISH_RESPONSE_SCHEMA: dict[str, Any] = {
     "name": "polish_response",
     "description": (

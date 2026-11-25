@@ -11,7 +11,6 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "browser-support.py"
 SPEC = importlib.util.spec_from_file_location("hermes_browser_support", SCRIPT_PATH)
 assert SPEC and SPEC.loader
@@ -31,7 +30,9 @@ class BrowserSupportTests(unittest.TestCase):
         (self.hermes_home / "cache").mkdir(parents=True)
         (self.browser_files / "browser-checkpoints").mkdir(parents=True)
         (self.browser_profile / "profile").mkdir(parents=True)
-        (self.browser_profile / "profile" / "Preferences").write_text("{}", encoding="utf-8")
+        (self.browser_profile / "profile" / "Preferences").write_text(
+            "{}", encoding="utf-8"
+        )
         self.browser_policy.mkdir(parents=True)
         self.previous = {
             "HERMES_HOME": os.environ.get("HERMES_HOME"),
@@ -46,7 +47,9 @@ class BrowserSupportTests(unittest.TestCase):
         os.environ["BROWSER_POLICY_ROOT"] = str(self.browser_policy)
 
     def test_live_view_reports_configured_interactive_console(self) -> None:
-        os.environ["BROWSER_VIEW_URL"] = "https://browser.example/vnc.html?autoconnect=true"
+        os.environ["BROWSER_VIEW_URL"] = (
+            "https://browser.example/vnc.html?autoconnect=true"
+        )
         supervisor = self.browser_files / "browser-supervisor" / "status.json"
         supervisor.parent.mkdir(parents=True)
         supervisor.write_text(json.dumps({"state": "running"}), encoding="utf-8")
@@ -72,7 +75,9 @@ class BrowserSupportTests(unittest.TestCase):
                 os.environ[key] = value
         self.tempdir.cleanup()
 
-    def test_build_challenge_summary_flags_verification_without_guarantees(self) -> None:
+    def test_build_challenge_summary_flags_verification_without_guarantees(
+        self,
+    ) -> None:
         summary = browser_support.build_challenge_summary(
             {
                 "title": "Just a moment...",
@@ -84,10 +89,15 @@ class BrowserSupportTests(unittest.TestCase):
 
         self.assertTrue(summary["challenge_detected"])
         self.assertIn("checking_browser", summary["signals"])
-        self.assertIn("Do not claim the challenge is solved", " ".join(summary["recommended_actions"]))
+        self.assertIn(
+            "Do not claim the challenge is solved",
+            " ".join(summary["recommended_actions"]),
+        )
 
     def test_resolve_output_path_defaults_under_browser_files(self) -> None:
-        destination = browser_support.resolve_output_path(None, "browser-checkpoints", ".json")
+        destination = browser_support.resolve_output_path(
+            None, "browser-checkpoints", ".json"
+        )
 
         self.assertTrue(destination.is_relative_to(self.browser_files))
         self.assertEqual(destination.suffix, ".json")
@@ -117,7 +127,9 @@ class BrowserSupportTests(unittest.TestCase):
         self.assertEqual(resolved, "target-123")
 
     @mock.patch.object(browser_support, "create_connection")
-    def test_cdp_client_omits_origin_for_local_chromium(self, connect: mock.Mock) -> None:
+    def test_cdp_client_omits_origin_for_local_chromium(
+        self, connect: mock.Mock
+    ) -> None:
         connection = mock.Mock()
         connection.recv.return_value = json.dumps({"id": 1, "result": {"ready": True}})
         connect.return_value = connection
@@ -164,7 +176,9 @@ class BrowserSupportTests(unittest.TestCase):
         connect.assert_called_once()
         self.assertEqual(connection.send.call_count, 2)
 
-    def test_challenge_progress_reports_possible_recovery_without_guarantees(self) -> None:
+    def test_challenge_progress_reports_possible_recovery_without_guarantees(
+        self,
+    ) -> None:
         progress = browser_support.challenge_progress(
             {
                 "title": "Just a moment...",
@@ -183,7 +197,9 @@ class BrowserSupportTests(unittest.TestCase):
         self.assertTrue(progress["possible_progress"])
         self.assertIn("Challenge markers dropped", " ".join(progress["notes"]))
 
-    def test_verify_page_state_matches_checkpoint_without_false_guarantees(self) -> None:
+    def test_verify_page_state_matches_checkpoint_without_false_guarantees(
+        self,
+    ) -> None:
         verification = browser_support.verify_page_state(
             {
                 "title": "Example Checkout",
@@ -225,7 +241,9 @@ class BrowserSupportTests(unittest.TestCase):
         self.assertFalse(verification["matched"])
         self.assertEqual(verification["confidence"], "low")
         self.assertTrue(verification["challenge"]["challenge_detected"])
-        self.assertIn("Challenge markers are still present", " ".join(verification["warnings"]))
+        self.assertIn(
+            "Challenge markers are still present", " ".join(verification["warnings"])
+        )
 
     def test_profile_backup_writes_tarball(self) -> None:
         result = browser_support.handle_profile_backup(argparse.Namespace(name=None))
@@ -287,8 +305,12 @@ class BrowserSupportTests(unittest.TestCase):
         events.write_text(
             "\n".join(
                 [
-                    json.dumps({"event": "command.started", "task_id": "shopping-task"}),
-                    json.dumps({"event": "command.completed", "task_id": "shopping-task"}),
+                    json.dumps(
+                        {"event": "command.started", "task_id": "shopping-task"}
+                    ),
+                    json.dumps(
+                        {"event": "command.completed", "task_id": "shopping-task"}
+                    ),
                 ]
             )
             + "\n",
@@ -349,7 +371,9 @@ class BrowserSupportTests(unittest.TestCase):
     ) -> None:
         fake_client = mock.Mock()
         client_cls.return_value = fake_client
-        fake_target = browser_support.Target("target-1", "Title", "https://example.com", "page", "ws://target")
+        fake_target = browser_support.Target(
+            "target-1", "Title", "https://example.com", "page", "ws://target"
+        )
         resolve_target.return_value = ("target-1", fake_target)
 
         result = browser_support.handle_click(
@@ -364,10 +388,16 @@ class BrowserSupportTests(unittest.TestCase):
             )
         )
 
-        self.assertEqual(result["click"], {"x": 120, "y": 340, "button": "left", "click_count": 1})
+        self.assertEqual(
+            result["click"], {"x": 120, "y": 340, "button": "left", "click_count": 1}
+        )
         self.assertEqual(
             [call.args[1] for call in fake_client.call.call_args_list],
-            ["Input.dispatchMouseEvent", "Input.dispatchMouseEvent", "Input.dispatchMouseEvent"],
+            [
+                "Input.dispatchMouseEvent",
+                "Input.dispatchMouseEvent",
+                "Input.dispatchMouseEvent",
+            ],
         )
         self.assertEqual(fake_client.call.call_args_list[1].args[2]["buttons"], 1)
         self.assertEqual(fake_client.call.call_args_list[2].args[2]["buttons"], 0)
@@ -409,7 +439,9 @@ class BrowserSupportTests(unittest.TestCase):
     ) -> None:
         fake_client = mock.Mock()
         client_cls.return_value = fake_client
-        fake_target = browser_support.Target("target-1", "Title", "https://example.com", "page", "ws://target")
+        fake_target = browser_support.Target(
+            "target-1", "Title", "https://example.com", "page", "ws://target"
+        )
         resolve_target.return_value = ("target-1", fake_target)
 
         with mock.patch.object(browser_support.time, "sleep") as sleep:
@@ -441,7 +473,9 @@ class BrowserSupportTests(unittest.TestCase):
     ) -> None:
         fake_client = mock.Mock()
         client_cls.return_value = fake_client
-        fake_target = browser_support.Target("target-1", "Title", "https://example.com", "page", "ws://target")
+        fake_target = browser_support.Target(
+            "target-1", "Title", "https://example.com", "page", "ws://target"
+        )
         resolve_target.return_value = ("target-1", fake_target)
 
         with mock.patch.object(browser_support.time, "sleep") as sleep:
@@ -518,9 +552,13 @@ class BrowserSupportTests(unittest.TestCase):
         destination = self.browser_files / "browser-recordings" / "clip.webm"
         destination.parent.mkdir(parents=True, exist_ok=True)
         fake_client = mock.Mock()
-        fake_client.call.return_value = {"data": base64.b64encode(b"fake-png").decode("ascii")}
+        fake_client.call.return_value = {
+            "data": base64.b64encode(b"fake-png").decode("ascii")
+        }
         client_cls.return_value = fake_client
-        fake_target = browser_support.Target("target-1", "Title", "https://example.com", "page", "ws://target")
+        fake_target = browser_support.Target(
+            "target-1", "Title", "https://example.com", "page", "ws://target"
+        )
         resolve_target.return_value = ("target-1", fake_target)
 
         def write_destination(*_args: object, **_kwargs: object) -> mock.Mock:
@@ -529,7 +567,9 @@ class BrowserSupportTests(unittest.TestCase):
 
         run.side_effect = write_destination
 
-        with mock.patch.object(browser_support, "resolve_output_path", return_value=destination):
+        with mock.patch.object(
+            browser_support, "resolve_output_path", return_value=destination
+        ):
             result = browser_support.handle_record_page(
                 argparse.Namespace(
                     cdp_url="http://127.0.0.1:9222",
@@ -562,15 +602,21 @@ class BrowserSupportTests(unittest.TestCase):
         android_viewer = self.browser_files / "android-viewer" / "status.json"
         supervisor.parent.mkdir(parents=True, exist_ok=True)
         android_viewer.parent.mkdir(parents=True, exist_ok=True)
-        supervisor.write_text(json.dumps({"state": "running", "restart_count": 1}), encoding="utf-8")
-        android_viewer.write_text(json.dumps({"state": "running", "serial": "device"}), encoding="utf-8")
+        supervisor.write_text(
+            json.dumps({"state": "running", "restart_count": 1}), encoding="utf-8"
+        )
+        android_viewer.write_text(
+            json.dumps({"state": "running", "serial": "device"}), encoding="utf-8"
+        )
 
         result = browser_support.handle_diagnostics(
             argparse.Namespace(cdp_url="http://127.0.0.1:9222")
         )
 
         self.assertEqual(result["supervisor"], {"state": "running", "restart_count": 1})
-        self.assertEqual(result["android_viewer"], {"state": "running", "serial": "device"})
+        self.assertEqual(
+            result["android_viewer"], {"state": "running", "serial": "device"}
+        )
         self.assertTrue(result["extensions"]["all_expected_loaded"])
 
     @mock.patch.object(browser_support, "evaluate_expression")

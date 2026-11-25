@@ -27,8 +27,6 @@ func fixtures(t *testing.T) []fixture {
 	return out
 }
 
-// decode keeps numbers as written, so a rewritten numeral fails the
-// comparison.
 func decode(t *testing.T, data []byte) any {
 	t.Helper()
 	dec := json.NewDecoder(bytes.NewReader(data))
@@ -63,8 +61,6 @@ func TestSplitRoundTripsFixtures(t *testing.T) {
 			if !reflect.DeepEqual(decode(t, joined), decode(t, body)) {
 				t.Fatalf("reassembled body differs:\n%s", joined)
 			}
-			// Splitting must agree on any body, including one that has
-			// already been through a round trip.
 			if again := Split(joined); !reflect.DeepEqual(again, split) {
 				t.Fatalf("splitting the reassembled body changed it: %+v", again)
 			}
@@ -107,7 +103,6 @@ func TestSplitMovesOnlyLargeScalars(t *testing.T) {
 }
 
 func TestSplitKeepsEscapedKeysInEnvelope(t *testing.T) {
-	// The view writes field names without escaping them.
 	split := Split([]byte(`{"mess\u0061ges":[1],"a\"b":[2]}`))
 	if split.Envelope != `{"mess\u0061ges":[1],"a\"b":[2]}` || len(split.Parts) != 0 {
 		t.Fatalf("split into %+v", split)
@@ -137,7 +132,6 @@ func TestSplitReplacesInvalidUTF8(t *testing.T) {
 }
 
 func TestHashMatchesClickHouse(t *testing.T) {
-	// SELECT reinterpretAsUInt128(substring(SHA256(item), 1, 16))
 	for item, want := range map[string]string{
 		"":                "48815046298653952574165987754911248611",
 		`{"role":"user"}`: "272458832270458307467492949439356678251",
@@ -153,7 +147,6 @@ func TestHashMatchesClickHouse(t *testing.T) {
 }
 
 func TestSplitKeepsRepeatedKeysVerbatim(t *testing.T) {
-	// Which value wins depends on member order, which splitting changes.
 	for _, body := range []string{`{"a":[1],"a":2}`, `{"messages":[1],"messages":[2]}`} {
 		split := Split([]byte(body))
 		if split.Envelope != "" || len(split.Parts) != 1 || string(split.Items[0]) != body {
@@ -163,8 +156,6 @@ func TestSplitKeepsRepeatedKeysVerbatim(t *testing.T) {
 }
 
 func TestSplitKeepsBodiesWithOversizedPartsWhole(t *testing.T) {
-	// Ten thousand one-byte elements under a long key would need far more
-	// bytes of parts than the body itself.
 	body := `{"` + strings.Repeat("k", 1000) + `":[` + strings.TrimSuffix(strings.Repeat("1,", 10000), ",") + `]}`
 	split := Split([]byte(body))
 	if split.Envelope != "" || len(split.Parts) != 1 || string(split.Items[0]) != body {

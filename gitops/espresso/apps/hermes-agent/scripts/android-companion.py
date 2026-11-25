@@ -15,7 +15,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 ANDROID_SCRIPT = SCRIPT_DIR / "android.py"
 SPEC = importlib.util.spec_from_file_location("hermes_android", ANDROID_SCRIPT)
@@ -148,7 +147,11 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/healthz":
                 self.send_json(
                     HTTPStatus.OK,
-                    {"ok": True, "service": "android-companion", "launcher": launcher_status()},
+                    {
+                        "ok": True,
+                        "service": "android-companion",
+                        "launcher": launcher_status(),
+                    },
                 )
                 return
             if self.path == "/readyz":
@@ -160,13 +163,18 @@ class Handler(BaseHTTPRequestHandler):
                     )
                     return
                 payload = android.health_report(default_serial())
-                if not payload.get("boot_completed") or "accessibility_error" in payload:
+                if (
+                    not payload.get("boot_completed")
+                    or "accessibility_error" in payload
+                ):
                     self.send_json(
                         HTTPStatus.SERVICE_UNAVAILABLE,
                         {"ok": False, "launcher": launcher, **payload},
                     )
                     return
-                self.send_json(HTTPStatus.OK, {"ok": True, "launcher": launcher, **payload})
+                self.send_json(
+                    HTTPStatus.OK, {"ok": True, "launcher": launcher, **payload}
+                )
                 return
             if self.path == "/metrics":
                 self.send_text(

@@ -9,8 +9,9 @@ from unittest.mock import patch
 
 import ai_images
 
-
-PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a+l8AAAAASUVORK5CYII=")
+PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a+l8AAAAASUVORK5CYII="
+)
 
 
 class ImageClientTests(unittest.TestCase):
@@ -31,8 +32,11 @@ class ImageClientTests(unittest.TestCase):
                 if owner.status == 302:
                     self.send_header("Location", "https://other.example.test/")
                 self.end_headers()
-                response = ({"data": [{"b64_json": base64.b64encode(PNG).decode()}]}
-                            if owner.status == 200 else {"error": "model not allowed"})
+                response = (
+                    {"data": [{"b64_json": base64.b64encode(PNG).decode()}]}
+                    if owner.status == 200
+                    else {"error": "model not allowed"}
+                )
                 self.wfile.write(json.dumps(response).encode())
 
             def log_message(self, *args):
@@ -43,7 +47,9 @@ class ImageClientTests(unittest.TestCase):
         thread.start()
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
-        gateway = patch.object(ai_images, "GATEWAY", f"http://127.0.0.1:{server.server_port}/v1")
+        gateway = patch.object(
+            ai_images, "GATEWAY", f"http://127.0.0.1:{server.server_port}/v1"
+        )
         gateway.start()
         self.addCleanup(gateway.stop)
 
@@ -64,14 +70,22 @@ class ImageClientTests(unittest.TestCase):
         second = self.output.with_name("style.png")
         first.write_bytes(PNG)
         second.write_bytes(PNG + b"distinct-reference")
-        ai_images.request_image("Image 1 is the target; image 2 is the style",
-                                str(self.output), [str(first), str(second)])
+        ai_images.request_image(
+            "Image 1 is the target; image 2 is the style",
+            str(self.output),
+            [str(first), str(second)],
+        )
         path, headers, body = self.requests[0]
         self.assertEqual(path, "/v1/images/edits")
         self.assertEqual(headers["Content-Type"], "application/json")
-        self.assertEqual(list(body)[0], "model")
-        self.assertEqual([base64.b64decode(item["image_url"].split(",", 1)[1])
-                          for item in body["images"]], [first.read_bytes(), second.read_bytes()])
+        self.assertEqual(next(iter(body)), "model")
+        self.assertEqual(
+            [
+                base64.b64decode(item["image_url"].split(",", 1)[1])
+                for item in body["images"]
+            ],
+            [first.read_bytes(), second.read_bytes()],
+        )
 
     def test_policy_denial_preserves_status_and_creates_no_output(self):
         self.status = 403
@@ -100,9 +114,11 @@ class ImageClientTests(unittest.TestCase):
         self.assertEqual(self.requests, [])
 
     def test_oversized_request_is_rejected_before_upload(self):
-        with patch.object(ai_images, "MAX_REQUEST_BYTES", 10):
-            with self.assertRaisesRegex(ValueError, "exceeds 30 MiB"):
-                ai_images.request_image("test", str(self.output))
+        with (
+            patch.object(ai_images, "MAX_REQUEST_BYTES", 10),
+            self.assertRaisesRegex(ValueError, "exceeds 30 MiB"),
+        ):
+            ai_images.request_image("test", str(self.output))
         self.assertEqual(self.requests, [])
 
 

@@ -13,7 +13,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
-
 MEAL_TYPES = ("breakfast", "lunch", "dinner", "side", "snack", "drink", "dessert")
 IMAGE_TYPES = {
     ".avif": "image/avif",
@@ -294,9 +293,7 @@ def request_for(args: argparse.Namespace, client: MealieClient) -> Any:
             raise ValueError("recipe-edit requires at least one change")
         return update_recipe(client, args.slug, changes)
     if command == "recipe-image":
-        return client.put_image(
-            f"/api/recipes/{encoded(args.slug)}/image", args.file
-        )
+        return client.put_image(f"/api/recipes/{encoded(args.slug)}/image", args.file)
     if command == "recipe-delete":
         require_confirmation(args, "a recipe")
         return client.delete(f"/api/recipes/{encoded(args.slug)}")

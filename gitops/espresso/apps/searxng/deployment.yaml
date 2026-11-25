@@ -15,7 +15,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       # hostNetwork: binding arbitrary source addresses from the delegated GUA
-      # range (hosts/espresso/ipv6-rotation.nix) requires the host namespace.
+      # range (modules/hosts/espresso/ipv6-rotation.nix) requires the host namespace.
       # The pod is reached through its node IP; the cilium host firewall
       # already allows cluster and remote-node traffic to it.
       hostNetwork: true

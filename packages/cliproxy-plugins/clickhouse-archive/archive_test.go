@@ -21,16 +21,12 @@ import (
 	"cliproxy-plugins/requestitems"
 )
 
-// gitops/espresso/tests/ai-usage.py inserts these rows into the real
-// ClickHouse schema as the cliproxy user.
 var dump = flag.String("dump", "", "write the rows inserted for the body fixtures to this directory")
 
 func TestQueueByteBudgetIncludesRowsWaitingForFlush(t *testing.T) {
 	a := newArchive()
-	// A slow ClickHouse insert leaves the consumer busy while completed
-	// requests accumulate in the channel, before reaching the batch buffer.
 	body := strings.Repeat("x", 1<<20)
-	for i := 0; i < maxQueueBytes/len(body)+1; i++ {
+	for range maxQueueBytes/len(body) + 1 {
 		a.enqueue("llm.requests", body)
 	}
 	var total int
@@ -47,7 +43,7 @@ func TestFlushRetainsByteBudgetUntilInsertSucceeds(t *testing.T) {
 	var attempts atomic.Int32
 	failed := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(io.Discard, r.Body)
+		_, _ = io.Copy(io.Discard, r.Body)
 		if attempts.Add(1) == 1 {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			close(failed)
@@ -59,7 +55,6 @@ func TestFlushRetainsByteBudgetUntilInsertSucceeds(t *testing.T) {
 	a.rows = make(chan row, 1)
 	a.enqueue("llm.requests", "first")
 	reserved := a.queuedBytes.Load()
-	// A full channel must return the second row's reservation.
 	a.enqueue("llm.requests", "second")
 	if got := a.queuedBytes.Load(); got != reserved {
 		t.Fatalf("full channel changed reserved bytes: got %d, want %d", got, reserved)
@@ -75,7 +70,6 @@ func TestFlushRetainsByteBudgetUntilInsertSucceeds(t *testing.T) {
 	if got := a.queuedBytes.Load(); got != reserved {
 		t.Fatalf("failed insert lost reserved bytes: got %d, want %d", got, reserved)
 	}
-	// Shutdown retries the failed batch and waits for its successful insert.
 	a.Shutdown()
 	if got := a.queuedBytes.Load(); got != 0 {
 		t.Fatalf("successful insert retained %d reserved bytes", got)
@@ -90,8 +84,6 @@ type insert struct {
 	body  string
 }
 
-// recorder is a fake ClickHouse that fails the first failures inserts into
-// failTable.
 type recorder struct {
 	mu        sync.Mutex
 	inserts   []insert
@@ -148,7 +140,6 @@ func (a *archive) request(id, body string) {
 	a.complete(requestCompletion{RequestID: id, Outcome: "success", StatusCode: 200, StartedAt: time.Now(), CompletedAt: time.Now()})
 }
 
-// flushOnce inserts everything queued so far, without the background loop.
 func (a *archive) flushOnce() {
 	a.started.Store(true)
 	go a.flushLoop()
@@ -174,7 +165,6 @@ func TestItemsAreInsertedOnceAndBeforeTheirRequests(t *testing.T) {
 	a := testArchive(t, rec)
 	a.request("first", `{"model":"m","messages":["a","b"]}`)
 	a.flushOnce()
-	// The next turn resends both messages and adds one.
 	a.request("second", `{"model":"m","messages":["a","b","c"]}`)
 	a.flushOnce()
 	var tables []string
@@ -216,14 +206,12 @@ func TestFailedItemsInsertHoldsBackRequests(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	// Unrelated tables still flush, but the request waits for its items.
 	if rows := rec.rows(t, "llm.requests"); len(rows) != 0 {
 		t.Fatalf("request row inserted before its items: %v", rows)
 	}
 	if a.queuedBytes.Load() == 0 {
 		t.Fatal("held-back rows lost their reservation")
 	}
-	// Shutdown retries both, items first.
 	a.Shutdown()
 	if len(rec.inserts) != 3 || rec.inserts[1].table != "llm.request_items" || rec.inserts[2].table != "llm.requests" {
 		t.Fatalf("inserts %v", rec.inserts)
@@ -234,7 +222,6 @@ func TestFailedItemsInsertHoldsBackRequests(t *testing.T) {
 }
 
 func TestFailedItemsAreNotMarkedSent(t *testing.T) {
-	// A hash may only be skipped once its item is stored.
 	rec := &recorder{failTable: "llm.request_items", failures: 1}
 	a := testArchive(t, rec)
 	a.request("first", `{"messages":["a"]}`)
@@ -252,9 +239,8 @@ func TestSentItemsKeepReusedHashes(t *testing.T) {
 		return requestitems.HashOf([]byte{byte(i), byte(i >> 8), byte(i >> 16)})
 	}
 	s.add(hash(-1))
-	for i := 0; i < 2*sentItemsPerGeneration; i++ {
+	for i := range 2 * sentItemsPerGeneration {
 		s.add(hash(i))
-		// A hash in use moves forward with each generation.
 		if !s.has(hash(-1)) {
 			t.Fatalf("reused hash forgotten after %d others", i)
 		}
@@ -324,8 +310,6 @@ func TestRequestRowsMatchTheSplit(t *testing.T) {
 func TestSplitRowsStayWithinTheByteBudget(t *testing.T) {
 	rec := &recorder{}
 	a := testArchive(t, rec)
-	// Escaped quotes double in size when an item is encoded as a JSON string,
-	// so these items outgrow the raw body the hook reserved.
 	var messages []string
 	for i := range 1000 {
 		messages = append(messages, fmt.Sprintf(`"%d%s"`, i, strings.Repeat(`\"`, 50)))

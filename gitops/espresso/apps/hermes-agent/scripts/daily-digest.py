@@ -3,10 +3,9 @@
 
 import json
 import subprocess
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-
-NOW = datetime.now(timezone.utc)
+NOW = datetime.now(UTC)
 RECENT = NOW - timedelta(hours=24)
 
 
@@ -106,7 +105,12 @@ def main() -> None:
             fields = line.split()
             if len(fields) >= 5:
                 metrics[fields[0]] = f"CPU {fields[2]}, memory {fields[4]}"
-        node_lines = [f"{line} ({metrics[line.split(':', 1)[0].strip()]})" if line.split(':', 1)[0].strip() in metrics else line for line in node_lines]
+        node_lines = [
+            f"{line} ({metrics[line.split(':', 1)[0].strip()]})"
+            if line.split(":", 1)[0].strip() in metrics
+            else line
+            for line in node_lines
+        ]
     print_section("NODES", node_lines)
 
     pods = kubectl_json("get", "pods", "-A")
@@ -121,7 +125,11 @@ def main() -> None:
             name = pod["metadata"]["name"]
             phase = pod.get("status", {}).get("phase", "Unknown")
             statuses = pod.get("status", {}).get("containerStatuses", [])
-            ready = all(status.get("ready", False) for status in statuses) if statuses else False
+            ready = (
+                all(status.get("ready", False) for status in statuses)
+                if statuses
+                else False
+            )
             completed = phase == "Succeeded"
             if phase != "Running" and not completed:
                 current_issues.append(f"pod {namespace}/{name} is {phase}")
@@ -130,13 +138,20 @@ def main() -> None:
 
             status_groups = (
                 ("container", statuses),
-                ("initContainer", pod.get("status", {}).get("initContainerStatuses", [])),
+                (
+                    "initContainer",
+                    pod.get("status", {}).get("initContainerStatuses", []),
+                ),
             )
             for status_kind, grouped_statuses in status_groups:
                 for status in grouped_statuses:
                     last = status.get("lastState", {}).get("terminated", {})
                     finished = timestamp(last.get("finishedAt"))
-                    if status.get("restartCount", 0) and finished and finished >= RECENT:
+                    if (
+                        status.get("restartCount", 0)
+                        and finished
+                        and finished >= RECENT
+                    ):
                         reason = last.get("reason", "unknown")
                         exit_code = last.get("exitCode", "?")
                         context = termination_context(reason, exit_code)
@@ -147,7 +162,9 @@ def main() -> None:
                         )
 
     pod_issue_count = sum(item.startswith("pod ") for item in current_issues)
-    print_section("PODS", [f"  {pod_count} observed", f"  current issues: {pod_issue_count}"])
+    print_section(
+        "PODS", [f"  {pod_count} observed", f"  current issues: {pod_issue_count}"]
+    )
     print_section("RECENT_RESTARTS", recent_restarts)
 
     pvcs = kubectl_json("get", "pvc", "-A")
@@ -173,7 +190,10 @@ def main() -> None:
                 current_issues.append(f"job {namespace}/{name} has failed")
 
     flux_lines: list[str] = []
-    for resource, label in (("kustomizations", "kustomizations"), ("helmreleases", "Helm releases")):
+    for resource, label in (
+        ("kustomizations", "kustomizations"),
+        ("helmreleases", "Helm releases"),
+    ):
         data = kubectl_json("get", resource, "-A")
         if "error" in data:
             errors.append(f"Flux {label}: {data['error']}")
@@ -183,10 +203,14 @@ def main() -> None:
         for item in items:
             ready = condition_status(item, "Ready")
             if ready != "True":
-                identifier = f"{item['metadata']['namespace']}/{item['metadata']['name']}"
+                identifier = (
+                    f"{item['metadata']['namespace']}/{item['metadata']['name']}"
+                )
                 failed.append(identifier)
                 current_issues.append(f"Flux {resource[:-1]} {identifier} is not Ready")
-        flux_lines.append(f"  {len(items)} {label}: {'OK' if not failed else 'not Ready: ' + ', '.join(failed)}")
+        flux_lines.append(
+            f"  {len(items)} {label}: {'OK' if not failed else 'not Ready: ' + ', '.join(failed)}"
+        )
     print_section("GITOPS", flux_lines)
 
     events = kubectl_json("get", "events", "-A", "--field-selector", "type=Warning")
@@ -207,7 +231,9 @@ def main() -> None:
         for event_time, event in sorted(recent_events, key=lambda item: item[0]):
             regarding = event.get("regarding") or event.get("involvedObject") or {}
             message = event.get("note") or event.get("message") or "no detail"
-            event_count = event.get("series", {}).get("count") or event.get("count") or 1
+            event_count = (
+                event.get("series", {}).get("count") or event.get("count") or 1
+            )
             first_observed = timestamp(
                 event.get("firstTimestamp")
                 or event["metadata"].get("creationTimestamp")

@@ -4,18 +4,29 @@
   bash,
   python3,
   shellcheck,
-}: let
+}:
+let
   source = lib.cleanSourceWith {
     src = ./.;
-    filter = path: type:
-      type
-      == "directory"
-      || lib.any (suffix: lib.hasSuffix suffix path) [".sh" ".py" ".cf"];
+    filter =
+      path: type:
+      type == "directory"
+      || lib.any (suffix: lib.hasSuffix suffix path) [
+        ".sh"
+        ".py"
+        ".cf"
+      ];
   };
 in
-  runCommand "smtp-edge-source-check" {
-    nativeBuildInputs = [bash python3 shellcheck];
-  } ''
+runCommand "smtp-edge-source-check"
+  {
+    nativeBuildInputs = [
+      bash
+      python3
+      shellcheck
+    ];
+  }
+  ''
     cp -r ${source} source
     chmod -R u+w source
     cd source

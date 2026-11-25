@@ -6,23 +6,15 @@ import urllib.error
 from pathlib import Path
 from unittest import mock
 
-
-CONFIGMAP = Path(__file__).parents[1] / "listenbrainz-bridge-configmap.yaml"
-
-
-def script_source(name, next_key=None):
-    text = CONFIGMAP.read_text(encoding="utf-8")
-    marker = f"  {name}: |\n"
-    start = text.index(marker) + len(marker)
-    end = text.index(f"  {next_key}: |\n", start) if next_key else len(text)
-    return "".join(
-        line[4:] if line.startswith("    ") else line
-        for line in text[start:end].splitlines(keepends=True)
-    )
+SCRIPTS = Path(__file__).parents[1] / "scripts"
+BRIDGE = SCRIPTS / "listenbrainz-bridge.py"
+CLEANUP = SCRIPTS / "listenbrainz-cleanup.py"
 
 
-def bridge_source():
-    return script_source("bridge.py", "cleanup.py")
+def run_script(path, name):
+    namespace = {"__name__": name}
+    exec(compile(path.read_text(encoding="utf-8"), str(path), "exec"), namespace)
+    return namespace
 
 
 def load_bridge(root):
@@ -32,17 +24,13 @@ def load_bridge(root):
         "METRICS_PATH": str(root / "listenbrainz.txt"),
         "NAVIDROME_DB": str(root / "navidrome.db"),
     }
-    namespace = {"__name__": "listenbrainz_bridge"}
     with mock.patch.dict(os.environ, environment, clear=False):
-        exec(compile(bridge_source(), str(CONFIGMAP), "exec"), namespace)
-    return namespace
+        return run_script(BRIDGE, "listenbrainz_bridge")
 
 
 def load_cleanup(root):
-    namespace = {"__name__": "listenbrainz_cleanup"}
     with mock.patch.dict(os.environ, {"MUSIC_ROOT": str(root / "music")}, clear=False):
-        exec(compile(script_source("cleanup.py"), str(CONFIGMAP), "exec"), namespace)
-    return namespace
+        return run_script(CLEANUP, "listenbrainz_cleanup")
 
 
 class FakeResponse:
@@ -75,9 +63,10 @@ class ListenBrainzBridgeTest(unittest.TestCase):
                 FakeResponse(b'{"ok": true}'),
             ]
         )
-        with mock.patch.object(self.bridge["urllib"].request, "urlopen", urlopen), mock.patch.object(
-            self.bridge["time"], "sleep"
-        ) as sleep:
+        with (
+            mock.patch.object(self.bridge["urllib"].request, "urlopen", urlopen),
+            mock.patch.object(self.bridge["time"], "sleep") as sleep,
+        ):
             result = self.bridge["http_json"]("GET", "https://example.test/data")
 
         self.assertEqual({"ok": True}, result)
@@ -91,7 +80,9 @@ class ListenBrainzBridgeTest(unittest.TestCase):
 
         index = self.bridge["local_index"]()
 
-        self.assertEqual(path, self.bridge["find_local"](index, "Kaleo", "Way Down We Go"))
+        self.assertEqual(
+            path, self.bridge["find_local"](index, "Kaleo", "Way Down We Go")
+        )
 
     def test_upsert_records_local_opus_as_lossy_fallback(self):
         path = self.root / "music" / "Singles" / "Kaleo" / "Way Down We Go.opus"
@@ -99,7 +90,11 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         path.touch()
         conn = self.bridge["db"]()
         self.addCleanup(conn.close)
-        rec = {"artist": "Kaleo", "title": "Way Down We Go", "recording_mbid": "recording"}
+        rec = {
+            "artist": "Kaleo",
+            "title": "Way Down We Go",
+            "recording_mbid": "recording",
+        }
 
         self.bridge["upsert_seen"](
             conn,
@@ -163,7 +158,14 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         self.assertEqual(str(path), row["local_path"])
 
     def test_job_from_earlier_request_is_ignored(self):
-        remix = self.root / "music" / "Albums" / "Tame Impala" / "Dracula (remix)" / "Dracula (JENNIE remix).flac"
+        remix = (
+            self.root
+            / "music"
+            / "Albums"
+            / "Tame Impala"
+            / "Dracula (remix)"
+            / "Dracula (JENNIE remix).flac"
+        )
         remix.parent.mkdir(parents=True)
         remix.touch()
         conn = self.bridge["db"]()
@@ -202,19 +204,24 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         self.assertIsNone(row["local_path"])
 
     def test_file_that_already_existed_is_never_cleanup_eligible(self):
-        path = self.root / "music" / "Albums" / "Compilations" / "Greatest Hits" / "07 Don't Stop Me Now.flac"
+        path = (
+            self.root
+            / "music"
+            / "Albums"
+            / "Compilations"
+            / "Greatest Hits"
+            / "07 Don't Stop Me Now.flac"
+        )
         path.parent.mkdir(parents=True)
         path.touch()
         conn = self.bridge["db"]()
         self.addCleanup(conn.close)
-        # A row recorded before the fix, with a download date for a file the
-        # bridge never downloaded.
         conn.execute(
             """
             insert into recommendation_seen(
               id, playlist_type, artist, title, status, local_path,
               first_seen, last_seen, queued_at, downloaded_at
-            ) values ('recording', 'daily_jams', 'Queen', 'Don’t Stop Me Now', 'downloaded', ?, ?, ?, ?, ?)
+            ) values ('recording', 'daily_jams', 'Queen', 'Don\u2019t Stop Me Now', 'downloaded', ?, ?, ?, ?, ?)
             """,
             (
                 str(path),
@@ -228,7 +235,7 @@ class ListenBrainzBridgeTest(unittest.TestCase):
             "jobs": [
                 {
                     "artist": "Queen",
-                    "title": "Don’t Stop Me Now",
+                    "title": "Don\u2019t Stop Me Now",
                     "status": "completed",
                     "created_at": "2026-08-19T14:35:30Z",
                     "completed_at": "2026-08-19T14:36:00Z",
@@ -248,8 +255,17 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         self.assertIsNone(row["downloaded_at"])
 
     def test_library_copy_found_later_is_never_cleanup_eligible(self):
-        downloaded = self.root / "music" / "Singles" / "Lady Gaga" / "Die With a Smile.opus"
-        library = self.root / "music" / "Albums" / "Lady Gaga" / "Die With A Smile - Single" / "01 Die With A Smile.flac"
+        downloaded = (
+            self.root / "music" / "Singles" / "Lady Gaga" / "Die With a Smile.opus"
+        )
+        library = (
+            self.root
+            / "music"
+            / "Albums"
+            / "Lady Gaga"
+            / "Die With A Smile - Single"
+            / "01 Die With A Smile.flac"
+        )
         conn = self.bridge["db"]()
         self.addCleanup(conn.close)
         conn.execute(
@@ -267,23 +283,38 @@ class ListenBrainzBridgeTest(unittest.TestCase):
                 "2026-08-02T14:40:00+00:00",
             ),
         )
-        rec = {"artist": "Lady Gaga & Bruno Mars", "title": "Die With a Smile", "recording_mbid": "recording"}
+        rec = {
+            "artist": "Lady Gaga & Bruno Mars",
+            "title": "Die With a Smile",
+            "recording_mbid": "recording",
+        }
 
         self.bridge["upsert_seen"](conn, "daily_jams", rec, "downloaded", downloaded)
         same = conn.execute("select downloaded_at from recommendation_seen").fetchone()
         self.bridge["upsert_seen"](conn, "daily_jams", rec, "downloaded", library)
-        other = conn.execute("select local_path, downloaded_at from recommendation_seen").fetchone()
+        other = conn.execute(
+            "select local_path, downloaded_at from recommendation_seen"
+        ).fetchone()
 
         self.assertEqual("2026-08-02T14:40:00+00:00", same["downloaded_at"])
         self.assertEqual(str(library), other["local_path"])
         self.assertIsNone(other["downloaded_at"])
 
     def test_local_index_matches_tagged_artist_and_title(self):
-        path = self.root / "music" / "Albums" / "Compilations" / "Greatest Hits" / "14 Iris.flac"
+        path = (
+            self.root
+            / "music"
+            / "Albums"
+            / "Compilations"
+            / "Greatest Hits"
+            / "14 Iris.flac"
+        )
         path.parent.mkdir(parents=True)
         path.touch()
         navidrome = sqlite3.connect(self.root / "navidrome.db")
-        navidrome.execute("create table media_file(path text, artist text, title text, missing bool)")
+        navidrome.execute(
+            "create table media_file(path text, artist text, title text, missing bool)"
+        )
         navidrome.execute(
             "insert into media_file values (?, 'Goo Goo Dolls', 'Iris', 0)",
             ("Albums/Compilations/Greatest Hits/14 Iris.flac",),
@@ -293,7 +324,9 @@ class ListenBrainzBridgeTest(unittest.TestCase):
 
         index = self.bridge["local_index"]()
 
-        self.assertEqual(path, self.bridge["find_local"](index, "Goo Goo Dolls", "Iris"))
+        self.assertEqual(
+            path, self.bridge["find_local"](index, "Goo Goo Dolls", "Iris")
+        )
 
     def test_completed_duplicate_resolves_already_exists_path(self):
         path = (
@@ -367,9 +400,13 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         path = self.root / "music" / "Singles" / "Kaleo" / "Way Down We Go.opus"
         path.parent.mkdir(parents=True)
         path.touch()
-        playlist = self.root / "music" / "Playlists" / "ListenBrainz Weekly Exploration.m3u"
+        playlist = (
+            self.root / "music" / "Playlists" / "ListenBrainz Weekly Exploration.m3u"
+        )
         playlist.parent.mkdir(parents=True)
-        playlist.write_text("#EXTM3U\n../Singles/Kaleo/Way Down We Go.opus\n", encoding="utf-8")
+        playlist.write_text(
+            "#EXTM3U\n../Singles/Kaleo/Way Down We Go.opus\n", encoding="utf-8"
+        )
 
         self.assertTrue(cleanup["protected_by_playlist"](path))
 
@@ -416,7 +453,10 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         self.assertEqual("Title old", jams[0]["title"])
 
     def test_weekly_playlist_limits_tracks_per_artist(self):
-        recs = [{"recording_mbid": f"r{index}", "latest_listened_at": None} for index in range(4)]
+        recs = [
+            {"recording_mbid": f"r{index}", "latest_listened_at": None}
+            for index in range(4)
+        ]
         metadata = {
             rec["recording_mbid"]: {
                 "recording": {"name": rec["recording_mbid"]},
@@ -431,14 +471,22 @@ class ListenBrainzBridgeTest(unittest.TestCase):
         self.assertEqual({"r0", "r1"}, {track["recording_mbid"] for track in tracks})
 
     def test_weekly_playlist_is_reused_within_the_week(self):
-        recs = [{"recording_mbid": f"r{index}", "latest_listened_at": None} for index in range(5)]
+        recs = [
+            {"recording_mbid": f"r{index}", "latest_listened_at": None}
+            for index in range(5)
+        ]
         calls = self.fake_listenbrainz(recs)
         conn = self.bridge["db"]()
         self.addCleanup(conn.close)
 
         source, first = self.bridge["weekly_playlist"](conn, "weekly_exploration")
-        ids = [self.bridge["upsert_seen"](conn, "weekly_exploration", rec, "seen") for rec in first]
-        self.bridge["replace_playlist_snapshot"](conn, "weekly_exploration", source, ids)
+        ids = [
+            self.bridge["upsert_seen"](conn, "weekly_exploration", rec, "seen")
+            for rec in first
+        ]
+        self.bridge["replace_playlist_snapshot"](
+            conn, "weekly_exploration", source, ids
+        )
         calls.clear()
         recs[:] = [{"recording_mbid": "new", "latest_listened_at": None}]
 

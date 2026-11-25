@@ -3,5 +3,5 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - statefulset.yaml
-  - service.yaml
+  - services.yaml
   - network-policy.yaml

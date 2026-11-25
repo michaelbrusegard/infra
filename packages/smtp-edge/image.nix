@@ -12,13 +12,14 @@
   gnugrep,
   gnused,
   gawk,
-}: let
+}:
+let
   # Store individual file contents, not paths rooted in a checkout/flake source.
   # Otherwise unrelated repository changes alter the image's store closure.
-  files = lib.genAttrs ["main.cf" "master.cf" "backup-master.cf" "deliver.sh" "entrypoint.sh"] (
+  files = lib.genAttrs [ "main.cf" "master.cf" "backup-master.cf" "deliver.sh" "entrypoint.sh" ] (
     name: builtins.toFile name (builtins.readFile (./. + "/${name}"))
   );
-  layout = runCommand "smtp-edge-layout" {} ''
+  layout = runCommand "smtp-edge-layout" { } ''
     mkdir -p $out/{bin,etc,opt/smtp-edge,var/lib/postfix,run,tmp}
     chmod 1777 $out/tmp
     ln -s /run/postfix $out/etc/postfix
@@ -60,24 +61,44 @@
       --replace-fail '#!/usr/bin/env bash' '#!${bash}/bin/bash'
   '';
 in
-  dockerTools.buildLayeredImage {
-    name = "smtp-edge";
-    tag = "postfix-${postfix.version}-curl-${curl.version}";
-    contents = buildEnv {
-      name = "smtp-edge-root";
-      paths = [layout bash curl cacert coreutils findutils gnugrep gnused gawk];
-      pathsToLink = ["/bin" "/etc" "/opt" "/var" "/run" "/tmp"];
+dockerTools.buildLayeredImage {
+  name = "smtp-edge";
+  tag = "postfix-${postfix.version}-curl-${curl.version}";
+  contents = buildEnv {
+    name = "smtp-edge-root";
+    paths = [
+      layout
+      bash
+      curl
+      cacert
+      coreutils
+      findutils
+      gnugrep
+      gnused
+      gawk
+    ];
+    pathsToLink = [
+      "/bin"
+      "/etc"
+      "/opt"
+      "/var"
+      "/run"
+      "/tmp"
+    ];
+  };
+  config = {
+    Entrypoint = [ "/bin/smtp-edge-entrypoint" ];
+    Env = [
+      "PATH=/bin"
+      "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+    ];
+    User = "0:0";
+    WorkingDir = "/var/lib/postfix";
+    ExposedPorts."25/tcp" = { };
+    Labels = {
+      "org.opencontainers.image.title" = "Postfix SMTP edge";
+      "org.opencontainers.image.version" = "${postfix.version}-curl-${curl.version}";
+      "org.opencontainers.image.source" = "https://github.com/michaelbrusegard/infra";
     };
-    config = {
-      Entrypoint = ["/bin/smtp-edge-entrypoint"];
-      Env = ["PATH=/bin" "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"];
-      User = "0:0";
-      WorkingDir = "/var/lib/postfix";
-      ExposedPorts."25/tcp" = {};
-      Labels = {
-        "org.opencontainers.image.title" = "Postfix SMTP edge";
-        "org.opencontainers.image.version" = "${postfix.version}-curl-${curl.version}";
-        "org.opencontainers.image.source" = "https://github.com/michaelbrusegard/infra";
-      };
-    };
-  }
+  };
+}

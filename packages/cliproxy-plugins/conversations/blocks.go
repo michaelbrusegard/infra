@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-// anthropicContent reads Anthropic Messages content: a string, or an array
-// of blocks. Claude Code transcripts use the same blocks.
 func anthropicContent(content json.RawMessage) []Block {
 	if isString(content) {
 		return []Block{{Type: "text", SourceType: "text", Text: str(content)}}
@@ -23,11 +21,15 @@ func anthropicContent(content json.RawMessage) []Block {
 		case t == "redacted_thinking":
 			out = append(out, Block{Type: "thinking", SourceType: t})
 		case t == "tool_use" || t == "server_tool_use" || t == "mcp_tool_use":
-			out = append(out, Block{Type: "tool_call", SourceType: t, ToolName: b.str("name"),
-				ToolCallID: b.str("id"), ToolInput: compactJSON(b["input"])})
+			out = append(out, Block{
+				Type: "tool_call", SourceType: t, ToolName: b.str("name"),
+				ToolCallID: b.str("id"), ToolInput: compactJSON(b["input"]),
+			})
 		case strings.HasSuffix(t, "tool_result"):
-			result := Block{Type: "tool_result", SourceType: t, ToolCallID: b.str("tool_use_id"),
-				IsError: b.boolean("is_error")}
+			result := Block{
+				Type: "tool_result", SourceType: t, ToolCallID: b.str("tool_use_id"),
+				IsError: b.boolean("is_error"),
+			}
 			var media []Block
 			if isString(b["content"]) {
 				result.Text = str(b["content"])
@@ -45,14 +47,10 @@ func anthropicContent(content json.RawMessage) []Block {
 			}
 			out = append(append(out, result), media...)
 		case t == "tool_reference":
-			// A tool that a tool search loaded, in its result.
 			out = append(out, Block{Type: "text", SourceType: t, Text: b.str("tool_name")})
 		case t == "web_search_result":
-			// A page a web search found, in its result; the page content is
-			// encrypted.
 			out = append(out, Block{Type: "text", SourceType: t, Text: b.str("title") + "\n" + b.str("url")})
 		case t == "fallback":
-			// The model refused and another answered the rest of the reply.
 			out = append(out, Block{Type: "fallback", SourceType: t, Text: compactJSON(raw)})
 		case t == "image" || t == "document":
 			kind := map[string]string{"image": "image", "document": "file"}[t]
@@ -64,8 +62,6 @@ func anthropicContent(content json.RawMessage) []Block {
 	return out
 }
 
-// responsesItem reads one OpenAI Responses API item, as sent in input, as
-// returned in output, or as recorded by Codex.
 func responsesItem(raw []byte) (string, []Block) {
 	it := parse(raw)
 	t := it.str("type")
@@ -77,9 +73,6 @@ func responsesItem(raw []byte) (string, []Block) {
 	case "message":
 		return role, responsesContent(it["content"], "")
 	case "agent_message":
-		// A message between Codex agents, which its recipient is sent as
-		// input. The header names the sender and the task; the payload is
-		// encrypted.
 		return "user", responsesContent(it["content"], "")
 	case "reasoning":
 		var texts []string
@@ -94,14 +87,14 @@ func responsesItem(raw []byte) (string, []Block) {
 		if t == "custom_tool_call" {
 			input = it["input"]
 		}
-		return "assistant", []Block{{Type: "tool_call", SourceType: t, ToolName: it.str("name"),
-			ToolNamespace: it.str("namespace"), ToolCallID: it.str("call_id"), ToolInput: compactJSON(input)}}
+		return "assistant", []Block{{
+			Type: "tool_call", SourceType: t, ToolName: it.str("name"),
+			ToolNamespace: it.str("namespace"), ToolCallID: it.str("call_id"), ToolInput: compactJSON(input),
+		}}
 	case "function_call_output", "custom_tool_call_output", "tool_search_output":
 		result := Block{Type: "tool_result", SourceType: t, ToolCallID: it.str("call_id")}
 		output := it["output"]
 		if t == "tool_search_output" {
-			// The tools found, which are definitions (functions, or
-			// namespaces of them) rather than content parts.
 			result.Text = compactJSON(it["tools"])
 			return "tool", []Block{result}
 		}
@@ -126,14 +119,15 @@ func responsesItem(raw []byte) (string, []Block) {
 	case "compaction":
 		return "system", []Block{{Type: "compaction", SourceType: t}}
 	}
-	// Hosted tools: web_search_call, tool_search_call, local_shell_call, ...
 	if strings.HasSuffix(t, "_call") {
 		input := it["action"]
 		if input == nil {
 			input = it["arguments"]
 		}
-		return "assistant", []Block{{Type: "tool_call", SourceType: t, ToolName: strings.TrimSuffix(t, "_call"),
-			ToolCallID: firstNonEmpty(it.str("call_id"), it.str("id")), ToolInput: compactJSON(input)}}
+		return "assistant", []Block{{
+			Type: "tool_call", SourceType: t, ToolName: strings.TrimSuffix(t, "_call"),
+			ToolCallID: firstNonEmpty(it.str("call_id"), it.str("id")), ToolInput: compactJSON(input),
+		}}
 	}
 	if role == "" {
 		role = "system"
@@ -157,10 +151,11 @@ func responsesContent(content json.RawMessage, callID string) []Block {
 		case "input_image":
 			out = append(out, Block{Type: "image", SourceType: t, ToolCallID: callID, Media: mediaOf(p.str("image_url"))})
 		case "input_file":
-			out = append(out, Block{Type: "file", SourceType: t, ToolCallID: callID,
-				Text: p.str("filename"), Media: mediaOf(p.str("file_data"))})
+			out = append(out, Block{
+				Type: "file", SourceType: t, ToolCallID: callID,
+				Text: p.str("filename"), Media: mediaOf(p.str("file_data")),
+			})
 		case "encrypted_content":
-			// Encrypted, like reasoning; not extracted.
 		default:
 			out = append(out, Block{Type: "other", SourceType: t, ToolCallID: callID})
 		}
@@ -168,7 +163,6 @@ func responsesContent(content json.RawMessage, callID string) []Block {
 	return out
 }
 
-// chatMessage reads one OpenAI Chat Completions message.
 func chatMessage(raw []byte) (string, []Block) {
 	m := parse(raw)
 	role := m.str("role")
@@ -196,8 +190,10 @@ func chatMessage(raw []byte) (string, []Block) {
 	for _, raw := range m.arr("tool_calls") {
 		c := parse(raw)
 		f := c.obj("function")
-		out = append(out, Block{Type: "tool_call", SourceType: firstNonEmpty(c.str("type"), "function"),
-			ToolName: f.str("name"), ToolCallID: c.str("id"), ToolInput: compactJSON(f["arguments"])})
+		out = append(out, Block{
+			Type: "tool_call", SourceType: firstNonEmpty(c.str("type"), "function"),
+			ToolName: f.str("name"), ToolCallID: c.str("id"), ToolInput: compactJSON(f["arguments"]),
+		})
 	}
 	return role, out
 }

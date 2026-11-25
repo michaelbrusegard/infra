@@ -1,6 +1,8 @@
-inputs: _: prev: let
+inputs: _: prev:
+let
   inherit (prev.stdenv.hostPlatform) system;
-in {
+in
+{
   inherit (inputs.hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
 
   quickshell = inputs.quickshell.packages.${system}.default;

@@ -4,13 +4,9 @@ _: prev: {
   # ships with CRLF line endings (only stripped in preFixup, after patchPhase),
   # so normalize to LF first or the LF-context patch fails to apply.
   asus-dialpad-driver = prev.asus-dialpad-driver.overrideAttrs (old: {
-    prePatch =
-      (old.prePatch or "")
-      + ''
-        sed -i 's/\r$//' dialpad.py
-      '';
-    patches =
-      (old.patches or [])
-      ++ [./wayland-keysym-none.patch];
+    prePatch = (old.prePatch or "") + ''
+      sed -i 's/\r$//' dialpad.py
+    '';
+    patches = (old.patches or [ ]) ++ [ ./wayland-keysym-none.patch ];
   });
 }

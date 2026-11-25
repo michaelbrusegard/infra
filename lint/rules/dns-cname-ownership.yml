@@ -1,0 +1,63 @@
+id: dns-cname-in-tofu
+language: hcl
+severity: error
+message: Define this CNAME as a DNSEndpoint (externaldns.k8s.io/v1alpha1) instead. If external-dns cannot express it, add its name to tofu-owned-cname in lint/rules/dns-cname-ownership.yml and give the reason in a comment above the record.
+note: external-dns owns per-service CNAMEs (managedRecordTypes [CNAME]); OpenTofu owns static records such as MX, TXT, DKIM and MTA-STS.
+files:
+  - gitops/espresso/tofu/dns/**/*.tf
+utils:
+  tofu-owned-cname:
+    has:
+      kind: object_elem
+      all:
+        - has:
+            field: key
+            regex: ^name$
+        - has:
+            field: val
+            regex: ^"(netbird\.midgard|michaelbrusegard\.com|em1206132|s1206132\._domainkey|mta-sts\.michaelbrusegard\.com|mta-sts\.michbrus\.com)"$
+rule:
+  any:
+    - kind: object_elem
+      all:
+        - has:
+            field: key
+            regex: ^type$
+        - has:
+            field: val
+            regex: ^"CNAME"$
+      not:
+        inside:
+          kind: object
+          matches: tofu-owned-cname
+    - kind: attribute
+      all:
+        - has:
+            kind: identifier
+            regex: ^type$
+        - has:
+            kind: expression
+            regex: ^"CNAME"$
+---
+id: dns-endpoint-not-cname
+language: yaml
+severity: error
+message: Define this record in gitops/espresso/tofu/dns instead; external-dns only manages CNAME records here and ignores every other type.
+note: external-dns runs with managedRecordTypes [CNAME]; OpenTofu owns static records such as MX, TXT, DKIM and MTA-STS.
+rule:
+  kind: block_mapping_pair
+  all:
+    - has:
+        field: key
+        regex: ^recordType$
+    - not:
+        has:
+          field: value
+          regex: ^["']?CNAME["']?$
+  inside:
+    kind: document
+    stopBy: end
+    has:
+      stopBy: end
+      kind: block_mapping_pair
+      regex: ^kind:\s*["']?DNSEndpoint["']?\s*$

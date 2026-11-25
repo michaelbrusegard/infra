@@ -16,7 +16,8 @@ class FakeAPI:
     def __init__(self):
         self.calls = []
         self.groups = [
-            {"id": "admins", "name": "Admins"}, {"id": "ai", "name": "AI"},
+            {"id": "admins", "name": "Admins"},
+            {"id": "ai", "name": "AI"},
             {"id": "hermes", "name": "Hermes Egress"},
         ]
         self.settings = {"endpoint": "", "proxy_address": ""}
@@ -33,7 +34,8 @@ class FakeAPI:
                 self.settings = {**body, "proxy_address": body["endpoint"]}
             return copy.deepcopy(self.settings)
         for resource, rows in [
-            ("providers", self.providers), ("policies", self.policies),
+            ("providers", self.providers),
+            ("policies", self.policies),
         ]:
             base = "/agent-network/" + resource
             if path == base and method == "GET":
@@ -48,10 +50,14 @@ class FakeAPI:
                 return copy.deepcopy(row)
         if path == "/reverse-proxies/proxy-tokens":
             if method == "POST":
-                self.tokens.append({
-                    **body, "id": "token" + str(len(self.tokens)),
-                    "plain_token": "test-proxy-secret", "revoked": False,
-                })
+                self.tokens.append(
+                    {
+                        **body,
+                        "id": "token" + str(len(self.tokens)),
+                        "plain_token": "test-proxy-secret",
+                        "revoked": False,
+                    }
+                )
             return copy.deepcopy(self.tokens[-1] if method == "POST" else self.tokens)
         raise AssertionError(f"Unexpected API call: {method} {path}")
 
@@ -81,7 +87,8 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(self.api.policies[1]["name"], "Hermes AI Access")
         self.assertEqual(self.api.policies[1]["source_groups"], ["hermes"])
         self.assertEqual(
-            self.api.policies[1]["destination_provider_ids"], [provider["id"]],
+            self.api.policies[1]["destination_provider_ids"],
+            [provider["id"]],
         )
         self.assertNotIn("limits", self.api.policies[0])
         self.assertEqual(self.api.policies[2]["name"], "Admin AI Access")
@@ -105,20 +112,28 @@ class BootstrapTests(unittest.TestCase):
 
     def test_dashboard_controls_and_disabled_access_survive_restart(self):
         self.run_bootstrap()
-        self.api.providers[0].update({
-            "models": [{"id": "restricted-model", "input_per_1k": 0, "output_per_1k": 0}],
-            "enabled": False,
-        })
-        self.api.policies[0].update({
-            "enabled": False,
-            "guardrail_ids": ["guardrail1"],
-            "limits": {"token_limit": {"enabled": True, "user_cap": 1000}},
-        })
-        self.api.policies[1].update({
-            "enabled": False,
-            "guardrail_ids": ["hermes-guardrail"],
-            "limits": {"token_limit": {"enabled": True, "group_cap": 2000}},
-        })
+        self.api.providers[0].update(
+            {
+                "models": [
+                    {"id": "restricted-model", "input_per_1k": 0, "output_per_1k": 0}
+                ],
+                "enabled": False,
+            }
+        )
+        self.api.policies[0].update(
+            {
+                "enabled": False,
+                "guardrail_ids": ["guardrail1"],
+                "limits": {"token_limit": {"enabled": True, "user_cap": 1000}},
+            }
+        )
+        self.api.policies[1].update(
+            {
+                "enabled": False,
+                "guardrail_ids": ["hermes-guardrail"],
+                "limits": {"token_limit": {"enabled": True, "group_cap": 2000}},
+            }
+        )
         before = copy.deepcopy((self.api.providers, self.api.policies))
         self.api.calls.clear()
         self.run_bootstrap()
@@ -143,11 +158,14 @@ class BootstrapTests(unittest.TestCase):
 
     def test_key_rotation_preserves_provider_settings_and_policy(self):
         self.run_bootstrap()
-        self.api.providers[0].update({
-            "enabled": False, "models": [{"id": "restricted-model"}],
-            "extra_values": {"config_id": "gateway-config"},
-            "identity_header_user_id": "x-user",
-        })
+        self.api.providers[0].update(
+            {
+                "enabled": False,
+                "models": [{"id": "restricted-model"}],
+                "extra_values": {"config_id": "gateway-config"},
+                "identity_header_user_id": "x-user",
+            }
+        )
         before = copy.deepcopy((self.api.providers[0], self.api.policies))
         self.api.calls.clear()
         reconcile(self.api, self.config, "rotated-upstream-secret", self.token)
@@ -169,15 +187,18 @@ class BootstrapTests(unittest.TestCase):
 
     def test_renamed_service_moves_provider_and_keeps_settings(self):
         self.run_bootstrap()
-        self.api.providers[0].update({
-            "upstream_url": "http://old.old.svc.cluster.local:8317",
-            "models": [{"id": "restricted-model"}],
-        })
+        self.api.providers[0].update(
+            {
+                "upstream_url": "http://old.old.svc.cluster.local:8317",
+                "models": [{"id": "restricted-model"}],
+            }
+        )
         before = copy.deepcopy((self.api.providers[0], self.api.policies))
         self.api.calls.clear()
         self.run_bootstrap()
         expected = {
-            **before[0], "upstream_url": self.config["provider"]["upstream_url"],
+            **before[0],
+            "upstream_url": self.config["provider"]["upstream_url"],
             "api_key": "test-upstream-secret",
         }
         self.assertEqual(self.api.providers[0], expected)
@@ -188,20 +209,33 @@ class BootstrapTests(unittest.TestCase):
         )
 
     def test_existing_endpoint_is_never_replaced(self):
-        self.api.settings = {"endpoint": "other.example.test", "proxy_address": "other.example.test"}
+        self.api.settings = {
+            "endpoint": "other.example.test",
+            "proxy_address": "other.example.test",
+        }
         with self.assertRaisesRegex(RuntimeError, "refusing to replace"):
             self.run_bootstrap()
         self.assert_no_mutation()
 
     def test_management_errors_do_not_expose_credential_payloads(self):
         api = NetBird("http://management.test/api", "test-management-secret")
-        with patch("bootstrap.urlopen", side_effect=HTTPError(
-            "http://management.test/api/agent-network/providers", 400,
-            "test-upstream-secret", {}, None,
-        )):
-            with self.assertRaises(RuntimeError) as caught:
-                api("POST", "/agent-network/providers", {"api_key": "test-upstream-secret"})
-        self.assertEqual(str(caught.exception), "NetBird POST /agent-network/providers: HTTP 400")
+        with (
+            patch(
+                "bootstrap.urlopen",
+                side_effect=HTTPError(
+                    "http://management.test/api/agent-network/providers",
+                    400,
+                    "test-upstream-secret",
+                    {},
+                    None,
+                ),
+            ),
+            self.assertRaises(RuntimeError) as caught,
+        ):
+            api("POST", "/agent-network/providers", {"api_key": "test-upstream-secret"})
+        self.assertEqual(
+            str(caught.exception), "NetBird POST /agent-network/providers: HTTP 400"
+        )
 
     def test_revoked_and_expired_registrations_are_recreated(self):
         self.run_bootstrap()

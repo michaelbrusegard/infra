@@ -3,11 +3,20 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - backup.yaml
-  - valkey.yaml
+  - valkey-deployment.yaml
   - machine-learning-pvc.yaml
-  - machine-learning.yaml
-  - server.yaml
+  - machine-learning-deployment.yaml
+  - server-statefulset.yaml
   - bootstrap-job.yaml
   - services.yaml
   - httproute.yaml
   - network-policy.yaml
+
+configMapGenerator:
+  - name: immich-backup-orchestrator
+    namespace: immich
+    files:
+      - trigger-volsync.py=scripts/trigger-volsync.py
+
+generatorOptions:
+  disableNameSuffixHash: true

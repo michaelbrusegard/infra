@@ -12,7 +12,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
-
 MISSING = object()
 STATUSES = (
     "all",

@@ -52,7 +52,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -71,8 +71,6 @@ SCIM_PERMISSIONS = (
     "sysAccountUpdate",
     "sysAccountDestroy",
 )
-# Only the rights exercised by the optional native UI workflow. An Admin role
-# label alone has no built-in grants in a recovery-only database.
 UI_PERMISSIONS = (
     "authenticate",
     "scimAccess",
@@ -103,7 +101,6 @@ def encoded(value):
 
 
 def isolated_environment():
-    # Keep tool/package lookup, not the caller's credentials or Stalwart config.
     environment = {
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
         "LANG": "C.UTF-8",
@@ -197,8 +194,6 @@ def check_schema(archive, fingerprint, reference=None):
         "Native SCIM permission carries an Enterprise annotation",
     )
     if reference is not None:
-        # Remove only the implemented extensions. Comparing the complete schema
-        # also catches removed fields, changed defaults, and unrelated UI changes.
         reduced = copy.deepcopy(schema)
         for kind, name in SCIM_FIELDS:
             require(
@@ -342,7 +337,6 @@ class FakeIdP:
                 self.wfile.write(body)
 
             def log_message(self, *_):
-                # Neither bearer credentials nor disposable profile data is logged.
                 pass
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
@@ -549,9 +543,6 @@ class Server:
                         "GET", "/api/account", auth="recovery"
                     )
                     if response.status == 200:
-                        # Legacy source binaries do not share the patched OSS
-                        # metadata contract. New-server qualification still
-                        # requires the OSS edition unless explicitly overridden.
                         if self.expected_edition is not None:
                             require(
                                 response.document().get("edition")
@@ -570,23 +561,16 @@ class Server:
     def stop(self):
         process, self.process = self.process, None
         if process is not None:
-            try:
+            with suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
             try:
                 process.wait(timeout=20)
             except subprocess.TimeoutExpired:
-                try:
+                with suppress(ProcessLookupError):
                     os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
                 process.wait(timeout=10)
-            # Terminate any child that outlived the main server process.
-            try:
+            with suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
         if self.log:
             self.log.close()
             self.log = None
@@ -615,9 +599,7 @@ class Acceptance:
     def stage(self, name, operation):
         try:
             operation()
-        except (
-            Exception
-        ) as error:  # noqa: BLE001 - collect test failures, never skip them
+        except Exception as error:
             self.failures.append(name)
             print(
                 self.c.redactor(f"FAIL {name}: {type(error).__name__}: {error}"),
@@ -707,8 +689,6 @@ class Acceptance:
             )
 
     def bootstrap_domain_state(self):
-        # Recovery-only raw native readback distinguishes persisted opt-in from
-        # a broken SCIM snapshot/listing. No Query permission is added to the key.
         ids = [self.domain_id, self.closed_domain_id]
         result = self.c.jmap("x:Domain/get", {"ids": ids})
         rows = {row["id"]: row for row in result.get("list", [])}
@@ -1117,8 +1097,6 @@ class Acceptance:
         self.c.jmap(
             "x:Account/set", {"update": {self.user["id"]: {"permissions": custom}}}
         )
-        # This is a real native credential, created through x:ApiKey/set, not a
-        # SCIM flag assertion. Warm the credential/auth caches before disabling.
         user_key = self.api_key(self.user["id"], {"authenticate": True})
         before = self.native(self.user["id"])["permissions"]
 
@@ -1137,11 +1115,6 @@ class Acceptance:
             disabled_response.document()["active"] is False,
             "Deactivation did not affect effective permission",
         )
-        # No polling allowance: successful deactivation must invalidate a warmed
-        # native credential before acknowledging the completed SCIM mutation.
-        # Native authenticate() preserves Security::Unauthorized when the valid
-        # credential lacks Authenticate; the JMAP/management mapper returns 403,
-        # not the 401 used for invalid credentials. This is a strict denial.
         authentication(403)
         disabled_native = self.native(self.user["id"])
         require(
@@ -1387,7 +1360,6 @@ class Acceptance:
         )
 
         def find_native(name, domain_id):
-            # Recovery administration, never a new permission on the SCIM key.
             accounts = self.c.jmap("x:Account/get", {})["list"]
             found = [
                 account
@@ -1415,11 +1387,6 @@ class Acceptance:
                 )
             }
 
-        # The global directory setting is OSS. Per-domain directoryId remains an
-        # unrelated Enterprise feature and is deliberately not enabled here.
-        # A recovery-only database may have no default role grants. Create
-        # narrow temporary User and Admin roles so the OIDC authorization test
-        # proves only the configured group adds the management permission.
         jit_role = self.c.jmap(
             "x:Role/set",
             {
@@ -1454,7 +1421,6 @@ class Acceptance:
                             "claimUsername": "email",
                             "claimName": "name",
                             "claimGroups": "groups",
-                            # Fixture tokens are opaque and carry no scopes.
                             "opaqueTokenValidation": "userInfo",
                             "unscopedTokens": "full",
                         }
@@ -1474,16 +1440,12 @@ class Acceptance:
                         }
                     },
                 )
-                # The pinned native API has an explicit ReloadSettings action;
-                # saving Authentication/Directory alone does NOT activate Core.
                 self.c.jmap(
                     "x:Action/set", {"create": {"reload": {"@type": "ReloadSettings"}}}
                 )
                 provider.wait_discovered(timeout=15)
 
                 def login(email, name, groups, status=200):
-                    # A fresh opaque token forces real userinfo/JIT instead of a
-                    # previously cached HTTP credential. Each probe proves a hit.
                     token = provider.issue(email, name, groups)
                     self.c.expect("GET", "/api/account", status, auth="Bearer " + token)
                     require(
@@ -1557,8 +1519,6 @@ class Acceptance:
                 )
                 warm_semantics = semantics(warm)
 
-                # No restart and NO intervening SCIM/account mutation: the next
-                # request must observe the domain toggle despite the warm cache.
                 self.c.jmap(
                     "x:Domain/set",
                     {"update": {switch_id: {"allowScimProvisioning": True}}},
@@ -1574,8 +1534,6 @@ class Acceptance:
                     "Opted-in domain JIT created a missing identity despite denial",
                 )
 
-                # Also prove preservation of values actually written via native
-                # SCIM, especially aliases that OIDC's empty alias list could erase.
                 warm_path = ROOT + "/Users/" + warm["id"]
                 provisioned = self.c.expect(
                     "PUT",
@@ -1611,9 +1569,6 @@ class Acceptance:
                     "JIT created an injected group in an opted-in domain",
                 )
 
-                # A user's domain alone is not the membership authority boundary.
-                # The outsider stays unmanaged, while BOTH groups are protected by
-                # their opted-in domain (the normal SCIM fixture domain).
                 protected = []
                 for suffix in ("remove", "add"):
                     group = self.c.expect(
@@ -1667,8 +1622,6 @@ class Acceptance:
                     and add_group[0] not in changed["memberGroupIds"],
                     "Protected membership add/remove boundary failed",
                 )
-                # Empty groups tests omission/removal separately from a rejected
-                # addition. Again the user's ordinary profile must still change.
                 login("outsider@jit-unmanaged.test", "Empty group claims profile", [])
                 changed = self.native(outsider["id"])
                 require(
@@ -1681,8 +1634,6 @@ class Acceptance:
                     flush=True,
                 )
             finally:
-                # Restore native authentication while the provider is still alive,
-                # then remove its directory before stopping the HTTP thread.
                 self.c.jmap(
                     "x:Authentication/set", {"update": {"singleton": authentication}}
                 )
@@ -1859,7 +1810,6 @@ class Acceptance:
         port = urllib.parse.urlsplit(self.c.origin).port
 
         def client():
-            # urllib openers are deliberately not shared across worker threads.
             instance = Client(port, self.c.redactor)
             instance.token, instance.recovery = self.c.token, self.c.recovery
             return instance
@@ -1915,9 +1865,6 @@ class Acceptance:
                     f"SCIM race {iteration}",
                 )
                 native_client, scim_client = client(), client()
-                # Full replacement intentionally carries the old externalId. A
-                # broken stale-snapshot write can erase the concurrent JMAP value;
-                # a PATCH of disjoint fields alone would miss that regression.
                 replacement = user_body(
                     "parallel-fixture",
                     externalId=before["externalId"],
@@ -1957,8 +1904,6 @@ class Acceptance:
                 flush=True,
             )
         finally:
-            # Native recovery cleanup is independent of SCIM success. The whole
-            # database is temporary even if this explicit cleanup itself fails.
             self.c.jmap("x:Account/set", {"destroy": [race_id]})
 
     def search_projection(self):
@@ -2124,8 +2069,6 @@ class Acceptance:
         self.c.expect("POST", ROOT + "/Bulk", 413, raw=b" " * (1024 * 1024 + 1))
 
     def pagination_limits(self):
-        # More than 200 real candidates proves caps and the non-indexed guard;
-        # a tiny fixture cannot distinguish an ignored count from a valid cap.
         creations = {
             f"page{i:03d}": {
                 "@type": "User",
@@ -2311,7 +2254,6 @@ class Acceptance:
                 not self.c.expect("GET", user_path, 200).document().get("groups"),
                 "User still references ignored groups",
             )
-            # Pocket ID's create payload: externalId, displayName, bare members.
             created = self.c.expect(
                 "POST",
                 ROOT + "/Groups",
@@ -2389,11 +2331,14 @@ class Acceptance:
         }
         require(
             names.isdisjoint(
-                {"Ignored Pocket ID Group", "Ignored Bulk Group", "Retired Fixture Group"}
+                {
+                    "Ignored Pocket ID Group",
+                    "Ignored Bulk Group",
+                    "Retired Fixture Group",
+                }
             ),
             f"Ignore mode stored a group: {names}",
         )
-        # Rendered groups drop dangling ids, so check the native reverse index.
         require(
             set(self.native(self.user["id"]).get("memberGroupIds", {}))
             == {self.group["id"]},
@@ -2403,7 +2348,6 @@ class Acceptance:
     def cleanup_resources(self):
         path = self.needed_user()
         require(self.group is not None, "Blocked: group creation failed (not skipped)")
-        # Deleting a member must also clean native reverse membership.
         self.c.expect("DELETE", path, 204)
         self.c.expect("GET", path, 404)
         group_path = ROOT + "/Groups/" + self.group["id"]
@@ -2473,8 +2417,6 @@ class Acceptance:
                 )
                 expected = source.read_bytes()
                 if source == index:
-                    # v1 serves one bundle at both prefixes, rewriting the base
-                    # path and injecting the Application's configured scopes.
                     expected = expected.replace(
                         b'<base href="/"', f'<base href="{prefix}/"'.encode(), 1
                     )
@@ -2491,9 +2433,6 @@ class Acceptance:
     def ui_checks(self):
         from ui import run_ui_checks
 
-        # Admin resolves only configured defaultAdminRoleIds; recovery fixtures
-        # can legitimately have none. Use explicit, bounded workflow permissions
-        # on this disposable account, not a global Admin-role grant or all rights.
         permissions = dict.fromkeys(UI_PERMISSIONS, True)
         admin = self.create_native_user(
             "ui-admin", self.domain_id, admin=True, permissions=permissions
@@ -2521,8 +2460,6 @@ class Acceptance:
         require(isinstance(result, dict), "UI checks did not return their result")
 
     def run(self):
-        # Pyzor is outside this SCIM fixture. An unresolvable host also makes
-        # subsequent ReloadSettings calls detect any accidental re-enabling.
         self.c.jmap(
             "x:SpamPyzor/set",
             {
@@ -2669,8 +2606,6 @@ def restored_configuration(client, domain_ids):
                 "JIT cleanup: restoring an unexpected change to a base domain provisioning flag",
                 flush=True,
             )
-        # Restore ALL Authentication properties, including every default role
-        # map, not just directoryId. These are disposable local settings only.
         client.jmap("x:Authentication/set", {"update": {"singleton": authentication}})
         client.jmap(
             "x:Domain/set",
@@ -2726,8 +2661,6 @@ def parallel_pair(first, second):
 
 
 def check_native_race(before, after, native_marker, scim_marker, scim_status):
-    # These are the only successful serializations of an unconditional native
-    # externalId write versus a full SCIM PUT guarded by the pre-race ETag.
     require(
         scim_status in (200, 412),
         f"Concurrent conditional PUT returned {scim_status}, expected 200 or 412",
@@ -2868,17 +2801,13 @@ def launch(args):
     try:
         return process.wait()
     except BaseException:
-        try:
+        with suppress(ProcessLookupError):
             os.killpg(process.pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
         try:
             process.wait(timeout=40)
         except subprocess.TimeoutExpired:
-            try:
+            with suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
             process.wait()
         raise
     finally:
@@ -3136,7 +3065,7 @@ class HelperTests(unittest.TestCase):
             if method == "x:Domain/set":
                 for key, value in arguments["update"].items():
                     domains[key].update(value)
-                return {"updated": {key: None for key in arguments["update"]}}
+                return {"updated": dict.fromkeys(arguments["update"])}
             if method == "x:Action/set":
                 self.assertEqual(
                     arguments["create"]["reload"]["@type"], "ReloadSettings"

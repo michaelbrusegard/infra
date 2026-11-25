@@ -15,7 +15,10 @@ buildNpmPackage (finalAttrs: {
     hash = "sha256-3kOGg3RGSJeGK4/hX/yxSPcpOs7VhyYCtC7HwuKlk/U=";
   };
   npmDepsHash = "sha256-AOgnRg8lcNvQUm7kAgdPKgttBj78pUz0oFU26C/7Z6A=";
-  nativeBuildInputs = [python3 zip];
+  nativeBuildInputs = [
+    python3
+    zip
+  ];
 
   # Retain all edition checks and feature authorization. Our
   # server's schema exposes its independently implemented SCIM capabilities.
@@ -25,7 +28,10 @@ buildNpmPackage (finalAttrs: {
     ./patches/webui/sel-free-build.patch
     ./patches/webui/oauth-resource.patch
   ];
-  patchFlags = ["-p1" "--fuzz=0"];
+  patchFlags = [
+    "-p1"
+    "--fuzz=0"
+  ];
   # WebUI 2 ships the Enterprise dashboards and live tracing under the SEL.
   # Remove them like the server's ossify.py: whole SEL files and SEL snippets.
   # The OSS server serves no dashboards and refuses telemetry tokens anyway.

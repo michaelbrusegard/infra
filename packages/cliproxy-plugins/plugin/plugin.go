@@ -1,8 +1,3 @@
-// Package plugin implements CLIProxyAPI's plugin C ABI for the plugins here.
-//
-// CLIProxyAPI loads each plugin with dlopen and talks to it through a C ABI:
-// each call is a method name plus a JSON request, answered with a JSON
-// envelope. A plugin's main package calls Serve from init.
 package plugin
 
 /*
@@ -43,7 +38,6 @@ import (
 	"unsafe"
 )
 
-// Handler answers the host's method calls.
 type Handler interface {
 	Handle(method string, request []byte) (response []byte, ok bool)
 	Shutdown()
@@ -51,18 +45,15 @@ type Handler interface {
 
 var handler Handler
 
-// Serve sets the handler for every call from the host.
 func Serve(h Handler) {
 	handler = h
 }
 
-// Registration describes a plugin to the host.
+const schemaVersionSkippingTranslatedAndStreamedBodies = 7
+
 func Registration(name string, capabilities map[string]bool) map[string]any {
 	return map[string]any{
-		// 7 lets the archive's after-auth interceptor skip the translated
-		// upstream body; 5 and 3 drop history and request bodies from stream
-		// chunks.
-		"schema_version": 7,
+		"schema_version": schemaVersionSkippingTranslatedAndStreamedBodies,
 		"metadata": map[string]any{
 			"Name":             name,
 			"Version":          "0.1.0",
@@ -85,7 +76,6 @@ type rpcErr struct {
 	Message string `json:"message"`
 }
 
-// Reply answers a call successfully.
 func Reply(result any) ([]byte, bool) {
 	out, err := json.Marshal(envelope{OK: true, Result: result})
 	if err != nil {
@@ -94,7 +84,6 @@ func Reply(result any) ([]byte, bool) {
 	return out, true
 }
 
-// Fail answers a call with an error.
 func Fail(code string, err error) ([]byte, bool) {
 	out, _ := json.Marshal(envelope{Error: &rpcErr{Code: code, Message: err.Error()}})
 	return out, false

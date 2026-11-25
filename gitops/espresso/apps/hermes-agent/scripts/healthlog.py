@@ -16,7 +16,6 @@ import httpx
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
-
 WINDOWS = ("last7days", "last30days", "last90days", "lastYear", "allTime")
 
 
@@ -69,7 +68,9 @@ def request_for(args: argparse.Namespace) -> tuple[str, str, dict[str, Any]]:
         optional(payload, "metricB", args.metric_b)
         optional(payload, "windowB", args.window_b)
         optional(payload, "range", date_range(args.start, args.end, "first range"))
-        optional(payload, "rangeB", date_range(args.start_b, args.end_b, "second range"))
+        optional(
+            payload, "rangeB", date_range(args.start_b, args.end_b, "second range")
+        )
         return "tool", "compare_metric", payload
     if command == "changes":
         payload = {"metric": args.metric, "window": args.window}
@@ -101,10 +102,14 @@ def request_for(args: argparse.Namespace) -> tuple[str, str, dict[str, Any]]:
         if args.metric_a or args.metric_b:
             if not args.metric_a or not args.metric_b:
                 raise ValueError("named correlation requires --metric-a and --metric-b")
-            return "tool", "get_correlation", {
-                "metricA": args.metric_a,
-                "metricB": args.metric_b,
-            }
+            return (
+                "tool",
+                "get_correlation",
+                {
+                    "metricA": args.metric_a,
+                    "metricB": args.metric_b,
+                },
+            )
         return "tool", "get_correlations", {}
     if command == "integrations":
         return "tool", "get_integration_status", {}
@@ -201,7 +206,9 @@ def parser() -> argparse.ArgumentParser:
     medications.add_argument("--schedule", action="store_true")
 
     sub.add_parser("recovery", help="read illness and recovery context")
-    correlations = sub.add_parser("correlations", help="read discovered or named correlations")
+    correlations = sub.add_parser(
+        "correlations", help="read discovered or named correlations"
+    )
     correlations.add_argument("--metric-a")
     correlations.add_argument("--metric-b")
     sub.add_parser("integrations", help="read device and service sync status")
@@ -228,7 +235,15 @@ def parser() -> argparse.ArgumentParser:
     review = sub.add_parser("review", help="run a server-grounded prepared review")
     review.add_argument(
         "review",
-        choices=("doctor", "weekly", "medication", "recovery", "glucose", "sleep", "labs"),
+        choices=(
+            "doctor",
+            "weekly",
+            "medication",
+            "recovery",
+            "glucose",
+            "sleep",
+            "labs",
+        ),
     )
     review.add_argument("--window", choices=WINDOWS)
     review.add_argument("--analyte")
@@ -251,6 +266,11 @@ def tool_payload(result: Any) -> Any:
 
 
 async def run(kind: str, name: str, arguments: dict[str, Any]) -> Any:
+    """Call one HealthLog MCP tool or resource over a fresh session.
+
+    HealthLog's endpoint is stateless, so the session is not terminated on
+    close: a DELETE would only add a failing round-trip after a good read.
+    """
     url = os.environ.get(
         "HEALTHLOG_MCP_URL",
         "http://healthlog.healthlog.svc.cluster.local:3000/mcp",
@@ -272,9 +292,6 @@ async def run(kind: str, name: str, arguments: dict[str, Any]) -> Any:
             streamable_http_client(
                 url,
                 http_client=client,
-                # HealthLog's endpoint is explicitly stateless. A DELETE on
-                # close has no session to terminate and only adds a failing
-                # cleanup round-trip after a successful read.
                 terminate_on_close=False,
             )
         )
@@ -288,7 +305,9 @@ async def run(kind: str, name: str, arguments: dict[str, Any]) -> Any:
         await session.initialize()
         if kind == "tool":
             return tool_payload(await session.call_tool(name, arguments))
-        result = await session.get_prompt(name, {k: str(v) for k, v in arguments.items()})
+        result = await session.get_prompt(
+            name, {k: str(v) for k, v in arguments.items()}
+        )
         return result.model_dump(mode="json", exclude_none=True)
 
 

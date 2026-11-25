@@ -64,12 +64,10 @@ func TestSessionStaysOnItsAccount(t *testing.T) {
 	if got := picked(t, s.pick(request("s", "a", "b"), now)); got != "a" {
 		t.Fatalf("picked %s, want a", got)
 	}
-	// b now resets sooner, but the session keeps its prompt cache on a.
 	s.resets["b"] = now.Add(time.Hour)
 	if got := picked(t, s.pick(request("s", "a", "b"), now.Add(30*time.Minute))); got != "a" {
 		t.Fatalf("picked %s, want a", got)
 	}
-	// A new session still picks the soonest reset.
 	if got := picked(t, s.pick(request("other", "a", "b"), now)); got != "b" {
 		t.Fatalf("picked %s, want b", got)
 	}
@@ -85,7 +83,6 @@ func TestSessionMovesWhenItsAccountDropsOut(t *testing.T) {
 	if got := picked(t, s.pick(request("s", "b", "c"), now)); got != "b" {
 		t.Fatalf("picked %s, want b", got)
 	}
-	// It stays on the new account once the old one is back.
 	if got := picked(t, s.pick(request("s", "a", "b", "c"), now)); got != "b" {
 		t.Fatalf("picked %s, want b", got)
 	}

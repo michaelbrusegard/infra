@@ -14,11 +14,11 @@ import hashlib
 import importlib.util
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 
 SPEC = importlib.util.spec_from_file_location(
     "native_hook", Path(__file__).with_name("apply-native.py")
@@ -74,7 +74,6 @@ class NativePackaging(unittest.TestCase):
                 ).read_bytes()
             )
         )
-        # Removing exactly the native SCIM capabilities yields the OSS schema.
         reduced = copy.deepcopy(actual)
         for kind, name in (
             ("x:Domain", "allowScimProvisioning"),
@@ -236,7 +235,6 @@ class NativePackaging(unittest.TestCase):
         )
         manifest = (self.root / "crates/registry/Cargo.toml").read_text()
         self.assertIn("independent-scim = []", manifest)
-        # The generated impls gain gated items only; the OSS build is unchanged.
         for name in ("structs_impl.rs", "enums_impl.rs", "properties_impl.rs"):
             patched = (schema / name).read_text().count(gate)
             self.assertGreater(patched, 0, name)
@@ -248,9 +246,6 @@ class NativePackaging(unittest.TestCase):
             )
 
     def test_dropped_upstream_covered_hooks_stay_unpatched(self):
-        # The DomainCache flag, domain toggle invalidation and group token
-        # expansion were dropped: nothing reads a cached SCIM policy, and
-        # upstream invalidate_grantee evicts group members on ACL changes.
         for path in (
             "crates/common/src/auth/mod.rs",
             "crates/common/src/cache/principals.rs",

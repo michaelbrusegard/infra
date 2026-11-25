@@ -1,0 +1,78 @@
+id: dns-endpoint-not-cname
+valid:
+  - |
+    apiVersion: externaldns.k8s.io/v1alpha1
+    kind: DNSEndpoint
+    metadata:
+      name: app
+    spec:
+      endpoints:
+        - dnsName: app.example.com
+          recordType: CNAME
+          targets:
+            - router.asgard.michaelbrusegard.com
+  - |
+    kind: ConfigMap
+    data:
+      recordType: A
+invalid:
+  - |
+    apiVersion: externaldns.k8s.io/v1alpha1
+    kind: DNSEndpoint
+    metadata:
+      name: app
+    spec:
+      endpoints:
+        - dnsName: app.example.com
+          recordType: A
+          targets:
+            - 192.0.2.1
+  - |
+    apiVersion: externaldns.k8s.io/v1alpha1
+    kind: "DNSEndpoint"
+    spec:
+      endpoints:
+        - dnsName: app.example.com
+          recordType: TXT
+---
+id: dns-cname-in-tofu
+valid:
+  - |
+    locals {
+      records = [
+        { name = "mail", type = "MX", content = "mx.example.com" },
+        { name = "mta-sts.michbrus.com", type = "CNAME", content = "mta-sts.example.com" },
+      ]
+    }
+invalid:
+  - |
+    locals {
+      records = [
+        { name = "app", type = "CNAME", content = "router.example.com" },
+      ]
+    }
+  - |
+    resource "cloudflare_dns_record" "app" {
+      name = "app"
+      type = "CNAME"
+    }
+---
+id: todo-needs-link-yaml
+valid:
+  - |
+    # TODO: remove after https://github.com/fluxcd/flux2/issues/1
+    key: value
+invalid:
+  - |
+    # TODO: tune this
+    key: value
+---
+id: todo-needs-link-hcl
+valid:
+  - |
+    # TODO: drop once https://github.com/opentofu/opentofu/issues/1 lands
+    locals {}
+invalid:
+  - |
+    # FIXME wrong ttl
+    locals {}

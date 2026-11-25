@@ -7,6 +7,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+# Read-only, plus the pull request file list that the paths filter queries.
+permissions:
+  contents: read
+  pull-requests: read
 jobs:
   filter:
     runs-on: ubuntu-26.04
@@ -15,14 +19,19 @@ jobs:
       gitops: ${{ steps.filter.outputs.gitops }}
       tofu: ${{ steps.filter.outputs.tofu }}
       tofu-dirs: ${{ steps.list-tofu.outputs.dirs }}
+      hosts: ${{ steps.list-hosts.outputs.hosts }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         id: filter
         with:
           filters: |
             nix:
-              - '**/*.nix'
+              - 'modules/**'
+              - 'overlays/**'
+              - 'packages/**/*.nix'
               - 'packages/ai-images/**'
               - 'flake.nix'
               - 'flake.lock'
@@ -31,100 +40,125 @@ jobs:
               - 'gitops/**'
               - 'packages/ai-images/**'
               - 'packages/cliproxy-plugins/**'
+              - 'modules/flake/check-app.nix'
               - '.github/workflows/ci.yaml'
             tofu:
               - '**/*.tf'
               - '**/.terraform.lock.hcl'
+              - 'gitops/espresso/infrastructure/configs/stalwart-tofu/kustomization.yaml'
               - '.github/workflows/ci.yaml'
       - id: list-tofu
         run: |
           dirs=$(printf '%s\n' gitops/espresso/tofu/*/ | sed 's:/$::' | jq -R . | jq -sc .)
           echo "dirs=$dirs" >> "$GITHUB_OUTPUT"
+      - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        if: steps.filter.outputs.nix == 'true'
+        with:
+          ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+        if: steps.filter.outputs.nix == 'true'
+      - id: list-hosts
+        if: steps.filter.outputs.nix == 'true'
+        run: echo "hosts=$(nix eval --json .#ci.hosts)" >> "$GITHUB_OUTPUT"
+  # Formatting, lint rules, the secret scan and every sandboxed test live in
+  # the flake's checks, so any file in the repository can fail this job. It
+  # builds the checks directly because nix flake check would also evaluate
+  # every host, which validate-nix-hosts already does in parallel.
   code-quality:
-    needs: filter
-    if: needs.filter.outputs.nix == 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
-      - name: Check code quality (Nix)
-        run: nix fmt -- --fail-on-change --no-cache
-      - name: Validate flake (Nix)
-        run: nix flake check --show-trace
+      - name: Run the flake checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          checks=$(nix eval --json .#checks.x86_64-linux --apply builtins.attrNames |
+            jq -r '.[] | ".#checks.x86_64-linux.\(.)"')
+          [[ -n $checks ]] || { echo "::error::No flake checks found"; exit 1; }
+          xargs nix build --no-link --print-build-logs --show-trace <<<"$checks"
+      - name: Check commit messages
+        if: github.event_name == 'pull_request'
+        run: nix run .#check-commits -- "HEAD^1..HEAD^2"
   validate-nix-hosts:
     needs: filter
     if: needs.filter.outputs.nix == 'true'
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - host: lungo
-            os: macos-latest
-          - host: ristretto
-            os: ubuntu-24.04
-          - host: forte
-            os: ubuntu-24.04
-          - host: macchiato
-            os: ubuntu-24.04
-          - host: espresso-0
-            os: ubuntu-24.04
-          - host: leggero
-            os: ubuntu-24.04
+        include: ${{ fromJSON(needs.filter.outputs.hosts) }}
+    name: validate-nix-hosts (${{ matrix.name }})
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
-      - name: Evaluate Host (NixOS)
-        if: runner.os == 'Linux'
-        run: nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel --dry-run
-      - name: Evaluate Host (Darwin)
-        if: runner.os == 'macOS'
-        run: nix build .#darwinConfigurations.${{ matrix.host }}.system --dry-run
+      - name: Evaluate host
+        env:
+          ATTRIBUTE: ${{ matrix.attribute }}
+        run: nix build ".#$ATTRIBUTE" --dry-run
+      # Values in a host's closure can come from the private secrets flake, so
+      # the summary names what changed without printing it. HEAD^1 is the base
+      # the merge commit was built on, which origin/main may have moved past.
+      - name: Summarise what changes on the host
+        if: github.event_name == 'pull_request'
+        env:
+          HOST: ${{ matrix.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo '```'
+            nix run .#diff-hosts -- --names-only HEAD^1 "$HOST"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
   validate-kubernetes:
     needs: filter
     if: needs.filter.outputs.gitops == 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
-      - name: Install Tools
-        run: nix profile install nixpkgs#go nixpkgs#kustomize nixpkgs#kubeconform nixpkgs#yq-go
-      - name: Check OpenTofu approval policy
-        run: bash gitops/espresso/tests/tofu-approval.sh
-      - name: Test Agent Network bootstrap and image client
+      - name: Run the checks that need network access
+        run: nix run .#check
+      - name: Summarise what changes on the cluster
+        if: github.event_name == 'pull_request'
+        shell: bash
         run: |
-          python3 -m unittest discover -s gitops/espresso/apps/netbird/agent-network -v
-          python3 -m unittest discover -s packages/ai-images -v
+          set -euo pipefail
+          {
+            echo '```'
+            nix run .#diff-manifests -- HEAD^1
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Test AI usage dashboard and ClickHouse permissions
-        run: |
-          python3 gitops/espresso/tests/ai-usage.py
-      - name: Run Hermes Android unit tests
-        run: |
-          nix-shell \
-            -p 'python3.withPackages (ps: [ ps.requests ps.websocket-client ])' \
-            --run "python3 -m unittest discover -s gitops/espresso/apps/hermes-agent/tests -p 'test_*.py'"
+        run: python3 gitops/espresso/tests/ai-usage.py
+      - name: Test conversation normalisation against ClickHouse
+        run: nix develop --command python3 gitops/espresso/tests/llm-conversations.py
       - name: Test Hermes tunnel routing and fail-closed behavior
         # Root avoids Ubuntu's unprivileged user-namespace restrictions. The
         # test changes routes only inside disposable network namespaces.
         run: sudo python3 gitops/espresso/apps/hermes-agent/tests/netbird_egress_smoke.py -v
-      - name: Validate Kubernetes Manifests
-        run: |
-          kustomize build gitops/espresso | \
-          kubeconform \
-            -strict \
-            -ignore-missing-schemas \
-            -schema-location default \
-            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            -verbose
   validate-tofu-stacks:
     needs: filter
     if: needs.filter.outputs.tofu == 'true'
@@ -137,6 +171,8 @@ jobs:
       OPENTOFU_VERSION: 1.11.5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
         with:
           tofu_version: ${{ env.OPENTOFU_VERSION }}
@@ -189,11 +225,17 @@ jobs:
           EOF
           echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/tofurc" >> "$GITHUB_ENV"
       - name: Check OpenTofu formatting
-        run: tofu -chdir=${{ matrix.tofu-dir }} fmt -check
+        env:
+          STACK: ${{ matrix.tofu-dir }}
+        run: tofu -chdir="$STACK" fmt -check
       - name: Initialize OpenTofu
-        run: tofu -chdir=${{ matrix.tofu-dir }} init -backend=false
+        env:
+          STACK: ${{ matrix.tofu-dir }}
+        run: tofu -chdir="$STACK" init -backend=false
       - name: Validate OpenTofu
-        run: tofu -chdir=${{ matrix.tofu-dir }} validate
+        env:
+          STACK: ${{ matrix.tofu-dir }}
+        run: tofu -chdir="$STACK" validate
   # Branch protection requires these stable names, not matrix-expanded names.
   validate-nix:
     needs: [filter, validate-nix-hosts]

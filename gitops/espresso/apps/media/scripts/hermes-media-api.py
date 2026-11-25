@@ -18,7 +18,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, quote, urlencode, urlparse
 from urllib.request import Request, urlopen
 
-
 MAX_BODY = 64 * 1024
 MAX_RESULTS = 50
 REF_TTL_SECONDS = 30 * 60
@@ -1071,11 +1070,11 @@ class Handler(BaseHTTPRequestHandler):
             body = self._body() if method == "POST" else {}
 
             get_routes = {
-                "/v1/status": lambda: Routes.status(),
+                "/v1/status": Routes.status,
                 "/v1/search": lambda: Routes.search(query),
                 "/v1/requests": lambda: Routes.requests(query),
                 "/v1/artist-search": lambda: Routes.artist_search(query),
-                "/v1/music-sources": lambda: Routes.music_sources(),
+                "/v1/music-sources": Routes.music_sources,
                 "/v1/albums": lambda: Routes.albums(query),
                 "/v1/music-jobs": lambda: Routes.music_jobs(query),
                 "/v1/album-jobs": lambda: Routes.album_jobs(query),

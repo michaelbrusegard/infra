@@ -13,6 +13,12 @@ name: Stalwart Image
   # the build is skipped, which passes, unless Stalwart's inputs changed.
   pull_request:
 
+# Read-only, plus the pull request file list that the paths filter queries.
+# The publishing job raises its own permissions.
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   stalwart-changes:
     if: github.event_name == 'pull_request'
@@ -21,6 +27,8 @@ jobs:
       stalwart: ${{ steps.filter.outputs.stalwart }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         id: filter
         with:

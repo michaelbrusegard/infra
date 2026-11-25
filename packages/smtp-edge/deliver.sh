@@ -4,7 +4,10 @@
 set -u
 export LC_ALL=C
 
-fail() { printf '4.3.0 %s\n' "$1"; exit 75; }
+fail() {
+  printf '4.3.0 %s\n' "$1"
+  exit 75
+}
 [[ $# == 8 ]] || fail 'invalid delivery configuration'
 backend=$1
 smtp_port=$2
@@ -19,26 +22,26 @@ sender=$7
 recipient=$8
 [[ -n $backend && -n $recipient ]] || fail 'missing delivery destination'
 for value in "$backend" "$client_ip" "$helo" "$sender" "$recipient"; do
-  case $value in *$'\r'*|*$'\n'*) fail 'invalid delivery metadata';; esac
+  case $value in *$'\r'* | *$'\n'*) fail 'invalid delivery metadata' ;; esac
 done
 
 # Encode the EHLO as a URL path. Quoting alone does not protect URL delimiters.
 urlencode() {
   local value=$1 char index
-  for ((index=0; index<${#value}; index++)); do
+  for ((index = 0; index < ${#value}; index++)); do
     char=${value:index:1}
     case $char in
-      [a-zA-Z0-9._~-]) printf '%s' "$char";;
-      *) printf '%%%02X' "'$char";;
+    [a-zA-Z0-9._~-]) printf '%s' "$char" ;;
+    *) printf '%%%02X' "'$char" ;;
     esac
   done
 }
 
 args=(--disable --silent --output /dev/null --write-out '%{response_code}'
-      --proxy '' --noproxy '*' --globoff --ssl-reqd --cacert "$ca_file"
-      --connect-timeout 30 --max-time 600 --upload-file - --mail-rcpt "$recipient")
+  --proxy '' --noproxy '*' --globoff --ssl-reqd --cacert "$ca_file"
+  --connect-timeout 30 --max-time 600 --upload-file - --mail-rcpt "$recipient")
 if [[ -n $client_ip ]]; then
-  case $client_ip in *[!0-9a-fA-F:.]*) fail 'invalid queued client address';; esac
+  case $client_ip in *[!0-9a-fA-F:.]*) fail 'invalid queued client address' ;; esac
   [[ -n $helo ]] || fail 'missing queued client greeting'
   args+=(--haproxy-clientip "$client_ip")
   port=$smtp_port
@@ -58,7 +61,10 @@ if code=$(curl "${args[@]}"); then
   exit 0
 else
   case $code in
-    5[0-9][0-9]) printf '5.0.0 backend rejected delivery (%s)\n' "$code"; exit 69;;
-    *) fail 'backend delivery temporarily unavailable';;
+  5[0-9][0-9])
+    printf '5.0.0 backend rejected delivery (%s)\n' "$code"
+    exit 69
+    ;;
+  *) fail 'backend delivery temporarily unavailable' ;;
   esac
 fi
