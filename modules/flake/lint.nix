@@ -86,7 +86,7 @@
         text = ''
           range=''${1:-origin/main..HEAD}
           commits=$(git log --no-merges --format='%H %s' "$range")
-          types='feat|fix|refactor|perf|docs|chore|ci|build|revert'
+          types='build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test'
           failures=0
 
           while IFS=' ' read -r sha subject; do
