@@ -23,13 +23,19 @@ jobs:
           ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
-      - name: Update every input
+      # Tries every input at once and falls back to one at a time, holding back
+      # any that stop a host from evaluating. The run fails only when one of
+      # the inputs that carry security fixes cannot move.
+      - name: Update inputs
         id: update
         shell: bash
         run: |
           set -euo pipefail
-          nix flake update
-          if git diff --quiet -- flake.lock; then
+          nix run .#update-inputs -- \
+            --required nixpkgs --required nixpkgs-unstable \
+            --required home-manager --required nix-darwin
+          nix fmt
+          if git diff --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -43,6 +49,18 @@ jobs:
         env:
           VERIFY_JOBS: 3
         run: nix run .#verify
+      # Evaluating proves a host's configuration is valid, not that its
+      # packages build. The x86 servers are small enough to build here, so a
+      # colmena deploy from main cannot fail on a package that does not build.
+      - name: Build the x86 servers
+        if: steps.update.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          servers=$(nix eval --json .#ci.hosts |
+            jq -r '.[] | select(.deployed and .system == "x86_64-linux") | ".#\(.attribute)"')
+          [[ -n $servers ]] || { echo "::error::No x86 servers found in ci.hosts"; exit 1; }
+          xargs nix build --no-link --print-build-logs <<<"$servers"
       # Host closures can hold values from the private secrets flake, so only
       # the names of what changed are published.
       - name: Summarise what changes on the hosts
@@ -65,8 +83,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git add flake.lock
-          git commit -m "chore(flake): update inputs"
+          git commit --all -m "chore(flake): update inputs"
           # The agent offers the read-only infra-secrets key before the
           # checkout's image-bump key, and GitHub rejects the push with it.
           unset SSH_AUTH_SOCK

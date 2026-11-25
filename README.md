@@ -45,6 +45,15 @@ nix run .#diff-manifests -- main
 Pushing to `main` deploys `gitops/espresso` to the cluster through Flux, so I
 only push when I mean it.
 
+The flake inputs update themselves every Monday through the "Update Flake
+Inputs" workflow. It only pushes when every check passes and every host still
+evaluates, and it holds back an input that breaks a host instead of giving up.
+The run's summary lists what was held back and why. To do the same by hand:
+
+```sh
+nix run .#update-inputs
+```
+
 After changing something in `../infra-secrets` and pushing it there:
 
 ```sh
