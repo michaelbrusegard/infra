@@ -6,14 +6,19 @@
       ...
     }:
     let
-      shellScripts = map (name: "gitops/espresso/apps/hermes-agent/scripts/${name}") [
-        "android"
-        "android-companion"
-        "browser-support"
-        "healthlog"
-        "mealie"
-        "media"
-      ];
+      shellScripts =
+        map (name: "gitops/espresso/apps/hermes-agent/scripts/${name}") [
+          "android"
+          "android-companion"
+          "browser-support"
+          "healthlog"
+          "mealie"
+          "media"
+        ]
+        ++ [
+          "packages/hermes-agent-image/smoke-test.sh"
+          "packages/hermes-android-image/smoke-test.sh"
+        ];
 
       goModule =
         name: src:

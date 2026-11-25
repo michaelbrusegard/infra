@@ -1,0 +1,364 @@
+#!/usr/bin/env bash
+set -e
+
+echo 'Browser smoke stage: load images and verify agent toolchain'
+if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+  sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+fi
+docker load <result-agent
+docker load <result-browser
+agent_layer_count=$(docker image inspect "$AGENT_IMAGE_REF:nix" --format '{{len .RootFS.Layers}}')
+if [ "$agent_layer_count" -gt 40 ]; then
+  echo "Hermes Agent image has $agent_layer_count layers; expected at most 40" >&2
+  exit 1
+fi
+chromium_seccomp_profile=$(readlink -f result-chromium-seccomp)
+smoke_root=$(mktemp -d)
+mkdir -p "$smoke_root/agent-scripts"
+mkdir -p "$smoke_root/browser-files"
+mkdir -p "$smoke_root/browser-policies"
+mkdir -p "$smoke_root/browser-profile/policies/managed"
+mkdir -p "$smoke_root/browser-profile/extensions-unpacked/hermes-smoke"
+install -m 0755 \
+  gitops/espresso/apps/hermes-agent/scripts/android \
+  gitops/espresso/apps/hermes-agent/scripts/browser-support \
+  "$smoke_root/agent-scripts/"
+install -m 0644 \
+  gitops/espresso/apps/hermes-agent/scripts/android.py \
+  gitops/espresso/apps/hermes-agent/scripts/browser-support.py \
+  gitops/espresso/apps/hermes-agent/tests/browser_refs_smoke.py \
+  gitops/espresso/apps/hermes-agent/tests/delegation_profiles_smoke.py \
+  "$smoke_root/agent-scripts/"
+chmod 0777 \
+  "$smoke_root/browser-files" \
+  "$smoke_root/browser-policies" \
+  "$smoke_root/browser-profile"
+cat >"$smoke_root/browser-profile/policies/managed/site-controls.json" <<'JSON'
+{
+  "URLBlocklist": ["https://blocked.example/*"]
+}
+JSON
+cat >"$smoke_root/browser-profile/extensions-unpacked/hermes-smoke/manifest.json" <<'JSON'
+{
+  "manifest_version": 3,
+  "name": "Hermes Smoke Extension",
+  "version": "1.0.0"
+}
+JSON
+printf '%s\n' '--disable-notifications' >"$smoke_root/browser-profile/chromium-extra-args"
+docker run --rm "$AGENT_IMAGE_REF:nix" --help
+for binary in blogwatcher-cli ffmpeg flux gh helm himalaya jq jupyter jupyter-live-kernel kubectl magick node ocrmypdf pdftoppm sed stern tar tesseract tofu yq; do
+  docker run --rm --entrypoint "$binary" "$AGENT_IMAGE_REF:nix" --help >/dev/null
+done
+docker run --rm --entrypoint agent-browser "$AGENT_IMAGE_REF:nix" --version | grep --fixed-strings 'agent-browser 0.35.0'
+docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp --entrypoint soffice "$AGENT_IMAGE_REF:nix" --version
+docker run --rm --entrypoint python3 "$AGENT_IMAGE_REF:nix" -c '
+import defusedxml
+import docx
+import markitdown
+import nbformat
+import PIL
+import pymupdf
+import pymupdf4llm
+import pptx
+import requests
+import websocket
+import youtube_transcript_api
+'
+docker run --rm \
+  --volume "$smoke_root/agent-scripts:/opt/data/scripts:ro" \
+  --entrypoint bash "$AGENT_IMAGE_REF:nix" -euc '
+  hermes_python=$(sed -n "s|^export HERMES_PYTHON='"'"'\(.*\)'"'"'$|\1|p" "$(command -v hermes)")
+  "$hermes_python" /opt/data/scripts/delegation_profiles_smoke.py
+  "$hermes_python" -c "from tools.browser_tool import BROWSER_TOOL_SCHEMAS; from tools import browser_session_router; schemas={s['"'"'name'"'"']: s for s in BROWSER_TOOL_SCHEMAS}; assert {'"'"'browser_click_at'"'"', '"'"'browser_upload'"'"', '"'"'browser_download'"'"'} <= schemas.keys(); assert '"'"'maxItems'"'"' not in schemas['"'"'browser_upload'"'"']['"'"'parameters'"'"']['"'"'properties'"'"']['"'"'paths'"'"']"
+  "$hermes_python" -c "from gateway.run import _normalize_gateway_tool_progress_event as n; assert n('"'"'subagent.tool'"'"') == ('"'"'tool.started'"'"', True); assert n('"'"'subagent.progress'"'"') == (None, False); assert n('"'"'tool.started'"'"') == ('"'"'tool.started'"'"', False)"
+  "$hermes_python" -c "import os; from types import SimpleNamespace; from gateway.config import Platform; from gateway.run import _is_stateless_mattermost_source as s; os.environ['"'"'MATTERMOST_STATELESS_CHANNELS'"'"']='"'"'one,two'"'"'; assert s(SimpleNamespace(platform=Platform.MATTERMOST, chat_id='"'"'two'"'"')); assert not s(SimpleNamespace(platform=Platform.MATTERMOST, chat_id='"'"'three'"'"'))"
+  "$hermes_python" -c "from tools import browser_tool as b; b._active_sessions.clear(); b._session_last_activity.clear(); b._active_sessions['"'"'keep'"'"']={'"'"'shared_profile_session'"'"': True}; b._session_last_activity['"'"'keep'"'"']=0; cleaned=[]; b.cleanup_browser=lambda task_id: cleaned.append(task_id); b._cleanup_inactive_browser_sessions(); assert cleaned == []"
+  "$hermes_python" -c "import inspect; from run_agent import AIAgent; from tools.delegate_tool import DELEGATE_TASK_SCHEMA as s, _resolve_delegation_profile as r; cfg={'"'"'provider'"'"':'"'"'openai-api'"'"','"'"'model'"'"':'"'"'fallback'"'"','"'"'default_profile'"'"':'"'"'operator'"'"','"'"'profiles'"'"':{'"'"'operator'"'"':{'"'"'model'"'"':'"'"'gpt-5.6-sol'"'"'},'"'"'researcher'"'"':{'"'"'model'"'"':'"'"'kimi-k3'"'"'}}}; assert r(cfg, None)[0]['"'"'model'"'"']=='"'"'gpt-5.6-sol'"'"'; assert r(cfg, '"'"'researcher'"'"')[0]['"'"'model'"'"']=='"'"'kimi-k3'"'"'; assert '"'"'profile'"'"' in s['"'"'parameters'"'"']['"'"'properties'"'"']; assert '"'"'profile'"'"' in s['"'"'parameters'"'"']['"'"'properties'"'"']['"'"'tasks'"'"']['"'"'items'"'"']['"'"'properties'"'"']; assert '"'"'profile=function_args.get(\"profile\")'"'"' in inspect.getsource(AIAgent._dispatch_delegate_task)"
+'
+docker run --rm \
+  --volume "$smoke_root/agent-scripts:/opt/data/scripts:ro" \
+  --entrypoint bash "$AGENT_IMAGE_REF:nix" -c '
+  browser-support --help >/dev/null
+  android --help >/dev/null
+'
+docker run --rm --entrypoint node "$AGENT_IMAGE_REF:nix" -e '
+for (const name of ["pptxgenjs", "react", "react-dom/server", "react-icons/fa", "sharp"]) {
+  require(name);
+}
+'
+docker run --rm --entrypoint bash "$AGENT_IMAGE_REF:nix" -c '
+  for binary in apk apt-get chromium nix-env npm pip uv; do
+    if command -v "$binary" >/dev/null; then
+      echo "unexpected excluded binary: $binary" >&2
+      exit 1
+    fi
+  done
+  if command -v opencode >/dev/null; then
+    echo "unexpected excluded tool: opencode" >&2
+    exit 1
+  fi
+'
+echo 'Browser smoke stage: verify browser and Android viewer entrypoints'
+docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp "$BROWSER_IMAGE_REF:nix" --version
+docker run --rm --entrypoint android-viewer "$BROWSER_IMAGE_REF:nix" --help
+android_viewer_id=$(docker run --detach --rm --read-only \
+  --security-opt apparmor=unconfined \
+  --security-opt "seccomp=$chromium_seccomp_profile" \
+  --tmpfs /opt/browser-files:rw,uid=10000,gid=10000,mode=0755 \
+  --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
+  --tmpfs /dev/shm:rw,uid=10000,gid=10000,mode=1777 \
+  --env HOME=/tmp/home \
+  --entrypoint android-viewer \
+  "$BROWSER_IMAGE_REF:nix")
+trap 'docker stop "$android_viewer_id" >/dev/null 2>&1 || true' EXIT
+for attempt in $(seq 1 30); do
+  if docker exec "$android_viewer_id" curl --fail --silent \
+    http://127.0.0.1:6081/vnc.html >/dev/null; then
+    break
+  fi
+  if [ "$attempt" -eq 30 ]; then
+    docker logs "$android_viewer_id"
+    exit 1
+  fi
+  sleep 1
+done
+docker exec "$android_viewer_id" grep --quiet \
+  '"state": "waiting-for-emulator"' \
+  /opt/browser-files/android-viewer/status.json
+docker exec "$android_viewer_id" pgrep -x Xvfb >/dev/null
+docker exec "$android_viewer_id" pgrep -x x11vnc >/dev/null
+docker exec "$android_viewer_id" pgrep -f \
+  'websockify.*0.0.0.0:6081.*127.0.0.1:5901' >/dev/null
+docker exec "$android_viewer_id" adb version >/dev/null
+docker exec "$android_viewer_id" scrcpy --version >/dev/null
+docker stop "$android_viewer_id"
+trap - EXIT
+echo 'Browser smoke stage: start Chromium supervisor'
+browser_id=$(docker run --detach --rm --read-only \
+  --security-opt apparmor=unconfined \
+  --security-opt "seccomp=$chromium_seccomp_profile" \
+  -v "$smoke_root/browser-profile:/opt/browser" \
+  -v "$smoke_root/browser-files:/opt/browser-files" \
+  -v "$smoke_root/browser-policies:/etc/chromium/policies/managed" \
+  --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
+  --tmpfs /dev/shm:rw,uid=10000,gid=10000,mode=1777 \
+  "$BROWSER_IMAGE_REF:nix" \
+  --ozone-platform=x11 \
+  --window-size=1440,900 \
+  --force-device-scale-factor=1 \
+  --lang=en-US \
+  --use-gl=angle \
+  --use-angle=swiftshader-webgl \
+  --enable-unsafe-swiftshader \
+  --disable-component-update \
+  --no-first-run \
+  --no-default-browser-check \
+  --remote-debugging-port=9222 \
+  --user-data-dir=/opt/browser/profile \
+  about:blank)
+trap 'docker stop "$browser_id" >/dev/null 2>&1 || true' EXIT
+for attempt in $(seq 1 30); do
+  if docker exec "$browser_id" curl --fail --silent http://127.0.0.1:9222/json/version >/dev/null; then
+    break
+  fi
+  if [ "$attempt" -eq 30 ]; then
+    docker logs "$browser_id"
+    exit 1
+  fi
+  sleep 1
+done
+chromium_processes=$(docker exec "$browser_id" pgrep -af chromium)
+if [[ " $chromium_processes " == *" --no-sandbox "* ]]; then
+  echo 'Chromium unexpectedly disabled its internal sandbox' >&2
+  exit 1
+fi
+chromium_pid=$(docker exec "$browser_id" jq -er \
+  '.browser_pid' /opt/browser-files/browser-supervisor/status.json)
+renderer_pid=$(docker exec "$browser_id" pgrep -f -- '--type=renderer' | sed -n '1p')
+renderer_status=$(docker exec "$browser_id" cat "/proc/$renderer_pid/status")
+printf '%s\n' "$renderer_status" | awk \
+  '$1 == "Seccomp:" { found = 1; if ($2 != 2) exit 1 } END { if (!found) exit 1 }'
+printf '%s\n' "$renderer_status" | awk \
+  '$1 == "Seccomp_filters:" { found = 1; if ($2 < 2) exit 1 } END { if (!found) exit 1 }'
+chromium_user_ns=$(docker exec "$browser_id" readlink "/proc/$chromium_pid/ns/user")
+renderer_user_ns=$(docker exec "$browser_id" readlink "/proc/$renderer_pid/ns/user")
+test "$chromium_user_ns" != "$renderer_user_ns"
+docker exec "$browser_id" curl --fail --silent \
+  http://127.0.0.1:6080/vnc.html >/dev/null
+docker exec "$browser_id" curl --fail --silent \
+  http://127.0.0.1:6080/mandatory.json | jq -e \
+  '.autoconnect == true and .reconnect == true and .resize == "scale" and .view_only == false' \
+  >/dev/null
+docker exec "$browser_id" pgrep --full \
+  'websockify.*127.0.0.1:6080.*127.0.0.1:5900' >/dev/null
+docker exec "$browser_id" jq -e '.state == "running" and .managed_policy_count >= 1' \
+  /opt/browser-files/browser-supervisor/status.json >/dev/null
+docker exec "$browser_id" jq -e \
+  '.extension_count >= 2 and .external_extension_count >= 1 and .unpacked_extension_count >= 1' \
+  /opt/browser-files/browser-supervisor/status.json >/dev/null
+docker exec "$browser_id" test ! -L \
+  /etc/chromium/policies/managed/hermes-browser.json
+docker exec "$browser_id" grep --quiet ddkjiahejlhfcafbddmgiahcphecmpfh \
+  /etc/chromium/policies/managed/hermes-browser.json
+docker exec "$browser_id" test -f \
+  /etc/chromium/policies/managed/site-controls.json
+docker exec "$browser_id" test -f \
+  /opt/hermes/extensions/ublock-origin-lite.crx
+echo 'Browser smoke stage: verify managed policies and extensions'
+for attempt in $(seq 1 30); do
+  if docker exec "$browser_id" sh -c \
+    'test -f /opt/browser/profile/Default/Extensions/ddkjiahejlhfcafbddmgiahcphecmpfh/*/manifest.json'; then
+    break
+  fi
+  if [ "$attempt" -eq 30 ]; then
+    docker logs "$browser_id"
+    exit 1
+  fi
+  sleep 1
+done
+docker exec "$browser_id" sh -c \
+  'jq -e '\'' .version == "2026.820.1159" '\'' /opt/browser/profile/Default/Extensions/ddkjiahejlhfcafbddmgiahcphecmpfh/*/manifest.json >/dev/null'
+if docker logs "$browser_id" 2>&1 | grep -Eq \
+  'Failed to load extension|Extension error'; then
+  docker logs "$browser_id"
+  exit 1
+fi
+docker exec "$browser_id" pgrep -af chromium | grep --quiet \
+  -- '/opt/browser/extensions-unpacked/hermes-smoke'
+docker exec "$browser_id" pgrep -af chromium | grep --quiet \
+  -- '--disable-notifications'
+echo 'Browser smoke stage: restart with the same policy volume'
+docker restart "$browser_id" >/dev/null
+for attempt in $(seq 1 30); do
+  if docker exec "$browser_id" curl --fail --silent \
+    http://127.0.0.1:9222/json/version >/dev/null; then
+    break
+  fi
+  if [ "$attempt" -eq 30 ]; then
+    docker logs "$browser_id"
+    exit 1
+  fi
+  sleep 1
+done
+docker exec "$browser_id" jq -e \
+  '.state == "running" and .managed_policy_count >= 1' \
+  /opt/browser-files/browser-supervisor/status.json >/dev/null
+docker exec "$browser_id" test -f \
+  /etc/chromium/policies/managed/hermes-browser.json
+docker exec "$browser_id" test -f \
+  /etc/chromium/policies/managed/site-controls.json
+echo 'Browser smoke stage: verify supervisor recovery'
+restart_before=$(docker exec "$browser_id" jq -r \
+  '.restart_count' /opt/browser-files/browser-supervisor/status.json)
+docker exec "$browser_id" sh -c \
+  'kill -KILL "$(jq -r .browser_pid /opt/browser-files/browser-supervisor/status.json)"'
+for attempt in $(seq 1 30); do
+  restart_after=$(docker exec "$browser_id" jq -r \
+    '.restart_count' /opt/browser-files/browser-supervisor/status.json)
+  if [ "$restart_after" -gt "$restart_before" ] &&
+    docker exec "$browser_id" curl --fail --silent \
+      http://127.0.0.1:9222/json/version >/dev/null; then
+    break
+  fi
+  if [ "$attempt" -eq 30 ]; then
+    docker logs "$browser_id"
+    exit 1
+  fi
+  sleep 1
+done
+echo 'Browser smoke stage: verify agent CDP integration'
+agent_id=$(docker run --detach --rm \
+  --network "container:$browser_id" \
+  --env AGENT_BROWSER_SOCKET_DIR=/tmp/agent-browser-smoke \
+  --env BROWSER_CDP_URL=http://127.0.0.1:9222 \
+  --env BROWSER_FILES_ROOT=/opt/browser-files \
+  --env BROWSER_PROFILE_ROOT=/opt/browser \
+  --env BROWSER_POLICY_ROOT=/etc/chromium/policies/managed \
+  --env BROWSER_SHARED_PROFILE_SESSIONS=true \
+  --volume "$smoke_root/agent-scripts:/opt/data/scripts:ro" \
+  --volume "$smoke_root/browser-files:/opt/browser-files" \
+  --volume "$smoke_root/browser-profile:/opt/browser:ro" \
+  --volume "$smoke_root/browser-policies:/etc/chromium/policies/managed:ro" \
+  --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
+  --entrypoint sleep \
+  "$AGENT_IMAGE_REF:nix" \
+  180)
+trap 'docker stop "$agent_id" >/dev/null 2>&1 || true; docker stop "$browser_id" >/dev/null 2>&1 || true' EXIT
+tab_json=$(docker exec "$agent_id" agent-browser \
+  --cdp http://127.0.0.1:9222 --json tab list)
+printf '%s' "$tab_json" | jq -e '.data.tabs[0].targetId | length > 0' >/dev/null
+fingerprint_json=$(docker exec "$agent_id" agent-browser \
+  --cdp http://127.0.0.1:9222 --json eval \
+  'JSON.stringify({webdriver: navigator.webdriver, webgl: Boolean(document.createElement("canvas").getContext("webgl")), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, userAgent: navigator.userAgent, plugins: navigator.plugins.length, languages: navigator.languages.length, screen: [screen.width, screen.height]})')
+printf '%s' "$fingerprint_json" | jq -e \
+  '.success and (.data.result | fromjson | .webdriver == false and .webgl == true and .timeZone == "America/Los_Angeles" and (.userAgent | contains("HeadlessChrome") | not) and .plugins > 0 and .languages > 0 and .screen == [1440, 900])' \
+  >/dev/null
+support_target_id=$(printf '%s' "$tab_json" | jq -er '.data.tabs[0].targetId')
+docker exec "$agent_id" browser-support frame-tree "$support_target_id" >/dev/null
+docker exec "$agent_id" browser-support click \
+  --target-id "$support_target_id" 20 20 >/dev/null
+docker exec "$agent_id" browser-support touch-tap \
+  --target-id "$support_target_id" 30 30 >/dev/null
+docker exec "$agent_id" browser-support touch-swipe \
+  --target-id "$support_target_id" 50 100 50 200 \
+  --steps 3 --duration-ms 60 >/dev/null
+docker exec "$agent_id" browser-support drag \
+  --target-id "$support_target_id" 100 100 150 150 \
+  --steps 3 --duration-ms 60 >/dev/null
+docker exec "$agent_id" browser-support checkpoint-save \
+  "$support_target_id" combined-smoke --note ci >/dev/null
+docker exec "$agent_id" browser-support verify-page \
+  "$support_target_id" --expected combined-smoke \
+  --without-signal captcha | jq -e '.ok and .verification.matched' >/dev/null
+diagnostics=$(docker exec "$agent_id" browser-support diagnostics)
+printf '%s\n' "$diagnostics" | jq \
+  '{ok,cdp,extensions,supervisor,profile:{size_bytes:.profile.size_bytes,policy_files:.profile.policy_files,installed_extensions:.profile.installed_extensions,unpacked_extensions:.profile.unpacked_extensions}}'
+printf '%s\n' "$diagnostics" |
+  jq -e '.ok and .cdp.target_count > 0 and .extensions.all_expected_loaded and (.extensions.expected[0].enabled_rulesets | length) > 0 and (.profile.installed_extensions | map(select(.id == "ddkjiahejlhfcafbddmgiahcphecmpfh")) | length) >= 1 and (.profile.policy_files | length) >= 2 and (.profile.unpacked_extensions | length) > 0' \
+    >/dev/null
+docker exec "$agent_id" bash -euc '
+  hermes_python=$(sed -n "s|^export HERMES_PYTHON='"'"'\(.*\)'"'"'$|\1|p" "$(command -v hermes)")
+  "$hermes_python" - <<'"'"'PY'"'"'
+from tools import browser_tool
+from tools import browser_session_router
+import runpy
+
+runpy.run_path("/opt/data/scripts/browser_refs_smoke.py", run_name="__main__")
+
+task_ids = [f"parallel-smoke-{index}" for index in range(4)]
+results = [
+    browser_tool._run_browser_command(task_id, "snapshot")
+    for task_id in task_ids
+]
+assert all(result.get("success") for result in results), results
+sessions = browser_session_router.list_persisted_sessions()
+smoke_sessions = [
+    session for session in sessions if session.get("task_id") in task_ids
+]
+assert len(smoke_sessions) == len(task_ids), smoke_sessions
+target_ids = {session.get("root_target_id") for session in smoke_sessions}
+assert None not in target_ids and len(target_ids) == len(task_ids), target_ids
+for task_id in task_ids:
+    browser_tool._cleanup_single_browser_session(task_id)
+remaining = {
+    session.get("task_id")
+    for session in browser_session_router.list_persisted_sessions()
+}
+assert not remaining.intersection(task_ids), remaining
+for task_id in task_ids:
+    events = browser_session_router.list_persisted_events(task_id, limit=20)
+    assert events and events[-1].get("event") == "session.closed", events
+    assert any(event.get("event") == "command.completed" for event in events), events
+PY
+'
+echo 'Browser smoke stage: clean up persistent test state'
+docker stop "$agent_id"
+docker stop "$browser_id"
+docker run --rm --user 0:0 \
+  -v "$smoke_root:/smoke" \
+  --entrypoint chmod \
+  "$BROWSER_IMAGE_REF:nix" \
+  -R a+rwX /smoke
+rm -rf "$smoke_root"
+trap - EXIT

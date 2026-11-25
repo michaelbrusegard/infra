@@ -41,6 +41,17 @@ manifest_updater = importlib.util.module_from_spec(MANIFEST_UPDATER_SPEC)
 MANIFEST_UPDATER_SPEC.loader.exec_module(manifest_updater)
 
 
+def image_pipeline(name):
+    """Return an image's workflow together with the smoke test it runs."""
+    root = APP_ROOT.parents[3]
+    workflow = (root / ".github" / "workflows" / f"{name}.yaml").read_text(
+        encoding="utf-8"
+    )
+    smoke_test = root / "packages" / name / "smoke-test.sh"
+    assert f"run: packages/{name}/smoke-test.sh" in workflow
+    return workflow + smoke_test.read_text(encoding="utf-8")
+
+
 class AndroidScriptTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = tempfile.TemporaryDirectory()
@@ -863,9 +874,7 @@ class AndroidScriptTests(unittest.TestCase):
         k3s_module = (
             APP_ROOT.parents[3] / "modules" / "features" / "k3s.nix"
         ).read_text(encoding="utf-8")
-        image_workflow = (
-            APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-agent-image.yaml"
-        ).read_text(encoding="utf-8")
+        image_workflow = image_pipeline("hermes-agent-image")
         agent_browser_package = (
             APP_ROOT.parents[3]
             / "packages"
@@ -989,13 +998,9 @@ class AndroidScriptTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn('mkdir -p "$HOME"', companion_wrapper)
-        workflow = (
-            APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-android-image.yaml"
-        ).read_text(encoding="utf-8")
+        workflow = image_pipeline("hermes-android-image")
         manifest_updater_source = MANIFEST_UPDATER_PATH.read_text(encoding="utf-8")
-        agent_workflow = (
-            APP_ROOT.parents[3] / ".github" / "workflows" / "hermes-agent-image.yaml"
-        ).read_text(encoding="utf-8")
+        agent_workflow = image_pipeline("hermes-agent-image")
         kvm_device_plugin = (
             APP_ROOT.parents[3]
             / "gitops"
