@@ -32,7 +32,7 @@ Each failure message says what to fix.
 
 ```sh
 nix run .#lint     # seconds: format, lint rules, secret scan. Run it often.
-nix run .#verify   # about a minute when cached: this system's flake checks and every host.
+nix run .#verify   # under a minute when cached: this system's flake checks and every host.
 nix run .#check    # needs network: manifest schemas, tofu validate. For gitops/.
 ```
 
