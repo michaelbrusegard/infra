@@ -79,9 +79,13 @@ pkgs.testers.runNixOSTest {
     backup.wait_for_unit("multi-user.target")
     primary.succeed("openssl req -x509 -newkey rsa:2048 -nodes -keyout /tmp/server.key -out /tmp/server.crt -days 2 -subj /CN=${primaryName} -addext subjectAltName=DNS:${primaryName}")
     primary.succeed("echo 'deleted@manafishrov.com REJECT removed recipient' > /tmp/rejected")
-    for name in ["client", "rogue"]:
+    for name in ["client", "rogue", "stale"]:
         primary.succeed(f"openssl req -x509 -newkey rsa:2048 -nodes -keyout /tmp/{name}.key -out /tmp/{name}.crt -days 2 -subj /CN={name}")
-    primary.succeed("mkdir -p /run/postfix; openssl x509 -in /tmp/client.crt -noout -fingerprint -sha256 | cut -d= -f2 | sed 's/$/ OK/' > /run/postfix/backup-client")
+
+    def pin(name):
+        primary.succeed(f"mkdir -p /run/postfix; openssl x509 -in /tmp/{name}.crt -noout -fingerprint -sha256 | cut -d= -f2 | sed 's/$/ OK/' > /run/postfix/backup-client")
+
+    pin("client")
 
     def copy(source, destination):
         contents = primary.succeed("cat " + source)
@@ -121,7 +125,9 @@ pkgs.testers.runNixOSTest {
 
     # A pin mismatch must defer the handoff and keep the queue intact. Install
     # it before the primary starts so automatic retries cannot drain the queue.
-    primary.succeed("cp /run/postfix/backup-client /tmp/backup-client; sed -i 's/^../00/' /run/postfix/backup-client")
+    # The wrong pin is another certificate's: editing the real fingerprint can
+    # leave it unchanged.
+    pin("stale")
     primary.succeed("systemctl start postfix")
     primary.wait_for_open_port(2525)
     backup.succeed("postqueue -f")
@@ -150,7 +156,8 @@ pkgs.testers.runNixOSTest {
             assert 400 <= s.docmd('DATA')[0] < 500
     """)
     primary.fail("grep forged.test /tmp/delivered")
-    primary.succeed("cp /tmp/backup-client /run/postfix/backup-client; postfix reload")
+    pin("client")
+    primary.succeed("postfix reload")
     python(primary, """
     import smtplib, ssl
     ctx = ssl._create_unverified_context()
