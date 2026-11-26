@@ -118,10 +118,6 @@
       url = "github:omarcresp/t3code-flake";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
-    bubbles = {
-      url = "github:chrispouliot/bubbles";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
     # Daily-updated agent harnesses. Its own nixpkgs keeps the binary cache.
     llm-agents.url = "github:numtide/llm-agents.nix";
     asus-dialpad-driver = {

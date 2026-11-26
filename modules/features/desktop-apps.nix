@@ -51,7 +51,6 @@
             audacity
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-            bubbles
             mattermost-desktop
             fluffychat
             zapzap
@@ -106,7 +105,6 @@
             ".config/scribus"
             ".config/inkscape"
             ".config/Signal"
-            ".local/share/bubbles"
             ".config/ZapZap"
             ".local/share/ZapZap"
             ".config/Mattermost"
