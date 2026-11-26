@@ -68,6 +68,10 @@ def root_cause(output):
     return " | ".join(lines[-ERROR_LINES:])
 
 
+class BrokenBaselineError(Exception):
+    """The gate fails on the tree as committed, so no input can be blamed."""
+
+
 class Updater:
     def __init__(self, nix_arguments, jobs, gate, scratch):
         self.nix_arguments = nix_arguments
@@ -158,11 +162,16 @@ class Updater:
         return names[low], failure
 
     def hold_back_what_fails_the_gate(self, names):
+        baseline_passes = False
         while names:
             passed, output = self.passes_gate(names)
             if passed:
                 print(f"gate passes with {len(names)} update(s)", flush=True)
                 return names
+            if not baseline_passes:
+                baseline_passes, failure = self.passes_gate([])
+                if not baseline_passes:
+                    raise BrokenBaselineError(failure)
             culprit, failure = self.first_breaking(names)
             self.held_back[culprit] = [failure or output]
             names = [name for name in names if name != culprit]
@@ -244,7 +253,13 @@ def main():
             shutil.copyfile(updater.good_lock, LOCK)
             accepted = updater.update_one_at_a_time(sorted(before))
         if arguments.gate:
-            updater.hold_back_what_fails_the_gate(accepted)
+            try:
+                updater.hold_back_what_fails_the_gate(accepted)
+            except BrokenBaselineError as failure:
+                sys.exit(
+                    "The gate fails before any input is updated, and with every "
+                    f"update applied. Fix this first: {failure}"
+                )
         held_back = updater.held_back
 
     summary = report(before, locked_revisions(), held_back)

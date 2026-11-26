@@ -153,7 +153,28 @@ class GateTest(InTemporaryCheckout):
         self.assertEqual(self.updated(), sorted(kept))
         self.assertEqual(sorted(self.updater.held_back), ["beta", "epsilon"])
 
-    def test_gate_that_fails_without_any_update_restores_the_original_lock(self):
+    def test_gate_that_fails_without_any_update_stops_without_blaming_an_input(self):
+        self.gate_fails_with()
+        self.gate_runs = 0
+
+        def run(command, **_):
+            if command[0] == "git":
+                return completed()
+            self.gate_runs += 1
+            return subprocess.CompletedProcess(
+                command, 1, "ERROR: tree is broken\n", ""
+            )
+
+        update_inputs.subprocess.run.side_effect = run
+        with self.assertRaisesRegex(
+            update_inputs.BrokenBaselineError, "ERROR: tree is broken"
+        ):
+            self.hold_back()
+        self.assertEqual(self.updated(), [])
+        self.assertEqual(self.updater.held_back, {})
+        self.assertEqual(self.gate_runs, 2)
+
+    def test_every_input_failing_the_gate_holds_them_all_back(self):
         self.gate_fails_with(*self.inputs)
         self.assertEqual(self.hold_back(), [])
         self.assertEqual(self.updated(), [])
@@ -162,7 +183,7 @@ class GateTest(InTemporaryCheckout):
     def test_search_is_logarithmic(self):
         self.gate_fails_with("epsilon")
         self.hold_back()
-        self.assertLessEqual(self.gate_runs, 5)
+        self.assertLessEqual(self.gate_runs, 6)
 
 
 class MessageTest(unittest.TestCase):
