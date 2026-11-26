@@ -221,7 +221,10 @@ sleep 2
 mark_smoke_stage 'Settings UI search control discovery'
 mark_smoke_stage 'Settings UI search control click'
 click_response=
-for attempt in $(seq 1 5); do
+# A freshly booted Settings keeps laying itself out for a while on a slow
+# runner, and the companion refuses to act on a node that moved since the
+# snapshot. Allow as long as the first snapshot gets.
+for attempt in $(seq 1 30); do
   settings_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
   settings_tree_id=$(printf '%s\n' "$settings_tree" | jq -r '.tree_id')
   settings_search_ref=$(printf '%s\n' "$settings_tree" | jq -r \
@@ -250,7 +253,7 @@ sleep 1
 mark_smoke_stage 'Settings UI editor discovery'
 mark_smoke_stage 'Unicode accessibility text entry'
 text_response=
-for attempt in $(seq 1 5); do
+for attempt in $(seq 1 30); do
   search_tree=$(accessibility_request '{"op":"snapshot","ttl_ms":30000}')
   search_tree_id=$(printf '%s\n' "$search_tree" | jq -r '.tree_id')
   search_edit_ref=$(printf '%s\n' "$search_tree" | jq -r \
