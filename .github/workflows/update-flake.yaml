@@ -21,6 +21,14 @@ jobs:
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
+      # The gate builds every x86 server, which does not fit in the disk a
+      # hosted runner has free: the run was shut down 39 minutes into it.
+      - name: Free disk for the server builds
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /usr/share/swift \
+            /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache
+          sudo docker image prune --all --force >/dev/null
+          df -h /
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
       # update-inputs tries every input at once and falls back to one at a
