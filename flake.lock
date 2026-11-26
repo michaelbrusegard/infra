@@ -56,11 +56,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779517639,
-        "narHash": "sha256-cRI7D9FJf2/pTOaGCpwx/HDGrDnQMVaMp2GRlL6/DjM=",
+        "lastModified": 1792529144,
+        "narHash": "sha256-3O7APZf7Q0tgOPvgcxRdGQCCnYxZvhO53EgIV79YFDM=",
         "owner": "asus-linux-drivers",
         "repo": "asus-dialpad-driver",
-        "rev": "de210fd14025402b6621e89a0cd52e84c1cbfec2",
+        "rev": "f3cc7a08b821d4a6006ecbfeca5138407300a4db",
         "type": "github"
       },
       "original": {
@@ -1285,11 +1285,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1792773339,
-        "narHash": "sha256-rZLrzrC6i+jnTAlvPZHogKDulY7WWDEv9hJeHieO7Zw=",
+        "lastModified": 1795234589,
+        "narHash": "sha256-f/VVvxf5RsQgWVhUtefoca5ktVg0DA2bnkMOcmSnozo=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "3ec636362e1816bc2f0888fa0fa2c69f1bc9e504",
+        "rev": "2786a2a72088ecf32aea5b3ec52099e6a7cff78f",
         "type": "github"
       },
       "original": {

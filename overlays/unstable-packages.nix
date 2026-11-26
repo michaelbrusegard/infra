@@ -34,16 +34,9 @@ in
     gh-skyline
     gh-stack
     netbird-ui
+    netbird
     ;
 
-  # `netbird kubernetes` aborts on the first peer without reverse DNS.
-  netbird = pkgs-unstable.netbird.overrideAttrs (old: {
-    postPatch = (old.postPatch or "") + ''
-      substituteInPlace client/cmd/kubernetes.go \
-        --replace-fail $'\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}' \
-                       $'\t\tif err != nil {\n\t\t\tlog.Debugf("could not resolve reverse DNS for peer %s: %v", peer.IP, err)\n\t\t\tcontinue\n\t\t}'
-    '';
-  });
   feishin = prev.feishin.overrideAttrs (old: {
     postFixup = (old.postFixup or "") + ''
       substituteInPlace $out/bin/feishin \

@@ -1,37 +1,25 @@
 { inputs, ... }: {
   flake.modules.nixos.dialpad =
-    { lib, ... }:
-    let
-      # The dms-greeter runs its own Hyprland and grabs wayland-0, so the actual
-      # user session lands on wayland-1.
-      uid = 1000;
-      waylandSocket = "/run/user/${toString uid}/wayland-1";
-    in
+    { lib, users, ... }:
     {
       imports = [
         inputs.asus-dialpad-driver.nixosModules.default
       ];
 
-      services.asus-dialpad-driver = {
+      hardware.asus-dialpad-driver = {
         enable = true;
         layout = "proartp16";
-        wayland = true;
-        waylandDisplay = "wayland-1";
+        sessionTypes = [ "wayland" ];
+        # Replaces the module's defaults, which pin wayland-0. That socket
+        # belongs to the greeter here, and uwsm already hands the session's own
+        # display variables to every user service.
+        environment.LOG = "WARNING";
       };
 
-      systemd.services.asus-dialpad-driver = {
-        wantedBy = lib.mkForce [ ];
-        after = [ "graphical.target" ];
-        unitConfig.ConditionPathExists = waylandSocket;
-        serviceConfig.RestartSec = lib.mkForce 5;
-      };
-
-      systemd.paths.asus-dialpad-driver = {
-        wantedBy = [ "paths.target" ];
-        pathConfig = {
-          PathExists = waylandSocket;
-          Unit = "asus-dialpad-driver.service";
-        };
+      # The driver runs in the user session and creates its virtual device
+      # through /dev/uinput.
+      users.users = lib.optionalAttrs (builtins.elem "michaelbrusegard" users) {
+        michaelbrusegard.extraGroups = [ "uinput" ];
       };
     };
 }
