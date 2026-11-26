@@ -67,8 +67,16 @@ jobs:
           git apply ../../packages/hermes-agent-image/hermes-v2026.8.19.patch
           git apply --check ../../packages/hermes-agent-image/delegation-profiles.patch
           git apply ../../packages/hermes-agent-image/delegation-profiles.patch
+          # uv compiles bytecode with a pool of workers, and what a worker
+          # compiled earlier leaks into its later files. One worker makes a
+          # rebuild produce the same package.
+          git apply --check ../../packages/hermes-agent-image/reproducible-bytecode.patch
+          git apply ../../packages/hermes-agent-image/reproducible-bytecode.patch
           install -m 0644 ../../packages/hermes-agent-image/browser_session_router.py tools/browser_session_router.py
-          git add -f tools/browser_session_router.py
+          # Nix copies this directory as it is. The index and logs under .git
+          # differ on every checkout, and left in place they change the agent
+          # package, the image digest and so restart Hermes on every build.
+          rm -rf .git
 
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
         if: github.event_name == 'push'

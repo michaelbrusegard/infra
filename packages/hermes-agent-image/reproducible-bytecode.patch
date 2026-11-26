@@ -1,0 +1,12 @@
+diff --git a/nix/python.nix b/nix/python.nix
+index 316b7687a6..cd90bfb894 100644
+--- a/nix/python.nix
++++ b/nix/python.nix
+@@ -117,6 +117,7 @@ let
+           (final: prev: {
+             hermes-agent = prev.hermes-agent.overrideAttrs (_old: {
+               HERMES_NIX_BUILD = "1";
++              UV_CONCURRENT_INSTALLS = "1";
+             });
+           })
+         ]
