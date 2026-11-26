@@ -13,7 +13,7 @@ name: CLIProxyAPI Plugins Image
   workflow_dispatch:
 
 concurrency:
-  group: image-digests-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -105,6 +105,4 @@ jobs:
           if git diff --quiet -- "${manifests[@]}"; then exit 0; fi
           git add "${manifests[@]}"
           git commit -m 'chore(cliproxy): update plugin image'
-          git pull --rebase origin main
-          git diff --exit-code "$GIT_SHA" -- packages/cliproxy-plugins .github/workflows/cliproxy-plugins-image.yaml
-          git push
+          .github/scripts/push-to-main.sh git diff --exit-code "$GIT_SHA" -- packages/cliproxy-plugins .github/workflows/cliproxy-plugins-image.yaml

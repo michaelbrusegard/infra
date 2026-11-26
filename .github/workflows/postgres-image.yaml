@@ -13,7 +13,7 @@ name: Postgres Image
       - .github/workflows/postgres-image.yaml
 
 concurrency:
-  group: image-digests-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -103,5 +103,4 @@ jobs:
 
           git add gitops/espresso/infrastructure/controllers/postgres/statefulset.yaml
           git commit -m "chore(postgres): update image digest [skip ci]"
-          git pull --rebase origin main
-          git push
+          .github/scripts/push-to-main.sh

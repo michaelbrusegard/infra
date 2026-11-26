@@ -13,7 +13,7 @@ name: NetBird Proxy Image
   workflow_dispatch:
 
 concurrency:
-  group: image-digests-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -104,6 +104,4 @@ jobs:
           if git diff --quiet -- "$manifest"; then exit 0; fi
           git add "$manifest"
           git commit -m 'fix(netbird): deploy proxy with image routing support'
-          git pull --rebase origin main
-          git diff --exit-code "$GIT_SHA" -- packages/netbird-proxy-image .github/workflows/netbird-proxy-image.yaml
-          git push
+          .github/scripts/push-to-main.sh git diff --exit-code "$GIT_SHA" -- packages/netbird-proxy-image .github/workflows/netbird-proxy-image.yaml

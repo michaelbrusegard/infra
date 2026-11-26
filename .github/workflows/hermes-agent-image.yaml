@@ -25,7 +25,7 @@ name: Hermes Agent Images
       - gitops/espresso/apps/hermes-agent/tests/*_smoke.py
 
 concurrency:
-  group: image-digests-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -240,5 +240,4 @@ jobs:
 
           git add gitops/espresso/apps/hermes-agent/statefulset.yaml
           git commit -m "chore(hermes-agent): update image digests [skip ci]"
-          git pull --rebase origin main
-          git push
+          .github/scripts/push-to-main.sh

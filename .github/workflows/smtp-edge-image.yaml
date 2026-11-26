@@ -16,7 +16,7 @@ name: SMTP Edge Image
   workflow_dispatch:
 
 concurrency:
-  group: image-digests-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -191,5 +191,4 @@ jobs:
         run: |
           git add "$STATEFULSET" "$RECORD"
           git commit -m "chore(smtp-edge): update image digest [skip ci]"
-          git pull --rebase origin main
-          git push
+          .github/scripts/push-to-main.sh

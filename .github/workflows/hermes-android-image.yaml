@@ -285,5 +285,4 @@ jobs:
           fi
           git add gitops/espresso/apps/hermes-agent/statefulset.yaml
           git commit -m "chore(hermes-agent): update android image digest [skip ci]"
-          git pull --rebase origin main
-          git push
+          .github/scripts/push-to-main.sh
