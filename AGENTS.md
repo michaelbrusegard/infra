@@ -41,6 +41,10 @@ changed. `verify` builds the checks for the system it runs on, so the router VM
 tests only run on Linux. `nix flake check` covers the same ground one host at a
 time and takes more than twice as long.
 
+`verify` evaluates hosts without building them. After changing `flake.lock` by
+hand, run `nix run .#update-gate` as well: it builds the x86 servers, which is
+where a package that no longer compiles shows up.
+
 `diff-hosts` prints values from host closures, which can include secrets. Pass
 `--names-only` anywhere the output is published.
 
