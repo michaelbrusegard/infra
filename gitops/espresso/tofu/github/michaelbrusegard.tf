@@ -101,45 +101,5 @@ resource "github_repository_ruleset" "infra_main" {
   }
 }
 
-resource "github_repository_ruleset" "infra_secrets_main" {
-  repository  = "infra-secrets"
-  name        = "main"
-  target      = "branch"
-  enforcement = "active"
-
-  bypass_actors {
-    actor_id    = 5 # admin
-    actor_type  = "RepositoryRole"
-    bypass_mode = "always"
-  }
-
-  conditions {
-    ref_name {
-      include = ["~DEFAULT_BRANCH"]
-      exclude = []
-    }
-  }
-
-  rules {
-    deletion         = true
-    non_fast_forward = true
-
-    pull_request {
-      allowed_merge_methods             = ["merge", "squash", "rebase"]
-      dismiss_stale_reviews_on_push     = false
-      require_code_owner_review         = false
-      require_last_push_approval        = false
-      required_approving_review_count   = 0
-      required_review_thread_resolution = false
-    }
-
-    required_status_checks {
-      do_not_enforce_on_create             = false
-      strict_required_status_checks_policy = false
-
-      required_check {
-        context = "check"
-      }
-    }
-  }
-}
+# infra-secrets has no ruleset: it is private, and the Free plan refuses even
+# to read one there.
