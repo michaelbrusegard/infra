@@ -23,6 +23,9 @@ spec:
     spec:
       backoffLimit: 0
       activeDeadlineSeconds: 540
+      # A failed run stays visible for a day, then stops showing up as an
+      # unhealthy pod once later runs have succeeded.
+      ttlSecondsAfterFinished: 86400
       template:
         metadata:
           labels:
