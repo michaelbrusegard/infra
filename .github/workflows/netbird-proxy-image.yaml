@@ -103,5 +103,5 @@ jobs:
           manifest=gitops/espresso/apps/netbird/agent-network.yaml
           if git diff --quiet -- "$manifest"; then exit 0; fi
           git add "$manifest"
-          git commit -m 'fix(netbird): deploy proxy with image routing support'
+          git commit -m 'chore(netbird): update proxy image digest [skip ci]'
           .github/scripts/push-to-main.sh git diff --exit-code "$GIT_SHA" -- packages/netbird-proxy-image .github/workflows/netbird-proxy-image.yaml

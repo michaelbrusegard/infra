@@ -104,5 +104,5 @@ jobs:
             gitops/espresso/apps/clickhouse/llm-normalizer.yaml)
           if git diff --quiet -- "${manifests[@]}"; then exit 0; fi
           git add "${manifests[@]}"
-          git commit -m 'chore(cliproxy): update plugin image'
+          git commit -m 'chore(cliproxy): update plugin image [skip ci]'
           .github/scripts/push-to-main.sh git diff --exit-code "$GIT_SHA" -- packages/cliproxy-plugins .github/workflows/cliproxy-plugins-image.yaml
