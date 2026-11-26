@@ -15,6 +15,7 @@ import argparse
 import concurrent.futures
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -61,7 +62,17 @@ def root_cause(output):
     """
     lines = [line.strip() for line in output.splitlines() if line.strip()]
     lines = [line for line in lines if "(ignored)" not in line]
-    for marker in ("ERROR", "FAIL", "error:"):
+    stated = [line for line in lines if "ERROR" in line]
+    if stated:
+        return " | ".join(stated[:ERROR_LINES])
+    unbuildable = [line for line in lines if line.startswith("error: Cannot build")]
+    if unbuildable:
+        derivation = re.search(r"-([^/']+)\.drv", unbuildable[0])
+        name = derivation.group(1) if derivation else "a derivation"
+        log = [line.lstrip("> ") for line in lines if line.startswith(">")]
+        errors = [line for line in log if "error" in line.lower()]
+        return " | ".join([f"{name} does not build", *dict.fromkeys(errors[-2:])])
+    for marker in ("FAIL", "error:"):
         matching = [line for line in lines if marker in line]
         if matching:
             return " | ".join(matching[:ERROR_LINES])
@@ -129,15 +140,24 @@ class Updater:
         shutil.copyfile(self.original_lock, LOCK)
         if names and self.update(*names).returncode != 0:
             return False, "nix flake update failed"
-        result = subprocess.run(
+        returncode, output = self.run_gate()
+        return returncode == 0, root_cause(output)
+
+    def run_gate(self):
+        """Run the gate, echoing its output so a long build shows progress."""
+        with subprocess.Popen(
             self.gate,
             shell=True,
-            check=False,
-            capture_output=True,
             text=True,
             stdin=subprocess.DEVNULL,
-        )
-        return result.returncode == 0, root_cause(result.stdout + result.stderr)
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        ) as process:
+            lines = []
+            for line in process.stdout:
+                print(f"  {line}", end="", flush=True)
+                lines.append(line)
+        return process.returncode, "".join(lines)
 
     def first_breaking(self, names):
         """Return the input whose update first makes the gate fail.

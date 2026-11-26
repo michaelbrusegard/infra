@@ -106,18 +106,17 @@ class GateTest(InTemporaryCheckout):
     def gate_fails_with(self, *breaking):
         self.gate_runs = 0
 
-        def run(command, **_):
-            if command[0] == "git":
-                return completed()
+        def run_gate():
             self.gate_runs += 1
             failing = [name for name in breaking if name in self.updated()]
             if failing:
-                return subprocess.CompletedProcess(
-                    command, 1, f"ERROR: {failing[0]} does not build\n", ""
-                )
-            return subprocess.CompletedProcess(command, 0, "", "")
+                return 1, f"ERROR: {failing[0]} does not build\n"
+            return 0, ""
 
-        patcher = mock.patch.object(update_inputs.subprocess, "run", side_effect=run)
+        self.updater.run_gate = run_gate
+        patcher = mock.patch.object(
+            update_inputs.subprocess, "run", return_value=completed()
+        )
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -125,6 +124,15 @@ class GateTest(InTemporaryCheckout):
         return self.quietly(
             self.updater.hold_back_what_fails_the_gate, list(self.inputs)
         )
+
+    def test_gate_output_is_echoed_and_returned(self):
+        self.updater.gate = "echo building; echo broke >&2; exit 3"
+        shown = io.StringIO()
+        with contextlib.redirect_stdout(shown):
+            returncode, output = self.updater.run_gate()
+        self.assertEqual(returncode, 3)
+        self.assertEqual(output, "building\nbroke\n")
+        self.assertEqual(shown.getvalue(), "  building\n  broke\n")
 
     def test_passing_gate_keeps_every_update(self):
         self.gate_fails_with()
@@ -155,17 +163,12 @@ class GateTest(InTemporaryCheckout):
 
     def test_gate_that_fails_without_any_update_stops_without_blaming_an_input(self):
         self.gate_fails_with()
-        self.gate_runs = 0
 
-        def run(command, **_):
-            if command[0] == "git":
-                return completed()
+        def run_gate():
             self.gate_runs += 1
-            return subprocess.CompletedProcess(
-                command, 1, "ERROR: tree is broken\n", ""
-            )
+            return 1, "ERROR: tree is broken\n"
 
-        update_inputs.subprocess.run.side_effect = run
+        self.updater.run_gate = run_gate
         with self.assertRaisesRegex(
             update_inputs.BrokenBaselineError, "ERROR: tree is broken"
         ):
@@ -208,6 +211,25 @@ class MessageTest(unittest.TestCase):
         )
         self.assertEqual(
             update_inputs.root_cause(output), "ERROR: patch does not apply"
+        )
+
+    def test_root_cause_names_the_derivation_whose_builder_failed(self):
+        output = (
+            "FAIL  flake checks\n"
+            "error: Cannot build '/nix/store/abc-whiskers-2.10.0.drv'.\n"
+            "       Reason: builder failed with exit code 101.\n"
+            "       Last 25 log lines:\n"
+            "       > Compiling whiskers\n"
+            "       > error: could not compile `whiskers` (lib)\n"
+            "       For full logs, run:\n"
+            "error: Cannot build '/nix/store/def-grub-theme.drv'.\n"
+            "       Reason: 1 dependency failed.\n"
+            "FAIL  verify\n"
+        )
+        self.assertEqual(
+            update_inputs.root_cause(output),
+            "whiskers-2.10.0 does not build | "
+            "error: could not compile `whiskers` (lib)",
         )
 
     def test_root_cause_skips_ignored_errors(self):
