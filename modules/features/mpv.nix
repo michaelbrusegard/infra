@@ -1,16 +1,12 @@
 {
   flake.modules.homeManager.mpv =
+    _:
     {
-      lib,
-      isWsl,
-      ...
-    }:
-    {
-      programs.mpv = lib.mkIf (!isWsl) {
+      programs.mpv = {
         enable = true;
       };
 
-      xdg = lib.mkIf (!isWsl) {
+      xdg = {
         mimeApps.defaultApplications = {
           "video/mp4" = [ "mpv.desktop" ];
         };

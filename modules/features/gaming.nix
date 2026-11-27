@@ -57,7 +57,6 @@
       pkgs,
       lib,
       config,
-      isWsl,
       osConfig,
       homePersistenceRoot ? null,
       ...
@@ -65,7 +64,6 @@
     let
       nvidiaOffload = osConfig.local.gaming.nvidiaOffload or false;
       gamemodeRun = osConfig.programs.gamemode.enable or false;
-      enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
 
       gamemoderun = lib.getExe' pkgs.gamemode "gamemoderun";
 
@@ -155,9 +153,9 @@
     in
     {
       home = {
-        packages = lib.optionals enable (launchers ++ tools);
+        packages = launchers ++ tools;
       }
-      // lib.optionalAttrs enable {
+      // {
         file.".config/MangoHud/MangoHud.conf".text = mangohudConf;
 
         activation.prismGamingTweaks = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -165,7 +163,7 @@
           ${setPrismKey "EnableMangoHud"}
         '';
       }
-      // lib.optionalAttrs (enable && homePersistenceRoot != null) {
+      // lib.optionalAttrs (homePersistenceRoot != null) {
         persistence = {
           ${homePersistenceRoot}.directories = [
             ".local/share/PrismLauncher"

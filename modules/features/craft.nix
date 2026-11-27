@@ -4,13 +4,12 @@
       config,
       lib,
       pkgs,
-      isWsl,
       homePersistenceRoot ? null,
       ...
     }:
     let
       inherit (pkgs.stdenv.hostPlatform) isDarwin;
-      onLinux = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
+      onLinux = pkgs.stdenv.hostPlatform.isLinux;
       enable = onLinux || isDarwin;
 
       apps = {

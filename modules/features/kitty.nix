@@ -3,7 +3,6 @@
     {
       lib,
       pkgs,
-      isWsl,
       ...
     }:
     let
@@ -77,7 +76,7 @@
       );
     in
     {
-      programs.kitty = lib.mkIf (!isWsl) {
+      programs.kitty = {
         enable = true;
         shellIntegration.enableZshIntegration = true;
         settings = {
@@ -101,9 +100,9 @@
           terminalBindings // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux passthroughBindings;
       };
 
-      home.sessionVariables.TERMINAL = lib.mkIf (!isWsl) "kitty";
+      home.sessionVariables.TERMINAL = "kitty";
 
-      xdg.terminal-exec = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
+      xdg.terminal-exec = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
         enable = true;
         settings.default = [ "kitty.desktop" ];
       };

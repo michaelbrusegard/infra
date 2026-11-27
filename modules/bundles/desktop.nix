@@ -1,4 +1,8 @@
 { inputs, ... }: {
+  flake.modules.nixos.desktop.home-manager.sharedModules = [
+    inputs.self.modules.homeManager.desktop
+  ];
+
   flake.modules.nixos.desktop.imports = with inputs.self.modules.nixos; [
     workstation
     avahi

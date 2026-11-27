@@ -3,7 +3,6 @@
     {
       pkgs,
       lib,
-      isWsl,
       homePersistenceRoot ? null,
       ...
     }:
@@ -39,8 +38,7 @@
     in
     {
       home = {
-        packages = lib.mkIf (!isWsl) (
-          with pkgs;
+        packages = with pkgs;
           [
             signal-desktop
             # Keep the desktop files while allowing slack-cli to own bin/slack.
@@ -77,8 +75,7 @@
             brewCasks.betaflight-configurator
             feishin
             brewCasks.opencloud
-          ]
-        );
+          ];
       }
       // lib.optionalAttrs (homePersistenceRoot != null) {
         persistence = {
@@ -100,12 +97,12 @@
         };
       };
 
-      xdg.autostart = lib.mkIf (!isWsl && pkgs.stdenv.hostPlatform.isLinux) {
+      xdg.autostart = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
         enable = true;
         entries = [ "${opencloudAutostart}/share/applications/opencloud-autostart.desktop" ];
       };
 
-      xdg.mimeApps.defaultApplications = lib.mkIf (!isWsl) {
+      xdg.mimeApps.defaultApplications = {
         "image/png" = [ "imv.desktop" ];
         "image/jpeg" = [ "imv.desktop" ];
       };

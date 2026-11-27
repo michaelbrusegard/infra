@@ -3,20 +3,16 @@
     {
       pkgs,
       lib,
-      isWsl,
       homePersistenceRoot ? null,
       ...
     }:
-    let
-      enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
-    in
     {
       imports = [
         inputs.dux-files.homeModules.default
       ];
 
       programs.dux-files = {
-        inherit enable;
+        enable = true;
         package = pkgs.dux-files;
         systemd.enable = true;
       };
@@ -28,7 +24,7 @@
         ];
       };
 
-      xdg.mimeApps.defaultApplications = lib.mkIf enable {
+      xdg.mimeApps.defaultApplications = {
         "inode/directory" = [ "dev.duxlabs.files.desktop" ];
       };
     };

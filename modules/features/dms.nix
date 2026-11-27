@@ -4,7 +4,6 @@
       pkgs,
       lib,
       config,
-      isWsl,
       homePersistenceRoot ? null,
       ...
     }:
@@ -35,10 +34,10 @@
         inputs.dsearch.homeModules.default
       ];
 
-      programs.dsearch.enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
+      programs.dsearch.enable = true;
 
       home = {
-        sessionVariables = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
+        sessionVariables = {
           ELECTRON_OZONE_PLATFORM_HINT = "auto";
           GTK_THEME = "Catppuccin-GTK-Dark";
           # Send GTK 3/4 file dialogs through the portal, i.e. Dux Files.
@@ -46,7 +45,7 @@
           GDK_DEBUG = "portals";
         };
 
-        pointerCursor = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
+        pointerCursor = {
           package = pkgs.bibata-cursors;
           name = "Bibata-Modern-Classic";
           size = 24;
@@ -62,8 +61,7 @@
         ];
       };
 
-      qt = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) (
-        {
+      qt = {
           enable = true;
           style.name = "kvantum";
         }
@@ -78,10 +76,9 @@
             general = "Inter,11";
             fixed = "GeistMono Nerd Font,11";
           };
-        }))
-      );
+        }));
 
-      gtk = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
+      gtk = {
         enable = true;
         colorScheme = "dark";
 
@@ -112,11 +109,11 @@
         };
       };
 
-      xdg.configFile = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
+      xdg.configFile = {
         "dms".source = config.lib.file.mkOutOfStoreSymlink dmsConfig;
       };
 
-      systemd.user.services.dms-wallpaper = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
+      systemd.user.services.dms-wallpaper = {
         Unit = {
           PartOf = [ "dms.service" ];
           After = [ "dms.service" ];

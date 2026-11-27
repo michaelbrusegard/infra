@@ -6,6 +6,16 @@
       config,
       ...
     }:
+    let
+      # A bare `rm file` goes to the trash; anything with flags is the real rm.
+      safeRm = pkgs.writeScriptBin "rm" ''
+        #!${lib.getExe pkgs.zsh}
+        if [ $# -eq 1 ] && [[ "$1" != -* ]]; then
+          exec ${lib.getExe' pkgs.trash-cli "trash"} "$1"
+        fi
+        exec ${lib.getExe' pkgs.uutils-coreutils "uutils-rm"} "$@"
+      '';
+    in
     {
       programs = {
         fastfetch.enable = true;
@@ -22,12 +32,23 @@
             duf
             procs
             fontconfig
+            ffmpeg
+            imagemagick
+            p7zip
+            unrar
+            chafa
+            yt-dlp
+            e2fsprogs
+            safeRm
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
             iproute2mac
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
             parted
+            cryptsetup
+            mbpoll
+            exfatprogs
           ];
 
         shellAliases = {

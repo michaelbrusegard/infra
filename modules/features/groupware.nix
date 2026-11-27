@@ -4,13 +4,11 @@
       config,
       lib,
       pkgs,
-      isWsl,
       osConfig,
       homePersistenceRoot ? null,
       ...
     }:
     let
-      enable = pkgs.stdenv.hostPlatform.isLinux && !isWsl;
 
       # vdirsyncer finds the CalDAV and CardDAV homes through .well-known.
       davUrl = "https://mail.asgard.michaelbrusegard.com/";
@@ -21,7 +19,7 @@
       ];
     in
     {
-      config = lib.mkIf enable {
+      config = {
         home = lib.optionalAttrs (homePersistenceRoot != null) {
           persistence.${homePersistenceRoot}.directories = [
             ".local/share/calendars"

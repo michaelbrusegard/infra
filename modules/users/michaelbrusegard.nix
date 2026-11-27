@@ -54,29 +54,13 @@
       ai
       cli-core
       cli-extras
-      cli-desktop
       cloud-credentials
-      craft
-      desktop-apps
       dev
-      dms
-      dux-files
-      gaming
       git
-      gnome-keyring
-      groupware
-      helium
       helix
-      hex
-      hyprland
-      launchd
       k8s
-      kitty
-      mpv
       nix-tools
-      scripts
       shell
-      slicer
       ssh
       xdg
     ];

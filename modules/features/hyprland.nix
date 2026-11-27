@@ -52,7 +52,6 @@
       pkgs,
       lib,
       osConfig,
-      isWsl,
       ...
     }:
     let
@@ -198,7 +197,7 @@
         }
       ];
     in
-    lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
+    {
       home.packages = [ pkgs.wl-clipboard ];
 
       systemd.user.services = {

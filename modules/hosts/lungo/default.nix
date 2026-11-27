@@ -24,6 +24,8 @@
       wallpaper
     ];
 
+    home-manager.sharedModules = [ inputs.self.modules.homeManager.mac ];
+
     time.timeZone = "America/Los_Angeles";
 
     system.stateVersion = 5;

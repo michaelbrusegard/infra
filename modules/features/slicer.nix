@@ -3,7 +3,6 @@
     {
       pkgs,
       lib,
-      isWsl,
       homePersistenceRoot ? null,
       ...
     }:
@@ -61,7 +60,7 @@
     {
       home = {
         packages =
-          lib.optionals (pkgs.stdenv.hostPlatform.isLinux && !isWsl) [
+          lib.optionals pkgs.stdenv.hostPlatform.isLinux [
             orca-slicer
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [

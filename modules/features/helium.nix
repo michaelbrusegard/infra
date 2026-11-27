@@ -3,7 +3,6 @@
     {
       pkgs,
       lib,
-      isWsl,
       homePersistenceRoot ? null,
       ...
     }:
@@ -64,7 +63,7 @@
       # home.persistence only exists on hosts with impermanence, so it is left out
       # rather than mkIf'd; both conditions are module arguments, not config.
       config = lib.mkMerge (
-        lib.optionals (!isWsl) [
+        [
           {
             home.packages =
               if isDarwin then
@@ -109,7 +108,7 @@
             ) extensions;
           })
         ]
-        ++ lib.optional (!isWsl && homePersistenceRoot != null) {
+        ++ lib.optional (homePersistenceRoot != null) {
           home.persistence.${homePersistenceRoot}.directories = [
             ".config/net.imput.helium"
             ".config/ardia"

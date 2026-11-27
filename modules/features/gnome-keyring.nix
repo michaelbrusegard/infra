@@ -3,12 +3,10 @@
     {
       pkgs,
       lib,
-      isWsl,
       homePersistenceRoot ? null,
       ...
     }:
     let
-      enable = !isWsl && pkgs.stdenv.hostPlatform.isLinux;
       components = [ "secrets" ];
       # `gnome-keyring-daemon --unlock` always starts a daemon of its own instead of
       # unlocking one that is running, so unlocking after the service starts leaves
@@ -20,12 +18,12 @@
       '';
     in
     {
-      services.gnome-keyring = lib.mkIf enable {
+      services.gnome-keyring = {
         enable = true;
         inherit components;
       };
 
-      systemd.user.services.gnome-keyring = lib.mkIf enable {
+      systemd.user.services.gnome-keyring = {
         Service.ExecStart = lib.mkForce "${unlockedDaemon}";
       };
 
