@@ -263,7 +263,7 @@
               blur.enabled = false;
               shadow = {
                 range = 30;
-                render_power = 5;
+                render_power = 4;
                 offset = "0 5";
                 color = "0x00000070";
               };

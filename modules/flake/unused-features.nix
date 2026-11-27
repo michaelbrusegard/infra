@@ -27,6 +27,15 @@ let
       modules = [ modules.homeManager.${user} ];
     }).graph;
 
+  # The home bundles a system bundle or host hands to every user on it.
+  sharedHomeGraph =
+    (lib.evalModules {
+      class = "homeManager";
+      modules = lib.concatMap (system: system.config.home-manager.sharedModules or [ ]) (
+        lib.attrValues config.flake.nixosConfigurations ++ lib.attrValues config.flake.darwinConfigurations
+      );
+    }).graph;
+
   imported = {
     nixos = lib.concatMap (system: namesIn "nixos" system.graph) (
       lib.attrValues config.flake.nixosConfigurations
@@ -34,9 +43,11 @@ let
     darwin = lib.concatMap (system: namesIn "darwin" system.graph) (
       lib.attrValues config.flake.darwinConfigurations
     );
-    homeManager = lib.concatMap (user: namesIn "homeManager" (homeGraph user)) (
-      lib.unique (lib.concatMap (host: host.users) (lib.attrValues config.hosts))
-    );
+    homeManager =
+      lib.concatMap (user: namesIn "homeManager" (homeGraph user)) (
+        lib.unique (lib.concatMap (host: host.users) (lib.attrValues config.hosts))
+      )
+      ++ namesIn "homeManager" sharedHomeGraph;
   };
 
   unused = lib.filterAttrs (_: names: names != [ ]) (

@@ -38,7 +38,8 @@
     in
     {
       home = {
-        packages = with pkgs;
+        packages =
+          with pkgs;
           [
             signal-desktop
             # Keep the desktop files while allowing slack-cli to own bin/slack.

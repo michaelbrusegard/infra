@@ -62,21 +62,21 @@
       };
 
       qt = {
-          enable = true;
-          style.name = "kvantum";
-        }
-        // (lib.genAttrs [ "qt5ctSettings" "qt6ctSettings" ] (_: {
-          Appearance = {
-            style = "kvantum";
-            icon_theme = "Papirus-Dark";
-            standard_dialogs = "xdgdesktopportal";
-          };
+        enable = true;
+        style.name = "kvantum";
+      }
+      // (lib.genAttrs [ "qt5ctSettings" "qt6ctSettings" ] (_: {
+        Appearance = {
+          style = "kvantum";
+          icon_theme = "Papirus-Dark";
+          standard_dialogs = "xdgdesktopportal";
+        };
 
-          Fonts = {
-            general = "Inter,11";
-            fixed = "GeistMono Nerd Font,11";
-          };
-        }));
+        Fonts = {
+          general = "Inter,11";
+          fixed = "GeistMono Nerd Font,11";
+        };
+      }));
 
       gtk = {
         enable = true;
