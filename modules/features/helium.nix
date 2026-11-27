@@ -1,4 +1,17 @@
 {
+  flake.modules.nixos.helium =
+    { pkgs, ... }:
+    {
+      # Ardia asks polkit for this action before it copies the sync recovery
+      # words or shows a saved password. Its .deb registers the action; the
+      # AppImage does not, and without it those buttons do nothing.
+      environment.systemPackages = [
+        (pkgs.writeTextDir "share/polkit-1/actions/dev.ardia.linux.policy" (
+          builtins.readFile ../../packages/ardia/reauth.policy
+        ))
+      ];
+    };
+
   flake.modules.homeManager.helium =
     {
       pkgs,

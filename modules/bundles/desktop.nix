@@ -14,6 +14,7 @@
     fonts
     gaming
     gtk
+    helium
     hyprland
     impermanence
     kanata
