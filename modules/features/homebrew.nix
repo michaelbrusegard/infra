@@ -59,7 +59,6 @@
         brew "steipete/tap/peekaboo"
       '';
       masApps = {
-        "Developer" = 640199958;
         "TestFlight" = 899247664;
       };
     };

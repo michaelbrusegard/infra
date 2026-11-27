@@ -14,7 +14,6 @@
     impermanence
     kanata
     lanzaboote
-    libvirt
     localsend
     location
     netbird

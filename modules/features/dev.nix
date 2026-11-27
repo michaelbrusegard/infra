@@ -25,7 +25,6 @@
           postgresql
           vite-plus
           nodejs_24
-          deno
         ];
       }
       // lib.optionalAttrs (homePersistenceRoot != null) {

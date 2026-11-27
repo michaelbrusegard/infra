@@ -18,22 +18,21 @@ in
     etcd
     opencloud-desktop
     signal-desktop
-    gh-eco
-    gh-poi
-    gh-dash
-    gh-skyline
-    gh-stack
     netbird-ui
     netbird
     ;
 
-  feishin = prev.feishin.overrideAttrs (old: {
-    postFixup = (old.postFixup or "") + ''
-      substituteInPlace $out/bin/feishin \
-        --replace-fail 'exec -a "$0" ' 'unset ELECTRON_RUN_AS_NODE
-      exec -a "$0" '
-    '';
-  });
+  # The wrapper script this patches only exists in the Linux build.
+  feishin = prev.feishin.overrideAttrs (
+    old:
+    prev.lib.optionalAttrs prev.stdenv.hostPlatform.isLinux {
+      postFixup = (old.postFixup or "") + ''
+        substituteInPlace $out/bin/feishin \
+          --replace-fail 'exec -a "$0" ' 'unset ELECTRON_RUN_AS_NODE
+        exec -a "$0" '
+      '';
+    }
+  );
   ruff-unstable = pkgs-unstable.ruff;
   eslint = pkgs-unstable.eslint.overrideAttrs (old: {
     meta = (old.meta or { }) // {

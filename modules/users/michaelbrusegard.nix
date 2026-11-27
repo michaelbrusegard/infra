@@ -16,7 +16,6 @@
           "wheel"
           "networkmanager"
           "docker"
-          "libvirtd"
           "i2c"
           "input"
         ];
@@ -74,7 +73,6 @@
       kitty
       mpv
       nix-tools
-      pentest
       scripts
       shell
       slicer

@@ -80,8 +80,7 @@
             libreoffice-bin
             blenderDarwin
             brewCasks.betaflight-configurator
-            utm
-            brewCasks.crystalfetch
+            feishin
             brewCasks.opencloud
           ]
         );

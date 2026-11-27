@@ -109,14 +109,10 @@
       launchers = [
         (wrap pkgs.prismlauncher "prismlauncher") # Minecraft
         (wrap pkgs.heroic "heroic") # Epic, GOG, Amazon
-        (wrap pkgs.lutris "lutris") # Battle.net, EA, Ubisoft, emulators
       ];
 
       tools = [
         pkgs.mangohud # in-game FPS/CPU/GPU overlay
-        pkgs.protonup-qt # manage Proton-GE across Steam/Heroic/Lutris
-        pkgs.protontricks # winetricks fixes for Proton prefixes
-        pkgs.vkbasalt # Vulkan post-processing (sharpening, etc.)
       ];
 
       # Perf + thermals overlay. Loaded but hidden by default (no_display);
@@ -176,8 +172,6 @@
             ".local/share/Steam"
             ".steam"
             ".config/heroic"
-            ".local/share/lutris"
-            ".config/lutris"
             ".local/share/Steam/compatibilitytools.d"
           ];
         };

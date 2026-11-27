@@ -73,62 +73,8 @@
           };
         };
 
-        lazygit = {
-          enable = true;
-          settings = {
-            gui = {
-              scrollOffMargin = 8;
-              skipNoStagedFilesWarning = true;
-              sidePanelWidth = 0.25;
-              expandFocusedSidePanel = true;
-              expandedSidePanelWeight = 2;
-              language = "en";
-              timeFormat = "02.01.2006";
-              shortTimeFormat = "15:04";
-              showBottomLine = false;
-              showPanelJumps = false;
-              nerdFontsVersion = "3";
-            };
-
-            git = {
-              pagers = [
-                {
-                  pager = "delta --dark --paging=never";
-                  colorArg = "always";
-                }
-              ];
-              parseEmoji = true;
-            };
-
-            disableStartupPopups = true;
-            quitOnTopLevelReturn = true;
-            os.editPreset = "helix";
-          };
-        };
         gh = {
           enable = true;
-          extensions = with pkgs; [
-            gh-eco
-            gh-poi
-            gh-dash
-            gh-skyline
-            gh-stack
-          ];
-        };
-
-        gh-dash = {
-          enable = true;
-          settings = {
-            keybindings = {
-              universal = [
-                {
-                  key = "g";
-                  name = "lazygit";
-                  command = "cd {{.RepoPath}} && lazygit";
-                }
-              ];
-            };
-          };
         };
       };
 
@@ -138,7 +84,6 @@
         '';
 
         packages = with pkgs; [
-          git-filter-repo
           git-lfs
         ];
       };

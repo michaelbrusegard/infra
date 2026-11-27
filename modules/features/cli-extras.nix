@@ -8,15 +8,6 @@
     }:
     {
       programs = {
-        pay-respects = {
-          enable = true;
-          enableZshIntegration = true;
-          options = [
-            "--alias"
-            "f"
-            "--nocnf"
-          ];
-        };
         fastfetch.enable = true;
       };
 
@@ -25,8 +16,9 @@
           with pkgs;
           [
             sd
+            tealdeer
+            lazydocker
             trash-cli
-            libqalculate
             moor
             dust
             duf
