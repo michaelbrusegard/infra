@@ -28,10 +28,13 @@ appimageTools.wrapType2 {
   extraInstallCommands = ''
     mkdir -p $out/share
     cp -r ${contents}/share/applications ${contents}/share/icons $out/share/
-    # On first start Ardia puts its command-line tool at ~/.local/bin/ardia,
-    # which comes first on PATH and would be what the launcher entries start.
+    # The entries start AppRun, which only exists inside the image. They get
+    # the full path because on first start Ardia installs its command-line
+    # tool as ~/.local/bin/ardia, ahead of the browser on PATH.
     chmod -R u+w $out/share/applications
-    sed -i "s|^Exec=ardia|Exec=$out/bin/ardia|" $out/share/applications/*.desktop
+    for entry in $out/share/applications/*.desktop; do
+      substituteInPlace "$entry" --replace-fail 'Exec=AppRun' "Exec=$out/bin/ardia"
+    done
   '';
 
   meta = {
