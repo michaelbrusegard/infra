@@ -150,6 +150,12 @@ jobs:
             /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache
           sudo docker image prune --all --force >/dev/null
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+        with:
+          # The caches the hosts use. Without them the runner compiles the
+          # agent tools and desktop packages that their projects ship prebuilt.
+          extra-conf: |
+            extra-substituters = https://nix-community.cachix.org https://hyprland.cachix.org https://cache.numtide.com
+            extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
       - name: Build the deployed x86 servers
         env:
