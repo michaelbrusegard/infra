@@ -54,7 +54,6 @@
             fluffychat
             rustdesk-flutter
             imv
-            gthumb
             feishin
 
             transmission_4-gtk
@@ -74,7 +73,6 @@
 
             brewCasks.transmission
             brewCasks.bitwarden
-            brewCasks.protonvpn
             blenderDarwin
             brewCasks.betaflight-configurator
             feishin
