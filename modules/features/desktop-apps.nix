@@ -59,7 +59,6 @@
 
             transmission_4-gtk
             bitwarden-desktop
-            libreoffice-fresh
             blender
             betaflight-configurator
             opencloudClient
@@ -76,7 +75,6 @@
             brewCasks.transmission
             brewCasks.bitwarden
             brewCasks.protonvpn
-            libreoffice-bin
             blenderDarwin
             brewCasks.betaflight-configurator
             feishin
@@ -95,7 +93,6 @@
             ".config/Bitwarden CLI"
             ".config/OpenCloud"
             ".config/discord"
-            ".config/libreoffice"
             ".config/blender"
             ".config/transmission"
             ".config/feishin"

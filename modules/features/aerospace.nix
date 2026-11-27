@@ -68,10 +68,6 @@
                 run = "move-node-to-workspace 3";
               }
               {
-                "if".app-name-regex-substring = "^LibreOffice$";
-                run = "move-node-to-workspace 4";
-              }
-              {
                 "if".app-name-regex-substring = "^(Messages|FaceTime|Discord|Slack|Signal)$";
                 run = "move-node-to-workspace 5";
               }

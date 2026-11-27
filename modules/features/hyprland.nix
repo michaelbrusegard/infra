@@ -162,10 +162,6 @@
           workspace = 3;
         }
         {
-          class = "^(libreoffice-.*)$";
-          workspace = 4;
-        }
-        {
           class = "^(discord)$";
           workspace = 5;
         }
