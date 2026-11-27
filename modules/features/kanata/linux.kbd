@@ -23,19 +23,24 @@
   k (tap-hold-release $tapping_term $tapping_term k rsft)
   l (tap-hold-release $tapping_term $tapping_term l lalt)
   ; (tap-hold-release $tapping_term $tapping_term ; rmet)
-  ;; The Copilot key emits lsft+lmet+f23 as one chord. Map it to Alt; the
-  ;; fork re-adds Shift so a manually held Shift survives (Shift+Alt).
+  ;; The Copilot key emits Shift+Win+F23 as one chord, which forte's hwdb turns
+  ;; into lsft+lalt+f23. Map it to Option; the fork re-adds Shift so a manually
+  ;; held Shift survives (Shift+Option).
   cplt (fork lalt (multi lsft lalt) (lsft))
 )
 
 (defchordsv2
-  (lsft lmet f23) @cplt 5 first-release ()
+  (lsft lalt f23) @cplt 5 first-release ()
 )
 
+;; Every keyboard sends modifiers by Mac meaning: Control, Option, Cmd. The QMK
+;; boards do so in firmware and forte's built-in keyboard through its hwdb.
+;; Linux apps use Ctrl where macOS uses Cmd, so Cmd sends Ctrl and Control sends
+;; Super, which Ghostty, T3 Code and Ardia read back as Control.
 (deflayer base
   esc @a @s @d @f @j @k @l @;
   lsft
-  lsft lmet lalt lctl rctl lalt rmet lalt
+  lsft lmet lctl lalt lalt rctl rmet lalt
 )
 
 ;; Hyprland switches to this layer while Ghostty is focused. The shell does its
@@ -46,18 +51,20 @@
   _ _ _ _ _ _ _ _
 )
 
+;; Gaming mode gives the built-in keyboard back its PC bottom row: Ctrl, Win,
+;; Alt, AltGr.
 (deflayer nomods
   esc a s d f j k l ;
   lsft
-  lsft lctl lmet lalt ralt rmet rctl ralt
+  lsft lctl lalt lmet ralt ralt rctl ralt
 )
 
 ;; Every Option key sends a real Alt, and Option+key types the us(mac) symbol
 ;; through AltGr as on a Mac. It stays Alt with Ctrl or Super held, so app
-;; shortcuts work, and on the keys the window manager binds: hjkl and digits,
-;; which AeroSpace also takes on macOS.
+;; shortcuts work, on the keys the window manager binds: hjkl and digits,
+;; which AeroSpace also takes on macOS, and in gaming mode.
 (deftemplate option-symbol (key)
-  (lalt $key) (ralt $key) (lctl rctl lmet rmet) ()
+  (lalt $key) (ralt $key) (lctl rctl lmet rmet) (nomods)
 )
 
 ;; Cmd+arrows jump to the line or document edge, Option+Left/Right by word, and

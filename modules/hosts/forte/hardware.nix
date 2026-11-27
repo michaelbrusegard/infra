@@ -133,6 +133,15 @@
 
       services = {
         xserver.videoDrivers = [ "nvidia" ];
+        # The built-in keyboard reports its bottom row by PC position: Ctrl,
+        # Win, Alt, AltGr. Kanata expects Mac meaning, as the QMK boards send,
+        # so swap Win and Alt and make AltGr the right Cmd: Control, Option, Cmd.
+        udev.extraHwdb = ''
+          evdev:input:b0003v0B05p19B6*
+           KEYBOARD_KEY_700e2=leftmeta
+           KEYBOARD_KEY_700e3=leftalt
+           KEYBOARD_KEY_700e6=rightmeta
+        '';
         asusd = {
           enable = true;
           auraConfigs."19b6".text = ''

@@ -3,10 +3,8 @@
 )
 
 (defsrc
-  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
   caps a s d f j k l ;
   102d
-  fn
 )
 
 (defvar
@@ -22,19 +20,9 @@
   k (tap-hold-release $tapping_term $tapping_term k rsft)
   l (tap-hold-release $tapping_term $tapping_term l ralt)
   ; (tap-hold-release $tapping_term $tapping_term ; rctl)
-  fnl (layer-while-held fn)
 )
 
 (deflayer base
-  brdn  brup  _    _    _    _   prev  pp  next  mute  vold  volu
   esc @a @s @d @f @j @k @l @;
   lsft
-  @fnl
-)
-
-(deflayer fn
-  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
-  esc _ _ _ _ _ _ _ _
-  _
-  fn
 )
