@@ -113,6 +113,8 @@
           home.persistence.${homePersistenceRoot}.directories = [
             ".config/net.imput.helium"
             ".config/ardia"
+            # Ardia unpacks its command-line tool here on first start.
+            ".local/share/ardia"
           ];
         }
       );
