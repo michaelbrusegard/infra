@@ -37,17 +37,46 @@
   lsft lmet lalt lctl rctl lalt rmet lalt
 )
 
-;; Every Option key sends a real Alt so app shortcuts see it. Only Option+o, '
-;; and a become AltGr, which us(mac) turns into ø, æ and å; with Ctrl or Super
-;; also held they stay shortcuts.
-(defoverridesv2
-  (lalt o) (ralt o) (lctl rctl lmet rmet) ()
-  (lalt ') (ralt ') (lctl rctl lmet rmet) ()
-  (lalt a) (ralt a) (lctl rctl lmet rmet) ()
+;; Every Option key sends a real Alt, and Option+key types the us(mac) symbol
+;; through AltGr as on a Mac. It stays Alt with Ctrl or Super held, so app
+;; shortcuts work, and on the keys the window manager binds: hjkl and digits,
+;; which AeroSpace also takes on macOS.
+(deftemplate option-symbol (key)
+  (lalt $key) (ralt $key) (lctl rctl lmet rmet) ()
 )
 
-(deflayer nomods
-  esc a s d f j k l ;
-  lsft
-  lsft lctl lmet lalt ralt rmet rctl ralt
+(defoverridesv2
+  (t! option-symbol a)
+  (t! option-symbol b)
+  (t! option-symbol c)
+  (t! option-symbol d)
+  (t! option-symbol e)
+  (t! option-symbol f)
+  (t! option-symbol g)
+  (t! option-symbol i)
+  (t! option-symbol m)
+  (t! option-symbol n)
+  (t! option-symbol o)
+  (t! option-symbol p)
+  (t! option-symbol q)
+  (t! option-symbol r)
+  (t! option-symbol s)
+  (t! option-symbol t)
+  (t! option-symbol u)
+  (t! option-symbol v)
+  (t! option-symbol w)
+  (t! option-symbol x)
+  (t! option-symbol y)
+  (t! option-symbol z)
+  (t! option-symbol grv)
+  (t! option-symbol min)
+  (t! option-symbol eql)
+  (t! option-symbol [)
+  (t! option-symbol ])
+  (t! option-symbol \)
+  (t! option-symbol ;)
+  (t! option-symbol ')
+  (t! option-symbol ,)
+  (t! option-symbol .)
+  (t! option-symbol /)
 )
