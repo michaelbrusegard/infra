@@ -46,7 +46,10 @@
         # store because the emulator writes to it.
         activation.androidAvd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           if ! ${root}/emulator/emulator -list-avds 2>/dev/null | grep -qx pixel; then
-            echo no | run env ANDROID_USER_HOME="$HOME/.android" ${root}/cmdline-tools/latest/bin/avdmanager \
+            # Activation runs without the session's PATH, so avdmanager finds no
+            # Java of its own.
+            echo no | run env ANDROID_USER_HOME="$HOME/.android" JAVA_HOME=${pkgs.jdk17_headless.home} \
+              ${root}/cmdline-tools/latest/bin/avdmanager \
               create avd --name pixel --device pixel_9 --package '${image}'
           fi
         '';
