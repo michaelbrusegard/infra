@@ -195,7 +195,7 @@ spec:
             - name: bootstrap-skills
               mountPath: /bootstrap-skills
         - name: prepare-android
-          image: ghcr.io/michaelbrusegard/hermes-android:sha-7fbf63b51206b8251fe20af0cf5517ffdb28eb9b@sha256:b8f7454ae212db10427b511f7df12b54a9b8441f296d4986fbd558847654e4a0
+          image: ghcr.io/michaelbrusegard/hermes-android:sha-b56387c4ed5d8126400479782a3d3a619465d3d8@sha256:9f77579c4fdd8275a0261a85845bd3f6668dd4678f609e36491e1a3a6dc8629f
           command:
             - sh
             - -euc
@@ -504,7 +504,7 @@ spec:
               drop:
                 - ALL
         - name: android
-          image: ghcr.io/michaelbrusegard/hermes-android:sha-7fbf63b51206b8251fe20af0cf5517ffdb28eb9b@sha256:b8f7454ae212db10427b511f7df12b54a9b8441f296d4986fbd558847654e4a0
+          image: ghcr.io/michaelbrusegard/hermes-android:sha-b56387c4ed5d8126400479782a3d3a619465d3d8@sha256:9f77579c4fdd8275a0261a85845bd3f6668dd4678f609e36491e1a3a6dc8629f
           ports:
             - containerPort: 5555
               name: android-adb
