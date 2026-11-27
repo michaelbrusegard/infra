@@ -341,11 +341,11 @@
             (bindUninhibited "MOD5 + ESCAPE" toggleShortcutsInhibit)
             (bind "CTRL + SHIFT + 3" (exec "dms screenshot full -d ~/Pictures/screenshots"))
             (bind "CTRL + SHIFT + 4" (exec "dms screenshot -d ~/Pictures/screenshots"))
-            # T3 Code snapshot on Ctrl+Ctrl, matching Cmd+Cmd on macOS. A key is
-            # not yet a modifier when its own press is matched, so these fire
-            # only when the other Ctrl is already held.
-            (bind "CTRL + Control_L" (global "com.t3tools.T3Code:capture-window"))
-            (bind "CTRL + Control_R" (global "com.t3tools.T3Code:capture-window"))
+            # T3 Code snapshot on both Shift keys. A key is not yet a modifier
+            # when its own press is matched, so these fire only when the other
+            # Shift is already held.
+            (bind "SHIFT + Shift_L" (global "com.t3tools.T3Code:capture-window"))
+            (bind "SHIFT + Shift_R" (global "com.t3tools.T3Code:capture-window"))
 
             (bindRepeat "MOD5 + left" (resizeactive (-20) 0))
             (bindRepeat "MOD5 + down" (resizeactive 0 20))
