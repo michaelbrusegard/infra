@@ -72,7 +72,7 @@
                 run = "move-node-to-workspace 4";
               }
               {
-                "if".app-name-regex-substring = "^(Messages|FaceTime|FluffyChat|Discord|Slack|Signal)$";
+                "if".app-name-regex-substring = "^(Messages|FaceTime|Discord|Slack|Signal)$";
                 run = "move-node-to-workspace 5";
               }
               {
