@@ -31,7 +31,8 @@
       gh-dash.enable = false;
       # Antigravity's theme is built while evaluating, which stops the Mac from
       # being evaluated on Linux, and it would turn the tool's settings file
-      # read-only.
+      # read-only. Later catppuccin revisions drop the theme and reject this
+      # option, so the line goes when that input next moves.
       gemini-cli.enable = false;
       fzf.enable = !config._module.check;
     };
