@@ -28,6 +28,10 @@ appimageTools.wrapType2 {
   extraInstallCommands = ''
     mkdir -p $out/share
     cp -r ${contents}/share/applications ${contents}/share/icons $out/share/
+    # On first start Ardia puts its command-line tool at ~/.local/bin/ardia,
+    # which comes first on PATH and would be what the launcher entries start.
+    chmod -R u+w $out/share/applications
+    sed -i "s|^Exec=ardia|Exec=$out/bin/ardia|" $out/share/applications/*.desktop
   '';
 
   meta = {
