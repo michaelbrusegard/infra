@@ -90,7 +90,7 @@ spec:
       containers:
         - name: proxy
           # Promoted to the tested custom image by netbird-proxy-image.yaml.
-          image: ghcr.io/michaelbrusegard/netbird-proxy:sha-0bbcecc34dfbef009622588ae2e4a8468e8cf99b@sha256:f8f572344dfa8c4b56ab8b74d756cbf6970de83fb38fd47c2dd2336cbab64c30
+          image: ghcr.io/michaelbrusegard/netbird-proxy:sha-6cc70cdb82e1f25e4ba5dc16ca6c2d1be08b5a89@sha256:ef7e6cf49a7adcb8ea6b0c0340316dec3928080793a3c73084bfc8ae0411dd42
           command:
             - /busybox/sh
             - -ec
