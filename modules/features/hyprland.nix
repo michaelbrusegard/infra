@@ -273,7 +273,6 @@
 
             input = {
               kb_variant = "mac";
-              kb_options = "lv3:lalt_switch";
               repeat_rate = 65;
               repeat_delay = 150;
               accel_profile = "flat";
@@ -313,23 +312,23 @@
           };
 
           bind = [
-            (bind "MOD5 + H" (movefocus "left"))
-            (bind "MOD5 + J" (movefocus "down"))
-            (bind "MOD5 + K" (movefocus "up"))
-            (bind "MOD5 + L" (movefocus "right"))
+            (bind "ALT + H" (movefocus "left"))
+            (bind "ALT + J" (movefocus "down"))
+            (bind "ALT + K" (movefocus "up"))
+            (bind "ALT + L" (movefocus "right"))
 
-            (bind "MOD5 + SHIFT + H" (movewindow "left"))
-            (bind "MOD5 + SHIFT + J" (movewindow "down"))
-            (bind "MOD5 + SHIFT + K" (movewindow "up"))
-            (bind "MOD5 + SHIFT + L" (movewindow "right"))
+            (bind "ALT + SHIFT + H" (movewindow "left"))
+            (bind "ALT + SHIFT + J" (movewindow "down"))
+            (bind "ALT + SHIFT + K" (movewindow "up"))
+            (bind "ALT + SHIFT + L" (movewindow "right"))
           ]
-          ++ map (n: bind "MOD5 + ${toString n}" (focusWorkspace n)) workspaces
-          ++ map (n: bind "MOD5 + SHIFT + ${toString n}" (moveToWorkspace n)) workspaces
+          ++ map (n: bind "ALT + ${toString n}" (focusWorkspace n)) workspaces
+          ++ map (n: bind "ALT + SHIFT + ${toString n}" (moveToWorkspace n)) workspaces
           ++ [
-            (bind "MOD5 + 0" togglefloating)
+            (bind "ALT + 0" togglefloating)
 
-            (bind "MOD5 + RETURN" (exec kitty))
-            (bind "MOD5 + SHIFT + RETURN" (exec "dfiles open"))
+            (bind "ALT + RETURN" (exec kitty))
+            (bind "ALT + SHIFT + RETURN" (exec "dfiles open"))
             (bind "CTRL + SPACE" (exec "dms ipc call spotlight toggle"))
             (bind "CTRL + SHIFT + V" (exec "dms ipc call clipboard toggle"))
             (bind "CTRL + Q" closewindow)
@@ -338,7 +337,7 @@
             (bind "CTRL + SUPER + S" (exec "dms ipc call lock lock && ${systemctl} suspend"))
             (bind "CTRL + SUPER + F" fullscreenToggle)
             (bind "CTRL + SHIFT + G" (exec gamingModeToggle))
-            (bindUninhibited "MOD5 + ESCAPE" toggleShortcutsInhibit)
+            (bindUninhibited "ALT + ESCAPE" toggleShortcutsInhibit)
             (bind "CTRL + SHIFT + 3" (exec "dms screenshot full -d ~/Pictures/screenshots"))
             (bind "CTRL + SHIFT + 4" (exec "dms screenshot -d ~/Pictures/screenshots"))
             # T3 Code snapshot on both Shift keys. A key is not yet a modifier
@@ -347,10 +346,10 @@
             (bind "SHIFT + Shift_L" (global "com.t3tools.T3Code:capture-window"))
             (bind "SHIFT + Shift_R" (global "com.t3tools.T3Code:capture-window"))
 
-            (bindRepeat "MOD5 + left" (resizeactive (-20) 0))
-            (bindRepeat "MOD5 + down" (resizeactive 0 20))
-            (bindRepeat "MOD5 + up" (resizeactive 0 (-20)))
-            (bindRepeat "MOD5 + right" (resizeactive 20 0))
+            (bindRepeat "ALT + left" (resizeactive (-20) 0))
+            (bindRepeat "ALT + down" (resizeactive 0 20))
+            (bindRepeat "ALT + up" (resizeactive 0 (-20)))
+            (bindRepeat "ALT + right" (resizeactive 20 0))
 
             (bindLockedRepeat "XF86AudioRaiseVolume" (exec "dms ipc call audio increment 3"))
             (bindLockedRepeat "XF86AudioLowerVolume" (exec "dms ipc call audio decrement 3"))
@@ -365,8 +364,8 @@
             (bindLocked "XF86AudioNext" (exec "dms ipc call mpris next"))
             (bindLocked "XF86AudioPrev" (exec "dms ipc call mpris previous"))
 
-            (bindMouse "MOD5 + mouse:272" drag)
-            (bindMouse "MOD5 + mouse:273" resizeMouse)
+            (bindMouse "ALT + mouse:272" drag)
+            (bindMouse "ALT + mouse:273" resizeMouse)
           ]
           ++ lidBinds;
 

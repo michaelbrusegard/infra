@@ -20,11 +20,11 @@
   f (tap-hold-release $tapping_term $tapping_term f lctl)
   j (tap-hold-release $tapping_term $tapping_term j rctl)
   k (tap-hold-release $tapping_term $tapping_term k rsft)
-  l (tap-hold-release $tapping_term $tapping_term l ralt)
+  l (tap-hold-release $tapping_term $tapping_term l lalt)
   ; (tap-hold-release $tapping_term $tapping_term ; rmet)
-  ;; The Copilot key emits lsft+lmet+f23 as one chord. Map it to AltGr; the
-  ;; fork re-adds Shift so a manually held Shift survives (Shift+AltGr).
-  cplt (fork ralt (multi lsft ralt) (lsft))
+  ;; The Copilot key emits lsft+lmet+f23 as one chord. Map it to Alt; the
+  ;; fork re-adds Shift so a manually held Shift survives (Shift+Alt).
+  cplt (fork lalt (multi lsft lalt) (lsft))
 )
 
 (defchordsv2
@@ -34,7 +34,16 @@
 (deflayer base
   esc @a @s @d @f @j @k @l @;
   lsft
-  lsft lmet lalt lctl rctl ralt rmet ralt
+  lsft lmet lalt lctl rctl lalt rmet lalt
+)
+
+;; Every Option key sends a real Alt so app shortcuts see it. Only Option+o, '
+;; and a become AltGr, which us(mac) turns into ø, æ and å; with Ctrl or Super
+;; also held they stay shortcuts.
+(defoverridesv2
+  (lalt o) (ralt o) (lctl rctl lmet rmet) ()
+  (lalt ') (ralt ') (lctl rctl lmet rmet) ()
+  (lalt a) (ralt a) (lctl rctl lmet rmet) ()
 )
 
 (deflayer nomods
