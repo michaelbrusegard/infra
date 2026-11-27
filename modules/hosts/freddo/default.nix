@@ -37,7 +37,11 @@
       minecraft-creative = [ "world" ];
       minecraft-revelation = [ "world" ];
       minecraft-vanilla = [ "world" ];
-      media-music = [ "repo-library" ];
+      media-music = [
+        "repo-library"
+        "repo-listenbrainz-bridge-config"
+        "repo-music-tagger-config"
+      ];
       mattermost = [
         "postgres"
         "pvc"
@@ -48,7 +52,10 @@
       ];
       musicgrabber = [ "repo-config" ];
       navidrome = [ "repo-data" ];
-      netbird = [ "pvc" ];
+      netbird = [
+        "agent-network"
+        "pvc"
+      ];
       nextcloud = [
         "postgres"
         "pvc"
