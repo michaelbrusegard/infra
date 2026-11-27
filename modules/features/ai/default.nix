@@ -341,6 +341,11 @@
           };
         };
 
+        antigravity-cli = {
+          enable = true;
+          package = direnvWrapped pkgs.antigravity-cli "agy";
+        };
+
         claude-code = {
           enable = true;
           package = direnvWrapped pkgs.claude-code "claude";
@@ -380,7 +385,6 @@
       home = {
         packages = [
           (direnvWrapped pkgs.pi-coding-agent "pi")
-          (direnvWrapped pkgs.antigravity-cli "agy")
           pkgs.slack-cli
         ]
         ++ lib.optionals (!isWsl) (

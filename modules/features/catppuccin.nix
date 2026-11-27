@@ -29,6 +29,10 @@
       hyprland.enable = false;
       mpv.enable = false;
       gh-dash.enable = false;
+      # Antigravity's theme is built while evaluating, which stops the Mac from
+      # being evaluated on Linux, and it would turn the tool's settings file
+      # read-only.
+      gemini-cli.enable = false;
       fzf.enable = !config._module.check;
     };
   };

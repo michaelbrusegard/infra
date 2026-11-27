@@ -164,6 +164,7 @@
             args = [ "--stdio" ];
           };
         };
+        antigravity-cli.enableMcpIntegration = true;
         claude-code.enableMcpIntegration = true;
         codex.enableMcpIntegration = true;
         opencode.enableMcpIntegration = true;
