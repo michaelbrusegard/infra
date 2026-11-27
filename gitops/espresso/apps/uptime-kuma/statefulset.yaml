@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: uptime-kuma
+      annotations:
+        secret.reloader.stakater.com/reload: uptime-kuma-env
     spec:
       initContainers:
         - name: uptime-kuma

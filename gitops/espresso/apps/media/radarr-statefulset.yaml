@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: radarr
+      annotations:
+        secret.reloader.stakater.com/reload: media-arr-env
     spec:
       nodeSelector:
         kubernetes.io/hostname: espresso-1

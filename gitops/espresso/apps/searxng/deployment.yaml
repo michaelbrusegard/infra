@@ -12,6 +12,9 @@ spec:
     metadata:
       labels:
         app: searxng
+      annotations:
+        configmap.reloader.stakater.com/reload: searxng-config
+        secret.reloader.stakater.com/reload: searxng-env
     spec:
       automountServiceAccountToken: false
       # hostNetwork: binding arbitrary source addresses from the delegated GUA

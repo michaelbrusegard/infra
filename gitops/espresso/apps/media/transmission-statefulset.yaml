@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: transmission
+      annotations:
+        secret.reloader.stakater.com/reload: media-vpn-env,media-transmission-env
     spec:
       nodeSelector:
         kubernetes.io/hostname: espresso-1
