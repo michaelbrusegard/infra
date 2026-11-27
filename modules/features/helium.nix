@@ -53,11 +53,12 @@
       # filtered there as sensitive, so set it by hand on macOS.
       darwinSettings = removeAttrs settings [ "RestoreOnStartup" ];
 
-      helium = pkgs.helium-browser.override {
-        policies = settings // {
-          ExtensionInstallForcelist = lib.attrValues extensions;
-        };
+      policies = settings // {
+        ExtensionInstallForcelist = lib.attrValues extensions;
       };
+      helium = pkgs.helium-browser.override { inherit policies; };
+      # On trial beside Helium, with the same policies, before replacing it.
+      ardia = pkgs.ardia.override { inherit policies; };
     in
     {
       # home.persistence only exists on hosts with impermanence, so it is left out
@@ -65,9 +66,14 @@
       config = lib.mkMerge (
         lib.optionals (!isWsl) [
           {
-            home.packages = [
-              (if isDarwin then pkgs.brewCasks.helium-browser else helium)
-            ];
+            home.packages =
+              if isDarwin then
+                [ pkgs.brewCasks.helium-browser ]
+              else
+                [
+                  helium
+                  ardia
+                ];
           }
 
           # macOS only forces policies from MDM profiles; preferences in Helium's
@@ -106,6 +112,7 @@
         ++ lib.optional (!isWsl && homePersistenceRoot != null) {
           home.persistence.${homePersistenceRoot}.directories = [
             ".config/net.imput.helium"
+            ".config/ardia"
           ];
         }
       );

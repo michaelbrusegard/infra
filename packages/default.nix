@@ -1,5 +1,6 @@
 { pkgs }:
 pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+  ardia = pkgs.callPackage ./ardia { };
   chromium-seccomp-profile = pkgs.callPackage ./chromium-seccomp-profile { };
   helium-browser = pkgs.callPackage ./helium-browser { };
   rustdesk-flutter = pkgs.callPackage ./rustdesk { };
