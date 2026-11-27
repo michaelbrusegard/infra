@@ -4,6 +4,7 @@
   # a desktop is never imported on a server or under WSL.
   flake.modules.homeManager = {
     graphical.imports = with inputs.self.modules.homeManager; [
+      android
       ardia
       craft
       desktop-apps
