@@ -33,7 +33,7 @@ spec:
             severity: warning
           annotations:
             summary: Hermes Android automation is unavailable
-            description: The Android emulator or its accessibility companion has not been ready for ten minutes.
+            description: Android or its accessibility companion has not been ready for ten minutes.
         - alert: HermesAndroidMetricsMissing
           expr: absent(hermes_android_available{namespace="hermes-agent"})
           for: 2h

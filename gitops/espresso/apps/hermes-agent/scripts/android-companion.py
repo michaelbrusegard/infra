@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Authenticated Android companion for semantic snapshots and emulator control."""
+"""Authenticated Android companion for semantic snapshots and device control."""
 
 from __future__ import annotations
 
@@ -200,13 +200,6 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 self.send_json(HTTPStatus.OK, {"ok": True, **payload})
                 return
-            if self.path == "/v1/emulator":
-                payload = android.get_emulator_status(default_serial())
-                self.send_json(
-                    HTTPStatus.OK,
-                    {"ok": True, "serial": default_serial(), "emulator": payload},
-                )
-                return
             if self.path == "/v1/clipboard":
                 payload = android.get_clipboard_text(default_serial())
                 self.send_json(
@@ -285,13 +278,6 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(
                     HTTPStatus.OK,
                     {"ok": True, "serial": serial, "clipboard": payload},
-                )
-                return
-            if self.path == "/v1/vm-state":
-                payload = android.set_vm_state(serial, str(body["state"]))
-                self.send_json(
-                    HTTPStatus.OK,
-                    {"ok": True, "serial": serial, "emulator": payload},
                 )
                 return
             self.send_json(HTTPStatus.NOT_FOUND, {"ok": False, "error": "not found"})

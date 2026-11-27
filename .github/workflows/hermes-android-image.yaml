@@ -8,13 +8,11 @@ name: Hermes Android Image
     paths:
       - packages/hermes-android-image/**
       - packages/hermes-android-companion/**
-      - gitops/espresso/apps/hermes-agent/scripts/android-emulator-launch.sh
       - .github/workflows/hermes-android-image.yaml
   pull_request:
     paths:
       - packages/hermes-android-image/**
       - packages/hermes-android-companion/**
-      - gitops/espresso/apps/hermes-agent/scripts/android-emulator-launch.sh
       - .github/workflows/hermes-android-image.yaml
 
 concurrency:
@@ -32,7 +30,7 @@ jobs:
     # The digest-bump deploy key bypasses the main ruleset, so it lives in
     # the image-bump environment (main only) and never reaches PR runs.
     environment: ${{ github.event_name != 'pull_request' && 'image-bump' || '' }}
-    timeout-minutes: 120
+    timeout-minutes: 90
     permissions:
       contents: read
       packages: write
@@ -41,13 +39,6 @@ jobs:
         with:
           fetch-depth: 0
           ssh-key: ${{ github.event_name != 'pull_request' && secrets.IMAGE_BUMP_DEPLOY_KEY || '' }}
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          repository: google/android-emulator-container-scripts
-          ref: 0654f694b46794fae4b178f1e1a17cb60c5d2d34
-          path: .upstream/android-emulator-container-scripts
-          persist-credentials: false
 
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
         if: github.event_name != 'pull_request'
@@ -61,184 +52,67 @@ jobs:
           sudo rm -rf /opt/hostedtoolcache /usr/local/lib/android /usr/share/dotnet
           docker system prune --all --force
 
-      - name: Fetch pinned Android inputs
-        id: inputs
-        run: |
-          set -a
-          source packages/hermes-android-image/versions.env
-          set +a
-          source_root="$RUNNER_TEMP/hermes-android-sources"
-          mkdir -p "$source_root"
-
-          fetch_sha1() {
-            url=$1
-            output=$2
-            expected_size=$3
-            expected_sha1=$4
-            expected_sha256=$5
-            curl --fail --location --retry 5 --retry-all-errors \
-              --output "$output" "$url"
-            test "$(stat -c %s "$output")" = "$expected_size"
-            echo "$expected_sha1  $output" | sha1sum --check --strict
-            echo "$expected_sha256  $output" | sha256sum --check --strict
-          }
-
-          fetch_sha1 \
-            "$ANDROID_EMULATOR_URL" \
-            "$source_root/emulator.zip" \
-            "$ANDROID_EMULATOR_SIZE" \
-            "$ANDROID_EMULATOR_SHA1" \
-            "$ANDROID_EMULATOR_SHA256"
-          fetch_sha1 \
-            "$ANDROID_SYSTEM_IMAGE_URL" \
-            "$source_root/system-image.zip" \
-            "$ANDROID_SYSTEM_IMAGE_SIZE" \
-            "$ANDROID_SYSTEM_IMAGE_SHA1" \
-            "$ANDROID_SYSTEM_IMAGE_SHA256"
-          fetch_sha1 \
-            "$ANDROID_PLATFORM_TOOLS_URL" \
-            "$source_root/platform-tools.zip" \
-            "$ANDROID_PLATFORM_TOOLS_SIZE" \
-            "$ANDROID_PLATFORM_TOOLS_SHA1" \
-            "$ANDROID_PLATFORM_TOOLS_SHA256"
-          fetch_sha1 \
-            "$ANDROID_BUILD_TOOLS_URL" \
-            "$source_root/build-tools.zip" \
-            "$ANDROID_BUILD_TOOLS_SIZE" \
-            "$ANDROID_BUILD_TOOLS_SHA1" \
-            "$ANDROID_BUILD_TOOLS_SHA256"
-          fetch_sha1 \
-            "$ANDROID_PLATFORM_URL" \
-            "$source_root/platform.zip" \
-            "$ANDROID_PLATFORM_SIZE" \
-            "$ANDROID_PLATFORM_SHA1" \
-            "$ANDROID_PLATFORM_SHA256"
-
-          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
-            for key_file in testkey.pk8 testkey.x509.pem; do
-              curl --fail --location --retry 5 --retry-all-errors \
-                "https://android.googlesource.com/platform/build/+/$AOSP_BUILD_COMMIT/target/product/security/$key_file?format=TEXT" | \
-                base64 --decode >"$source_root/$key_file"
-            done
-            echo "$AOSP_TESTKEY_PK8_SHA256  $source_root/testkey.pk8" | \
-              sha256sum --check --strict
-            echo "$AOSP_TESTKEY_X509_SHA256  $source_root/testkey.x509.pem" | \
-              sha256sum --check --strict
-          fi
-
-          curl --fail --location --retry 5 --retry-all-errors \
-            --output "$source_root/grpcurl.tar.gz" "$GRPCURL_URL"
-          test "$(stat -c %s "$source_root/grpcurl.tar.gz")" = "$GRPCURL_SIZE"
-          echo "$GRPCURL_SHA256  $source_root/grpcurl.tar.gz" | \
-            sha256sum --check --strict
-          tar -xzf "$source_root/grpcurl.tar.gz" -C "$source_root" grpcurl
-          chmod 0755 "$source_root/grpcurl"
-
-          curl --fail --location --retry 5 --retry-all-errors \
-            --output "$source_root/AuroraStore.apk" "$AURORA_STORE_URL"
-          test "$(stat -c %s "$source_root/AuroraStore.apk")" = "$AURORA_STORE_SIZE"
-          echo "$AURORA_STORE_SHA256  $source_root/AuroraStore.apk" | \
-            sha256sum --check --strict
-          unzip -q "$source_root/platform-tools.zip" -d "$source_root"
-          test -x "$source_root/platform-tools/adb"
-          echo "source_root=$source_root" >> "$GITHUB_OUTPUT"
-
-      - name: Build accessibility companion
+      - name: Build image
         env:
-          SOURCE_ROOT: ${{ steps.inputs.outputs.source_root }}
           SIGNING_KEY_PK8_B64: ${{ secrets.HERMES_ANDROID_SIGNING_KEY_PK8_B64 }}
           SIGNING_CERT_X509_PEM_B64: ${{ secrets.HERMES_ANDROID_SIGNING_CERT_X509_PEM_B64 }}
         run: |
-          set -a
-          source packages/hermes-android-image/versions.env
-          set +a
-          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
-            signing_key="$SOURCE_ROOT/testkey.pk8"
-            signing_cert="$SOURCE_ROOT/testkey.x509.pem"
-          else
+          secrets=()
+          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then
             test -n "$SIGNING_KEY_PK8_B64"
             test -n "$SIGNING_CERT_X509_PEM_B64"
-            signing_key="$SOURCE_ROOT/hermes-android-signing.pk8"
-            signing_cert="$SOURCE_ROOT/hermes-android-signing.x509.pem"
-            printf '%s' "$SIGNING_KEY_PK8_B64" | base64 --decode >"$signing_key"
-            printf '%s' "$SIGNING_CERT_X509_PEM_B64" | base64 --decode >"$signing_cert"
-            chmod 0600 "$signing_key" "$signing_cert"
-            actual_cert_sha256=$(openssl x509 -in "$signing_cert" -outform DER | sha256sum | cut -d' ' -f1)
-            test "$actual_cert_sha256" = "$HERMES_ACCESSIBILITY_SIGNING_CERT_SHA256"
+            (
+              umask 077
+              printf '%s' "$SIGNING_KEY_PK8_B64" | base64 --decode >"$RUNNER_TEMP/signing.pk8"
+              printf '%s' "$SIGNING_CERT_X509_PEM_B64" | base64 --decode >"$RUNNER_TEMP/signing.pem"
+            )
+            secrets=(
+              --secret "id=signing-key,src=$RUNNER_TEMP/signing.pk8"
+              --secret "id=signing-cert,src=$RUNNER_TEMP/signing.pem"
+            )
           fi
-          bash packages/hermes-android-companion/build.sh \
-            "$SOURCE_ROOT/platform.zip" \
-            "$SOURCE_ROOT/build-tools.zip" \
-            "$signing_key" \
-            "$signing_cert" \
-            "$HERMES_ACCESSIBILITY_VERSION_CODE" \
-            "$HERMES_ACCESSIBILITY_VERSION" \
-            "$SOURCE_ROOT/HermesAccessibility-$HERMES_ACCESSIBILITY_VERSION.apk"
-          test -s "$SOURCE_ROOT/HermesAccessibility-$HERMES_ACCESSIBILITY_VERSION.apk"
+          # The source host for the Android headers answers 503 under load.
+          for attempt in 1 2 3; do
+            if docker build "${secrets[@]}" \
+              --file packages/hermes-android-image/Dockerfile \
+              --tag "$ANDROID_IMAGE_REF:ci" \
+              packages; then
+              exit 0
+            fi
+            sleep $((attempt * 60))
+          done
+          exit 1
 
-      - name: Build Android 17 Play Store image
-        env:
-          SOURCE_ROOT: ${{ steps.inputs.outputs.source_root }}
+      - name: Boot Android
+        timeout-minutes: 15
         run: |
-          set -a
-          source packages/hermes-android-image/versions.env
-          set +a
-          test "$(git -C .upstream/android-emulator-container-scripts rev-parse HEAD)" = \
-            "$ANDROID_CONTAINER_SCRIPTS_COMMIT"
-          git -C .upstream/android-emulator-container-scripts apply --check \
-            "$GITHUB_WORKSPACE/packages/hermes-android-image/android-emulator-container-scripts.patch"
-          git -C .upstream/android-emulator-container-scripts apply \
-            "$GITHUB_WORKSPACE/packages/hermes-android-image/android-emulator-container-scripts.patch"
-          python3 -m venv .upstream/android-emulator-container-scripts/.venv
-          .upstream/android-emulator-container-scripts/.venv/bin/pip install \
-            --requirement packages/hermes-android-image/requirements-build.txt
-          (
-            cd "$SOURCE_ROOT"
-            ln -s platform-tools.zip platform-tools-latest-linux.zip
-            PYTHONPATH="$GITHUB_WORKSPACE/.upstream/android-emulator-container-scripts" \
-              "$GITHUB_WORKSPACE/.upstream/android-emulator-container-scripts/.venv/bin/python" \
-              -m emu.emu_docker create \
-              emulator.zip \
-              system-image.zip \
-              --dest "$RUNNER_TEMP/hermes-android-build" \
-              --repo hermes-local \
-              --name hermes-android-base \
-              --no-metrics
-          )
-          docker image inspect hermes-local/hermes-android-base:latest >/dev/null
-          docker tag \
-            hermes-local/hermes-android-base:latest \
-            "hermes-local/hermes-android-base:$ANDROID_EMULATOR_BUILD_ID"
-          docker image inspect \
-            "hermes-local/hermes-android-base:$ANDROID_EMULATOR_BUILD_ID" >/dev/null
-          cat > "$SOURCE_ROOT/.dockerignore" <<'EOF'
-          *
-          !platform-tools/
-          !platform-tools/**
-          !AuroraStore.apk
-          !HermesAccessibility-*.apk
-          EOF
-          docker build \
-            --file packages/hermes-android-image/Dockerfile \
-            --build-arg BASE_IMAGE="hermes-local/hermes-android-base:$ANDROID_EMULATOR_BUILD_ID" \
-            --build-arg ANDROID_EMULATOR_VERSION="$ANDROID_EMULATOR_VERSION" \
-            --build-arg ANDROID_EMULATOR_SHA256="$ANDROID_EMULATOR_SHA256" \
-            --build-arg ANDROID_SYSTEM_IMAGE_VERSION="$ANDROID_SYSTEM_IMAGE_VERSION" \
-            --build-arg ANDROID_SYSTEM_IMAGE_SHA256="$ANDROID_SYSTEM_IMAGE_SHA256" \
-            --build-arg ANDROID_PLATFORM_TOOLS_VERSION="$ANDROID_PLATFORM_TOOLS_VERSION" \
-            --build-arg ANDROID_PLATFORM_TOOLS_SHA256="$ANDROID_PLATFORM_TOOLS_SHA256" \
-            --build-arg AURORA_STORE_VERSION="$AURORA_STORE_VERSION" \
-            --build-arg AURORA_STORE_SHA256="$AURORA_STORE_SHA256" \
-            --build-arg HERMES_ACCESSIBILITY_VERSION="$HERMES_ACCESSIBILITY_VERSION" \
-            --build-arg HERMES_ACCESSIBILITY_PACKAGE="$HERMES_ACCESSIBILITY_PACKAGE" \
-            --tag "$ANDROID_IMAGE_REF:ci" \
-            "$SOURCE_ROOT"
-
-      - name: Smoke test persistent Android device
-        timeout-minutes: 45
-        env:
-          SOURCE_ROOT: ${{ steps.inputs.outputs.source_root }}
-        run: packages/hermes-android-image/smoke-test.sh
+          # Android needs binder, which some runner kernels ship in a package
+          # outside the default set.
+          if ! sudo modprobe binder_linux devices=binder,hwbinder,vndbinder; then
+            sudo apt-get update
+            sudo apt-get install --yes --no-install-recommends "linux-modules-extra-$(uname -r)"
+            sudo modprobe binder_linux devices=binder,hwbinder,vndbinder
+          fi
+          state=$(mktemp -d)
+          mkdir -p "$state/adb" "$state/companion"
+          docker run --rm --entrypoint sh --volume "$state:/opt/android" "$ANDROID_IMAGE_REF:ci" -euc '
+            HOME=/tmp adb keygen /opt/android/adb/adbkey
+            od -An -tx1 -N 32 /dev/urandom | tr -d " \n" >/opt/android/companion/auth-token
+          '
+          docker run --detach --name android --privileged \
+            --volume "$state:/opt/android" "$ANDROID_IMAGE_REF:ci"
+          for _ in $(seq 1 120); do
+            if sudo grep -q '"state":"ready"' "$state/status/accessibility.json" 2>/dev/null; then
+              docker exec android adb -s 127.0.0.1:5555 shell getprop ro.build.fingerprint
+              docker stop --time 40 android
+              test "$(docker inspect --format '{{.State.ExitCode}}' android)" = 143
+              exit 0
+            fi
+            sleep 5
+          done
+          sudo cat "$state"/status/*.json || true
+          docker logs --tail 200 android
+          exit 1
 
       - name: Publish image
         id: publish
@@ -268,9 +142,9 @@ jobs:
           GIT_SHA: ${{ github.sha }}
         run: |
           image="$ANDROID_IMAGE_REF:sha-$GIT_SHA@$ANDROID_DIGEST"
-          python3 packages/hermes-android-image/update-manifest.py \
-            --manifest gitops/espresso/apps/hermes-agent/statefulset.yaml \
-            --image "$image"
+          manifest=gitops/espresso/apps/hermes-agent/statefulset.yaml
+          sed -i -E "s|(image: )$ANDROID_IMAGE_REF:[^[:space:]]+|\1$image|" "$manifest"
+          test "$(grep -c "image: $image\$" "$manifest")" = 2
 
       - name: Commit image digest update
         if: github.event_name != 'pull_request'

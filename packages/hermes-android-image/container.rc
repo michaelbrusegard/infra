@@ -1,0 +1,3 @@
+on early-init
+    write /dev/.bpf_unprivileged 0
+    mount none /dev/.bpf_unprivileged /proc/sys/kernel/unprivileged_bpf_disabled bind

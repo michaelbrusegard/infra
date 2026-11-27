@@ -117,7 +117,6 @@ let
       fluxcd
       gh
       git
-      grpcurl
       gnused
       gnutar
       himalaya

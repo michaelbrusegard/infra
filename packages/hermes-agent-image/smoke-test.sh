@@ -101,14 +101,8 @@ docker run --rm --entrypoint bash "$AGENT_IMAGE_REF:nix" -c '
 '
 echo 'Browser smoke stage: verify browser and Android viewer entrypoints'
 docker run --rm --tmpfs /tmp:rw,mode=1777 --env HOME=/tmp "$BROWSER_IMAGE_REF:nix" --version
-docker run --rm --entrypoint android-viewer "$BROWSER_IMAGE_REF:nix" --help
 android_viewer_id=$(docker run --detach --rm --read-only \
-  --security-opt apparmor=unconfined \
-  --security-opt "seccomp=$chromium_seccomp_profile" \
-  --tmpfs /opt/browser-files:rw,uid=10000,gid=10000,mode=0755 \
   --tmpfs /tmp:rw,uid=10000,gid=10000,mode=1777 \
-  --tmpfs /dev/shm:rw,uid=10000,gid=10000,mode=1777 \
-  --env HOME=/tmp/home \
   --entrypoint android-viewer \
   "$BROWSER_IMAGE_REF:nix")
 trap 'docker stop "$android_viewer_id" >/dev/null 2>&1 || true' EXIT
@@ -123,15 +117,8 @@ for attempt in $(seq 1 30); do
   fi
   sleep 1
 done
-docker exec "$android_viewer_id" grep --quiet \
-  '"state": "waiting-for-emulator"' \
-  /opt/browser-files/android-viewer/status.json
-docker exec "$android_viewer_id" pgrep -x Xvfb >/dev/null
-docker exec "$android_viewer_id" pgrep -x x11vnc >/dev/null
 docker exec "$android_viewer_id" pgrep -f \
-  'websockify.*0.0.0.0:6081.*127.0.0.1:5901' >/dev/null
-docker exec "$android_viewer_id" adb version >/dev/null
-docker exec "$android_viewer_id" scrcpy --version >/dev/null
+  'websockify.*0.0.0.0:6081.*127.0.0.1:5900' >/dev/null
 docker stop "$android_viewer_id"
 trap - EXIT
 echo 'Browser smoke stage: start Chromium supervisor'

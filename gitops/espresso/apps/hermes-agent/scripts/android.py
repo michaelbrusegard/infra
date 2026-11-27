@@ -18,7 +18,6 @@ import xml.etree.ElementTree as ET
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9_.-]+")
 _BOUNDS = re.compile(r"^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$")
@@ -130,28 +129,6 @@ def load_json_file(path: Path) -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) else None
 
 
-def default_grpc_endpoint(serial: str | None = None) -> str | None:
-    candidates = []
-    if serial:
-        suffix = env_name(serial)
-        candidates.extend(
-            [
-                os.environ.get(f"ANDROID_GRPC_URL_{suffix}"),
-                os.environ.get(f"ANDROID_EMULATOR_GRPC_URL_{suffix}"),
-            ]
-        )
-    candidates.extend(
-        [
-            os.environ.get("ANDROID_GRPC_URL"),
-            os.environ.get("ANDROID_EMULATOR_GRPC_URL"),
-        ]
-    )
-    for candidate in candidates:
-        if candidate:
-            return candidate
-    return None
-
-
 def default_view_endpoint(serial: str | None = None) -> str | None:
     candidates = []
     if serial:
@@ -207,15 +184,6 @@ def adb_command(serial: str | None, *args: str) -> list[str]:
     return command
 
 
-def grpc_target(endpoint: str) -> str:
-    parsed = urlparse(endpoint)
-    if parsed.scheme and parsed.netloc:
-        return parsed.netloc
-    if parsed.scheme and parsed.path:
-        return parsed.path
-    return endpoint
-
-
 def run_adb(
     serial: str | None,
     *args: str,
@@ -236,68 +204,6 @@ def run_adb(
         )
         raise RuntimeError(f"adb {' '.join(args)} failed: {safe_text(stderr)}")
     return completed.stdout
-
-
-def run_grpc(
-    endpoint: str,
-    method: str,
-    payload: dict[str, Any] | None = None,
-    *,
-    timeout: int = 60,
-    check: bool = True,
-) -> str:
-    command = [
-        "grpcurl",
-        "-plaintext",
-        "-emit-defaults",
-    ]
-    token_file = Path(
-        os.environ.get(
-            "ANDROID_EMULATOR_GRPC_TOKEN_FILE",
-            "/opt/android/companion/emulator-grpc-token",
-        )
-    )
-    try:
-        token = token_file.read_text(encoding="utf-8").strip()
-    except OSError as exc:
-        raise RuntimeError(
-            f"unable to read emulator gRPC token: {safe_text(exc)}"
-        ) from exc
-    if not token:
-        raise RuntimeError(f"empty emulator gRPC token file: {token_file}")
-    proto_file = token_file.parent / "emulator_controller.proto"
-    if proto_file.is_file():
-        command.extend(
-            [
-                "-import-path",
-                str(proto_file.parent),
-                "-proto",
-                proto_file.name,
-            ]
-        )
-    command.extend(
-        [
-            "-H",
-            f"authorization: Bearer {token}",
-            "-d",
-            json.dumps(payload or {}, ensure_ascii=False),
-            grpc_target(endpoint),
-            method,
-        ]
-    )
-    try:
-        completed = subprocess.run(
-            command,
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-    except OSError as exc:
-        raise RuntimeError(f"unable to run grpcurl: {safe_text(exc)}") from exc
-    if check and completed.returncode != 0:
-        raise RuntimeError(f"{method} failed: {safe_text(completed.stderr)}")
-    return completed.stdout.strip()
 
 
 def chosen_serial(args: argparse.Namespace) -> str | None:
@@ -342,33 +248,6 @@ def require_connected_serial(args: argparse.Namespace) -> str:
     serial = require_serial(args)
     ensure_device_connection(serial)
     return serial
-
-
-def default_grpc_url_for_serial(serial: str) -> str:
-    grpc_url = default_grpc_endpoint(serial)
-    if not grpc_url:
-        raise RuntimeError(
-            "set ANDROID_EMULATOR_GRPC_URL or ANDROID_GRPC_URL to use emulator gRPC features"
-        )
-    return grpc_url
-
-
-def grpc_json(
-    serial: str,
-    method: str,
-    payload: dict[str, Any] | None = None,
-    *,
-    timeout: int = 60,
-) -> dict[str, Any]:
-    response = run_grpc(
-        default_grpc_url_for_serial(serial), method, payload, timeout=timeout
-    )
-    if not response:
-        return {}
-    parsed = json.loads(response)
-    if not isinstance(parsed, dict):
-        raise RuntimeError(f"{method} returned a non-object response")
-    return parsed
 
 
 def accessibility_request(
@@ -521,6 +400,8 @@ def parse_wm_size(output: str) -> dict[str, int] | None:
 def parse_focus(output: str) -> str | None:
     for raw_line in output.splitlines():
         line = raw_line.strip()
+        if line.endswith("=null"):
+            continue
         if "mCurrentFocus" in line or "mFocusedApp" in line:
             return safe_text(line)
     return None
@@ -698,67 +579,45 @@ def simple_adb_input_text(value: str) -> bool:
     return bool(_SIMPLE_INPUT_TEXT.fullmatch(value.strip()))
 
 
+CLIPBOARD_HELPER = "/data/local/tmp/hermes-clipboard.jar"
+
+
+def run_clipboard_helper(serial: str, *args: str) -> str:
+    output = run_adb(
+        serial,
+        "shell",
+        f"CLASSPATH={CLIPBOARD_HELPER}",
+        "app_process",
+        "/",
+        "com.hermes.agent.clipboard.Main",
+        *args,
+        timeout=30,
+    )
+    return str(output).strip()
+
+
 def set_clipboard_text(serial: str, text: str) -> dict[str, Any]:
     if not text:
         raise ValueError("text must not be empty")
-    grpc_json(
-        serial,
-        "android.emulation.control.EmulatorController/setClipboard",
-        {"text": text},
+    run_clipboard_helper(
+        serial, "set", base64.b64encode(text.encode("utf-8")).decode("ascii")
     )
-    clipboard = grpc_json(
-        serial,
-        "android.emulation.control.EmulatorController/getClipboard",
-        {},
-    )
+    clipboard = get_clipboard_text(serial)
     if clipboard.get("text") != text:
-        raise RuntimeError("emulator clipboard verification failed")
+        raise RuntimeError("clipboard verification failed")
     return clipboard
 
 
 def get_clipboard_text(serial: str) -> dict[str, Any]:
-    return grpc_json(
-        serial,
-        "android.emulation.control.EmulatorController/getClipboard",
-        {},
-    )
-
-
-def get_emulator_status(serial: str) -> dict[str, Any]:
-    status = grpc_json(
-        serial,
-        "android.emulation.control.EmulatorController/getStatus",
-        {},
-    )
-    vm_state = grpc_json(
-        serial,
-        "android.emulation.control.EmulatorController/getVmState",
-        {},
-    )
-    return {
-        "grpc_url": default_grpc_url_for_serial(serial),
-        "status": status,
-        "vm_state": vm_state,
-    }
-
-
-def set_vm_state(serial: str, state: str) -> dict[str, Any]:
-    grpc_json(
-        serial,
-        "android.emulation.control.EmulatorController/setVmState",
-        {"state": state},
-    )
-    return get_emulator_status(serial)
+    encoded = run_clipboard_helper(serial, "get")
+    return {"text": base64.b64decode(encoded, validate=True).decode("utf-8")}
 
 
 def live_view(serial: str) -> dict[str, Any]:
     adb_endpoint = serial if is_tcp_endpoint(serial) else None
-    grpc_url = default_grpc_endpoint(serial)
     result: dict[str, Any] = {"serial": serial}
     if adb_endpoint:
         result["adb_endpoint"] = adb_endpoint
-    if grpc_url:
-        result["grpc_url"] = grpc_url
     viewer_url = default_view_endpoint(serial)
     if viewer_url:
         result["viewer_url"] = viewer_url
@@ -791,12 +650,6 @@ def health_report(serial: str) -> dict[str, Any]:
         "focus": focus,
         "live_view": live_view(serial),
     }
-    grpc_url = default_grpc_endpoint(serial)
-    if grpc_url:
-        try:
-            report["emulator"] = get_emulator_status(serial)
-        except Exception as exc:
-            report["emulator_error"] = safe_text(exc)
     try:
         report["accessibility"] = accessibility_request(
             serial, {"op": "health"}, timeout=5.0
@@ -839,31 +692,6 @@ def handle_disconnect(args: argparse.Namespace) -> dict[str, Any]:
 def handle_screenshot(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
     destination = resolve_output_path(args.path, serial, "screenshots", ".png")
-    grpc_url = default_grpc_endpoint(serial)
-    if grpc_url:
-        try:
-            screenshot = grpc_json(
-                serial,
-                "android.emulation.control.EmulatorController/getScreenshot",
-                {"format": "PNG", "display": 0},
-                timeout=120,
-            )
-            encoded = screenshot.get("image")
-            if not isinstance(encoded, str) or not encoded:
-                raise RuntimeError("emulator gRPC screenshot returned no image data")
-            destination.write_bytes(base64.b64decode(encoded, validate=True))
-            return {
-                "serial": serial,
-                "path": str(destination),
-                "size_bytes": destination.stat().st_size,
-                "source": "emulator-grpc",
-                "secure_windows_visible": True,
-            }
-        except (RuntimeError, ValueError, OSError) as exc:
-            grpc_error = safe_text(exc)
-    else:
-        grpc_error = "emulator gRPC endpoint is not configured"
-
     payload = run_adb(serial, "exec-out", "screencap", "-p", text=False, timeout=120)
     destination.write_bytes(bytes(payload))
     return {
@@ -872,7 +700,6 @@ def handle_screenshot(args: argparse.Namespace) -> dict[str, Any]:
         "size_bytes": destination.stat().st_size,
         "source": "adb-screencap",
         "secure_windows_visible": False,
-        "grpc_error": grpc_error,
     }
 
 
@@ -1305,14 +1132,14 @@ def handle_text(args: argparse.Namespace) -> dict[str, Any]:
         return {
             "serial": serial,
             "text": args.text,
-            "mode": "grpc-clipboard-paste",
+            "mode": "clipboard-paste",
             "clipboard": clipboard,
             "accessibility_error": accessibility_error,
         }
     except Exception as clipboard_exc:
         if not simple_adb_input_text(args.text):
             raise RuntimeError(
-                "Unicode text entry failed through accessibility and emulator clipboard: "
+                "Unicode text entry failed through accessibility and clipboard paste: "
                 f"{accessibility_error}; {safe_text(clipboard_exc)}"
             ) from clipboard_exc
 
@@ -1410,6 +1237,8 @@ def handle_app_start(args: argparse.Namespace) -> dict[str, Any]:
             serial,
             "shell",
             "monkey",
+            "--pct-syskeys",
+            "0",
             "-p",
             args.package,
             "-c",
@@ -1627,18 +1456,6 @@ def handle_live_view(args: argparse.Namespace) -> dict[str, Any]:
     return live_view(serial)
 
 
-def handle_emulator_status(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_connected_serial(args)
-    return {"serial": serial, "emulator": get_emulator_status(serial)}
-
-
-def handle_vm_state(args: argparse.Namespace) -> dict[str, Any]:
-    serial = require_connected_serial(args)
-    if args.state:
-        return {"serial": serial, "emulator": set_vm_state(serial, args.state)}
-    return {"serial": serial, "emulator": get_emulator_status(serial)}
-
-
 def handle_clipboard(args: argparse.Namespace) -> dict[str, Any]:
     serial = require_connected_serial(args)
     return {"serial": serial, "clipboard": get_clipboard_text(serial)}
@@ -1698,8 +1515,6 @@ HANDLERS = {
     "health": handle_health,
     "snapshot": handle_snapshot,
     "live-view": handle_live_view,
-    "emulator-status": handle_emulator_status,
-    "vm-state": handle_vm_state,
     "clipboard": handle_clipboard,
     "set-clipboard": handle_set_clipboard,
     "logcat": handle_logcat,
@@ -1777,26 +1592,15 @@ def parser() -> argparse.ArgumentParser:
     wait_for_boot.add_argument("--interval", type=positive_float, default=2.0)
 
     live_view_cmd = sub.add_parser(
-        "live-view", help="show adb, browser viewer, and emulator gRPC endpoints"
+        "live-view", help="show adb, browser viewer, and companion endpoints"
     )
     live_view_cmd.add_argument(
         "--serial", default=argparse.SUPPRESS, help=argparse.SUPPRESS
     )
 
-    sub.add_parser("emulator-status", help="show emulator gRPC status and VM state")
+    sub.add_parser("clipboard", help="read the device clipboard")
 
-    vm_state = sub.add_parser("vm-state", help="get or set the emulator VM run state")
-    vm_state.add_argument(
-        "state",
-        nargs="?",
-        choices=("RUNNING", "PAUSED", "SHUTDOWN", "RESET", "RESTART", "START", "STOP"),
-    )
-
-    sub.add_parser("clipboard", help="read the emulator clipboard through gRPC")
-
-    set_clipboard = sub.add_parser(
-        "set-clipboard", help="set the emulator clipboard through gRPC"
-    )
+    set_clipboard = sub.add_parser("set-clipboard", help="set the device clipboard")
     set_clipboard.add_argument("text")
 
     tap = sub.add_parser("tap", help="tap one screen coordinate")
@@ -1848,7 +1652,7 @@ def parser() -> argparse.ArgumentParser:
     long_press.add_argument("--require-change", action="store_true")
 
     text = sub.add_parser(
-        "text", help="type text through adb input or emulator clipboard paste"
+        "text", help="type text through accessibility, clipboard paste or adb input"
     )
     text.add_argument("text")
     text.add_argument("--ref", help="editable accessibility ref to target")
