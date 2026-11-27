@@ -1,8 +1,0 @@
-import FreeCADGui as Gui
-
-# Switch to PartDesignWorkbench Workbench
-try:
-    Gui.activateWorkbench("PartDesignWorkbench")
-    print("Workbench changed to: PartDesignWorkbench")
-except Exception as e:
-    print("Error: " + str(e))

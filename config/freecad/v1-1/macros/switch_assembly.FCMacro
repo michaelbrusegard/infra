@@ -1,8 +1,0 @@
-import FreeCADGui as Gui
-
-# Switch to AssemblyWorkbench Workbench
-try:
-    Gui.activateWorkbench("AssemblyWorkbench")
-    print("Workbench changed to: AssemblyWorkbench")
-except Exception as e:
-    print("Error: " + str(e))

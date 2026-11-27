@@ -1,8 +1,0 @@
-import FreeCADGui as Gui
-
-# Switch to DraftWorkbench Workbench
-try:
-    Gui.activateWorkbench("DraftWorkbench")
-    print("Workbench changed to: DraftWorkbench")
-except Exception as e:
-    print("Error: " + str(e))

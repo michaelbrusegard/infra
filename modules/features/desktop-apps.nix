@@ -47,7 +47,6 @@
             (lib.lowPrio slack)
             bulwark-desktop
             bitwarden-cli
-            audacity
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
             mattermost-desktop

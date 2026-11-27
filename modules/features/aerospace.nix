@@ -76,7 +76,7 @@
                 run = "move-node-to-workspace 5";
               }
               {
-                "if".app-name-regex-substring = "^(FreeCAD|OrcaSlicer)$";
+                "if".app-name-regex-substring = "^OrcaSlicer$";
                 run = "move-node-to-workspace 6";
               }
               {

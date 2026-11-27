@@ -190,10 +190,6 @@
           workspace = 6;
         }
         {
-          class = "^(org.freecad.FreeCAD)$";
-          workspace = 6;
-        }
-        {
           class = "^(feishin)$";
           workspace = 7;
         }

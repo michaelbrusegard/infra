@@ -1,8 +1,0 @@
-import FreeCADGui as Gui
-
-# Switch to SurfaceWorkbench Workbench
-try:
-    Gui.activateWorkbench("SurfaceWorkbench")
-    print("Workbench changed to: SurfaceWorkbench")
-except Exception as e:
-    print("Error: " + str(e))

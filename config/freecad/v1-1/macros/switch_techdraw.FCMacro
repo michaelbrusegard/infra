@@ -1,8 +1,0 @@
-import FreeCADGui as Gui
-
-# Switch to TechDrawWorkbench Workbench
-try:
-    Gui.activateWorkbench("TechDrawWorkbench")
-    print("Workbench changed to: TechDrawWorkbench")
-except Exception as e:
-    print("Error: " + str(e))
