@@ -16,7 +16,6 @@
           with pkgs;
           [
             sd
-            tealdeer
             trash-cli
             moor
             dust
