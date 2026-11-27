@@ -183,6 +183,130 @@ spec:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
+  name: listenbrainz-bridge-config-backup
+  namespace: media
+spec:
+  schedule: "55 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: listenbrainz-bridge-config-backup
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: espresso-1
+          containers:
+            - name: restic
+              image: docker.io/restic/restic:0.20.0@sha256:93999df80d4ac6cb148e82d2ef1fe6a81996f17ff535e772723538211b31555a
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  restic --retry-lock 15m backup \
+                    --host espresso-media \
+                    --tag espresso \
+                    --tag media \
+                    --tag listenbrainz-bridge \
+                    --tag config \
+                    /config
+              env:
+                - name: RESTIC_CACHE_DIR
+                  value: /cache
+              envFrom:
+                - secretRef:
+                    name: freddo-restic-listenbrainz-bridge-config
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: cache
+                  mountPath: /cache
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                claimName: config-listenbrainz-bridge
+            - name: cache
+              emptyDir: {}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: music-tagger-config-backup
+  namespace: media
+spec:
+  schedule: "5 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: music-tagger-config-backup
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: espresso-1
+          containers:
+            - name: restic
+              image: docker.io/restic/restic:0.20.0@sha256:93999df80d4ac6cb148e82d2ef1fe6a81996f17ff535e772723538211b31555a
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  restic --retry-lock 15m backup \
+                    --host espresso-media \
+                    --tag espresso \
+                    --tag media \
+                    --tag music-tagger \
+                    --tag config \
+                    /config
+              env:
+                - name: RESTIC_CACHE_DIR
+                  value: /cache
+              envFrom:
+                - secretRef:
+                    name: freddo-restic-music-tagger-config
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: cache
+                  mountPath: /cache
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                claimName: config-music-tagger
+            - name: cache
+              emptyDir: {}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
   name: music-library-backup
   namespace: media
 spec:
