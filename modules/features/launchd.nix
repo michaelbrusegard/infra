@@ -7,12 +7,12 @@
     }:
     lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
       launchd.agents = {
-        raycast = {
+        tinycast = {
           enable = true;
           config = {
             ProgramArguments = [
               "/usr/bin/open"
-              "${pkgs.brewCasks.raycast}/Applications/Raycast.app"
+              "${pkgs.brewCasks.tinycast}/Applications/Tinycast.app"
             ];
             RunAtLoad = true;
             LimitLoadToSessionType = "Aqua";

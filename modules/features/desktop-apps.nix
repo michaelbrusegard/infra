@@ -62,7 +62,7 @@
             opencloudClient
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-            brewCasks.raycast
+            brewCasks.tinycast
             brewCasks.rustdesk
             brewCasks.mattermost
 
