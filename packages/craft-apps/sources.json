@@ -1,0 +1,80 @@
+{
+  "artcraft-launcher": {
+    "repo": "storytold/craft-launcher",
+    "version": "0.20.3",
+    "hash": "sha256-qn5JtF2lAlhdh39FfDz4rTsZwc0r61y40BrpKTFHeas=",
+    "dmgHash": "sha256-6vTx60bSosbJIY5G0+ovnpQLyECdNqSS5QSUMKz9464="
+  },
+  "deckcraft": {
+    "hash": "sha256-7HWqrvEKbcSBP36/D3/Y+YBSDFs9BRuj12IEyeXXb+o=",
+    "repo": "storytold/deckcraft",
+    "version": "0.19.1",
+    "cliHash": "sha256-EoWxSCPNQT7ipma1Afi6UHbOK6BDk4FDvAS/Juxb8Og="
+  },
+  "designcraft": {
+    "hash": "sha256-IR50ufXO5b/DzbRpg9C9sf29CRZL/YB/T/cHBpNdQK4=",
+    "repo": "storytold/designcraft",
+    "version": "0.21.1",
+    "cliHash": "sha256-gUikLik7qagzUVaK2ThBC4hoSVlSZ5ZI9wGK1c0kXPM="
+  },
+  "effectcraft": {
+    "hash": "sha256-byn/fgNZkJ/h2/b9PP2EMKA2I0m2EsXrLPyP7nueJ2A=",
+    "repo": "storytold/effectcraft",
+    "version": "0.25.1",
+    "cliHash": "sha256-9JjkB6gva6CAZxYAJTAeZHI3Bu/EXJY8SVoPf+14yP8="
+  },
+  "filmcraft": {
+    "hash": "sha256-Pk/qPLjUc+aPGJoKh5K6RhYPq1B62rOriSAHP9QfJPo=",
+    "repo": "storytold/filmcraft",
+    "version": "0.20.1",
+    "cliHash": "sha256-FlHZ3vtU+FPL1pAWQou59yp78m1W5HVbjip5U1/QrII="
+  },
+  "gridcraft": {
+    "hash": "sha256-jZe7otW7AP1p7VUGSFLB/ZFN5A1ezVXKAcjfgbgolG0=",
+    "repo": "storytold/gridcraft",
+    "version": "0.19.1",
+    "cliHash": "sha256-fCiV660LvZK2XGIrp+Iq2lbgSYBl39vUMxEboeIl64o="
+  },
+  "lightcraft": {
+    "hash": "sha256-sSPeFpFYCaeeZLpO467p4c3tbvI7c3wG+Bzcfi8obWI=",
+    "repo": "storytold/lightcraft",
+    "version": "0.21.1",
+    "cliHash": "sha256-WAhrnSJNArXsntCOdtoEuh3F1R08KFzepBc1j6fqBuI="
+  },
+  "pdfcraft": {
+    "hash": "sha256-qJk/nuluh6zOz5CvQib/YKhLnheHrp/Y+kj/4Tlrw14=",
+    "repo": "storytold/pdfcraft",
+    "version": "0.22.0",
+    "cliHash": "sha256-2biogHCJXm1czzzFPR3jU2IrYL2K+ZPhw5WbS+HK8No="
+  },
+  "photocraft": {
+    "hash": "sha256-Q4Ou9noHzDcK0lCm7WABUgXT5sRj+vP/Sw9nuBeMz8g=",
+    "repo": "storytold/photocraft",
+    "version": "0.23.1",
+    "cliHash": "sha256-puzcbUrdAogWQr2goLGRtJdBGGUfLsVkHccbLD/0t1I="
+  },
+  "solidcraft": {
+    "hash": "sha256-sMY/Rf5YqxPEAUUTKyH9wwn0XilDAfG6UlBQqplXWSA=",
+    "repo": "tangency-labs/solidcraft",
+    "version": "0.50.0",
+    "cliHash": "sha256-BcFlJOHv0d10s7DnVkxu+SskPn56/nnBVxf6xHUO/Ng="
+  },
+  "soundcraft": {
+    "hash": "sha256-yu/PhcTxE4cX1ZLTHOW+B/L8phbsNtY/rGdgze++KKk=",
+    "repo": "storytold/soundcraft",
+    "version": "0.20.1",
+    "cliHash": "sha256-hm/L/jIXnmZSFZOFtPZ2unVuHK24j6w+kXPpZD92O1E="
+  },
+  "vectorcraft": {
+    "hash": "sha256-oJBRQlL94UVJWsb8Zdb/ExHWmJmOV7pDTV0IlsPR+/o=",
+    "repo": "storytold/vectorcraft",
+    "version": "0.24.1",
+    "cliHash": "sha256-fwyCYeXIMdloHkgnL5unO/hwLb9s64T5gXfHwAf63fI="
+  },
+  "wordcraft": {
+    "hash": "sha256-7I2MwrkgSsA9E4DOyRDe/fLohQ2T6bh9YYTq/vYZaLQ=",
+    "repo": "storytold/wordcraft",
+    "version": "0.19.1",
+    "cliHash": "sha256-8Ajbfh3T+BpPm6ZdNDWO1NqOMOv5GRJYvvP3vizDLFM="
+  }
+}

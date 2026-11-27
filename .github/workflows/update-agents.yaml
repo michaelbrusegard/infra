@@ -37,10 +37,17 @@ jobs:
       - name: Update vite-plus
         run: packages/vite-plus/update.sh
 
+      - name: Update the Craft apps
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: packages/craft-apps/update.sh
+
       - name: Validate hosts
         run: |
-          git diff --quiet -- flake.lock packages/vite-plus && exit 0
+          git diff --quiet -- flake.lock packages/vite-plus packages/craft-apps && exit 0
           nix build --no-link .#packages.x86_64-linux.vite-plus
+          jq -r 'keys[] | ".#packages.x86_64-linux.\(.)"' packages/craft-apps/sources.json |
+            xargs nix build --no-link
           nix eval --raw .#nixosConfigurations.forte.config.system.build.toplevel.drvPath
           nix eval --raw .#darwinConfigurations.lungo.system.drvPath
 
@@ -51,11 +58,11 @@ jobs:
           GIT_COMMITTER_NAME: github-actions[bot]
           GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: |
-          if git diff --quiet -- flake.lock packages/vite-plus; then
+          if git diff --quiet -- flake.lock packages/vite-plus packages/craft-apps; then
             exit 0
           fi
 
-          git add flake.lock packages/vite-plus
+          git add flake.lock packages/vite-plus packages/craft-apps
           git commit -m "chore(flake): update agent harnesses"
           # The agent offers the read-only infra-secrets key before the
           # checkout's image-bump key, and GitHub rejects the push with it.

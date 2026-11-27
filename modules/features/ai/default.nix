@@ -388,7 +388,7 @@
           [
             (t3code.override {
               # Preserve project environments instead of using unwrapped providers.
-              claude-code = config.programs.claude-code.package;
+              claude-code = config.programs.claude-code.finalPackage;
               codex = config.programs.codex.package;
               opencode = config.programs.opencode.package;
               pi-coding-agent = direnvWrapped pkgs.pi-coding-agent "pi";

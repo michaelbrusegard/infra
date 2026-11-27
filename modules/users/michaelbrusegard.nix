@@ -56,17 +56,18 @@
       cli-extras
       cli-desktop
       cloud-credentials
+      craft
       desktop-apps
       dev
       dms
       dux-files
-      freecad
       gaming
       git
       gnome-keyring
       groupware
       helium
       helix
+      hex
       hyprland
       launchd
       k8s
