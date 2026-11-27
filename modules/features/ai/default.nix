@@ -496,6 +496,18 @@
               $DRY_RUN_CMD install -m 0600 "$temp_file" "$config_file"
             fi
 
+            # The snapshot shortcut is the same on every machine. macOS reads
+            # the keys itself from this setting; Hyprland holds the bind on
+            # Linux and has to agree with it.
+            client_file="$config_dir/client-settings.json"
+            shortcut='{kind: "both-shift-keys"}'
+            if ! ${lib.getExe pkgs.jq} -e ".snapShotShortcut == $shortcut" "$client_file" >/dev/null 2>&1; then
+              { [ -f "$client_file" ] && cat "$client_file" || echo '{}'; } | ${lib.getExe pkgs.jq} -c \
+                ".snapShotShortcut = $shortcut" > "$temp_file"
+              $DRY_RUN_CMD mkdir -p "$config_dir"
+              $DRY_RUN_CMD install -m 0600 "$temp_file" "$client_file"
+            fi
+
             rm -f "$temp_file"
           ''
         );
