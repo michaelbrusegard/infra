@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: signal
-          image: netbirdio/signal:0.81.3@sha256:67c9a97195dde8f4c50c270d1a04a0af052861808ffec3ac658f1346bf47e488
+          image: netbirdio/signal:0.83.2@sha256:075086a1b38cca814ec0699ec9aa509b6a0f078453f19ebac52934593fd5d6de
           args:
             - --port
             - "10000"

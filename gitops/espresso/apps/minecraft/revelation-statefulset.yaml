@@ -18,7 +18,7 @@ spec:
       terminationGracePeriodSeconds: 120
       containers:
         - name: minecraft
-          image: itzg/minecraft-server:2026.10.1-java8@sha256:e96f581be09a8760487c48302f6f953cee3eeb06b00efe637f2a582ea38067ec
+          image: itzg/minecraft-server:2026.11.1-java8@sha256:0232f3834fc76ce6f3f5c034bac73e28d4f69b49e2eab6f9671ad845a095df3d
           tty: true
           stdin: true
           ports:
