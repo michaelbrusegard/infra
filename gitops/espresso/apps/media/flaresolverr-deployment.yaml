@@ -42,3 +42,9 @@ spec:
               path: /health
               port: http
             periodSeconds: 10
+          resources:
+            requests:
+              cpu: 25m
+              memory: 192Mi
+            limits:
+              memory: 3Gi

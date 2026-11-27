@@ -23,6 +23,12 @@ spec:
             - sh
             - -c
             - mkdir -p /data/torrents/movies /data/torrents/tv /data/torrents/music /data/torrents/incomplete /data/media/movies /data/media/tv /data/media/music && chown -R 1000:1000 /data
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
           volumeMounts:
             - mountPath: /data
               name: media-data
@@ -47,6 +53,12 @@ spec:
                 sed -i 's|"idle-seeding-limit":.*|"idle-seeding-limit": 1440,|' /config/settings.json
                 sed -i 's|"idle-seeding-limit-enabled":.*|"idle-seeding-limit-enabled": true,|' /config/settings.json
               fi
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
           volumeMounts:
             - mountPath: /config
               name: config
@@ -143,6 +155,12 @@ spec:
                 - wget -qO- http://127.0.0.1:9999 2>/dev/null && wget -qO- http://127.0.0.1:8000/v1/openvpn/portforwarded 2>/dev/null | grep -qv '"port":0'
             periodSeconds: 30
             failureThreshold: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 448Mi
+            limits:
+              memory: 1536Mi
         - name: transmission
           restartPolicy: Always
           image: lscr.io/linuxserver/transmission:4.1.1-r1-ls338@sha256:653e7394633786ef76b3ad7987299dabf730b68646c7fc27826dbb86d20986d4
@@ -183,6 +201,12 @@ spec:
                 - -c
                 - nc -z 127.0.0.1 9091
             periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 256Mi
+            limits:
+              memory: 1536Mi
           volumeMounts:
             - mountPath: /config
               name: config
@@ -191,6 +215,12 @@ spec:
       containers:
         - name: pause
           image: registry.k8s.io/pause:3.10@sha256:ee6521f290b2168b6e0935a181d4cff9be1ac3f505666ef0e3c98fae8199917a
+          resources:
+            requests:
+              cpu: 1m
+              memory: 8Mi
+            limits:
+              memory: 32Mi
       volumes:
         - name: media-data
           persistentVolumeClaim:

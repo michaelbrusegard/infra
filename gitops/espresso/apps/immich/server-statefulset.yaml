@@ -29,6 +29,12 @@ spec:
                 mkdir -p "/usr/src/app/upload/$dir"
                 touch "/usr/src/app/upload/$dir/.immich"
               done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
           volumeMounts:
             - name: uploads
               mountPath: /usr/src/app/upload

@@ -58,6 +58,12 @@ spec:
               path: /health
               port: http
             periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              memory: 4Gi
           volumeMounts:
             - mountPath: /config
               name: config

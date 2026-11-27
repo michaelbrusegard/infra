@@ -24,6 +24,12 @@ spec:
           envFrom:
             - secretRef:
                 name: netbird-dashboard-env
+          resources:
+            requests:
+              cpu: 10m
+              memory: 48Mi
+            limits:
+              memory: 128Mi
           ports:
             - containerPort: 80
               name: http

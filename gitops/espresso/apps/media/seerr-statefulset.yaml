@@ -25,6 +25,12 @@ spec:
             - sh
             - -c
             - chown -R 1000:1000 /app/config
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
           volumeMounts:
             - mountPath: /app/config
               name: config
@@ -62,6 +68,12 @@ spec:
               path: /api/v1/status
               port: http
             periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
           volumeMounts:
             - mountPath: /app/config
               name: config

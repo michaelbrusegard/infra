@@ -41,6 +41,12 @@ spec:
               port: http
             periodSeconds: 10
             failureThreshold: 18
+          resources:
+            requests:
+              cpu: 10m
+              memory: 48Mi
+            limits:
+              memory: 256Mi
           volumeMounts:
             - mountPath: /app/data
               name: data

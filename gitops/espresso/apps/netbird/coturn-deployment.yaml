@@ -23,6 +23,12 @@ spec:
             - |
               EXTERNAL_IP=$(/usr/local/bin/detect-external-ip.sh --ipv4 2>/dev/null) || true
               exec turnserver -c /etc/coturn/turnserver.conf ${EXTERNAL_IP:+-X "$EXTERNAL_IP"}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
           ports:
             - containerPort: 3478
               name: stun

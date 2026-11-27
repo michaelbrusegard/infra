@@ -46,6 +46,12 @@ spec:
             httpGet:
               path: /api/instance
               port: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
           volumeMounts:
             - mountPath: /etc/netbird
               name: config

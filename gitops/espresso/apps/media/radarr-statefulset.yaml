@@ -52,6 +52,12 @@ spec:
               path: /
               port: http
             periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
           volumeMounts:
             - mountPath: /config
               name: config
