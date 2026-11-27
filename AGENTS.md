@@ -14,6 +14,10 @@ starts with `_` is skipped.
   `flake.modules.<class>.<name>` for each class it supports (`nixos`, `darwin`,
   `homeManager`), so the system and home halves of a feature sit together.
 - `modules/bundles/` — named sets of features (`base`, `server`, `desktop`…).
+  `home.nix` holds the Home Manager ones (`graphical`, `desktop`, `mac`), which
+  a system bundle or host hands to its users through
+  `home-manager.sharedModules`. A user's own profile lists only what applies on
+  every machine they have an account on.
 - `modules/hosts/<name>/` — the host's `hosts.<name>` registry entry and its
   module. System outputs, colmena nodes and the CI matrix all derive from the
   registry in `modules/flake/hosts.nix`.
@@ -44,6 +48,12 @@ time and takes more than twice as long.
 `verify` evaluates hosts without building them. After changing `flake.lock` by
 hand, run `nix run .#update-gate` as well: it builds the x86 servers, which is
 where a package that no longer compiles shows up.
+
+None of these checks runs Home Manager's activation, which is where a clash
+with a file already in the home folder shows up, and a failed activation leaves
+the desktop without a login screen. When a change makes Home Manager manage a
+file a program also writes, build the home activation package and run its
+`activate` with `DRY_RUN=1` on a machine that has the real home folder.
 
 `diff-hosts` prints values from host closures, which can include secrets. Pass
 `--names-only` anywhere the output is published.

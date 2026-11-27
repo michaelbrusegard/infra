@@ -9,11 +9,14 @@ say in the commit body which resources change.
 - `apps/<app>/` — one folder per app; `tests/app-shape.sh` defines the required
   shape and holds the exemptions.
 - `infrastructure/controllers/` then `infrastructure/configs/` then `apps/`:
-  Flux applies them in that order through `dependsOn`.
+  Flux applies them in that order through `dependsOn`. The top-level
+  `*.yaml` files are the Flux Kustomizations and say what else waits on what:
+  the secrets from `infra-secrets`, the NetBird operator, `projects` and the
+  manafishrov tenant.
 - `tofu/<stack>/` — OpenTofu stacks run by tofu-controller. Every stack applies
   its plan automatically once pushed; `tests/tofu-approval.sh` pins that policy.
-- Scripts shipped to pods live as real files under `apps/<app>/scripts/` and
-  reach the cluster through `configMapGenerator`.
+- Files shipped to pods live as real files in the app's folder (`scripts/`
+  for most apps) and reach the cluster through `configMapGenerator`.
 
 ## DNS
 
