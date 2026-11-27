@@ -12,7 +12,6 @@
       # Chrome Web Store IDs. Helium bundles uBlock Origin and proxies store
       # downloads through its own services.
       extensions = {
-        floccus = "fnaicdffflnofjppbagibeoednhnbjhg";
         bitwarden = "nngceckbapebfimnlniiiahkandclblb";
         vimium = "dbepggeogbaibhgnhhndojpepiihcmeb";
         sponsorblock = "mnjggcdmjocbbbhaepdhchncahnbgone";
