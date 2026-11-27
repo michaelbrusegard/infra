@@ -1,11 +1,23 @@
 name: Update Flake Inputs
 'on':
   schedule:
+    - cron: '17 5 * * *'
     - cron: '23 3 * * 1'
   workflow_dispatch:
+    inputs:
+      lane:
+        description: daily moves the fast-moving tools, weekly moves every input
+        type: choice
+        options:
+          - daily
+          - weekly
+        default: daily
+# Both lanes write flake.lock, so they queue behind each other.
 concurrency:
   group: update-flake
   cancel-in-progress: false
+env:
+  LANE: ${{ github.event.schedule == '23 3 * * 1' && 'weekly' || inputs.lane || 'daily' }}
 jobs:
   update:
     runs-on: ubuntu-26.04
@@ -21,9 +33,10 @@ jobs:
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
-      # The gate builds every x86 server, which does not fit in the disk a
-      # hosted runner has free: the run was shut down 39 minutes into it.
+      # The weekly gate builds every x86 server, which does not fit in the
+      # disk a hosted runner has free.
       - name: Free disk for the server builds
+        if: env.LANE == 'weekly'
         run: |
           sudo rm -rf /usr/local/lib/android /usr/share/dotnet /usr/share/swift \
             /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache
@@ -31,6 +44,40 @@ jobs:
           df -h /
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
+      # The tools that ship several times a week: the agent harnesses and the
+      # packages pinned to a vendor's release files. The run builds whatever it
+      # moved, because nothing else stands between it and main.
+      - name: Update the fast-moving tools
+        if: env.LANE == 'daily'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          release=https://github.com
+          nix flake update llm-agents t3code
+          packages/vite-plus/update.sh
+          packages/craft-apps/update.sh
+          packages/update-release.sh packages/helium-browser/default.nix imputnet/helium-linux \
+            "arch = \"x86_64\";=$release/imputnet/helium-linux/releases/download/{version}/helium-{version}-x86_64.AppImage" \
+            "arch = \"arm64\";=$release/imputnet/helium-linux/releases/download/{version}/helium-{version}-arm64.AppImage"
+          packages/update-release.sh packages/rustdesk/default.nix rustdesk/rustdesk \
+            "arch = \"x86_64\";=$release/rustdesk/rustdesk/releases/download/{version}/rustdesk-{version}-x86_64.deb" \
+            "arch = \"aarch64\";=$release/rustdesk/rustdesk/releases/download/{version}/rustdesk-{version}-aarch64.deb"
+          packages/update-release.sh packages/bulwark-desktop/default.nix bulwarkmail/desktop \
+            "arch = \"x86_64\";=$release/bulwarkmail/desktop/releases/download/v{version}/Bulwark-{version}-x86_64.AppImage" \
+            "arch = \"arm64\";=$release/bulwarkmail/desktop/releases/download/v{version}/Bulwark-{version}-arm64.AppImage" \
+            "universal.zip=$release/bulwarkmail/desktop/releases/download/v{version}/Bulwark-{version}-universal.zip"
+      - name: Build what moved
+        if: env.LANE == 'daily'
+        run: |
+          git diff --quiet && exit 0
+          {
+            jq -r 'keys[] | select(. != "artcraft-launcher")' packages/craft-apps/sources.json
+            printf '%s\n' craft-ai-mcp vite-plus helium-browser rustdesk-flutter bulwark-desktop
+          } | sed 's|^|.#packages.x86_64-linux.|' | xargs nix build --no-link
+          printf '%s\n' claude-code codex opencode pi-coding-agent antigravity-cli t3code |
+            sed 's|^|.#nixosConfigurations.forte.pkgs.|' | xargs nix build --no-link
+          nix eval --raw .#nixosConfigurations.forte.config.system.build.toplevel.drvPath
+          nix eval --raw .#darwinConfigurations.lungo.system.drvPath
       # update-inputs tries every input at once and falls back to one at a
       # time, holding back any that stop a host from evaluating. update-gate is
       # the bar for the result: formatting, every flake check including the
@@ -38,8 +85,9 @@ jobs:
       # evaluating a host does not prove its packages build. An input that
       # fails the gate is found and held back as well. Nothing but this job
       # stands between the update and main: it is pushed straight there.
-      - name: Update inputs
+      - name: Update every input
         id: update
+        if: env.LANE == 'weekly'
         shell: bash
         env:
           VERIFY_JOBS: 3
@@ -52,25 +100,20 @@ jobs:
             exit "$status"
           fi
           echo "held-back=$((status == 2))" >> "$GITHUB_OUTPUT"
-          if git diff --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
       # Host closures can hold values from the private secrets flake, so only
       # the names of what changed are published.
       - name: Summarise what changes on the hosts
-        if: steps.update.outputs.changed == 'true'
+        if: env.LANE == 'weekly'
         shell: bash
         run: |
           set -euo pipefail
+          git diff --quiet && exit 0
           {
             echo '```'
             nix run .#diff-hosts -- --names-only HEAD
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Commit the update
-        if: steps.update.outputs.changed == 'true'
         env:
           GIT_AUTHOR_NAME: github-actions[bot]
           GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
@@ -79,12 +122,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git commit --all -m "chore(flake): update inputs"
+          git diff --quiet && exit 0
+          if [[ $LANE == weekly ]]; then
+            subject='chore(flake): update inputs'
+          else
+            subject='chore(flake): update agent harnesses and apps'
+          fi
+          git commit --all -m "$subject"
           # The agent offers the read-only infra-secrets key before the
           # checkout's image-bump key, and GitHub rejects the push with it.
           unset SSH_AUTH_SOCK
-          git pull --rebase origin main
-          git push
+          .github/scripts/push-to-main.sh
       - name: Fail when an input was held back
         if: steps.update.outputs.held-back == '1'
         run: |

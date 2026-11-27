@@ -9,15 +9,15 @@
 }:
 let
   pname = "helium";
-  version = "0.22.1.1";
+  version = "0.22.5.1";
   artifacts = {
     x86_64-linux = {
       arch = "x86_64";
-      hash = "sha256-r0aE4ONRpoU03DNEOzadArw6wmM3NMl4SMinQ5vLs2c=";
+      hash = "sha256-l1vGVHSlvx1BDDa50OkUEjy+ZgkwQ8Ho213IaNNiOVU=";
     };
     aarch64-linux = {
       arch = "arm64";
-      hash = "sha256-4+BJ/cFfHDsYU+azrOvuXIjbC7hnJ2q0DFj1ulR5TQs=";
+      hash = "sha256-RpWm+F7ZUi/hGpvtmKkd8Dn0uzLRE8YVyZLM4z+I5Eo=";
     };
   };
   artifact = artifacts.${stdenvNoCC.hostPlatform.system};

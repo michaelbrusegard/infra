@@ -18,6 +18,7 @@
         ++ [
           ".github/scripts/push-to-main.sh"
           "packages/craft-apps/update.sh"
+          "packages/update-release.sh"
           "packages/hermes-agent-image/smoke-test.sh"
           "packages/hermes-android-image/smoke-test.sh"
         ];

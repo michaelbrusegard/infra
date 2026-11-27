@@ -7,7 +7,7 @@
 }:
 let
   pname = "bulwark";
-  version = "0.1.0-beta.61";
+  version = "0.1.0-beta.62";
   releaseUrl = "https://github.com/bulwarkmail/desktop/releases/download/v${version}";
 
   meta = {
@@ -31,11 +31,11 @@ let
         {
           x86_64-linux = {
             arch = "x86_64";
-            hash = "sha256-BxtMvg3o007NioVPq41CqLYPGzKlbLdW/GlK38OA1zM=";
+            hash = "sha256-d11X/sh5oHT4nJ8n5zmy03YTZsbxqPgcCUPk5V0ktxk=";
           };
           aarch64-linux = {
             arch = "arm64";
-            hash = "sha256-BFih4ZuQSvbrgps8pwdujJZOgQmaSmrjToPBcXyIVH4=";
+            hash = "sha256-UnQvXfX9w9nEbAZjyaaWzY8pPMm9DvDrUOIsVhwFg6A=";
           };
         }
         .${stdenvNoCC.hostPlatform.system};
@@ -72,7 +72,7 @@ let
 
     src = fetchurl {
       url = "${releaseUrl}/Bulwark-${version}-universal.zip";
-      hash = "sha256-okC5MK9J8qfz0Vxh7x54diYsrB43+qtc+g8nIq6o0uo=";
+      hash = "sha256-9mT5wJEN7NuGSvM+0nPmNQZ6qhrBu7ZJcz98p85iYUE=";
     };
 
     nativeBuildInputs = [ unzip ];

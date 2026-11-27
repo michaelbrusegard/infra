@@ -34,18 +34,18 @@ let
   artifacts = {
     x86_64-linux = {
       arch = "x86_64";
-      hash = "sha256-TiuXAdJafvNz89Cb2lhKN9aQL5emqxXy6G1KV4PioOw=";
+      hash = "sha256-gQltL2X9QzUlQMNRvKFbsHEqKm+e+kyV6f/yXLl7O4E=";
     };
     aarch64-linux = {
       arch = "aarch64";
-      hash = "sha256-Hy/JvoMhwQNHqjPLExmMapVq7CcsXlisgfTA7wQDffM=";
+      hash = "sha256-+oXo08zUXi4wPC0TWa9dxRqpPYgOObpHybBL+r2Crhk=";
     };
   };
   artifact = artifacts.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "rustdesk";
-  version = "1.5.0";
+  version = "1.5.3";
 
   src = fetchurl {
     url = "https://github.com/rustdesk/rustdesk/releases/download/${finalAttrs.version}/rustdesk-${finalAttrs.version}-${artifact.arch}.deb";

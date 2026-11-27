@@ -9,5 +9,4 @@ rules:
       - netbird-proxy-image.yaml
       - postgres-image.yaml
       - smtp-edge-image.yaml
-      - update-agents.yaml
       - update-flake.yaml
