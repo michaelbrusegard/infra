@@ -17,7 +17,6 @@
           [
             sd
             tealdeer
-            lazydocker
             trash-cli
             moor
             dust
