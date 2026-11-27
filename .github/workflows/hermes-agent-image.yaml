@@ -5,9 +5,6 @@ name: Hermes Agent Images
     branches:
       - main
     paths:
-      - flake.nix
-      - flake.lock
-      - packages/default.nix
       - packages/hermes-agent-image/**
       - packages/hermes-browser-image/**
       - packages/chromium-seccomp-profile/**
@@ -15,9 +12,6 @@ name: Hermes Agent Images
       - gitops/espresso/apps/hermes-agent/tests/*_smoke.py
   pull_request:
     paths:
-      - flake.nix
-      - flake.lock
-      - packages/default.nix
       - packages/hermes-agent-image/**
       - packages/hermes-browser-image/**
       - packages/chromium-seccomp-profile/**

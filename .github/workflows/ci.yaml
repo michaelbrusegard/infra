@@ -18,6 +18,7 @@ jobs:
       nix: ${{ steps.filter.outputs.nix }}
       gitops: ${{ steps.filter.outputs.gitops }}
       tofu: ${{ steps.filter.outputs.tofu }}
+      builds: ${{ steps.filter.outputs.builds }}
       tofu-dirs: ${{ steps.list-tofu.outputs.dirs }}
       hosts: ${{ steps.list-hosts.outputs.hosts }}
     steps:
@@ -42,6 +43,9 @@ jobs:
               - 'packages/cliproxy-plugins/**'
               - 'modules/flake/check-app.nix'
               - '.github/workflows/ci.yaml'
+            builds:
+              - 'flake.lock'
+              - 'overlays/**'
             tofu:
               - '**/*.tf'
               - '**/.terraform.lock.hcl'
@@ -125,6 +129,34 @@ jobs:
             nix run .#diff-hosts -- --names-only HEAD^1 "$HOST"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+  # Evaluating a host does not prove its packages compile, and a lock or
+  # overlay change is where they stop. Pushes to main are left out: the update
+  # workflow runs the same build before it pushes.
+  build-servers:
+    needs: filter
+    if: needs.filter.outputs.builds == 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SECRETS_DEPLOY_KEY }}
+      - name: Free disk for the server builds
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /usr/share/swift \
+            /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache
+          sudo docker image prune --all --force >/dev/null
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
+      - name: Build the deployed x86 servers
+        env:
+          HOSTS: ${{ needs.filter.outputs.hosts }}
+        run: |
+          jq -r '.[] | select(.deployed and .system == "x86_64-linux") | ".#\(.attribute)"' <<<"$HOSTS" |
+            xargs nix build --no-link
   validate-kubernetes:
     needs: filter
     if: needs.filter.outputs.gitops == 'true'
