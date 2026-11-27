@@ -18,6 +18,9 @@ spec:
             app: uptime-kuma-status-page-reconciler
         spec:
           restartPolicy: OnFailure
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: reconciler
               image: docker.io/library/python:3.15-slim@sha256:fd2aef5e0d8438208de9fe154ab5b331a2428fc0c9838d41611e611fd7a80d85
@@ -45,6 +48,14 @@ spec:
                   memory: 64Mi
                 limits:
                   memory: 256Mi
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 10000
+                runAsGroup: 10000
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
           volumes:
             - name: script
               configMap:

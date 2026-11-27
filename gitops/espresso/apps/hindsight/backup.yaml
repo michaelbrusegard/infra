@@ -18,6 +18,9 @@ spec:
             app: hindsight-backup
         spec:
           restartPolicy: Never
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
           initContainers:
             - name: dump-postgres
               image: postgres:18-bookworm@sha256:194e55feb2597b1465dbee81cc9fd8d204566cd2eb42c8d22fd6c931a38781b1
@@ -50,6 +53,11 @@ spec:
                 limits:
                   cpu: "1"
                   memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
           containers:
             - name: restic
               image: docker.io/restic/restic:0.20.0@sha256:93999df80d4ac6cb148e82d2ef1fe6a81996f17ff535e772723538211b31555a
@@ -76,6 +84,11 @@ spec:
                 limits:
                   cpu: "1"
                   memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
           volumes:
             - name: backup
               emptyDir: {}

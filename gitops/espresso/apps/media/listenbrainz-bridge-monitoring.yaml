@@ -15,6 +15,9 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: espresso-1
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         - name: init-metrics
           image: busybox:1.38.0@sha256:f97baa533a26513c453a362be331a43eb60214302f449c16571b23cea141dce4
@@ -63,6 +66,14 @@ spec:
             limits:
               cpu: 50m
               memory: 32Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           volumeMounts:
             - name: state
               mountPath: /metrics

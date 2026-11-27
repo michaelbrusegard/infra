@@ -13,6 +13,12 @@ spec:
       labels:
         app: netbird-signal
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: signal
           image: netbirdio/signal:0.83.2@sha256:075086a1b38cca814ec0699ec9aa509b6a0f078453f19ebac52934593fd5d6de
@@ -23,6 +29,11 @@ spec:
             - console
             - --log-level
             - info
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               cpu: 10m

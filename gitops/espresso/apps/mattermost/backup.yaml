@@ -42,6 +42,9 @@ spec:
             app: mattermost-backup
         spec:
           restartPolicy: Never
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
           initContainers:
             - name: dump-postgres
               image: postgres:18-bookworm@sha256:194e55feb2597b1465dbee81cc9fd8d204566cd2eb42c8d22fd6c931a38781b1
@@ -71,6 +74,11 @@ spec:
                 limits:
                   cpu: "1"
                   memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
               volumeMounts:
                 - name: backup
                   mountPath: /backup
@@ -94,6 +102,11 @@ spec:
                 limits:
                   cpu: "1"
                   memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
               volumeMounts:
                 - name: backup
                   mountPath: /backup

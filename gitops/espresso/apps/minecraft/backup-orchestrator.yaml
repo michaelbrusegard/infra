@@ -83,6 +83,9 @@ spec:
             app: minecraft-backup
         spec:
           restartPolicy: Never
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
           serviceAccountName: minecraft-backup
           containers:
             - name: backup
@@ -101,6 +104,14 @@ spec:
                   memory: 64Mi
                 limits:
                   memory: 256Mi
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 10000
+                runAsGroup: 10000
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
               volumeMounts:
                 - name: script
                   mountPath: /scripts
