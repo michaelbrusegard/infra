@@ -125,7 +125,11 @@
       "matchUpdateTypes": [
         "minor"
       ],
-      "groupName": "all minor dependencies"
+      "groupName": "all minor dependencies",
+      "automerge": true,
+      "platformAutomerge": true,
+      "minimumReleaseAge": "3 days",
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
       "matchUpdateTypes": [
@@ -146,12 +150,23 @@
       "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
+      "description": "Chart minors can change defaults and bundled images, so they are reviewed, apart from the dependencies that merge themselves.",
       "matchManagers": [
         "helmv3",
         "flux"
       ],
       "matchUpdateTypes": [
-        "minor",
+        "minor"
+      ],
+      "groupName": "helm chart minors",
+      "automerge": false
+    },
+    {
+      "matchManagers": [
+        "helmv3",
+        "flux"
+      ],
+      "matchUpdateTypes": [
         "major"
       ],
       "automerge": false
@@ -167,6 +182,21 @@
       "registryUrls": [
         "https://registry.opentofu.org"
       ],
+      "automerge": false,
+      "description": "Provider updates change what a plan does, and the stacks apply on merge, so they are reviewed in their own pull request.",
+      "groupName": "tofu providers"
+    },
+    {
+      "description": "Database engines are reviewed: a new version can migrate data on start.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "/(^|/)postgres$/",
+        "/clickhouse-server$/",
+        "/(^|/)valkey$/"
+      ],
+      "groupName": "databases",
       "automerge": false
     },
     {
