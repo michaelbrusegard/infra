@@ -89,11 +89,6 @@
               alt-shift-k = "move up";
               alt-shift-l = "move right";
 
-              alt-left = "resize width -20";
-              alt-right = "resize width +20";
-              alt-up = "resize height -20";
-              alt-down = "resize height +20";
-
               alt-1 = "workspace --auto-back-and-forth 1";
               alt-2 = "workspace --auto-back-and-forth 2";
               alt-3 = "workspace --auto-back-and-forth 3";

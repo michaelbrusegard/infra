@@ -58,6 +58,8 @@
       inherit (lib.generators) mkLuaInline;
 
       newTerminal = "${lib.getExe pkgs.ghostty} +new-window";
+      nc = lib.getExe pkgs.netcat-openbsd;
+      kanataPort = toString osConfig.services.kanata.keyboards.default.port;
       systemctl = lib.getExe' pkgs.systemd "systemctl";
       brightnessctl = lib.getExe pkgs.brightnessctl;
       kbdBacklightCycle = pkgs.writeShellScript "kbd-backlight-cycle" ''
@@ -67,34 +69,6 @@
         ${brightnessctl} -d "$d" s $(((b + 1) % (m + 1)))
       '';
 
-      # Manual gaming-mode toggle: flips touchpad disable-while-typing
-      # and the kanata home-row-mods layer together, so holding WASD works in games.
-      # State is derived from the current DWT value, so the two stay in sync.
-      gamingModeToggle = lib.getExe (
-        pkgs.writeShellApplication {
-          name = "gaming-mode-toggle";
-          runtimeInputs = [
-            pkgs.hyprland
-            pkgs.netcat-openbsd
-          ];
-          text = ''
-            kanata_port=5829
-            cur=$(hyprctl -i 0 getoption input:touchpad:disable_while_typing 2>/dev/null | awk '/^bool:/{print $2}')
-            if [ "$cur" = "true" ]; then
-              # enable gaming mode
-              hyprctl -i 0 dispatch 'hl.config({input={touchpad={disable_while_typing=false}}})' >/dev/null 2>&1 || true
-              printf '{"ChangeLayer":{"new":"nomods"}}' | nc -N -w1 127.0.0.1 "$kanata_port" >/dev/null 2>&1 || true
-              hyprctl -i 0 notify -1 2000 "rgb(00ff00)" "Gaming mode ON" >/dev/null 2>&1 || true
-            else
-              # back to normal
-              hyprctl -i 0 dispatch 'hl.config({input={touchpad={disable_while_typing=true}}})' >/dev/null 2>&1 || true
-              printf '{"ChangeLayer":{"new":"base"}}' | nc -N -w1 127.0.0.1 "$kanata_port" >/dev/null 2>&1 || true
-              hyprctl -i 0 notify -1 2000 "rgb(ff8800)" "Gaming mode OFF" >/dev/null 2>&1 || true
-            fi
-          '';
-        }
-      );
-
       exec = cmd: mkLuaInline ''hl.dsp.exec_cmd("${cmd}")'';
       execRaw = cmd: mkLuaInline "hl.dsp.exec_cmd([[${cmd}]])";
       movefocus = dir: mkLuaInline ''hl.dsp.focus({ direction = "${dir}" })'';
@@ -103,8 +77,6 @@
       moveToWorkspace = n: mkLuaInline "hl.dsp.window.move({ workspace = ${toString n} })";
       togglefloating = mkLuaInline ''hl.dsp.window.float({ action = "toggle" })'';
       fullscreenToggle = mkLuaInline ''hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" })'';
-      resizeactive =
-        x: y: mkLuaInline "hl.dsp.window.resize({ x = ${toString x}, y = ${toString y}, relative = true })";
       # Toggles whether the focused window (RustDesk) can capture Hyprland binds.
       toggleShortcutsInhibit = mkLuaInline ''hl.dsp.window.set_prop({ prop = "no_shortcuts_inhibit", value = "toggle" })'';
       global = action: mkLuaInline ''hl.dsp.global("${action}")'';
@@ -126,7 +98,6 @@
           flags
         ];
       };
-      bindRepeat = bindFlags { repeating = true; };
       bindLocked = bindFlags { locked = true; };
       bindLockedRepeat = bindFlags {
         locked = true;
@@ -239,6 +210,47 @@
         systemd.variables = [ "--all" ];
         configType = "lua";
 
+        # Kanata's layer follows gaming mode and the focused window. Gaming mode
+        # drops the home-row mods and lets the touchpad work while keys are held,
+        # so holding WASD works in games. Ghostty gets a layer without the Mac
+        # text shortcuts because the shell does its own line editing.
+        extraConfig = ''
+          local gaming = false
+          local kanataLayer
+
+          local function syncKanata(window)
+            local layer = "base"
+            if gaming then
+              layer = "nomods"
+            elseif window and window.class == "com.mitchellh.ghostty" then
+              layer = "terminal"
+            end
+            if layer == kanataLayer then
+              return
+            end
+            kanataLayer = layer
+            hl.exec_cmd(string.format(
+              [[printf '{"ChangeLayer":{"new":"%s"}}' | ${nc} -N -w1 127.0.0.1 ${kanataPort}]],
+              layer
+            ))
+          end
+
+          hl.on("window.active", syncKanata)
+          hl.on("hyprland.start", function() syncKanata(hl.get_active_window()) end)
+          hl.on("config.reloaded", function() syncKanata(hl.get_active_window()) end)
+
+          hl.bind("CTRL + SHIFT + G", function()
+            gaming = not gaming
+            hl.config({ input = { touchpad = { disable_while_typing = not gaming } } })
+            syncKanata(hl.get_active_window())
+            hl.notification.create({
+              text = gaming and "Gaming mode ON" or "Gaming mode OFF",
+              duration = 2000,
+              color = gaming and "rgb(00ff00)" or "rgb(ff8800)",
+            })
+          end)
+        '';
+
         settings = {
           monitor = osConfig.local.hyprland.monitors;
 
@@ -336,7 +348,6 @@
             (bind "CTRL + SUPER + Q" (exec "dms ipc call lock lock"))
             (bind "CTRL + SUPER + S" (exec "dms ipc call lock lock && ${systemctl} suspend"))
             (bind "CTRL + SUPER + F" fullscreenToggle)
-            (bind "CTRL + SHIFT + G" (exec gamingModeToggle))
             (bindUninhibited "ALT + ESCAPE" toggleShortcutsInhibit)
             (bind "CTRL + SHIFT + 3" (exec "dms screenshot full -d ~/Pictures/screenshots"))
             (bind "CTRL + SHIFT + 4" (exec "dms screenshot -d ~/Pictures/screenshots"))
@@ -345,11 +356,6 @@
             # Shift is already held.
             (bind "SHIFT + Shift_L" (global "com.t3tools.T3Code:capture-window"))
             (bind "SHIFT + Shift_R" (global "com.t3tools.T3Code:capture-window"))
-
-            (bindRepeat "ALT + left" (resizeactive (-20) 0))
-            (bindRepeat "ALT + down" (resizeactive 0 20))
-            (bindRepeat "ALT + up" (resizeactive 0 (-20)))
-            (bindRepeat "ALT + right" (resizeactive 20 0))
 
             (bindLockedRepeat "XF86AudioRaiseVolume" (exec "dms ipc call audio increment 3"))
             (bindLockedRepeat "XF86AudioLowerVolume" (exec "dms ipc call audio decrement 3"))

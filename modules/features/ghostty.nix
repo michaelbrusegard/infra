@@ -41,10 +41,6 @@
             "super+j=goto_split:down"
             "super+k=goto_split:up"
             "super+l=goto_split:right"
-            "super+left=resize_split:left,20"
-            "super+down=resize_split:down,20"
-            "super+up=resize_split:up,20"
-            "super+right=resize_split:right,20"
             "super+z=toggle_split_zoom"
             "ctrl+tab=next_tab"
             "ctrl+shift+tab=previous_tab"
@@ -58,6 +54,18 @@
             "super+9=last_tab"
             "super+f=start_search"
             "super+r=reload_config"
+
+            # Mac text editing for the shell: Cmd+arrows go to the line's ends
+            # and Cmd+Backspace/Delete clear to them, Option moves and deletes
+            # by word.
+            "super+left=csi:H"
+            "super+right=csi:F"
+            "super+backspace=text:\\x15"
+            "super+delete=text:\\x0b"
+            "alt+left=esc:b"
+            "alt+right=esc:f"
+            "alt+backspace=text:\\x1b\\x7f"
+            "alt+delete=esc:d"
           ];
         }
         // lib.optionalAttrs isLinux {
