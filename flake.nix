@@ -79,6 +79,10 @@
       url = "github:steipete/homebrew-tap";
       flake = false;
     };
+    homebrew-anomaly = {
+      url = "github:anomalyco/homebrew-tap";
+      flake = false;
+    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
@@ -116,6 +120,11 @@
     };
     # Daily-updated agent harnesses. Its own nixpkgs keeps the binary cache.
     llm-agents.url = "github:numtide/llm-agents.nix";
+    hex = {
+      url = "github:anomalyco/hex";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.home-manager.follows = "home-manager";
+    };
     asus-dialpad-driver = {
       url = "github:asus-linux-drivers/asus-dialpad-driver";
       inputs.nixpkgs.follows = "nixpkgs";

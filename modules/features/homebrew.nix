@@ -13,6 +13,7 @@
         "michaelbrusegard/homebrew-extras" = inputs.homebrew-extras;
         "netbirdio/homebrew-tap" = inputs.homebrew-netbird;
         "steipete/homebrew-tap" = inputs.homebrew-steipete;
+        "anomalyco/homebrew-tap" = inputs.homebrew-anomaly;
       };
       mutableTaps = false;
       autoMigrate = true;
@@ -57,6 +58,8 @@
         cask "netbirdio/tap/netbird-ui"
         tap "steipete/tap", trusted: { formulae: ["peekaboo"] }
         brew "steipete/tap/peekaboo"
+        tap "anomalyco/tap", trusted: { casks: ["hex"] }
+        cask "anomalyco/tap/hex"
       '';
       masApps = {
         "TestFlight" = 899247664;

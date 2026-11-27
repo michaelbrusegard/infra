@@ -494,6 +494,29 @@
         "type": "github"
       }
     },
+    "hex": {
+      "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1795753633,
+        "narHash": "sha256-mh9XttVKshYskQnxn928tqqFxGoVnZgiu4YKmPUvw24=",
+        "owner": "anomalyco",
+        "repo": "hex",
+        "rev": "7ae9c033e251cd197f07d8503b7cc647912ef13a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "repo": "hex",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -533,6 +556,22 @@
       "original": {
         "owner": "nix-community",
         "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "homebrew-anomaly": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795736131,
+        "narHash": "sha256-0fY100k2Y9r0hpMH4trAVOW6OqgNg5mLOQP0fvUZV1c=",
+        "owner": "anomalyco",
+        "repo": "homebrew-tap",
+        "rev": "54ebbb0b7de4342eb707c02296f597cfdcf35801",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "repo": "homebrew-tap",
         "type": "github"
       }
     },
@@ -1318,7 +1357,9 @@
         "dsearch": "dsearch",
         "dux-files": "dux-files",
         "flake-parts": "flake-parts",
+        "hex": "hex",
         "home-manager": "home-manager",
+        "homebrew-anomaly": "homebrew-anomaly",
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",
         "homebrew-extras": "homebrew-extras",
