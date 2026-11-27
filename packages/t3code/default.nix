@@ -3,6 +3,8 @@
   stdenv,
   symlinkJoin,
   makeWrapper,
+  asar,
+  jq,
   perl,
   unwrapped,
   claude-code,
@@ -14,47 +16,45 @@
   backendPort ? null,
 }:
 let
-  # Kanata puts Ctrl where Cmd sits and Super where Control sits, so the
-  # terminal must read Super as Ctrl and take Ctrl+V as paste, as Ghostty is
-  # set up to.
-  # The client bundle is minified: each string must match exactly once, so an
-  # upgrade that moves one fails the build. Equal lengths keep the asar header
-  # offsets valid, so the archive is edited in place.
-  terminalKeyPatches = [
-    {
-      # Super sets the Ctrl bit when a key is encoded for the pty.
-      from = "(e.ctrlKey?2:0)|(e.altKey?4:0)|(e.metaKey?8:0)";
-      to = "(e.ctrlKey?2:0)|(e.altKey?4:0)|(e.metaKey?2:0)";
-    }
-    {
-      # Ctrl+V pastes without Shift, while Super+V still sends ^V.
-      from = "e.metaKey:e.ctrlKey&&e.shiftKey:!1}";
-      to = "e.metaKey:e.ctrlKey&&!e.metaKey:!1}";
-    }
-    {
-      # Ctrl+C with nothing selected does nothing instead of sending ^C.
-      from = "(t?!e.shiftKey:e.shiftKey||e.key.toLowerCase()===`insert`)&&";
-      to = "(t?!e.shiftKey:!e.metaKey||e.key.toLowerCase()===`insert`)&&";
-    }
-  ];
+  # Kanata puts Ctrl on the Cmd key and Super on the Control key. On Linux, a
+  # preload hands T3 Code's terminal its own macOS rules with the two swapped
+  # back, the way Ghostty's key-remap does, and maps kanata's Mac text
+  # shortcuts back to Cmd and Option there. The archive's package.json points
+  # its main script at a hook beside the archive, which registers the preload
+  # and starts T3. The path is padded with slashes, which path.join drops, so
+  # package.json keeps its length and the archive is edited in place. The
+  # build fails if the terminal input or package.json no longer match.
+  macTerminal = unwrapped.overrideAttrs (old: {
+    nativeBuildInputs = old.nativeBuildInputs ++ [
+      asar
+      jq
+      perl
+    ];
+    postInstall = (old.postInstall or "") + ''
+      resources=$out/libexec/t3-code/resources
+      grep -aqF t3-ghostty-input "$resources/app.asar" \
+        || { echo "t3code: the terminal input class t3-ghostty-input is gone" >&2; exit 1; }
 
-  patched = unwrapped.overrideAttrs (old: {
-    nativeBuildInputs = old.nativeBuildInputs ++ [ perl ];
-    postInstall =
-      assert lib.all (p: lib.stringLength p.from == lib.stringLength p.to) terminalKeyPatches;
-      (old.postInstall or "")
-      + lib.concatMapStrings (p: ''
-        perl -0777 -i -pe 'BEGIN { $from = shift; $to = shift } $n += s/\Q$from\E/$to/g; END { exit($n == 1 ? 0 : 1) }' \
-          ${lib.escapeShellArg p.from} ${lib.escapeShellArg p.to} \
-          "$out/libexec/t3-code/resources/app.asar" \
-          || { echo "t3code terminal key patch did not match exactly once: "${lib.escapeShellArg p.from} >&2; exit 1; }
-      '') terminalKeyPatches;
+      (cd "$TMPDIR" && asar extract-file "$resources/app.asar" package.json)
+      appMain=$(jq -er .main "$TMPDIR/package.json")
+      hook=../mac-terminal/main.cjs
+      padding=$(( ''${#appMain} - ''${#hook} ))
+      [ "$padding" -ge 0 ] || { echo "t3code: main script path is too short to redirect" >&2; exit 1; }
+      newMain="../mac-terminal/$(printf "%''${padding}s" "" | tr ' ' /)main.cjs"
+      perl -0777 -i -pe 'BEGIN { $from = "\"main\": \"" . shift . "\""; $to = "\"main\": \"" . shift . "\"" } $n += s/\Q$from\E/$to/g; END { exit($n == 1 ? 0 : 1) }' \
+        "$appMain" "$newMain" "$resources/app.asar" \
+        || { echo "t3code: package.json main did not match exactly once" >&2; exit 1; }
+
+      mkdir "$resources/mac-terminal"
+      substitute ${./mac-terminal/main.cjs} "$resources/mac-terminal/main.cjs" --replace-fail @appMain@ "$appMain"
+      cp ${./mac-terminal/terminal-keys.cjs} "$resources/mac-terminal/terminal-keys.cjs"
+    '';
   });
 in
 symlinkJoin {
   pname = "t3code";
   inherit (unwrapped) version meta;
-  paths = [ (if stdenv.hostPlatform.isLinux then patched else unwrapped) ];
+  paths = [ (if stdenv.hostPlatform.isLinux then macTerminal else unwrapped) ];
   nativeBuildInputs = [ makeWrapper ];
   # Keep providers available to both the GUI and headless server. The upstream
   # binary release includes its own resource monitor and disables auto-updates.

@@ -8,7 +8,6 @@
   caps a s d f j k l ;
   102d
   lsft lctl lmet lalt ralt rmet rctl f23
-  bspc del
 )
 
 (defvar
@@ -27,10 +26,6 @@
   ;; The Copilot key emits lsft+lmet+f23 as one chord. Map it to Alt; the
   ;; fork re-adds Shift so a manually held Shift survives (Shift+Alt).
   cplt (fork lalt (multi lsft lalt) (lsft))
-  ;; Cmd+Backspace and Cmd+Delete clear to the start and end of the line, as
-  ;; on macOS. No single Linux shortcut does that, so select and delete.
-  bspc (fork bspc (macro (unmod (lctl rctl) lsft home) (unmod (lctl rctl) bspc)) (lctl rctl))
-  del (fork del (macro (unmod (lctl rctl) lsft end) (unmod (lctl rctl) del)) (lctl rctl))
 )
 
 (defchordsv2
@@ -41,7 +36,6 @@
   esc @a @s @d @f @j @k @l @;
   lsft
   lsft lmet lalt lctl rctl lalt rmet lalt
-  @bspc @del
 )
 
 ;; Hyprland switches to this layer while Ghostty is focused. The shell does its
@@ -50,14 +44,12 @@
   _ _ _ _ _ _ _ _ _
   _
   _ _ _ _ _ _ _ _
-  bspc del
 )
 
 (deflayer nomods
   esc a s d f j k l ;
   lsft
   lsft lctl lmet lalt ralt rmet rctl ralt
-  bspc del
 )
 
 ;; Every Option key sends a real Alt, and Option+key types the us(mac) symbol
@@ -68,8 +60,10 @@
   (lalt $key) (ralt $key) (lctl rctl lmet rmet) ()
 )
 
-;; Cmd+arrows jump to the line or document edge and Option+arrows jump by word
-;; or paragraph, as on macOS, by sending the Linux shortcut for each.
+;; Cmd+arrows jump to the line or document edge, Option+arrows by word or
+;; paragraph, and Cmd/Option+Backspace delete to the line start or by word, as
+;; on macOS, by sending the Linux shortcut for each. Chromium deletes to the
+;; line start on Ctrl+Shift+Backspace.
 (deftemplate cmd-text (key out)
   (lctl $key) $out (lalt lmet rmet) (terminal nomods)
   (rctl $key) $out (lalt lmet rmet) (terminal nomods)
@@ -77,6 +71,11 @@
 
 (deftemplate option-text (key)
   (lalt $key) (lctl $key) (lctl rctl lmet rmet) (terminal nomods)
+)
+
+;; Shift stays out so Option+Shift+Backspace cannot become Cmd+Backspace.
+(deftemplate option-delete (key)
+  (lalt $key) (lctl $key) (lctl rctl lmet rmet lsft rsft) (terminal nomods)
 )
 
 (defoverridesv2
@@ -118,11 +117,12 @@
   (t! cmd-text right (end))
   (t! cmd-text up (lctl home))
   (t! cmd-text down (lctl end))
+  (t! cmd-text bspc (lctl lsft bspc))
 
   (t! option-text left)
   (t! option-text right)
   (t! option-text up)
   (t! option-text down)
-  (t! option-text bspc)
-  (t! option-text del)
+  (t! option-delete bspc)
+  (t! option-delete del)
 )

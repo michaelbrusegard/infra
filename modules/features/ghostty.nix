@@ -56,12 +56,11 @@
             "super+r=reload_config"
 
             # Mac text editing for the shell: Cmd+arrows go to the line's ends
-            # and Cmd+Backspace/Delete clear to them, Option moves and deletes
-            # by word.
+            # and Cmd+Backspace clears the line, Option moves and deletes by
+            # word.
             "super+left=csi:H"
             "super+right=csi:F"
             "super+backspace=text:\\x15"
-            "super+delete=text:\\x0b"
             "alt+left=esc:b"
             "alt+right=esc:f"
             "alt+backspace=text:\\x1b\\x7f"
