@@ -59,7 +59,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           release=https://github.com
-          nix flake update llm-agents t3code
+          # The Homebrew inputs set the versions of the Mac apps, whose headless
+          # halves move in this lane too. Only their evaluation can be checked
+          # here; a Linux runner cannot build them.
+          nix flake update llm-agents t3code brew-api homebrew-core homebrew-cask \
+            homebrew-extras homebrew-netbird homebrew-steipete homebrew-anomaly
           packages/vite-plus/update.sh
           packages/craft-apps/update.sh
           packages/update-release.sh packages/helium-browser/default.nix imputnet/helium-linux \
