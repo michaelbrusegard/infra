@@ -37,7 +37,7 @@ jobs:
       # router VM tests, every host, and a full build of the x86 servers, since
       # evaluating a host does not prove its packages build. An input that
       # fails the gate is found and held back as well. Nothing but this job
-      # stands between the update and main, because the push below skips CI.
+      # stands between the update and main: it is pushed straight there.
       - name: Update inputs
         id: update
         shell: bash

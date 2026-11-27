@@ -12,7 +12,7 @@ in
     jankyborders
     postgresql
     fluffychat
-    flux
+    fluxcd
     kubectl
     kubernetes-helm
     etcd
@@ -33,10 +33,4 @@ in
       '';
     }
   );
-  ruff-unstable = pkgs-unstable.ruff;
-  eslint = pkgs-unstable.eslint.overrideAttrs (old: {
-    meta = (old.meta or { }) // {
-      mainProgram = "eslint";
-    };
-  });
 }

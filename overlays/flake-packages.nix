@@ -5,6 +5,7 @@ in
 {
   inherit (inputs.hyprland.packages.${system}) hyprland xdg-desktop-portal-hyprland;
 
+  # The shell's module takes pkgs.quickshell; nixpkgs lags the release it needs.
   quickshell = inputs.quickshell.packages.${system}.default;
   dms-shell = inputs.dms.packages.${system}.default;
   dux-files = inputs.dux-files.packages.${system}.default;

@@ -7,7 +7,6 @@ metadata:
     secret.reloader.stakater.com/reload: smtp-edge-resend,wildcard-tls
     configmap.reloader.stakater.com/reload: smtp-edge-backup-client
 spec:
-  # Pending registry digest, secret provisioning and cutover approval; see README.
   replicas: 1
   serviceName: smtp-edge-internal
   persistentVolumeClaimRetentionPolicy:

@@ -18,7 +18,6 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: michaelbrusegard/postgres
   IMAGE_REF: ghcr.io/michaelbrusegard/postgres
 
 jobs:
