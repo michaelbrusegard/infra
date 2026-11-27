@@ -47,51 +47,39 @@
             (lib.lowPrio slack)
             bulwark-desktop
             bitwarden-cli
-            inkscape-with-extensions
             audacity
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
             mattermost-desktop
+            discord
             fluffychat
-            zapzap
             rustdesk-flutter
             imv
             gthumb
-            legcord
-            veracrypt
             feishin
 
             transmission_4-gtk
             bitwarden-desktop
             libreoffice-fresh
-            pdfarranger
-            scribus
-            gimp-with-plugins
             blender
-            davinci-resolve
             betaflight-configurator
-            qgis
             opencloudClient
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
             brewCasks.raycast
             brewCasks.rustdesk
             brewCasks.mattermost
-            brewCasks.whatsapp
 
             brewCasks.linearmouse
             brewCasks.stats
-            brewCasks.legcord
+            brewCasks.discord
 
             brewCasks.transmission
             brewCasks.bitwarden
             brewCasks.protonvpn
             libreoffice-bin
-            brewCasks.gimp
             blenderDarwin
             brewCasks.betaflight-configurator
-            brewCasks.qgis
-            brewCasks.wootility
             utm
             brewCasks.crystalfetch
             brewCasks.opencloud
@@ -101,19 +89,14 @@
       // lib.optionalAttrs (homePersistenceRoot != null) {
         persistence = {
           ${homePersistenceRoot}.directories = [
-            ".config/GIMP"
-            ".config/scribus"
-            ".config/inkscape"
             ".config/Signal"
-            ".config/ZapZap"
-            ".local/share/ZapZap"
             ".config/Mattermost"
             ".config/Slack"
             ".config/Bulwark"
             ".config/Bitwarden"
             ".config/Bitwarden CLI"
             ".config/OpenCloud"
-            ".config/legcord"
+            ".config/discord"
             ".config/libreoffice"
             ".config/blender"
             ".config/transmission"

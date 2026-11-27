@@ -10,17 +10,7 @@ in
   inherit (pkgs-unstable)
     aerospace
     jankyborders
-    neovim-unwrapped
-    vimPlugins
-    uv
-    ty
-    oxlint
-    oxfmt
-    prettier
-    biome
-    vtsls
     postgresql
-    lazysql
     fluffychat
     flux
     kubectl

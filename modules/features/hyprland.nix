@@ -166,7 +166,7 @@
           workspace = 4;
         }
         {
-          class = "^(legcord)$";
+          class = "^(discord)$";
           workspace = 5;
         }
         {
@@ -187,22 +187,6 @@
         }
         {
           class = "^(OrcaSlicer)$";
-          workspace = 6;
-        }
-        {
-          class = "^(resolve)$";
-          workspace = 6;
-        }
-        {
-          class = "^(gimp)$";
-          workspace = 6;
-        }
-        {
-          class = "^(org.inkscape.Inkscape)$";
-          workspace = 6;
-        }
-        {
-          class = "^(scribus)$";
           workspace = 6;
         }
         {

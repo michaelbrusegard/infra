@@ -125,8 +125,8 @@
           "......" = "cd ../../../../..";
           "-" = "cd -";
 
-          vim = "nvim";
-          vi = "nvim";
+          vim = "hx";
+          vi = "hx";
         }
         // lib.optionalAttrs (pkgs.stdenv.hostPlatform.isLinux && !isWsl) {
           pbcopy = "wl-copy";

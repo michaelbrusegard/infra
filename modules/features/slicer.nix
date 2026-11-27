@@ -57,37 +57,21 @@
           pkgs.appimageTools.extract { inherit pname version src; }
         );
       };
-
-      bambu-studio = pkgs.appimageTools.wrapType2 rec {
-        pname = "bambu-studio";
-        version = "02.07.01.57";
-        src = pkgs.fetchurl {
-          url = "https://github.com/bambulab/BambuStudio/releases/download/v02.07.01.57/BambuStudio_ubuntu-24.04-v02.07.01.57-20260601192128.AppImage";
-          hash = "sha256-hbBThT8aI4d1zXri1NGVRONSYFkkKNInbKJ9y9X461M=";
-        };
-        inherit extraPkgs profile;
-        extraInstallCommands = desktopItem "BambuStudio" (
-          pkgs.appimageTools.extract { inherit pname version src; }
-        );
-      };
     in
     {
       home = {
         packages =
           lib.optionals (pkgs.stdenv.hostPlatform.isLinux && !isWsl) [
             orca-slicer
-            bambu-studio
           ]
           ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
             pkgs.brewCasks.orcaslicer
-            pkgs.brewCasks.bambu-studio
           ];
       }
       // lib.optionalAttrs (homePersistenceRoot != null) {
         persistence = {
           ${homePersistenceRoot}.directories = [
             ".config/OrcaSlicer"
-            ".config/BambuStudio"
           ];
         };
       };

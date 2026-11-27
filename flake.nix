@@ -87,10 +87,6 @@
       url = "github:catppuccin/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    yazi = {
-      url = "github:sxyazi/yazi";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
     hyprland.url = "github:hyprwm/Hyprland";
     quickshell = {
       url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";

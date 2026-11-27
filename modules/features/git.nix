@@ -50,18 +50,9 @@
 
             rebase.autoStash = true;
 
-            core.editor = "nvim";
+            core.editor = "hx";
 
-            merge = {
-              conflictstyle = "merge";
-              tool = "nvimdiff";
-            };
-
-            "mergetool \"nvimdiff\"" = {
-              cmd = "nvim -c 'DiffviewOpen -uno'";
-            };
-
-            mergetool.prompt = false;
+            merge.conflictstyle = "merge";
 
             diff.colorMoved = "default";
 
@@ -111,7 +102,7 @@
 
             disableStartupPopups = true;
             quitOnTopLevelReturn = true;
-            os.editPreset = "nvim-remote";
+            os.editPreset = "helix";
           };
         };
         gh = {

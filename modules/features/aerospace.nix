@@ -72,11 +72,11 @@
                 run = "move-node-to-workspace 4";
               }
               {
-                "if".app-name-regex-substring = "^(Messages|FaceTime|FluffyChat|Legcord|Slack|Signal)$";
+                "if".app-name-regex-substring = "^(Messages|FaceTime|FluffyChat|Discord|Slack|Signal)$";
                 run = "move-node-to-workspace 5";
               }
               {
-                "if".app-name-regex-substring = "^(Inkscape|Gimp|Scribus|DaVinci Resolve|FreeCAD|OrcaSlicer)$";
+                "if".app-name-regex-substring = "^(FreeCAD|OrcaSlicer)$";
                 run = "move-node-to-workspace 6";
               }
               {

@@ -47,14 +47,6 @@
         "mas"
         "xcodes"
       ];
-      casks = [
-        # TODO: re-add "scribus" once the upstream homebrew-cask definition
-        # (https://github.com/Homebrew/homebrew-cask/blob/main/Casks/s/scribus.rb)
-        # stops declaring conflicting `depends_on macos` (on_arm/on_intel
-        # versions plus a bare `depends_on :macos`), which brew rejects with
-        # "Only a single 'depends_on macos' is allowed". The nixpkgs scribus
-        # is also marked broken on darwin, so there's no Nix fallback.
-      ];
       # Brew Bundle refuses to load third-party formulae and casks unless their
       # tap is trusted, and the trust option has no nix-darwin equivalent. The
       # netbird formula is declared explicitly rather than left implicit as the
@@ -69,7 +61,6 @@
       masApps = {
         "Developer" = 640199958;
         "TestFlight" = 899247664;
-        "DaVinci Resolve" = 571213070;
       };
     };
     # NetBird UI upgrades can remove the daemon and silently fail to reinstall it.

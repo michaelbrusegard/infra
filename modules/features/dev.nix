@@ -2,7 +2,6 @@
   flake.modules.homeManager.dev =
     {
       pkgs,
-      config,
       lib,
       homePersistenceRoot ? null,
       ...
@@ -19,18 +18,6 @@
         bun = {
           enable = true;
           enableGitIntegration = true;
-        };
-
-        lazysql = {
-          enable = true;
-          settings = {
-            inherit (config.secrets.lazysql.settings) database;
-            application = {
-              DefaultPageSize = 300;
-              DisableSidebar = false;
-              SidebarOverlay = false;
-            };
-          };
         };
       };
       home = {

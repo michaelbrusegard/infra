@@ -28,7 +28,6 @@ let
           "https://nix-community.cachix.org?priority=20"
           "https://nixos-raspberrypi.cachix.org?priority=30"
           "https://hyprland.cachix.org?priority=40"
-          "https://yazi.cachix.org?priority=60"
           "https://cache.numtide.com?priority=70"
         ];
 
@@ -37,7 +36,6 @@ let
           "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
           "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
           "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-          "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
           "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
         ];
       };

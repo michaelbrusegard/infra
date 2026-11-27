@@ -22,9 +22,8 @@
       cli-core
       git
       k8s
-      neovim
+      helix
       shell
-      yazi
     ];
 
     home.stateVersion = "25.11";

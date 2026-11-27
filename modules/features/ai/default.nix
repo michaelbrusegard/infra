@@ -380,6 +380,7 @@
       home = {
         packages = [
           (direnvWrapped pkgs.pi-coding-agent "pi")
+          (direnvWrapped pkgs.antigravity-cli "agy")
           pkgs.slack-cli
         ]
         ++ lib.optionals (!isWsl) (
@@ -394,7 +395,6 @@
               gh = config.programs.gh.package;
               backendPort = agentUiPorts.t3code;
             })
-            chatgpt
           ]
         );
 

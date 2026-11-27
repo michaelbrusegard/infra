@@ -1,11 +1,17 @@
 {
-  flake.modules.homeManager.helix = {
+  flake.modules.homeManager.helix = { pkgs, ... }: {
     programs.helix = {
       enable = true;
+      defaultEditor = true;
+      # Nix is edited on every host; other languages bring their servers in
+      # the project's dev shell.
+      extraPackages = [
+        pkgs.nixd
+        pkgs.nixfmt
+      ];
 
       settings = {
         editor = {
-          # Matching neovim options
           mouse = true;
           scrolloff = 4;
           cursorline = true;
@@ -97,7 +103,6 @@
           smart-tab.enable = true;
         };
 
-        # Matching neovim keybinds where possible
         keys = {
           normal = {
             # Space as leader is default in helix
@@ -189,7 +194,6 @@
         };
       };
 
-      # Matching neovim lang configs for formatting/LSP
       languages = {
         language-server = {
           nixd = {

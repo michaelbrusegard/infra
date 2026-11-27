@@ -82,6 +82,6 @@ reason the code cannot show; a `TODO` carries a link.
 Conventional Commits, checked by `nix run .#check-commits -- <range>`. Use a
 scope when the change is local to one slice: a platform (`nixos`, `darwin`,
 `home`), a host or cluster name, or an area (`flake`, `gitops`, `tofu`,
-`neovim`). Write a body whenever the reason is not obvious from the subject.
+`helix`). Write a body whenever the reason is not obvious from the subject.
 `chore(deps)` is reserved for Renovate; a secrets lock bump is
 `chore(flake): bump secrets`.

@@ -7,7 +7,6 @@
     disko
     dms-greeter
     dms-shell
-    flatpak
     fonts
     gaming
     gtk

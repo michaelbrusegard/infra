@@ -73,7 +73,6 @@
       k8s
       kitty
       mpv
-      neovim
       nix-tools
       pentest
       scripts
@@ -81,7 +80,6 @@
       slicer
       ssh
       xdg
-      zathura
     ];
 
     home.stateVersion = "25.11";
