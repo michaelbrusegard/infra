@@ -68,9 +68,15 @@ reason the code cannot show; a `TODO` carries a link.
 
 ## Boundaries
 
-- Pushing or merging to `main` deploys `gitops/espresso` through Flux and is a
-  production change. Commit freely on the task branch; push, merge and apply
-  (`nh`, `colmena`) only when asked.
+- `main` is production: Flux applies `gitops/espresso` from it within minutes.
+  Push a requested change straight to `main` once its checks pass: `lint` and
+  `verify` always, `check` when `gitops/` changed, `update-gate` when
+  `flake.lock` or `overlays/` changed. Say what was pushed and what was not
+  tested.
+- Ask before a change that cannot be undone by reverting the commit: deleting
+  or migrating stored data, a tofu plan that destroys a resource, rotating a
+  secret, or anything that drops a backup.
+- Apply to hosts (`nh`, `colmena`) only when asked.
 - Create public GitHub artifacts (issues, PRs, comments, releases) only when
   asked. Reading is fine.
 - Anything sensitive goes in `../infra-secrets` through `sops`.
