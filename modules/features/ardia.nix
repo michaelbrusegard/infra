@@ -67,6 +67,28 @@
         ExtensionInstallForcelist = lib.attrValues extensions;
       };
       ardia = pkgs.ardia.override { inherit policies; };
+
+      # Ardia reads ⌘ as Ctrl and ⌃ as Super on Linux, which is where kanata puts
+      # Cmd and Control, so one file gives the same keys on both machines. These
+      # are its Linux defaults that differ from the Mac ones; the glyphs are its
+      # own Mac notation. Clear Browsing Data is unbound because kanata sends its
+      # Ctrl+Shift+Backspace for Cmd+Backspace, delete to line start.
+      shortcuts = {
+        "tabSwitcher:forward" = "⌃⇥";
+        "tabSwitcher:backward" = "⌃⇧⇥";
+        openSplitPane = "⌃⇧=";
+        openSplitPaneBelow = "⌃⇧-";
+        moveSplitPaneLeft = "⌃⌥←";
+        moveSplitPaneRight = "⌃⌥→";
+        moveSplitPaneUp = "⌃⌥↑";
+        moveSplitPaneDown = "⌃⌥↓";
+        downloads = "⇧⌘J";
+        javaScriptConsole = "⌥⌘J";
+        devTools = "⌥⌘I";
+        emailPageLocation = "⇧⌘I";
+        jumpToSelection = "⌘J";
+        clearBrowsingData = "";
+      };
     in
     {
       # home.persistence only exists on hosts with impermanence, so it is left out
@@ -76,6 +98,10 @@
           {
             # The Mac gets Ardia from its Homebrew cask.
             home.packages = lib.optional (!isDarwin) ardia;
+
+            xdg.configFile.${if isDarwin then "ardia/config.json" else "ardia/config/config.json"}.text =
+              builtins.toJSON
+                { settings = { inherit shortcuts; }; };
           }
 
           (lib.mkIf (!isDarwin) {

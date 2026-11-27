@@ -239,7 +239,7 @@
           hl.on("hyprland.start", function() syncKanata(hl.get_active_window()) end)
           hl.on("config.reloaded", function() syncKanata(hl.get_active_window()) end)
 
-          hl.bind("CTRL + SHIFT + G", function()
+          hl.bind("CTRL + SUPER + G", function()
             gaming = not gaming
             hl.config({ input = { touchpad = { disable_while_typing = not gaming } } })
             syncKanata(hl.get_active_window())

@@ -60,10 +60,10 @@
   (lalt $key) (ralt $key) (lctl rctl lmet rmet) ()
 )
 
-;; Cmd+arrows jump to the line or document edge, Option+arrows by word or
-;; paragraph, and Cmd/Option+Backspace delete to the line start or by word, as
-;; on macOS, by sending the Linux shortcut for each. Chromium deletes to the
-;; line start on Ctrl+Shift+Backspace.
+;; Cmd+arrows jump to the line or document edge, Option+Left/Right by word, and
+;; Cmd/Option+Backspace delete to the line start or by word, as on macOS, by
+;; sending the Linux shortcut for each. Chromium deletes to the line start on
+;; Ctrl+Shift+Backspace. Option+Up/Down stay Alt for app shortcuts.
 (deftemplate cmd-text (key out)
   (lctl $key) $out (lalt lmet rmet) (terminal nomods)
   (rctl $key) $out (lalt lmet rmet) (terminal nomods)
@@ -121,8 +121,6 @@
 
   (t! option-text left)
   (t! option-text right)
-  (t! option-text up)
-  (t! option-text down)
   (t! option-delete bspc)
   (t! option-delete del)
 )
