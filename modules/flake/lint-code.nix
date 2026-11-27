@@ -16,7 +16,7 @@
           "media"
         ]
         ++ [
-          ".github/scripts/push-to-main.sh"
+          ".github/scripts/commit-to-main.sh"
           "packages/craft-apps/update.sh"
           "packages/update-release.sh"
           "packages/hermes-agent-image/smoke-test.sh"

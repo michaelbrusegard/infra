@@ -129,25 +129,18 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Commit the update
-        env:
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         shell: bash
         run: |
           set -euo pipefail
-          git diff --quiet && exit 0
           if [[ $LANE == weekly ]]; then
             subject='chore(flake): update inputs'
           else
             subject='chore(flake): update agent harnesses and apps'
           fi
-          git commit --all -m "$subject"
           # The agent offers the read-only infra-secrets key before the
           # checkout's image-bump key, and GitHub rejects the push with it.
           unset SSH_AUTH_SOCK
-          .github/scripts/push-to-main.sh
+          .github/scripts/commit-to-main.sh "$subject" flake.lock packages
       - name: Fail when an input was held back
         if: steps.update.outputs.held-back == '1'
         run: |

@@ -230,16 +230,6 @@ jobs:
 
       - name: Commit image digest update
         if: github.event_name == 'push'
-        env:
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: |
-          if git diff --quiet -- gitops/espresso/apps/hermes-agent/statefulset.yaml; then
-            exit 0
-          fi
-
-          git add gitops/espresso/apps/hermes-agent/statefulset.yaml
-          git commit -m "chore(hermes-agent): update image digests [skip ci]"
-          .github/scripts/push-to-main.sh
+          .github/scripts/commit-to-main.sh "chore(hermes-agent): update image digests [skip ci]" \
+            gitops/espresso/apps/hermes-agent/statefulset.yaml

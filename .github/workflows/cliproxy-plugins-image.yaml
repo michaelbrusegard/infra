@@ -90,19 +90,12 @@ jobs:
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
           GIT_SHA: ${{ github.sha }}
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: |
           git pull --rebase origin main
           # A queued build must never replace a newer patch with older code.
           git diff --exit-code "$GIT_SHA" -- packages/cliproxy-plugins .github/workflows/cliproxy-plugins-image.yaml
           python3 packages/cliproxy-plugins/update-manifest.py \
             "$IMAGE_REF:sha-$GIT_SHA@$DIGEST"
-          manifests=(gitops/espresso/apps/cliproxy/statefulset.yaml
-            gitops/espresso/apps/clickhouse/llm-normalizer.yaml)
-          if git diff --quiet -- "${manifests[@]}"; then exit 0; fi
-          git add "${manifests[@]}"
-          git commit -m 'chore(cliproxy): update plugin image [skip ci]'
-          .github/scripts/push-to-main.sh git diff --exit-code "$GIT_SHA" -- packages/cliproxy-plugins .github/workflows/cliproxy-plugins-image.yaml
+          .github/scripts/commit-to-main.sh 'chore(cliproxy): update plugin image [skip ci]' \
+            gitops/espresso/apps/cliproxy/statefulset.yaml gitops/espresso/apps/clickhouse/llm-normalizer.yaml \
+            -- git diff --exit-code "$GIT_SHA" -- packages/cliproxy-plugins .github/workflows/cliproxy-plugins-image.yaml

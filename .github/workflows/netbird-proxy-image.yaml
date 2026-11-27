@@ -90,18 +90,12 @@ jobs:
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
           GIT_SHA: ${{ github.sha }}
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: |
           git pull --rebase origin main
           # A queued build must never replace a newer patch with older code.
           git diff --exit-code "$GIT_SHA" -- packages/netbird-proxy-image .github/workflows/netbird-proxy-image.yaml
           python3 packages/netbird-proxy-image/update-manifest.py \
             "$IMAGE_REF:sha-$GIT_SHA@$DIGEST"
-          manifest=gitops/espresso/apps/netbird/agent-network.yaml
-          if git diff --quiet -- "$manifest"; then exit 0; fi
-          git add "$manifest"
-          git commit -m 'chore(netbird): update proxy image digest [skip ci]'
-          .github/scripts/push-to-main.sh git diff --exit-code "$GIT_SHA" -- packages/netbird-proxy-image .github/workflows/netbird-proxy-image.yaml
+          .github/scripts/commit-to-main.sh 'chore(netbird): update proxy image digest [skip ci]' \
+            gitops/espresso/apps/netbird/agent-network.yaml \
+            -- git diff --exit-code "$GIT_SHA" -- packages/netbird-proxy-image .github/workflows/netbird-proxy-image.yaml

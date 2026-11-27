@@ -90,16 +90,6 @@ jobs:
 
       - name: Commit image digest update
         if: github.event_name == 'push'
-        env:
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: |
-          if git diff --quiet -- gitops/espresso/infrastructure/controllers/postgres/statefulset.yaml; then
-            exit 0
-          fi
-
-          git add gitops/espresso/infrastructure/controllers/postgres/statefulset.yaml
-          git commit -m "chore(postgres): update image digest [skip ci]"
-          .github/scripts/push-to-main.sh
+          .github/scripts/commit-to-main.sh "chore(postgres): update image digest [skip ci]" \
+            gitops/espresso/infrastructure/controllers/postgres/statefulset.yaml
