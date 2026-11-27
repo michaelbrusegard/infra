@@ -109,8 +109,10 @@
           text = "";
         };
 
-        # Preserve terminal capabilities when connecting from Kitty over SSH.
-        packages = [ pkgs.kitty.terminfo ];
+        # Preserve terminal capabilities when connecting from Ghostty over SSH.
+        packages = [
+          (if pkgs.stdenv.hostPlatform.isDarwin then pkgs.ghostty-bin else pkgs.ghostty).terminfo
+        ];
 
         shellAliases = {
           dl = "cd $HOME/Downloads";

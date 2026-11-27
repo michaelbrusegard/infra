@@ -15,7 +15,8 @@
 }:
 let
   # Kanata puts Ctrl where Cmd sits and Super where Control sits, so the
-  # terminal must read Super as Ctrl and take Ctrl+V as paste, as kitty does.
+  # terminal must read Super as Ctrl and take Ctrl+V as paste, as Ghostty is
+  # set up to.
   # The client bundle is minified: each string must match exactly once, so an
   # upgrade that moves one fails the build. Equal lengths keep the asar header
   # offsets valid, so the archive is edited in place.

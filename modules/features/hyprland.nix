@@ -57,7 +57,7 @@
     let
       inherit (lib.generators) mkLuaInline;
 
-      kitty = lib.getExe pkgs.kitty;
+      newTerminal = "${lib.getExe pkgs.ghostty} +new-window";
       systemctl = lib.getExe' pkgs.systemd "systemctl";
       brightnessctl = lib.getExe pkgs.brightnessctl;
       kbdBacklightCycle = pkgs.writeShellScript "kbd-backlight-cycle" ''
@@ -327,7 +327,7 @@
           ++ [
             (bind "ALT + 0" togglefloating)
 
-            (bind "ALT + RETURN" (exec kitty))
+            (bind "ALT + RETURN" (exec newTerminal))
             (bind "ALT + SHIFT + RETURN" (exec "dfiles open"))
             (bind "CTRL + SPACE" (exec "dms ipc call spotlight toggle"))
             (bind "CTRL + SHIFT + V" (exec "dms ipc call clipboard toggle"))

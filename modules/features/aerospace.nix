@@ -2,13 +2,10 @@
   flake.modules.darwin.aerospace =
     {
       config,
-      lib,
-      pkgs,
       ...
     }:
     let
       home = config.users.users.${config.system.primaryUser}.home;
-      kitty = lib.getExe pkgs.kitty;
     in
     {
       services = {
@@ -119,7 +116,9 @@
 
               alt-0 = "layout floating tiling";
 
-              alt-enter = "exec-and-forget ${kitty} --working-directory ${home}";
+              # A running Ghostty opens another window; otherwise launching it opens
+              # the first one.
+              alt-enter = "exec-and-forget osascript -e 'tell application \"Ghostty\"' -e 'if running then new window' -e 'activate' -e 'end tell'";
               alt-shift-enter = "exec-and-forget /usr/bin/open ${home}";
             };
           };

@@ -8,7 +8,7 @@
       ardia
       craft
       desktop-apps
-      kitty
+      ghostty
       mpv
       slicer
     ];
