@@ -32,3 +32,11 @@ spec:
           ports:
             - containerPort: 10000
               name: signal
+          readinessProbe:
+            tcpSocket:
+              port: signal
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: signal
+            periodSeconds: 30

@@ -48,6 +48,14 @@ spec:
           ports:
             - name: metrics
               containerPort: 9100
+          readinessProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 30
           resources:
             requests:
               cpu: 5m

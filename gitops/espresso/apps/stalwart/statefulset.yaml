@@ -127,6 +127,14 @@ spec:
             - -d
             - -c
             - /etc/unbound/unbound.conf
+          readinessProbe:
+            exec:
+              command: ["drill", "-p", "5335", "@127.0.0.1", "localhost"]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["drill", "-p", "5335", "@127.0.0.1", "localhost"]
+            periodSeconds: 30
           resources:
             requests:
               cpu: 10m

@@ -33,6 +33,23 @@ spec:
             - containerPort: 3478
               name: stun
               protocol: UDP
+            - containerPort: 3478
+              name: turn-tcp
+          # The entrypoint looks up the public address before it listens, which
+          # has taken 80 seconds.
+          startupProbe:
+            tcpSocket:
+              port: turn-tcp
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: turn-tcp
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: turn-tcp
+            periodSeconds: 30
           volumeMounts:
             - mountPath: /etc/coturn/turnserver.conf
               name: config

@@ -144,6 +144,8 @@ spec:
         - ports:
             - port: "33080"
               protocol: TCP
+            - port: "9000"
+              protocol: TCP
     - fromEntities:
         - ingress
       toPorts:
@@ -186,6 +188,8 @@ spec:
         - ports:
             - port: "3478"
               protocol: UDP
+            - port: "3478"
+              protocol: TCP
     - fromCIDR:
         - 0.0.0.0/0
         - ::/0

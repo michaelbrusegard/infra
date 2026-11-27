@@ -35,3 +35,14 @@ spec:
           ports:
             - containerPort: 33080
               name: relay
+            - containerPort: 9000
+              name: health
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: health
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: relay
+            periodSeconds: 30
