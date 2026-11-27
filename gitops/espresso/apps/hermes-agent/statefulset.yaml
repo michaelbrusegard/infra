@@ -8,7 +8,7 @@ spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      partition: 1
+      partition: 0
   selector:
     matchLabels:
       app: hermes-agent

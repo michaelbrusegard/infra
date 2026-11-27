@@ -23,7 +23,6 @@ configMapGenerator:
       - android-companion=scripts/android-companion
       - android-companion.py=scripts/android-companion.py
       - android.py=scripts/android.py
-      - android-emulator-launch.sh=scripts/android-emulator-launch.sh
       - android-automation-skill.md=skills/android-automation/SKILL.md
       - browser-support=scripts/browser-support
       - browser-support.py=scripts/browser-support.py
