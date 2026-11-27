@@ -45,10 +45,20 @@ let
         features.memories = false;
         # Codex's native image tool requires first-party provider/auth metadata.
         # Keep device authentication and expose the gateway's Images API via MCP.
-        mcp_servers.ai_images = {
-          command = lib.getExe aiImages;
-          args = [ "serve" ];
-          tool_timeout_sec = 660;
+        mcp_servers = {
+          ai_images = {
+            command = lib.getExe aiImages;
+            args = [ "serve" ];
+            tool_timeout_sec = 660;
+          };
+        }
+        # The gateway to the Craft apps. It is registered here and not through
+        # Home Manager, which would replace Codex's own ~/.codex/config.toml.
+        // lib.optionalAttrs (pkgs ? craft-ai-mcp) {
+          craft = {
+            command = lib.getExe pkgs.craft-ai-mcp;
+            args = [ "--stdio" ];
+          };
         };
         memories = {
           generate_memories = false;
