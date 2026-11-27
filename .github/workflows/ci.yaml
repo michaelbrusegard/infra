@@ -4,9 +4,11 @@ on:
     branches:
       - main
   pull_request:
+# Runs on main are never cancelled: two image workflows wait for the result of
+# their own commit before promoting an image, and a cancelled run fails them.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 # Read-only, plus the pull request file list that the paths filter queries.
 permissions:
   contents: read
