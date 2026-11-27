@@ -5,6 +5,7 @@
 
   flake.modules.nixos.desktop.imports = with inputs.self.modules.nixos; [
     workstation
+    ardia
     avahi
     binfmt
     console
@@ -14,7 +15,6 @@
     fonts
     gaming
     gtk
-    helium
     hyprland
     impermanence
     kanata

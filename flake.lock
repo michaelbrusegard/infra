@@ -575,6 +575,22 @@
         "type": "github"
       }
     },
+    "homebrew-ardia": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795748793,
+        "narHash": "sha256-fGQOc6IDEMXhiLLbAGvgHV4aVG3FaJW2rGfxq798aoE=",
+        "owner": "ardia-browser",
+        "repo": "homebrew-tap",
+        "rev": "d82717be3db907571f4e2b694f2cd2cce6f64ec2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ardia-browser",
+        "repo": "homebrew-tap",
+        "type": "github"
+      }
+    },
     "homebrew-cask": {
       "flake": false,
       "locked": {
@@ -1360,6 +1376,7 @@
         "hex": "hex",
         "home-manager": "home-manager",
         "homebrew-anomaly": "homebrew-anomaly",
+        "homebrew-ardia": "homebrew-ardia",
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",
         "homebrew-extras": "homebrew-extras",

@@ -66,12 +66,10 @@ jobs:
           # halves move in this lane too. Only their evaluation can be checked
           # here; a Linux runner cannot build them.
           nix flake update llm-agents t3code brew-api homebrew-core homebrew-cask \
-            homebrew-extras homebrew-netbird homebrew-steipete homebrew-anomaly
+            homebrew-extras homebrew-netbird homebrew-steipete homebrew-anomaly \
+            homebrew-ardia
           packages/vite-plus/update.sh
           packages/craft-apps/update.sh
-          packages/update-release.sh packages/helium-browser/default.nix imputnet/helium-linux \
-            "arch = \"x86_64\";=$release/imputnet/helium-linux/releases/download/{version}/helium-{version}-x86_64.AppImage" \
-            "arch = \"arm64\";=$release/imputnet/helium-linux/releases/download/{version}/helium-{version}-arm64.AppImage"
           packages/update-release.sh packages/ardia/default.nix ardia-browser/ardia \
             "linux-x64.AppImage=$release/ardia-browser/ardia/releases/download/v{version}/Ardia-{version}-linux-x64.AppImage"
           packages/update-release.sh packages/rustdesk/default.nix rustdesk/rustdesk \
@@ -87,7 +85,7 @@ jobs:
           git diff --quiet && exit 0
           {
             jq -r 'keys[] | select(. != "artcraft-launcher")' packages/craft-apps/sources.json
-            printf '%s\n' craft-ai-mcp vite-plus ardia helium-browser rustdesk-flutter bulwark-desktop
+            printf '%s\n' craft-ai-mcp vite-plus ardia rustdesk-flutter bulwark-desktop
           } | sed 's|^|.#packages.x86_64-linux.|' | xargs nix build --no-link
           printf '%s\n' claude-code codex opencode pi-coding-agent antigravity-cli t3code |
             sed 's|^|.#nixosConfigurations.forte.pkgs.|' | xargs nix build --no-link

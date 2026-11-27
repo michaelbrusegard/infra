@@ -14,6 +14,7 @@
         "netbirdio/homebrew-tap" = inputs.homebrew-netbird;
         "steipete/homebrew-tap" = inputs.homebrew-steipete;
         "anomalyco/homebrew-tap" = inputs.homebrew-anomaly;
+        "ardia-browser/homebrew-tap" = inputs.homebrew-ardia;
       };
       mutableTaps = false;
       autoMigrate = true;
@@ -60,6 +61,8 @@
         brew "steipete/tap/peekaboo"
         tap "anomalyco/tap", trusted: { casks: ["hex"] }
         cask "anomalyco/tap/hex"
+        tap "ardia-browser/tap", trusted: { casks: ["ardia"] }
+        cask "ardia-browser/tap/ardia"
       '';
       masApps = {
         "TestFlight" = 899247664;

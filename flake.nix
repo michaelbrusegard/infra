@@ -83,6 +83,10 @@
       url = "github:anomalyco/homebrew-tap";
       flake = false;
     };
+    homebrew-ardia = {
+      url = "github:ardia-browser/homebrew-tap";
+      flake = false;
+    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs-unstable";

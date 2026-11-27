@@ -149,7 +149,7 @@
 
       workspaceRules = [
         {
-          class = "^(helium)$";
+          class = "^(ardia)$";
           workspace = 2;
         }
         {

@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.helium =
+  flake.modules.nixos.ardia =
     { pkgs, ... }:
     {
       # Ardia asks polkit for this action before it copies the sync recovery
@@ -12,7 +12,7 @@
       ];
     };
 
-  flake.modules.homeManager.helium =
+  flake.modules.homeManager.ardia =
     {
       pkgs,
       lib,
@@ -22,8 +22,7 @@
     let
       inherit (pkgs.stdenv.hostPlatform) isDarwin;
 
-      # Chrome Web Store IDs. Helium bundles uBlock Origin and proxies store
-      # downloads through its own services.
+      # Chrome Web Store IDs.
       extensions = {
         bitwarden = "nngceckbapebfimnlniiiahkandclblb";
         vimium = "dbepggeogbaibhgnhhndojpepiihcmeb";
@@ -67,8 +66,6 @@
       policies = settings // {
         ExtensionInstallForcelist = lib.attrValues extensions;
       };
-      helium = pkgs.helium-browser.override { inherit policies; };
-      # On trial beside Helium, with the same policies, before replacing it.
       ardia = pkgs.ardia.override { inherit policies; };
     in
     {
@@ -77,19 +74,10 @@
       config = lib.mkMerge (
         [
           {
-            home.packages =
-              if isDarwin then
-                [ pkgs.brewCasks.helium-browser ]
-              else
-                [
-                  helium
-                  ardia
-                ];
+            # The Mac gets Ardia from its Homebrew cask.
+            home.packages = lib.optional (!isDarwin) ardia;
           }
 
-          # macOS only forces policies from MDM profiles; preferences in Helium's
-          # domain apply as recommended defaults the user can still change, and
-          # extensions are offered through the External Extensions directory.
           (lib.mkIf (!isDarwin) {
             xdg.mimeApps.defaultApplications = lib.genAttrs [
               "text/html"
@@ -103,26 +91,28 @@
               "x-scheme-handler/https"
               "x-scheme-handler/about"
               "x-scheme-handler/unknown"
-            ] (_: [ "helium.desktop" ]);
+            ] (_: [ "ardia.desktop" ]);
           })
 
+          # macOS only forces policies from MDM profiles; preferences in Ardia's
+          # domain apply as recommended defaults the user can still change, and
+          # extensions are offered through the External Extensions directory.
           (lib.mkIf isDarwin {
-            targets.darwin.defaults."net.imput.helium" = darwinSettings;
+            targets.darwin.defaults."com.ardia.browser" = darwinSettings;
             home.file = lib.mapAttrs' (
               _: id:
-              lib.nameValuePair "Library/Application Support/net.imput.helium/External Extensions/${id}.json" {
-                # Helium only routes installs through its proxy (and its
-                # consent check) for its own placeholder store URL.
-                text = builtins.toJSON {
-                  external_update_url = "https://update-url-to-be-replaced.qjz9zk";
-                };
-              }
+              lib.nameValuePair
+                "Library/Application Support/com.ardia.browser/Chromium/External Extensions/${id}.json"
+                {
+                  text = builtins.toJSON {
+                    external_update_url = "https://clients2.google.com/service/update2/crx";
+                  };
+                }
             ) extensions;
           })
         ]
         ++ lib.optional (homePersistenceRoot != null) {
           home.persistence.${homePersistenceRoot}.directories = [
-            ".config/net.imput.helium"
             ".config/ardia"
             # Ardia unpacks its command-line tool here on first start.
             ".local/share/ardia"

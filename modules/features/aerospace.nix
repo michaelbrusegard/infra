@@ -56,7 +56,7 @@
                 run = "layout floating";
               }
               {
-                "if".app-name-regex-substring = "^Helium$";
+                "if".app-name-regex-substring = "^Ardia$";
                 run = "move-node-to-workspace 2";
               }
               {

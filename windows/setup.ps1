@@ -198,7 +198,6 @@ Invoke-Section "Installing Applications with Winget" {
     "FocusriteAudioEngineeringLtd.FocusriteControl",
     "Microsoft.PowerToys",
     "Microsoft.WindowsTerminal",
-    "ImputNet.Helium",
     "Discord.Discord",
     "Dweymouth.Supersonic",
     "OBSProject.OBSStudio",
@@ -227,6 +226,36 @@ Invoke-Section "Installing Applications with Winget" {
   if ($wingetFailures.Count -gt 0) {
     Write-Warning "Winget packages failed: $($wingetFailures -join ', ')"
   }
+}
+
+# =============================================================================
+# ARDIA BROWSER INSTALLATION
+# =============================================================================
+Invoke-Section "Installing Ardia" {
+  # Ardia is not in winget; its installer comes from the GitHub release and
+  # the app updates itself afterwards.
+  $uninstallKeys = @(
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+  )
+  $installed = Get-ItemProperty -Path $uninstallKeys -ErrorAction SilentlyContinue |
+    Where-Object { $_.DisplayName -like "Ardia*" }
+  if ($installed) {
+    Write-Host "Ardia already installed. Skipping."
+    return
+  }
+
+  $release = Invoke-RestMethod -Uri "https://api.github.com/repos/ardia-browser/ardia/releases/latest" -UseBasicParsing
+  $asset = $release.assets | Where-Object { $_.name -like "*-windows-x64-setup.exe" } | Select-Object -First 1
+  if (-not $asset) {
+    throw "No Windows installer in Ardia release $($release.tag_name)."
+  }
+
+  $setupPath = Join-Path $env:TEMP $asset.name
+  Write-Host "Downloading $($asset.name)..."
+  Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $setupPath -UseBasicParsing
+  Start-Process -FilePath $setupPath -Wait -ErrorAction Stop
+  Remove-Item $setupPath -Force -ErrorAction SilentlyContinue
 }
 
 # =============================================================================
