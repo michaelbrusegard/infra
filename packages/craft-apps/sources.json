@@ -54,10 +54,10 @@
     "cliHash": "sha256-puzcbUrdAogWQr2goLGRtJdBGGUfLsVkHccbLD/0t1I="
   },
   "solidcraft": {
-    "hash": "sha256-sMY/Rf5YqxPEAUUTKyH9wwn0XilDAfG6UlBQqplXWSA=",
+    "hash": "sha256-MIz18VABAeurl+oS/ZqS41qyJ+YJbYaubqzYYMnPQHI=",
     "repo": "tangency-labs/solidcraft",
-    "version": "0.50.0",
-    "cliHash": "sha256-BcFlJOHv0d10s7DnVkxu+SskPn56/nnBVxf6xHUO/Ng="
+    "version": "0.51.2",
+    "cliHash": "sha256-YUx2mXeewM6950tiu2AcqzuLGU1qlEs6nv1EEhMWHaI="
   },
   "soundcraft": {
     "hash": "sha256-yu/PhcTxE4cX1ZLTHOW+B/L8phbsNtY/rGdgze++KKk=",
